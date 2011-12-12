@@ -492,10 +492,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	boolean joinedWithAccounts = false;
         	if (skipProjectTemplates || (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.featured))) {
         		whereClause += " INNER JOIN account a on (t.account_id = a.id)";
-        		if (skipProjectTemplates) {
+        		joinedWithAccounts = true;
+        		if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {                	            		
+            		 whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";     
+             		if (skipProjectTemplates) {
+            			whereClause += " AND a.type != " + Account.ACCOUNT_TYPE_PROJECT;
+            		}
+        		}else if (skipProjectTemplates) {
         			whereClause += " WHERE a.type != " + Account.ACCOUNT_TYPE_PROJECT;
         		}
-        		joinedWithAccounts = true;
         	}
 
         	if (!isIso) {
@@ -533,7 +538,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     }
 
                     // get all child domain ID's
-                    if ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ) {
+                    if (isAdmin(account.getType()) ) {
                         List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
                         for (DomainVO childDomain : allChildDomains) {
                             relatedDomainIds.append(childDomain.getId());
@@ -549,7 +554,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	attr += " WHERE ";
             }
             
-            if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)) {
+            if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)  && !isAdmin(caller.getType()) ) {
             	whereClause += attr + "t.account_id IN (" + permittedAccountsStr + ")";
             }
 
@@ -557,15 +562,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	whereClause += attr + "t.public = 1 AND t.featured = 1";
             	if (!permittedAccounts.isEmpty()) {
             	    whereClause += attr + "(dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
-            	}
-            	
-            } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            	if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            		if (!joinedWithAccounts) {
-            			whereClause += " INNER JOIN account a on (t.account_id = a.id)";
-            		}
-            		 whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
-            	}
+            	}            	            
             } else if (templateFilter == TemplateFilter.sharedexecutable && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             	if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             		whereClause += " LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE" +
@@ -577,7 +574,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             		}
             		whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
             	}	
-            } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
+            }else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            	// This has been moved up since it involved Joins
+            }
+            else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
             	whereClause += attr + "(t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
             } else if (templateFilter == TemplateFilter.community) {
             	whereClause += attr + "t.public = 1 AND t.featured = 0";
@@ -812,4 +812,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         return update(id, template);
     }
+    private boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	    	    (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
+    
 }
