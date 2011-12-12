@@ -1398,6 +1398,18 @@ div.details div.detail-group td.value select {
   width: 282px;
 }
 
+div.details div.detail-group td.value input,
+div.details div.detail-group td.value input[type=checkbox] {
+  float: left;
+  width: 15px;
+  margin-left: 10px;
+}
+
+div.details div.detail-group td.value input,
+div.details div.detail-group td.value input[type=text] {
+  width: 93%;
+}
+
 #browser div.panel div.detail-view .toolbar {
   width: 594px;
 }

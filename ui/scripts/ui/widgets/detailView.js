@@ -300,7 +300,7 @@
       if ($detailView.find('.button.done').size()) return false;
 
       // Convert value TDs
-      var $inputs = $detailView.find('input[type=text], select');
+      var $inputs = $detailView.find('input, select');
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
       var $editButton = $('<div>').addClass('button done').html('Apply').hide()
@@ -318,6 +318,12 @@
             $value.html(
               $input.attr('value')
             );
+          else if ($input.is('input[type=checkbox]')) {
+            var val = $input.is(':checked');
+            
+            $value.data('detail-view-boolean-value', val);
+            $value.html(val ? 'Yes' : 'No'); 
+          }
           else if ($input.is('select')) {
             $value.html(
               $input.find('option:selected').html()
@@ -333,7 +339,13 @@
 
           var data = {};
           $inputs.each(function() {
-            data[$(this).attr('name')] = $(this).val();
+            var $input = $(this);
+
+            if ($input.is('[type=checkbox]')) {
+              data[$input.attr('name')] = $input.is(':checked') ? true : false;
+            } else {
+              data[$input.attr('name')] = $input.val(); 
+            }
           });
 
           $editButton.fadeOut('fast', function() {
@@ -395,7 +407,7 @@
       };
 
       $editButton.click(function() {
-        var $inputs = $detailView.find('input[type=text], select');
+        var $inputs = $detailView.find('input, select');
         applyEdits($inputs, $editButton);
       });
 
@@ -406,11 +418,13 @@
 
         // Turn into form field
         var selectData = $value.data('detail-view-editable-select');
+        var isBoolean = $value.data('detail-view-editable-boolean');
+        var data = !isBoolean ? $value.html() : $value.data('detail-view-boolean-value');
+
+        $value.html('');
 
         if (selectData) {
           // Select
-          var data = $value.html();
-          $value.html('');
           $value.append(
             $('<select>')
               .attr({
@@ -432,10 +446,16 @@
           });
 
           $value.find('select').val($value.data('detail-view-selected-option'));
+        } else if (isBoolean) {
+          $value.append(
+            $('<input>').attr({
+              name: name,
+              type: 'checkbox',
+              checked: data
+            })
+          );
         } else {
           // Text input
-          var data = $value.html();
-          $value.html('');
           $value.append(
             $('<input>').attr({
               name: name,
@@ -668,6 +688,9 @@
               }
             }
           });
+        } else if (value.isBoolean) {
+          $value.data('detail-view-editable-boolean', true);
+          $value.data('detail-view-boolean-value', content == 'Yes' ? true : false);
         }
 
         return true;
