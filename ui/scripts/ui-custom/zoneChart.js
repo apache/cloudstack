@@ -23,7 +23,7 @@
         $.each(actions, function(actionID, action) {
           if (allowedActions && $.inArray(actionID, allowedActions) == -1)
             return true;
-          
+
           var $action = $('<div>').addClass('button action main-action');
 
           $action.addClass(actionID);
@@ -76,7 +76,7 @@
 
         $.each(naas.networkProviders.types, function(name, type) {
           var status = networkStatus[name];
-          var statusLabel = naas.networkProviders.statusLabels ? 
+          var statusLabel = naas.networkProviders.statusLabels ?
                 naas.networkProviders.statusLabels[status] : {};
 
           var $item = $('<li>').addClass('provider')
@@ -349,6 +349,23 @@
                     $providerActions.appendTo($listView.find('.toolbar'));
                   };
 
+                  var loadProviderDetails = function($container) {
+                    var provider = naas.networkProviders.types[itemID];
+
+                    if (provider.type == 'detailView') {
+                      var $detailView = $container.detailView($.extend(true, {}, provider, {
+                        $browser: $browser
+                      }));
+                    } else {
+                      var $listView = $container.listView({
+                        listView: provider
+                      });
+
+                      loadProviderActions($listView);
+                    }
+                  };
+
+
                   $browser.cloudBrowser('addPanel', {
                     title: itemName + ' details',
                     maximizeIfSelected: true,
@@ -370,11 +387,9 @@
                                     _custom: args ? args._custom : null,
                                     complete: function(args) {
                                       refreshChart();
-                                      var $listView = $newPanel.html('').listView({
-                                        listView: naas.networkProviders.types[itemID]
-                                      });
-
-                                      loadProviderActions($listView);
+                                      $newPanel.html('');
+                                      $loading.remove();
+                                      loadProviderDetails($newPanel);
                                     }
                                   });
                                 }
@@ -405,19 +420,7 @@
                             )
                         );
                       } else {
-                        var provider = naas.networkProviders.types[itemID];
-
-                        if (provider.type == 'detailView') {
-                          var $detailView = $newPanel.detailView($.extend(true, {}, provider, {
-                            $browser: $browser
-                          }));
-                        } else {
-                          var $listView = $newPanel.listView({
-                            listView: provider
-                          });
-
-                          loadProviderActions($listView); 
-                        }
+                        loadProviderDetails($newPanel);
                       }
                     }
                   });

@@ -313,7 +313,7 @@
                 title: 'Network',
                 fields: [
                   {
-                    name: { label: 'Name' }                    
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
@@ -382,15 +382,79 @@
 
           // NetScaler list view
           netscaler: {
+            type: 'detailView',
             id: 'netscaler-providers',
             label: 'NetScaler',
-            fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
-              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
-            },
-            providerActionFilter: testProviderActionFilter,
-            providerActions: {
+            viewAll: { label: 'NetScaler Providers', path: '_zone.netscalerProviders' },
+            actions: {
+              add: {
+                label: 'Add new NetScaler',
+                createForm: {
+                  title: 'Add NetScaler Device',
+                  desc: 'Please enter your NetScaler device\'s information to add it to your network.',
+                  fields: {
+                    name: {
+                      label: 'Name',
+                      validation: { required: true },
+                      defaultValue: 'New_NetScaler'
+                    },
+                    ipaddress: {
+                      label: 'IP Address',
+                      validation: { required: true }
+                    },
+                    supportedServices: {
+                      label: 'Supported Services',
+                      isBoolean: true,
+                      multiArray: {
+                        serviceA: { label: 'Service A' },
+                        serviceB: { label: 'Service B' },
+                        serviceC: { label: 'Service C' }
+                      }
+                    },
+                    username: {
+                      label: 'Username',
+                      validation: { required: true }
+                    },
+                    password: {
+                      label: 'Password',
+                      isPassword: true,
+                      validation: { required: true }
+                    },
+                    type: {
+                      label: 'NetScaler Model',
+                      select: function(args) {
+                        args.response.success({
+                          data: [
+                            {
+                            id: 'mpx',
+                            description: 'NetScaler MPX'
+                          },
+                          {
+                            id: 'adc',
+                            description: 'NetScaler ADC'
+                          }
+                          ]
+                        });
+                      }
+                    },
+                    enabled: {
+                      label: 'Enable',
+                      isBoolean: true
+                    }
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Added new NetScaler';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.testPoll
+                }
+              },
               disable: {
                 label: 'Disable',
                 action: function(args) {
@@ -432,102 +496,38 @@
                 notification: { poll: testData.notifications.testPoll }
               }
             },
-            actions: {
-              add: {
-                label: 'Add new NetScaler',
-                createForm: {
-                  title: 'Add NetScaler Device',
-                  desc: 'Please enter your NetScaler device\'s information to add it to your network.',
-                  fields: {
-                    name: {
-                      label: 'Name',
-                      validation: { required: true },
-                      defaultValue: 'New_NetScaler'
-                    },
-                    ipaddress: {
-                      label: 'IP Address',
-                      validation: { required: true }
-                    },
-                    supportedServices: {
-                      label: 'Supported Services',
-                      isBoolean: true,
-                      multiArray: {
-                        serviceA: { label: 'Service A' },
-                        serviceB: { label: 'Service B' },
-                        serviceC: { label: 'Service C' }
-                      }
-                    },
-                    username: {
-                      label: 'Username',
-                      validation: { required: true }
-                    },
-                    password: {
-                      label: 'Password',
-                      isPassword: true,
-                      validation: { required: true }
-                    },
-                    type: {
-                      label: 'NetScaler Model',
-                      select: function(args) {
-                        args.response.success({
-                          data: [
-                            {
-                              id: 'mpx',
-                              description: 'NetScaler MPX'
-                            },
-                            {
-                              id: 'adc',
-                              description: 'NetScaler ADC'
-                            }
-                          ]
-                        });
-                      }
-                    },
-                    enabled: {
-                      label: 'Enable',
-                      isBoolean: true
-                    }
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    state: { label: 'Status' }
                   }
-                },
-                action: function(args) {
-                  args.response.success();
-                },
-                messages: {
-                  notification: function(args) {
-                    return 'Added new NetScaler';
-                  }
-                },
-                notification: {
-                  poll: testData.notifications.testPoll
+                ],
+                dataProvider: function(args) {
+                  setTimeout(function() {
+                    args.response.success({
+                      data: {
+                        name: 'NetScaler Provider',
+                        state: 'Enabled'
+                      }
+                    });
+                  }, 500);
                 }
               }
-            },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              }, 500);
             }
           },
 
           // F5 list view
           f5: {
+            type: 'detailView',
             id: 'f5-providers',
             label: 'F5',
-            fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
-              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
-            },
-            providerActionFilter: testProviderActionFilter,
-            providerActions: {
+            viewAll: { label: 'F5 Providers', path: '_zone.f5Providers' },
+            actions: {
               disable: {
                 label: 'Disable',
                 action: function(args) {
@@ -569,42 +569,38 @@
                 notification: { poll: testData.notifications.testPoll }
               }
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              }, 500);
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    state: { label: 'Status' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  setTimeout(function() {
+                    args.response.success({
+                      data: {
+                        name: 'F5 Provider',
+                        state: 'Enabled'
+                      }
+                    });
+                  }, 500);
+                }
+              }
             }
           },
 
           // SRX list view
           srx: {
+            type: 'detailView',
             id: 'srx-providers',
             label: 'SRX',
-            fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
-              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
-            },
-            providerActionFilter: testProviderActionFilter,
-            providerActions: {
+            viewAll: { label: 'SRX Providers', path: '_zone.srxProviders' },
+            actions: {
               disable: {
                 label: 'Disable',
                 action: function(args) {
@@ -646,49 +642,45 @@
                 notification: { poll: testData.notifications.testPoll }
               }
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              });
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    state: { label: 'Status' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  setTimeout(function() {
+                    args.response.success({
+                      data: {
+                        name: 'SRX Provider',
+                        state: 'Enabled'
+                      }
+                    });
+                  }, 500);
+                }
+              }
             }
           },
 
           // Security groups list view
           securityGroups: {
-            id: 'securityGroup-providers',
+            type: 'detailView',
+            id: 'securityGroups-providers',
             label: 'Security Groups',
-            fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
-              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
-            },
-            providerActionFilter: testProviderActionFilter,
-            providerActions: {
+            viewAll: { label: 'Security Groups', path: 'network.securityGroups' },
+            actions: {
               disable: {
                 label: 'Disable',
                 action: function(args) {
                   setTimeout(args.response.success, 100);
                 },
                 messages: {
-                  notification: function() { return 'Disabled security group provider'; }
+                  notification: function() { return 'Disabled Security Groups provider'; }
                 },
                 notification: { poll: testData.notifications.testPoll }
               },
@@ -698,7 +690,7 @@
                   setTimeout(args.response.success, 100);
                 },
                 messages: {
-                  notification: function() { return 'Enable security group provider'; }
+                  notification: function() { return 'Enable Security Groups provider'; }
                 },
                 notification: { poll: testData.notifications.testPoll }
               },
@@ -708,7 +700,7 @@
                   setTimeout(args.response.success, 100);
                 },
                 messages: {
-                  notification: function() { return 'Shutdown security group provider'; }
+                  notification: function() { return 'Shutdown Security Groups provider'; }
                 },
                 notification: { poll: testData.notifications.testPoll }
               },
@@ -718,35 +710,35 @@
                   setTimeout(args.response.success, 100);
                 },
                 messages: {
-                  notification: function() { return 'Started security group provider'; }
+                  notification: function() { return 'Started Security Groups provider'; }
                 },
                 notification: { poll: testData.notifications.testPoll }
               }
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              });
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    state: { label: 'Status' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  setTimeout(function() {
+                    args.response.success({
+                      data: {
+                        name: 'SRX Provider',
+                        state: 'Enabled'
+                      }
+                    });
+                  }, 500);
+                }
+              }
             }
-          }
+          },
         }
       }
     },
@@ -932,7 +924,172 @@
         }
       }
     }),
+
     subsections: {
+      // Provider list views
+      netscalerProviders: {
+        id: 'netscalerProviders',
+        title: 'NetScaler Providers',
+        listView: {
+          label: 'NetScaler Providers',
+          fields: {
+            name: { label: 'Name' },
+            ipAddress: { label: 'IP Address' },
+            gateway: { label: 'Gateway' },
+            netmask: { label: 'Netmask' }
+          },
+          actions: {
+            add: {
+              label: 'Add new NetScaler',
+              createForm: {
+                title: 'Add NetScaler Device',
+                desc: 'Please enter your NetScaler device\'s information to add it to your network.',
+                fields: {
+                  name: {
+                    label: 'Name',
+                    validation: { required: true },
+                    defaultValue: 'New_NetScaler'
+                  },
+                  ipaddress: {
+                    label: 'IP Address',
+                    validation: { required: true }
+                  },
+                  supportedServices: {
+                    label: 'Supported Services',
+                    isBoolean: true,
+                    multiArray: {
+                      serviceA: { label: 'Service A' },
+                      serviceB: { label: 'Service B' },
+                      serviceC: { label: 'Service C' }
+                    }
+                  },
+                  username: {
+                    label: 'Username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'Password',
+                    isPassword: true,
+                    validation: { required: true }
+                  },
+                  type: {
+                    label: 'NetScaler Model',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          {
+                          id: 'mpx',
+                          description: 'NetScaler MPX'
+                        },
+                        {
+                          id: 'adc',
+                          description: 'NetScaler ADC'
+                        }
+                        ]
+                      });
+                    }
+                  },
+                  enabled: {
+                    label: 'Enable',
+                    isBoolean: true
+                  }
+                }
+              },
+              action: function(args) {
+                args.response.success();
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Added new NetScaler';
+                }
+              },
+              notification: {
+                poll: testData.notifications.testPoll
+              }
+            }           
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              data: [
+                {
+                name: 'ns-1',
+                ipAddress: '192.168.1.10',
+                gateway: '192.168.1.1',
+                netmask: '255.255.255.0'
+              },
+              {
+                name: 'ns-2',
+                ipAddress: '192.168.1.11',
+                gateway: '192.168.1.1',
+                netmask: '255.255.255.0'
+              }
+              ]
+            });
+          }
+        }
+      },
+      f5Providers: {
+        id: 'f5Provider',
+        title: 'F5 Providers',
+        listView: {
+          label: 'F5 Providers',
+          fields: {
+            name: { label: 'Name' },
+            ipAddress: { label: 'IP Address' },
+            gateway: { label: 'Gateway' },
+            netmask: { label: 'Netmask' }
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              data: [
+                {
+                  name: 'f5-1',
+                  ipAddress: '192.168.1.10',
+                  gateway: '192.168.1.1',
+                  netmask: '255.255.255.0'
+                },
+                {
+                  name: 'f5-2',
+                  ipAddress: '192.168.1.11',
+                  gateway: '192.168.1.1',
+                  netmask: '255.255.255.0'
+                }
+              ]
+            });
+          }
+        }
+      },
+      srxProviders: {
+        id: 'srxProviders',
+        title: 'SRX Providers',
+        listView: {
+          label: 'SRX Providers',
+          fields: {
+            name: { label: 'Name' },
+            ipAddress: { label: 'IP Address' },
+            gateway: { label: 'Gateway' },
+            netmask: { label: 'Netmask' }
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              data: [
+                {
+                  name: 'srx-1',
+                  ipAddress: '192.168.1.10',
+                  gateway: '192.168.1.1',
+                  netmask: '255.255.255.0'
+                },
+                {
+                  name: 'srx-2',
+                  ipAddress: '192.168.1.11',
+                  gateway: '192.168.1.1',
+                  netmask: '255.255.255.0'
+                }
+              ]
+            });
+          }
+        }
+      },
       systemVMs: {
         type: 'select',
         title: 'System VMs',
