@@ -693,8 +693,9 @@ public class ApiDBUtils {
         return _projectMgr.getProjectOwner(projectId).getId();
     }
     
-    public static Map getAccountDetails(long accountId) {
-    	return _accountDetailsDao.findDetails(accountId);
+    public static Map<String, String> getAccountDetails(long accountId) {
+    	Map<String, String> details = _accountDetailsDao.findDetails(accountId);
+    	return details.isEmpty() ? null : details;
     }
 
     public static Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {

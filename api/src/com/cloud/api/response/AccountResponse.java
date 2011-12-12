@@ -333,7 +333,7 @@ public class AccountResponse extends BaseResponse {
         this.networkDomain = networkDomain;
     }
     
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
     	this.details = details;
     }
     
