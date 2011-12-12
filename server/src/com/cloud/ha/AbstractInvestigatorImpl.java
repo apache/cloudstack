@@ -19,6 +19,7 @@
 package com.cloud.ha;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -75,14 +76,18 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
     
     // Host.status is up and Host.type is routing
     protected List<Long> findHostByPod(long podId, Long excludeHostId) {
-    	SearchCriteriaService<HostVO, Long> sc = SearchCriteria2.create(HostVO.class, Long.class);
-    	sc.selectField(sc.getEntity().getId());
+    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Type.Routing);
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        List<Long> hostIds = sc.list();
+        List<HostVO> hosts = sc.list();
         
-        if (excludeHostId != null){
+        List<Long> hostIds = new ArrayList<Long>(hosts.size());
+        for (HostVO h : hosts) {
+        	hostIds.add(h.getId());
+        }
+        
+        if (excludeHostId != null) {
             hostIds.remove(excludeHostId);
         }
         
