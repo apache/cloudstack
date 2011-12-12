@@ -84,7 +84,14 @@
                         var $radio = $(this).closest('.select').find('input[type=radio]');
 
                         if ($radio.is(':checked') && !$(this).is(':checked')) {
-                          return false;
+                          if (!$radio.closest('.select').index()) {
+                            return false;
+                          } else {
+                            $radio
+                              .closest('.select')
+                              .siblings().filter(':first')
+                              .find('input[type=radio]').click(); 
+                          }
                         }
 
                         return true;
