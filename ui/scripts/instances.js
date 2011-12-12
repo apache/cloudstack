@@ -1370,19 +1370,19 @@
           },          
 
           migrate: {
-            label: 'Migrate instance',
+            label: 'Migrate instance to another host',
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to migrate instance?';
+                return 'Please confirm that you want to migrate instance to another host.';
               },
               success: function(args) {
-                return 'Instance is being migrated.';
+                return 'Instance is being migrated to another host.';
               },
               notification: function(args) {
-                return 'Migrating instance';
+                return 'Migrating instance to another host.';
               },
               complete: function(args) {
-                return 'Instance has been migrated.';
+                return 'Instance has been migrated to another host.';
               }
             },
             createForm: {
@@ -1451,7 +1451,75 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          },          
+          },  
+         
+          migrateToAnotherStorage: {
+            label: 'Migrate instance to another primary storage',
+            messages: {
+              confirm: function(args) {
+                return 'Please confirm that you want to migrate instance to another primary storage.';
+              },
+              success: function(args) {
+                return 'Instance is being migrated to another primary storage.';
+              },
+              notification: function(args) {
+                return 'Migrating instance to another primary storage.';
+              },
+              complete: function(args) {
+                return 'Instance has been migrated to another primary storage.';
+              }
+            },
+            createForm: {
+              title: 'Migrate instanceto another primary storage',
+              desc: '',
+              fields: {
+                storageId: {
+                  label: 'Primary storage',
+                  validation: { required: true },
+                  select: function(args) {                    
+                    $.ajax({  
+                      url: createURL("listStoragePools&zoneid=" + args.context.instances[0].zoneid),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {                        
+                        var pools = json.liststoragepoolsresponse.storagepool;
+                        var items = [];
+                        $(pools).each(function() {                          
+                          items.push({id: this.id, description: this.name});
+                        });
+                        args.response.success({data: items});
+                      }
+                    });
+                  }
+                }
+              }
+            },
+            action: function(args) {
+              $.ajax({
+                url: createURL("migrateVirtualMachine&storageid=" + args.data.storageId + "&virtualmachineid=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.migratevirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {                        
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;                       
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                     }
+                    }
+                  );
+                }
+              });
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+          },   
           
           viewConsole: {
             label: 'View console',
@@ -1650,6 +1718,10 @@
       allowedActions.push("edit");
       allowedActions.push("start");
       allowedActions.push("destroy");
+      
+      if(isAdmin())
+        allowedActions.push("migrateToAnotherStorage");
+      
       if (jsonObj.isoid == null)	{
         allowedActions.push("attachISO");
       }
