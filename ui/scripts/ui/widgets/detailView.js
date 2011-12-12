@@ -342,7 +342,7 @@
             var $input = $(this);
 
             if ($input.is('[type=checkbox]')) {
-              data[$input.attr('name')] = $input.is(':checked') ? true : false;
+              data[$input.attr('name')] = $input.is(':checked') ? 'on' : null;
             } else {
               data[$input.attr('name')] = $input.val(); 
             }
