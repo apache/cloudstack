@@ -387,16 +387,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         String prodBrand = record.softwareVersion.get("product_brand").trim();
         String prodVersion = record.softwareVersion.get("product_version").trim();
         
-        if(prodBrand.equals("XCP") && prodVersion.equals("1.0.0")) 
-        	return new XcpServerResource(XcpServerResource.XCP_1_0_0);
-
-        if(prodBrand.equals("XCP") &&  prodVersion.equals("1.1.0")) 
-            return new XcpServerResource(XcpServerResource.XCP_1_1_0);
-
-        if(prodBrand.equals("XCP") && prodVersion.equals("5.6.100"))
-            return new XcpServerResource(XcpServerResource.XCP_1_0_0);
-//Setting this to return XCP 1.0.0 - this is the lowest common denominator
-// for XCP trying to disguise itself at 5.6.100 for XenCenter integration
+        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100"))) 
+        	return new XcpServerResource();
 
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServer56Resource();

@@ -31,7 +31,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CitrixHelper {
 	 private static final Logger s_logger = Logger.getLogger(CitrixHelper.class);
 	 private static final HashMap<String, String> _xcp100GuestOsMap = new HashMap<String, String>(70);
-     private static final HashMap<String, String> _xcp110GuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServerGuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServer56FP1GuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServer56FP2GuestOsMap = new HashMap<String, String>(70);
@@ -86,8 +85,8 @@ public class CitrixHelper {
         _xcp100GuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
         _xcp100GuestOsMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
         _xcp100GuestOsMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp100GuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit) (experimental)");
-        _xcp100GuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit) (experimental)");
+        _xcp100GuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xcp100GuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
         _xcp100GuestOsMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
         _xcp100GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
         _xcp100GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
@@ -116,84 +115,6 @@ public class CitrixHelper {
     }
     
 
-    static {
-        _xcp110GuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 4.7 (32-bit)", "CentOS 4.7 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 4.8 (32-bit)", "CentOS 4.8 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.0 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.0 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.1 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.1 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.5 (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("CentOS 5.5 (64-bit)", "CentOS 5 (64-bit)");
-        _xcp110GuestOsMap.put("Debian GNU/Linux 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
-        _xcp110GuestOsMap.put("Debian GNU/Linux 6(32-bit)", "Debian Squeeze 6.0 (32-bit)");
-        _xcp110GuestOsMap.put("Debian GNU/Linux 6(64-bit)", "Debian Squeeze 6.0 (64-bit) (experimental)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.5 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Oracle Enterprise Linux 5.5 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
-        _xcp110GuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 x64");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "Other install media");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 x64");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", "SUSE Linux Enterprise Server 11 SP1 (32-bit)");
-        _xcp110GuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", "SUSE Linux Enterprise Server 11 SP1 (64-bit)");
-        _xcp110GuestOsMap.put("Windows 7 (32-bit)", "Windows 7 (32-bit)");
-        _xcp110GuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
-        _xcp110GuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003 (32-bit)");
-        _xcp110GuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 (64-bit)");
-        _xcp110GuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008 (32-bit)");
-        _xcp110GuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 (64-bit)");
-        _xcp110GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
-        _xcp110GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
-        _xcp110GuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
-        _xcp110GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
-        _xcp110GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
-        _xcp110GuestOsMap.put("Other Linux (32-bit)", "Other install media");
-        _xcp110GuestOsMap.put("Other Linux (64-bit)", "Other install media");
-        _xcp110GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
-        _xcp110GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
-    }
-    
-    
     static {
     	_xenServerGuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5 (32-bit)");
     	_xenServerGuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6 (32-bit)");
@@ -431,7 +352,7 @@ public class CitrixHelper {
     }
     
     
-    public static String getXcp100GuestOsType(String stdType) {
+    public static String getXcpGuestOsType(String stdType) {
         String guestOS =  _xcp100GuestOsMap.get(stdType);
         if (guestOS == null) {
         	s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
@@ -440,15 +361,6 @@ public class CitrixHelper {
         return guestOS;
     }
     
-    
-    public static String getXcp110GuestOsType(String stdType) {
-        String guestOS =  _xcp110GuestOsMap.get(stdType);
-        if (guestOS == null) {
-            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
-            guestOS = "Other install media";
-        }
-        return guestOS;
-    }
     
     public static String getXenServerGuestOsType(String stdType, boolean bootFromCD) {
         String guestOS =  _xenServerGuestOsMap.get(stdType);
