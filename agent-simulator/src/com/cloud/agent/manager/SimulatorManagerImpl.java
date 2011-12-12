@@ -15,6 +15,7 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
@@ -198,7 +199,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockVmMgr.setVmData((VmDataCommand)cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
                 return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
-            } else if (cmd instanceof StopCommand) {
+            } else if (cmd instanceof CheckNetworkCommand) {
+            	return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
+            }else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
                 return _mockVmMgr.rebootVM((RebootCommand)cmd);

@@ -6,6 +6,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainCommand;
@@ -38,4 +39,6 @@ public interface MockAgentManager extends Manager {
     MockHost getHost(String guid);
 
     Answer MaintainCommand(MaintainCommand cmd);
+
+	Answer checkNetworkCommand(CheckNetworkCommand cmd);
 }

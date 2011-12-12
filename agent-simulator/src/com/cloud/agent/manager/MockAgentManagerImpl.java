@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
@@ -348,4 +350,12 @@ public class MockAgentManagerImpl implements MockAgentManager {
     public MaintainAnswer MaintainCommand(com.cloud.agent.api.MaintainCommand cmd) {
         return new MaintainAnswer(cmd);
     }
+
+	@Override
+	public Answer checkNetworkCommand(CheckNetworkCommand cmd) {
+		if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if network name setup is done on the resource");
+        }
+		return new CheckNetworkAnswer(cmd, true , "Network Setup check by names is done");
+	}
 }
