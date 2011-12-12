@@ -86,6 +86,7 @@
      */
     standard: function($detailView, args, additional) {
       var action = args.actions[args.actionName];
+      var preAction = action.preAction;
       var notification = action.notification ?
             action.notification : {};
       var messages = action.messages;
@@ -96,6 +97,11 @@
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
       var noRefresh = additional.noRefresh;
+
+      // Handle pre-action (occurs before any other behavior happens)
+      if (preAction) {
+        if (!preAction({ context: context })) return false;
+      }
 
       var updateTabContent = function(newData) {
         var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();

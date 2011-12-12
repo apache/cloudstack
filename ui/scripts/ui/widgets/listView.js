@@ -55,6 +55,7 @@
       var notification = args.action.notification ? args.action.notification : {};
       var messages = args.action ? args.action.messages : {};
       var messageArgs = { name: $instanceRow.find('td.name span').html() };
+      var preAction = args.action ? args.action.preAction : {};
       var action = args.action ? args.action.action : {};
       var section;
       var data = {
@@ -71,6 +72,17 @@
 
       if (listViewArgs)
         notification.section = listViewArgs.id;
+
+      // Handle pre-action (occurs before any other behavior happens)
+      if (preAction) {
+        var preActionContext = $.extend(true, {}, listViewArgs.context);
+
+        preActionContext[
+          listViewArgs.activeSection
+        ] = [$instanceRow.data('jsonObj')];
+
+        if (!preAction({ context: preActionContext })) return false;
+      }
 
       var performAction = function(data, options) {
         if (!options) options = {};
