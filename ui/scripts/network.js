@@ -103,6 +103,10 @@
                 args.response.success({
                   data: data.listnetworksresponse.network
                 });
+              },
+
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -189,6 +193,10 @@
                         }
                       }
                     });
+                  },
+
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -223,6 +231,10 @@
                       async: true,
                       success: function(data) {
                         args.response.success();
+                      },
+
+                      error: function(data) {
+                        args.response.error(parseXMLHttpResponse(data));
                       }
                     });
                   }
@@ -270,6 +282,9 @@
                         }
                       }
                     });
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -313,6 +328,9 @@
                         }
                       }
                     });
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -369,6 +387,9 @@
                   actionFilter: actionFilters.ipAddress,
                   data: items
                 });
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -393,6 +414,9 @@
                     item.vpnenabled = true;
                     item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
                   };
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
                 }
               });
 
@@ -433,6 +457,9 @@
                           jobId: data.createremoteaccessvpnresponse.jobid
                         }
                       });
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -475,6 +502,9 @@
                           jobId: data.deleteremoteaccessvpnresponse.jobid
                         }
                       });
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -507,6 +537,9 @@
                         async: true,
                         success: function(data) {
                           args.response.success();
+                        },
+                        error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
                         }
                       });
                     }
@@ -553,6 +586,9 @@
                           }
                         }
                       });
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -596,6 +632,9 @@
                           }
                         }
                       });
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -672,6 +711,9 @@
                           });
                         }
                       });
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 }
@@ -761,6 +803,9 @@
                                 poll: pollAsyncJobResult
                               }
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -788,6 +833,10 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
+                            },
+
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -805,6 +854,9 @@
                           args.response.success({
                             data: data.listfirewallrulesresponse.firewallrule
                           });
+                        },
+                        error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
                         }
                       });
                     }
@@ -824,6 +876,9 @@
                         args.response.success({
                           data: ipAddress
                         });
+                      },
+                      error: function(data) {
+                        args.response.error(parseXMLHttpResponse(data));
                       }
                     });
                   },
@@ -840,6 +895,9 @@
                         args.response.success({
                           data: data.listvirtualmachinesresponse.virtualmachine[0]
                         });
+                      },
+                      error: function(data) {
+                        args.response.error(parseXMLHttpResponse(data));
                       }
                     });
                   },
@@ -886,6 +944,9 @@
                                 poll: pollAsyncJobResult
                               }
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -912,6 +973,9 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -930,6 +994,9 @@
                             args.response.success({
                               data: data.listipforwardingrulesresponse.ipforwardingrule
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }, 100);
@@ -951,7 +1018,8 @@
                             success: function(data) {
                               args.response.success({
                                 data: $.grep(
-                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  data.listvirtualmachinesresponse.virtualmachine ?
+                                    data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
                                       'Destroyed'
@@ -959,6 +1027,9 @@
                                   }
                                 )
                               });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -998,6 +1069,7 @@
                           async: true,
                           success: function(data) {
                             var itemData = args.itemData;
+                            var jobID = data.createloadbalancerruleresponse.jobid;
 
                             $.ajax({
                               url: createURL('assignToLoadBalancerRule'),
@@ -1010,19 +1082,23 @@
                               dataType: 'json',
                               async: true,
                               success: function(data) {
-
-                              }
-                            });
-
-                            args.response.success({
-                              _custom: {
-                                jobId: data.createloadbalancerruleresponse.jobid
+                                args.response.success({
+                                  _custom: {
+                                    jobId: jobID
+                                  },
+                                  notification: {
+                                    label: 'Add load balancer rule',
+                                    poll: pollAsyncJobResult
+                                  }
+                                });
                               },
-                              notification: {
-                                label: 'Add load balancer rule',
-                                poll: pollAsyncJobResult
+                              error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
                               }
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -1050,6 +1126,9 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
+                            }, 
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -1091,6 +1170,9 @@
                                     data: loadBalancerData
                                   });
                                 }
+                              },
+                              error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
                               }
                             });
                           });
@@ -1122,6 +1204,9 @@
                                   }
                                 )
                               });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -1175,6 +1260,9 @@
                                 poll: pollAsyncJobResult
                               }
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -1202,6 +1290,9 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
@@ -1249,6 +1340,9 @@
                               }
                             });
                           });
+                        },
+                        error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
                         }
                       });
                     }
@@ -1299,6 +1393,9 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
                             }
                           });
                         }
