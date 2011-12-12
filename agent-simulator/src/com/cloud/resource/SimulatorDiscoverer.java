@@ -45,10 +45,12 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -261,7 +263,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-    	/*
+    	
         if(forRebalance)
     		return;
         if ( Host.Type.SecondaryStorage == host.getType() ) {
@@ -270,16 +272,16 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
                 VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), tmplt.getId());
                 if (vmTemplateHost == null) {
                     vmTemplateHost = new VMTemplateHostVO(host.getId(), tmplt.getId(), new Date(), 100,
-                            VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, null, tmplt.getUrl());
+                            com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, null, tmplt.getUrl());
                     _vmTemplateHostDao.persist(vmTemplateHost);
                 } else {
-                    vmTemplateHost.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+                    vmTemplateHost.setDownloadState(com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                     vmTemplateHost.setDownloadPercent(100);
                     _vmTemplateHostDao.update(vmTemplateHost.getId(), vmTemplateHost);
                 }
             }
         }
-        */
+        
     }
 
     @Override
