@@ -59,6 +59,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
 
     protected final SearchBuilder<VMInstanceVO> VMClusterSearch;
+    protected final SearchBuilder<VMInstanceVO> StartingVMClusterSearch;
     protected final SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected final SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
@@ -87,6 +88,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
     protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
+    
     protected VMInstanceDaoImpl() {
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
@@ -99,6 +101,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         VMClusterSearch.done();
 
+        
+        StartingVMClusterSearch = createSearchBuilder();
+        SearchBuilder<HostVO> hostSearch1 = _hostDao.createSearchBuilder();
+        StartingVMClusterSearch.join("hostSearch1", hostSearch1, hostSearch1.entity().getId(), StartingVMClusterSearch.entity().getHostId(), JoinType.INNER);
+        hostSearch1.and("clusterId", hostSearch1.entity().getClusterId(), SearchCriteria.Op.EQ);
+        StartingVMClusterSearch.done();
+
+        
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
@@ -212,10 +222,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listByClusterId(long clusterId) {
         SearchCriteria<VMInstanceVO> sc = VMClusterSearch.create();
         sc.setJoinParameters("hostSearch", "clusterId", clusterId);
-
         return listBy(sc);
     }
 
+    
+    @Override
+    public List<VMInstanceVO> listStartingByClusterId(long clusterId) {
+        SearchCriteria<VMInstanceVO> sc = StartingVMClusterSearch.create();
+        sc.setJoinParameters("hostSearch1", "clusterId", clusterId);
+        return listBy(sc);
+    }
+    
     @Override
     public List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type) {
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();

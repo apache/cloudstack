@@ -13,8 +13,9 @@ import com.cloud.vm.VirtualMachine.State;
  
 public class XenServerPoolVms {
     private static final Logger s_logger = Logger.getLogger(XenServerPoolVms.class);
-    HashMap<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _cluster_vms = 
+    private HashMap<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _cluster_vms = 
         new HashMap<String, HashMap<String, Pair<String, State>>>();
+    private long _last_sync_time=0;
 
     public HashMap<String, Pair<String, State>> getClusterVmState(String clusterId){
         HashMap<String, Pair<String, State>> _vms= _cluster_vms.get(clusterId);
@@ -64,10 +65,9 @@ public class XenServerPoolVms {
         HashMap<String, Pair<String, State>> vms= getClusterVmState(clusterId);
         return vms.size();
     }
-  
     
-    public static void main(String args[]){
-        XenServerPoolVms vms = new XenServerPoolVms();
+    public void initSyncTime(){
+        _last_sync_time = System.currentTimeMillis();
     }
     
     @Override

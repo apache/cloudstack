@@ -6573,7 +6573,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
         XenServerPoolVms vms = new XenServerPoolVms();
         try {
-            Host lhost = Host.getByUuid(conn, _host.uuid);
             Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
             for (VM.Record record: vm_map.values()) {
                 if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
@@ -6627,6 +6626,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 //check if host is changed
                 if (host_uuid != null && oldState != null){
                     if (!host_uuid.equals(oldState.first()) && newState != State.Stopped && newState != State.Stopping){
+                        s_logger.warn("Detecting a change in host for " + vm);
                         changes.put(vm, new Pair<String, State>(host_uuid, newState));
                         s_vms.put(_cluster, host_uuid, vm, newState);
                         continue;
@@ -6636,7 +6636,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (newState == State.Stopped  && oldState != null && oldState.second() != State.Stopping && oldState.second() != State.Stopped) {
                     newState = getRealPowerState(conn, vm);
                 }
-
+                
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("VM " + vm + ": xen has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
                 }
@@ -6682,7 +6682,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 final String vm = entry.getKey();
                 final State oldState = entry.getValue().second();
                 String host_uuid = entry.getValue().first();
-
+                
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("VM " + vm + " is now missing from xen so reporting stopped");
                 }
@@ -6697,12 +6697,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (oldState == State.Migrating) {
                     s_logger.warn("Ignoring VM " + vm + " in migrating state.");
                 } else {
-                    //State newState = State.Stopped;
-                    //changes.put(vm, new Pair<String, State>(host_uuid, newState));
+                    State newState = State.Stopped;
+                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 }
             }
         }
-
         return changes;
     }
 

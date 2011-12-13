@@ -27,6 +27,7 @@ public class ClusterSyncAnswer extends Answer {
     private HashMap<String, Pair<String, State>> _newStates;
     private HashMap<String, Pair<String, State>> _allStates;
     private int _type = -1; // 0 for full, 1 for delta
+    private boolean _isExecuted=false;
     
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
@@ -36,6 +37,17 @@ public class ClusterSyncAnswer extends Answer {
         result = false;
         this.details = "Ignore sync as this is not a pool master";
         _type = -1;
+    }
+    
+    // this is here because a cron command answer is being sent twice
+    //  AgentAttache.processAnswers
+    //  AgentManagerImpl.notifyAnswersToMonitors
+    public boolean isExceuted(){
+        return _isExecuted;
+    }
+    
+    public void setExecuted(){
+        _isExecuted = true;
     }
     
 

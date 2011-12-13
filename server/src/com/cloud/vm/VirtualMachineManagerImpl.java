@@ -139,6 +139,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -1608,6 +1609,27 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 commands.addCommand(command);
             }
         }
+        
+
+        final List<? extends VMInstanceVO> vmsz = _vmDao.listByHostId(hostId);
+        s_logger.debug("Found " + vmsz.size() + " VMs for host " + hostId);
+        for (VMInstanceVO vm : vmsz) {
+            AgentVmInfo info = infos.remove(vm.getId());
+            VMInstanceVO castedVm = null;
+            if (info == null) {
+                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+                castedVm = info.guru.findById(vm.getId());
+            } else {
+                castedVm = info.vm;
+            }
+
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+
+            Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
+            if (command != null) {
+                commands.addCommand(command);
+            }
+        }
 
         for (final AgentVmInfo left : infos.values()) {
             boolean found = false;
@@ -1629,7 +1651,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             }
             if ( ! found ) {
-                s_logger.warn("Stopping a VM that we have no record of: " + left.name);
+                s_logger.warn("Stopping a VM that we have no record of <fullHostSync>: " + left.name);
                 commands.addCommand(cleanup(left.name));
             }
         }
@@ -1667,50 +1689,70 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
 
 
-    public Commands deltaSync(Map<String, Pair<String, State>> newStates) {
+    public void deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
-        Commands commands = new Commands(OnError.Continue);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             AgentVmInfo info = entry.getValue();
             VMInstanceVO vm = info.vm;
             Command command = null;
             if (vm != null) {
-                String hostGuid = info.getHostUuid();
-                Host host = _resourceMgr.findHostByGuid(hostGuid);
+                Host host = _resourceMgr.findHostByGuid(info.getHostUuid());
                 long hId = host.getId();
 
                 HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
                 command = compareState(hId, vm, info, false, hvGuru.trackVmHostChange());
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
+                    s_logger.debug("Cleaning up a VM that is no longer found <deltaSync>: " + info.name);
                 }
                 command = cleanup(info.name);
             }
-
-            if (command != null) {
-                commands.addCommand(command);
+            if (command != null){
+                try {
+                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid());
+                    if (host != null){
+                        Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+                        if (!answer.getResult()) {
+                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                }
             }
         }
-
-        return commands;
     }
 
 
-    public Commands fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
-        Commands commands = new Commands(OnError.Continue);
+    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
-        long hId = 0;
-        final List<VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
+        List<VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
         for (VMInstanceVO vm : vms) {
-            AgentVmInfo info = infos.remove(vm.getId());
+            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
+            infos.remove(vm.getId());
+        }
+        // some VMs may be starting and will have last host id null
+        vms = _vmDao.listStartingByClusterId(clusterId);
+        for (VMInstanceVO vm : vms) {
+            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
+            infos.remove(vm.getId());
         }
         for (final AgentVmInfo left : infos.values()) {
-            s_logger.warn("Stopping a VM that we have no record of: " + left.name);
-            commands.addCommand(cleanup(left.name));
+            try {
+                Host host = _resourceMgr.findHostByGuid(left.getHostUuid());
+                if (host != null){
+                    s_logger.warn("Stopping a VM which we do not have any record of " + left.name);
+                    Answer answer = _agentMgr.send(host.getId(), cleanup(left.name));
+                    if (!answer.getResult()) {
+                        s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+            }
         }
-        return commands;
+        
     }
 
 
@@ -2040,11 +2082,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (final Answer answer : answers) {
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
-                if (hs.isFull()) {
-                    deltaSync(hs.getNewStates());
-                    fullSync(hs.getClusterId(), hs.getAllStates());
-                } else if (hs.isDelta()){
-                    deltaSync(hs.getNewStates());
+                if (!hs.isExceuted()){
+                    if (hs.isFull()) {
+                        deltaSync(hs.getNewStates());
+                        fullSync(hs.getClusterId(), hs.getAllStates());
+                    } else if (hs.isDelta()){
+                        deltaSync(hs.getNewStates());
+                    }
+                    hs.setExecuted();
                 }
             } else if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails());
