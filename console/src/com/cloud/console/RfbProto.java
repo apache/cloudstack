@@ -1339,6 +1339,7 @@ public class RfbProto {
 
     os.write(eventBuf, 0, eventBufLen);
   }
+  
 
 
   //
@@ -1358,7 +1359,11 @@ public class RfbProto {
     if(s_logger.isTraceEnabled())
     	s_logger.trace("Send keyboard event on wire, keysym: 0x" + Integer.toHexString(keysym) + ", down: " + down);    
   }
-
+  
+  public void flushEventBuffer() throws IOException {
+      os.write(eventBuf, 0, eventBufLen);
+      eventBufLen = 0;
+  }
 
   //
   // Write key events to set the correct modifier state.
