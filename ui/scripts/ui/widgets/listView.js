@@ -1207,11 +1207,13 @@
       clearTimeout(infScrollTimer);
       infScrollTimer = setTimeout(function() {
         var loadMoreData = $listView.scrollTop() >= ($table.height() - $listView.height()) - $listView.height() / 4;
-
+        var context = $listView.data('view-args').context;
+        
         if (loadMoreData) {
           page = page + 1;
 
           loadBody($table, listViewData.dataProvider, listViewData.fields, true, {
+            context: context,
             page: page,
             filterBy: {
               search: {},
