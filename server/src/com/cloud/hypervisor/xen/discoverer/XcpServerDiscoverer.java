@@ -566,11 +566,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             throw new RuntimeException(msg);
         }
         if (! resource.equals(host.getResource()) ) {
+            String msg = "host " + host.getPrivateIpAddress() + " changed from " + host.getResource() + " to " + resource;
+            s_logger.debug(msg);
             host.setResource(resource);
             host.setSetup(false);
             _hostDao.update(agentId, host);
-            String msg = "host " + host.getPrivateIpAddress() + " changed from " + host.getResource() + " to " + resource;
-            s_logger.debug(msg);
             throw new HypervisorVersionChangedException(msg);
         }
         
