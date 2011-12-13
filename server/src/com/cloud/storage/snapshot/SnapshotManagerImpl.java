@@ -1409,7 +1409,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         try{
         	_resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
         } catch (ResourceAllocationException e){
-        	if (snapshotType == Type.RECURRING){
+        	if (snapshotType != Type.MANUAL){
         		String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
         		s_logger.warn(msg);
         		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, 
