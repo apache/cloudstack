@@ -1221,9 +1221,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             userVmResponse.setName(userVm.getHostName());
             userVmResponse.setCreated(userVm.getCreated());
 
-            if (userVm.getState() != null) {
-                userVmResponse.setState(userVm.getState().toString());
-            }
+           
 
             userVmResponse.setHaEnable(userVm.isHaEnabled());
 
@@ -1269,6 +1267,24 @@ public class ApiResponseHelper implements ResponseGenerator {
                 
                 userVmResponse.setHostId(host.getId());
                 userVmResponse.setHostName(host.getName());
+            }
+            
+            if (userVm.getState() != null) {
+            	if (userVm.getHostId() != null) {
+            		Host host = hosts.get(userVm.getHostId());
+                    
+                    if (host == null) {
+                        host = ApiDBUtils.findHostById(userVm.getHostId());
+                        hosts.put(host.getId(), host);
+                    }
+                    if (host.getStatus() == com.cloud.host.Status.Alert) {
+                    	userVmResponse.setState(VirtualMachine.State.Unknown.toString());
+                    } else {
+                    	userVmResponse.setState(userVm.getState().toString());
+                    }
+            	} else {
+            		userVmResponse.setState(userVm.getState().toString());
+            	}
             }
 
             if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
