@@ -132,14 +132,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
     @Override
-    public VMTemplateVO findByTemplateNameAccountId(String templateName, Long accountId) {
-        SearchCriteria<VMTemplateVO> sc = NameAccountIdSearch.create();
-        sc.setParameters("name", templateName);
-        sc.setParameters("accountId", accountId);
-        return findOneBy(sc);
-    }
-
-    @Override
     public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved){
         SearchCriteria<VMTemplateVO> sc = PublicIsoSearch.create();
     	sc.setParameters("public", 1);

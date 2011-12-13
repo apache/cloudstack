@@ -1388,11 +1388,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             hyperType = snapshot.getHypervisorType();            
         }
 
-        VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, accountId);
-        if (existingTemplate != null) {
-            throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
-        }
-
         AccountVO ownerAccount = _accountDao.findById(accountId);
         _resourceLimitMgr.checkResourceLimit(ownerAccount, ResourceType.template);
 
