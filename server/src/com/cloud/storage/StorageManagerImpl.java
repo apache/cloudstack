@@ -320,7 +320,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private long _maxVolumeSizeInGb;
     private long _serverId;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
-
+    private int _customDiskOfferingMinSize = 1;
+    private int _customDiskOfferingMaxSize = 1024;
+    
 
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
@@ -883,6 +885,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 
+        String _customDiskOfferingMinSizeStr = configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
+        _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
+
+        String _customDiskOfferingMaxSizeStr = configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
+        _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr, Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue()));
+        
         HostTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         HostTemplateStatesSearch.and("state", HostTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
@@ -1625,6 +1633,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
             diskOfferingId = cmd.getDiskOfferingId();
             size = cmd.getSize();
+            Long sizeInGB = size; 
             if ( size != null ) {
                 if ( size > 0 ) {
                     size = size * 1024 * 1024 * 1024; // user specify size in GB
@@ -1641,8 +1650,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
             }
 
-            if ((diskOffering.isCustomized() && size == null)) {
-                throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+            if (diskOffering.isCustomized()) {
+            	if(size == null){
+            		throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+            	}
+            	if((sizeInGB < _customDiskOfferingMinSize) || (sizeInGB > _customDiskOfferingMaxSize)){
+            		throw new InvalidParameterValueException("Volume size: "+sizeInGB+"GB is out of allowed range. Max: "+_customDiskOfferingMaxSize+" Min:"+_customDiskOfferingMinSize);
+            	}
             }
 
             if (!diskOffering.isCustomized() && size != null) {

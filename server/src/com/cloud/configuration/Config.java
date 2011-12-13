@@ -327,8 +327,10 @@ public enum Config {
     ProjectSMTPUsername("Project Defaults", ManagementServer.class, String.class, "project.smtp.username", null, "Username for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
 
     DefaultExternalLoadBalancerCapacity("Advanced", ManagementServer.class, String.class, "external.lb.default.capacity", "50", "default number of networks permitted per external load balancer device", null),
-    DefaultExternalFirewallCapacity("Advanced", ManagementServer.class, String.class, "external.firewall.default.capacity", "50", "default number of networks permitted per external load firewall device", null);
-
+    DefaultExternalFirewallCapacity("Advanced", ManagementServer.class, String.class, "external.firewall.default.capacity", "50", "default number of networks permitted per external load firewall device", null),
+	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
+	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null);
+	
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;
