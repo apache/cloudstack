@@ -541,7 +541,7 @@ def destroy_ebtables_rules(vm_chain):
 
 @echo
 def destroy_arptables_rules(vm_chain):
-    delcmd = "arptables -vL FORWARD | grep " + vm_chain + " sed 's/-i any//' | sed 's/-o any//' | awk '{print $1,$2,$3,$4}' "
+    delcmd = "arptables -vL FORWARD | grep " + vm_chain + " | sed 's/-i any//' | sed 's/-o any//' | awk '{print $1,$2,$3,$4}' "
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -561,7 +561,7 @@ def destroy_arptables_rules(vm_chain):
         util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain) 
               
 @echo
-def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
+def default_ebtables_rules(vm_chain, vifs, vm_ip, vm_mac):
     
     vmchain_in = vm_chain + "-in"
     vmchain_out = vm_chain + "-out"
@@ -574,18 +574,20 @@ def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
                 util.pread2(['ebtables', '-t',  'nat',  '-F', chain])
             except:
                 util.SMlog("Failed to create ebtables nat rule, skipping")
-                return default_arptables_rules(vm_chain, vif, vm_ip, vm_mac)
+                return default_arptables_rules(vm_chain, vifs, vm_ip, vm_mac)
 
     try:
-        # -s ! 52:54:0:56:44:32 -j DROP 
-        util.pread2(['ebtables', '-t', 'nat', '-A', 'PREROUTING', '-i',  vif,  '-j', vmchain_in])
-        util.pread2(['ebtables', '-t', 'nat', '-A', 'POSTROUTING', '-o',  vif, '-j', vmchain_out])
+        for vif in vifs:
+            # -s ! 52:54:0:56:44:32 -j DROP 
+            util.pread2(['ebtables', '-t', 'nat', '-A', 'PREROUTING', '-i',  vif,  '-j', vmchain_in])
+            util.pread2(['ebtables', '-t', 'nat', '-A', 'POSTROUTING', '-o',  vif, '-j', vmchain_out])
     except:
         util.SMlog("Failed to program default rules")
         return 'false'
     
     try:
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-i',  vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+        for vif in vifs:
+            util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-i',  vif, '-s', '!', vm_mac,  '-j', 'DROP'])
         util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '-s', '!', vm_mac, '-j', 'DROP'])
         util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-mac-src', '!', vm_mac, '-j', 'DROP'])
         util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-ip-src', '!', vm_ip, '-j', 'DROP']) 
@@ -609,7 +611,7 @@ def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
     return 'true'
     
 @echo
-def default_arptables_rules(vm_chain, vif, vm_ip, vm_mac):
+def default_arptables_rules(vm_chain, vifs, vm_ip, vm_mac):
     try:
         util.pread2(['arptables',  '-N', vm_chain])
     except:
@@ -620,22 +622,24 @@ def default_arptables_rules(vm_chain, vif, vm_ip, vm_mac):
             return 'true'
 
     try:
-        util.pread2(['arptables',  '-A', 'FORWARD', '-i',  vif, '-j', vm_chain])
-        util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
+        for vif in vifs:
+           util.pread2(['arptables',  '-A', 'FORWARD', '-i',  vif, '-j', vm_chain])
+           util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
         return 'false'
     
     try:
-        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-mac', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-ip', '!', vm_ip, '-j', 'DROP']) 
-        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])   
-        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '-j', 'ACCEPT'])    
-        
-        util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
-        util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '-j', 'ACCEPT'])   
-        
-        util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])    
+        for vif in vifs:
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-mac', '!', vm_mac, '-j', 'DROP'])
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-ip', '!', vm_ip, '-j', 'DROP']) 
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])   
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '-j', 'ACCEPT'])    
+            
+            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
+            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '-j', 'ACCEPT'])   
+            
+            util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])    
     except:
         util.SMlog("Failed to program default arptables  rules")
         return 'false'
@@ -759,8 +763,7 @@ def default_network_rules(session, args):
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
     
-    for v in vifs:
-        default_ebtables_rules(vmchain, v, vm_ip, vm_mac)
+    default_ebtables_rules(vmchain, vifs, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1') == False:
         util.SMlog("Failed to log default network rules, ignoring")
