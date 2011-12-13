@@ -828,8 +828,7 @@
           }
         }
       },
-      
-      //???
+        
        hypervisorCapabilities: {
         type: 'select',
         title: 'Hypervisor capabilities',
@@ -857,19 +856,17 @@
 
           detailView: {
             name: 'Details',
-            actions: {
-              /*
+            actions: {              
               edit: {
                 label: 'Edit',
                 action: function(args) {   
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var array1 = [];                 
+                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));                  
                   $.ajax({
-                    url: createURL("updateDiskOffering&id=" + args.context.diskOfferings[0].id + array1.join("")),
+                    url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
                     dataType: "json",
-                    success: function(json) {
-                      var item = json.updatediskofferingresponse.diskoffering;
+                    success: function(json) {                      
+                      var item = json.updatehypervisorcapabilitiesresponse.null;
                       args.response.success({data: item});
                     },
                     error: function(data) {
@@ -877,8 +874,7 @@
                     }
                   });                  
                 }
-              } 
-              */              
+              }                          
             },
 
             tabs: {
@@ -911,8 +907,7 @@
           }
         }
       },
-      //???
-      
+            
       networkOfferings: {
         type: 'select',
         title: 'Network offerings',
