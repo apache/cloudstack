@@ -1401,8 +1401,8 @@
                       success: function(json) {
                         var hosts = json.listhostsresponse.host;
                         var items = [];
-                        $(hosts).each(function() {
-                          items.push({id: this.id, description: this.name});
+                        $(hosts).each(function() {                          
+                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                         });
                         args.response.success({data: items});
                       }
