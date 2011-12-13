@@ -464,15 +464,15 @@
                             dependsOn: 'scope',
                             select: function(args) {
                               var array1 = [];
-                              var apiCmd;
+                              var apiCmd = "listNetworkOfferings&state=Enabled";
                               if(selectedZoneObj.networktype == "Advanced") {  //Advanced zone
                                 if(args.scope == "zone-wide" || args.scope == "domain-specific")
-                                  apiCmd = "listNetworkOfferings&guestiptype=Shared";
+                                  apiCmd += "&guestiptype=Shared";
                                 else  //args.scope == "account-specific"
-                                  apiCmd = "listNetworkOfferings&guestiptype=Isolated&sourcenatsupported=false";
+                                  apiCmd += "&guestiptype=Isolated&sourcenatsupported=false";
                               }
                               else {  //Basic zone
-                                apiCmd = "listNetworkOfferings&guestiptype=Shared";
+                                apiCmd += "&guestiptype=Shared";
                               }
                               $.ajax({
                                 url: createURL(apiCmd),
