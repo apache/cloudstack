@@ -896,7 +896,12 @@
                             },
                             restartrequired: {
                               label: 'Restart required',
-                              converter: cloudStack.converters.toBooleanText
+                              converter: function(booleanValue) {
+                                if(booleanValue == true)
+                                  return "<font color='red'>Yes</font>";
+                                else if(booleanValue == false)
+                                  return "No";
+                              },
                             },
                             isdefault: {
                               label: 'Default',
