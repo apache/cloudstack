@@ -179,6 +179,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -2301,12 +2302,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(conn, vmName, vm.toString());
 			
-
-			NicTO[] nics = vmSpec.getNics();
-			for (NicTO nic : nics) {
-                if (nic.isSecurityGroupEnabled()) {
+			
+            NicTO[] nics = vmSpec.getNics();
+            for (NicTO nic : nics) {
+                if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
                     if (vmSpec.getType() != VirtualMachine.Type.User) {
                         default_network_rules_for_systemvm(conn, vmName);
+                        break;
                     } else {
                         default_network_rules(conn, vmName, nic, vmSpec.getId());
                     }
