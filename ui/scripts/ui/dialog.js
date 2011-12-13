@@ -310,7 +310,7 @@
         },
         buttons: [
           {
-            text: createLabel ? createLabel : 'Create',
+            text: createLabel ? createLabel : 'OK',
             'class': 'ok',
             click: function() {
               if (!complete($formContainer)) { return false; }
