@@ -802,7 +802,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
                 }
                 txn.rollback();
-                return true;
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
             }
 
             List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
@@ -811,7 +811,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
                 }
                 txn.rollback();
-                return false;
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
             }
             
             //don't allow to remove the cluster if it has non-removed storage pools
@@ -821,7 +821,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     s_logger.debug("Cluster: " + cmd.getId() + " still has storage pools, can't remove");
                 }
                 txn.rollback();
-                return false;
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has storage pools");
             }
 
             if (_clusterDao.remove(cmd.getId())){
@@ -830,10 +830,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             txn.commit();
             return true;
+        } catch(CloudRuntimeException e){
+        	throw e;
         } catch (Throwable t) {
-            s_logger.error("Unable to delete cluster: " + cmd.getId(), t);
-            txn.rollback();
-            return false;
+        	s_logger.error("Unable to delete cluster: " + cmd.getId(), t);
+        	txn.rollback();
+        	return false;
         }
     }
 
