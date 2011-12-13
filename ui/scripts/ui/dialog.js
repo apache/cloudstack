@@ -20,8 +20,20 @@
     createForm: function(args) {
       var $formContainer = $('<div>').addClass('form-container');
       var $message = $('<span>').addClass('message').appendTo($formContainer).html(args.form.desc);
-      var $form = $('<form>').appendTo($formContainer);
+      var $form = $('<form>').appendTo($formContainer)
+            .submit(function() {
+              $(this).closest('.ui-dialog').find('button.ok').click();
+              
+              return false;
+            });
+      
       var createLabel = args.form.createLabel;
+      var $submit = $('<input>')
+            .attr({
+              type: 'submit'
+            })
+            .hide()
+            .appendTo($form);
 
       // Render fields and events
       $.each(args.form.fields, function(key, field) {
