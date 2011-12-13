@@ -32,6 +32,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a Zone.", responseObject=ZoneResponse.class)
 public class UpdateZoneCmd extends BaseCmd {
@@ -154,7 +155,8 @@ public class UpdateZoneCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        DataCenter result = _configService.editZone(this);
+    	UserContext.current().setEventDetails("Zone Id: "+getId());
+    	DataCenter result = _configService.editZone(this);
         if (result != null) {
             ZoneResponse response = _responseGenerator.createZoneResponse(result, false);
             response.setResponseName(getCommandName());

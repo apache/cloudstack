@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a Zone.", responseObject=SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
@@ -69,7 +70,8 @@ public class DeleteZoneCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        boolean result = _configService.deleteZone(this);
+    	UserContext.current().setEventDetails("Zone Id: "+getId());
+    	boolean result = _configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
