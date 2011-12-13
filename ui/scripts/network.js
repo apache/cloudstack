@@ -1196,7 +1196,8 @@
                             success: function(data) {
                               args.response.success({
                                 data: $.grep(
-                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  data.listvirtualmachinesresponse.virtualmachine ?
+                                    data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
                                       'Destroyed'
