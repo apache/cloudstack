@@ -1960,8 +1960,8 @@
                               else {
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {
-                                  nspMap["netscaler"] = result.jobresult.networkserviceprovider;             
-                                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
+                                  nspMap["netscaler"] = result.jobresult.networkserviceprovider;
+                                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
                                 }
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));
@@ -1978,7 +1978,7 @@
                     });
                   }
                   else {
-                    addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
+                    addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
                   }
                 },
                 messages: {
@@ -2413,7 +2413,7 @@
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                   
                                   nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                  addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");
+                                  addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
                                 }
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));
@@ -2430,7 +2430,7 @@
                     });
                   }
                   else {
-                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");
+                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
                   }
                 },
                 messages: {
@@ -3294,6 +3294,114 @@
               }
             });
           },
+          actions: {
+            add: {
+              label: 'Add new NetScaler',
+              createForm: {
+                title: 'Add new NetScaler',
+                fields: {
+                  ip: {
+                    label: 'IP address'
+                  },
+                  username: {
+                    label: 'Username'
+                  },
+                  password: {
+                    label: 'Password',
+                    isPassword: true
+                  },
+                  networkdevicetype: {
+                    label: 'Type',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
+                      items.push({id: "NetscalerVPXLoadBalancer", description: "NetScaler VPX LoadBalancer"});
+                      items.push({id: "NetscalerSDXLoadBalancer", description: "NetScaler SDX LoadBalancer"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  publicinterface: {
+                    label: 'Public interface'
+                  },
+                  privateinterface: {
+                    label: 'Private interface'
+                  },
+                  numretries: {
+                    label: 'Number of retries',
+                    defaultValue: '2'
+                  },
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  capacity: {
+                    label: 'Capacity',
+                    validation: { required: false, number: true }
+                  },
+                  dedicated: {
+                    label: 'Dedicated',
+                    isBoolean: true,
+                    isChecked: false
+                  }
+                }
+              },
+              action: function(args) {
+                if(nspMap["netscaler"] == null) {
+                  $.ajax({
+                    url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jobId = json.addnetworkserviceproviderresponse.jobid;
+                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
+                      $("body").everyTime(2000, timerKey, function() {
+                        $.ajax({
+                          url: createURL("queryAsyncJobResult&jobId="+jobId),
+                          dataType: "json",
+                          success: function(json) {
+                            var result = json.queryasyncjobresultresponse;
+                            if (result.jobstatus == 0) {
+                              return; //Job has not completed
+                            }
+                            else {
+                              $("body").stopTime(timerKey);
+                              if (result.jobstatus == 1) {
+                                nspMap["netscaler"] = result.jobresult.networkserviceprovider;
+                                addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
+                              }
+                              else if (result.jobstatus == 2) {
+                                alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));
+                              }
+                            }
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
+                          }
+                        });
+                      });
+                    }
+                  });
+                }
+                else {
+                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Added new NetScaler';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          },
           detailView: {
             name: 'NetScaler details',
             actions: {
@@ -3375,6 +3483,112 @@
           fields: {
             ipaddress: { label: 'IP Address' },
             lbdevicestate: { label: 'Status' }
+          },
+          actions: {
+            add: {
+              label: 'Add new F5',
+              createForm: {
+                title: 'Add F5',
+                fields: {
+                  ip: {
+                    label: 'IP address'
+                  },
+                  username: {
+                    label: 'Username'
+                  },
+                  password: {
+                    label: 'Password',
+                    isPassword: true
+                  },
+                  networkdevicetype: {
+                    label: 'Type',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  publicinterface: {
+                    label: 'Public interface'
+                  },
+                  privateinterface: {
+                    label: 'Private interface'
+                  },
+                  numretries: {
+                    label: 'Number of retries',
+                    defaultValue: '2'
+                  },
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  capacity: {
+                    label: 'Capacity',
+                    validation: { required: false, number: true }
+                  },
+                  dedicated: {
+                    label: 'Dedicated',
+                    isBoolean: true,
+                    isChecked: false
+                  }
+                }
+              },
+              action: function(args) {
+                if(nspMap["f5"] == null) {
+                  $.ajax({
+                    url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jobId = json.addnetworkserviceproviderresponse.jobid;
+                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
+                      $("body").everyTime(2000, timerKey, function() {
+                        $.ajax({
+                          url: createURL("queryAsyncJobResult&jobId="+jobId),
+                          dataType: "json",
+                          success: function(json) {
+                            var result = json.queryasyncjobresultresponse;
+                            if (result.jobstatus == 0) {
+                              return; //Job has not completed
+                            }
+                            else {
+                              $("body").stopTime(timerKey);
+                              if (result.jobstatus == 1) {
+                                nspMap["f5"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse", "f5loadbalancer");
+                              }
+                              else if (result.jobstatus == 2) {
+                                alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));
+                              }
+                            }
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
+                          }
+                        });
+                      });
+                    }
+                  });
+                }
+                else {
+                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse", "f5loadbalancer");
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Added new F5';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -3468,6 +3682,127 @@
           fields: {
             ipaddress: { label: 'IP Address' },
             lbdevicestate: { label: 'Status' }
+          },
+          actions: {
+            add: {
+              label: 'Add new SRX',
+              createForm: {
+                title: 'Add new SRX',
+                fields: {
+                  ip: {
+                    label: 'IP address'
+                  },
+                  username: {
+                    label: 'Username'
+                  },
+                  password: {
+                    label: 'Password',
+                    isPassword: true
+                  },
+                  networkdevicetype: {
+                    label: 'Type',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  publicinterface: {
+                    label: 'Public interface'
+                  },
+                  privateinterface: {
+                    label: 'Private interface'
+                  },
+                  usageinterface: {
+                    label: 'Usage interface'
+                  },
+                  numretries: {
+                    label: 'Number of retries',
+                    defaultValue: '2'
+                  },
+                  timeout: {
+                    label: 'Timeout',
+                    defaultValue: '300'
+                  },
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  publicnetwork: {
+                    label: 'Public network',
+                    defaultValue: 'untrusted'
+                  },
+                  privatenetwork: {
+                    label: 'Private network',
+                    defaultValue: 'trusted'
+                  },
+                  capacity: {
+                    label: 'Capacity',
+                    validation: { required: false, number: true }
+                  },
+                  dedicated: {
+                    label: 'Dedicated',
+                    isBoolean: true,
+                    isChecked: false
+                  }
+                }
+              },
+              action: function(args) {
+                if(nspMap["srx"] == null) {
+                  $.ajax({
+                    url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jobId = json.addnetworkserviceproviderresponse.jobid;
+                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
+                      $("body").everyTime(2000, timerKey, function() {
+                        $.ajax({
+                          url: createURL("queryAsyncJobResult&jobId="+jobId),
+                          dataType: "json",
+                          success: function(json) {
+                            var result = json.queryasyncjobresultresponse;
+                            if (result.jobstatus == 0) {
+                              return; //Job has not completed
+                            }
+                            else {
+                              $("body").stopTime(timerKey);
+                              if (result.jobstatus == 1) {
+                                nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
+                              }
+                              else if (result.jobstatus == 2) {
+                                alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));
+                              }
+                            }
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
+                          }
+                        });
+                      });
+                    }
+                  });
+                }
+                else {
+                  addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Added new SRX';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -7808,7 +8143,7 @@
     return url;
   }
 
-  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes) {
+  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
     array1.push("&username=" + todb(args.data.username));
@@ -7906,8 +8241,9 @@
           {_custom:
            {jobId: jid,
             getUpdatedItem: function(json) {
-              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-              return {data: item};
+              var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+
+              return item;
             }
            }
           }
@@ -7916,7 +8252,7 @@
     });
   }
 
-  function addExternalFirewall(args, physicalNetworkObj, apiCmd, apiCmdRes){
+  function addExternalFirewall(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj){
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
     array1.push("&username=" + todb(args.data.username));
@@ -8061,8 +8397,9 @@
           {_custom:
            {jobId: jid,
             getUpdatedItem: function(json) {
-              var item = json.queryasyncjobresultresponse.jobresult.firewall;
-              return {data: item};
+              var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+              
+              return item;
             }
            }
           }
