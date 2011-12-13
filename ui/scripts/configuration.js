@@ -154,6 +154,9 @@
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -177,6 +180,9 @@
                   actionFitler: serviceOfferingActionfilter,
                   data:items
                 });
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -196,6 +202,9 @@
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 }
@@ -218,6 +227,9 @@
                     async: true,
                     success: function(json) {
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -438,6 +450,9 @@
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -458,6 +473,9 @@
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({data:items});
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -477,6 +495,9 @@
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 }
@@ -499,6 +520,9 @@
                     async: true,
                     success: function(json) {
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -594,6 +618,9 @@
               success: function(json) {
                 var items = json.listdiskofferingsresponse.diskoffering;
                 args.response.success({data:items});
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -687,6 +714,9 @@
                   success: function(json) {
                     var item = json.creatediskofferingresponse.diskoffering;
                     args.response.success({data: item});
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -714,6 +744,9 @@
                     success: function(json) {
                       var item = json.updatediskofferingresponse.diskoffering;
                       args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 }
@@ -736,6 +769,9 @@
                     async: true,
                     success: function(json) {
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -818,6 +854,9 @@
                   actionFilter: networkOfferingActionfilter,
                   data:items
                 });
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
               }
             });
           },
@@ -876,6 +915,10 @@
                       data: data.createnetworkofferingresponse.networkoffering,
                       actionFilter: networkOfferingActionfilter
                     });
+                  },
+
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -950,6 +993,9 @@
                               })
                             )
                           });                          
+                        },
+                        error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
                         }
                       });
                     }
@@ -999,6 +1045,9 @@
                           args.response.success({
                             fields: fields
                           });
+                        },
+                        error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
                         }
                       });
                     }
@@ -1041,6 +1090,9 @@
                   success: function(json) {
                     var item = json.updatenetworkofferingresponse.networkoffering;
                     args.response.success();
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -1071,6 +1123,9 @@
                   success: function(json) {
                     var item = json.updatenetworkofferingresponse.networkoffering;
                     args.response.success();
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -1091,6 +1146,9 @@
                   },
                   success: function(json) {
                     args.response.success();
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
               },
@@ -1168,14 +1226,8 @@
                         actionFilter: networkOfferingActionfilter
                       });
                     },
-
-                    notification: {
-                      poll: function(args) {
-                        args.complete({
-                          data: { state: 'Disabled' },
-                          actionFilter: networkOfferingActionfilter
-                        });
-                      }
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -1250,6 +1302,9 @@
                                 })
                               )
                             });                          
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -1299,6 +1354,9 @@
                             args.response.success({
                               fields: fields
                             });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
                           }
                         });
                       }
@@ -1333,6 +1391,9 @@
                     success: function(json) {
                       var item = json.updatenetworkofferingresponse.networkoffering;
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -1363,6 +1424,9 @@
                     success: function(json) {
                       var item = json.updatenetworkofferingresponse.networkoffering;
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
@@ -1383,6 +1447,9 @@
                     },
                     success: function(json) {
                       args.response.success();
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
                 },
