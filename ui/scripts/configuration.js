@@ -304,7 +304,7 @@
 
       systemServiceOfferings: {
         type: 'select',
-        title: 'System Service offerings',
+        title: 'System service offerings',
         listView: {
           label: 'System service offerings',
           fields: {
@@ -828,6 +828,91 @@
           }
         }
       },
+      
+      //???
+       hypervisorCapabilities: {
+        type: 'select',
+        title: 'Hypervisor capabilities',
+        listView: {
+          label: 'Hypervisor capabilities',
+          fields: {
+            hypervisor: { label: 'Hypervisor' },
+            hypervisorversion: { label: 'Hypervisor version' },
+            maxguestslimit: { label: 'Max guest limit' }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL("listHypervisorCapabilities&page="+args.page+"&pagesize="+pageSize),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
+                args.response.success({data:items});
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
+              }
+            });
+          },
+
+          detailView: {
+            name: 'Details',
+            actions: {
+              /*
+              edit: {
+                label: 'Edit',
+                action: function(args) {   
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  $.ajax({
+                    url: createURL("updateDiskOffering&id=" + args.context.diskOfferings[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var item = json.updatediskofferingresponse.diskoffering;
+                      args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });                  
+                }
+              } 
+              */              
+            },
+
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [                  
+                  {
+                    id: { label: 'ID' },                   
+                    hypervisor: { label: 'Hypervisor' },
+                    hypervisorversion: { label: 'Hypervisor version' },
+                    maxguestslimit: { 
+                      label: 'Max guest limit',
+                      isEditable: true
+                    },
+                    securitygroupenabled: {
+                      label: 'Security group enabled',
+                      converter: cloudStack.converters.toBooleanText
+                    }    
+                  }
+                ],
+                dataProvider: function(args) {               
+                  args.response.success(
+                    {                      
+                      data:args.context.hypervisorCapabilities[0]
+                    }
+                  );
+                }
+              }
+            }
+          }
+        }
+      },
+      //???
+      
       networkOfferings: {
         type: 'select',
         title: 'Network offerings',
