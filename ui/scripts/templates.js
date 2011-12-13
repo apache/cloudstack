@@ -1192,11 +1192,35 @@
                   $.ajax({
                     url: createURL("updateIso&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + array1.join("")),
                     dataType: "json",
+                    async: false,
                     success: function(json) {
-                      var item = json.updateisoresponse.iso;
-                      args.response.success({data:item});
+                      //updateIso API returns an incomplete ISO object (isextractable and isfeatured are missing)              
                     }
                   });
+                                   
+                  var array2 = [];
+                  array2.push("&ispublic=" + (args.data.ispublic=="on"));                           
+                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));	
+                  array2.push("&isextractable=" + (args.data.isextractable=="on"));	  
+                  $.ajax({
+                    url: createURL("updateIsoPermissions&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + array2.join("")),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {   
+                      //updateIsoPermissions API doesn't return ISO object             
+                    }
+                  });
+                  
+                  //So, we call listIsos API to get a complete ISO object
+                  $.ajax({                  
+                    url: createURL("listIsos&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + "&isofilter=self"),
+                    dataType: "json",
+                    async: false,
+                    success: function(json){  
+                      var item = json.listisosresponse.iso;
+                      args.response.success({data: item});
+                    }
+                  });    
                 }
               },
 
@@ -1406,6 +1430,8 @@
                     },
                     isextractable: {
                       label: 'Extractable',
+                       isBoolean: true,
+                      isEditable: true,  
                       converter:cloudStack.converters.toBooleanText
                     },
                     bootable: {
@@ -1414,10 +1440,14 @@
                     },
                     ispublic: {
                       label: 'Public',
+                       isBoolean: true,
+                      isEditable: true,  
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
                       label: 'Featured',
+                       isBoolean: true,
+                      isEditable: true,  
                       converter:cloudStack.converters.toBooleanText
                     },
                     crossZones: {
