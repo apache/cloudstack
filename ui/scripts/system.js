@@ -3276,7 +3276,7 @@
       // Provider list views
       netscalerProviders: {
         id: 'netscalerProviders',
-        title: 'NetScaler Providers',
+        title: 'NetScaler',
         listView: {
           id: 'netscalerProviders',
           fields: {
@@ -3477,7 +3477,7 @@
       
       f5Providers: {
         id: 'f5Providers',
-        title: 'F5 Providers',
+        title: 'F5',
         listView: {
           id: 'f5Providers',
           fields: {
@@ -3676,7 +3676,7 @@
 
       srxProviders: {
         id: 'srxProviders',
-        title: 'SRX Providers',
+        title: 'SRX',
         listView: {
           id: 'srxProviders',
           fields: {
