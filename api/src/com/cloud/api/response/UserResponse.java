@@ -67,6 +67,10 @@ public class UserResponse extends BaseResponse {
     @SerializedName("secretkey") @Param(description="the secret key of the user")
     private String secretKey;
 
+    @SerializedName("accountid") @Param(description="the account ID of the user")
+    private IdentityProxy accountId = new IdentityProxy("account");
+
+    
     public Long getId() {
         return id.getValue();
     }
@@ -177,5 +181,12 @@ public class UserResponse extends BaseResponse {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+    public Long getAccountId() {
+        return accountId.getValue();
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId.setValue(accountId);
     }
 }

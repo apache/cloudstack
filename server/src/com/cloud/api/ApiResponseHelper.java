@@ -372,6 +372,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userResponse.setUsername(user.getUsername());
         userResponse.setApiKey(user.getApiKey());
         userResponse.setSecretKey(user.getSecretKey());
+        userResponse.setAccountId((user.getAccountId()));
         userResponse.setObjectName("user");
 
         return userResponse;
