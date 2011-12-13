@@ -40,6 +40,7 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
@@ -166,6 +167,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     protected AsyncJobManager _asyncMgr;
     @Inject
     protected AccountManager _accountMgr;
+    @Inject
+    private AlertManager _alertMgr;
     @Inject
     protected ClusterDao _clusterDao;
     @Inject
@@ -1401,9 +1404,19 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
         // Verify permissions
         _accountMgr.checkAccess(caller, null, volume);
-
+        Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
+        try{
+        	_resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
+        } catch (ResourceAllocationException e){
+        	if (snapshotType == Type.RECURRING){
+        		String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
+        		s_logger.warn(msg);
+        		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, 
+        				"Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
+        	}
+        	throw e;
+        }
 
         // Determine the name for this snapshot
         // Snapshot Name: VMInstancename + volumeName + timeString
@@ -1417,8 +1430,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 
         // Create the Snapshot object and save it so we can return it to the
-        // user
-        Type snapshotType = getSnapshotType(policyId);
+        // user        
         HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
