@@ -894,6 +894,10 @@
                               label: 'Description',
                               isEditable: true
                             },
+                            restartrequired: {
+                              label: 'Restart required',
+                              converter: cloudStack.converters.toBooleanText
+                            },
                             isdefault: {
                               label: 'Default',
                               converter: cloudStack.converters.toBooleanText
