@@ -371,11 +371,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Handle client keyboard event. event: " + event + ", code: " + code + ", modifier: " + modifiers);
-
-			if(ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW)
-				viewer.sendClientRawKeyboardEvent(event, code, modifiers);
-			else
-				viewer.sendClientKeyboardEvent(event, code, modifiers);
+			viewer.sendClientRawKeyboardEvent(event, code, modifiers);
 			break;
 			
 		default :
