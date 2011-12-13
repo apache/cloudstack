@@ -3,14 +3,14 @@
     title: 'Configuration',
     id: 'configuration',
     sectionSelect: {
-      label: 'Select Offering'
+      label: 'Select view'
     },
     sections: {
       serviceOfferings: {
         type: 'select',
-        title: 'Service',
+        title: 'Service offerings',
         listView: {
-          label: 'Service Offerings',
+          label: 'Service offerings',
           fields: {
             name: { label: 'Name', editable: true },
             displaytext: { label: 'Description' }
@@ -304,9 +304,9 @@
 
       systemServiceOfferings: {
         type: 'select',
-        title: 'System Service',
+        title: 'System Service offerings',
         listView: {
-          label: 'System Service Offerings',
+          label: 'System service offerings',
           fields: {
             name: { label: 'Name', editable: true },
             displaytext: { label: 'Description' }
@@ -597,9 +597,9 @@
 
       diskOfferings: {
         type: 'select',
-        title: 'Disk',
+        title: 'Disk offerings',
         listView: {
-          label: 'Disk Offerings',
+          label: 'Disk offerings',
           fields: {
             name: { label: 'Name' },
             displaytext: { label: 'Description' },
@@ -830,9 +830,9 @@
       },
       networkOfferings: {
         type: 'select',
-        title: 'Network',
+        title: 'Network offerings',
         listView: {
-          label: 'Network Offerings',
+          label: 'Network offerings',
           fields: {
             name: { label: 'Name' },           
             guestiptype: { label: 'Guest type' },
