@@ -26,7 +26,7 @@ var md5Hashed = true;
 var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
-var pageSize = 50;
+var pageSize = 20;
 
 //async action
 var pollAsyncJobResult = function(args) {
