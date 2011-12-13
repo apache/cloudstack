@@ -2050,7 +2050,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork)) {
+        } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkMgr.canAddDefaultSecurityGroup()) {
             if (securityGroupIdList == null) {
                 securityGroupIdList = new ArrayList<Long>();
             }
@@ -2162,7 +2162,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // if network is security group enabled, and default security group is not present in the list of groups specified, add it automatically
-        if (isSecurityGroupEnabledNetworkUsed && !isVmWare) {
+        if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkMgr.canAddDefaultSecurityGroup()) {
             if (securityGroupIdList == null) {
                 securityGroupIdList = new ArrayList<Long>();
             }
@@ -2828,9 +2828,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         UserVO user = _userDao.findById(userId);
-
+        
         //check if vm is security group enabled
-        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId)) {
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkMgr.canAddDefaultSecurityGroup()) {
             //if vm is not mapped to security group, create a mapping
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");

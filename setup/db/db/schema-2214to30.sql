@@ -114,6 +114,7 @@ INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server'
 INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.secstorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'custom.diskoffering.size.min', '1', 'Minimum size in GB for custom disk offering');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'custom.diskoffering.size.max', '1024', 'Maximum size in GB for custom disk offering');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.defaultadding' , 'true', 'If true, the user VM would be added to the default security group by default');
 
 update configuration set name = 'cluster.storage.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.allocated.capacity.threshold' ;
 update configuration set name = 'cluster.storage.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.capacity.threshold' ;
