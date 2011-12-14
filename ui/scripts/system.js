@@ -518,8 +518,7 @@
                       createForm: {
                         title: 'Create network',
                         preFilter: function(args) {
-                          if(selectedZoneObj.networktype == "Basic") {
-                            args.$form.find('.form-item[rel=isDefault]').hide();
+                          if(selectedZoneObj.networktype == "Basic") {                           
                             args.$form.find('.form-item[rel=vlanTagged]').hide();
                             args.$form.find('.form-item[rel=vlanId]').hide();
                             args.$form.find('.form-item[rel=scope]').hide();
@@ -529,8 +528,7 @@
 
                             args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
                           }
-                          else {  //"Advanced"
-                            args.$form.find('.form-item[rel=isDefault]').css('display', 'inline-block');
+                          else {  //"Advanced"                           
                             args.$form.find('.form-item[rel=vlanTagged]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=scope]').css('display', 'inline-block');
@@ -549,11 +547,7 @@
                           description: {
                             label: 'Description',
                             validation: { required: true }
-                          },
-                          isDefault: {
-                            label: "Default",
-                            isBoolean: true
-                          },
+                          },                          
                           vlanTagged: {
                             label: 'VLAN',
                             select: function(args) {
@@ -787,8 +781,7 @@
                           else { //zone-wide
                             array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
                           }
-
-                          array1.push("&isDefault=" + (args.data.isDefault=="on"));
+                         
                           array1.push("&gateway=" + args.data.guestGateway);
                           array1.push("&netmask=" + args.data.guestNetmask);
                           array1.push("&startip=" + args.data.guestStartIp);
@@ -1066,11 +1059,7 @@
                                 else if(booleanValue == false)
                                   return "No";
                               },
-                            },
-                            isdefault: {
-                              label: 'Default',
-                              converter: cloudStack.converters.toBooleanText
-                            },
+                            },                           
                             vlan: { label: 'VLAN ID' },
 
                             networkofferingdisplaytext: { label: 'Network offering' },
