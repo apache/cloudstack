@@ -48,13 +48,13 @@
       getData();
     });
 
-    $dashboard.find('.button.refresh').click(function() {
-      getData();
-      
-      return false;
-    });
-
     return function(args) {
+      $dashboard.find('.button.refresh').click(function() {
+        getData();
+        
+        return false;
+      });
+
       return resourceChart(args);
     };
   };
