@@ -34,7 +34,6 @@ public class CitrixHelper {
 	 private static final HashMap<String, String> _xenServerGuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServer56FP1GuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServer56FP2GuestOsMap = new HashMap<String, String>(70);
-	 private static final ArrayList<String> _guestOsList = new ArrayList<String>(70);
 
 
     static {
