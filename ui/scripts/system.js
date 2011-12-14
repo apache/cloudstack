@@ -219,25 +219,7 @@
                         if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
                         else
-                          array1.push("&vlan=untagged");
-
-
-                        //array1.push("&isshared=true"); //temporary, will add scope, domain, account field, then uncommment the following section later.
-                        /*
-                        if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-                          if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
-                            array1.push("&domainId=" + args.data.domainId);
-                            array1.push("&account=" + args.data.account);
-                          }
-                          else {  //domain-specific
-                            array1.push("&domainId=" + args.data.domainId);
-                            array1.push("&isshared=true");
-                          }
-                        }
-                        else { //zone-wide
-                          array1.push("&isshared=true");
-                        }
-                        */
+                          array1.push("&vlan=untagged");                       
 
                         array1.push("&gateway=" + args.data.gateway);
                         array1.push("&netmask=" + args.data.netmask);
@@ -552,12 +534,12 @@
                             select: function(args) {
                               var array1 = [];
                               if(selectedZoneObj.securitygroupsenabled) {
-                                array1.push({id: 'account-specific', description: 'account-specific'});
+                                array1.push({id: 'account-specific', description: 'Account'});
                               }
                               else {
-                                array1.push({id: 'zone-wide', description: 'zone-wide'});
-                                array1.push({id: 'domain-specific', description: 'domain-specific'});
-                                array1.push({id: 'account-specific', description: 'account-specific'});
+                                array1.push({id: 'zone-wide', description: 'All'});
+                                array1.push({id: 'domain-specific', description: 'Domain'});
+                                array1.push({id: 'account-specific', description: 'Account'});
                               }
                               args.response.success({data: array1});
 
