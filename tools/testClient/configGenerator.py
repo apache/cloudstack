@@ -48,37 +48,14 @@ class zone():
         self.guestcidraddress = None
         self.internaldns2 = None
         self.securitygroupenabled = None
+        self.vlan = None
         '''default public network, in advanced mode'''
         self.ipranges = []
         '''tagged network, in advanced mode'''
         self.networks = []
-        self.providers = []
         self.pods = []
         self.secondaryStorages = []
         
-class provider():
-    def __init__(self):
-        self.name = None
-        self.state = None
-        self.broadcastdomainrange = 'ZONE'
-        ''' Guest Vlan range'''
-        self.vlan = None
-        self.zoneid = None
-        self.servicelist = []
-
-        #self.vpn_service_provided = None
-        #self.dhcp_service_provided = None
-        #self.dns_service_provided = None
-        #self.gateway_service_provided = None
-        #self.firewall_service_provided = None
-        #self.source_nat_service_provided = None
-        #self.load_balance_service_provided = None
-        #self.static_nat_service_provided = None
-        #self.port_forwarding_service_provided = None
-        #self.user_data_service_provided = None
-        #self.security_group_service_provided = None
-
-
 class pod():
     def __init__(self):
         self.gateway = None
