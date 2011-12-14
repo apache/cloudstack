@@ -83,9 +83,11 @@
             },
             action: function(args) {
               var domainObj;
-
+              var array1 = [];
+              array1.push("&name=" + todb(args.data.name));
+              array1.push("&networkdomain=" + todb(args.data.networkdomain));
               $.ajax({
-                url: createURL("updateDomain&id=" + args.context.domains[0].id + "&name=" + todb(args.data.name)),
+                url: createURL("updateDomain&id=" + args.context.domains[0].id + array1.join("")),
                 async: false,
                 dataType: "json",
                 success: function(json) {
@@ -193,7 +195,10 @@
               },
               {
                 id: { label: 'ID' },
-                networkdomain: { label: 'Network domain' },
+                networkdomain: { 
+                  label: 'Network domain',
+                  isEditable: true
+                },
                 vmLimit: {
                   label: 'Instance limits',
                   isEditable: true
