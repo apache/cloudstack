@@ -3300,6 +3300,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
         Map<String, String> args = new HashMap<String, String>();
+        String msg;
         try {
             for (int i = 0; i < params.length; i += 2) {
                 args.put(params[i], params[i + 1]);
@@ -3315,11 +3316,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return result.replace("\n", "");
         } catch (XenAPIException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
+            msg = "callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString();
+            s_logger.warn(msg);
         } catch (XmlRpcException e) {
-            s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
+            msg = "callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage();
+            s_logger.debug(msg);
         }
-        return null;
+        throw new CloudRuntimeException(msg);
     }
 
     protected String getArgsString(Map<String, String> args) {
