@@ -1712,14 +1712,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly) {
-        List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
         if (zoneId == null || zoneId == -1) {
-            dcs.addAll(ApiDBUtils.listZones());
-            List<TemplateResponse> response = new ArrayList<TemplateResponse>();
-            for (DataCenterVO dc : dcs ) {
-                response.addAll(createTemplateResponses(templateId, dc.getId(), readyOnly));
+            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+            List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
+            responses = createSwiftTemplateResponses(templateId);
+            if (!responses.isEmpty()) {
+                return responses;
             }
-            return response;
+            dcs.addAll(ApiDBUtils.listZones());
+            for (DataCenterVO dc : dcs ) {
+                responses.addAll(createTemplateResponses(templateId, dc.getId(), readyOnly));
+            }
+            return responses;
         } else {
             return createTemplateResponses(templateId, zoneId.longValue(), readyOnly);
         }
@@ -1747,6 +1751,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());
         templateResponse.setDetails(template.getDetails());
+        templateResponse.setZoneId(-1L);
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
@@ -1799,9 +1804,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly) {
-        if (zoneId == 0) {
-            return createSwiftTemplateResponses(templateId);
-        }
         VirtualMachineTemplate template = findTemplateById(templateId);
         List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
         VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(templateId, zoneId, readyOnly);
@@ -1931,8 +1933,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponses.add(isoResponse);
             return isoResponses;
         } else {
-            List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
             if (zoneId == null || zoneId == -1 ) {
+                isoResponses = createSwiftIsoResponses(iso);
+                if (!isoResponses.isEmpty()) {
+                    return isoResponses;
+                }
+                List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
                 dcs.addAll(ApiDBUtils.listZones());
                 for (DataCenterVO dc : dcs ) {
                     isoResponses.addAll(createIsoResponses(iso, dc.getId(), readyOnly));
@@ -1965,6 +1971,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setChecksum(iso.getChecksum());
         isoResponse.setDetails(iso.getDetails());
+        isoResponse.setZoneId(-1L);
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
@@ -1975,10 +1982,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setOsTypeId(-1L);
             isoResponse.setOsTypeName("");
         }
-
-        populateOwner(isoResponse, iso);
-
-        Account account = UserContext.current().getCaller();
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(iso.getAccountId());
+        populateAccount(isoResponse, account.getId());
+        populateDomain(isoResponse, account.getDomainId());
         boolean isAdmin = false;
         if ((account == null) || BaseCmd.isAdmin(account.getType())) {
             isAdmin = true;
@@ -2000,9 +2006,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly) {
-        if (zoneId == 0) {
-            return createSwiftIsoResponses(iso);
-        }
         long isoId = iso.getId();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);

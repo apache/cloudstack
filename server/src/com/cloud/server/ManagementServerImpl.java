@@ -1307,7 +1307,7 @@ public class ManagementServerImpl implements ManagementServer {
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, skipProjectTemplates);
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), 0L))) {
+                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
                         templateZonePairSet.add(tmpltPair);
                     }
                 }

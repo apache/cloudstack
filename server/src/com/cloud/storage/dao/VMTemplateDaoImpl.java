@@ -361,10 +361,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
                 }
             }
-            if (onlyReady) {
-                joinClause += " INNER JOIN  template_swift_ref tsr on (t.id = tsr.template_id)";
-            }
-
+            joinClause += " INNER JOIN  template_swift_ref tsr on (t.id = tsr.template_id)";
             if (keyword != null) {
                 whereClause += " AND t.name LIKE \"%" + keyword + "%\"";
             } else if (name != null) {
@@ -408,7 +405,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), 0L);
+                Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), -1L);
                 templateZonePairList.add(templateZonePair);
             }
 
