@@ -19,6 +19,98 @@
   cloudStack.sections.system = {
     title: 'System',
     id: 'system',
+
+    // System dashboard
+    dashboard: {
+      dataProvider: function(args) {
+        var dataFns = {
+          zoneCount: function(data) {
+            $.ajax({
+              url: createURL('listZones'),
+              success: function(json) {
+                dataFns.podCount($.extend(data, {
+                  zoneCount: json.listzonesresponse.count
+                }));
+              }
+            });
+          },
+
+          podCount: function(data) {
+            $.ajax({
+              url: createURL('listPods'),
+              success: function(json) {
+                dataFns.clusterCount($.extend(data, {
+                  podCount: json.listpodsresponse.count
+                }));
+              }
+            });
+          },
+
+          clusterCount: function(data) {
+            $.ajax({
+              url: createURL('listClusters'),
+              success: function(json) {
+                dataFns.hostCount($.extend(data, {
+                  clusterCount: json.listclustersresponse.count
+                }));
+              }
+            });
+          },
+
+          hostCount: function(data) {
+            $.ajax({
+              url: createURL('listHosts'),
+              data: {
+                type: 'routing'
+              },
+              success: function(json) {
+                dataFns.capacity($.extend(data, {
+                  hostCount: json.listhostsresponse.count
+                }));
+              }
+            });
+          },
+
+          capacity: function(data) {
+            $.ajax({
+              url: createURL('listCapacity'),
+              success: function(json) {
+                var capacities = json.listcapacityresponse.capacity;
+
+                var capacityTotal = function(id, converter) {
+                  var capacity = $.grep(capacities, function(capacity) {
+                    return capacity.type == id;
+                  })[0];
+
+                  var total = capacity.capacitytotal;
+
+                  if (converter) {
+                    return converter(total);
+                  }
+
+                  return total;
+                };
+                
+                complete($.extend(data, {
+                  cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
+                  memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
+                  storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
+                }));
+              }
+            });
+          }
+        };
+
+        var complete = function(data) {
+          args.response.success({
+            data: data
+          });
+        };
+
+        dataFns.zoneCount({});
+      }
+    },
+
     // Network-as-a-service configuration
     naas: {
       mainNetworks: {
@@ -259,13 +351,13 @@
                       selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
                     }
                   });
-                 
-                  var vlan;                  
+
+                  var vlan;
                   if(args.data.endVlan == null || args.data.endVlan.length == 0)
                     vlan = args.data.startVlan;
                   else
-                    vlan = args.data.startVlan + "-" + args.data.endVlan;                  
-                  
+                    vlan = args.data.startVlan + "-" + args.data.endVlan;
+
                   $.ajax({
                     url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(vlan)),
                     dataType: "json",
@@ -297,22 +389,22 @@
                   {
                     id: { label: 'ID' },
                     state: { label: 'State' },
-                    
+
                     /*
                     vlan: {
                       label: 'VLAN',
                       isEditable: true
                     },
                     */
-                    startVlan: { 
-                      label: 'Start Vlan', 
-                      isEditable: true 
+                    startVlan: {
+                      label: 'Start Vlan',
+                      isEditable: true
                     },
-                    endVlan: { 
-                      label: 'End Vlan', 
-                      isEditable: true 
+                    endVlan: {
+                      label: 'End Vlan',
+                      isEditable: true
                     },
-                    
+
                     broadcastdomainrange: { label: 'Broadcast domain range' },
                     zoneid: { label: 'Zone ID' },
                     guestcidraddress: {
@@ -323,10 +415,10 @@
                 ],
                 dataProvider: function(args) {
                   selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;
-                                    
+
                   var startVlan, endVlan;
-                  var vlan = selectedPhysicalNetworkObj.vlan;                  
-                  
+                  var vlan = selectedPhysicalNetworkObj.vlan;
+
                   if(vlan != null && vlan.length > 0) {
                     if(vlan.indexOf("-") != -1) {
                       var vlanArray = vlan.split("-");
@@ -338,8 +430,8 @@
                     }
                     selectedPhysicalNetworkObj["startVlan"] = startVlan;
                     selectedPhysicalNetworkObj["endVlan"] = endVlan;
-                  }  
-                                    
+                  }
+
                   args.response.success({
                     actionFilter: function() {
                       var allowedActions = [];
@@ -988,7 +1080,7 @@
           setTimeout(function() {
             args.response.success({
               data: [
-                { id: 1, name: 'Network 1' }//,
+                { id: 1, name: 'Network 1' }
                 //{ id: 2, name: 'Network 2' },
                 //{ id: 3, name: 'Network 3' }
               ]
@@ -1143,14 +1235,14 @@
                 title: 'Network',
                 fields: [
                   {
-                    name: { label: 'Name' }                    
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
                     state: { label: 'State' },
                     physicalnetworkid: { label: 'Physical network ID' },
                     destinationphysicalnetworkid: { label: 'Destination physical networkID' }
-                  },                 
+                  },
                   {
                     Vpn: { label: 'VPN' },
                     Dhcp: { label: 'DHCP' },
@@ -1167,7 +1259,7 @@
                 dataProvider: function(args) {
                   args.response.success({
                     actionFilter: virtualRouterProviderActionFilter,
-                    data: $.extend(true, {}, nspMap["virtualRouter"], {                    
+                    data: $.extend(true, {}, nspMap["virtualRouter"], {
                       Vpn: 'On',
                       Dhcp: 'On',
                       Dns: 'On',
@@ -1460,7 +1552,7 @@
                       }
                     }
                   },
-                  dataProvider: function(args) {                   
+                  dataProvider: function(args) {
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize),
                       dataType: 'json',
@@ -1744,7 +1836,7 @@
                               return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
                             },
                             title: function(args) {
-                              return "console";  //can't have space in window name in window.open()  
+                              return "console";  //can't have space in window name in window.open()
                             },
                             width: 820,
                             height: 640
@@ -2177,7 +2269,7 @@
                               }
                               else {
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {                                  
+                                if (result.jobstatus == 1) {
                                   nspMap["f5"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");
                                 }
@@ -2411,7 +2503,7 @@
                               }
                               else {
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {                                   
+                                if (result.jobstatus == 1) {
                                   nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
                                 }
@@ -2614,7 +2706,7 @@
               id: { label: 'ID' },
               name: { label: 'Name' }//,
               //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
-            }            
+            }
           }
         }
       }
@@ -3474,7 +3566,7 @@
           }
         }
       },
-      
+
       f5Providers: {
         id: 'f5Providers',
         title: 'F5',
@@ -3903,7 +3995,7 @@
               }
             }
           },
-          dataProvider: function(args) {          
+          dataProvider: function(args) {
             $.ajax({
               url: createURL("listSystemVms&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -4388,11 +4480,11 @@
                 label: 'View console',
                 action: {
                   externalLink: {
-                    url: function(args) {                      
+                    url: function(args) {
                       return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
                     },
                     title: function(args) {
-                      return "console";  //can't have space in window name in window.open()  
+                      return "console";  //can't have space in window name in window.open()
                     },
                     width: 820,
                     height: 640
@@ -8398,7 +8490,7 @@
            {jobId: jid,
             getUpdatedItem: function(json) {
               var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
-              
+
               return item;
             }
            }

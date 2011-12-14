@@ -6119,8 +6119,18 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 180px;
   height: 178px;
   padding: 0;
-  background: url(../images/bg-status_box.png) no-repeat 0px 1px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -1003px;
   margin: 0 0 0 12px;
+  /*+border-radius:7px;*/
+  -moz-border-radius: 7px;
+  -webkit-border-radius: 7px;
+  -khtml-border-radius: 7px;
+  border-radius: 7px 7px 7px 7px;
+  /*+box-shadow:inset 0px 1px 3px #000000;*/
+  -moz-box-shadow: inset 0px 1px 3px #000000;
+  -webkit-box-shadow: inset 0px 1px 3px #000000;
+  -o-box-shadow: inset 0px 1px 3px #000000;
+  box-shadow: inset 0px 1px 3px #000000;
   position: relative;
   border: none;
   float: left;
@@ -6237,6 +6247,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   left: 8px;
   top: 26px;
   position: absolute;
+}
+
+.system-dashboard .status_box li.capacity span.overview.total {
+  font-size: 32px;
 }
 
 .system-dashboard .status_box li span.overview.label {
