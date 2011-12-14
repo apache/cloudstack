@@ -754,7 +754,11 @@
 
       <!-- System dashboard -->
       <div class="system-dashboard-view">
-        <div class="toolbar"></div>
+        <div class="toolbar">
+          <div class="button refresh">
+            <span>Refresh</span>
+          </div>
+        </div>
 
         <!-- Zone dashboard -->
         <div class="system-dashboard">
@@ -765,19 +769,19 @@
           <ul class="status_box good">
             <li class="block">
               <span class="header">Number of Zones</span>
-              <span class="overview total">0</span>
+              <span class="overview total" data-item="zoneCount"></span>
             </li>
             <li class="block">
               <span class="header">Number of Pods</span>
-              <span class="overview total">0</span>
+              <span class="overview total" data-item="podCount"></span>
             </li>
             <li class="block">
               <span class="header">Number of Clusters</span>
-              <span class="overview total">0</span>
+              <span class="overview total" data-item="clusterCount"></span>
             </li>
             <li class="block last">
               <span class="header">Number of Hosts</span>
-              <span class="overview total">0</span>
+              <span class="overview total" data-item="hostCount"></span>
             </li>
           </ul>
         </div>
@@ -791,19 +795,19 @@
           <ul class="status_box good">
             <li class="block">
               <span class="header">Total Hosts</span>
-              <span class="overview total">0</span>
+              <span class="overview total" data-item="hostCount"></span>
             </li>
-            <li class="block">
+            <li class="block capacity">
               <span class="header">Total CPU</span>
-              <span class="overview total">500</span>
+              <span class="overview total" data-item="cpuCapacityTotal"></span>
             </li>
-            <li class="block">
+            <li class="block capacity">
               <span class="header">Total Memory</span>
-              <span class="overview total">60</span>
+              <span class="overview total" data-item="memCapacityTotal"></span>
             </li>
-            <li class="block last">
+            <li class="block last capacity">
               <span class="header">Total Storage</span>
-              <span class="overview total">10</span>
+              <span class="overview total" data-item="storageCapacityTotal"></span>
             </li>
           </ul>
         </div>

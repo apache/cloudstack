@@ -15,6 +15,23 @@
     title: 'System',
     id: 'system',
 
+    // System dashboard
+    dashboard: {
+      dataProvider: function(args) {
+        args.response.success({
+          data: {
+            zoneCount: 3,
+            podCount: 4,
+            clusterCount: 4,
+            hostCount: 4,
+            cpuCapacityTotal: '15000 GHZ',
+            memCapacityTotal: '15.08 GB',
+            storageCapacityTotal: '10.74 TB'
+          }
+        });
+      }
+    },
+
     // Network-as-a-service configuration
     naas: {
       mainNetworks: {
@@ -1006,7 +1023,7 @@
               notification: {
                 poll: testData.notifications.testPoll
               }
-            }           
+            }
           },
           dataProvider: function(args) {
             args.response.success({
