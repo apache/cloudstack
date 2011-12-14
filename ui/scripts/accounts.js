@@ -115,6 +115,10 @@
                         items.push({id: p, description: timezoneMap[p]});
                       args.response.success({data: items});
                     }
+                  },
+                  networkdomain: { 
+                    label: 'Network domain',
+                    validation: { required: false }
                   }
                 }
               },
@@ -147,6 +151,9 @@
                 if(args.data.timezone != null && args.data.timezone.length > 0)
                   array1.push("&timezone=" + todb(args.data.timezone));
 
+                if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+                  array1.push("&networkdomain=" + todb(args.data.networkdomain));      
+                  
                 $.ajax({
                   url: createURL("createAccount" + array1.join("")),
                   dataType: "json",

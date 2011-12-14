@@ -146,9 +146,11 @@
 
             action: function(args) {
               var array1 = [];
-              array1.push("&name=" + todb(args.data.name));         
-              array1.push("&networkdomain=" + todb(args.data.networkdomain));              
               array1.push("&parentdomainid=" + args.context.domains[0].id);
+              array1.push("&name=" + todb(args.data.name));     
+              if(args.data.networkdomain != null && args.data.networkdomain.length > 0)              
+                array1.push("&networkdomain=" + todb(args.data.networkdomain));  
+                
               $.ajax({
                 url: createURL("createDomain" + array1.join("")),
                 dataType: "json",
