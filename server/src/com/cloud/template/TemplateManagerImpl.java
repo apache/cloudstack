@@ -23,6 +23,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -585,6 +587,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         
         List<StoragePoolHostVO> vos = _poolHostDao.listByHostStatus(poolId, com.cloud.host.Status.Up);
+        if (vos == null || vos.isEmpty()){
+        	if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot download " + templateId + " to poolId " + poolId + " since there is no host in the Up state connected to this pool");
+            }
+        }
+        Collections.shuffle(vos); // Shuffling so we don't pick the same host in the vm deployment retries
+        StoragePoolHostVO vo = vos.get(0);
         
         templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, _storagePoolMaxWaitSeconds);
         if (templateStoragePoolRef == null) {
@@ -604,31 +613,31 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             // TODO temporary hacking, hard-coded to NFS primary data store
             dcmd.setPrimaryStorageUrl("nfs://" + pool.getHostAddress() + pool.getPath());
             
-            for (StoragePoolHostVO vo : vos) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
-                }
-            	dcmd.setLocalPath(vo.getLocalPath());
-            	// set 120 min timeout for this command
-            	
-            	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(
-                       _hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd);
-                if (answer != null && answer.getResult() ) {
-            		templateStoragePoolRef.setDownloadPercent(100);
-            		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);
-            		templateStoragePoolRef.setLocalDownloadPath(answer.getInstallPath());
-            		templateStoragePoolRef.setInstallPath(answer.getInstallPath());
-            		templateStoragePoolRef.setTemplateSize(answer.getTemplateSize());
-            		_tmpltPoolDao.update(templateStoragePoolRef.getId(), templateStoragePoolRef);
-            		if (s_logger.isDebugEnabled()) {
-            			s_logger.debug("Template " + templateId + " is downloaded via " + vo.getHostId());
-            		}
-            		return templateStoragePoolRef;
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Template " + templateId + " download to pool " + vo.getPoolId() + " failed due to " + (answer!=null?answer.getDetails():"return null"));                }
-                }
+            
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
             }
+        	dcmd.setLocalPath(vo.getLocalPath());
+        	// set 120 min timeout for this command
+        	
+        	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(
+                   _hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd);
+            if (answer != null && answer.getResult() ) {
+        		templateStoragePoolRef.setDownloadPercent(100);
+        		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);
+        		templateStoragePoolRef.setLocalDownloadPath(answer.getInstallPath());
+        		templateStoragePoolRef.setInstallPath(answer.getInstallPath());
+        		templateStoragePoolRef.setTemplateSize(answer.getTemplateSize());
+        		_tmpltPoolDao.update(templateStoragePoolRef.getId(), templateStoragePoolRef);
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Template " + templateId + " is downloaded via " + vo.getHostId());
+        		}
+        		return templateStoragePoolRef;
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Template " + templateId + " download to pool " + vo.getPoolId() + " failed due to " + (answer!=null?answer.getDetails():"return null"));                }
+            }
+        
         } finally {
             _tmpltPoolDao.releaseFromLockTable(templateStoragePoolRefId);
         }
