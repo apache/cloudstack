@@ -312,7 +312,25 @@
         },
         'management': {
           detailView: {
-            viewAll: { path: '_zone.pods', label: 'Pods' },
+            viewAll: { path: '_zone.pods', label: 'Pods' },            
+            actions: {
+              edit: {
+                label: 'Edit',
+                action: function(args) {                  
+                  var array1 = [];
+                  array1.push("&domain=" + todb(args.data.domain));                 
+                  $.ajax({
+                    url: createURL("updateZone&id=" + args.context.zones[0].id + array1.join("")),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {                      
+                      selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
+                      args.response.success({data: selectedZoneObj});
+                    }
+                  });
+                }
+              }
+            },           
             tabs: {
               details: {
                 title: 'Details',
@@ -332,7 +350,10 @@
                       label: 'Security Groups Enabled',
                       converter:cloudStack.converters.toBooleanText
                     },
-                    domain: { label: 'Domain' },
+                    domain: { 
+                      label: 'Domain',
+                      isEditable: true
+                    },
 
                     //only advanced zones have VLAN and CIDR Address
                     guestcidraddress: { label: 'Guest CIDR Address', isEditable: true },
@@ -929,7 +950,7 @@
 
                           //args.data.networkofferingid is null when networkofferingid field is hidden
                           if(args.data.networkofferingid != null && args.data.networkofferingid != selectedGuestNetworkObj.networkofferingid)
-                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //???
+                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    
 
                           //args.data.networkdomain is null when networkdomain field is hidden
                           if(args.data.networkdomain != null && args.data.networkdomain != selectedGuestNetworkObj.networkdomain)
