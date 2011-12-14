@@ -3207,6 +3207,8 @@ Dialogs*/
 .dashboard.admin .dashboard-container.sub.alerts {
   float: left;
   margin: 0 17px 0 0;
+  height: 313px;
+  overflow: auto;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts.last {
@@ -3214,6 +3216,9 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
+  width: 362px;
+  height: 294px;
+  overflow: auto;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {

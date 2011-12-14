@@ -1,43 +1,8 @@
-(function(cloudStack, testData) {
+(function($, cloudStack, testData) {
   // Admin dashboard
   cloudStack.sections.dashboard = {
     title: 'Dashboard',
-    show: function() {
-      var $dashboard = $('#template').find('div.dashboard.admin').clone();
-
-      $dashboard.find('.view-all').click(function() {
-        $('#navigation li.events').click();
-      });
-
-      var getData = function() {
-        // Populate data
-        $dashboard.find('[data-item]').hide();
-        cloudStack.sections.dashboard.dataProvider({
-          response: {
-            success: function(args) {
-              var data = args.data;
-
-              $.each(data, function(key, value) {
-                var $elem = $dashboard.find('[data-item=' + key + ']');
-
-                $elem.each(function() {
-                  var $item = $(this);
-                  if ($item.hasClass('chart-line')) {
-                    $item.show().animate({ width: value + '%' });
-                  } else {
-                    $item.hide().html(value).fadeIn();
-                  }
-                });
-              });
-            }
-          }
-        });
-      };
-
-      getData();
-
-      return $dashboard;
-    },
+    show: cloudStack.uiCustom.dashboard,
 
     dataProvider: function(args) {
       var dataFns = {
@@ -64,7 +29,7 @@
                   })[0];
                 };
 
-                complete($.extend(data, {
+                dataFns.alerts($.extend(data, {
                   publicIPAllocated: capacity(8).capacityused,
                   publicIPTotal: capacity(8).capacitytotal,
                   publicIPPercentage: parseInt(capacity(8).percentused),
@@ -81,7 +46,7 @@
               }
             });
           } else {
-            complete($.extend(data, {
+            dataFns.alerts($.extend(data, {
               publicIPAllocated: 0,
               publicIPTotal: 0,
               publicIPPercentage: 0,
@@ -96,6 +61,47 @@
               cpuPercentage: 0
             }));
           }
+        },
+
+        alerts: function(data) {
+          $.ajax({
+            url: createURL('listAlerts'),
+            data: {
+              page: 1,
+              pageSize: 4
+            },
+            success: function(json) {
+              dataFns.hostAlerts($.extend(data, {
+                alerts: $.map(json.listalertsresponse.alert, function(alert) {
+                  return {
+                    name: cloudStack.converters.toAlertType(alert.type),
+                    description: alert.description
+                  };
+                })
+              }));
+            }
+          });
+        },
+
+        hostAlerts: function(data) {
+          $.ajax({
+            url: createURL('listHosts'),
+            data: {
+              state: 'Alert',
+              page: 1,
+              pageSize: 4
+            },
+            success: function(json) {
+              complete($.extend(data, {
+                hostAlerts: $.map(json.listhostsresponse.host, function(host) {
+                  return {
+                    name: host.name,
+                    description: 'Alert state detected for ' + host.name
+                  };
+                })
+              }));
+            }
+          });
         }
       };
 
@@ -108,4 +114,4 @@
       dataFns.zones({});
     }
   };
-})(cloudStack, testData);
+})(jQuery, cloudStack, testData);

@@ -972,29 +972,11 @@
             <div class="title"><span>General Alerts</span></div>
             <div class="button view-all">view all</div>
           </div>
-          <ul>
+          <ul data-item="alerts">
             <li class="error">
               <div class="content">
-                <span class="title">Alert 1</span>
-                <p>Alert 1</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 2</span>
-                <p>Alert 2</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 3</span>
-                <p>Alert 3</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 4</span>
-                <p>Alert 4</p>
+                <span class="title" data-list-item="name">Alert 1</span>
+                <p data-list-item="description">Alert 1</p>
               </div>
             </li>
           </ul>
@@ -1006,29 +988,11 @@
             <div class="title"><span>Host Alerts</span></div>
             <div class="button view-all">view all</div>
           </div>
-          <ul>
+          <ul data-item="hostAlerts">
             <li class="error">
               <div class="content">
-                <span class="title">Alert 1</span>
-                <p>Alert 1</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 2</span>
-                <p>Alert 2</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 3</span>
-                <p>Alert 3</p>
-              </div>
-            </li>
-            <li class="error">
-              <div class="content">
-                <span class="title">Alert 4</span>
-                <p>Alert 4</p>
+                <span class="title" data-list-item="name">Alert 1</span>
+                <p data-list-item="description">Alert 1</p>
               </div>
             </li>
           </ul>
@@ -1447,6 +1411,7 @@
     <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
     <script src="scripts/cloudStack.js" type="text/javascript"></script>
+    <script src="scripts/ui-custom/dashboard.js" type="text/javascript"></script>
     <script src="scripts/installWizard.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/installWizard.js" type="text/javascript"></script>
     <script src="scripts/projects.js" type="text/javascript"></script>

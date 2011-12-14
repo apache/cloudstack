@@ -2,42 +2,7 @@
   // Admin dashboard
   cloudStack.sections.dashboard = {
     title: 'Dashboard',
-    show: function() {
-      var $dashboard = $('#template').find('div.dashboard.admin').clone();
-
-      $dashboard.find('.view-all').click(function() {
-        $('#navigation li.events').click();
-      });
-
-      var getData = function() {
-        // Populate data
-        $dashboard.find('[data-item]').hide();
-        cloudStack.sections.dashboard.dataProvider({
-          response: {
-            success: function(args) {
-              var data = args.data;
-
-              $.each(data, function(key, value) {
-                var $elem = $dashboard.find('[data-item=' + key + ']');
-
-                $elem.each(function() {
-                  var $item = $(this);
-                  if ($item.hasClass('chart-line')) {
-                    $item.show().animate({ width: value + '%' });
-                  } else {
-                    $item.hide().html(value).fadeIn();
-                  }
-                });
-              });
-            }
-          }
-        });
-      };
-
-      getData();
-
-      return $dashboard;
-    },
+    show: cloudStack.uiCustom.dashboard,
 
     dataProvider: function(args) {
       args.response.success({
