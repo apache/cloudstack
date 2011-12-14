@@ -333,11 +333,19 @@ public class SimulatorManagerImpl implements SimulatorManager {
     	}
     }
 
-    @Override
-    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
-    	SimulatorInfo info = new SimulatorInfo();
-    	info.setHostUuid(hostGuid);
-        return _mockVmMgr.syncNetworkGroups(info);
-    }
+	@Override
+	public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
+		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+		try {
+
+			SimulatorInfo info = new SimulatorInfo();
+			info.setHostUuid(hostGuid);
+			return _mockVmMgr.syncNetworkGroups(info);
+		} finally {
+			txn.close();
+			txn = Transaction.open(Transaction.CLOUD_DB);
+			txn.close();
+		}
+	}
 
 }
