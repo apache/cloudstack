@@ -853,6 +853,37 @@
                         });
                       },
 
+                      preAction: function(args) {
+                        var zone = $('.detail-view:last').data('view-args').context.zones[0];
+                        var networksPresent = false;
+
+                        // Only 1 guest network is allowed per basic zone,
+                        // so don't show the dialog in this case
+                        $.ajax({
+                          url: createURL('listNetworks'),
+                          data: {
+                            trafficType: 'guest',
+                            zoneId: zone.id
+                          },
+                          async: false,
+                          success: function(json) {
+                            if (json.listnetworksresponse.network) {
+                              networksPresent = true;
+                            }
+                          }
+                        });
+
+                        if (zone.networktype == 'Basic' && networksPresent) {
+                          cloudStack.dialog.notice({
+                            message: 'Sorry, you can only have one guest network for a basic zone.'
+                          });
+
+                          return false;
+                        }
+
+                        return true;
+                      },
+
                       notification: {
                         poll: function(args) {
                           args.complete();
