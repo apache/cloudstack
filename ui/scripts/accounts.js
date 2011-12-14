@@ -349,8 +349,11 @@
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
 
+                  var array1 = [];                  
+                  array1.push("&newname=" + todb(args.data.name));                  
+                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
                   $.ajax({
-                    url: createURL("updateAccount&newname=" + todb(args.data.name) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    url: createURL("updateAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name + array1.join("")),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -601,7 +604,10 @@
                     },
                     domain: { label: 'Domain' },
                     state: { label: 'State' },
-
+                    networkdomain: { 
+                     label: 'Network domain',
+                     isEditable: true
+                    },                    
                     vmLimit: {
                       label: 'Instance limits',
                       isEditable: true
