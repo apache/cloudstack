@@ -28,8 +28,8 @@ CREATE TABLE  `cloud_simulator`.`mockhost` (
   `capabilities` varchar(255) COMMENT 'host capabilities in comma separated list',
   `vm_id` bigint unsigned,
   `resource` varchar(255) DEFAULT NULL COMMENT 'If it is a local resource, this is the class name',
-  PRIMARY KEY  (`id`)
-  INDEX `i_mockhost__guid`(`guid`),
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockhost__guid`(`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud_simulator`.`mocksecstorage` (
@@ -37,8 +37,8 @@ CREATE TABLE `cloud_simulator`.`mocksecstorage` (
   `url` varchar(255),
   `capacity` bigint unsigned,
   `mount_point` varchar(255),
-  PRIMARY KEY  (`id`)
-  INDEX `i_mocksecstorage__url`(`url`),
+  PRIMARY KEY  (`id`),
+  INDEX `i_mocksecstorage__url`(`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud_simulator`.`mockstoragepool` (
@@ -48,8 +48,8 @@ CREATE TABLE `cloud_simulator`.`mockstoragepool` (
   `capacity` bigint,
   `pool_type` varchar(40),
   `hostguid` varchar(255) UNIQUE,
-  PRIMARY KEY  (`id`)
-  INDEX `i_mockstoragepool__guid`(`guid`),
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockstoragepool__guid`(`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
