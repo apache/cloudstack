@@ -770,7 +770,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             cmd.addVmData("metadata", "public-hostname",  StringUtils.unicodeEscape(vmName));
         }else
         {
-            cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+        	if (router.getPublicIpAddress() == null) {
+        		 cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
+        	} else {
+        		cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+        	}
             cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         }
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
