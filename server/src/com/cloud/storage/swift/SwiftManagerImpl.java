@@ -40,9 +40,13 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 
 
 
@@ -77,6 +81,14 @@ public class SwiftManagerImpl implements SwiftManager {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean isTemplateInstalled(Long templateId) {
+
+        SearchCriteriaService<VMTemplateSwiftVO, VMTemplateSwiftVO> sc = SearchCriteria2.create(VMTemplateSwiftVO.class);
+        sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
+        return !sc.list().isEmpty();
     }
 
     @Override

@@ -62,7 +62,6 @@ import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -141,6 +140,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     private HostDao _hostDao;
     @Inject
     private ResourceManager _resourceMgr;
+    @Inject
     private SwiftDao _swiftDao;
 
 	private String _name;
@@ -501,16 +501,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	
     @Override
     public void handleTemplateSync(Long dcId) {
-        if ( dcId != null ) {
-	    List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
-            for ( HostVO ssHost : ssHosts ) {
+        if (dcId != null) {
+            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
+            for (HostVO ssHost : ssHosts) {
                 handleTemplateSync(ssHost);
-            }
-        }
-        if (_swiftMgr.isSwiftEnabled()) {
-            List<SwiftVO> swifts = _swiftDao.listAll();
-            for (SwiftVO swift : swifts) {
-                handleTemplateSync(swift);
             }
         }
     }
@@ -547,37 +541,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         return null;
     }
 
-    public void handleTemplateSync(SwiftVO swift) {
-        if (swift == null) {
-            s_logger.warn("Huh? swift is null");
-            return;
-        }
-        Map<String, TemplateInfo> templateInfos = listTemplate(swift);
-        if (templateInfos == null) {
-            return;
-        }
-        List<VMTemplateVO> allTemplates = _templateDao.listAll();
-        for (VMTemplateVO tmplt : allTemplates) {
-            String uniqueName = tmplt.getUniqueName();
-            VMTemplateSwiftVO tmpltSwift = _vmTemplateSwiftlDao.findBySwiftTemplate(swift.getId(), tmplt.getId());
-            if (templateInfos.containsKey(uniqueName)) {
-                TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
-                if (tmpltSwift != null) {
-                    s_logger.info("Template Sync found " + uniqueName + " already in the template swift table");
-                    continue;
-                } else {
-                    tmpltSwift = new VMTemplateSwiftVO(swift.getId(), tmplt.getId(), new Date(), tmpltInfo.getSize(), tmpltInfo.getPhysicalSize());
-                    _vmTemplateSwiftlDao.persist(tmpltSwift);
-                    s_logger.info("Template Sync added " + uniqueName + " to the template swift table");
-                }
-            }
-        }
-
-        for (TemplateInfo tmpltInfo : templateInfos.values()) {
-            s_logger.warn("Template Sync found template " + tmpltInfo.getInstallPath() + " in Swift description, but not in template table, please");
-        }
-    }
-	
 	@Override
     public void handleTemplateSync(HostVO ssHost) {
         if (ssHost == null) {
@@ -590,6 +553,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
             return;
         }
+
         Map<String, TemplateInfo> templateInfos = listTemplate(ssHost);
         if (templateInfos == null) {
             return;
@@ -715,6 +679,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                     }
                 }
                 if (availHypers.contains(tmplt.getHypervisorType())) {
+                    if (_swiftMgr.isSwiftEnabled()) {
+                        if (_swiftMgr.isTemplateInstalled(tmplt.getId())) {
+                            continue;
+                        }
+                    }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
                     downloadTemplateToStorage(tmplt, ssHost);
                 }

@@ -40,4 +40,6 @@ public interface SwiftManager extends Manager {
     List<? extends Swift> addSwift(AddSwiftCmd cmd) throws DiscoveryException;
 
     boolean isSwiftEnabled();
+
+    public boolean isTemplateInstalled(Long templateId);
 }

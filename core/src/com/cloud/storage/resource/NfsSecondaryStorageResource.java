@@ -235,11 +235,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
                 + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
                 + " upload " + container + " " + lFilename);
-        String result = command.execute();
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
         if (result != null) {
             String errMsg = "swiftUpload failed , err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
+        }
+        if (parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            for (String line : lines) {
+                if (line.contains("Errno")) {
+                    String errMsg = "swiftUpload failed , err=" + lines.toString();
+                    s_logger.warn(errMsg);
+                    return errMsg;
+                }
+            }
         }
         return null;
     }
@@ -259,7 +270,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 String errMsg = "swiftList failed , err=" + result;
                 s_logger.warn(errMsg);
             } else {
-                String errMsg = "swiftList, no lines returns";
+                String errMsg = "swiftList failed, no lines returns";
                 s_logger.warn(errMsg);
             }
         }
@@ -272,11 +283,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
                 + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
                 + " delete " + container + " " + rFilename);
-        String result = command.execute();
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
         if (result != null) {
             String errMsg = "swiftDelete failed , err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
+        }
+        if (parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            for (String line : lines) {
+                if (line.contains("Errno")) {
+                    String errMsg = "swiftDelete failed , err=" + lines.toString();
+                    s_logger.warn(errMsg);
+                    return errMsg;
+                }
+            }
         }
         return null;
     }
