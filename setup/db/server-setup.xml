@@ -13,14 +13,15 @@
     <zone>
       <id>1</id>
       <name>NM</name>
+      <physicalNetworkId>200</physicalNetworkId>
       <dns1>4.2.2.2</dns1>
       <dns2>10.10.10.14</dns2>
       <internalDns1>4.2.2.2</internalDns1>
       <internalDns2>4.2.2.2</internalDns2>
-	  <gateway>10.91.28.1</gateway>
-	  <netmask>255.255.255.0</netmask>
-	  <vnet>560-579</vnet>      
+      <netmask>255.255.255.0</netmask>
+      <vnet>560-579</vnet>      
       <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
+      <networktype>Advanced</networktype>
     </zone>
   </zones> 
 

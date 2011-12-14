@@ -306,6 +306,8 @@ public class PodZoneConfig {
 			values += ",'" + networkType + "'";
 		}
 		
+        columns += ", uuid";
+        values += ", UUID()";
 			
 		columns += ")";
 		values += ")";
@@ -335,6 +337,11 @@ public class PodZoneConfig {
         columns += ", vnet";
         values += ",'" + vnetStart + "-" + vnetEnd + "'";
             
+        columns += ", state";
+        values += ", 'Enabled'";
+        
+        columns += ", uuid";
+        values += ", UUID()";
             
         columns += ")";
         values += ")";
