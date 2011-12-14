@@ -29,7 +29,8 @@
               url: createURL('listZones'),
               success: function(json) {
                 dataFns.podCount($.extend(data, {
-                  zoneCount: json.listzonesresponse.count
+                  zoneCount: json.listzonesresponse.count ?
+                    json.listzonesresponse.count : 0
                 }));
               }
             });
@@ -40,7 +41,8 @@
               url: createURL('listPods'),
               success: function(json) {
                 dataFns.clusterCount($.extend(data, {
-                  podCount: json.listpodsresponse.count
+                  podCount: json.listpodsresponse.count ?
+                    json.listpodsresponse.count : 0
                 }));
               }
             });
@@ -51,7 +53,8 @@
               url: createURL('listClusters'),
               success: function(json) {
                 dataFns.hostCount($.extend(data, {
-                  clusterCount: json.listclustersresponse.count
+                  clusterCount: json.listclustersresponse.count ?
+                    json.listclustersresponse.count : 0
                 }));
               }
             });
@@ -65,39 +68,48 @@
               },
               success: function(json) {
                 dataFns.capacity($.extend(data, {
-                  hostCount: json.listhostsresponse.count
+                  hostCount: json.listhostsresponse.count ?
+                    json.listhostsresponse.count : 0
                 }));
               }
             });
           },
 
           capacity: function(data) {
-            $.ajax({
-              url: createURL('listCapacity'),
-              success: function(json) {
-                var capacities = json.listcapacityresponse.capacity;
+            if (data.zoneCount) {
+              $.ajax({
+                url: createURL('listCapacity'),
+                success: function(json) {
+                  var capacities = json.listcapacityresponse.capacity;
 
-                var capacityTotal = function(id, converter) {
-                  var capacity = $.grep(capacities, function(capacity) {
-                    return capacity.type == id;
-                  })[0];
+                  var capacityTotal = function(id, converter) {
+                    var capacity = $.grep(capacities, function(capacity) {
+                      return capacity.type == id;
+                    })[0];
 
-                  var total = capacity.capacitytotal;
+                    var total = capacity ? capacity.capacitytotal : 0;
 
-                  if (converter) {
-                    return converter(total);
-                  }
+                    if (converter) {
+                      return converter(total);
+                    }
 
-                  return total;
-                };
-                
-                complete($.extend(data, {
-                  cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
-                  memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
-                  storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
-                }));
-              }
-            });
+                    return total;
+                  };
+                  
+                  complete($.extend(data, {
+                    cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
+                    memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
+                    storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
+                  }));
+                } 
+              });
+            } else {
+              complete($.extend(data, {
+                cpuCapacityTotal: cloudStack.converters.convertHz(0),
+                memCapacityTotal: cloudStack.converters.convertBytes(0),
+                storageCapacityTotal: cloudStack.converters.convertBytes(0)
+              }));
+            }
           }
         };
 
