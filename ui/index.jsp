@@ -509,7 +509,17 @@
                       <input type="text" name="internaldns2" />
                     </div>
                   </div>
-
+                  
+                  <!-- Network domain-->
+                  <div class="field odd">
+                    <div class="name">
+                      <span>Network domain</span>
+                    </div>
+                    <div class="value">
+                      <input type="text" name="networkdomain" />
+                    </div>
+                  </div>  
+                  
                   <div class="conditional vlan">
                     <!-- Guest CIDR -->
                     <div class="field">
@@ -524,7 +534,7 @@
                   </div>
 
                   <!-- Public -->
-                  <div class="field odd">
+                  <div class="field">
                     <div class="name">
                       <span>Public</span>
                     </div>
@@ -535,7 +545,7 @@
 
                   <div class="conditional public">
                     <!-- Domain -->
-                    <div class="field">
+                    <div class="field odd">
                       <div class="name">
                         <span>Domain</span>
                       </div>

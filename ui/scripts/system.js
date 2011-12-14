@@ -2852,7 +2852,10 @@
 
                       if(args.data["public"] == null) //public checkbox is unchecked
                         array1.push("&domainid=" + args.data["zone-domain"]);
-
+                     
+                      if(args.data.networkdomain != null && args.data.networkdomain.length > 0)  
+                        array1.push("&domain=" + todb(args.data.networkdomain));
+                        
                       var zoneId;
                       $.ajax({
                         url: createURL("createZone" + array1.join("")),
