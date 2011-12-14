@@ -144,7 +144,8 @@
 
             action: function(args) {
               var array1 = [];
-              array1.push("&name=" + todb(args.data.name));
+              array1.push("&name=" + todb(args.data.name));         
+              array1.push("&networkdomain=" + todb(args.data.networkdomain));              
               array1.push("&parentdomainid=" + args.context.domains[0].id);
               $.ajax({
                 url: createURL("createDomain" + array1.join("")),
@@ -170,6 +171,10 @@
                 name: {
                   label: 'Name',
                   validation: { required: true }
+                },
+                networkdomain: {
+                  label: 'Network Domain',
+                  validation: { required: false }
                 }
               }
             },
@@ -188,6 +193,7 @@
               },
               {
                 id: { label: 'ID' },
+                networkdomain: { label: 'Network domain' },
                 vmLimit: {
                   label: 'Instance limits',
                   isEditable: true
