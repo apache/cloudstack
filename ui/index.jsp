@@ -509,7 +509,7 @@
                       <input type="text" name="internaldns2" />
                     </div>
                   </div>
-                  
+
                   <!-- Network domain-->
                   <div class="field odd">
                     <div class="name">
@@ -518,8 +518,8 @@
                     <div class="value">
                       <input type="text" name="networkdomain" />
                     </div>
-                  </div>  
-                  
+                  </div>
+
                   <div class="conditional vlan">
                     <!-- Guest CIDR -->
                     <div class="field">
@@ -899,7 +899,7 @@
             <div class="title">
               <span>System-wide capacity</span>
             </div>
-            <div class="selects">
+            <div class="selects" style="display:none;">
               <div class="select">
                 <label>Zone:</label>
                 <select>
@@ -918,49 +918,49 @@
                 <div class="name">Public IP Addresses</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
+                    Allocated: <span class="allocated" data-item="publicIPAllocated">0</span> / <span class="total" data-item="publicIPTotal">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 0%;"></div>
+                  <div class="chart-line" style="width: 0%;" data-item="publicIPPercentage"></div>
                 </div>
-                <div class="percentage"><span class="value">0</span>%</div>
+                <div class="percentage"><span class="value" data-item="publicIPPercentage"></span>%</div>
               </li>
               <li>
                 <div class="name">Private IP Addresses</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
+                    Allocated: <span class="allocated" data-item="privateIPAllocated"></span> / <span class="total" data-item="privateIPTotal">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 0%;"></div>
+                  <div class="chart-line" style="width: 0%;" data-item="privateIPPercentage"></div>
                 </div>
-                <div class="percentage"><span class="value">0</span>%</div>
+                <div class="percentage"><span class="value" data-item="privateIPPercentage"></span>%</div>
               </li>
               <li>
                 <div class="name">Memory Allocated</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">0mb</span> / <span class="total">0mb</span>
+                    Allocated: <span class="allocated" data-item="memoryAllocated"></span> / <span class="total" data-item="memoryTotal"></span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 0%;"></div>
+                  <div class="chart-line" style="width: 0%;" data-item="memoryPercentage"></div>
                 </div>
-                <div class="percentage"><span class="value">0</span>%</div>
+                <div class="percentage"><span class="value" data-item="memoryPercentage"></span>%</div>
               </li>
               <li>
                 <div class="name">CPU Allocated</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
+                    Allocated: <span class="allocated" data-item="cpuAllocated"></span> / <span class="total" data-item="cpuTotal">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 0%;"></div>
+                  <div class="chart-line" style="width: 0%;" data-item="cpuPercentage"></div>
                 </div>
-                <div class="percentage"><span class="value">0</span>%</div>
+                <div class="percentage"><span class="value" data-item="cpuPercentage"></span>%</div>
               </li>
             </ul>
           </div>

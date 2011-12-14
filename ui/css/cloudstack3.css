@@ -3128,15 +3128,15 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container .stats ul li .name {
-  width: 132px;
+  width: 121px;
   float: left;
-  margin: 19px 40px 0 0;
+  margin: 19px 15px 0 0;
 }
 
 .dashboard.admin .dashboard-container .stats ul li div.value {
   float: left;
   background: url(../images/bg-gradients.png) 0px -51px;
-  width: 179px;
+  width: 212px;
   height: 100%;
   border-left: 1px solid #C8C2C2;
   border-right: 1px solid #C8C2C2;
