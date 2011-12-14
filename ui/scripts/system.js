@@ -4598,6 +4598,8 @@
           }
         }
       },
+      
+      /*
       networks: {
         sectionSelect: { label: 'Network type' },
         sections: {
@@ -5213,6 +5215,7 @@
           }
         }
       },
+      */
 
       pods: {
         title: 'Pods',
