@@ -3636,6 +3636,12 @@ Dialogs*/
   top: 11px;
 }
 
+.zone-chart ul li.disabled .name {
+  color: #AAAAAA;
+  text-decoration: line-through;
+  margin-top: 10px;
+}
+
 .zone-chart ul li .view-all,
 .zone-chart ul li .view-details {
   /*+placement:anchor-bottom-right 5px 11px;*/
@@ -3744,6 +3750,9 @@ Dialogs*/
   text-align: center;
 }
 
+.zone-chart .resources.naas ul.system-main li.main.disabled {
+}
+
 .zone-chart .resources.naas ul.system-main li.main .view-all {
   /*+placement:shift 65px 29px;*/
   position: relative;
@@ -3752,6 +3761,10 @@ Dialogs*/
   position: absolute;
   text-align: left;
   text-indent: -2px;
+}
+
+.zone-chart .resources.naas ul.system-main li.main.disabled .view-all {
+  display: none;
 }
 
 .zone-chart .resources.naas ul.system-main li.main.public {

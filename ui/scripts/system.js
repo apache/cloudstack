@@ -125,6 +125,14 @@
 
     // Network-as-a-service configuration
     naas: {
+      mainNetworksPreFilter: function(args) {
+        if (args.context.physicalResources[0].networktype == 'Basic') {
+          return ['public'];
+        }
+
+        return [];
+      },
+
       mainNetworks: {
         'public': {
           detailView: {

@@ -286,6 +286,19 @@
                   $tooltip.animate({ opacity: 0 }, { queue: false });
                 });
 
+                // Main items pre-filter
+                if (naas.mainNetworksPreFilter) {
+                  var disabledNetworks = naas.mainNetworksPreFilter({
+                    context: context
+                  });
+
+                  $(disabledNetworks).each(function() {
+                    var $item = $tabContent.find('li.main[rel=' + this + ']');
+
+                    $item.addClass('disabled');
+                  });
+                }
+
                 // Main items configure event
                 $tabContent.find('li.main .view-all.configure').click(function() {
                   var itemID = $(this).closest('li').attr('rel');
