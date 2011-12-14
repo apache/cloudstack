@@ -3636,7 +3636,7 @@ Dialogs*/
   top: 11px;
 }
 
-.zone-chart ul li.disabled .name {
+.zone-chart ul li.main.disabled .name {
   color: #AAAAAA;
   text-decoration: line-through;
   margin-top: 10px;
