@@ -959,20 +959,16 @@
                           if(selectedZoneObj.networktype == "Basic") {
                             hiddenFields.push("account");
                             hiddenFields.push("gateway");
-                            hiddenFields.push("netmask");
-                            hiddenFields.push("startip");
-                            hiddenFields.push("endip");
+                            //hiddenFields.push("netmask");                            
                           }
 
                           if(selectedGuestNetworkObj.type == "Isolated") {
                             hiddenFields.push("networkofferingdisplaytext");
                             hiddenFields.push("networkdomaintext");
                             hiddenFields.push("gateway");
-                            hiddenFields.push("netmask");
-                            hiddenFields.push("startip");
-                            hiddenFields.push("endip");
+                            //hiddenFields.push("netmask");                            
                           }
-                          else {
+                          else { //selectedGuestNetworkObj.type == "Shared"
                             hiddenFields.push("networkofferingid");
                             hiddenFields.push("networkdomain");
                           }
@@ -1037,9 +1033,7 @@
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },
                             gateway: { label: 'Gateway' },
-                            netmask: { label: 'Netmask' },
-                            startip: { label: 'Start IP' },
-                            endip: { label: 'End IP' },
+                            //netmask: { label: 'Netmask' },                            
                             cidr: { label: 'CIDR' },
                             networkdomaintext: {
                               label: 'Network domain'
