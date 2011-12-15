@@ -403,13 +403,6 @@
                   {
                     id: { label: 'ID' },
                     state: { label: 'State' },
-
-                    /*
-                    vlan: {
-                      label: 'VLAN',
-                      isEditable: true
-                    },
-                    */
                     startVlan: {
                       label: 'Start Vlan',
                       isEditable: true
@@ -1061,6 +1054,7 @@
                             netmask: { label: 'Netmask' },
                             startip: { label: 'Start IP' },
                             endip: { label: 'End IP' },
+                            cidr: { label: 'CIDR' },
                             networkdomaintext: {
                               label: 'Network domain'
                             },
