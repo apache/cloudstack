@@ -123,8 +123,11 @@
                 pageSize: 4
               },
               success: function(json) {
+                var alerts = json.listalertsresponse.alert ?
+                      json.listalertsresponse.alert : [];
+
                 dataFns.hostAlerts($.extend(data, {
-                  alerts: $.map(json.listalertsresponse.alert, function(alert) {
+                  alerts: $.map(alerts, function(alert) {
                     return {
                       name: cloudStack.converters.toAlertType(alert.type),
                       description: alert.description
@@ -144,8 +147,11 @@
                 pageSize: 4
               },
               success: function(json) {
+                var hosts = json.listhostsresponse.host ?
+                      json.listhostsresponse.host : [];
+
                 complete($.extend(data, {
-                  hostAlerts: $.map(json.listhostsresponse.host, function(host) {
+                  hostAlerts: $.map(hosts, function(host) {
                     return {
                       name: host.name,
                       description: 'Alert state detected for ' + host.name
