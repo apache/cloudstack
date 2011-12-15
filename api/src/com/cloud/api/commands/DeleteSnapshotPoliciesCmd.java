@@ -41,12 +41,12 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="snapshots")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot")
+    @IdentityMapper(entityTableName="snapshot_policy")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot policy")
     private Long id;
 
-    @IdentityMapper(entityTableName="snapshots")
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots IDs separated by comma")
+    @IdentityMapper(entityTableName="snapshot_policy")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots policy IDs separated by comma")
     private List<Long> ids;
 
 
