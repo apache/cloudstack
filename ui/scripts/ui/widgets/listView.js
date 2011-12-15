@@ -233,11 +233,12 @@
                 );
               },
               error: function(message) {
-                if (args.action.createFrom && args.action.addRow != 'false')
-                  $instanceRow.remove();
+                if ($.isPlainObject(args.action.createForm)
+                    && args.action.addRow != 'false') {
+                  $instanceRow.remove();                  
+                }
 
-                if (message)
-                  cloudStack.dialog.notice({ message: message });
+                if (message) cloudStack.dialog.notice({ message: message });
               }
             }
           };
