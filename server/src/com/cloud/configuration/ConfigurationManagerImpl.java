@@ -2202,11 +2202,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Only Direct Untagged and Virtual networks are supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
 
-        //  don't allow to create a virtual vlan when physical networks's vnet is NULL in Advanced zone
-        if ((zone.getNetworkType() == NetworkType.Advanced && pNtwk.getVnet() == null) && forVirtualNetwork) {
-            throw new InvalidParameterValueException("Can't add virtual network to the physical Network id="+pNtwk.getId() +" in zone id=" + zone.getId() + " as there is no guest vlan configured");
-        }
-
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
 
         // ACL check
