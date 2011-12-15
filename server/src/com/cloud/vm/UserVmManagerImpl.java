@@ -2928,7 +2928,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (account == null) {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
-                permittedAccounts.add(caller.getId());
+                permittedAccounts.add(account.getId());
             }
 
             if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
