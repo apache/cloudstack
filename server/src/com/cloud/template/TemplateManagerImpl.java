@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -750,6 +749,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	Long destZoneId = cmd.getDestinationZoneId();
     	Account caller = UserContext.current().getCaller();
         
+        if (_swiftMgr.isSwiftEnabled()) {
+            throw new CloudRuntimeException("copytemplate API is disabled in Swift setup, templates in Swift can be accessed by all Zones");
+        }
         //Verify parameters
         if (sourceZoneId == destZoneId) {
             throw new InvalidParameterValueException("Please specify different source and destination zones.");
