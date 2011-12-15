@@ -508,6 +508,10 @@ for example:
                 self.info("Mysql user password:", True)
             self.info("Mysql server ip:%s"%self.host, True)
             self.info("Mysql server port:%s"%self.port, True)
+        
+        def validateParameters():
+            if self.encryptiontype != 'file' or self.encryptiontype != 'web':
+                self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
             
     #---------------------- option parsing and command line checks ------------------------
         usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml] [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [--debug]
@@ -563,6 +567,7 @@ for example:
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
+        validateParameters()
     
     def run(self):
         try:
