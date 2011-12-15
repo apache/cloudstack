@@ -3835,7 +3835,8 @@ Dialogs*/
   margin-bottom: 0px;
 }
 
-.zone-chart .resources.naas ul.system-main li.network-providers ul li.disabled {
+.zone-chart .resources.naas ul.system-main li.network-providers ul li.disabled,
+.zone-chart .resources.naas ul.system-main li.network-providers ul li.not-configured {
   background-position: -3px -944px;
 }
 
