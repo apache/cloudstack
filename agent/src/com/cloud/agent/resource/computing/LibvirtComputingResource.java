@@ -2287,7 +2287,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(conn, vmName, vm.toString());
-			
+			Script.runSimpleBashScript("virsh schedinfo " + vmName + " --set cpu_shares=" + vmSpec.getCpus() * vmSpec.getSpeed());
 
 			NicTO[] nics = vmSpec.getNics();
 			for (NicTO nic : nics) {

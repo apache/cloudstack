@@ -120,6 +120,9 @@ public class KVMGuestOsMapper {
 		s_mapper.put("Windows 95", "Windows 95");
 		s_mapper.put("Windows NT 4", "Windows NT");
 		s_mapper.put("Windows 3.1", "Windows 3.1");
+		s_mapper.put("Windows PV", "Other PV");
+		s_mapper.put("Other PV (32-bit)", "Other PV");
+		s_mapper.put("Other PV (64-bit)", "Other PV");
 	}
 	
 	public static String getGuestOsName(String guestOsName) {
