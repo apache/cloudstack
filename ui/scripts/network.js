@@ -316,7 +316,7 @@
                         jobId: data.disassociateipaddressresponse.jobid,
                         getActionFilter: function() {
                           return function(args) {
-                            var allowedActions = ['enableStaticNAT'];
+                            var allowedActions = [];
 
                             return allowedActions;
                           };
