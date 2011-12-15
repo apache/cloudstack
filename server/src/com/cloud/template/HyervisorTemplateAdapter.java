@@ -183,6 +183,8 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 						success = false;
 						break;
 					}
+					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
+					_usageEventDao.persist(usageEvent);					
                     templateHostVO.setDestroyed(true);
 					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
 					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
@@ -190,9 +192,6 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 					if (templateZone != null) {
 						_tmpltZoneDao.remove(templateZone.getId());
 					}
-					
-					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
-					_usageEventDao.persist(usageEvent);
 				} finally {
 					if (lock != null) {
 						_tmpltHostDao.releaseFromLockTable(lock.getId());
