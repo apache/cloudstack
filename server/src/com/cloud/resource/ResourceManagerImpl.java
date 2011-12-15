@@ -83,10 +83,10 @@ import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.Status.Event;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
@@ -513,7 +513,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     @Override
-    public List<? extends Swift> discoverSwift(AddSwiftCmd cmd) throws DiscoveryException {
+    public Swift discoverSwift(AddSwiftCmd cmd) throws DiscoveryException {
         return _swiftMgr.addSwift(cmd);
     }
 

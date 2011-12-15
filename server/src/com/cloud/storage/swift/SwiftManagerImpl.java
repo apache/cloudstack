@@ -24,8 +24,6 @@
 
 package com.cloud.storage.swift;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -43,7 +41,6 @@ import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.dao.SwiftDao;
@@ -100,15 +97,13 @@ public class SwiftManagerImpl implements SwiftManager {
     }
 
     @Override
-    public List<? extends Swift> addSwift(AddSwiftCmd cmd) throws DiscoveryException {
+    public SwiftVO addSwift(AddSwiftCmd cmd) throws DiscoveryException {
         if (!isSwiftEnabled()) {
             throw new DiscoveryException("Swift is not enabled");
         }
         SwiftVO swift = new SwiftVO(cmd.getUrl(), cmd.getAccount(), cmd.getUsername(), cmd.getKey());
         swift = _swiftDao.persist(swift);
-        List<SwiftVO> list = new ArrayList<SwiftVO>();
-        list.add(swift);
-        return list;
+        return swift;
     }
 
     @Override

@@ -24,8 +24,6 @@
 
 package com.cloud.storage.swift;
 
-import java.util.List;
-
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
@@ -39,7 +37,7 @@ public interface SwiftManager extends Manager {
 
     SwiftTO getSwiftTO();
 
-    List<? extends Swift> addSwift(AddSwiftCmd cmd) throws DiscoveryException;
+    Swift addSwift(AddSwiftCmd cmd) throws DiscoveryException;
 
     boolean isSwiftEnabled();
 

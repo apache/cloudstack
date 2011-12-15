@@ -89,7 +89,7 @@ public interface ResourceService {
 
     Cluster getCluster(Long clusterId);
 
-    List<? extends Swift> discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
+    Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
     
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId);
 }

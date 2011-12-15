@@ -37,6 +37,15 @@ public class SwiftResponse extends BaseResponse {
     @Param(description = "the date and time the host was created")
     private Date created;
 
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account for swift")
+    private String account;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the username for swift")
+    private String username;
+
+
     @Override
     public Long getObjectId() {
         return id.getValue();
@@ -60,6 +69,22 @@ public class SwiftResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
 }

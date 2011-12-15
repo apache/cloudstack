@@ -18,8 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -91,16 +89,13 @@ public class AddSwiftCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            List<? extends Swift> result = _resourceService.discoverSwift(this);
+            Swift result = _resourceService.discoverSwift(this);
             SwiftResponse swiftResponse = null;
-            if (result != null && result.size() > 0) {
-                for (Swift swift : result) {
-                    // There should only be one secondary storage host per add
-                    swiftResponse = _responseGenerator.createSwiftResponse(swift);
-                    swiftResponse.setResponseName(getCommandName());
-                    swiftResponse.setObjectName("Swift");
-                    this.setResponseObject(swiftResponse);
-                }
+            if (result != null) {
+                swiftResponse = _responseGenerator.createSwiftResponse(result);
+                swiftResponse.setResponseName(getCommandName());
+                swiftResponse.setObjectName("Swift");
+                this.setResponseObject(swiftResponse);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Swift");
             }

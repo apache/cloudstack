@@ -652,6 +652,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         SwiftResponse swiftResponse = new SwiftResponse();
         swiftResponse.setId(swift.getId());
         swiftResponse.setUrl(swift.getUrl());
+        swiftResponse.setAccount(swift.getAccount());
+        swiftResponse.setUsername(swift.getUserName());
         swiftResponse.setObjectName("Swift");
         return swiftResponse;
     }
