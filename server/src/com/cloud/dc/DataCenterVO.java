@@ -69,9 +69,6 @@ public class DataCenterVO implements DataCenter, Identity {
     @Column(name="router_mac_address", updatable = false, nullable=false)
     private String routerMacAddress = "02:00:00:00:00:01";
     
-	@Column(name="guest_network_cidr")
-    private String guestNetworkCidr = null;
-    
     @Column(name="domain_id")
     private Long domainId = null;
 
@@ -174,21 +171,20 @@ public class DataCenterVO implements DataCenter, Identity {
         this.firewallProvider = firewallProvider;
     }
     
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+        this(name, description, dns1, dns2, dns3, dns4, domain, domainId, zoneType, zoneToken, domainSuffix, false);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
         this.dns2 = dns2;
         this.internalDns1 = dns3;
         this.internalDns2 = dns4;
-        this.guestNetworkCidr = guestCidr;
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
@@ -309,17 +305,6 @@ public class DataCenterVO implements DataCenter, Identity {
         this.routerMacAddress = routerMacAddress;
     }
     
-    @Override
-    public String getGuestNetworkCidr()
-    {
-    	return guestNetworkCidr;
-    }
-    
-    public void setGuestNetworkCidr(String guestNetworkCidr)
-    {
-    	this.guestNetworkCidr = guestNetworkCidr;
-    }
-
     @Override
     public String getDomain() {
         return domain;

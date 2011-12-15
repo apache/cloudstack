@@ -49,9 +49,6 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan range of the zone")
     private String vlan;
 
-    @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS) @Param(description="the guest CIDR address for the Zone")
-    private String guestCidrAddress;
-    
     //TODO - generate description
     @SerializedName("status")
     private String status;
@@ -145,14 +142,6 @@ public class ZoneResponse extends BaseResponse {
 
     public void setVlan(String vlan) {
         this.vlan = vlan;
-    }
-
-    public String getGuestCidrAddress() {
-        return guestCidrAddress;
-    }
-
-    public void setGuestCidrAddress(String guestCidrAddress) {
-        this.guestCidrAddress = guestCidrAddress;
     }
 
     public String getStatus() {

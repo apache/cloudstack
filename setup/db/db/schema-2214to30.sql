@@ -152,6 +152,7 @@ ALTER TABLE `cloud`.`project_invitations` ADD CONSTRAINT `uc_project_invitations
 
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `uc_data_center__uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`data_center` DROP COLUMN `guest_network_cidr`;
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`host` ADD CONSTRAINT `uc_host__uuid` UNIQUE (`uuid`);

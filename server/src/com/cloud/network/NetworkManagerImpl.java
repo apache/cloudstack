@@ -2082,15 +2082,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networks == null || networks.isEmpty()) {
             throw new CloudRuntimeException("Fail to create a network");
         } else {
+            if (networks.size() > 1) {
+                throw new InvalidParameterValueException("Cannot determine a guest network to deploy in, please specify one");
+            }
             if (networks.size() > 0 && networks.get(0).getGuestType()== Network.GuestType.Isolated && networks.get(0).getTrafficType() == TrafficType.Guest) {
-                Network defaultGuestNetwork = networks.get(0);
-                for (Network nw : networks) {
-                    if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
-                        defaultGuestNetwork = nw;
-                    }
-                }
-                network = defaultGuestNetwork;
+                network = networks.get(0);
             } else {
+                // For shared network
                 network = networks.get(0);
             }
         }

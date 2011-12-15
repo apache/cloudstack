@@ -1279,7 +1279,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String guestCidr = cmd.getGuestCidrAddress();
         List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         Boolean isPublic = cmd.isPublic();
         String allocationStateStr = cmd.getAllocationState();
@@ -1330,10 +1329,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zoneName = zone.getName();
         }
 
-        if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
-            throw new InvalidParameterValueException("Please enter a valid guest cidr");
-        }
-
         // Make sure the zone exists
         if (!validZone(zoneId)) {
             throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
@@ -1355,10 +1350,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (internalDns1 == null) {
             internalDns1 = zone.getInternalDns1();
-        }
-
-        if (guestCidr == null) {
-            guestCidr = zone.getGuestNetworkCidr();
         }
 
         // validate network domain
@@ -1389,7 +1380,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setDns2(dns2);
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
-        zone.setGuestNetworkCidr(guestCidr);
         zone.setDomain(networkDomain);
 
         // update a private zone to public; not vice versa
@@ -1428,15 +1418,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String domain, Long domainId,
             NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
         // hence the method below is generic to check for common params
-        if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
-            throw new InvalidParameterValueException("Please enter a valid guest cidr");
-        }
 
         // Validate network domain
         if (networkDomain != null) {
@@ -1455,7 +1442,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1554,7 +1541,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String guestCidr = cmd.getGuestCidrAddress();
         Long domainId = cmd.getDomainId();
         String type = cmd.getNetworkType();
         Boolean isBasic = false;
@@ -1574,14 +1560,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
-        // Guest cidr is required for Advanced zone creation; error out when the
-        // parameter specified for Basic zone
-        if (zoneType == NetworkType.Advanced && guestCidr == null && !isSecurityGroupEnabled) {
-            throw new InvalidParameterValueException("guestCidrAddress parameter is required for Advanced zone creation");
-        } else if (zoneType == NetworkType.Basic && guestCidr != null) {
-            throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
-        }
-
         DomainVO domainVO = null;
 
         if (userId == null) {
@@ -1596,7 +1574,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             isSecurityGroupEnabled = true;
         }
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
                 isSecurityGroupEnabled);
     }
 
@@ -2279,30 +2257,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
 
-        // Check if the new VLAN's subnet conflicts with the guest network in
-        // the specified zone (guestCidr is null for basic
-        // zone)
-        String guestNetworkCidr = zone.getGuestNetworkCidr();
-        if (guestNetworkCidr != null) {
-            String[] cidrPair = guestNetworkCidr.split("\\/");
-            String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrPair[0], Long.parseLong(cidrPair[1]));
-            long guestCidrSize = Long.parseLong(cidrPair[1]);
-            long vlanCidrSize = NetUtils.getCidrSize(vlanNetmask);
-
-            long cidrSizeToUse = -1;
-            if (vlanCidrSize < guestCidrSize) {
-                cidrSizeToUse = vlanCidrSize;
-            } else {
-                cidrSizeToUse = guestCidrSize;
-            }
-
-            String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
-
-            if (newVlanSubnet.equals(guestSubnet)) {
-                throw new InvalidParameterValueException("The new IP range you have specified has the same subnet as the guest network in zone: " + zone.getName()
-                        + ". Please specify a different gateway/netmask.");
-            }
-        }
+        // TODO: Check if the new VLAN's subnet conflicts with the guest network in
+        // the specified zone (guestCidr is null for basic zone)
 
         // Check if there are any errors with the IP range
         checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
@@ -2702,21 +2658,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // 1. The pod's CIDR subnet conflicts with the guest network subnet
         // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other
         // pod
-        DataCenterVO dcVo = _zoneDao.findById(dcId);
-        String guestNetworkCidr = dcVo.getGuestNetworkCidr();
-
-        // Guest cidr can be null for Basic zone
-        String guestIpNetwork = null;
-        Long guestCidrSize = null;
-        if (guestNetworkCidr != null) {
-            String[] cidrTuple = guestNetworkCidr.split("\\/");
-            guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1]));
-            guestCidrSize = Long.parseLong(cidrTuple[1]);
-        }
-
-        String zoneName = getZoneName(dcId);
-
+        
         // Iterate through all pods in this zone
+        
+        String zoneName = getZoneName(dcId);
+        
         for (Long podId : currentPodCidrSubnets.keySet()) {
             String podName;
             if (podId.longValue() == -1) {
@@ -2730,26 +2676,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             long cidrSize = ((Long) cidrPair.get(1)).longValue();
 
             long cidrSizeToUse = -1;
-            if (guestCidrSize == null || cidrSize < guestCidrSize) {
-                cidrSizeToUse = cidrSize;
-            } else {
-                cidrSizeToUse = guestCidrSize;
-            }
+            cidrSizeToUse = cidrSize;
 
             String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
-
-            if (guestNetworkCidr != null) {
-                String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
-                // Check that cidrSubnet does not equal guestSubnet
-                if (cidrSubnet.equals(guestSubnet)) {
-                    if (podName.equals("newPod")) {
-                        throw new InvalidParameterValueException("The subnet of the pod you are adding conflicts with the subnet of the Guest IP Network. Please specify a different CIDR.");
-                    } else {
-                        throw new InvalidParameterValueException("Warning: The subnet of pod " + podName + " in zone " + zoneName
-                                + " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.");
-                    }
-                }
-            }
+            
+            //TODO add checking for CIDR of guest network in this data center
 
             // Iterate through the rest of the pods
             for (Long otherPodId : currentPodCidrSubnets.keySet()) {

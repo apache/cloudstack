@@ -82,14 +82,6 @@ public class PodZoneConfig {
 		//get the guest network cidr and guest netmask from the zone
 //		DataCenterVO dcVo = _dcDao.findById(dcId);
 		
-		String guestNetworkCidr = IPRangeConfig.getGuestNetworkCidr(dcId);
-		
-		if (guestNetworkCidr == null || guestNetworkCidr.isEmpty()) return "Please specify a valid guest cidr";
-        String[] cidrTuple = guestNetworkCidr.split("\\/");
-        
-		String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1]));
-		long guestCidrSize = Long.parseLong(cidrTuple[1]);
-        
         // Iterate through all pods in this zone
 		for (Long podId : currentPodCidrSubnets.keySet()) {
 			String podName;
@@ -101,20 +93,9 @@ public class PodZoneConfig {
 			long cidrSize = ((Long) cidrPair.get(1)).longValue();
 			
 			long cidrSizeToUse = -1;
-			if (cidrSize < guestCidrSize) cidrSizeToUse = cidrSize;
-			else cidrSizeToUse = guestCidrSize;
+			cidrSizeToUse = cidrSize;
 			
 			String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
-			String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
-			
-			// Check that cidrSubnet does not equal guestSubnet
-			if (cidrSubnet.equals(guestSubnet)) {
-				if (podName.equals("newPod")) {
-					return "The subnet of the pod you are adding conflicts with the subnet of the Guest IP Network. Please specify a different CIDR.";
-				} else {
-					return "Warning: The subnet of pod " + podName + " in zone " + zoneName + " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.";
-				}
-			}
 			
 			// Iterate through the rest of the pods
 			for (Long otherPodId : currentPodCidrSubnets.keySet()) {
@@ -261,7 +242,7 @@ public class PodZoneConfig {
     }
 	
 	@DB
-	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, String guestNetworkCidr, String networkType) {
+	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, String networkType) {
 		
 		if (printOutput) System.out.println("Saving zone, please wait...");
 		
@@ -294,11 +275,6 @@ public class PodZoneConfig {
 		if (dns4 != null) {
 			columns += ", internal_dns2";
 			values += ",'" + dns4 + "'";
-		}
-		
-		if(guestNetworkCidr != null) {
-			columns += ", guest_network_cidr";
-			values += ",'" + guestNetworkCidr + "'";
 		}
 		
 		if(networkType != null) {
