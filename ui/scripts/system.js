@@ -292,6 +292,7 @@
             }
           }
         },
+        
         'management': {
           detailView: {
             viewAll: { path: '_zone.pods', label: 'Pods' },            
@@ -304,16 +305,8 @@
                   array1.push("&dns1=" + todb(args.data.dns1));
                   array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
                   array1.push("&internaldns1=" + todb(args.data.internaldns1));
-                  array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
-                  
-                  if(args.context.zones[0].networktype == "Advanced") {  //remove this line after Brian fixes it to include $form in args
-                  //if(args.$form.find('.form-item[rel=guestcidraddress]').css("display") != "none") {  //commented out until Brian fixes it to include $form in args
-                    array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
-                  //}                                                                                   //commented out until Brian fixes it to include $form in args
-                  }                                                      //remove this line after Brian fixes it to include $form in args
-                                  
-                  array1.push("&domain=" + todb(args.data.domain));    
-                  
+                  array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API                      
+                  array1.push("&domain=" + todb(args.data.domain));  
                   $.ajax({
                     url: createURL("updateZone&id=" + args.context.zones[0].id + array1.join("")),
                     dataType: "json",
@@ -328,13 +321,7 @@
             },           
             tabs: {
               details: {
-                title: 'Details',                
-                preFilter: function(args) {
-                  var hiddenFields = [];                  
-                  if(selectedZoneObj.networktype == "Basic") 
-                    hiddenFields.push("guestcidraddress");                                   
-                  return hiddenFields;
-                },  
+                title: 'Details',  
                 fields: [
                   {
                     name: { label: 'Zone', isEditable: true }
@@ -354,8 +341,7 @@
                     domain: { 
                       label: 'Network domain',
                       isEditable: true
-                    },
-                    guestcidraddress: { label: 'Guest CIDR Address', isEditable: true }  //only advanced zones have CIDR Address               
+                    }             
                   }
                 ],
                 dataProvider: function(args) {                 
