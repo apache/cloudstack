@@ -105,7 +105,7 @@ public enum Config {
 	
 	SecurityGroupDefaultAdding("Network", ManagementServer.class, Boolean.class, "network.securitygroups.defaultadding", "true", "If true, the user VM would be added to the default security group by default", null),
 
-	FirewallRuleUiEnabled("Network", ManagementServer.class, Boolean.class, "firewall.rule.ui.enabled", "false", "enable/disable UI that separates firewall rules from NAT/LB rules", null),
+	FirewallRuleUiEnabled("Network", ManagementServer.class, Boolean.class, "firewall.rule.ui.enabled", "true", "enable/disable UI that separates firewall rules from NAT/LB rules", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),

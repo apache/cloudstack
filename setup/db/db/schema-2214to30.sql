@@ -482,3 +482,5 @@ ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physic
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
+
+UPDATE `cloud`.`configuration` set value='true' where name='firewall.rule.ui.enabled';
