@@ -299,13 +299,26 @@
               edit: {
                 label: 'Edit',
                 action: function(args) {                  
-                  var array1 = [];
-                  array1.push("&domain=" + todb(args.data.domain));                 
+                  var array1 = [];                  
+                  array1.push("&name="  +todb(args.data.name));
+                  array1.push("&dns1=" + todb(args.data.dns1));
+                  array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
+                  array1.push("&internaldns1=" + todb(args.data.internaldns1));
+                  array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
+                  
+                  if(args.context.zones[0].networktype == "Advanced") {  //remove this line after Brian fixes it to include $form in args
+                  //if(args.$form.find('.form-item[rel=guestcidraddress]').css("display") != "none") {  //commented out until Brian fixes it to include $form in args
+                    array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
+                  //}                                                                                   //commented out until Brian fixes it to include $form in args
+                  }                                                      //remove this line after Brian fixes it to include $form in args
+                                  
+                  array1.push("&domain=" + todb(args.data.domain));    
+                  
                   $.ajax({
                     url: createURL("updateZone&id=" + args.context.zones[0].id + array1.join("")),
                     dataType: "json",
                     async: false,
-                    success: function(json) {                      
+                    success: function(json) {  
                       selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
                       args.response.success({data: selectedZoneObj});
                     }
@@ -315,7 +328,13 @@
             },           
             tabs: {
               details: {
-                title: 'Details',
+                title: 'Details',                
+                preFilter: function(args) {
+                  var hiddenFields = [];                  
+                  if(selectedZoneObj.networktype == "Basic") 
+                    hiddenFields.push("guestcidraddress");                                   
+                  return hiddenFields;
+                },  
                 fields: [
                   {
                     name: { label: 'Zone', isEditable: true }
@@ -333,27 +352,13 @@
                       converter:cloudStack.converters.toBooleanText
                     },
                     domain: { 
-                      label: 'Domain',
+                      label: 'Network domain',
                       isEditable: true
                     },
-
-                    //only advanced zones have VLAN and CIDR Address
-                    guestcidraddress: { label: 'Guest CIDR Address', isEditable: true },
-                    vlan: { label: 'Vlan' },
-                    startVlan: { label: 'Start Vlan', isEditable: true },
-                    endVlan: { label: 'End Vlan', isEditable: true }
+                    guestcidraddress: { label: 'Guest CIDR Address', isEditable: true }  //only advanced zones have CIDR Address               
                   }
                 ],
-                dataProvider: function(args) {
-                  /*
-                  $.ajax({
-                    url: createURL("listTrafficTypes&physicalNetworkId=" + selectedPhysicalNetworkObj.id),
-                    dataType: "json",
-                    success: function(json) {
-                      args.response.success({ data: testData.data.networks[0] });
-                    }
-                  });
-                  */
+                dataProvider: function(args) {                 
                   args.response.success({ data: selectedZoneObj });
                 }
               }
@@ -3202,24 +3207,24 @@
                         array1.push("&internaldns1=" + todb(args.data.internaldns1));
                         array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
 
-                        if(args.context.zones[0].networktype == "Advanced") {  //remove this after Brian fixes it to include $form in args
-                          var vlan;
-                          //if(args.$form.find('.form-item[rel=startVlan]').css("display") != "none") {  //comment out until Brian fixes it to include $form in args
-                          var vlanStart = args.data.startVlan;
-                          if(vlanStart != null && vlanStart.length > 0) {
-                            var vlanEnd = args.data.endVlan;
-                            if (vlanEnd != null && vlanEnd.length > 0)
-                              vlan = vlanStart + "-" + vlanEnd;
-                            else
-                              vlan = vlanStart;
-                            array1.push("&vlan=" + todb(vlan));
+                        //if(args.context.zones[0].networktype == "Advanced") {  //remove this after Brian fixes it to include $form in args
+                          var vlan;                          
+                          if(args.$form.find('.form-item[rel=startVlan]').css("display") != "none") {  //comment out until Brian fixes it to include $form in args
+                            var vlanStart = args.data.startVlan;
+                            if(vlanStart != null && vlanStart.length > 0) {
+                              var vlanEnd = args.data.endVlan;
+                              if (vlanEnd != null && vlanEnd.length > 0)
+                                vlan = vlanStart + "-" + vlanEnd;
+                              else
+                                vlan = vlanStart;
+                              array1.push("&vlan=" + todb(vlan));
+                            }
                           }
-                          //}
 
-                          //if(args.$form.find('.form-item[rel=guestcidraddress]').css("display") != "none") {  //comment out until Brian fixes it to include $form in args
-                          array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
-                          //}
-                        }  //remove this after Brian fixes it to include $form in args
+                          if(args.$form.find('.form-item[rel=guestcidraddress]').css("display") != "none") {  //comment out until Brian fixes it to include $form in args
+                            array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
+                          }
+                        //}  //remove this after Brian fixes it to include $form in args
 
                         $.ajax({
                           url: createURL("updateZone&id=" + args.context.zones[0].id + array1.join("")),
@@ -3344,17 +3349,9 @@
                     details: {
                       title: 'Details',
 
-                      preFilter: function(args) {
-                        /*
-                         var hiddenFields;
-                         if(args.context.zones[0].networktype == "Basic")
-                         hiddenFields = ["guestcidraddress", "startVlan", "endVlan"];
-                         else if(args.context.zones[0].networktype == "Advanced")
-                         hiddenFields = [];
-                         return hiddenFields;
-                         */
-                        //comment out the above section until Brian fix it to include context in args
-                        return [];
+                      preFilter: function(args) {                        
+                        var hiddenFields = [];                         
+                        return hiddenFields;
                       },
 
                       fields: [
