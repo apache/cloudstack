@@ -179,6 +179,10 @@ listAlerts=com.cloud.api.commands.ListAlertsCmd;3
 #### system capacity commands
 listCapacity=com.cloud.api.commands.ListCapacityCmd;3
 
+#### swift commands^M
+addSwift=com.cloud.api.commands.AddSwiftCmd;1
+
+
 #### host commands
 addHost=com.cloud.api.commands.AddHostCmd;3
 addCluster=com.cloud.api.commands.AddClusterCmd;1
