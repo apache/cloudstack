@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <components-simulator.xml>
-    <management-server class="com.cloud.server.ManagementServerSimulatorImpl" library="com.cloud.configuration.SimulatorComponentLibrary" extends="components-premium.xml:management-server">
+    <management-server class="com.cloud.server.ManagementServerSimulatorImpl" library="com.cloud.configuration.SimulatorComponentLibrary" extends="components.xml:management-server">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
