@@ -554,6 +554,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
             template.setPoolId(storage.getId());
             template.setSize(defaultTemplateSize);
             template.setType(MockVolumeType.TEMPLATE);
+            template.setStatus(Status.DOWNLOADED);
             _mockVolumeDao.persist(template);
         }
         
