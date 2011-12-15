@@ -76,9 +76,14 @@
                   var capacities = json.listcapacityresponse.capacity;
 
                   var capacity = function(id, converter) {
-                    return $.grep(capacities, function(capacity) {
+                    var result = $.grep(capacities, function(capacity) {
                       return capacity.type == id;
-                    })[0];
+                    });
+                    return result[0] ? result[0] : {
+                      capacityused: 0,
+                      capacitytotal: 0,
+                      percentused: 0
+                    };
                   };
 
                   dataFns.alerts($.extend(data, {
