@@ -1112,6 +1112,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (related == -1) {
                     related = id;
                 }
+                
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, predefined.getNetworkDomain(),
                         offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType);
@@ -1120,6 +1123,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (domainId != null && aclType == ACLType.Domain) {
                     _networksDao.addDomainToNetwork(id, domainId, subdomainAccess);
                 }
+                
+                txn.commit();
             }
 
             if (networks.size() < 1) {
@@ -1808,6 +1813,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _accountMgr.checkAccess(caller, domain);
             }
             isDomainSpecific = true;
+            
         } else if (subdomainAccess != null) {
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
         }
@@ -1886,6 +1892,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 sharedDomainId = domainId;
             } else {
                 sharedDomainId = _domainMgr.getDomain(Domain.ROOT_DOMAIN).getId();
+                subdomainAccess = true;
             }
         }
         
