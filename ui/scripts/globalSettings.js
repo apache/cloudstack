@@ -22,9 +22,7 @@
                 args.response.success({data: item});
               },
               error: function(json) {                
-                args.response.error({
-                  message: $.parseJSON(json.responseText).updateconfigurationresponse.errortext
-                });
+                args.response.error(parseXMLHttpResponse(json));
               }
             });
           }
