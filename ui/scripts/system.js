@@ -494,7 +494,10 @@
                             label: 'Description',
                             validation: { required: true }
                           },  
-                          vlanId: { label: "VLAN ID" },
+                          vlanId: { 
+                            label: "VLAN ID" 
+                          },
+                          
                           scope: {
                             label: 'Scope',
                             select: function(args) {
@@ -526,6 +529,53 @@
                               });
                             }
                           },
+                          domainId: {
+                            label: 'Domain',
+                            validation: { required: true },
+                            select: function(args) {
+                              var items = [];
+                              if(selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
+                                $.ajax({
+                                  url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {
+                                    var domainObjs = json.listdomainchildrenresponse.domain;
+                                    $(domainObjs).each(function() {
+                                      items.push({id: this.id, description: this.name});
+                                    });
+                                  }
+                                });
+                                $.ajax({
+                                  url: createURL("listDomains&id=" + selectedZoneObj.domainid),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {
+                                    var domainObjs = json.listdomainsresponse.domain;
+                                    $(domainObjs).each(function() {
+                                      items.push({id: this.id, description: this.name});
+                                    });
+                                  }
+                                });
+                              }
+                              else { //list all domains
+                                $.ajax({
+                                  url: createURL("listDomains"),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {
+                                    var domainObjs = json.listdomainsresponse.domain;
+                                    $(domainObjs).each(function() {
+                                      items.push({id: this.id, description: this.name});
+                                    });
+                                  }
+                                });
+                              }
+                              args.response.success({data: items});
+                            }
+                          },
+                          account: { label: 'Account' },
+                          
                           networkOfferingId: {
                             label: 'Network offering',
                             dependsOn: 'scope',
@@ -634,53 +684,7 @@
                             validation: { required: false }
                           },
                           //create new pod fields ends here
-
-                          domainId: {
-                            label: 'Domain',
-                            validation: { required: true },
-                            select: function(args) {
-                              var items = [];
-                              if(selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
-                                $.ajax({
-                                  url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var domainObjs = json.listdomainchildrenresponse.domain;
-                                    $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
-                                    });
-                                  }
-                                });
-                                $.ajax({
-                                  url: createURL("listDomains&id=" + selectedZoneObj.domainid),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var domainObjs = json.listdomainsresponse.domain;
-                                    $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
-                                    });
-                                  }
-                                });
-                              }
-                              else { //list all domains
-                                $.ajax({
-                                  url: createURL("listDomains"),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var domainObjs = json.listdomainsresponse.domain;
-                                    $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
-                                    });
-                                  }
-                                });
-                              }
-                              args.response.success({data: items});
-                            }
-                          },
-                          account: { label: 'Account' },
+                          
                           guestGateway: { label: 'Guest gateway' },
                           guestNetmask: { label: 'Guest netmask' },
                           guestStartIp: { label: 'Start guest IP' },
