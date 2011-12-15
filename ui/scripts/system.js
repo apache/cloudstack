@@ -140,41 +140,12 @@
             tabs: {
               details: {
                 title: 'Details',
-                fields: [
-                  {
-                    networkofferingdisplaytext:  { label: "Network offering description" }
-                  },
+                fields: [                  
                   {
                     id: { label: "ID" },
-                    broadcastdomaintype: { label: 'Broadcast domain type' },
-                    traffictype: { label: 'Traffic type' },                   
-                    zoneid: { label: 'Zone ID' },
-                    networkofferingid: { label: 'Network offering ID' },
-                    networkofferingname: { label: 'Network offering name' },
-                    networkofferingavailability: { label: 'network offering availability' },
-                    isshared: {
-                      label: 'Shared',
-                      converter: cloudStack.converters.toBooleanText
-                    },
-                    issystem: {
-                      label: 'System',
-                      converter: cloudStack.converters.toBooleanText
-                    },
-                    isdefault: {
-                      label: 'Default',
-                      converter: cloudStack.converters.toBooleanText
-                    },
-                    securitygroupenabled: {
-                      label: 'Security group enabled',
-                      converter: cloudStack.converters.toBooleanText
-                    },
-                    state: { label: 'State' },
-                    related: { label: 'Related' },
-                    dns1: { label: 'DNS 1' },
-                    dns2: { label: 'DNS 2' },
-                    vlan: { label: 'VLAN' },
-                    domainid: { label: 'Domain ID' },
-                    account: { label: 'Account' }
+                    traffictype: { label: 'Traffic type' },     
+                    broadcastdomaintype: { label: 'Broadcast domain type' },                                  
+                    zoneid: { label: 'Zone ID' }                    
                   }
                 ],
 
