@@ -36,6 +36,7 @@ import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -258,4 +259,18 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         
         return orphanList;
 	}
+
+	@Override
+	public ManagementServerHostVO findOneInUpState(Filter filter) {
+	    SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+
+        sc.setParameters("state", ManagementServerHost.State.Up);
+        
+        List<ManagementServerHostVO> mshosts =  listBy(sc, filter);
+        if(mshosts != null && mshosts.size() > 0){
+        	return mshosts.get(0);	
+        }
+        return null;
+	}
+	
 }

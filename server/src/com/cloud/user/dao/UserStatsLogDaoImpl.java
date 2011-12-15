@@ -18,20 +18,13 @@
 
 package com.cloud.user.dao;
 
-import java.util.Date;
-import java.util.List;
+import javax.ejb.Local;
 
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.user.UserStatsLogVO;
+import com.cloud.utils.db.GenericDaoBase;
 
-public interface UserStatisticsDao extends GenericDao<UserStatisticsVO, Long> {
-    UserStatisticsVO findBy(long accountId, long dcId, long networkId, String publicIp, Long deviceId, String deviceType);
-
-    UserStatisticsVO lock(long accountId, long dcId, long networkId, String publicIp, Long hostId, String deviceType);
-
-    List<UserStatisticsVO> listBy(long accountId);
-
-    List<UserStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
-
-	List<UserStatisticsVO> listUpdatedStats();
+@Local(value={UserStatsLogDao.class})
+public class UserStatsLogDaoImpl extends GenericDaoBase<UserStatsLogVO, Long> implements UserStatsLogDao {
+	public UserStatsLogDaoImpl(){
+	}
 }

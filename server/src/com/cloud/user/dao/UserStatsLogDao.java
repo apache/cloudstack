@@ -18,20 +18,8 @@
 
 package com.cloud.user.dao;
 
-import java.util.Date;
-import java.util.List;
-
-import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserStatsLogVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface UserStatisticsDao extends GenericDao<UserStatisticsVO, Long> {
-    UserStatisticsVO findBy(long accountId, long dcId, long networkId, String publicIp, Long deviceId, String deviceType);
-
-    UserStatisticsVO lock(long accountId, long dcId, long networkId, String publicIp, Long hostId, String deviceType);
-
-    List<UserStatisticsVO> listBy(long accountId);
-
-    List<UserStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
-
-	List<UserStatisticsVO> listUpdatedStats();
+public interface UserStatsLogDao extends GenericDao<UserStatsLogVO, Long> {
 }

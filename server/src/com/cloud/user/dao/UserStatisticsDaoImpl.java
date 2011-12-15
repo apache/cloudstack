@@ -43,9 +43,11 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
-    private static final String UPDATE_AGG_STATS = "UPDATE user_statistics set agg_bytes_received = net_bytes_received + current_bytes_received , agg_bytes_sent = net_bytes_sent + current_bytes_sent";
+    private static final String UPDATED_STATS_SEARCH = "SELECT id, current_bytes_received, current_bytes_sent, net_bytes_received, net_bytes_sent, agg_bytes_received, agg_bytes_sent from  user_statistics " +
+    																"where (agg_bytes_received < net_bytes_received + current_bytes_received) OR (agg_bytes_sent < net_bytes_sent + current_bytes_sent)";
     private final SearchBuilder<UserStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
+    
     
     public UserStatisticsDaoImpl() {
     	AccountSearch = createSearchBuilder();
@@ -113,18 +115,23 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         }
         return userStats;
     }
-    
+
     @Override
-    public boolean updateAggStats(){
-    	Transaction txn = Transaction.currentTxn();
+    public List<UserStatisticsVO> listUpdatedStats() {
+        List<UserStatisticsVO> userStats = new ArrayList<UserStatisticsVO>();
+
+        Transaction txn = Transaction.currentTxn();
         try {
-            String sql = UPDATE_AGG_STATS;
             PreparedStatement pstmt = null;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            return pstmt.executeUpdate() > 0;
+            pstmt = txn.prepareAutoCloseStatement(UPDATED_STATS_SEARCH);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                userStats.add(toEntityBean(rs, false));
+            }
         } catch (Exception ex) {
-            s_logger.error("error updating agg user stats", ex);
+            s_logger.error("error lisitng updated user stats", ex);
         }
-        return false;
+        return userStats;
     }
+    
 }

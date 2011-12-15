@@ -2013,4 +2013,17 @@ CREATE TABLE `cloud`.`virtual_router_providers` (
   CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `cloud`.`op_user_stats_log` (
+  `user_stats_id` bigint unsigned NOT NULL,
+  `net_bytes_received` bigint unsigned NOT NULL default '0',
+  `net_bytes_sent` bigint unsigned NOT NULL default '0',
+  `current_bytes_received` bigint unsigned NOT NULL default '0',
+  `current_bytes_sent` bigint unsigned NOT NULL default '0',
+  `agg_bytes_received` bigint unsigned NOT NULL default '0',
+  `agg_bytes_sent` bigint unsigned NOT NULL default '0',
+  `updated` datetime COMMENT 'stats update timestamp',
+  UNIQUE KEY (`user_stats_id`, `updated`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;

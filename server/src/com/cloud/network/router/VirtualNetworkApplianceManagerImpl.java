@@ -78,7 +78,9 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.ManagementServerNode;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
@@ -183,10 +185,12 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserStatsLogVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.user.dao.UserStatsLogDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -196,6 +200,8 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -269,6 +275,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     CapacityDao _capacityDao = null;
     @Inject
+    UserStatsLogDao _userStatsLogDao = null;
+    @Inject
     AgentManager _agentMgr;
     @Inject
     StorageManager _storageMgr;
@@ -332,7 +340,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
-
+    @Inject
+    ManagementServerHostDao _msHostDao;
+    
     int _routerRamSize;
     int _routerCpuMHz;
     int _retry = 2;
@@ -350,7 +360,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
-
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
+    
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
@@ -689,39 +700,39 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean start() {
         if (_routerStatsInterval > 0){
             _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
-
-            //Schedule Network stats update task
-            TimeZone usageTimezone = TimeZone.getTimeZone(_usageTimeZone);
-            Calendar cal = Calendar.getInstance(usageTimezone);
-            cal.setTime(new Date());
-            long endDate = 0;
-            int HOURLY_TIME = 60;
-            final int DAILY_TIME = 60 * 24;
-            if (_usageAggregationRange == DAILY_TIME) {
-                cal.roll(Calendar.DAY_OF_YEAR, false);
-                cal.set(Calendar.HOUR_OF_DAY, 0);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
-                cal.roll(Calendar.DAY_OF_YEAR, true);
-                cal.add(Calendar.MILLISECOND, -1);
-                endDate = cal.getTime().getTime();
-            } else if (_usageAggregationRange == HOURLY_TIME) {
-                cal.roll(Calendar.HOUR_OF_DAY, false);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
-                cal.roll(Calendar.HOUR_OF_DAY, true);
-                cal.add(Calendar.MILLISECOND, -1);
-                endDate = cal.getTime().getTime();
-            } else {
-                endDate = cal.getTime().getTime();
-            }
-
-            _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000), TimeUnit.MILLISECONDS);
         }else{
             s_logger.debug("router.stats.interval - " + _routerStatsInterval+ " so not scheduling the router stats thread");
         }
+
+        //Schedule Network stats update task
+        TimeZone usageTimezone = TimeZone.getTimeZone(_usageTimeZone);
+        Calendar cal = Calendar.getInstance(usageTimezone);
+        cal.setTime(new Date());
+        long endDate = 0;
+        int HOURLY_TIME = 60;
+        final int DAILY_TIME = 60 * 24;
+        if (_usageAggregationRange == DAILY_TIME) {
+        	cal.roll(Calendar.DAY_OF_YEAR, false);
+        	cal.set(Calendar.HOUR_OF_DAY, 0);
+        	cal.set(Calendar.MINUTE, 0);
+        	cal.set(Calendar.SECOND, 0);
+        	cal.set(Calendar.MILLISECOND, 0);
+        	cal.roll(Calendar.DAY_OF_YEAR, true);
+        	cal.add(Calendar.MILLISECOND, -1);
+        	endDate = cal.getTime().getTime();
+        } else if (_usageAggregationRange == HOURLY_TIME) {
+        	cal.roll(Calendar.HOUR_OF_DAY, false);
+        	cal.set(Calendar.MINUTE, 0);
+        	cal.set(Calendar.SECOND, 0);
+        	cal.set(Calendar.MILLISECOND, 0);
+        	cal.roll(Calendar.HOUR_OF_DAY, true);
+        	cal.add(Calendar.MILLISECOND, -1);
+        	endDate = cal.getTime().getTime();
+        } else {
+        	endDate = cal.getTime().getTime();
+        }
+
+        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000), TimeUnit.MILLISECONDS);
         
         if (_routerCheckInterval > 0) {
             _checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _routerCheckInterval, _routerCheckInterval, TimeUnit.SECONDS);
@@ -875,15 +886,49 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         @Override
         public void run() {
-            try{
-                if(_statsDao.updateAggStats()){
-                    s_logger.debug("Succussfully updated aggregate network stats");
-                } else {
-                    s_logger.debug("Failed to update aggregate network stats");
+        	GlobalLock scanLock = GlobalLock.getInternLock("network.stats");
+            try {
+                if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                	//Check for ownership
+                	//msHost in UP state with min id should run the job
+                	ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                	if(msHost == null || (msHost.getMsid() != mgmtSrvrId)){
+                		s_logger.debug("Skipping aggregate network stats update");
+                		scanLock.unlock();
+                		return;
+                	}
+                	Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                    try {
+                    	txn.start();
+                    	//get all stats with delta > 0
+                    	List<UserStatisticsVO> updatedStats = _statsDao.listUpdatedStats();
+                    	Date updatedTime = new Date();
+                    	for(UserStatisticsVO stat : updatedStats){
+                    		//update agg bytes            		
+                    		stat.setAggBytesReceived(stat.getCurrentBytesReceived() + stat.getNetBytesReceived());
+                    		stat.setAggBytesSent(stat.getCurrentBytesSent() + stat.getNetBytesSent());
+                    		_userStatsDao.update(stat.getId(), stat);
+                    		//insert into op_user_stats_log
+                    		UserStatsLogVO statsLog = new UserStatsLogVO(stat.getId(), stat.getNetBytesReceived(), stat.getNetBytesSent(), stat.getCurrentBytesReceived(), 
+                    													 stat.getCurrentBytesSent(), stat.getAggBytesReceived(), stat.getAggBytesSent(), updatedTime);
+                    		_userStatsLogDao.persist(statsLog);
+                    	}
+                    	s_logger.debug("Successfully updated aggregate network stats");
+                    	txn.commit();
+                    } catch (Exception e){
+                    	txn.rollback();
+                        s_logger.debug("Failed to update aggregate network stats", e);
+                    } finally {
+                        scanLock.unlock();
+                        txn.close();
+                    }
                 }
             } catch (Exception e){
-                s_logger.debug("Failed to update aggregate network stats", e);
+                s_logger.debug("Exception while trying to acquire network stats lock", e);
+            }  finally {
+                scanLock.releaseRef();
             }
+           
         }
 
     }

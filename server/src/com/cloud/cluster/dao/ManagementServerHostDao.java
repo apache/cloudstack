@@ -24,6 +24,7 @@ import java.util.List;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDao extends GenericDao<ManagementServerHostVO, Long> {
@@ -44,4 +45,6 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 	
 	List<ManagementServerHostVO> listBy(ManagementServerHost.State...states);
 	public List<Long> listOrphanMsids();
+
+	ManagementServerHostVO findOneInUpState(Filter filter);
 }

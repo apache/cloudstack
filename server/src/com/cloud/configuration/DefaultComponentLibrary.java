@@ -173,6 +173,7 @@ import com.cloud.user.dao.SSHKeyPairDaoImpl;
 import com.cloud.user.dao.UserAccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
+import com.cloud.user.dao.UserStatsLogDaoImpl;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
@@ -226,6 +227,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         info.addParameter("cache.size", "5000");
         info.addParameter("cache.time.to.live", "300");
         addDao("UserStatisticsDao", UserStatisticsDaoImpl.class);
+        addDao("UserStatsLogDao", UserStatsLogDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("LoadBalancerDao", LoadBalancerDaoImpl.class);
         addDao("NetworkRuleConfigDao", NetworkRuleConfigDaoImpl.class);

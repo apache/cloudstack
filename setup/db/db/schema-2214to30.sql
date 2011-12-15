@@ -485,3 +485,14 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
 
 UPDATE `cloud`.`configuration` set value='true' where name='firewall.rule.ui.enabled';
+CREATE TABLE  `cloud`.`op_user_stats_log` (
+  `user_stats_id` bigint unsigned NOT NULL,
+  `net_bytes_received` bigint unsigned NOT NULL default '0',
+  `net_bytes_sent` bigint unsigned NOT NULL default '0',
+  `current_bytes_received` bigint unsigned NOT NULL default '0',
+  `current_bytes_sent` bigint unsigned NOT NULL default '0',
+  `agg_bytes_received` bigint unsigned NOT NULL default '0',
+  `agg_bytes_sent` bigint unsigned NOT NULL default '0',
+  `updated` datetime COMMENT 'stats update timestamp',
+  UNIQUE KEY (`user_stats_id`, `updated`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
