@@ -219,7 +219,36 @@
               action: {
                 noAdd: true,
                 custom: cloudStack.uiCustom.enableStaticNAT({
-                  listView: cloudStack.sections.instances,
+                  listView: $.extend(true, {}, cloudStack.sections.instances, {
+                    listView: {
+                      dataProvider: function(args) {
+                        $.ajax({
+                          url: createURL('listVirtualMachines'),
+                          data: {
+                            networkid: args.context.networks[0].id
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(data) {
+                            args.response.success({
+                              data: $.grep(
+                                data.listvirtualmachinesresponse.virtualmachine ?
+                                  data.listvirtualmachinesresponse.virtualmachine : [],
+                                function(instance) {
+                                  return $.inArray(instance.state, [
+                                    'Destroyed'
+                                  ]) == -1;
+                                }
+                              )
+                            });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
+                          }
+                        });
+                      }
+                    }
+                  }),
                   action: function(args) {
                     $.ajax({
                       url: createURL('enableStaticNat'),
@@ -525,7 +554,36 @@
                 action: {
                   noAdd: true,
                   custom: cloudStack.uiCustom.enableStaticNAT({
-                    listView: cloudStack.sections.instances,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              networkid: args.context.networks[0].id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              args.response.success({
+                                data: $.grep(
+                                  data.listvirtualmachinesresponse.virtualmachine ?
+                                    data.listvirtualmachinesresponse.virtualmachine : [],
+                                  function(instance) {
+                                    return $.inArray(instance.state, [
+                                      'Destroyed'
+                                    ]) == -1;
+                                  }
+                                )
+                              });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
+                            }
+                          });
+                        }
+                      }
+                    }),
                     action: function(args) {
                       $.ajax({
                         url: createURL('enableStaticNat'),

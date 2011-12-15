@@ -2,15 +2,17 @@
   cloudStack.uiCustom.enableStaticNAT = function(args) {
     var listView = args.listView;
     var action = args.action;
-    
+
     return function(args) {
       var context = args.context;
       var $instanceRow = args.$instanceRow;
+
       var vmList = function(args) {
         // Create a listing of instances, based on limited information
         // from main instances list view
         var $listView;
         var instances = $.extend(true, {}, args.listView, {
+          context: context,
           uiCustom: true
         });
 
