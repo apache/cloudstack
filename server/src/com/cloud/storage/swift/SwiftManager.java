@@ -28,6 +28,8 @@ import java.util.List;
 
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
+import com.cloud.api.commands.DeleteIsoCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.utils.component.Manager;
@@ -42,4 +44,8 @@ public interface SwiftManager extends Manager {
     boolean isSwiftEnabled();
 
     public boolean isTemplateInstalled(Long templateId);
+
+    void deleteIso(DeleteIsoCmd cmd);
+
+    void deleteTemplate(DeleteTemplateCmd cmd);
 }

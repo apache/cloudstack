@@ -33,8 +33,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
+import com.cloud.api.commands.DeleteIsoCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.DiscoveryException;
@@ -47,6 +52,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 
@@ -63,6 +69,8 @@ public class SwiftManagerImpl implements SwiftManager {
     VMTemplateSwiftDao _vmTmpltSwiftlDao;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private AgentManager _agentMgr;
 
     @Override
     public SwiftTO getSwiftTO(Long swiftId) {
@@ -116,6 +124,59 @@ public class SwiftManagerImpl implements SwiftManager {
 
         return true;
     }
+
+    @Override
+    public void deleteIso(DeleteIsoCmd cmd) {
+        String msg;
+        SwiftTO swift = getSwiftTO();
+        if (swift == null) {
+            msg = "There is no Swift in this setup";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        VMTemplateSwiftVO tmpltSwiftRef = _vmTmpltSwiftlDao.findBySwiftTemplate(swift.getId(), cmd.getId());
+        if ( tmpltSwiftRef == null ) {
+           msg = "Delete ISO failed due to  cannot find ISO " + cmd.getId() + " in Swift ";
+           s_logger.warn(msg);
+           throw new CloudRuntimeException(msg);
+        }
+        Answer answer = _agentMgr.sendToSSVM(null, new DeleteObjectFromSwiftCommand(swift, "T-" + cmd.getId(), null));
+        if (answer == null || !answer.getResult()) {
+            msg = "Failed to delete " + tmpltSwiftRef + " due to " + ((answer == null) ? "answer is null" : answer.getDetails());
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        } else {
+            _vmTmpltSwiftlDao.remove(tmpltSwiftRef.getId());
+            s_logger.debug("Deleted template " + cmd.getId() + " in Swift");
+        }
+    }
+
+    @Override
+    public void deleteTemplate(DeleteTemplateCmd cmd) {
+        String msg;
+        SwiftTO swift = getSwiftTO();
+        if (swift == null) {
+            msg = "There is no Swift in this setup";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        VMTemplateSwiftVO tmpltSwiftRef = _vmTmpltSwiftlDao.findBySwiftTemplate(swift.getId(), cmd.getId());
+        if (tmpltSwiftRef == null) {
+            msg = "Delete Template failed due to cannot find Template" + cmd.getId() + " in Swift ";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Answer answer = _agentMgr.sendToSSVM(null, new DeleteObjectFromSwiftCommand(swift, "T-" + cmd.getId(), null));
+        if (answer == null || !answer.getResult()) {
+            msg = "Failed to delete " + tmpltSwiftRef + " due to " + ((answer == null) ? "answer is null" : answer.getDetails());
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        } else {
+            _vmTmpltSwiftlDao.remove(tmpltSwiftRef.getId());
+            s_logger.debug("Deleted template " + cmd.getId() + " in Swift");
+        }
+    }
+
 
     @Override
     public boolean stop() {

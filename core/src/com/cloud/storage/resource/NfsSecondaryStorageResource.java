@@ -41,6 +41,7 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -158,6 +159,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
             return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
+            return execute((DeleteObjectFromSwiftCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -211,6 +214,29 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.warn(errMsg, e);
             return new Answer(cmd, false, errMsg);
         }
+    }
+
+    private Answer execute(DeleteObjectFromSwiftCommand cmd) {
+        SwiftTO swift = cmd.getSwift();
+        String container = cmd.getContainer();
+        String object = cmd.getObject();
+        if (object == null) {
+            object = "";
+        }
+        try {
+            String result = swiftDelete(swift, container, object);
+            if (result != null) {
+                String errMsg = "failed to delete object " + container + "/" + object + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+
     }
 
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
@@ -277,12 +303,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    String swiftDelete(SwiftTO swift, String container, String rFilename) {
+    String swiftDelete(SwiftTO swift, String container, String object) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
                 + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
-                + " delete " + container + " " + rFilename);
+ + " delete " + container + " " + object);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -489,7 +515,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 } else {
                     filename = name;
                 }
-                String result = swiftDelete(swift, volumeId.toString(), filename);
+                String result = swiftDelete(swift, "V-" + volumeId.toString(), filename);
                 if (result != null) {
                     String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
                     s_logger.warn(errMsg);

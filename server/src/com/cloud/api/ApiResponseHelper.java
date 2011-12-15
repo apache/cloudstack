@@ -1750,7 +1750,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());
         templateResponse.setDetails(template.getDetails());
-        templateResponse.setZoneId(-1L);
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
@@ -1970,7 +1969,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setChecksum(iso.getChecksum());
         isoResponse.setDetails(iso.getDetails());
-        isoResponse.setZoneId(-1L);
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());

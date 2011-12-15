@@ -1109,6 +1109,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
+        if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
+            _swiftMgr.deleteTemplate(cmd);
+        }
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
     	boolean result = adapter.delete(profile);
@@ -1137,7 +1140,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}
-    	
+        if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
+            _swiftMgr.deleteIso(cmd);
+    	}
     	if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
