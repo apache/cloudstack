@@ -519,20 +519,7 @@
                       <input type="text" name="networkdomain" />
                     </div>
                   </div>
-
-                  <div class="conditional vlan">
-                    <!-- Guest CIDR -->
-                    <div class="field">
-                      <div class="name">
-                        <span>Guest CIDR</span>
-                      </div>
-                      <div class="value">
-                        <input type="text" name="guest-cidr" class="required"
-                               value="10.1.1.0/24" />
-                      </div>
-                    </div>
-                  </div>
-
+                 
                   <!-- Public -->
                   <div class="field">
                     <div class="name">

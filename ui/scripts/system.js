@@ -2784,17 +2784,7 @@
                         array1.push("&internaldns2=" + todb(internaldns2));
 
                       if(networktype == "Advanced") {
-                        //if(args.data["isolation-mode"] == "security-groups") {
-                        //  array1.push("&securitygroupenabled=true");
-                        //}
-                        //else { //args.data["isolation-mode"] == "vlan"
-                          array1.push("&securitygroupenabled=false");
-
-                          var guestcidraddress = args.data["guest-cidr"];
-                          if(guestcidraddress != null && guestcidraddress.length > 0) {
-                            array1.push("&guestcidraddress="+todb(guestcidraddress));
-                          }
-                        //}
+                        array1.push("&securitygroupenabled=false");  
                       }
 
                       if(args.data["public"] == null) //public checkbox is unchecked
