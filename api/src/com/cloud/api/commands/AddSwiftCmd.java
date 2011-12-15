@@ -94,7 +94,7 @@ public class AddSwiftCmd extends BaseCmd {
             if (result != null) {
                 swiftResponse = _responseGenerator.createSwiftResponse(result);
                 swiftResponse.setResponseName(getCommandName());
-                swiftResponse.setObjectName("Swift");
+                swiftResponse.setObjectName("swift");
                 this.setResponseObject(swiftResponse);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Swift");
