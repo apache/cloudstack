@@ -19,6 +19,7 @@
 
 package com.cloud.network.resource;
 
+import java.util.List;
 import java.util.Map;
 import javax.naming.ConfigurationException;
 import com.cloud.agent.IAgentControl;
@@ -41,15 +42,17 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
+import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
-import com.vmware.vim25.VirtualMachinePowerState;
 
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.resource.base.base_response;
@@ -401,7 +404,7 @@ public class NetscalerResource implements ServerResource {
                 if (!loadBalancer.isRevoked() && destinationsToAdd) {
 
                     // create a load balancing virtual server
-                    addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbAlgorithm, lbProtocol);
+                    addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbAlgorithm, lbProtocol, loadBalancer.getStickinessPolicies());
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Created load balancing virtual server " + nsVirtualServerName + " on the Netscaler device");
                     }
@@ -889,27 +892,27 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private void addLBVirtualServer(String virtualServerName, String srcIp, int srcPort, String lbMethod, String lbProtocol) throws ExecutionException {
+    private void addLBVirtualServer(String virtualServerName, String srcIp, int srcPort, String lbMethod, String lbProtocol, StickinessPolicyTO[] stickyPolicies) throws ExecutionException {
         try {
 
             if (lbProtocol == null) {
                 lbProtocol = "TCP";
-            } else if (lbProtocol.equals(NetUtils.TCP_PROTO)){
+            } else if (NetUtils.TCP_PROTO.equalsIgnoreCase(lbProtocol)) {
                 lbProtocol = "TCP";
-            } else if (lbProtocol.equals(NetUtils.UDP_PROTO)) {
+            } else if (NetUtils.UDP_PROTO.equalsIgnoreCase(lbProtocol)) {
                 lbProtocol = "UDP";
             } else {
-                throw new ExecutionException("Got invalid protocol: " + lbProtocol);
+                throw new ExecutionException("Got invalid protocol: " + lbProtocol + " in the  load balancer rule");
             }
 
-            if (lbMethod.equals("roundrobin")) {
+            if ("roundrobin".equalsIgnoreCase(lbMethod)) {
                 lbMethod = "ROUNDROBIN";
-            } else if (lbMethod.equals("leastconn")) {
+            } else if ("leastconn".equalsIgnoreCase(lbMethod)) {
                 lbMethod = "LEASTCONNECTION";
-            } else if (lbMethod.equals("source")) {
+            } else if ("source".equalsIgnoreCase(lbMethod)) {
                 lbMethod = "SOURCEIPHASH";
             } else {
-                throw new ExecutionException("Got invalid load balancing algorithm: " + lbMethod);
+                throw new ExecutionException("Got invalid load balancing algorithm: " + lbMethod + " in the load balancing rule");
             }
 
             boolean vserverExisis = false;
@@ -924,6 +927,44 @@ public class NetscalerResource implements ServerResource {
             vserver.set_port(srcPort);
             vserver.set_servicetype(lbProtocol);
             vserver.set_lbmethod(lbMethod);
+
+            if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
+                long timeout = 2;// netscaler default 2 min
+                String cookieName = null;
+                StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
+
+                // get the session persistence parameters
+                List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
+                for(Pair<String,String> param : paramsList) {
+                    if ("holdtime".equalsIgnoreCase(param.first())) {
+                        timeout = Long.parseLong(param.second()); 
+                    } else if ("name".equalsIgnoreCase(param.first())) {
+                    	cookieName = param.second();
+                    }
+                }
+
+                // configure virtual server based on the persistence method
+                if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    vserver.set_persistencetype("COOKIEINSERT");
+                    vserver.set_servicetype("HTTP");
+                } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    vserver.set_persistencetype("SOURCEIP");
+                } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    vserver.set_persistencetype("RULE");
+                    vserver.set_rule("HTTP.REQ.HEADER(\"COOKIE\").VALUE(0).typecast_nvlist_t('=',';').value(\"" + cookieName + "\")");
+                    vserver.set_resrule("HTTP.RES.HEADER(\"SET-COOKIE\").VALUE(0).typecast_nvlist_t('=',';').value(\"" + cookieName + "\")");
+                } else {
+                    throw new ExecutionException("Got invalid session persistence method: " + stickinessPolicy.getMethodName() + " in the load balancing rule");
+                }
+
+                // set session persistence timeout
+                vserver.set_timeout(timeout);
+            } else {
+                if (vserver.get_persistencetype() != null) {
+                    // delete the LB stickyness policy
+                    vserver.set_persistencetype("NONE");
+                }
+            }
 
             if (vserverExisis) {
                 apiCallResult = lbvserver.update(_netscalerService,vserver);

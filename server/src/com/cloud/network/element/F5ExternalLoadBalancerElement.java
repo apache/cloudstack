@@ -73,6 +73,8 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.resource.F5BigIpResource;
+import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
@@ -82,6 +84,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.google.gson.Gson;
 
 @Local(value=NetworkElement.class)
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
@@ -183,7 +186,21 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
          
          // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
          lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
-         
+
+         LbStickinessMethod method;
+         List <LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
+         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased,"This is cookie based sticky method, can be used only for http");
+         methodList.add(method);
+         method.addParam("holdtime", false, "time period for which persistence is in effect.",false);
+
+         method = new LbStickinessMethod(StickinessMethodType.SourceBased,"This is source based sticky method, can be used for any type of protocol.");
+         methodList.add(method);
+         method.addParam("holdtime", false, "time period for which persistence is in effect.",false);
+
+         Gson gson = new Gson();
+         String stickyMethodList = gson.toJson(methodList);
+         lbCapabilities.put(Capability.SupportedStickinessMethods,stickyMethodList);
+
          capabilities.put(Service.Lb, lbCapabilities);
          
          return capabilities;

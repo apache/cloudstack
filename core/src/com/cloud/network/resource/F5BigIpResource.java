@@ -625,16 +625,17 @@ public class F5BigIpResource implements ServerResource {
 				}
 			}
 
-			if ((stickyPolicies != null) && (stickyPolicies[0] != null)){
-				StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
-				if (stickinessPolicy.getMethodName().equalsIgnoreCase(StickinessMethodType.LBCookieBased.getName())) {
-					_virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("cookie"));
-				} else  if (stickinessPolicy.getMethodName().equalsIgnoreCase(StickinessMethodType.SourceBased.getName())) {
-					_virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("source_addr"));
-				}
-			} else {
-				_virtualServerApi.remove_all_persistence_profiles(genStringArray(virtualServerName));
-			}
+            if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
+                StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
+                if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    _virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("cookie"));
+                } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    _virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("source_addr"));
+                }
+            } else {
+                _virtualServerApi.remove_all_persistence_profiles(genStringArray(virtualServerName));
+            }
+
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
 		}

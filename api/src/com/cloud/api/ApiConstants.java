@@ -99,7 +99,6 @@ public class ApiConstants {
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
-    public static final String IS_LB_SHARED = "islbshared";
     public static final String ISO_FILTER = "isofilter";
     public static final String ISO_GUEST_OS_NONE = "None";
     public static final String JOB_ID = "jobid";
@@ -262,7 +261,6 @@ public class ApiConstants {
     public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
     public static final String IP_NETWORK_LIST = "iptonetworklist";
     public static final String PARAM_LIST = "param";
-    public static final String REDUNDANT_ROUTER = "redundantrouter";
     public static final String FOR_LOAD_BALANCING = "forloadbalancing";
     public static final String KEYBOARD="keyboard";
     public static final String OPEN_FIREWALL="openfirewall";
@@ -303,7 +301,6 @@ public class ApiConstants {
     public static final String SUPPORTED_SERVICES = "supportedservices";
     public static final String NSP_ID= "nspid";
     public static final String ACL_TYPE= "acltype";
-    public static final String IS_SOURCE_NAT_SHARED = "isshared";
     public static final String SUBDOMAIN_ACCESS = "subdomainaccess";
     public static final String LOAD_BALANCER_DEVICE_ID = "lbdeviceid";
     public static final String LOAD_BALANCER_DEVICE_NAME = "lbdevicename";
