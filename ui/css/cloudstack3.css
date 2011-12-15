@@ -2753,7 +2753,7 @@ Dialogs*/
 
 /*** Create form*/
 .ui-dialog div.form-container {
-  width: 100% !important;
+  width: 94% !important;
   height: 106px;
   text-align: left;
   display: inline-block;
