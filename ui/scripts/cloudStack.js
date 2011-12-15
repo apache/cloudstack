@@ -56,6 +56,7 @@
         g_mySession = $.cookie("JSESSIONID");
         g_sessionKey = $.cookie("sessionKey");
         g_role = $.cookie("role");
+        g_type = $.cookie("type");
         g_username = $.cookie("username");
         g_account = $.cookie("account");
         g_domainid = $.cookie("domainid");
@@ -89,9 +90,9 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            /* g_supportELB: "guest"   â€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+            /* g_supportELB: "guest"   à¥ˆ€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
              * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-             * g_supportELB: "false"   â€“ no ELB support
+             * g_supportELB: "false"   à¥ˆ€“ no ELB support
              */
             g_capabilities = json.listcapabilitiesresponse.capability;
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
@@ -127,6 +128,7 @@
             account: g_account,
             name: g_userfullname,
             role: g_role,
+            type: g_type,
             domainid: g_domainid
           }
         } : false;
@@ -169,6 +171,7 @@
             g_mySession = $.cookie('JSESSIONID');
             g_sessionKey = encodeURIComponent(loginresponse.sessionkey);
             g_role = loginresponse.type;
+            g_type = loginresponse.type;
             g_username = loginresponse.username;
             g_userid = loginresponse.userid;
             g_account = loginresponse.account;
@@ -182,6 +185,7 @@
             $.cookie('account', g_account, { expires: 1});
             $.cookie('domainid', g_domainid, { expires: 1});
             $.cookie('role', g_role, { expires: 1});
+            $.cookie('type', g_type, { expires: 1});
             $.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});
             $.cookie('timezone', g_timezone, { expires: 1});
             $.cookie('userfullname', g_userfullname, { expires: 1 });
@@ -218,7 +222,8 @@
                   data: {
                     user: $.extend(true, {}, loginresponse, {
                       name: loginresponse.firstname + ' ' + loginresponse.lastname,
-                      role: loginresponse.type == 1 ? 'admin' : 'user'
+                      role: loginresponse.type == 1 ? 'admin' : 'user',
+                      type: loginresponse.type
                     })
                   }
                 });
