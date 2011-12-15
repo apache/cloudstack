@@ -147,11 +147,7 @@
                   {
                     id: { label: "ID" },
                     broadcastdomaintype: { label: 'Broadcast domain type' },
-                    traffictype: { label: 'Traffic type' },
-                    gateway: { label: 'Gateway' },
-                    netmask: { label: 'Netmask' },
-                    startip: { label: 'Start IP' },
-                    endip: { label: 'End IP' },
+                    traffictype: { label: 'Traffic type' },                   
                     zoneid: { label: 'Zone ID' },
                     networkofferingid: { label: 'Network offering ID' },
                     networkofferingname: { label: 'Network offering name' },
