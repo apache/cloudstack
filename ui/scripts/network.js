@@ -1063,6 +1063,7 @@
                         $.ajax({
                           url: createURL('createLoadBalancerRule'),
                           data: $.extend(args.data, {
+                            openfirewall: false,
                             publicipid: args.context.ipAddresses[0].id
                           }),
                           dataType: 'json',
@@ -1246,6 +1247,7 @@
                         $.ajax({
                           url: createURL('createPortForwardingRule'),
                           data: $.extend(args.data, {
+                            openfirewall: false,
                             ipaddressid: args.context.ipAddresses[0].id,
                             virtualmachineid: args.itemData[0].id
                           }),
