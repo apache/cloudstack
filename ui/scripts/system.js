@@ -351,27 +351,18 @@
             }
           }
         },
+        
         'guest': {
           detailView: {
             actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) {
-                  $.ajax({
-                    url: createURL("updateZone&id=" + args.context.zones[0].id + "&guestcidraddress=" + todb(args.data.guestcidraddress)),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
-                    }
-                  });
-
+                action: function(args) { 
                   var vlan;
                   if(args.data.endVlan == null || args.data.endVlan.length == 0)
                     vlan = args.data.startVlan;
                   else
                     vlan = args.data.startVlan + "-" + args.data.endVlan;
-
                   $.ajax({
                     url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(vlan)),
                     dataType: "json",
@@ -396,10 +387,7 @@
                   }
                   return hiddenFields;
                 },
-                fields: [
-                  {
-                    name: { label: 'Name' }
-                  },
+                fields: [                  
                   {
                     id: { label: 'ID' },
                     state: { label: 'State' },
@@ -413,16 +401,10 @@
                     },
 
                     broadcastdomainrange: { label: 'Broadcast domain range' },
-                    zoneid: { label: 'Zone ID' },
-                    guestcidraddress: {
-                      label: 'CIDR',
-                      isEditable: true
-                    }
+                    zoneid: { label: 'Zone ID' }
                   }
                 ],
-                dataProvider: function(args) {
-                  selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;
-
+                dataProvider: function(args) {                  
                   var startVlan, endVlan;
                   var vlan = selectedPhysicalNetworkObj.vlan;
 
