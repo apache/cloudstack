@@ -90,9 +90,9 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            /* g_supportELB: "guest"   à¥ˆ€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+            /* g_supportELB: "guest"   à¥†à¤†ˆ€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
              * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-             * g_supportELB: "false"   à¥ˆ€“ no ELB support
+             * g_supportELB: "false"   à¥†à¤†ˆ€“ no ELB support
              */
             g_capabilities = json.listcapabilitiesresponse.capability;
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
@@ -271,7 +271,7 @@
           context: context,
           response: {
             success: function(args) {
-              if (args.doInstall) {
+              if (args.doInstall && cloudStack.context.users[0].role == 'admin') {
                 cloudStack.uiCustom.installWizard({
                   $container: $container,
                   context: context,
