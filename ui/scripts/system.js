@@ -5738,8 +5738,11 @@
                   url: createURL("addHost" + array1.join("")),
                   dataType: "json",
                   success: function(json) {
-                    var item = json.addhostresponse.host[0];
-                    args.response.success({data: item});
+                    var item = json.addhostresponse.host[0];                   
+                    args.response.success({
+                      actionFilter: hostActionfilter, //Brian, hostActionfilter() is not being applied here. Please fix widget code to apply actionFilter for a newly created host
+                      data: item
+                    });
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -5773,10 +5776,10 @@
                     args.response.success(
                       {_custom:
                        {jobId: jid,
-                        getUpdatedItem: function(json) {
+                        getUpdatedItem: function(json) {                         
                           return json.queryasyncjobresultresponse.jobresult.host;
                         },
-                        getActionFilter: function() {
+                        getActionFilter: function() {                         
                           return hostActionfilter;
                         }
                        }
@@ -7751,7 +7754,7 @@
     return allowedActions;
   }
 
-  var hostActionfilter = function(args) {
+  var hostActionfilter = function(args) {   
     var jsonObj = args.context.item;
     var allowedActions = [];
 
