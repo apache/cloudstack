@@ -1060,10 +1060,13 @@
                     add: {
                       label: 'Add VMs',
                       action: function(args) {
+                        var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+
                         $.ajax({
                           url: createURL('createLoadBalancerRule'),
+
                           data: $.extend(args.data, {
-                            openfirewall: false,
+                            openfirewall: openFirewall,
                             publicipid: args.context.ipAddresses[0].id
                           }),
                           dataType: 'json',
@@ -1244,10 +1247,13 @@
                     add: {
                       label: 'Add VM',
                       action: function(args) {
+                        var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+
                         $.ajax({
                           url: createURL('createPortForwardingRule'),
+
                           data: $.extend(args.data, {
-                            openfirewall: false,
+                            openfirewall: openFirewall,
                             ipaddressid: args.context.ipAddresses[0].id,
                             virtualmachineid: args.itemData[0].id
                           }),
