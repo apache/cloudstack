@@ -1623,15 +1623,30 @@
             multiple: true,
             fields: [
               {
-                id: { label: 'ID' },
+                name: { label: 'Name', header: true },
                 ipaddress: { label: 'IP Address' },
                 type: { label: 'Type' },
                 gateway: { label: 'Default gateway' },
-                netmask: { label: 'Netmask' }
+                netmask: { label: 'Netmask' },
+                isdefault: {
+                  label: 'Default',
+                  converter: function(data) {
+                    return data ? 'Yes' : 'No';
+                  }
+                }
               }
             ],
             dataProvider: function(args) {              
-              args.response.success({data: args.context.instances[0].nic});
+              args.response.success({data: $.map(args.context.instances[0].nic, function(nic, index) {
+                var name = 'NIC ' + (index + 1);
+
+                if (nic.isdefault) {
+                  name += ' (Default)';
+                }
+                return $.extend(nic, {
+                  name: name
+                });
+              })});
             }
           },
                     

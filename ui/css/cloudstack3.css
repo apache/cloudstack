@@ -1268,6 +1268,11 @@ div.list-view td.state.off span {
   border-top: none;
 }
 
+.details.group-multiple table.header {
+  width: 94%;
+  margin-bottom: 1px;
+}
+
 .details.group-multiple table tbody {
   border-top: 1px solid #F2F0F0;
 }
@@ -1324,7 +1329,7 @@ div.list-view td.state.off span {
 }
 
 div.group-multiple div.detail-group table {
-  margin-top: -12px;
+  margin-top: -1px;
 }
 
 div.group-multiple div.detail-group table.header {
