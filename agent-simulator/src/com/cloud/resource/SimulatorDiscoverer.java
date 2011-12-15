@@ -264,7 +264,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
     	
-        if(forRebalance)
+        /*if(forRebalance)
     		return;
         if ( Host.Type.SecondaryStorage == host.getType() ) {
             List<VMTemplateVO> tmplts = _vmTemplateDao.listAll();
@@ -280,7 +280,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
                     _vmTemplateHostDao.update(vmTemplateHost.getId(), vmTemplateHost);
                 }
             }
-        }
+        }*/
         
     }
 
