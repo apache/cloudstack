@@ -2047,7 +2047,8 @@ div.toolbar div.button.search:hover {
 div.toolbar div.button.add,
 div.toolbar div.button.refresh,
 div.toolbar div.button.add,
-div.toolbar div.button.main-action {
+div.toolbar div.button.main-action,
+.toolbar div.button.header-action {
   /*+placement:shift 0px 5px;*/
   position: relative;
   left: 0px;
@@ -2077,7 +2078,8 @@ div.toolbar div.button.main-action {
 
 div.toolbar div.button.add:hover,
 div.toolbar div.button.refresh:hover,
-div.toolbar div.button.main-action:hover {
+div.toolbar div.button.main-action:hover,
+.toolbar div.button.header-action:hover {
   background-position: 0 -132px;
   border-left: 1px solid #585D60;
 }
@@ -7056,12 +7058,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .create .icon,
-.createTemplate .icon {
+.createTemplate .icon,
+.enableSwift .icon {
   background-position: -69px -63px;
 }
 
 .create:hover .icon,
-.createTemplate:hover .icon {
+.createTemplate:hover .icon,
+.enableSwift:hover .icon {
   background-position: -69px -645px;
 }
 

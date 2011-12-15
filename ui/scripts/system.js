@@ -3012,6 +3012,60 @@
                 }
               },
 
+              // Enable swift
+              enableSwift: {
+                label: 'Configure Swift',
+                isHeader: true,
+                preFilter: function(args) {
+                  var swiftEnabled = false;
+                  
+                  $.ajax({
+                    url: createURL('listConfigurations'),
+                    data: {
+                      name: 'swift.enable'
+                    },
+                    async: false,
+                    success: function(json) {
+                      swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' ?
+                        true : false;
+                    }
+                  });
+                  
+                  return swiftEnabled;
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Enabled Swift support';
+                  }
+                },
+                createForm: {
+                  desc: 'Please fill in the following information to enable support for Swift',
+                  fields: {
+                    url: { label: 'URL', validation: { required: true } },
+                    account: { label: 'Account' },
+                    username: { label: 'Username' },
+                    key: { label: 'Key' }
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('addSwift'),
+                    data: {
+                      url: args.data.url,
+                      account: args.data.account,
+                      username: args.data.username,
+                      key: args.data.key
+                    },
+                    success: function(json) {
+                      args.response.success();
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                }
+              },
+
               enable: {
                 label: 'Enable zone',
                 messages: {
@@ -7602,7 +7656,7 @@
   //action filters (begin)
   var zoneActionfilter = function(args) {
     var jsonObj = args.context.item;
-    var allowedActions = [];
+    var allowedActions = ['enableSwift'];
     allowedActions.push("edit");
     if(jsonObj.allocationstate == "Disabled")
       allowedActions.push("enable");

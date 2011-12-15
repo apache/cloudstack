@@ -278,6 +278,7 @@
         performAction();
       else {
         var addRow = args.action.addRow == "false" ? false : true;
+        var isHeader = args.action.isHeader;
         var createFormContext = $.extend({}, context);
 
         if (args.action.createForm) {
@@ -285,26 +286,35 @@
             form: args.action.createForm,
             after: function(args) {
               var $newItem;
-              if (addRow != false) {
-                $newItem = $listView.listView('prependItem', {
-                  data: [
-                    $.extend(args.data, {
-                      state: 'Creating',
-                      status: 'Creating',
-                      allocationstate: 'Creating'
-                    })
-                  ]
+
+              if (!isHeader) {
+                if (addRow != false) {
+                  $newItem = $listView.listView('prependItem', {
+                    data: [
+                      $.extend(args.data, {
+                        state: 'Creating',
+                        status: 'Creating',
+                        allocationstate: 'Creating'
+                      })
+                    ]
+                  });
+                } else {
+                  $newItem = $instanceRow;
+                }
+
+                performAction(args.data, {
+                  ref: args.ref,
+                  context: createFormContext,
+                  $item: $newItem,
+                  $form: args.$form
                 });
               } else {
-                $newItem = $instanceRow;
+                performAction(args.data, {
+                  ref: args.ref,
+                  context: createFormContext,
+                  $form: args.$form
+                });
               }
-
-              performAction(args.data, {
-                ref: args.ref,
-                context: createFormContext,
-                $item: $newItem,
-                $form: args.$form
-              });
             },
             ref: listViewArgs.ref,
             context: createFormContext
@@ -314,7 +324,7 @@
             message: messages.confirm(messageArgs),
             action: function() {
               var $newItem;
-              if (addRow != false) {
+              if (addRow != false && !action.isHeader) {
                 $newItem = $listView.listView('prependItem', {
                   data: [
                     $.extend(args.data, {
@@ -324,6 +334,8 @@
                     })
                   ]
                 });
+              } else if (action.isHeader) {
+                $newItem = $('<div>');
               } else {
                 $newItem = $instanceRow;
               }
@@ -602,7 +614,7 @@
     var allowedActions = options.allowedActions;
 
     $.each(actions, function(actionName, action) {
-      if (actionName == 'add')
+      if (actionName == 'add' || action.isHeader)
         return true;
 
       if (action.type == 'radio') {
@@ -943,7 +955,7 @@
             $table.dataTable(null, { noSelect: uiCustom });
 
             setTimeout(function() {
-              $table.dataTable('refresh');              
+              $table.dataTable('refresh');
             });
           },
           error: function(args) {
@@ -1104,6 +1116,28 @@
         );
     }
 
+    // List view header actions
+    if (listViewData.actions) {
+      $.each(listViewData.actions, function(actionName, action) {
+        if (!action.isHeader || (
+          action.preFilter && !action.preFilter({
+            context: listViewData.context ? listViewData.context : cloudStack.context
+          })
+        )) return true;
+
+        $toolbar
+          .append(
+            $('<div>')
+              .addClass('button action main-action reduced-hide').addClass(actionName)
+              .data('list-view-action-id', actionName)
+              .append($('<span>').addClass('icon'))
+              .append($('<span>').html(action.label))
+          );
+
+        return true;
+      });
+    }
+
     $('<tbody>').appendTo($table);
 
     createHeader(listViewData.fields, $table, actions, { reorder: reorder });
@@ -1208,7 +1242,7 @@
       infScrollTimer = setTimeout(function() {
         var loadMoreData = $listView.scrollTop() >= ($table.height() - $listView.height()) - $listView.height() / 4;
         var context = $listView.data('view-args').context;
-        
+
         if (loadMoreData) {
           page = page + 1;
 
@@ -1292,7 +1326,8 @@
       // Action icons
       if (!$target.closest('td.actions').hasClass('reorder') &&
           ($target.closest('td.actions').size() ||
-           $target.closest('.action.add').size())) {
+           $target.closest('.action.add').size() ||
+           $target.closest('.action.main-action').size())) {
         var actionID = $target.closest('.action').data('list-view-action-id');
         var $tr;
 
@@ -1300,7 +1335,8 @@
           return false;
         }
 
-        if ($target.closest('.action.add').size()) {
+        if ($target.closest('.action.add').size() ||
+            $target.closest('.action.main-action').size()) {
           $tr = $target.closest('div.list-view').find('tr:first'); // Dummy row
         } else {
           $tr = $target.closest('tr');
