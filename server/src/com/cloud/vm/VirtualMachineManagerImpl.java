@@ -1610,27 +1610,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         }
         
-
-        final List<? extends VMInstanceVO> vmsz = _vmDao.listByHostId(hostId);
-        s_logger.debug("Found " + vmsz.size() + " VMs for host " + hostId);
-        for (VMInstanceVO vm : vmsz) {
-            AgentVmInfo info = infos.remove(vm.getId());
-            VMInstanceVO castedVm = null;
-            if (info == null) {
-                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                castedVm = info.guru.findById(vm.getId());
-            } else {
-                castedVm = info.vm;
-            }
-
-            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-
-            Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
-            if (command != null) {
-                commands.addCommand(command);
-            }
-        }
-
         for (final AgentVmInfo left : infos.values()) {
             boolean found = false;
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
