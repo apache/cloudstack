@@ -1,22 +1,32 @@
 (function($, cloudStack) {
   cloudStack.uiCustom.dashboard = function() {
-    var $dashboard = $('#template').find('div.dashboard.admin').clone();
+    // Determine if user or admin dashboard should be shown
+    var dashboardType = cloudStack.sections.dashboard.adminCheck({
+      context: cloudStack.context
+    }) ? 'admin' : 'user';
 
+    // Get dashboard layout
+    var $dashboard = $('#template').find('div.dashboard.' + dashboardType).clone();
+
+    // View all action
     $dashboard.find('.view-all').click(function() {
       $('#navigation li.events').click();
     });
 
+    // Retrieve data
     var getData = function() {
       // Populate data
       $dashboard.find('[data-item]').hide();
-      cloudStack.sections.dashboard.dataProvider({
+      cloudStack.sections.dashboard[dashboardType].dataProvider({
         response: {
           success: function(args) {
             var data = args.data;
 
+            // Iterate over data; populate corresponding DOM elements
             $.each(data, function(key, value) {
               var $elem = $dashboard.find('[data-item=' + key + ']');
 
+              // This assumes an array of data
               if ($elem.is('ul')) {
                 $elem.show();
                 var $liTmpl = $elem.find('li').remove();
@@ -53,5 +63,5 @@
     getData();
 
     return $dashboard;
-  }
+  };
 }(jQuery, cloudStack));

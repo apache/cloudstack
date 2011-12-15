@@ -1008,15 +1008,15 @@
             <ul>
               <li class="running">
                 <div class="name">Running VMs</div>
-                <div class="value">110</div>
+                <div class="value" data-item="runningInstances"></div>
               </li>
               <li class="stopped">
                 <div class="name">Stopped VMs</div>
-                <div class="value">10</div>
+                <div class="value" data-item="stoppedInstances"></div>
               </li>
               <li class="total">
                 <div class="name">Total VMs</div>
-                <div class="value">120</div>
+                <div class="value" data-item="totalInstances"></div>
               </li>
             </ul>
           </div>
@@ -1028,22 +1028,14 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Recent Errors</th>
+                    <th>My Projects</th>
                   </tr>
                 </thead>
               </table>
               <div class="content">
                 <table>
                   <tbody>
-                    <tr><td class="desc">Error 1</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td>Error 2</td><td class="value">Desc</td></tr>
-                    <tr><td class="desc">Error 3</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td>Error 4</td><td class="value">Desc</td></tr>
-                    <tr><td class="desc">Error 5</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td>Error 6</td><td class="value">Desc</td></tr>
-                    <tr><td class="desc">Error 7</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td>Error 7</td><td class="value">Desc</td></tr>
-                    <tr><td class="desc">Error 9</td><td class="value">Desc</td></tr>
+                    <tr><td class="desc"></td><td class="value"></td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1059,11 +1051,11 @@
               <div class="content">
                 <table>
                   <tbody>
-                    <tr><td class="desc">Account ID</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td>Account</td><td class="value">Desc</td></tr>
-                    <tr><td>Type</td><td class="value">Desc</td></tr>
-                    <tr class="odd"><td class="desc">Domain</td><td class="value">Desc</td></tr>
-                    <tr><td class="desc">Some other value</td><td class="value">Desc</td></tr>
+                    <tr class="odd"><td class="desc">Account</td><td class="value" data-item="accountName"></td></tr>
+                    <tr><td class="desc">User</td><td class="value" data-item="userName"></td></tr>
+                    <tr class="odd"><td class="desc">Role</td><td class="value" data-item="accountType"></td></tr>
+                    <tr><td class="desc">Account ID</td><td class="value" data-item="accountID"></td></tr>
+                    <tr class="odd"><td class="desc">Domain ID</td><td class="value" data-item="accountDomainID"></td></tr>
                   </tbody>
                 </table>
               </div>
