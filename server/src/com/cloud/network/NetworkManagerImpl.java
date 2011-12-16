@@ -1074,7 +1074,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         return configs;
                     }
                 }
-            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && predefined.getBroadcastUri() == null) {
+            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId(), predefined.getCidr());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1825,35 +1825,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         UserContext.current().setAccountId(owner.getAccountId());
-
+        
+        //VALIDATE IP INFO
         // if end ip is not specified, default it to startIp
-        if (endIP == null && startIP != null) {
-            endIP = startIP;
+        if (startIP != null) {
+        	if (!NetUtils.isValidIp(startIP)){
+        		throw new InvalidParameterValueException("Invalid format for the startIp parameter");
+        	}
+        	if (endIP == null){
+                endIP = startIP;
+        	} else if (!NetUtils.isValidIp(endIP)) {
+        		throw new InvalidParameterValueException("Invalid format for the endIp parameter");
+        	}
         }
-
-        // If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
-        ArrayList<String> networkConfigs = new ArrayList<String>();
-        networkConfigs.add(gateway);
-        networkConfigs.add(startIP);
-        networkConfigs.add(endIP);
-        networkConfigs.add(netmask);
-        boolean defineNetworkConfig = false;
-        short configElementsCount = 0;
-
-        for (String networkConfig : networkConfigs) {
-            if (networkConfig != null) {
-                configElementsCount++;
-            }
-        }
-
-        if (configElementsCount > 0 && configElementsCount != networkConfigs.size()) {
-            throw new InvalidParameterValueException("startIP/endIP/netmask/gateway must be specified together");
-        } else if (configElementsCount == networkConfigs.size()) {
-            defineNetworkConfig = true;
+        
+        if (startIP != null && endIP != null) {
+        	if (!(gateway != null && netmask != null)) {
+                throw new InvalidParameterValueException("gateway and netmask should be defined when startIP/endIP are passed in");
+        	}
         }
 
         String cidr = null;
         if (gateway != null && netmask != null) {
+        	if (!NetUtils.isValidIp(gateway)) {
+        		throw new InvalidParameterValueException("Invalid gateway");
+        	}
+        	if (!NetUtils.isValidNetmask(netmask)) {
+        		throw new InvalidParameterValueException("Invalid netmask");
+        	}
+        	
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
 
@@ -1905,9 +1905,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Vlan is created in 2 cases - works in Advance zone only:
         //1) GuestType is Shared
         //2) GuestType is Isolated, but SourceNat service is disabled
-        boolean createVlan = ((network.getGuestType() == Network.GuestType.Shared) || (network.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced 	
+        		&& ((network.getGuestType() == Network.GuestType.Shared) 
+        				|| (network.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
 
-        if (zone.getNetworkType() == NetworkType.Advanced && caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, null, network.getId(), physicalNetworkId);
         }
