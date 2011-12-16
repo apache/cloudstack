@@ -954,6 +954,12 @@
                               label: 'Description',
                               isEditable: true
                             },
+                            type: {
+                              label: 'Type'
+                            },
+                            state: {
+                              label: 'State'
+                            },                           
                             restartrequired: {
                               label: 'Restart required',
                               converter: function(booleanValue) {
@@ -996,6 +1002,10 @@
                                 args.response.success({data: items});
                               }
                             },
+                            
+                            networkofferingidText: {
+                              label: 'Network offering ID'
+                            },
 
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },
@@ -1015,6 +1025,7 @@
                           selectedGuestNetworkObj = args.context.networks[0];
 
                           selectedGuestNetworkObj["networkdomaintext"] = selectedGuestNetworkObj.networkdomain;
+                          selectedGuestNetworkObj["networkofferingidText"] = selectedGuestNetworkObj.networkofferingid;
 
                           if(selectedGuestNetworkObj.vlan == null && selectedGuestNetworkObj.broadcasturi != null)
                             selectedGuestNetworkObj["vlan"] = selectedGuestNetworkObj.broadcasturi.replace("vlan://", "");
