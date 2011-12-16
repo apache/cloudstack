@@ -1,8 +1,7 @@
 (function($, cloudStack, testData) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
-  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj, selectedManagementNetworkObj;
-  var publicNetworkObj;
+  var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
 
@@ -154,8 +153,8 @@
                     async: false,
                     success: function(json) {
                       var items = json.listnetworksresponse.network;
-                      publicNetworkObj = items[0];
-                      args.response.success({data: publicNetworkObj});
+                      selectedPublicNetworkObj = items[0];
+                      args.response.success({data: selectedPublicNetworkObj});
                     }
                   });
                 }
@@ -243,7 +242,7 @@
                     },
                     dataProvider: function(args) {
                       $.ajax({
-                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + selectedPublicNetworkObj.id),
                         dataType: "json",
                         success: function(json) {
                           var items = json.listvlaniprangesresponse.vlaniprange;
@@ -572,9 +571,23 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {
+                    dataProvider: function(args) { //only basic zone has IP Range tab                      
+                      selectedGuestNetworkObj = null;
                       $.ajax({
-                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        url: createURL("listNetworks&trafficType=Guest&zoneid=" + selectedZoneObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {                         
+                          var items = json.listnetworksresponse.network;
+                          if(items != null && items.length > 0)
+                            selectedGuestNetworkObj = json.listnetworksresponse.network[0];                          
+                        }
+                      });                      
+                      if(selectedGuestNetworkObj == null) 
+                        return;                      
+                    
+                      $.ajax({
+                        url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkId=" + selectedGuestNetworkObj.id), 
                         dataType: "json",
                         success: function(json) {
                           var items = json.listvlaniprangesresponse.vlaniprange;
