@@ -496,3 +496,5 @@ CREATE TABLE  `cloud`.`op_user_stats_log` (
   `updated` datetime COMMENT 'stats update timestamp',
   UNIQUE KEY (`user_stats_id`, `updated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `simulator_network_label` varchar(255) COMMENT  'The name labels needed for identifying the simulator';
