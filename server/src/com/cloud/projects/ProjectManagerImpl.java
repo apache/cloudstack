@@ -660,6 +660,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Filter searchFilter = new Filter(ProjectAccountVO.class, "id", false, startIndex, pageSizeVal);
         SearchBuilder<ProjectAccountVO> sb = _projectAccountDao.createSearchBuilder();
         sb.and("accountRole", sb.entity().getAccountRole(), Op.EQ);
+        sb.and("projectId", sb.entity().getProjectId(), Op.EQ);
         
         SearchBuilder<AccountVO> accountSearch;
         if (accountName != null) {
@@ -669,6 +670,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         SearchCriteria<ProjectAccountVO> sc = sb.create();
+        
+        sc.setParameters("projectId", projectId);
         
         if (role != null) {
             sc.setParameters("accountRole", role);
