@@ -45,7 +45,9 @@
     };
 
     $(window).bind('cloudStack.fullRefresh cloudStack.updateResources', function() {
-      getData();
+      if ($dashboard.is(':visible')) {
+        getData();
+      }
     });
 
     return function(args) {
