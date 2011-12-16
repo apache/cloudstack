@@ -724,6 +724,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	private boolean checkNetwork(String networkName) {
+		if (networkName == null) {
+			return true;
+		}
+		
 		String name = Script.runSimpleBashScript("brctl show | grep " + networkName + " | awk '{print $4}'");	
 		if (name == null) {
 			return false;

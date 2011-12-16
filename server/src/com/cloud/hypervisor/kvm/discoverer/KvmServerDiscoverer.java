@@ -190,8 +190,18 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			} else {
 				PhysicalNetworkSetupInfo network = networks.get(0);
 				_kvmPublicNic = network.getPublicNetworkName();
+				if (_kvmPublicNic == null) {
+					_kvmPublicNic = "cloudbr0";
+				}
 				_kvmPrivateNic = network.getPrivateNetworkName();
+				if (_kvmPrivateNic == null) {
+					_kvmPrivateNic = _kvmPublicNic;
+				}
 				_kvmGuestNic = network.getGuestNetworkName();
+				if (_kvmGuestNic == null) {
+					_kvmGuestNic = _kvmPrivateNic;
+				}
+				
 			}
 			
 			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
