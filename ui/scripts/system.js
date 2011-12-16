@@ -2941,7 +2941,7 @@
                         });
 
                         $.ajax({
-                          url: createURL("listNetworkOfferings"),
+                          url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
                           dataType: "json",
                           async: false,
                           success: function(json) {
