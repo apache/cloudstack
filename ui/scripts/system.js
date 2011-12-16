@@ -1008,9 +1008,7 @@
                             networkofferingidText: {
                               label: 'Network offering ID'
                             },
-
-                            domain: { label: 'Domain' },
-                            account: { label: 'Account' },
+                          
                             gateway: { label: 'Gateway' },
                             //netmask: { label: 'Netmask' },                            
                             cidr: { label: 'CIDR' },
