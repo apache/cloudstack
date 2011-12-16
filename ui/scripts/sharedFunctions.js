@@ -28,6 +28,8 @@ var md5HashedLogin = false;
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
 
+var rootAccountId = 1;
+
 //async action
 var pollAsyncJobResult = function(args) {
   $.ajax({

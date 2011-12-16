@@ -775,7 +775,9 @@
                       },
 
                       preAction: function(args) {
-                        var zone = $('.detail-view:last').data('view-args').context.zones[0];
+                        //var zone = $('.detail-view:last').data('view-args').context.zones[0]; //this line causes a bug when going back and forth between listView and detailView: "$(".detail-view:last").data("view-args").context.zones is undefined"
+                        var zone = selectedZoneObj;
+                        
                         var networksPresent = false;
 
                         // Only 1 guest network is allowed per basic zone,
@@ -970,7 +972,7 @@
                               },
                             },                           
                             vlan: { label: 'VLAN ID' },
-
+                            scope: { label: 'Scope' },
                             networkofferingdisplaytext: { label: 'Network offering' },
                             networkofferingid: {
                               label: 'Network offering',
@@ -1024,11 +1026,21 @@
                         dataProvider: function(args) {
                           selectedGuestNetworkObj = args.context.networks[0];
 
-                          selectedGuestNetworkObj["networkdomaintext"] = selectedGuestNetworkObj.networkdomain;
-                          selectedGuestNetworkObj["networkofferingidText"] = selectedGuestNetworkObj.networkofferingid;
+                          selectedGuestNetworkObj.networkdomaintext = selectedGuestNetworkObj.networkdomain;
+                          selectedGuestNetworkObj.networkofferingidText = selectedGuestNetworkObj.networkofferingid;
+                                                    
+                          if(selectedGuestNetworkObj.acltype == "Domain") {
+                            if(selectedGuestNetworkObj.domainid == rootAccountId) 
+                              selectedGuestNetworkObj.scope = "All";                            
+                            else 
+                              selectedGuestNetworkObj.scope = "Domain (" + selectedGuestNetworkObj.domain + ")";                            
+                          } 
+                          else if (selectedGuestNetworkObj.acltype == "Account"){
+                            selectedGuestNetworkObj.scope = "Account (" + selectedGuestNetworkObj.domain + ", " + selectedGuestNetworkObj.account + ")";      
+                          }
 
                           if(selectedGuestNetworkObj.vlan == null && selectedGuestNetworkObj.broadcasturi != null)
-                            selectedGuestNetworkObj["vlan"] = selectedGuestNetworkObj.broadcasturi.replace("vlan://", "");
+                            selectedGuestNetworkObj.vlan = selectedGuestNetworkObj.broadcasturi.replace("vlan://", "");
 
                           args.response.success({data: selectedGuestNetworkObj});
                         }
