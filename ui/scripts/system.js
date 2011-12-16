@@ -2962,7 +2962,6 @@
                     ],
 
                     action: function(args) {
-                      debugger;
                       var array1 = [];
 
                       //var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
