@@ -141,11 +141,9 @@
               details: {
                 title: 'Details',
                 fields: [                  
-                  {
-                    id: { label: "ID" },
+                  {                    
                     traffictype: { label: 'Traffic type' },     
-                    broadcastdomaintype: { label: 'Broadcast domain type' },                                  
-                    zoneid: { label: 'Zone ID' }                    
+                    broadcastdomaintype: { label: 'Broadcast domain type' }   
                   }
                 ],
 
