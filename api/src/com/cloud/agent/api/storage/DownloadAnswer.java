@@ -68,6 +68,7 @@ public class DownloadAnswer extends Answer  {
         this.downloadPct = 0;
         this.errorString = errorString;
         this.downloadStatus = status;
+        this.details = errorString;
     }
 	
 	public DownloadAnswer(String jobId, int downloadPct, String errorString,
@@ -76,6 +77,7 @@ public class DownloadAnswer extends Answer  {
 		this.jobId = jobId;
 		this.downloadPct = downloadPct;
 		this.errorString = errorString;
+		this.details = errorString;
 		this.downloadStatus = downloadStatus;
 		this.downloadPath = fileSystemPath;
 		this.installPath = fixPath(installPath);

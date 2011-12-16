@@ -73,6 +73,7 @@ public class UploadAnswer extends Answer {
 		this.jobId = jobId;
 		this.uploadPct = uploadPct;
 		this.errorString = errorString;
+		this.details = errorString;
 		this.uploadStatus = uploadStatus;
 		this.uploadPath = fileSystemPath;
 		this.installPath = fixPath(installPath);
