@@ -1,6 +1,6 @@
 (function($, cloudStack, testData) {
 
-  var zoneObjs, podObjs, clusterObjs, domainObjs;
+  var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
@@ -2939,7 +2939,17 @@
                             domainObjs = json.listdomainsresponse.domain;
                           }
                         });
-                        args.response.success({domains: domainObjs});
+
+                        $.ajax({
+                          url: createURL("listNetworkOfferings"),
+                          dataType: "json",
+                          async: false,
+                          success: function(json) {
+                            networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                          }
+                        });
+
+                        args.response.success({domains: domainObjs, networkOfferings: networkOfferingObjs});
                       },
 
                       // Step 3: Setup Pod
@@ -2952,6 +2962,7 @@
                     ],
 
                     action: function(args) {
+                      debugger;
                       var array1 = [];
 
                       //var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"

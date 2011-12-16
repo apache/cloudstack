@@ -82,6 +82,8 @@
           } else if (formState['isolation-mode'] == 'security-groups') {
             $conditional.filter('.security-groups').show();
           }
+        } else if (formState['network-model'] == 'Basic') {
+          $conditional.filter('.basic').show();
         }
 
         if (!formState['public']) {
@@ -116,6 +118,11 @@
                 $(args.domains).each(function() {
                   $('<option>').val(this.id).html(this.name)
                     .appendTo($targetStep.find('select.domain'));
+                });
+
+                $(args.networkOfferings).each(function() {
+                  $('<option></option>').val(this.id).html(this.name)
+                    .appendTo($targetStep.find('select.network-offering'));
                 });
 
                 $targetStep.addClass('loaded');

@@ -3514,9 +3514,6 @@ Dialogs*/
 }
 
 /*System chart*/
-.system-charts {
-}
-
 .system-charts .ui-tabs-nav {
   /*+placement:shift 13px 7px;*/
   position: relative;
@@ -3535,6 +3532,7 @@ Dialogs*/
   width: 100%;
   height: 589px;
   overflow: auto;
+  overflow-x: hidden;
   font-weight: normal;
   margin-top: 0;
 }
@@ -3555,7 +3553,7 @@ Dialogs*/
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
-  width: 68%;
+  width: 515px;
   margin: 18px auto 0 22px;
   padding: 0 0 11px;
   clear: both;
@@ -3652,6 +3650,7 @@ Dialogs*/
   color: #AAAAAA;
   text-decoration: line-through;
   margin-top: 10px;
+  /*[empty]background:;*/
 }
 
 .zone-chart ul li .view-all,
@@ -3715,6 +3714,65 @@ Dialogs*/
   text-indent: 4px;
 }
 
+/*** Info area*/
+.zone-chart .side-info {
+  width: 203px;
+  float: right;
+  margin: 58px 0 0;
+}
+
+.zone-chart .side-info ul {
+  display: block;
+  height: 904px;
+}
+
+.zone-chart .side-info ul li {
+  width: 185px;
+  height: 98px;
+  margin-left: 0;
+  background: none;
+}
+
+.zone-chart .side-info ul li .icon {
+  width: 29px;
+  height: 30px;
+  background: url(../images/sprites.png) -587px -1107px;
+  float: left;
+}
+
+.zone-chart .side-info ul li .icon span {
+  color: #FFFFFF;
+  /*+placement:shift 9px 6px;*/
+  position: relative;
+  left: 9px;
+  top: 6px;
+  /*+text-shadow:0px 1px 1px #313131;*/
+  -moz-text-shadow: 0px 1px 1px #313131;
+  -webkit-text-shadow: 0px 1px 1px #313131;
+  -o-text-shadow: 0px 1px 1px #313131;
+  text-shadow: 0px 1px 1px #313131;
+}
+
+.zone-chart .side-info ul li .title {
+  color: #9A9A9A;
+  float: left;
+  font-size: 17px;
+  /*+placement:shift 10px 4px;*/
+  position: relative;
+  left: 10px;
+  top: 4px;
+}
+
+.zone-chart .side-info ul li p {
+  max-height: 113px;
+  overflow: hidden;
+  clear: both;
+  font-size: 11px;
+  line-height: 19px;
+  margin: 0 0 0 38px;
+  color: #808080;
+}
+
 /*** NAAS*/
 .zone-chart .resources.naas {
   border: none;
@@ -3739,7 +3797,7 @@ Dialogs*/
   background: #E7E7E7;
   width: 728px;
   display: inline-block;
-  padding: 4px 0 10px;
+  padding: 1px 0 15px;
 }
 
 .zone-chart .resources.naas .head span {
@@ -3840,6 +3898,40 @@ Dialogs*/
   background-position: -3px -944px;
 }
 
+.zone-chart ul li .tooltip-icon {
+  width: 18px;
+  height: 19px;
+  background: url(../images/sprites.png) no-repeat -592px -1066px;
+  /*+placement:shift 23px 8px;*/
+  position: relative;
+  left: 23px;
+  top: 8px;
+  position: absolute;
+}
+
+.zone-chart .resources.zone ul li .tooltip-icon {
+  position: relative;
+  float: left;
+  left: 6px;
+}
+
+.zone-chart ul li .tooltip-icon span {
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: bold;
+  /*+placement:shift 6px 3px;*/
+  position: relative;
+  left: 6px;
+  top: 3px;
+  position: absolute;
+}
+
+.zone-chart .resources.zone ul li .tooltip-icon span {
+  left: 6px;
+  top: 3px;
+  position: absolute;
+}
+
 .zone-chart .resources.naas .system-main .network-providers li .name {
   /*+placement:shift 96px 12px;*/
   position: relative;
@@ -3882,7 +3974,8 @@ Dialogs*/
 
 /*** Zone resources*/
 .zone-chart .resources.zone {
-  margin-top: -18px;
+  width: 519px;
+  margin-top: -15px;
   z-index: 10;
 }
 
@@ -5006,12 +5099,12 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li {
-  width: 288px;
+  width: 182px;
   padding: 0 32px 0 0;
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
-  margin: -4px 0 0 266px;
+  margin: -4px 0 0 160px;
 }
 
 .multi-wizard.zone-wizard .select-network .content .section {
@@ -5152,6 +5245,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-container .field .value select {
   width: 139px;
+  height: 21px;
 }
 
 .multi-wizard.zone-wizard .select-container .field .value input[type=checkbox] {
@@ -5167,7 +5261,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-container .field .value.multi-range span {
   float: left;
-  margin: 19px 0 0;
+  margin: 13px 0 0;
 }
 
 /*Tree view*/
