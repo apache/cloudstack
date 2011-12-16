@@ -1,7 +1,7 @@
 (function($, cloudStack, testData) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
-  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
+  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj, selectedManagementNetworkObj;
   var publicNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
@@ -289,28 +289,19 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Zone', isEditable: true }
-                  },
-                  {
-                    id: { label: 'ID' },
-                    allocationstate: { label: 'Allocation State' },
-                    dns1: { label: 'DNS 1', isEditable: true },
-                    dns2: { label: 'DNS 2', isEditable: true },
-                    internaldns1: { label: 'Internal DNS 1', isEditable: true },
-                    internaldns2: { label: 'Internal DNS 2', isEditable: true },
-                    networktype: { label: 'Network Type' },
-                    securitygroupsenabled: {
-                      label: 'Security Groups Enabled',
-                      converter:cloudStack.converters.toBooleanText
-                    },
-                    domain: {
-                      label: 'Network domain',
-                      isEditable: true
-                    }
+                    traffictype: { label: 'Traffic type' },
+                    broadcastdomaintype: { label: 'Broadcast domain type' }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({ data: selectedZoneObj });
+                dataProvider: function(args) {                  
+                  $.ajax({
+                    url: createURL("listNetworks&issystem=true&trafficType=Management&zoneId=" + selectedZoneObj.id),
+                    dataType: "json",
+                    success: function(json) {                      
+                      selectedManagementNetworkObj =json.listnetworksresponse.network[0];
+                      args.response.success({ data: selectedManagementNetworkObj });                      
+                    }
+                  });                
                 }
               },
 
@@ -394,9 +385,9 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {
+                    dataProvider: function(args) {                      
                       $.ajax({
-                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + selectedManagementNetworkObj.id), 
                         dataType: "json",
                         success: function(json) {
                           var items = json.listvlaniprangesresponse.vlaniprange;
