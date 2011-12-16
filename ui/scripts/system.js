@@ -95,13 +95,13 @@
 
                     return total;
                   };
-                  
+
                   complete($.extend(data, {
                     cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
                     memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
                     storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
                   }));
-                } 
+                }
               });
             } else {
               complete($.extend(data, {
@@ -140,10 +140,10 @@
             tabs: {
               details: {
                 title: 'Details',
-                fields: [                  
-                  {                    
-                    traffictype: { label: 'Traffic type' },     
-                    broadcastdomaintype: { label: 'Broadcast domain type' }   
+                fields: [
+                  {
+                    traffictype: { label: 'Traffic type' },
+                    broadcastdomaintype: { label: 'Broadcast domain type' }
                   }
                 ],
 
@@ -184,7 +184,7 @@
                         if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
                         else
-                          array1.push("&vlan=untagged");                       
+                          array1.push("&vlan=untagged");
 
                         array1.push("&gateway=" + args.data.gateway);
                         array1.push("&netmask=" + args.data.netmask);
@@ -257,36 +257,43 @@
             }
           }
         },
-        
+
         'management': {
           detailView: {
-            viewAll: { path: '_zone.pods', label: 'Pods' },            
+            viewAll: { path: '_zone.pods', label: 'Pods' },
             actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) {                  
-                  var array1 = [];                  
+                action: function(args) {
+                  var array1 = [];
                   array1.push("&name="  +todb(args.data.name));
                   array1.push("&dns1=" + todb(args.data.dns1));
                   array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
                   array1.push("&internaldns1=" + todb(args.data.internaldns1));
                   array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API                      
-                  array1.push("&domain=" + todb(args.data.domain));  
+                  array1.push("&domain=" + todb(args.data.domain));
                   $.ajax({
                     url: createURL("updateZone&id=" + args.context.zones[0].id + array1.join("")),
                     dataType: "json",
                     async: false,
-                    success: function(json) {  
+                    success: function(json) {
                       selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
                       args.response.success({data: selectedZoneObj});
                     }
                   });
                 }
               }
-            },           
+            },
+            tabFilter: function(args) {
+              var zone = args.context.zones[0];
+
+              if (zone.networktype == 'Basic') return [];
+
+              return ['ipAddresses'];
+            },
             tabs: {
               details: {
-                title: 'Details',  
+                title: 'Details',
                 fields: [
                   {
                     name: { label: 'Zone', isEditable: true }
@@ -303,26 +310,120 @@
                       label: 'Security Groups Enabled',
                       converter:cloudStack.converters.toBooleanText
                     },
-                    domain: { 
+                    domain: {
                       label: 'Network domain',
                       isEditable: true
-                    }             
+                    }
                   }
                 ],
-                dataProvider: function(args) {                 
+                dataProvider: function(args) {
                   args.response.success({ data: selectedZoneObj });
+                }
+              },
+
+              ipAddresses: {
+                title: 'IP Ranges',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    context: args.context,
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        var array1 = [];
+                        array1.push("&zoneId=" + args.context.zones[0].id);
+
+                        if (args.data.vlan != null && args.data.vlan.length > 0)
+                          array1.push("&vlan=" + todb(args.data.vlan));
+                        else
+                          array1.push("&vlan=untagged");
+
+                        array1.push("&gateway=" + args.data.gateway);
+                        array1.push("&netmask=" + args.data.netmask);
+                        array1.push("&startip=" + args.data.startip);
+                        if(args.data.endip != null && args.data.endip.length > 0)
+                          array1.push("&endip=" + args.data.endip);
+
+                        if(args.context.zones[0].securitygroupsenabled == false)
+                          array1.push("&forVirtualNetwork=true");
+                        else
+                          array1.push("&forVirtualNetwork=false");
+
+                        $.ajax({
+                          url: createURL("createVlanIpRange" + array1.join("")),
+                          dataType: "json",
+                          success: function(json) {
+                            var item = json.createvlaniprangeresponse.vlan;
+                            args.response.success({
+                              data: item,
+                              notification: {
+                                label: 'IP range is added',
+                                poll: function(args) {
+                                  args.complete();
+                                }
+                              }
+                            });
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            args.response.error(errorMsg);
+                          }
+                        });
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Delete',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        dataType: "json",
+                        success: function(json) {
+                          var items = json.listvlaniprangesresponse.vlaniprange;
+                          args.response.success({data: items});
+                        }
+                      });
+                    }
+                  });
                 }
               }
             }
           }
         },
-        
+
         'guest': {
           detailView: {
             actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) { 
+                action: function(args) {
                   var vlan;
                   if(args.data.endVlan == null || args.data.endVlan.length == 0)
                     vlan = args.data.startVlan;
@@ -341,6 +442,13 @@
               }
             },
 
+            tabFilter: function(args) {
+              var zone = args.context.zones[0];
+
+              if (zone.networktype == 'Basic') return ['network'];
+
+              return ['ipAddresses'];
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -394,6 +502,100 @@
                       return allowedActions;
                     },
                     data: selectedPhysicalNetworkObj
+                  });
+                }
+              },
+
+              ipAddresses: {
+                title: 'IP Ranges',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    context: args.context,
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        var array1 = [];
+                        array1.push("&zoneId=" + args.context.zones[0].id);
+
+                        if (args.data.vlan != null && args.data.vlan.length > 0)
+                          array1.push("&vlan=" + todb(args.data.vlan));
+                        else
+                          array1.push("&vlan=untagged");
+
+                        array1.push("&gateway=" + args.data.gateway);
+                        array1.push("&netmask=" + args.data.netmask);
+                        array1.push("&startip=" + args.data.startip);
+                        if(args.data.endip != null && args.data.endip.length > 0)
+                          array1.push("&endip=" + args.data.endip);
+
+                        if(args.context.zones[0].securitygroupsenabled == false)
+                          array1.push("&forVirtualNetwork=true");
+                        else
+                          array1.push("&forVirtualNetwork=false");
+
+                        $.ajax({
+                          url: createURL("createVlanIpRange" + array1.join("")),
+                          dataType: "json",
+                          success: function(json) {
+                            var item = json.createvlaniprangeresponse.vlan;
+                            args.response.success({
+                              data: item,
+                              notification: {
+                                label: 'IP range is added',
+                                poll: function(args) {
+                                  args.complete();
+                                }
+                              }
+                            });
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            args.response.error(errorMsg);
+                          }
+                        });
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Delete',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        dataType: "json",
+                        success: function(json) {
+                          var items = json.listvlaniprangesresponse.vlaniprange;
+                          args.response.success({data: items});
+                        }
+                      });
+                    }
                   });
                 }
               },
