@@ -389,7 +389,7 @@
                   );
                 }
               },
-              error: function(args) {
+              error: function(message) {
                 // Put in original values on error
                 $inputs.each(function() {
                   var $input = $(this);
@@ -399,7 +399,7 @@
                   $value.html(originalValue);
                 });
 
-                if (args.message) cloudStack.dialog.notice({ message: args.message });
+                if (message) cloudStack.dialog.notice({ message: message });
               }
             }
           });
@@ -784,6 +784,7 @@
 
     if (tabs.listView) {
       return $('<div>').listView({
+        context: args.context,
         listView: tabs.listView
       }).appendTo($tabContent);
     }
