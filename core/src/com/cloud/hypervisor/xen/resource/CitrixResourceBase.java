@@ -1081,7 +1081,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
-
+            s_logger.debug("The VM " + vmName + " is in Starting state.");
             s_vms.put(_cluster, _name, vmName, State.Starting);
 
             Host host = Host.getByUuid(conn, _host.uuid);
@@ -1163,9 +1163,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new StartAnswer(cmd, msg);
         } finally {
             synchronized (s_vms) {
-                if (state != State.Stopped) {
+                if (state != State.Stopped) { 
+                	s_logger.debug("The VM is in " + state + ", detected problem during startup : " + vm);
                     s_vms.put(_cluster, _name, vmName, state);
                 } else {
+                	s_logger.debug("The VM is in stopped state, detected problem during startup : " + vm);
                     s_vms.remove(_cluster, _name, vmName);
                 }
             }
@@ -2166,6 +2168,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Integer vncPort = null;
         if (state == State.Running) {
             synchronized (s_vms) {
+            	s_logger.debug("The VM " + vmName + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, vmName, State.Running);
             }
         }
@@ -2188,6 +2191,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (NicTO nic : nics) {
                 getNetwork(conn, nic);
             }
+            s_logger.debug("The VM " +  vm.getName() + " is in " + State.Migrating + " state");
             s_vms.put(_cluster, _name, vm.getName(), State.Migrating);
 
             return new PrepareForMigrationAnswer(cmd);
@@ -2423,6 +2427,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         State state = null;
 
         state = s_vms.getState(_cluster, vmName);
+        
+        s_logger.debug("The VM " + vmName + " is in " + State.Stopping + " state");
         s_vms.put(_cluster, _name, vmName, State.Stopping);
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
@@ -2489,6 +2495,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
+        	s_logger.debug("The VM " + vmName + " is in " + state + " state");
             s_vms.put(_cluster, _name, vmName, state);
         }
 
@@ -2611,6 +2618,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
+        s_logger.debug("The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
         s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
         try {
             Set<VM> vms = null;
@@ -2634,6 +2642,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new RebootAnswer(cmd, "reboot succeeded", null, null);
         } finally {
+            s_logger.debug("The VM " + cmd.getVmName() + " is in " + State.Running + " state");
             s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
         }
     }
@@ -3126,6 +3135,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
 
                 State state = s_vms.getState(_cluster, vmName);
+                
+                s_logger.debug("The VM " + vmName + " is in " + State.Stopping + " state");
                 s_vms.put(_cluster, _name, vmName, State.Stopping);
 
                 try {
@@ -3187,6 +3198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.getMessage();
                         s_logger.warn(msg, e);
                     } finally {
+                    	s_logger.debug("The VM " + vmName + " is in " + state + " state");
                         s_vms.put(_cluster, _name, vmName, state);
                     }
                 }
@@ -6631,6 +6643,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (!host_uuid.equals(oldState.first()) && newState != State.Stopped && newState != State.Stopping){
                         s_logger.warn("Detecting a change in host for " + vm);
                         changes.put(vm, new Pair<String, State>(host_uuid, newState));
+                        
+                        s_logger.debug("The VM " + vm + " is in " + newState + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                         continue;
                     }
@@ -6653,7 +6667,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
                     changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 } else if (oldState.second() == State.Starting) {
-                    if (newState == State.Running) {
+                    if (newState == State.Running) { 
+                    	s_logger.debug("The VM " + vm + " is in " + State.Running + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Stopped) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in starting the vm.");
@@ -6665,11 +6680,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 } else if (oldState.second() == State.Stopping) {
                     if (newState == State.Stopped) {
+                    	s_logger.debug("The VM " + vm + " is in " + State.Stopped + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Running) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
                     }
                 } else if (oldState.second() != newState) {
+                	s_logger.debug("The VM " + vm + " is in " + newState + " state was " + oldState.second());
                     s_vms.put(_cluster, host_uuid, vm, newState);
                     if (newState == State.Stopped) {
                         /*
@@ -6701,6 +6718,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn("Ignoring VM " + vm + " in migrating state.");
                 } else {
                     State newState = State.Stopped;
+                    s_logger.warn("The VM is now missing marking it as Stopped " + vm);
                     changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 }
             }
