@@ -10,6 +10,7 @@
         type: 'select',
         title: 'Service offerings',
         listView: {
+          id: 'serviceOfferings',
           label: 'Service offerings',
           fields: {
             name: { label: 'Name', editable: true },
@@ -306,6 +307,7 @@
         type: 'select',
         title: 'System service offerings',
         listView: {
+          id: 'systemServiceOfferings',
           label: 'System service offerings',
           fields: {
             name: { label: 'Name', editable: true },
@@ -599,6 +601,7 @@
         type: 'select',
         title: 'Disk offerings',
         listView: {
+          id: 'diskOfferings',
           label: 'Disk offerings',
           fields: {
             name: { label: 'Name' },
@@ -829,10 +832,11 @@
         }
       },
         
-       hypervisorCapabilities: {
+      hypervisorCapabilities: {
         type: 'select',
         title: 'Hypervisor capabilities',
         listView: {
+          id: 'hypervisorCapabilities',
           label: 'Hypervisor capabilities',
           fields: {
             hypervisor: { label: 'Hypervisor' },
@@ -866,7 +870,7 @@
                     url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
                     dataType: "json",
                     success: function(json) {                      
-                      var item = json.updatehypervisorcapabilitiesresponse.null;
+                      var item = json.updatehypervisorcapabilitiesresponse['null'];
                       args.response.success({data: item});
                     },
                     error: function(data) {
@@ -912,6 +916,7 @@
         type: 'select',
         title: 'Network offerings',
         listView: {
+          id: 'networkOfferings',
           label: 'Network offerings',
           fields: {
             name: { label: 'Name' },           
