@@ -1155,7 +1155,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
 
-            //state = State.Running;  VM sync will mark it as started once detected on agent
+            state = State.Starting;
             return new StartAnswer(cmd);
         } catch (Exception e) {
             s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
