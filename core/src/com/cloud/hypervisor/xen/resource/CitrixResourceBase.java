@@ -1155,7 +1155,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
 
-            state = State.Running;
+            //state = State.Running;  VM sync will mark it as started once detected on agent
             return new StartAnswer(cmd);
         } catch (Exception e) {
             s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
@@ -1164,10 +1164,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } finally {
             synchronized (s_vms) {
                 if (state != State.Stopped) { 
-                	s_logger.debug("The VM is in " + state + ", detected problem during startup : " + vm);
+                	s_logger.debug("The VM " + vmName + " is in " + state + " state.");
                     s_vms.put(_cluster, _name, vmName, state);
                 } else {
-                	s_logger.debug("The VM is in stopped state, detected problem during startup : " + vm);
+                	s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
                     s_vms.remove(_cluster, _name, vmName);
                 }
             }
@@ -6713,6 +6713,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (oldState == State.Starting) {
                     s_logger.warn("Ignoring VM " + vm + " in transition state starting.");
                 } else if (oldState == State.Stopped) {
+                	s_logger.debug("VM missing " + vm + " old state stopped so removing.");
                     s_vms.remove(_cluster, host_uuid, vm);
                 } else if (oldState == State.Migrating) {
                     s_logger.warn("Ignoring VM " + vm + " in migrating state.");
