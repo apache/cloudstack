@@ -550,7 +550,7 @@
                         <span>Network Offering</span>
                       </div>
                       <div class="value">
-                        <select name="zone-network-offering" class="network-offering required"></select>
+                        <select name="networkOfferingId" class="network-offering required"></select>
                       </div>
                     </div>
                   </div>
@@ -571,7 +571,7 @@
                       <span>Name</span>
                     </div>
                     <div class="value">
-                      <input type="text" name="pod-name" class="required" />
+                      <input type="text" name="podName" class="required" />
                     </div>
                   </div>
 
@@ -581,7 +581,7 @@
                       <span>Gateway</span>
                     </div>
                     <div class="value">
-                      <input type="text" name="pod-gateway" class="required" />
+                      <input type="text" name="podGateway" class="required" />
                     </div>
                   </div>
 
@@ -591,7 +591,7 @@
                       <span>Netmask</span>
                     </div>
                     <div class="value">
-                      <input type="text" name="pod-netmask" class="required" />
+                      <input type="text" name="podNetmask" class="required" />
                     </div>
                   </div>
 
@@ -601,9 +601,9 @@
                       <span>Reserved IP</span>
                     </div>
                     <div class="value multi-range">
-                      <input type="text" name="pod-ip-range-start" class="required" />
+                      <input type="text" name="podStartIp" class="required" />
                       <span class="divider">-</span>
-                      <input type="text" name="pod-ip-range-end" />
+                      <input type="text" name="podEndIp" />
                     </div>
                   </div>
                 </div>
