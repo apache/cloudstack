@@ -283,14 +283,7 @@
                   });
                 }
               }
-            },
-            tabFilter: function(args) {
-              var zone = args.context.zones[0];
-
-              if (zone.networktype == 'Basic') return [];
-
-              return ['ipAddresses'];
-            },
+            },            
             tabs: {
               details: {
                 title: 'Details',
@@ -443,12 +436,14 @@
             },
 
             tabFilter: function(args) {
-              var zone = args.context.zones[0];
-
-              if (zone.networktype == 'Basic') return ['network'];
-
-              return ['ipAddresses'];
+              var hiddenTabs = [];       
+              if (selectedZoneObj.networktype == 'Basic') 
+                hiddenTabs.push("network");
+              else //selectedZoneObj.networktype == 'Advanced'
+                hiddenTabs.push("ipAddresses");                
+              return hiddenTabs;
             },
+            
             tabs: {
               details: {
                 title: 'Details',
