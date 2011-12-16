@@ -2991,24 +2991,23 @@
                      
                       if(args.data.networkdomain != null && args.data.networkdomain.length > 0)  
                         array1.push("&domain=" + todb(args.data.networkdomain));
-                        
-                      var zoneId;
+                      
+                      var newZoneObj; 
                       $.ajax({
                         url: createURL("createZone" + array1.join("")),
                         dataType: "json",
                         async: false,
                         success: function(json) {
-                          var zoneObj = json.createzoneresponse.zone;
+                          var newZoneObj = json.createzoneresponse.zone;
                           args.response.success({
-                            data: zoneObj,
-                            _custom: { zone: zoneObj }
+                            data: newZoneObj,
+                            _custom: { zone: newZoneObj }
                           }); //spinning wheel appears from this moment
-                          zoneId = zoneObj.id;
-
+                          
                           //NaaS (begin)
                           var physicalNetworkId;
                           $.ajax({
-                            url: createURL("listPhysicalNetworks&zoneId=" + zoneId),
+                            url: createURL("listPhysicalNetworks&zoneId=" + newZoneObj.id),
                             dataType: "json",
                             async: false,
                             success: function(json) {
@@ -3119,34 +3118,47 @@
                                                                   if (result.jobstatus == 1) {
                                                                     //alert("updateNetworkServiceProvider succeeded.");
 
-                                                                    /*
+                                                                    //create network if it's basic zone                                                                   
+                                                                    if(newZoneObj.networktype == "Basic") {
+                                                                      var array2 = [];
+                                                                      array2.push("&zoneid=" + newZoneObj.id);
+                                                                      array2.push("&name=guestNetworkForBasicZone");
+                                                                      array2.push("&displaytext=guestNetworkForBasicZone");
+                                                                      array2.push("&networkofferingid=" + args.data.networkOfferingId);
+                                                                      $.ajax({
+                                                                        url: createURL("createNetwork" + array2.join("")),
+                                                                        dataType: "json",
+                                                                        async: false,
+                                                                        success: function(json) {
+                                                                          
+                                                                        }
+                                                                      });
+                                                                    }
+                                                                    
+                                                                    //create pod                                                                     
+                                                                    var array3 = [];
+                                                                    array3.push("&zoneId=" + newZoneObj.id);
+                                                                    array3.push("&name=" + todb(args.data.podName));
+                                                                    array3.push("&gateway=" + todb(args.data.podGateway));
+                                                                    array3.push("&netmask=" + todb(args.data.podNetmask));
+                                                                    array3.push("&startIp=" + todb(args.data.podStartIp));
+
+                                                                    var endip = args.data.podEndIp;      //optional
+                                                                    if (endip != null && endip.length > 0)
+                                                                      array3.push("&endIp=" + todb(endip));
+
                                                                     $.ajax({
-                                                                      url: createURL("listCapabilities"),
+                                                                      url: createURL("createPod" + array3.join("")),
                                                                       dataType: "json",
                                                                       async: false,
                                                                       success: function(json) {
-                                                                        // g_supportELB: "guest"   � ips are allocated on guest network (so use 'forvirtualnetwork' = false)
-                                                                        // g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-                                                                        // g_supportELB: "false"   � no ELB support
-                                                                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                                                                        $.cookie('supportELB', g_supportELB, { expires: 1});
-
-                                                                        g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
-                                                                        $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
-
-                                                                        if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                                                                          g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                                                                          $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
-                                                                        }
-
-                                                                        if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-                                                                          g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
-                                                                          $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
-                                                                        }
+                                                                      
+                                                                      },
+                                                                      error: function(XMLHttpResponse) {
+                                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                        alert("createPod failed. Error: " + errorMsg);
                                                                       }
-                                                                    });
-                                                                    */
-
+                                                                    }); 
                                                                   }
                                                                   else if (result.jobstatus == 2) {
                                                                     alert("updateNetworkServiceProvider failed. Error: " + fromdb(result.jobresult.errortext));
