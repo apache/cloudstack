@@ -2741,7 +2741,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         	Pair<Long, Boolean> domainNetworkDetails = ApiDBUtils.getDomainNetworkDetails(network.getId());
         	response.setDomainId(domainNetworkDetails.first());
         	response.setSubdomainAccess(domainNetworkDetails.second());
-        	populateAccount(response, network.getAccountId());
         }
 
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
