@@ -54,7 +54,7 @@ public class UpdateAccountCmd extends BaseCmd{
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
     private String newName;
     
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks; empty string will update domainName with NULL value")
     private String networkDomain;
     
 	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")

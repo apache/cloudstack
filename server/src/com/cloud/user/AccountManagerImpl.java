@@ -1052,7 +1052,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-    @Override
+    @Override @DB
     public AccountVO updateAccount(UpdateAccountCmd cmd) {
         Long accountId = cmd.getId();
         Long domainId = cmd.getDomainId();
@@ -1095,7 +1095,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     + duplicateAcccount.getId());
         }
 
-        if (networkDomain != null) {
+        if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
@@ -1107,14 +1107,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         acctForUpdate.setAccountName(newAccountName);
         
         if (networkDomain != null) {
-            acctForUpdate.setNetworkDomain(networkDomain);
+        	if (networkDomain.isEmpty()) {
+        		acctForUpdate.setNetworkDomain(null);
+        	} else {
+        		acctForUpdate.setNetworkDomain(networkDomain);
+        	}
         }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         
         success = _accountDao.update(account.getId(), acctForUpdate);
         
-        if (details != null) {
+        if (details != null && success) {
             _accountDetailsDao.update(account.getId(), details);
         }
+        
+        txn.commit();
         
         if (success) {
             return _accountDao.findById(account.getId());

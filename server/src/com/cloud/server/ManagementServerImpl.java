@@ -2155,13 +2155,15 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
             List<DomainVO> domains = _domainDao.search(sc, null);
             
-            if (!domains.isEmpty()) {
+            boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
+            
+            if (!domains.isEmpty() && !sameDomain) {
                 throw new InvalidParameterValueException("Failed to update domain id=" + domainId + "; domain with name " + domainName + " already exists in the system");
             }
         }
 
         //validate network domain 
-        if (networkDomain != null){
+        if (networkDomain != null && !networkDomain.isEmpty()){
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
@@ -2181,7 +2183,11 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (networkDomain != null) {
-            domain.setNetworkDomain(networkDomain);
+        	if (networkDomain.isEmpty()) {
+        		domain.setNetworkDomain(null);
+        	} else {
+                domain.setNetworkDomain(networkDomain);
+        	}
         }
         _domainDao.update(domainId, domain);
         

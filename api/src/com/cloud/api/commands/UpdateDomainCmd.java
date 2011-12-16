@@ -46,7 +46,7 @@ public class UpdateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates domain with this name")
     private String domainName;
     
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks")
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
     /////////////////////////////////////////////////////

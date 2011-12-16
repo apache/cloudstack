@@ -75,7 +75,7 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DHCP_PROVIDER, type=CommandType.STRING, description="the dhcp Provider for the Zone")
     private String dhcpProvider;
     
-    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
+    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone; empty string will update domain with NULL value")
     private String domain;
     
     @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
