@@ -479,6 +479,25 @@
     var $browser = args.$browser;
     var listViewArgs, viewAllPath;
     var $listView;
+    var isCustom = $.isFunction(viewAllID.custom);
+
+    if (isCustom) {
+      $browser.cloudBrowser('addPanel', {
+        title: viewAllID.label,
+        maximizeIfSelected: true,
+        complete: function($newPanel) {
+          $newPanel.append(
+            viewAllID.custom({
+              $browser: $browser,
+              context: $detailView.data('view-args').context,
+              listViewArgs: $detailView.data('list-view').data('view-args')
+            })
+          );
+        }
+      });
+
+      return;
+    }
 
     // Get path in cloudStack args
     viewAllPath = viewAllID.split('.');
@@ -944,7 +963,11 @@
     var $viewAll = $target.closest('td.view-all a');
 
     if ($target.closest('div.detail-view').size() && $target.closest('td.view-all a').size()) {
-      viewAll($viewAll.data('detail-view-link-view-all').path);
+      viewAll(
+        $viewAll.data('detail-view-link-view-all').custom ?
+          $viewAll.data('detail-view-link-view-all') :
+          $viewAll.data('detail-view-link-view-all').path
+      );
       return false;
     }
 

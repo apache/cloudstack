@@ -702,14 +702,16 @@
       maximizeIfSelected: data.isMaximized,
       complete: function($newPanel) {
         // Make detail view element
-        if (!args.pageGenerator)
-          $detailView = $('<div>').addClass('detail-view').detailView(data);
+        if (!args.pageGenerator && !data.isMaximized)
+          $detailView = $('<div>').addClass('detail-view').detailView(data).appendTo($newPanel);
+        else if (!args.pageGenerator && data.isMaximized)
+          $detailView = $newPanel.detailView(data);
         else
-          $detailView = args.pageGenerator(data);
+          $detailView = args.pageGenerator(data).appendTo($newPanel);
 
         if (complete) complete($detailView);
 
-        return $detailView.appendTo($newPanel);
+        return $detailView;
       }
     };
 
