@@ -774,136 +774,100 @@
               networktype: { label: 'Network Type' },
               allocationstate: { label: 'State' }
             },
-            actions: {
-              destroy: testData.actions.destroy('zone'),
-              add: {
-                label: 'Add zone',
-                action: {
-                  custom: cloudStack.zoneWizard({
-                    steps: [
-                      // Step 1: Setup
-                      null,
-
-                      // Step 2: Setup Zone
-                      function(args) {
-                        args.response.success({
-                          domains: [
-                            {
-                              id: '1',
-                              name: 'Domain A'
-                            },
-                            {
-                              id: '2',
-                              name: 'Domain B'
-                            },
-                            {
-                              id: '3',
-                              name: 'Domain C'
-                            }
-                          ]
-                        });
-                      },
-
-                      // Step 3: Setup Pod
-                      null,
-
-                      // Step 4: Setup IP Range
-                      function(args) {
-                        args.response.success({
-                          domains: [
-                            {
-                              id: '1',
-                              name: 'Domain A'
-                            },
-                            {
-                              id: '2',
-                              name: 'Domain B'
-                            },
-                            {
-                              id: '3',
-                              name: 'Domain C'
-                            }
-                          ]
-                        });
-                      }
-                    ],
-                    action: function(args) {
-                      args.response.success({
-                        _custom: { jobID: new Date() }
-                      });
-                    }
-                  })
-                },
-                messages: {
-                  confirm: function(args) {
-                    return 'Are you sure you want to add ' + args.name + '?';
-                  },
-                  notification: function(args) {
-                    return 'Created new zone';
-                  }
-                },
-                notification: {
-                  poll: testData.notifications.customPoll(testData.data.zones[0])
-                }
-              }
-            },
             dataProvider: testData.dataProvider.listView('zones'),
             detailView: {
               isMaximized: true,
-              pageGenerator: cloudStack.zoneChart({
-                dataProvider: testData.dataProvider.detailView('zones'),
-                detailView: {
-                  name: 'Zone details',
-                  viewAll: { path: '_zone.pods', label: 'Pods' },
-                  tabs: {
-                    details: {
-                      title: 'Details',
-                      fields: [
-                        {
-                          name: { label: 'Zone' }
-                        },
-                        {
-                          dns1: { label: 'DNS 1' },
-                          dns2: { label: 'DNS 2' },
-                          internaldns1: { label: 'Internal DNS 1' },
-                          internaldns2: { label: 'Internal DNS 2' }
-                        },
-                        {
-                          networktype: { label: 'Network Type' },
-                          allocationstate: { label: 'State' },
-                          vlan: { label: 'VLAN' },
-                          networktype: { label: 'Network Type' },
-                          securitygroupenabled: { label: 'Security Group?' }
-                        }
-                      ],
-                      dataProvider: testData.dataProvider.detailView('zones')
+              viewAll: {
+                path: 'instances',
+                label: 'Configuration',
+                custom: cloudStack.zoneChart()
+              },
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      name: { label: 'Zone', isEditable: true }
                     },
-                    resources: {
-                      title: 'Resources',
-                      fields: [
-                        {
-                          iptotal: { label: 'Total IPs' },
-                          cputotal: { label: 'Total CPU' },
-                          bandwidthout: { label: 'Bandwidth (Out)'},
-                          bandwidthin: { label: 'Bandwidth (In)'}
+                    {
+                      id: { label: 'ID' },
+                      allocationstate: { label: 'Allocation State' },
+                      dns1: { label: 'DNS 1', isEditable: true },
+                      dns2: { label: 'DNS 2', isEditable: true },
+                      internaldns1: { label: 'Internal DNS 1', isEditable: true },
+                      internaldns2: { label: 'Internal DNS 2', isEditable: true },
+                      networktype: { label: 'Network Type' },
+                      securitygroupsenabled: {
+                        label: 'Security Groups Enabled',
+                      },
+                      domain: {
+                        label: 'Network domain',
+                        isEditable: true
+                      }
+                    }
+                  ],
+                  dataProvider: testData.dataProvider.detailView('zones')
+                },
+                systemVMs: {
+                  title: 'System VMs',
+                  listView: {
+                    label: 'System VMs',
+                    id: 'systemVMs',
+                    fields: {
+                      name: { label: 'Name' },
+                      systemvmtype: {
+                        label: 'Type',
+                        converter: function(args) {
+                          if(args == "consoleproxy")
+                            return "Console Proxy VM";
+                          else if(args == "secondarystoragevm")
+                            return "Secondary Storage VM";
                         }
-                      ],
-                      dataProvider: function(args) {
-                        setTimeout(function() {
-                          args.response.success({
-                            data: {
-                              iptotal: 1000,
-                              cputotal: '500 Ghz',
-                              bandwidthout: '14081 mb',
-                              bandwidthin: '31000 mb'
+                      },
+                      zonename: { label: 'Zone' },
+                      state: {
+                        label: 'Status',
+                        indicator: {
+                          'Running': 'on',
+                          'Stopped': 'off',
+                          'Error': 'off'
+                        }
+                      }
+                    },
+                    dataProvider: testData.dataProvider.listView('instances'),
+
+                    detailView: {
+                      name: 'System VM details',
+                      tabs: {
+                        details: {
+                          title: 'Details',
+                          fields: [
+                            {
+                              name: { label: 'Name' }
+                            },
+                            {
+                              id: { label: 'ID' },
+                              state: { label: 'State' },
+                              systemvmtype: {
+                                label: 'Type'
+                              },
+                              zonename: { label: 'Zone' },
+                              publicip: { label: 'Public IP' },
+                              privateip: { label: 'Private IP' },
+                              linklocalip: { label: 'Link local IP' },
+                              hostname: { label: 'Host' },
+                              gateway: { label: 'Gateway' },
+                              created: { label: 'Created' },
+                              activeviewersessions: { label: 'Active sessions' }
                             }
-                          });
-                        }, 500);
+                          ],
+                          dataProvider: testData.dataProvider.detailView('instances')
+                        }
                       }
                     }
                   }
                 }
-              })
+              }
             }
           }
         },

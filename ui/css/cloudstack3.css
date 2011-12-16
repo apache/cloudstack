@@ -3718,6 +3718,7 @@ Dialogs*/
 .zone-chart .side-info {
   width: 203px;
   float: right;
+  display: none;
   margin: 58px 0 0;
 }
 
@@ -3907,12 +3908,14 @@ Dialogs*/
   left: 23px;
   top: 8px;
   position: absolute;
+  display: none;
 }
 
 .zone-chart .resources.zone ul li .tooltip-icon {
   position: relative;
   float: left;
   left: 6px;
+  display: none;
 }
 
 .zone-chart ul li .tooltip-icon span {

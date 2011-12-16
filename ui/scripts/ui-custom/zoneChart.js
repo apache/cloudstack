@@ -443,6 +443,13 @@
               $tabMain.tabs();
               $tabMain.find('li:first').addClass('first');
               $tabMain.find('li:last').addClass('last');
+
+              var $info = $charts.find('.side-info, .tooltip-icon').filter(function() {
+                return $(this).hasClass(
+                  context.physicalResources[0].networktype == 'Basic' ?
+                    'basic' : 'advanced'
+                );
+              }).show();
             }
           }
         });

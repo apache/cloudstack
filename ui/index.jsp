@@ -825,8 +825,39 @@
 
       <!-- Zone chart -->
       <div class="zone-chart">
-        <!-- Side info -->
-        <div class="side-info">
+        <!-- Side info -- Basic zone -->
+        <div class="side-info basic">
+          <ul>
+            <li>
+              <div class="icon"><span>1</span></div>
+              <div class="title">Guest</div>
+              <p>Set up the network for traffic between end-user VMs.</p>
+            </li>
+            <li>
+              <div class="icon"><span>2</span></div>
+              <div class="title">Clusters</div>
+              <p>Define one or more clusters to group the compute hosts.</p>
+            </li>
+            <li>
+              <div class="icon"><span>3</span></div>
+              <div class="title">Hosts</div>
+              <p>Add hosts to clusters. Hosts run hypervisors and VMs.</p>
+            </li>
+            <li>
+              <div class="icon"><span>4</span></div>
+              <div class="title">Primary Storage</div>
+              <p>Add servers to store VM disk volumes in each cluster.</p>
+            </li>
+            <li>
+              <div class="icon"><span>5</span></div>
+              <div class="title">Secondary Storage</div>
+              <p>Add servers to store templates, ISOs, and snapshots for the whole zone.</p>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Side info -- Advanced zone -->
+        <div class="side-info advanced">
           <ul>
             <li>
               <div class="icon"><span>1</span></div>
@@ -868,7 +899,7 @@
           </div>
           <ul class="system-main">
             <li class="main public" rel="public">
-              <div class="tooltip-icon"><span>1</span></div>
+              <div class="tooltip-icon advanced"><span>1</span></div>
               <div class="name">Public</div>
               <div class="view-all configure">Configure</div>
             </li>
@@ -877,7 +908,8 @@
               <div class="view-all configure">Configure</div>
             </li>
             <li class="main guest" rel="guest">
-              <div class="tooltip-icon"><span>2</span></div>
+              <div class="tooltip-icon advanced"><span>2</span></div>
+              <div class="tooltip-icon basic"><span>1</span></div>
               <div class="name">Guest</div>
               <div class="view-all configure">Configure</div>
             </li>
@@ -895,22 +927,26 @@
               <div class="view-all" zone-target="pods">View All</div>
             </li>
             <li class="cluster">
-              <div class="tooltip-icon"><span>3</span></div>
+              <div class="tooltip-icon advanced"><span>3</span></div>
+              <div class="tooltip-icon basic"><span>2</span></div>
               <div class="name"><span>Clusters</span></div>
               <div class="view-all" zone-target="clusters">View All</div>
             </li>
             <li class="host">
-              <div class="tooltip-icon"><span>4</span></div>
+              <div class="tooltip-icon advanced"><span>4</span></div>
+              <div class="tooltip-icon basic"><span>3</span></div>
               <div class="name"><span>Hosts</span></div>
               <div class="view-all" zone-target="hosts">View All</div>
             </li>
             <li class="primary-storage">
-              <div class="tooltip-icon"><span>5</span></div>
+              <div class="tooltip-icon advanced"><span>5</span></div>
+              <div class="tooltip-icon basic"><span>4</span></div>
               <div class="name"><span>Primary Storage</span></div>
               <div class="view-all" zone-target="primary-storage">View All</div>
             </li>
             <li class="secondary-storage">
-              <div class="tooltip-icon"><span>6</span></div>
+              <div class="tooltip-icon advanced"><span>6</span></div>
+              <div class="tooltip-icon basic"><span>5</span></div>
               <div class="name"><span>Secondary Storage</span></div>
               <div class="view-all" zone-target="secondary-storage">View All</div>
             </li>
