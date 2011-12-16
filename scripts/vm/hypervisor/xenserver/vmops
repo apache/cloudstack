@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version @VERSION@
+# Version 2.2.13.20111117130644
 #
 # A plugin for executing script needed by vmops cloud 
 
@@ -516,28 +516,23 @@ def destroy_network_rules_for_vm(session, args):
 @echo
 def destroy_ebtables_rules(vm_chain):
     
-    delcmd = "ebtables-save | grep ROUTING | grep " +  vm_chain + " | sed 's/-A/-D/'"
+    delcmd = "ebtables-save | grep " +  vm_chain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
     delcmds.pop()
     for cmd in delcmds:
         try:
             dc = cmd.split(' ')
             dc.insert(0, 'ebtables')
-            dc.insert(1, '-t')
-            dc.insert(2, 'nat')
             util.pread2(dc)
         except:
             util.SMlog("Ignoring failure to delete ebtables rules for vm " + vm_chain)
-    chains = [vm_chain+"-in", vm_chain+"-out"]
-    for chain in chains:
-        try:
-            util.pread2(['ebtables', '-t', 'nat', '-F', chain])
-            util.pread2(['ebtables', '-t', 'nat', '-X', chain])
-        except:
+    try:
+        util.pread2(['ebtables', '-F', vm_chain])
+        util.pread2(['ebtables', '-X', vm_chain])
+    except:
             util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
             
     destroy_arptables_rules(vm_chain)
-
 
 @echo
 def destroy_arptables_rules(vm_chain):
@@ -558,60 +553,51 @@ def destroy_arptables_rules(vm_chain):
         util.pread2(['arptables', '-F', vm_chain])
         util.pread2(['arptables', '-X', vm_chain])
     except:
-        util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain) 
+        util.SMlog("Ignoring failure to delete arptables chain for vm " + vm_chain) 
               
 @echo
-def default_ebtables_rules(vm_chain, vifs, vm_ip, vm_mac):
+def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
+    if vm_mac == 'ff:ff:ff:ff:ff:ff':
+        util.SMlog("Ignoring since mac address is not valid")
+        return 'true'
     
-    vmchain_in = vm_chain + "-in"
-    vmchain_out = vm_chain + "-out"
-    
-    for chain in [vmchain_in, vmchain_out]:
+    try:
+        util.pread2(['ebtables', '-N', vm_chain])
+    except:
         try:
-            util.pread2(['ebtables', '-t', 'nat', '-N', chain])
+            util.pread2(['ebtables', '-F', vm_chain])
         except:
-            try:
-                util.pread2(['ebtables', '-t',  'nat',  '-F', chain])
-            except:
-                util.SMlog("Failed to create ebtables nat rule, skipping")
-                return default_arptables_rules(vm_chain, vifs, vm_ip, vm_mac)
+            util.SMlog("Failed to create ebtables antispoof chain, skipping")
+            return 'true'
 
     try:
         for vif in vifs:
-            # -s ! 52:54:0:56:44:32 -j DROP 
-            util.pread2(['ebtables', '-t', 'nat', '-A', 'PREROUTING', '-i',  vif,  '-j', vmchain_in])
-            util.pread2(['ebtables', '-t', 'nat', '-A', 'POSTROUTING', '-o',  vif, '-j', vmchain_out])
+            util.pread2(['ebtables', '-A', 'FORWARD', '-i',  vif,  '-j', vm_chain])
+            util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
-        util.SMlog("Failed to program default rules")
+        util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
         return 'false'
-    
+
     try:
         for vif in vifs:
-            util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-i',  vif, '-s', '!', vm_mac,  '-j', 'DROP'])
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '-s', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-mac-src', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-ip-src', '!', vm_ip, '-j', 'DROP']) 
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP',  '-j', 'DROP'])    
+            # only allow source mac that belongs to the vm
+	    util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+            # do not allow fake dhcp responses
+            util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'DROP'])
+            # do not allow snooping of dhcp requests
+            util.pread2(['ebtables', '-A', vm_chain, '-o', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'DROP'])
     except:
-        util.SMlog("Failed to program default ebtables IN rules")
+        util.SMlog("Failed to program default ebtables antispoof rules for %s" % vm_chain)
         return 'false'
-   
-    try:
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '--arp-mac-dst', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-ip-dst', '!', vm_ip, '-j', 'DROP']) 
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
-        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP',  '-j', 'DROP'])    
-    except:
-        util.SMlog("Failed to program default ebtables OUT rules")
-        return 'false' 
-    
+
     return 'true'
-    
+
 @echo
-def default_arptables_rules(vm_chain, vifs, vm_ip, vm_mac):
+def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
+    if vm_mac == 'ff:ff:ff:ff:ff:ff':
+        util.SMlog("Ignoring since mac address is not valid")
+        return 'true'
+
     try:
         util.pread2(['arptables',  '-N', vm_chain])
     except:
@@ -631,19 +617,20 @@ def default_arptables_rules(vm_chain, vifs, vm_ip, vm_mac):
     
     try:
         for vif in vifs:
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-mac', '!', vm_mac, '-j', 'DROP'])
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-ip', '!', vm_ip, '-j', 'DROP']) 
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])   
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '-j', 'ACCEPT'])    
-            
+            #accept arp replies into the bridge as long as the source mac and ips match the vm
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'ACCEPT'])
+            #accept any arp requests from this vm. In the future this can be restricted to deny attacks on hosts
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])
+            #accept any arp requests to this vm as long as the request is for this vm's ip
             util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
-            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '-j', 'ACCEPT'])   
-            
-            util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])    
+            #accept any arp replies to this vm as long as the mac and ip matches
+            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
+        util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])
+
     except:
         util.SMlog("Failed to program default arptables  rules")
         return 'false'
-    
+
     return 'true'
 
 @echo
@@ -763,14 +750,16 @@ def default_network_rules(session, args):
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
     
-    default_ebtables_rules(vmchain, vifs, vm_ip, vm_mac)
+    default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+    default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
     
-    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1') == False:
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1', vm_mac) == False:
         util.SMlog("Failed to log default network rules, ignoring")
         
     util.SMlog("Programmed default rules for vm " + vm_name)
     return 'true'
 
+@echo
 def check_domid_changed(session, vmName):
     curr_domid = '-1'
     try:
@@ -790,18 +779,22 @@ def check_domid_changed(session, vmName):
     
     lines = (line.rstrip() for line in open(logfilename))
     
-    [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
+    [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno, _vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
     for line in lines:
-        [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = line.split(',')
+        try:
+            [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno,_vmMac] = line.split(',')
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = line.split(',')
         break
     
     return [curr_domid, old_domid]
 
+@echo
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     vmchain = chain_name_def(vm_name)
     
-    delcmd = "iptables -S BRIDGE-FIREWALL | grep " +  vmchain + " | sed 's/-A/-D/'"
+    delcmd = "iptables-save | grep '\-A BRIDGE-FIREWALL' | grep " +  vmchain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -809,11 +802,12 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
             dc = cmd.split(' ')
             dc.insert(0, 'iptables')
             dc.pop()
-            util.pread2(dc)
+            util.pread2(filter(None, dc))
         except:
               util.SMlog("Ignoring failure to delete rules for vm " + vmName)
 
   
+@echo
 def network_rules_for_rebooted_vm(session, vmName):
     vm_name = vmName
     [curr_domid, old_domid] = check_domid_changed(session, vm_name)
@@ -851,12 +845,15 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     #change antispoof rule in vmchain
     try:
-        delcmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | sed 's/-A/-D/'"
-        inscmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
+        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
+        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
+        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
+        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
         
         ipts = []
-        for cmd in [delcmd, inscmd, inscmd2]:
+        for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
             cmds = util.pread2(['/bin/bash', '-c', cmd]).split('\n')
             cmds.pop()
             for c in cmds:
@@ -867,12 +864,17 @@ def network_rules_for_rebooted_vm(session, vmName):
         
         for ipt in ipts:
             try:
-                util.pread2(ipt)
+                util.pread2(filter(None,ipt))
             except:
                 util.SMlog("Failed to rewrite antispoofing rules for vm " + vm_name)
     except:
         util.SMlog("No rules found for vm " + vm_name)
 
+    destroy_ebtables_rules(vmchain)
+    destroy_arptables_rules(vmchain)
+    [vm_ip, vm_mac] = get_vm_mac_ip_from_log(vmchain)
+    default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+    default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
     rewrite_rule_log_for_vm(vm_name, curr_domid)
     return True
 
@@ -882,12 +884,15 @@ def rewrite_rule_log_for_vm(vm_name, new_domid):
         return 
     lines = (line.rstrip() for line in open(logfilename))
     
-    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1','ff:ff:ff:ff:ff:ff']
     for line in lines:
-        [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
-        break
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
     
-    write_rule_log_for_vm(_vmName, _vmID, '0.0.0.0', new_domid, _signature, '-1')
+    write_rule_log_for_vm(_vmName, _vmID, _vmIP, new_domid, _signature, '-1', _vmMac)
 
 def get_rule_log_for_vm(session, vmName):
     vm_name = vmName;
@@ -897,12 +902,32 @@ def get_rule_log_for_vm(session, vmName):
     
     lines = (line.rstrip() for line in open(logfilename))
     
-    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
     for line in lines:
-        [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
-        break
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
     
     return ','.join([_vmName, _vmID, _vmIP, _domID, _signature, _seqno])
+
+@echo
+def get_vm_mac_ip_from_log(vm_name):
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '0.0.0.0', '-1', '_', '-1','ff:ff:ff:ff:ff:ff']
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    if not os.path.exists(logfilename):
+        return ['_', '_']
+    
+    lines = (line.rstrip() for line in open(logfilename))
+    for line in lines:
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+    
+    return [ _vmIP, _vmMac]
 
 @echo
 def get_rule_logs_for_vms(session, args):
@@ -996,10 +1021,13 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
         
     lines = (line.rstrip() for line in open(logfilename))
     
-    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
     try:
         for line in lines:
-            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+            try:
+                [_vmName,_vmID,_vmIP,_domID,_signature,_seqno, _vmMac] = line.split(',')
+            except ValueError,v:
+                [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
             break
     except:
         util.SMlog("Failed to parse log file for vm " + vmName)
@@ -1042,12 +1070,12 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     
 
 @echo
-def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
+def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff:ff:ff:ff:ff:ff'):
     vm_name = vmName
     logfilename = "/var/run/cloud/" + vm_name +".log"
     util.SMlog("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
-    output = ','.join([vmName, vmID, vmIP, domID, signature, seqno])
+    output = ','.join([vmName, vmID, vmIP, domID, signature, seqno, vmMac])
     result = True
     try:
         logf.write(output)
@@ -1107,6 +1135,7 @@ def network_rules(session, args):
     vm_name = args.get('vmName')
     vm_ip = args.get('vmIP')
     vm_id = args.get('vmID')
+    vm_mac = args.get('vmMAC')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
     deflated = 'false'
@@ -1146,7 +1175,7 @@ def network_rules(session, args):
         reason = 'seqno_same_sig_same'
         if rewriteLog:
             reason = 'seqno_increased_sig_same'
-            write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno)
+            write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno, vm_mac)
         util.SMlog("Programming network rules for vm  %s seqno=%s signature=%s guestIp=%s,"\
                " do nothing, reason=%s" % (vm_name, seqno, signature, vm_ip, reason))
         return 'true'
@@ -1222,7 +1251,7 @@ def network_rules(session, args):
         util.pread2(cmd)
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
-    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno) == False:
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno, vm_mac) == False:
         return 'false'
     
     return 'true'
