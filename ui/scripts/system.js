@@ -608,8 +608,9 @@
                   fields: {
                     name: { label: 'Name' },
                     type: { label: 'Type' },
-                    networkofferingdisplaytext: { label: 'Network offering' },
-                    account: { label: 'Account' }
+                    vlan: { label: 'VLAN ID' },                    
+                    cidr: { label: 'CIDR' },
+                    scope: { label: 'Scope' }
                   },
                   actions: {
                     add: {
@@ -1014,12 +1015,32 @@
                       }
                     }
                   },
+                  
                   dataProvider: function(args) {
                     $.ajax({
                       url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
                       dataType: "json",
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
+                                                                      
+                        $(items).each(function(){                          
+                          this.networkdomaintext = this.networkdomain;
+                          this.networkofferingidText = this.networkofferingid;
+                                                    
+                          if(this.acltype == "Domain") {
+                            if(this.domainid == rootAccountId) 
+                              this.scope = "All";                            
+                            else 
+                              this.scope = "Domain (" + this.domain + ")";                            
+                          } 
+                          else if (this.acltype == "Account"){
+                            this.scope = "Account (" + this.domain + ", " + this.account + ")";      
+                          }
+
+                          if(this.vlan == null && this.broadcasturi != null)
+                            this.vlan = this.broadcasturi.replace("vlan://", "");                          
+                        });                        
+                        
                         args.response.success({data: items});
                       }
                     });
@@ -1221,25 +1242,8 @@
                             }
                           }
                         ],
-                        dataProvider: function(args) {
-                          selectedGuestNetworkObj = args.context.networks[0];
-
-                          selectedGuestNetworkObj.networkdomaintext = selectedGuestNetworkObj.networkdomain;
-                          selectedGuestNetworkObj.networkofferingidText = selectedGuestNetworkObj.networkofferingid;
-                                                    
-                          if(selectedGuestNetworkObj.acltype == "Domain") {
-                            if(selectedGuestNetworkObj.domainid == rootAccountId) 
-                              selectedGuestNetworkObj.scope = "All";                            
-                            else 
-                              selectedGuestNetworkObj.scope = "Domain (" + selectedGuestNetworkObj.domain + ")";                            
-                          } 
-                          else if (selectedGuestNetworkObj.acltype == "Account"){
-                            selectedGuestNetworkObj.scope = "Account (" + selectedGuestNetworkObj.domain + ", " + selectedGuestNetworkObj.account + ")";      
-                          }
-
-                          if(selectedGuestNetworkObj.vlan == null && selectedGuestNetworkObj.broadcasturi != null)
-                            selectedGuestNetworkObj.vlan = selectedGuestNetworkObj.broadcasturi.replace("vlan://", "");
-
+                        dataProvider: function(args) {    
+                          selectedGuestNetworkObj = args.context.networks[0];                        
                           args.response.success({data: selectedGuestNetworkObj});
                         }
                       },
