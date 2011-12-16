@@ -55,10 +55,12 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 
 import com.citrix.netscaler.nitro.service.nitro_service;
+import com.citrix.netscaler.nitro.util.filtervalue;
 import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
 import com.citrix.netscaler.nitro.resource.config.lb.lbvserver;
+import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding;
 import com.citrix.netscaler.nitro.resource.config.network.*;
 import com.citrix.netscaler.nitro.resource.config.ns.*;
 import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
@@ -493,6 +495,7 @@ public class NetscalerResource implements ServerResource {
                     if (lbserver == null) {
                         throw new ExecutionException("Failed to find virtual server with name:" + nsVirtualServerName);
                     }
+
                     //unbind the all services associated with this virtual server
                     com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
                     
@@ -507,8 +510,23 @@ public class NetscalerResource implements ServerResource {
                             com.citrix.netscaler.nitro.resource.config.basic.service svc = com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName);
                             String nsServerName = svc.get_servername();
 
-                            // delete the service
-                            com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, serviceName);
+                            // check if service is bound to any other virtual server
+                            boolean deleteService = true;
+                            lbvserver[] lbservers = lbvserver.get(_netscalerService);
+                            for (lbvserver vserver : lbservers) {
+                                filtervalue[] filter = new filtervalue[1];
+                                filter[0] = new filtervalue("servicename", serviceName);
+                                lbvserver_service_binding[] result = (lbvserver_service_binding[]) lbvserver_service_binding.get_filtered(_netscalerService, vserver.get_name(), filter);
+                                if (result != null && result.length > 0) {
+                                	deleteService = false;
+                                	break;
+                                }
+                            }
+                            
+                            if (deleteService) {
+                                // no lb virtual servers are bound to this service so delete it
+                                com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, serviceName);
+                            }
 
                             //delete the server if no more services attached
                             server_service_binding[] services = server_service_binding.get(_netscalerService, nsServerName);
