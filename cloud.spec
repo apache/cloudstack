@@ -187,10 +187,6 @@ Summary:   Cloud.com agent libraries
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: commons-httpclient
-#Requires: commons-codec
-Requires: commons-collections
-Requires: commons-pool
-Requires: commons-dbcp
 Requires: jakarta-commons-logging
 Requires: jpackage-utils
 Group:     System Environment/Libraries
