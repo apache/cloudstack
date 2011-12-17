@@ -1346,9 +1346,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             s_logger.debug(hType + " won't support system vm, skip it");
                             continue;
                         }
+                        
+                        boolean offerHA = routerOffering.getOfferHA();
+                        /* We don't provide HA to redundant router VMs, admin should own it all, and redundant router themselves are HA */
+                        if (isRedundant) {
+                            offerHA = false;
+                        }
 
                         router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
+                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, offerHA, false);
                         router.setRole(Role.VIRTUAL_ROUTER);
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                         break;

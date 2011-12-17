@@ -2820,14 +2820,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         s_logger.debug("Restarting network " + networkId + "...");
 
-        //shutdown the network
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
-        s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
+        
+        if (cleanup) {
+            //shutdown the network
+            s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
 
-        if (!shutdownNetworkElementsAndResources(context, cleanup, network)) {
-            s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
-            setRestartRequired(network, true);
-            return false;
+            if (!shutdownNetworkElementsAndResources(context, true, network)) {
+                s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
+                setRestartRequired(network, true);
+                return false;
+            }
+        } else {
+            s_logger.debug("Skip the shutting down of network id=" + networkId);
         }
 
         //implement the network elements and rules again
