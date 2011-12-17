@@ -1378,10 +1378,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	                	else
 	                		controllerKey = ideControllerKey;
                 	} else {
-	                	if(_rootDiskController == DiskControllerType.scsi)
-	                		controllerKey = scsiControllerKey;
-	                	else
-	                		controllerKey = ideControllerKey;
+                		controllerKey = scsiControllerKey;
                 	}
                 }
 
