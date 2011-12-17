@@ -13,6 +13,8 @@
 /etc/cloud/management/classpath.conf
 /etc/cloud/management/tomcat-users.xml
 /etc/cloud/management/web.xml
+/etc/cloud/management/server-nonssl.xml
+/etc/cloud/management/tomcat6-nonssl.conf
 /etc/cloud/management/Catalina
 /etc/cloud/management/Catalina/localhost
 /etc/cloud/management/Catalina/localhost/client
