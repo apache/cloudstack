@@ -212,10 +212,6 @@ Requires: %{name}-agent-scripts = %{version}
 Requires: python
 Requires: %{name}-python = %{version}
 Requires: commons-httpclient
-#Requires: commons-codec
-Requires: commons-collections
-Requires: commons-pool
-Requires: commons-dbcp
 Requires: jakarta-commons-logging
 Requires: libvirt
 Requires: /usr/sbin/libvirtd
@@ -229,7 +225,7 @@ Group:     System Environment/Libraries
 
 Requires: kvm
 
-%if 0%{?fedora} >= 14
+%if 0%{?fedora} >= 14 && 0%{?fedora} != 16
 Requires: cloud-qemu-kvm
 Requires: cloud-qemu-img
 %endif
