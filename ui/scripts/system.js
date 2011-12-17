@@ -854,8 +854,8 @@
                           
                           guestGateway: { label: 'Guest gateway' },
                           guestNetmask: { label: 'Guest netmask' },
-                          guestStartIp: { label: 'Start guest IP' },
-                          guestEndIp: { label: 'End guest IP' },
+                          guestStartIp: { label: 'Guest start IP' },
+                          guestEndIp: { label: 'Guest end IP' },
                           networkdomain: { label: 'Network domain' }
                         }
                       },
@@ -8041,8 +8041,8 @@
 
                   guestGateway: { label: 'Guest gateway' },
                   guestNetmask: { label: 'Guest netmask' },
-                  guestStartIp: { label: 'Start guest IP' },
-                  guestEndIp: { label: 'End guest IP' }
+                  guestStartIp: { label: 'Guest start IP' },
+                  guestEndIp: { label: 'Guest end IP' }
                 }
               },
 
