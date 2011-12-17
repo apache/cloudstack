@@ -1,15 +1,12 @@
 /usr/share/java/cloud-commons-codec-1.5.jar
 /usr/share/java/cloud-commons-dbcp-1.4.jar
 /usr/share/java/cloud-commons-pool-1.5.6.jar
-/usr/share/java/cloud-google-gson-1.7.1.jar
 /usr/share/java/cloud-netscaler.jar
 /usr/share/java/cloud-netscaler-sdx.jar
-/usr/share/java/cloud-log4j-extras.jar
 /usr/share/java/cloud-backport-util-concurrent-3.0.jar
 /usr/share/java/cloud-ehcache.jar
 /usr/share/java/cloud-email.jar
 /usr/share/java/cloud-httpcore-4.0.jar
-/usr/share/java/cloud-libvirt-0.4.5.jar
 /usr/share/java/cloud-log4j.jar
 /usr/share/java/cloud-trilead-ssh2-build213.jar
 /usr/share/java/cloud-cglib.jar
