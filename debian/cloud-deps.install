@@ -24,7 +24,7 @@
 /usr/share/java/cloud-manageontap.jar
 /usr/share/java/cloud-jnetpcap.jar
 /usr/share/java/cloud-junit.jar
+/usr/share/java/cloud-jasypt-1.8.jar
 /usr/share/java/jetty-6.1.26.jar
 /usr/share/java/jetty-util-6.1.26.jar
 /usr/share/java/vmware*.jar
-
