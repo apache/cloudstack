@@ -437,11 +437,11 @@
             tabs: {
               details: {
                 title: 'Details',
-                preFilter: function(args) {
+                preFilter: function(args) {                  
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
-                    hiddenFields.push("vlan");
-                    hiddenFields.push("guestcidraddress");
+                    hiddenFields.push("startVlan");
+                    hiddenFields.push("endVlan");
                   }
                   return hiddenFields;
                 },
@@ -457,9 +457,7 @@
                       label: 'End Vlan',
                       isEditable: true
                     },
-
-                    broadcastdomainrange: { label: 'Broadcast domain range' },
-                    zoneid: { label: 'Zone ID' }
+                    broadcastdomainrange: { label: 'Broadcast domain range' }                    
                   }
                 ],
                 dataProvider: function(args) {                  
