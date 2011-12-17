@@ -149,9 +149,6 @@ Requires: %{name}-python = %{version}
 Requires: tomcat6
 Requires: ws-commons-util
 #Requires: commons-codec
-Requires: commons-dbcp
-Requires: commons-collections
-Requires: commons-httpclient
 Requires: jpackage-utils
 Requires: sudo
 Requires: /sbin/service
@@ -162,6 +159,18 @@ Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
 Requires: %{name}-utils = %{version}
+%if 0%{?fedora} > 14 
+Requires: apache-commons-dbcp
+Requires: apache-commons-collections
+Requires: jakarta-commons-httpclient
+%endif
+
+%if 0%{?rhel} >= 5
+Requires: commons-dbcp
+Requires: commons-collection
+Requires: commons-httpclient
+%endif
+
 Group:     System Environment/Libraries
 %description client
 The Cloud.com management server is the central point of coordination,
@@ -231,6 +240,9 @@ Requires: qemu-img
 %endif
 
 Requires: libcgroup
+%if 0%{?fedora} >= 16
+Requires: libcgroup-tools
+%endif
 Requires: /usr/bin/uuidgen
 Requires: rsync
 Requires: /bin/egrep
