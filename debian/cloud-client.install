@@ -33,4 +33,3 @@
 /usr/bin/cloud-update-xenserver-licenses
 /usr/share/java/cloud-vmware-base.jar
 /etc/cloud/management/commands-ext.properties
-/etc/cloud/management/components-premium.xml
