@@ -204,7 +204,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             String result = swiftUpload(swift, "T-" + templateId.toString(), lPath, "*");
             if (result != null) {
-                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                String errMsg = "failed to upload template from secondary storage " + lPath + " to swift  , err=" + result;
                 s_logger.debug(errMsg);
                 return new Answer(cmd, false, errMsg);
             }

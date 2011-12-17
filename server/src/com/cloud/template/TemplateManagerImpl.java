@@ -883,6 +883,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 try {
                     List<VMTemplateHostVO> templtHostRefs = _tmpltHostDao.listByState(VMTemplateHostVO.Status.DOWNLOADED);
                     for (VMTemplateHostVO templtHostRef : templtHostRefs) {
+                        if (templtHostRef.getDestroyed()) {
+                            continue;
+                        }
                         if (!templateIds.contains(templtHostRef.getTemplateId())) {
                             continue;
                         }
