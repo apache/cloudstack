@@ -19,7 +19,11 @@
     dashboard: function() {
       var tabs = {
         overview: function() {
-          return $('<img>').attr('src', 'images/screens/ProjectDashboard.png').data('tab-title', 'Overview');
+          var $dashboard = $('#template').find('.project-dashboard-view').clone();
+
+          $dashboard.data('tab-title', 'Dashboard')
+
+          return $dashboard;
         }
       };
 
@@ -42,7 +46,7 @@
 
       // Make UI tabs
       $.each(tabs, function(tabName, tab) {
-        var $tab = $('<li>').appendTo($tabs.find('ul'));
+        var $tab = $('<li>').appendTo($tabs.find('ul:first'));
         var $tabLink = $('<a>')
               .attr({ href: '#project-view-dashboard-' + tabName })
               .html(tab().data('tab-title'))

@@ -1912,7 +1912,7 @@ div.detail-group.actions td {
 }
 
 .project-view .ui-tabs div.ui-tabs-panel {
-  background: #C7C7C7 0px 9px;
+  background: #DBDDDF;
 }
 
 #browser div.panel .shadow {
@@ -6172,6 +6172,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border: 1px solid #BFD4E1;
   position: relative;
   margin: 18px 0 0 6px;
+  font-weight: bold;
 }
 
 .system-dashboard-view .toolbar {
@@ -6679,6 +6680,303 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .project-view .project-dashboard .ui-tabs .multi-edit table td {
   background: #EAEAEA;
+}
+
+.project-dashboard-view .overview-area {
+  width: 533px;
+  float: left;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard,
+.project-dashboard-view .users .system-dashboard {
+  width: 526px;
+  height: 230px;
+  float: left;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard ul,
+.project-dashboard-view .users .system-dashboard ul {
+  height: 162px;
+  margin: 14px 0 0;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li,
+.project-dashboard-view .users .system-dashboard li {
+  width: 159px;
+  height: 161px;
+  background-position: 300px -1018px;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .icon,
+.project-dashboard-view .users li .icon {
+  width: 100px;
+  height: 76px;
+  /*+placement:shift 27px 20px;*/
+  position: relative;
+  left: 27px;
+  top: 20px;
+  position: absolute;
+  background: url(../images/sprites.png) no-repeat 2px -1039px;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li.storage .icon {
+  background-position: -89px -1036px;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li.bandwidth .icon {
+  background-position: -184px -1036px;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .overview {
+  width: 100%;
+  height: 53px;
+  position: relative;
+  margin: 81px 0 0;
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li.storage .overview .total {
+  font-size: 28px;
+  /*+placement:shift 30px 21px;*/
+  position: relative;
+  left: 30px;
+  top: 21px;
+  position: absolute;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li.storage .overview .label {
+  font-size: 13px;
+  color: #C3C1C1;
+  /*+placement:shift 91px 33px;*/
+  position: relative;
+  left: 91px;
+  top: 33px;
+  position: absolute;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .overview .overview-item {
+  float: left;
+  margin: 12px 0 0 20px;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .overview .overview-item .total {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .overview .overview-item .label {
+  font-size: 11px;
+  margin: 4px 0 0;
+  color: #C7C7C7;
+}
+
+.project-dashboard-view .compute-and-storage .system-dashboard li .overview .overview-item.running .label {
+  color: #2BFF2B;
+  /*[empty]background-position:;*/
+}
+
+.project-dashboard-view .users .system-dashboard {
+  width: 526px;
+  height: 100%;
+}
+
+.project-dashboard-view .users .system-dashboard ul {
+  overflow-y: auto;
+}
+
+.project-dashboard-view .users .system-dashboard li {
+  width: 91px;
+  height: 138px;
+  margin-bottom: 24px;
+  margin-left: 9px;
+}
+
+.project-dashboard-view .users .system-dashboard li .icon {
+  background-position: -306px -1044px;
+  left: 16px;
+}
+
+.project-dashboard-view .users .system-dashboard li .header {
+  width: 77px;
+  /*+placement:shift 7px 110px;*/
+  position: relative;
+  left: 7px;
+  top: 110px;
+  position: absolute;
+  text-align: center;
+}
+
+/**** Info box*/
+.info-boxes {
+  float: right;
+  width: 226px;
+  height: 558px;
+  margin: 21px 5px 0 0;
+}
+
+.info-boxes .info-box {
+  display: inline-block;
+  border: 1px solid #B3C3D0;
+  /*+box-shadow:inset 0px -1px 7px #A7A7A7;*/
+  -moz-box-shadow: inset 0px -1px 7px #A7A7A7;
+  -webkit-box-shadow: inset 0px -1px 7px #A7A7A7;
+  -o-box-shadow: inset 0px -1px 7px #A7A7A7;
+  box-shadow: inset 0px -1px 7px #A7A7A7;
+  background: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.info-boxes .info-box.events {
+  margin-top: 4px;
+}
+
+.info-boxes .info-box.events ul {
+  max-height: 205px;
+  overflow: auto;
+  overflow-x: hidden;
+}
+
+.info-boxes .info-box ul {
+  margin: 0 0 3px 2px;
+  height: auto;
+  display: inline-block;
+}
+
+.info-boxes .info-box ul li {
+  width: 224px;
+  margin: 0 2px 0 0;
+  height: 36px;
+  border-bottom: 1px solid #BDD2DF;
+  border-top: 1px solid #FFFFFF;
+}
+
+.info-boxes .info-box ul li.odd {
+  background: #ECECEC;
+}
+
+.info-boxes .info-box .button {
+  background: url(../images/bg-gradients.png) 0px -734px;
+  color: #FFFFFF;
+  border: 1px solid #82A3C7;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  /*+box-shadow:inset 0px 1px 1px #85ACC4;*/
+  -moz-box-shadow: inset 0px 1px 1px #85ACC4;
+  -webkit-box-shadow: inset 0px 1px 1px #85ACC4;
+  -o-box-shadow: inset 0px 1px 1px #85ACC4;
+  box-shadow: inset 0px 1px 1px #85ACC4;
+  padding: 2px 6px 3px 3px;
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  float: right;
+  margin: 0 14px 0 0;
+}
+
+.info-boxes .info-box .button span {
+  /*+placement:shift 0px 2px;*/
+  position: relative;
+  left: 0px;
+  top: 2px;
+}
+
+.info-boxes .info-box .title .button {
+  margin: 4px 6px 0 3px;
+}
+
+.info-boxes .info-box .title .button span {
+  color: #FFFFFF;
+  font-size: 10px;
+  margin: 0;
+  padding: 0;
+  /*+placement:shift 1px 1px;*/
+  position: relative;
+  left: 1px;
+  top: 1px;
+}
+
+.info-boxes .info-box .button:hover {
+  background-position: 0px -766px;
+}
+
+.info-boxes .info-box .button .arrow {
+  width: 16px;
+  height: 13px;
+  float: right;
+  /*+placement:shift 0px 0px;*/
+  position: relative;
+  left: 0px;
+  top: 0px;
+  background: url(../images/sprites.png) no-repeat -455px -84px;
+}
+
+.info-boxes .info-box ul li .total,
+.info-boxes .info-box ul li .date {
+  width: 52px;
+  height: 36px;
+  float: left;
+  font-size: 24px;
+  color: #647C91;
+  border-right: 1px solid #BDD2DF;
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
+  text-align: right;
+}
+
+.info-boxes .info-box ul li .date {
+  font-size: 13px;
+  text-align: center;
+  margin: 13px 0 0;
+}
+
+.info-boxes .info-box ul li .desc {
+  color: #606060;
+  font-size: 12px;
+  /*+placement:shift 10px 11px;*/
+  position: relative;
+  left: 10px;
+  top: 11px;
+}
+
+.info-boxes .info-box ul li .total span {
+  /*+placement:shift -5px 7px;*/
+  position: relative;
+  left: -5px;
+  top: 7px;
+}
+
+.info-boxes .info-box .title {
+  height: 27px;
+  border-bottom: 1px solid #BDD2DF;
+}
+
+.info-boxes .info-box .title span {
+  /*+placement:shift 8px 6px;*/
+  position: relative;
+  left: 8px;
+  top: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #4E748C;
 }
 
 /*** New project form*/

@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <title>CloudStack</title>
@@ -7,7 +7,7 @@
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
 
     <!--[if IE 7]>
-        <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
+    <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
     <![endif]-->
   </head>
   <body>
@@ -520,7 +520,7 @@
                       <input type="text" name="networkdomain" />
                     </div>
                   </div>
-                 
+
                   <!-- Public -->
                   <div class="field">
                     <div class="name">
@@ -760,6 +760,224 @@
             <div class="view-details" net-target="staticNAT">View All</div>
           </li>
         </ul>
+      </div>
+
+      <!-- Project dashboard -->
+      <div class="project-dashboard-view">
+        <div class="overview-area">
+          <!-- Compute and storage -->
+          <div class="compute-and-storage">
+            <div class="system-dashboard">
+              <div class="head">
+                <span>Compute and Storage</span>
+              </div>
+              <ul class="status_box good">
+                <!-- Virtual Machines -->
+                <li class="block virtual-machines">
+                  <span class="header">Virtual Machines</span>
+                  <div class="icon"></div>
+                  <div class="overview">
+                    <!-- Running -->
+                    <div class="overview-item running">
+                      <div class="total" data-item="virtualMachinesRunning">12</div>
+                      <div class="label">Running</div>
+                    </div>
+
+                    <!-- Stopped -->
+                    <div class="overview-item stopped">
+                      <div class="total" data-item="virtualMachinesStopped">2</div>
+                      <div class="label">Stopped</div>
+                    </div>
+                  </div>
+                </li>
+
+                <!-- Storage -->
+                <li class="block storage">
+                  <span class="header">Storage</span>
+                  <div class="icon"></div>
+                  <div class="overview">
+                    <div class="total" data-item="storageCapacityTotal">171</div>
+                    <div class="label">GB/mo</div>
+                  </div>
+                </li>
+
+                <!-- Bandwidth -->
+                <li class="block bandwidth">
+                  <span class="header">Bandwidth</span>
+                  <div class="icon"></div>
+                  <div class="overview">
+                    <!-- In -->
+                    <div class="overview-item in">
+                      <div class="total" data-item="virtualMachinesRunning">2.3</div>
+                      <div class="label">In GB</div>
+                    </div>
+
+                    <!-- Out -->
+                    <div class="overview-item out">
+                      <div class="total" data-item="virtualMachinesRunning">1.5</div>
+                      <div class="label">Out GB</div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Users -->
+          <div class="users">
+            <div class="system-dashboard">
+              <div class="head">
+                <span>Users</span>
+              </div>
+              <ul class="status_box good">
+                <li class="block user">
+                  <span class="header">Will</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Brian</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Sonny</span>
+                  <div class="icon"></div>
+                </li>
+                <li class="block user">
+                  <span class="header">Will</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Brian</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Sonny</span>
+                  <div class="icon"></div>
+                </li>
+                <li class="block user">
+                  <span class="header">Will</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Brian</span>
+                  <div class="icon"></div>
+                </li>
+
+                <li class="block user">
+                  <span class="header">Sonny</span>
+                  <div class="icon"></div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-boxes">
+          <!-- Networking and security -->
+          <div class="info-box networking-and-security">
+            <div class="title">
+              <span>Networking and Security</span>
+            </div>
+            <ul>
+              <!-- IP addresses -->
+              <li class="odd">
+                <div class="total"><span>171</span></div>
+                <div class="desc">IP addresses</div>
+              </li>
+
+              <!-- Load balancing policies -->
+              <li>
+                <div class="total"><span>04</span></div>
+                <div class="desc">Load balancing policies</div>
+              </li>
+
+              <!-- Security Groups -->
+              <li class="odd">
+                <div class="total"><span>23</span></div>
+                <div class="desc">Security groups</div>
+              </li>
+
+              <!-- Blank -->
+              <li>
+                <div class="total"></div>
+                <div class="desc"></div>
+              </li>
+
+              <!-- Manage resources -->
+              <li class="odd">
+                <div class="total"></div>
+                <div class="desc">
+                  <div class="button manage-resources">
+                    <span>Manage Resources</span>
+                    <span class="arrow"></span>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Events -->
+          <div class="info-box events">
+            <div class="title">
+              <span>Events</span>
+              <div class="button view-all">
+                <span>View all</span>
+                <span class="arrow"></span>
+              </div>
+            </div>
+            <ul>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li>
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li>
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li>
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li>
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li>
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+              <li class="odd">
+                <div class="date"><span>12/01</span></div>
+                <div class="desc">Event</div>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <!-- System dashboard -->
@@ -1186,65 +1404,65 @@
                   <div class="name">Timezone</div>
                   <div class="value">
                     <select name="timezone">
-								      <option value="Etc/GMT+12">[UTC-12:00] GMT-12:00</option>
-								      <option value="Etc/GMT+11">[UTC-11:00] GMT-11:00</option>
-								      <option value="Pacific/Samoa">[UTC-11:00] Samoa Standard Time</option>
-								      <option value="Pacific/Honolulu">[UTC-10:00] Hawaii Standard Time</option>
-								      <option value="US/Alaska">[UTC-09:00] Alaska Standard Time</option>
-								      <option value="America/Los_Angeles">[UTC-08:00] Pacific Standard Time</option>
-								      <option value="Mexico/BajaNorte">[UTC-08:00] Baja California</option>
-								      <option value="US/Arizona">[UTC-07:00] Arizona</option>
-								      <option value="US/Mountain">[UTC-07:00] Mountain Standard Time</option>
-								      <option value="America/Chihuahua">[UTC-07:00] Chihuahua, La Paz</option>
-								      <option value="America/Chicago">[UTC-06:00] Central Standard Time</option>
-								      <option value="America/Costa_Rica">[UTC-06:00] Central America</option>
-								      <option value="America/Mexico_City">[UTC-06:00] Mexico City, Monterrey</option>
-								      <option value="Canada/Saskatchewan">[UTC-06:00] Saskatchewan</option>
-								      <option value="America/Bogota">[UTC-05:00] Bogota, Lima</option>
-								      <option value="America/New_York">[UTC-05:00] Eastern Standard Time</option>
-								      <option value="America/Caracas">[UTC-04:00] Venezuela Time</option>
-								      <option value="America/Asuncion">[UTC-04:00] Paraguay Time</option>
-								      <option value="America/Cuiaba">[UTC-04:00] Amazon Time</option>
-								      <option value="America/Halifax">[UTC-04:00] Atlantic Standard Time</option>
-								      <option value="America/La_Paz">[UTC-04:00] Bolivia Time</option>
-								      <option value="America/Santiago">[UTC-04:00] Chile Time</option>
-								      <option value="America/St_Johns">[UTC-03:30] Newfoundland Standard Time</option>
-								      <option value="America/Araguaina">[UTC-03:00] Brasilia Time</option>
-								      <option value="America/Argentina/Buenos_Aires">[UTC-03:00] Argentine Time</option>
-								      <option value="America/Cayenne">[UTC-03:00] French Guiana Time</option>
-								      <option value="America/Godthab">[UTC-03:00] Greenland Time</option>
-								      <option value="America/Montevideo">[UTC-03:00] Uruguay Time]</option>
-								      <option value="Etc/GMT+2">[UTC-02:00] GMT-02:00</option>
-								      <option value="Atlantic/Azores">[UTC-01:00] Azores Time</option>
-								      <option value="Atlantic/Cape_Verde">[UTC-01:00] Cape Verde Time</option>
-								      <option value="Africa/Casablanca">[UTC] Casablanca</option>
-								      <option value="Etc/UTC">[UTC] Coordinated Universal Time</option>
-								      <option value="Atlantic/Reykjavik">[UTC] Reykjavik</option>
-								      <option value="Europe/London">[UTC] Western European Time</option>
-								      <option value="CET">[UTC+01:00] Central European Time</option>
-								      <option value="Europe/Bucharest">[UTC+02:00] Eastern European Time</option>
-								      <option value="Africa/Johannesburg">[UTC+02:00] South Africa Standard Time</option>
-								      <option value="Asia/Beirut">[UTC+02:00] Beirut</option>
-								      <option value="Africa/Cairo">[UTC+02:00] Cairo</option>
-								      <option value="Asia/Jerusalem">[UTC+02:00] Israel Standard Time</option>
-								      <option value="Europe/Minsk">[UTC+02:00] Minsk</option>
-								      <option value="Europe/Moscow">[UTC+03:00] Moscow Standard Time</option>
-								      <option value="Africa/Nairobi">[UTC+03:00] Eastern African Time</option>
-								      <option value="Asia/Karachi">[UTC+05:00] Pakistan Time</option>
-								      <option value="Asia/Kolkata">[UTC+05:30] India Standard Time</option>
-								      <option value="Asia/Bangkok">[UTC+05:30] Indochina Time</option>
-								      <option value="Asia/Shanghai">[UTC+08:00] China Standard Time</option>
-								      <option value="Asia/Kuala_Lumpur">[UTC+08:00] Malaysia Time</option>
-								      <option value="Australia/Perth">[UTC+08:00] Western Standard Time (Australia)</option>
-								      <option value="Asia/Taipei">[UTC+08:00] Taiwan</option>
-								      <option value="Asia/Tokyo">[UTC+09:00] Japan Standard Time</option>
-								      <option value="Asia/Seoul">[UTC+09:00] Korea Standard Time</option>
-								      <option value="Australia/Adelaide">[UTC+09:30] Central Standard Time (South Australia)</option>
-								      <option value="Australia/Darwin">[UTC+09:30] Central Standard Time (Northern Territory)</option>
-								      <option value="Australia/Brisbane">[UTC+10:00] Eastern Standard Time (Queensland)</option>
-								      <option value="Australia/Canberra">[UTC+10:00] Eastern Standard Time (New South Wales)</option>
-								      <option value="Pacific/Guam">[UTC+10:00] Chamorro Standard Time</option>
-								      <option value="Pacific/Auckland">[UTC+12:00] New Zealand Standard Time</option>
+                      <option value="Etc/GMT+12">[UTC-12:00] GMT-12:00</option>
+                      <option value="Etc/GMT+11">[UTC-11:00] GMT-11:00</option>
+                      <option value="Pacific/Samoa">[UTC-11:00] Samoa Standard Time</option>
+                      <option value="Pacific/Honolulu">[UTC-10:00] Hawaii Standard Time</option>
+                      <option value="US/Alaska">[UTC-09:00] Alaska Standard Time</option>
+                      <option value="America/Los_Angeles">[UTC-08:00] Pacific Standard Time</option>
+                      <option value="Mexico/BajaNorte">[UTC-08:00] Baja California</option>
+                      <option value="US/Arizona">[UTC-07:00] Arizona</option>
+                      <option value="US/Mountain">[UTC-07:00] Mountain Standard Time</option>
+                      <option value="America/Chihuahua">[UTC-07:00] Chihuahua, La Paz</option>
+                      <option value="America/Chicago">[UTC-06:00] Central Standard Time</option>
+                      <option value="America/Costa_Rica">[UTC-06:00] Central America</option>
+                      <option value="America/Mexico_City">[UTC-06:00] Mexico City, Monterrey</option>
+                      <option value="Canada/Saskatchewan">[UTC-06:00] Saskatchewan</option>
+                      <option value="America/Bogota">[UTC-05:00] Bogota, Lima</option>
+                      <option value="America/New_York">[UTC-05:00] Eastern Standard Time</option>
+                      <option value="America/Caracas">[UTC-04:00] Venezuela Time</option>
+                      <option value="America/Asuncion">[UTC-04:00] Paraguay Time</option>
+                      <option value="America/Cuiaba">[UTC-04:00] Amazon Time</option>
+                      <option value="America/Halifax">[UTC-04:00] Atlantic Standard Time</option>
+                      <option value="America/La_Paz">[UTC-04:00] Bolivia Time</option>
+                      <option value="America/Santiago">[UTC-04:00] Chile Time</option>
+                      <option value="America/St_Johns">[UTC-03:30] Newfoundland Standard Time</option>
+                      <option value="America/Araguaina">[UTC-03:00] Brasilia Time</option>
+                      <option value="America/Argentina/Buenos_Aires">[UTC-03:00] Argentine Time</option>
+                      <option value="America/Cayenne">[UTC-03:00] French Guiana Time</option>
+                      <option value="America/Godthab">[UTC-03:00] Greenland Time</option>
+                      <option value="America/Montevideo">[UTC-03:00] Uruguay Time]</option>
+                      <option value="Etc/GMT+2">[UTC-02:00] GMT-02:00</option>
+                      <option value="Atlantic/Azores">[UTC-01:00] Azores Time</option>
+                      <option value="Atlantic/Cape_Verde">[UTC-01:00] Cape Verde Time</option>
+                      <option value="Africa/Casablanca">[UTC] Casablanca</option>
+                      <option value="Etc/UTC">[UTC] Coordinated Universal Time</option>
+                      <option value="Atlantic/Reykjavik">[UTC] Reykjavik</option>
+                      <option value="Europe/London">[UTC] Western European Time</option>
+                      <option value="CET">[UTC+01:00] Central European Time</option>
+                      <option value="Europe/Bucharest">[UTC+02:00] Eastern European Time</option>
+                      <option value="Africa/Johannesburg">[UTC+02:00] South Africa Standard Time</option>
+                      <option value="Asia/Beirut">[UTC+02:00] Beirut</option>
+                      <option value="Africa/Cairo">[UTC+02:00] Cairo</option>
+                      <option value="Asia/Jerusalem">[UTC+02:00] Israel Standard Time</option>
+                      <option value="Europe/Minsk">[UTC+02:00] Minsk</option>
+                      <option value="Europe/Moscow">[UTC+03:00] Moscow Standard Time</option>
+                      <option value="Africa/Nairobi">[UTC+03:00] Eastern African Time</option>
+                      <option value="Asia/Karachi">[UTC+05:00] Pakistan Time</option>
+                      <option value="Asia/Kolkata">[UTC+05:30] India Standard Time</option>
+                      <option value="Asia/Bangkok">[UTC+05:30] Indochina Time</option>
+                      <option value="Asia/Shanghai">[UTC+08:00] China Standard Time</option>
+                      <option value="Asia/Kuala_Lumpur">[UTC+08:00] Malaysia Time</option>
+                      <option value="Australia/Perth">[UTC+08:00] Western Standard Time (Australia)</option>
+                      <option value="Asia/Taipei">[UTC+08:00] Taiwan</option>
+                      <option value="Asia/Tokyo">[UTC+09:00] Japan Standard Time</option>
+                      <option value="Asia/Seoul">[UTC+09:00] Korea Standard Time</option>
+                      <option value="Australia/Adelaide">[UTC+09:30] Central Standard Time (South Australia)</option>
+                      <option value="Australia/Darwin">[UTC+09:30] Central Standard Time (Northern Territory)</option>
+                      <option value="Australia/Brisbane">[UTC+10:00] Eastern Standard Time (Queensland)</option>
+                      <option value="Australia/Canberra">[UTC+10:00] Eastern Standard Time (New South Wales)</option>
+                      <option value="Pacific/Guam">[UTC+10:00] Chamorro Standard Time</option>
+                      <option value="Pacific/Auckland">[UTC+12:00] New Zealand Standard Time</option>
                     </select>
                   </div>
                 </div>
@@ -1454,7 +1672,7 @@
 
     <script src="scripts-test/test-data.js" type="text/javascript"></script>
 
-	  <!-- Common libraries -->
+    <!-- Common libraries -->
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.timers.js" type="text/javascript"></script>
@@ -1462,7 +1680,7 @@
 
     <!-- CloudStack -->
     <script src="scripts/cloud.core.callbacks.js" type="text/javascript"></script>
-	  <script src="scripts/sharedFunctions.js" type="text/javascript"></script>
+    <script src="scripts/sharedFunctions.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
     <script src="scripts/cloudStack.js" type="text/javascript"></script>
@@ -1491,17 +1709,17 @@
     <script src="scripts/domains.js" type="text/javascript"></script>
 
     <!-- Local testing-->
-	  <!--
-        <script src="js-test/accounts.js" type="text/javascript"></script>
-        <script src="js-test/configuration.js" type="text/javascript"></script>
-        <script src="js-test/dashboard.js" type="text/javascript"></script>
-        <script src="js-test/domains.js" type="text/javascript"></script>
-        <script src="js-test/events.js" type="text/javascript"></script>
-        <script src="js-test/instances.js" type="text/javascript"></script>
-        <script src="js-test/network.js" type="text/javascript"></script>
-        <script src="js-test/storage.js" type="text/javascript"></script>
-        <script src="js-test/system.js" type="text/javascript"></script>
-        <script src="js-test/templates.js" type="text/javascript"></script>
-	      -->
+    <!--
+    <script src="js-test/accounts.js" type="text/javascript"></script>
+    <script src="js-test/configuration.js" type="text/javascript"></script>
+    <script src="js-test/dashboard.js" type="text/javascript"></script>
+    <script src="js-test/domains.js" type="text/javascript"></script>
+    <script src="js-test/events.js" type="text/javascript"></script>
+    <script src="js-test/instances.js" type="text/javascript"></script>
+    <script src="js-test/network.js" type="text/javascript"></script>
+    <script src="js-test/storage.js" type="text/javascript"></script>
+    <script src="js-test/system.js" type="text/javascript"></script>
+    <script src="js-test/templates.js" type="text/javascript"></script>
+    -->
   </body>
 </html>
