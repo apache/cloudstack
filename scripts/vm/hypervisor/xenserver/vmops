@@ -385,6 +385,7 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
+    default_ebtables_rules()
     privnic = get_private_nic(session, args)
     result = 'true'
     try:
@@ -404,6 +405,30 @@ def can_bridge_firewall(session, args):
     cleanup_rules(session, args)
     
     return result
+
+@echo
+def default_ebtables_rules():
+    try:
+        util.pread2(['ebtables', '-N',  'DEFAULT_EBTABLES'])
+        util.pread2(['ebtables', '-A', 'FORWARD', '-j'  'DEFAULT_EBTABLES'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])
+        # deny mac broadcast and multicast
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-d', 'Broadcast', '-j', 'DROP']) 
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-d', 'Multicast', '-j', 'DROP']) 
+        # deny ip broadcast and multicast
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '-j', 'DROP'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '224.0.0.0/4', '-j', 'DROP'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-j', 'RETURN'])
+        # deny ipv6
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv6', '-j', 'DROP'])
+        # deny vlan
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', '802_1Q', '-j', 'DROP'])
+        # deny all other 802. frames
+        util.pread2(['ebtables', '-A', 'FORWARD', '-j', 'DROP'])
+    except:
+        util.SMlog('Chain DEFAULT_EBTABLES already exists')
 
 @echo
 def allow_egress_traffic(session):
@@ -580,8 +605,8 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
 
     try:
         for vif in vifs:
-            util.pread2(['ebtables', '-A', 'FORWARD', '-i',  vif,  '-j', vm_chain])
-            util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
+            util.pread2(['ebtables', '-I', 'FORWARD', '2', '-i',  vif,  '-j', vm_chain])
+            util.pread2(['ebtables', '-I', 'FORWARD', '2', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
         return 'false'
