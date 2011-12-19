@@ -1294,8 +1294,9 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
+        
         List<HypervisorType> hypers = null;
-        if( ! isIso ) {
+        if(!isIso) {
             hypers =  _resourceMgr.listAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();

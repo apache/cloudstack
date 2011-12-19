@@ -575,7 +575,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	}
             } else if (templateFilter == TemplateFilter.all && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
         		whereClause += attr;
-            } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && !isIso) {
             	return templateZonePairList;
             }
             
