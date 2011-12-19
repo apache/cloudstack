@@ -379,6 +379,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return _userDao.update(Long.valueOf(userId), userForUpdate);
     }
 
+    @Override
     public boolean enableAccount(long accountId) {
         boolean success = false;
         AccountVO acctForUpdate = _accountDao.createForUpdate();
