@@ -731,7 +731,14 @@
         }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
 
       // 'View all' button
-      if (detailViewArgs.viewAll) {
+      var showViewAll = detailViewArgs.viewAll ?
+            (
+              detailViewArgs.viewAll.preFilter ?
+                detailViewArgs.viewAll.preFilter({
+                  context: context
+                }) : true
+            ) : true;
+      if (detailViewArgs.viewAll && showViewAll) {
         $('<div>')
           .addClass('view-all')
           .append(
