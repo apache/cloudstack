@@ -432,6 +432,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
             //when taking snapshot, make sure nobody can delete/move the volume
             boolean stateTransit = false;
+            /*
             try {
             	stateTransit = _storageMgr.stateTransitTo(volume, Volume.Event.SnapshotRequested);
             } catch (NoTransitionException e) {
@@ -441,7 +442,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             		_snapshotDao.expunge(snapshotId);           		
             		throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
             	}
-            }
+            }*/
 
             snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
             if (snapshot != null) {
@@ -489,11 +490,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             	}
             }
 
+            /*
             try {
             	_storageMgr.stateTransitTo(volume, Volume.Event.OperationSucceeded);
             } catch (NoTransitionException e) {
             	s_logger.debug("Failed to transit volume state: " + e.toString());
-            }
+            }*/
 
         }
 
