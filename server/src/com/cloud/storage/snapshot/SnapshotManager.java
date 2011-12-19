@@ -111,8 +111,6 @@ public interface SnapshotManager {
      */
     boolean deleteSnapshotDirsForAccount(long accountId);
 
-    void validateSnapshot(Long userId, SnapshotVO snapshot);
-
     SnapshotPolicyVO getPolicyForVolume(long volumeId);
 
     boolean destroySnapshotBackUp(long snapshotId);

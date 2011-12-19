@@ -81,7 +81,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -300,6 +299,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 s_logger.debug("CreateSnapshot: this is empty snapshot ");
                 snapshot.setPath(preSnapshotPath);
                 snapshot.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
+                snapshot.setSwiftId(preSnapshotVO.getSwiftId());
+
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 snapshot.setPrevSnapshotId(preId);
                 snapshot.setSecHostId(preSnapshotVO.getSecHostId());
@@ -511,34 +512,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return createdSnapshot;
     }
 
-    @Override
-    @DB
-    @SuppressWarnings("fallthrough")
-    public void validateSnapshot(Long userId, SnapshotVO snapshot) {
-        assert snapshot != null;
-        Long id = snapshot.getId();
-        Status status = snapshot.getStatus();
-        s_logger.debug("Snapshot scheduler found a snapshot whose actual status is not clear. Snapshot id:" + id + " with DB status: " + status);
-
-        switch (status) {
-        case Creating:
-            // else continue to the next case.
-        case CreatedOnPrimary:
-            // The snapshot has been created on the primary and the DB has been updated.
-            // However, it hasn't entered the backupSnapshotToSecondaryStorage, else
-            // status would have been backing up.
-            // So call backupSnapshotToSecondaryStorage without any fear.
-        case BackingUp:
-            // It has entered backupSnapshotToSecondaryStorage.
-            // But we have no idea whether it was backed up or not.
-            // So call backupSnapshotToSecondaryStorage again.
-            backupSnapshotToSecondaryStorage(snapshot);
-            break;
-        case BackedUp:
-            // No need to do anything as snapshot has already been backed up.
-        }
-    }
-
 
     @Override
     public void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId ){
@@ -605,9 +578,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
     }
 
-    private SwiftTO toSwiftTO(SwiftVO swift) {
-        return new SwiftTO(swift.getId(), swift.getUrl(), swift.getAccount(), swift.getUserName(), swift.getKey());
-    }
 
     @Override
     @DB
