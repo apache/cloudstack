@@ -11,6 +11,16 @@ yum install ant ant-devel openjdk openjdk-devel mysql mysql-server tomcat
 Dependencies:
 yum install jakarta-commons-collections jakarta-commons-dbcp.noarch apache-commons-logging.noarch jakarta-commons-pool jakarta-commons-httpclient.noarch ws-commons-util.noarch glibc-devel gcc python MySQL-python openssh-clients
 
+Tomcat:
+Download tomcat6.0.33 from http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.33/bin/ instead of using distribution's default tomcat. Set CATALINA_HOME and CATALINA_BASE to path where you extract tomcat in environment variable, it would be better off setting them in .bashrc as it will take effect every time you log in.
+
+Note: Tomcat6.0.35 has some known issue with CloudStack, please avoid it
+
+SSHKEY:
+Run:
+sh-keygen -t rsa -q
+to create sshkey for your account if you don't have one
+
 Step 2: Configuration
 
 Start the MySQL service :
