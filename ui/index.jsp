@@ -433,22 +433,6 @@
                     <div class="desc">Choose this network model if you wish to enable VLAN support. This network model provides the most flexibility in allowing administrators to provide custom network offerings such as providing firewall, vpn, or load balancer support as well as enabling direct vs virtual networking.</div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label>Advanced</label>
-
-                    <div class="isolation-mode">
-                      <h3>Isolation mode</h3>
-                      <div class="select-area">
-                        <input type="radio" name="isolation-mode" value="vlan"
-                               checked="checked" disabled="disabled" />
-                        <label>VLAN</label>
-                        <div class="desc">Choose this if you wish to use zone-wide VLANs to provide guest VM isolation.</div>
-                      </div>
-                      <div class="select-area">
-                        <input type="radio" name="isolation-mode" value="security-groups"
-                               disabled="disabled" />
-                        <label>Security Groups</label>
-                        <div class="desc">Choose this if you wish to use security groups to provide guest VM isolation.</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -544,6 +528,15 @@
                   </div>
 
                   <div class="conditional basic">
+                    <!-- Enable security groups -->
+                    <div class="field">
+                      <div class="name">
+                        <span>Enable security groups</span>
+                      </div>
+                      <div class="value">
+                        <input type="checkbox" name="security-groups-enabled" />
+                      </div>
+                    </div>
                     <!-- Network Offering -->
                     <div class="field">
                       <div class="name">

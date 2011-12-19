@@ -110,8 +110,9 @@
           return $(this).index() <= targetIndex;
         }).toggleClass('active');
 
-        // Load data provider for domain dropdowns
-        if (!$targetStep.hasClass('loaded') && (index == 2 || index == 4)) {
+        var loadData = function(options) {
+          if (!options) options = {};
+
           args.steps[targetIndex]({
             response: {
               success: function(args) {
@@ -121,14 +122,41 @@
                 });
 
                 $(args.networkOfferings).each(function() {
-                  $('<option></option>').val(this.id).html(this.name)
+                  $('<option></option>')
+                    .val(this.id)
+                    .html(this.name)
                     .appendTo($targetStep.find('select.network-offering'));
                 });
 
                 $targetStep.addClass('loaded');
+
+                // Security groups checkbox filters offering drop-down
+                var $securityGroupsEnabled = $wizard.find(
+                  'input[name=security-groups-enabled]'
+                );
+                $securityGroupsEnabled.data('target-index', targetIndex);
+                $securityGroupsEnabled.change(function() {
+                  var $check = $(this);
+                  var $select = $targetStep.find('select.network-offering');
+                  var objs = $check.is(':checked') ?
+                        args.securityGroupNetworkOfferings : args.networkOfferings;
+                  
+                  $select.children().remove();
+                  $(objs).each(function() {
+                    $('<option></option>')
+                      .val(this.id)
+                      .html(this.name)
+                      .appendTo($select);
+                  });
+                });
               }
             }
           });
+        };
+
+        // Load data provider for domain dropdowns
+        if (!$targetStep.hasClass('loaded') && (index == 2 || index == 4)) {
+          loadData();
         }
 
         setTimeout(function() {

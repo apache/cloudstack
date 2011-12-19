@@ -2852,7 +2852,15 @@
                           }
                         });
 
-                        args.response.success({domains: domainObjs, networkOfferings: networkOfferingObjs});
+                        args.response.success({
+                          domains: domainObjs,
+
+                          // Non-security-group-enabled offerings
+                          networkOfferings: networkOfferingObjs,
+
+                          // Security group-enabled offerings
+                          securityGroupNetworkOfferings: []
+                        });
                       },
 
                       // Step 3: Setup Pod
