@@ -2161,6 +2161,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 			return null;
 		}
 		
+		NetworkOfferingVO offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
+		if (offering.getRedundantRouter()) {
+		    return findGatewayIp(userVmId);
+		}
+		
 		//find domR's nic in the network
 		NicVO domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
 		return domrDefaultNic.getIp4Address();
