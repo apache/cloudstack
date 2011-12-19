@@ -18,6 +18,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.agent.manager.SimulatorManager.AgentType;
@@ -67,7 +68,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
 
     @Override
     public StartupCommand[] initialize() {
-        StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
+    	StartupStorageCommand cmd = new StartupStorageCommand();
 
         cmd.setPrivateIpAddress(agentHost.getPrivateIpAddress());
         cmd.setPrivateNetmask(agentHost.getPrivateNetMask());

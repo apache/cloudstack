@@ -8,106 +8,87 @@
 ############################################################
 '''
 
+from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 from configGenerator import *
 import random
 
 
-def getGlobalSettings():
-    global_settings = {'expunge.delay': '60',
-                       'expunge.interval': '60',
-                       'expunge.workers': '3',
-                       'workers': '10',
-                       'use.user.concentrated.pod.allocation': 'false',
-                       'vm.allocation.algorithm': 'random',
-                       'vm.op.wait.interval': '5',
-                       'guest.domain.suffix': 'sandbox.simulator',
-                       'instance.name': 'SIMQA',
-                       'direct.agent.load.size': '1000',
-                       'default.page.size': '10000',
-                       'linkLocalIp.nums': '10',
-                       'check.pod.cidrs': 'false',
-                      }
-    for k, v in global_settings.iteritems():
+def getGlobalSettings(config):
+   for k, v in dict(config.items('globals')).iteritems():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
         yield cfg
 
 
-def describeResources(dbnode='localhost', mshost='localhost'):
+def describeResources(config):
     zs = cloudstackConfiguration()
-    numberofpods = 1
-
-    clustersPerPod = 10
-    hostsPerCluster = 2
 
     z = zone()
-    z.dns1 = '4.2.2.2'
-    z.dns2 = '10.223.110.254'
-    z.internaldns1 = '10.147.28.6'
-    z.internaldns2 = '10.223.110.254'
-    z.name = 'Sandbox-Simulator'
+    z.dns1 = config.get('environment', 'dns')
+    z.internaldns1 = config.get('environment', 'dns')
+    z.name = 'Sandbox-%s'%(config.get('environment', 'hypervisor'))
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
-    z.vlan='100-300'
+
+    prov = provider()
+    prov.vlan = config.get('cloudstack','guest.vlan')
+    z.providers.append(prov)
 
     p = pod()
     p.name = 'POD0'
-    p.gateway = '172.1.1.1'
-    p.startip = '172.1.1.2'
-    p.endip = '172.1.1.200'
+    p.gateway = config.get('cloudstack', 'private.gateway')
+    p.startip =  config.get('cloudstack', 'private.pod.startip')
+    p.endip =  config.get('cloudstack', 'private.pod.endip')
     p.netmask = '255.255.255.0'
 
     v = iprange()
-    v.vlan = '30'
-    v.gateway = '172.1.2.1'
-    v.startip = '172.1.2.2'
-    v.endip = '172.1.2.200'
+    v.gateway = config.get('cloudstack', 'public.gateway')
+    v.startip = config.get('cloudstack', 'public.vlan.startip')
+    v.endip = config.get('cloudstack', 'public.vlan.endip') 
     v.netmask = '255.255.255.0'
+    v.vlan = config.get('cloudstack', 'public.vlan')
+    z.ipranges.append(v)
 
-    curhost = 1
-    for i in range(1, clustersPerPod + 1):
-        c = cluster()
-        c.clustername = 'POD1-CLUSTER' + str(i)
-        c.hypervisor = 'Simulator'
-        c.clustertype = 'CloudManaged'
+    c = cluster()
+    c.clustername = 'C0'
+    c.hypervisor = config.get('environment', 'hypervisor')
+    c.clustertype = 'CloudManaged'
 
-        for j in range(1, hostsPerCluster + 1):
-            h = host()
-            h.username = 'root'
-            h.password = 'password'
-            h.url = 'http://sim/test-%d'%(curhost)
-            c.hosts.append(h)
-            curhost = curhost + 1
+    h = host()
+    h.username = 'root'
+    h.password = 'password'
+    h.url = 'http://%s'%(config.get('cloudstack', 'host'))
+    c.hosts.append(h)
 
-        ps = primaryStorage()
-        ps.name = 'spool'+str(i)
-        ps.url = 'nfs://172.16.24.32/export/path/'+str(i)
-        c.primaryStorages.append(ps)
-        p.clusters.append(c)
+    ps = primaryStorage()
+    ps.name = 'PS0'
+    ps.url = config.get('cloudstack', 'pool')
+    c.primaryStorages.append(ps)
 
+    p.clusters.append(c)
+    z.pods.append(p)
 
     secondary = secondaryStorage()
-    secondary.url = 'nfs://172.16.25.32/secondary/path'
-
-    z.pods.append(p)
-    z.ipranges.append(v)
+    secondary.url = config.get('cloudstack', 'secondary')
     z.secondaryStorages.append(secondary)
+
+    '''Add zone'''
     zs.zones.append(z)
 
     '''Add mgt server'''
     mgt = managementServer()
-    mgt.mgtSvrIp = mshost
+    mgt.mgtSvrIp = config.get('environment', 'mshost')
     zs.mgtSvr.append(mgt)
 
     '''Add a database'''
     db = dbServer()
-    db.dbSvr = opts.dbnode
+    db.dbSvr = config.get('environment', 'database')
     zs.dbSvr = db
 
     '''Add some configuration'''
-    [zs.globalConfig.append(cfg) for cfg in getGlobalSettings()]
+    [zs.globalConfig.append(cfg) for cfg in getGlobalSettings(config)]
 
     ''''add loggers'''
     testClientLogger = logger()
@@ -125,10 +106,16 @@ def describeResources(dbnode='localhost', mshost='localhost'):
 
 if __name__ == '__main__':
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', default='./sandbox.cfg', dest='output', help='the path where the json config file generated')
-    parser.add_option('-d', '--dbnode', dest='dbnode', help='hostname/ip of the database node', action='store')
-    parser.add_option('-m', '--mshost', dest='mshost', help='hostname/ip of management server', action='store')
+    parser.add_option('-i', '--input', action='store', default='setup.properties', \
+                      dest='input', help='file containing environment setup information')
+    parser.add_option('-o', '--output', action='store', default='./sandbox.cfg', \
+                      dest='output', help='path where environment json will be generated')
+
 
     (opts, args) = parser.parse_args()
-    cfg = describeResources(opts.dbnode, opts.mshost)
+
+    cfg_parser = SafeConfigParser()
+    cfg_parser.read(opts.input)
+
+    cfg = describeResources(cfg_parser)
     generate_setup_config(cfg, opts.output)

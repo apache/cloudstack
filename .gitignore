@@ -16,6 +16,7 @@ dist/
 cloud-*.tar.bz2
 *.log
 *.pyc
+*.cfg
 build.number
 api.log.*.gz
 cloud.log.*.*

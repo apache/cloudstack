@@ -142,6 +142,8 @@ class deployDataCenters():
             self.createVlanIpRanges("Advanced", ipranges, zoneId, networkId=networkId)
 
     def configureProviders(self, providers, zoneid, networktype):
+        if providers == None:
+            return
         for prov in providers:
             pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
             pnets.zoneid = zoneid
