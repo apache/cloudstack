@@ -429,14 +429,15 @@
                       label: 'Add',
                       action: function(args) {											  
                         var array1 = [];												
-                        array1.push("&podid=" + args.data.podid); //args.data.podId shouldn't be undefined (wait for Brian to fix it)
+                        array1.push("&podid=" + args.data.podid); 
 												array1.push("&networkid=" + selectedGuestNetworkObj.id)
                         array1.push("&gateway=" + args.data.gateway);
                         array1.push("&netmask=" + args.data.netmask);
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
-
+												array1.push("&forVirtualNetwork=false"); //indicates this new IP range is for guest network, not public network	
+													
                         $.ajax({
                           url: createURL("createVlanIpRange" + array1.join("")),
                           dataType: "json",
