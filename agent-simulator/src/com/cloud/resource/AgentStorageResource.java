@@ -68,7 +68,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
 
     @Override
     public StartupCommand[] initialize() {
-    	StartupStorageCommand cmd = new StartupStorageCommand();
+    	StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
 
         cmd.setPrivateIpAddress(agentHost.getPrivateIpAddress());
         cmd.setPrivateNetmask(agentHost.getPrivateNetMask());

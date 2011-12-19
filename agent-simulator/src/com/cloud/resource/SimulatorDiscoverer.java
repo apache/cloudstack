@@ -307,7 +307,6 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 	@Override
 	public HostVO createHostVOForConnectedAgent(HostVO host,
 			StartupCommand[] cmd) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -331,7 +330,6 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 	@Override
 	public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
 			boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

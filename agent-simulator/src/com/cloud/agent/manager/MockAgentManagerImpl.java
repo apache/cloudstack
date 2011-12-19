@@ -263,12 +263,13 @@ public class MockAgentManagerImpl implements MockAgentManager {
                 AgentStorageResource storageResource = new AgentStorageResource();
                 try {
                     Map<String, Object> params =  new HashMap<String, Object>();
+                    Map<String, String> details = new HashMap<String, String>();
                     params.put("guid", this.guid);
+                    details.put("guid", this.guid);
                     storageResource.configure("secondaryStorage", params);
                     storageResource.start();
-                    StartupCommand[] cmds = storageResource.initialize();
                     //on the simulator the ssvm is as good as a direct agent
-                    _resourceMgr.addHost(mockHost.getDataCenterId(), storageResource, Host.Type.SecondaryStorageVM, null);
+                    _resourceMgr.addHost(mockHost.getDataCenterId(), storageResource, Host.Type.SecondaryStorageVM, details);
                     _resources.put(this.guid, storageResource);
                 } catch (ConfigurationException e) {
                     s_logger.debug("Failed to load secondary storage resource: " + e.toString());
