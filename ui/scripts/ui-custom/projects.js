@@ -25,9 +25,11 @@
           var getData = function() {
             // Populate data
             $dashboard.find('[data-item]').hide();
+            var $loading = $('<div>').addClass('loading-overlay').prependTo($dashboard);
             cloudStack.projects.dashboard({
               response: {
                 success: function(args) {
+                  $loading.remove();
                   var data = args.data;
 
                   // Iterate over data; populate corresponding DOM elements
@@ -70,6 +72,14 @@
 
           getData();
 
+          $dashboard.find('.button.manage-resources').click(function() {
+            $('.navigation-item.network').click();
+          });
+
+          $dashboard.find('.info-box.events .button').click(function() {
+            $('.navigation-item.events').click();
+          });
+
           return $dashboard;
         }
       };
@@ -101,7 +111,7 @@
         var $content = $('<div>')
               .appendTo($tabs)
               .attr({ id: 'project-view-dashboard-' + tabName })
-              .append(tab());
+              .append(tab);
       });
 
       $tabs.find('ul li:first').addClass('first');
@@ -462,8 +472,6 @@
             .filter(function() {
               return $(this).data('json-obj').name == cloudStack.context.projects[0].name;
             }).attr('selected', 'selected');
-          showDashboard();
-
 
           ////
           // Hidden for now

@@ -832,20 +832,20 @@
             <ul>
               <!-- IP addresses -->
               <li class="odd">
-                <div class="total"><span>171</span></div>
+                <div class="total"><span data-item="totalIPAddresses"></span></div>
                 <div class="desc">IP addresses</div>
               </li>
 
               <!-- Load balancing policies -->
               <li>
-                <div class="total"><span>04</span></div>
+                <div class="total"><span data-item="totalLoadBalancers"></span></div>
                 <div class="desc">Load balancing policies</div>
               </li>
 
-              <!-- Security Groups -->
+              <!-- Port forwarding policies -->
               <li class="odd">
-                <div class="total"><span>23</span></div>
-                <div class="desc">Security groups</div>
+                <div class="total"><span data-item="totalPortForwards"></span></div>
+                <div class="desc">Port forwarding policies</div>
               </li>
 
               <!-- Blank -->

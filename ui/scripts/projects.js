@@ -18,7 +18,7 @@
                   return instance.state == 'Running';
                 }).length,
                 stoppedInstances: $.grep(instances, function(instance) {
-                  return instance.state == 'Stopped';
+                  return instance.state != 'Running';
                 }).length,
                 totalInstances: instances.length
               }));
@@ -32,7 +32,7 @@
             success: function(json) {
               dataFns.bandwidth($.extend(data, {
                 totalVolumes: json.listvolumesresponse.volume ?
-                  json.listvolumesresponse.volume.count : 0
+                  json.listvolumesresponse.count : 0
               }));
             }
           });
@@ -60,8 +60,44 @@
                 });
               });
 
-              dataFns.users($.extend(data, {
+              dataFns.ipAddresses($.extend(data, {
                 totalBandwidth: totalBandwidth
+              }));
+            }
+          });
+        },
+
+        ipAddresses: function(data) {
+          $.ajax({
+            url: createURL('listPublicIpAddresses'),
+            success: function(json) {
+              dataFns.loadBalancingRules($.extend(data, {
+                totalIPAddresses: json.listpublicipaddressesresponse ?
+                  json.listpublicipaddressesresponse.count : 0
+              }));
+            }
+          });
+        },
+
+        loadBalancingRules: function(data) {
+          $.ajax({
+            url: createURL('listLoadBalancerRules'),
+            success: function(json) {
+              dataFns.portForwardingRules($.extend(data, {
+                totalLoadBalancers: json.listloadbalancerrulesresponse ?
+                  json.listloadbalancerrulesresponse.count : 0
+              }));
+            }
+          });
+        },
+
+        portForwardingRules: function(data) {
+          $.ajax({
+            url: createURL('listPortForwardingRules'),
+            success: function(json) {
+              dataFns.users($.extend(data, {
+                totalPortForwards: json.listportforwardingrulesresponse ?
+                  json.listportforwardingrulesresponse.count : 0
               }));
             }
           });
