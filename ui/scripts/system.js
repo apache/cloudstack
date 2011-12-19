@@ -402,7 +402,6 @@
                     noSelect: true,
                     fields: {
 										  'podid': { 
-											  edit: true,
 											  label: 'Pod',
 												select: function(args) {												 
 												  $.ajax({
