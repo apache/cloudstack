@@ -469,8 +469,8 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             for(ObjectContent oc : ocs) {
                 String vmName = oc.getPropSet()[0].getVal().toString();
                 
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("put " + vmName + " into host cache");
+                if(s_logger.isTraceEnabled())
+                	s_logger.trace("put " + vmName + " into host cache");
                 
                 _vmCache.put(vmName, new VirtualMachineMO(_context, oc.getObj()));
             }
