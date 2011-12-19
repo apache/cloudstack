@@ -153,6 +153,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ListTemplateCommand)cmd);
         } else if (cmd instanceof downloadSnapshotFromSwiftCommand){
             return execute((downloadSnapshotFromSwiftCommand)cmd);
+        } else if (cmd instanceof DeleteSnapshotBackupCommand){
+            return execute((DeleteSnapshotBackupCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand){
             return execute((DeleteSnapshotsDirCommand)cmd);
         } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
