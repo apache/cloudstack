@@ -270,6 +270,21 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
     }
 
+	@Override
+	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+        if (canHandle(network, Service.Lb)) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router element doesn't need to associate load balancer ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
+                return true;
+            }
+            
+            return _routerMgr.associateIP(network, ipAddress, routers);
+        } else {
+            return false;
+        }
+	}
+
     @Override
     public Provider getProvider() {
         return Provider.VirtualRouter;
@@ -644,4 +659,5 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
         return true;
     }
+
 }

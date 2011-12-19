@@ -601,8 +601,79 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
+    protected boolean applyProviderIpAssociations(Network network, Purpose purpose, boolean continueOnError, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        boolean success = true;
+
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        for (FirewallRule rule : rules) {
+        	IPAddressVO lbIp = _ipAddressDao.findById(rule.getSourceIpAddressId());
+            PublicIp publicIp = new PublicIp(lbIp, _vlanDao.findById(lbIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(lbIp.getMacAddress()));
+            publicIps.add(publicIp);
+        }
+
+        for (NetworkElement ne : _networkElements) {
+            try {
+                boolean handled;
+                switch (purpose) {
+                case LoadBalancing:
+                    if (!(ne instanceof LoadBalancingServiceProvider)) {
+                        continue;
+                    }
+                    LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider) ne;
+                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");
+                    handled = lbProvider.applyLoadBalancerIp(network, publicIps);
+                    break;
+
+                case PortForwarding:
+                    if (!(ne instanceof PortForwardingServiceProvider)) {
+                        continue;
+                    }
+                    PortForwardingServiceProvider pfProvider = (PortForwardingServiceProvider) ne;
+                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");               
+                    handled = pfProvider.applyIps(network, publicIps);
+                    break;
+
+                case StaticNat:
+                case Firewall: 
+                    if (!(ne instanceof FirewallServiceProvider)) {
+                        continue;
+                    }
+                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");
+                    FirewallServiceProvider fwProvider = (FirewallServiceProvider) ne;
+                    handled = fwProvider.applyIps(network, publicIps);
+                    break;
+
+                default:
+                    s_logger.debug("Unable to handle IP association for purpose: " + purpose.toString());
+                    handled = false;
+                }
+                s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
+            } catch (ResourceUnavailableException e) {
+                success = false;
+                if (!continueOnError) {
+                    throw e;
+                } else {
+                    s_logger.debug("Resource is not available: " + ne.getName(), e);
+                }
+            }
+        }
+        return success;
+    }
+    
     protected boolean applyIpAssociations(Network network, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
+        List<PublicIp> srcNatpublicIps = new ArrayList<PublicIp>();
+
+        // apply IP only for source NAT public IP at this point. Depending on the network service for which 
+        // public IP will be used do IP Association to respective network service provider before apply rules
+        if (publicIps != null && !publicIps.isEmpty()) {
+	        for (PublicIp ip : publicIps) {
+	        	if (ip.isSourceNat()) {
+	        		srcNatpublicIps.add(ip);
+	        	}
+	        }
+        }
+
         for (NetworkElement element : _networkElements) {
             try {
                 if (!(element instanceof FirewallServiceProvider)) {
@@ -610,7 +681,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 FirewallServiceProvider e = (FirewallServiceProvider)element;
                 s_logger.trace("Asking " + element + " to apply ip associations");
-                e.applyIps(network, publicIps);
+                e.applyIps(network, srcNatpublicIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
@@ -2583,6 +2654,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
         Purpose purpose = rules.get(0).getPurpose();
+
+        // associate the IP with corresponding network service provider
+      	applyProviderIpAssociations(network, purpose, continueOnError, rules);
+
         for (NetworkElement ne : _networkElements) {
             try {
                 boolean handled;

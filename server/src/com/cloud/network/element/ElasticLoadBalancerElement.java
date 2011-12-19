@@ -39,6 +39,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -179,4 +180,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean verifyServicesCombination(List<String> services) {
         return true;
     }
+
+	@Override
+	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
