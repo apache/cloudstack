@@ -275,10 +275,10 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             long accountLimit = findCorrectResourceLimitForAccount(account, type);
             long potentialCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type) + numResources;
             if (accountLimit != Resource.RESOURCE_UNLIMITED && potentialCount > accountLimit) {
-                String message = "Maximum number of resources of type \"" + type + "\" for account name=" + account.getAccountName()
+                String message = "Maximum number of resources of type '" + type + "' for account name=" + account.getAccountName()
                 + " in domain id=" + account.getDomainId() + " has been exceeded.";
                 if (project != null) {
-                    message = "Maximum number of resources of type \"" + type + "\" for project name=" + project.getName()
+                    message = "Maximum number of resources of type '" + type + "' for project name=" + project.getName()
                     + " in domain id=" + account.getDomainId() + " has been exceeded.";
                 }
                 throw new ResourceAllocationException(message, type);
@@ -298,7 +298,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                 if (domainLimit != null && domainLimit.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
                     long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                     if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                        throw new ResourceAllocationException("Maximum number of resources of type \"" + type + "\" for domain id=" + domainId + " has been exceeded.", type);
+                        throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId + " has been exceeded.", type);
                     }
                 }
                 
