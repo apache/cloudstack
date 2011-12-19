@@ -2851,23 +2851,37 @@
                           }
                         });
 
+												var networkOfferingObjsWithoutSG = [];
                         $.ajax({
                           url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
                           dataType: "json",
                           async: false,
                           success: function(json) {
                             networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+																	
+														$(networkOfferingObjs).each(function() {														 
+															var includingSGP = false;
+															var serviceObjArray = this.service;
+															for(var k = 0; k < serviceObjArray.length; k++) {
+																if(serviceObjArray[k].name == "SecurityGroup") {
+																	includingSGP = true;
+																	break;
+																}
+															}															
+															if(includingSGP == false) //withoutSG
+																networkOfferingObjsWithoutSG.push(this);																											
+														});														
                           }
                         });
-
+                        
                         args.response.success({
                           domains: domainObjs,
 
                           // Non-security-group-enabled offerings
-                          networkOfferings: networkOfferingObjs,
+                          networkOfferings: networkOfferingObjsWithoutSG,
 
                           // Security group-enabled offerings
-                          securityGroupNetworkOfferings: []
+                          securityGroupNetworkOfferings: networkOfferingObjs
                         });
                       },
 
