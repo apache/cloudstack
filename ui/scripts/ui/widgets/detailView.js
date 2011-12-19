@@ -689,6 +689,7 @@
           value.selected = $value.html();
 
           value.select({
+            context: context,
             response: {
               success: function(args) {
                 // Get matching select data
