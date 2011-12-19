@@ -17,23 +17,23 @@
  */
 package com.cloud.projects.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value={ProjectAccountDao.class})
 public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long> implements ProjectAccountDao {
-    private static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class);
     protected final SearchBuilder<ProjectAccountVO> AllFieldsSearch;
+    final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
+    final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountSearch;
     
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -42,6 +42,17 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getProjectAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
+        
+        AdminSearch = createSearchBuilder(Long.class);
+        AdminSearch.selectField(AdminSearch.entity().getProjectId());
+        AdminSearch.and("role", AdminSearch.entity().getAccountRole(), Op.EQ);
+        AdminSearch.and("accountId", AdminSearch.entity().getAccountId(), Op.EQ);
+        AdminSearch.done();
+        
+        ProjectAccountSearch = createSearchBuilder(Long.class);
+        ProjectAccountSearch.selectField(ProjectAccountSearch.entity().getProjectAccountId());
+        ProjectAccountSearch.and("accountId", ProjectAccountSearch.entity().getAccountId(), Op.EQ);
+        ProjectAccountSearch.done();
     }
     
     @Override
@@ -99,16 +110,16 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     
     @Override
     public List<Long> listPermittedAccountIds(long accountId) {
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        SearchCriteria<Long> sc = ProjectAccountSearch.create();
         sc.setParameters("accountId", accountId);
-        
-        List<ProjectAccountVO> records = listBy(sc);
-        
-        for (ProjectAccountVO record : records) {
-            permittedAccounts.add(record.getProjectAccountId());
-        }
-        
-        return permittedAccounts;
+        return customSearch(sc, null);
+    }
+    
+    @Override
+    public List<Long> listAdministratedProjects(long adminAccountId) {
+        SearchCriteria<Long> sc = AdminSearch.create();
+        sc.setParameters("role", ProjectAccount.Role.Admin);
+        sc.setParameters("accountId", adminAccountId);
+        return customSearch(sc, null);
     }
 }

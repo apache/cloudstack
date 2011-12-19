@@ -83,6 +83,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
@@ -194,6 +195,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private AccountDetailsDao _accountDetailsDao;
     @Inject
     private DomainDao _domainDao;
+    @Inject
+    private ProjectAccountDao _projectAccountDao;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -960,6 +963,17 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
+        }
+        
+        //Account that manages project(s) can't be removed
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjects(accountId);
+        if (!managedProjectIds.isEmpty()) {
+        	StringBuilder projectIds = new StringBuilder();
+        	for (Long projectId : managedProjectIds) {
+        		projectIds.append(projectId + ", ");
+        	}
+        	
+        	throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
         }
         
         return deleteAccount(account, callerUserId, caller);
