@@ -401,39 +401,46 @@
                     context: args.context,
                     noSelect: true,
                     fields: {
+										  'podid': { 
+											  edit: true,
+											  label: 'Pod',
+												select: function(args) {												 
+												  $.ajax({
+													  url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+														dataType: "json",
+														success: function(json) {														  
+															var items = [];
+															var pods = json.listpodsresponse.pod;
+															$(pods).each(function(){
+															  items.push({name: this.id, description: this.name}); //should be "{id: this.id, description: this.name}" (to be consistent with dropdown in createFrom and edit mode) (Brian will fix widget later)
+															});
+															args.response.success({	data: items });
+														}
+													});
+												}											
+											},
                       'gateway': { edit: true, label: 'Gateway' },
-                      'netmask': { edit: true, label: 'Netmask' },
-                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
+                      'netmask': { edit: true, label: 'Netmask' },                     
                       'startip': { edit: true, label: 'Start IP' },
                       'endip': { edit: true, label: 'End IP' },
                       'add-rule': { label: 'Add', addButton: true }
                     },
                     add: {
                       label: 'Add',
-                      action: function(args) {
-                        var array1 = [];
-                        array1.push("&zoneId=" + args.context.zones[0].id);
-
-                        if (args.data.vlan != null && args.data.vlan.length > 0)
-                          array1.push("&vlan=" + todb(args.data.vlan));
-                        else
-                          array1.push("&vlan=untagged");
-
+                      action: function(args) {											  
+                        var array1 = [];												
+                        array1.push("&podid=" + args.data.podid); //args.data.podId shouldn't be undefined (wait for Brian to fix it)
+												array1.push("&networkid=" + selectedGuestNetworkObj.id)
                         array1.push("&gateway=" + args.data.gateway);
                         array1.push("&netmask=" + args.data.netmask);
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
 
-                        if(args.context.zones[0].securitygroupsenabled == false)
-                          array1.push("&forVirtualNetwork=true");
-                        else
-                          array1.push("&forVirtualNetwork=false");
-
                         $.ajax({
                           url: createURL("createVlanIpRange" + array1.join("")),
                           dataType: "json",
-                          success: function(json) {
+                          success: function(json) {													 
                             var item = json.createvlaniprangeresponse.vlan;
                             args.response.success({
                               data: item,
