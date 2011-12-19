@@ -55,8 +55,8 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -375,8 +375,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (!_elbEnabled) {
                 protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
-        } else {
+        } else if (purpose == Purpose.Firewall){
             protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
+        } else if (purpose == Purpose.PortForwarding) {
+            protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         }
 
         if (protocolCapabilities != null) {
