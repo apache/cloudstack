@@ -772,13 +772,13 @@
                   <div class="overview">
                     <!-- Running -->
                     <div class="overview-item running">
-                      <div class="total" data-item="virtualMachinesRunning">12</div>
+                      <div class="total" data-item="runningInstances">5</div>
                       <div class="label">Running</div>
                     </div>
 
                     <!-- Stopped -->
                     <div class="overview-item stopped">
-                      <div class="total" data-item="virtualMachinesStopped">2</div>
+                      <div class="total" data-item="stoppedInstances">10</div>
                       <div class="label">Stopped</div>
                     </div>
                   </div>
@@ -789,27 +789,18 @@
                   <span class="header">Storage</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <div class="total" data-item="storageCapacityTotal">171</div>
-                    <div class="label">GB/mo</div>
+                    <div class="total" data-item="totalVolumes">10</div>
+                    <div class="label">volumes</div>
                   </div>
                 </li>
 
                 <!-- Bandwidth -->
-                <li class="block bandwidth">
+                <li class="block storage bandwidth">
                   <span class="header">Bandwidth</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <!-- In -->
-                    <div class="overview-item in">
-                      <div class="total" data-item="virtualMachinesRunning">2.3</div>
-                      <div class="label">In GB</div>
-                    </div>
-
-                    <!-- Out -->
-                    <div class="overview-item out">
-                      <div class="total" data-item="virtualMachinesRunning">1.5</div>
-                      <div class="label">Out GB</div>
-                    </div>
+                    <div class="total" data-item="totalBandwidth">200</div>
+                    <div class="label">mb/s</div>
                   </div>
                 </li>
               </ul>
@@ -822,47 +813,9 @@
               <div class="head">
                 <span>Users</span>
               </div>
-              <ul class="status_box good">
+              <ul class="status_box good" data-item="users">
                 <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
+                  <span class="header" data-list-item="account"></span>
                   <div class="icon"></div>
                 </li>
               </ul>
@@ -923,50 +876,10 @@
                 <span class="arrow"></span>
               </div>
             </div>
-            <ul>
+            <ul data-item="events">
               <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
+                <div class="date"><span data-list-item="date"></span></div>
+                <div class="desc" data-list-item="desc"></div>
               </li>
             </ul>
           </div>

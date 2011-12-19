@@ -6837,6 +6837,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .info-boxes .info-box.events {
   margin-top: 4px;
+  min-height: 100px;
+  width: 228px;
 }
 
 .info-boxes .info-box.events ul {
@@ -6854,7 +6856,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .info-boxes .info-box ul li {
   width: 224px;
   margin: 0 2px 0 0;
-  height: 36px;
+  display: inline-block;
   border-bottom: 1px solid #BDD2DF;
   border-top: 1px solid #FFFFFF;
 }
@@ -6895,6 +6897,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 0px;
   top: 2px;
+  float: left;
 }
 
 .info-boxes .info-box .title .button {

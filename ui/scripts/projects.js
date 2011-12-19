@@ -4,6 +4,114 @@
       return window.g_projectsInviteRequired;
     },
 
+    dashboard: function(args) {
+      var dataFns = {
+        instances: function(data) {
+          $.ajax({
+            url: createURL('listVirtualMachines'),
+            success: function(json) {
+              var instances = json.listvirtualmachinesresponse.virtualmachine ? 
+                    json.listvirtualmachinesresponse.virtualmachine : [];
+              
+              dataFns.storage($.extend(data, {
+                runningInstances: $.grep(instances, function(instance) {
+                  return instance.state == 'Running';
+                }).length,
+                stoppedInstances: $.grep(instances, function(instance) {
+                  return instance.state == 'Stopped';
+                }).length,
+                totalInstances: instances.length
+              }));
+            }
+          });
+        },
+
+        storage: function(data) {
+          $.ajax({
+            url: createURL('listVolumes'),
+            success: function(json) {
+              dataFns.bandwidth($.extend(data, {
+                totalVolumes: json.listvolumesresponse.volume ?
+                  json.listvolumesresponse.volume.count : 0
+              }));
+            }
+          });
+        },
+
+        bandwidth: function(data) {
+          var totalBandwidth = 0;
+          $.ajax({
+            url: createURL('listNetworks'),
+            success: function(json) {
+              var networks = json.listnetworksresponse.network ?
+                    json.listnetworksresponse.network : [];
+              $(networks).each(function() {
+                var network = this;
+                $.ajax({
+                  url: createURL('listNetworkOfferings'),
+                  async: false,
+                  data: {
+                    id: network.networkofferingid
+                  },
+                  success: function(json) {
+                    totalBandwidth += 
+                    json.listnetworkofferingsresponse.networkoffering[0].networkrate;
+                  }
+                });
+              });
+
+              dataFns.users($.extend(data, {
+                totalBandwidth: totalBandwidth
+              }));
+            }
+          });
+        },
+
+        users: function(data) {
+          $.ajax({
+            url: createURL('listProjectAccounts'),
+            success: function(json) {
+              var users = json.listprojectaccountsresponse.projectaccount;
+
+              dataFns.events($.extend(data, {
+                users: $.map(users, function(user) {
+                  return {
+                    account: user.account
+                  };
+                })
+              }));
+            }
+          });
+        },
+
+        events: function(data) {
+          $.ajax({
+            url: createURL('listEvents', { ignoreProject: true }),
+            success: function(json) {
+              var events = json.listeventsresponse.event;
+
+              complete($.extend(data, {
+                events: $.map(events, function(event) {
+                  return {
+                    date: event.created.substr(5, 2) + '/' + event.created.substr(8, 2) + '/' + event.created.substr(2, 2),
+                    desc: event.description
+                  };
+                })
+              }));
+            }
+          });
+        }
+      };
+
+      var complete = function(data) {
+        args.response.success({
+          data: data
+        });
+      };
+
+      dataFns.instances();
+    },
+
     add: function(args) {
       setTimeout(function() {
         $.ajax({

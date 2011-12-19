@@ -20,8 +20,55 @@
       var tabs = {
         overview: function() {
           var $dashboard = $('#template').find('.project-dashboard-view').clone();
+          $dashboard.data('tab-title', 'Dashboard');
 
-          $dashboard.data('tab-title', 'Dashboard')
+          var getData = function() {
+            // Populate data
+            $dashboard.find('[data-item]').hide();
+            cloudStack.projects.dashboard({
+              response: {
+                success: function(args) {
+                  var data = args.data;
+
+                  // Iterate over data; populate corresponding DOM elements
+                  $.each(data, function(key, value) {
+                    var $elem = $dashboard.find('[data-item=' + key + ']');
+
+                    // This assumes an array of data
+                    if ($elem.is('ul')) {
+                      $elem.show();
+                      var $liTmpl = $elem.find('li').remove();
+                      $(value).each(function() {
+                        var item = this;
+                        var $li = $liTmpl.clone().appendTo($elem).hide();
+
+                        $.each(item, function(arrayKey, arrayValue) {
+                          var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
+
+                          $arrayElem.html(arrayValue);
+                        });
+
+                        $li.attr({ title: item.description });
+
+                        $li.fadeIn();
+                      });
+                    } else {
+                      $elem.each(function() {
+                        var $item = $(this);
+                        if ($item.hasClass('chart-line')) {
+                          $item.show().animate({ width: value + '%' });
+                        } else {
+                          $item.hide().html(value).fadeIn();
+                        }
+                      }); 
+                    }
+                  });
+                }
+              }
+            });
+          };
+
+          getData();
 
           return $dashboard;
         }
@@ -397,7 +444,6 @@
             dialogClass: 'project-selector-dialog',
             width: 420
           }).closest('.ui-dialog').overlay();
-          showDashboard();
         }
       });
 
@@ -416,6 +462,8 @@
             .filter(function() {
               return $(this).data('json-obj').name == cloudStack.context.projects[0].name;
             }).attr('selected', 'selected');
+          showDashboard();
+
 
           ////
           // Hidden for now
@@ -473,7 +521,6 @@
    */
   cloudStack.uiCustom.projects = function(args) {
     var $dashboardNavItem = $('#navigation li.navigation-item.dashboard');
-    var $projectSelect = args.$projectSelect;
 
     // Use project dashboard
     var event = function() {
@@ -493,15 +540,6 @@
       return false;
     };
     $dashboardNavItem.bind('click', event);
-
-    // Project selector event
-    $projectSelect.change(function() {
-      cloudStack.context.projects = [
-        $projectSelect.find('option:selected').data('json-obj')
-      ];
-
-      $(window).trigger('cloudStack.fullRefresh');
-    });
 
     pageElems.selector(args);
   };
