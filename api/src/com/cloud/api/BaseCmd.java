@@ -479,7 +479,6 @@ public abstract class BaseCmd {
         }
         
         if (projectId != null) {
-            
             Project project = _projectService.getProject(projectId);
             if (project != null) {
                 if (project.getState() == Project.State.Active) {

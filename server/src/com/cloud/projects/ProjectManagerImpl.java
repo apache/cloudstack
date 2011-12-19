@@ -546,6 +546,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
         }
+        
+        //User can be added to Active project only
+        if (project.getState() != Project.State.Active) {
+        	throw new InvalidParameterValueException("Can't add account to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+        }
        
         //check that account-to-add exists
         Account account = null;
