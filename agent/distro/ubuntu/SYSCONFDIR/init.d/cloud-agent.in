@@ -37,10 +37,10 @@ wait_for_network() {
         if ip addr show cloudbr0 |grep -w inet > /dev/null 2>&1; then
             break
         else
+            sleep 1
+            let i=$i+1
             continue
         fi
-        sleep 1
-        let i=$i+1
     done
 }
 
