@@ -96,6 +96,69 @@
             return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
           };          
         }
+
+        tabs.resources = function() {
+          var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
+          var $form = $('<form>');
+          var $submit = $('<input>').attr({
+            type: 'submit'            
+          }).val('Apply');
+
+          cloudStack.projects.resourceManagement.dataProvider({
+            response: {
+              success: function(args) {
+                $(args.data).each(function() {
+                  var resource = this;
+                  var $field = $('<div>').addClass('field');
+                  var $label = $('<label>').attr({
+                    for: resource.type
+                  }).html(resource.label);
+                  var $input = $('<input>').attr({
+                    type: 'text',
+                    name: resource.type,
+                    value: resource.value
+                  }).addClass('required');
+                  
+                  $field.append($label, $input);
+                  $field.appendTo($form);
+                });
+
+                $form.validate();
+                $form.submit(function() {
+                  if (!$form.valid) {
+                    return false;
+                  }
+
+                  var $loading = $('<div>').addClass('loading-overlay').appendTo($form);
+
+                  cloudStack.projects.resourceManagement.update({
+                    data: cloudStack.serializeForm($form),
+                    response: {
+                      success: function(args) {
+                        $loading.remove();
+                        $('.notifications').notifications('add', {
+                          section: 'dashboard',
+                          desc: 'Updated project resources',
+                          interval: 1000,
+                          poll: function(args) {
+                            args.complete();
+                          }
+                        });
+                      }
+                    }
+                  });
+                  
+                  return false;
+                });
+
+                $submit.appendTo($form);
+                $form.appendTo($resources);
+              }
+            }
+          });
+          
+          return $resources;
+        };
       }
 
       var $tabs = $('<div>').addClass('tab-content').append($('<ul>'));

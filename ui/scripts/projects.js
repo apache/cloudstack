@@ -4,6 +4,76 @@
       return window.g_projectsInviteRequired;
     },
 
+    resourceManagement: {
+      update: function(args) {
+        var totalResources = 5;
+        var updatedResources = 0;
+        $.each(args.data, function(key, value) {
+          $.ajax({
+            url: createURL('updateResourceLimit'),
+            data: {
+              resourcetype: key,
+              max: args.data[key]
+            },
+            success: function(json) {
+              updatedResources++;
+              if (updatedResources == totalResources) {
+                args.response.success();                
+              }
+            }
+          });
+        });
+      },
+      
+      dataProvider: function(args) {
+        $.ajax({
+          url: createURL('listResourceLimits'),
+          success: function(json) {
+            args.response.success({
+              data: $.map(
+                json.listresourcelimitsresponse.resourcelimit,
+                function(resource) {
+                  var resourceMap = {
+                    0: {
+                      id: 'user_vm',
+                      label: 'Max. User VMs'
+                    },
+                    1: {
+                      id: 'public_ip',
+                      label: 'Max. Public IPs'
+                    },
+                    2: {
+                      id: 'volume',
+                      label: 'Max. Volumes'
+                    },
+                    3: {
+                      id: 'snapshot',
+                      label: 'Max. Snapshots'
+                    },
+                    4: {
+                      id: 'template',
+                      label: 'Max. Templates'
+                    },
+                    5: {
+                      id: 'project',
+                      label: 'Max. Projects'
+                    }
+                  };
+                  return {
+                    id: resourceMap[resource.resourcetype].id,
+                    label: resourceMap[resource.resourcetype].label,
+                    type: resource.resourcetype,
+                    value: resource.max
+                  };
+                }
+              )
+            });
+          }
+        });
+       
+      }
+    },
+
     dashboard: function(args) {
       var dataFns = {
         instances: function(data) {
