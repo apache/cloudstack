@@ -141,7 +141,8 @@
                         url: createURL('listNetworkOfferings'),
                         data: {
                           supportedServices: 'SourceNat',
-                          type: 'isolated'
+                          type: 'isolated',
+                          state: 'Enabled'
                         },
                         success: function(json) {
                           var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
@@ -167,6 +168,9 @@
                     args.response.success({
                       data: json.createnetworkresponse.network
                     });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },
@@ -183,7 +187,8 @@
             vlan: { label: 'VLAN' },
             cidr: { label: 'CIDR' },
             state: { label: 'State', indicator: {
-              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on'
+              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on',
+              'Destroyed': 'off'
             } }
           },
           dataProvider: function(args) {
@@ -210,21 +215,13 @@
           detailView: {
             name: 'Guest network details',
             viewAll: { 
-							path: '_zone.guestIpRanges', 
-							label: 'IP ranges',
-              preFilter: function(args) {                        
-								if(args.context.networks[0].type == "Isolated") {												  
-									var services = args.context.networks[0].service;
-									if(services != null) {
-										for(var i=0; i < services.length; i++) {
-											var service = services[i];
-											if(service.name == "SourceNat")
-												return false;
-										}
-									}  								  
-								}
-								return true;
-              }											
+							path: 'network.ipAddresses', 
+							label: 'IP addresses',
+              preFilter: function(args) {
+                if (args.context.networks[0].state == 'Destroyed') return false;
+
+                return true;
+              }
 						},
             actions: {
               edit: {
@@ -304,14 +301,8 @@
 									confirm: function(args) {
 										return 'Please confirm that you want to restart network';
 									},
-									success: function(args) {
-										return 'Network is being restarted';
-									},
 									notification: function(args) {
 										return 'Restarting network';
-									},
-									complete: function(args) {
-										return 'Network has been restarted';
 									}
 								},
 								notification: {
@@ -319,20 +310,14 @@
 								}												
 							},
 							
-              'delete': {
+              destroy: {
                 label: 'Delete network',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to delete network ?';
                   },
-                  success: function(args) {
-                    return 'Network is being deleted.';
-                  },
                   notification: function(args) {
                     return 'Deleting network';
-                  },
-                  complete: function(args) {
-                    return 'Network has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -346,7 +331,7 @@
                         {_custom:
                          {jobId: jid,
                           getUpdatedItem: function(json) {
-                            return {}; //nothing in this network needs to be updated, in fact, this whole template has being deleted
+                            return { state: 'Destroyed' }; //nothing in this network needs to be updated, in fact, this whole template has being deleted
                           }
                          }
                         }
@@ -425,11 +410,16 @@
                     },                           
                     vlan: { label: 'VLAN ID' },
                     scope: { label: 'Scope' },
-                    networkofferingdisplaytext: { label: 'Network offering' },
+                    //networkofferingdisplaytext: { label: 'Network offering' },
                     networkofferingid: {
                       label: 'Network offering',
                       isEditable: true,
                       select: function(args){
+                        if (args.context.networks[0].state == 'Destroyed') {
+                          args.response.success({ data: [] });
+                          return;
+                        }
+                        
                         var items = [];
                         $.ajax({
                           url: createURL("listNetworkOfferings&networkid=" + args.context.networks[0].id),
@@ -457,10 +447,6 @@
                       }
                     },
                     
-                    networkofferingidText: {
-                      label: 'Network offering ID'
-                    },
-                    
                     gateway: { label: 'Gateway' },
                     //netmask: { label: 'Netmask' },                            
                     cidr: { label: 'CIDR' },
@@ -473,8 +459,16 @@
                     }
                   }
                 ],
-                dataProvider: function(args) {    
-                  args.response.success({data: args.context.networks[0]});
+                dataProvider: function(args) {
+                  args.response.success({
+                    actionFilter: function(args) {
+                      if (args.context.networks[0].state == 'Destroyed')
+                        return [];
+
+                      return args.context.actions;
+                    },
+                    data: args.context.networks[0]
+                  });
                 }
               },
             }
