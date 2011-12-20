@@ -1161,8 +1161,7 @@
                           args.response.success({
                             data: [
                               { name: 'roundrobin', description: 'Round-robin' },
-                              { name: 'leastconn', description: 'Least connections' },
-                              { name: 'source', description: 'Source' }
+                              { name: 'leastconn', description: 'Least connections' }
                             ]
                           });
                         }
