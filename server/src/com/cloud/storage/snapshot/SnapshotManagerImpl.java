@@ -117,7 +117,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -369,14 +368,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async = true)
-    public SnapshotVO createSnapshot(Long volumeId, Long policyId, Long snapshotId) {
-        VolumeVO volume = _volsDao.findById(volumeId);
-        
+    public SnapshotVO createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner) {
+        VolumeVO volume = _volsDao.findById(volumeId);   
         if (volume == null) {
         	throw new InvalidParameterValueException("No such volume exist");
         }
         
-        Account owner = _accountMgr.getAccount(volume.getAccountId());
         SnapshotVO snapshot = null;
      
         boolean backedUp = false;
@@ -481,7 +478,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     snapshot.setStatus(Status.Error);
                     _snapshotDao.update(snapshot.getId(), snapshot);
                 } else {
-                    _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.snapshot);
+                    _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
                 }
             } else {
             	snapshot = _snapshotDao.findById(snapshotId);

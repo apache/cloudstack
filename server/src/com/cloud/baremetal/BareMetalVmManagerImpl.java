@@ -140,7 +140,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	}
 	
 	@Override
-    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException {
+    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
 		/*Baremetal creates record after host rebooting for imaging, in createPrivateTemplate*/
 		return null;
 	}

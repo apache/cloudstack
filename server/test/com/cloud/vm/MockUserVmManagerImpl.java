@@ -260,7 +260,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException {
+    public VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }

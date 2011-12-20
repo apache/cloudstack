@@ -123,10 +123,11 @@ public interface UserVmService {
      * @param cmd
      *            the command object that defines the name, display text, snapshot/volume, bits, public/private, etc. for the
      *            private template
+     * @param templateOwner TODO
      * @return the vm template object if successful, null otherwise
      * @throws ResourceAllocationException
      */
-    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException;
+    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException;
 
     /**
      * Creates a private template from a snapshot of a VM

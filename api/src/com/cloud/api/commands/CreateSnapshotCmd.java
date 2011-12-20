@@ -30,7 +30,10 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
@@ -103,13 +106,29 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
-        if (volume != null) {
-            return volume.getAccountId();
-        }
+    	Long volumeId = getVolumeId();
+        Long accountId = null;
 
-        // bad id given, parent this command to SYSTEM so ERROR events are tracked
-        return Account.ACCOUNT_ID_SYSTEM;
+        Volume volume = _entityMgr.findById(Volume.class, volumeId);
+        if (volume != null) {
+            accountId = volume.getAccountId();
+        } else {
+        	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+        }
+       
+        
+        Account account = _accountService.getAccount(accountId);
+        //Can create templates for enabled projects/accounts only
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        	Project project = _projectService.findByProjectAccountId(accountId);
+            if (project.getState() != Project.State.Active) {
+                throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
+            }
+        } else if (account.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+        }
+        
+        return accountId;
     }
 
     @Override
@@ -140,7 +159,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         UserContext.current().setEventDetails("Volume Id: "+getVolumeId());
-        Snapshot snapshot = _snapshotService.createSnapshot(getVolumeId(), getPolicyId(), getEntityId());
+        Snapshot snapshot = _snapshotService.createSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()));
         if (snapshot != null) {
             SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
             response.setResponseName(getCommandName());

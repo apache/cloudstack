@@ -1287,19 +1287,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
-    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException {
+    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
         Long userId = UserContext.current().getCallerUserId();
 
         Account caller = UserContext.current().getCaller();
-        boolean isAdmin = ((caller == null) || isAdmin(caller.getType()));
+        boolean isAdmin = (isAdmin(caller.getType()));
 
-        VMTemplateVO privateTemplate = null;
-
-        UserVO user = _userDao.findById(userId);
-
-        if (user == null) {
-            throw new InvalidParameterValueException("User " + userId + " does not exist");
-        }
+        _accountMgr.checkAccess(caller, null, templateOwner);
 
         String name = cmd.getTemplateName();
         if ((name == null) || (name.length() > 32)) {
@@ -1307,7 +1301,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         if(cmd.getTemplateTag() != null){
-            if(!_accountService.isRootAdmin(caller.getType())){
+            if (!_accountService.isRootAdmin(caller.getType())){
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
@@ -1338,10 +1332,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" + snapshotId + ")");
         }
 
-        long domainId;
-        long accountId;
         HypervisorType hyperType;
         VolumeVO volume = null;
+        VMTemplateVO privateTemplate = null;
         if (volumeId != null) { // create template from volume
             volume = _volsDao.findById(volumeId);
             if (volume == null) {
@@ -1359,17 +1352,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 throw new CloudRuntimeException(msg);
             }
-            domainId = volume.getDomainId();
-            accountId = volume.getAccountId();
             hyperType = _volsDao.getHypervisorType(volumeId);
         } else { // create template from snapshot
             SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-            volume = _volsDao.findById(snapshot.getVolumeId());
-            VolumeVO snapshotVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
-
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
+            
+            volume = _volsDao.findById(snapshot.getVolumeId());
+            VolumeVO snapshotVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());     
 
             //check permissions
             _accountMgr.checkAccess(caller, null, snapshot);
@@ -1383,13 +1374,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from Data Disk");
             }
 
-            domainId = snapshot.getDomainId();
-            accountId = snapshot.getAccountId();
             hyperType = snapshot.getHypervisorType();            
         }
 
-        AccountVO ownerAccount = _accountDao.findById(accountId);
-        _resourceLimitMgr.checkResourceLimit(ownerAccount, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
         if (!isAdmin || featured == null) {
             featured = Boolean.FALSE;
@@ -1421,7 +1409,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("Adding template tag: "+templateTag);
             }
         }
-        privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, accountId,
+        privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, templateOwner.getId(),
                 null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
         if(sourceTemplateId != null){
             if(s_logger.isDebugEnabled()){
@@ -1437,7 +1425,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         		_templateDetailsDao.persist(template.getId(), cmd.getDetails());
         	}
         	
-            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
         }
 
         if (template != null){

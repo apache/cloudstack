@@ -164,7 +164,7 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = getAccountId(accountName, domainId, projectId, true);
+        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }

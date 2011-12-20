@@ -35,6 +35,7 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
@@ -459,7 +460,7 @@ public abstract class BaseCmd {
     	return this.fullUrlParams;
     }
     
-    public Long getAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
@@ -475,7 +476,7 @@ public abstract class BaseCmd {
             	if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
             	} else {
-            		throw new InvalidParameterValueException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+            		throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
             	}
             } else {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
@@ -488,14 +489,12 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    throw new InvalidParameterValueException("Can't add resources to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
                 }
-                
             } else {
                 throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }
         }
-        
         return null;
     }
 }

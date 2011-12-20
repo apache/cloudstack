@@ -112,7 +112,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(getAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
+    	List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
 
         if ((result != null) && (result.size()>0)){
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();
