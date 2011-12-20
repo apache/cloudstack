@@ -6666,6 +6666,70 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   left: 0;
 }
 
+/*** Resource management*/
+.project-dashboard .resources {
+}
+
+.project-dashboard .resources form {
+  background: #FFFFFF;
+  width: 87%;
+  /*+border-radius:11px;*/
+  -moz-border-radius: 11px;
+  -webkit-border-radius: 11px;
+  -khtml-border-radius: 11px;
+  border-radius: 11px 11px 11px 11px;
+  padding: 26px;
+  margin-top: 17px;
+  margin-left: 22px;
+  /*+box-shadow:inset 0px 3px 4px #979797;*/
+  -moz-box-shadow: inset 0px 3px 4px #979797;
+  -webkit-box-shadow: inset 0px 3px 4px #979797;
+  -o-box-shadow: inset 0px 3px 4px #979797;
+  box-shadow: inset 0px 3px 4px #979797;
+  display: inline-block;
+}
+
+.project-dashboard .resources form .field {
+  width: 100%;
+  float: left;
+  clear: both;
+  margin: auto auto 30px;
+}
+
+.project-dashboard .resources form label {
+  float: left;
+}
+
+.project-dashboard .resources form input[type=text] {
+  float: right;
+  width: 176px;
+  font-size: 16px;
+  margin: 0 287px 0 0;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid #C6C6C6;
+  padding: 6px;
+}
+
+.project-dashboard .resources form input[type=submit] {
+  display: block;
+  border: none;
+  background: transparent url(../images/bg-gradients.png) 0px -220px;
+  float: left;
+  padding: 9px 20px;
+  cursor: pointer;
+  color: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  clear: both;
+}
+
 /*** Dashboard*/
 .project-dashboard .toolbar {
   position: relative;
