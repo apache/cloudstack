@@ -351,8 +351,7 @@
                   return hiddenFields;
                 },
                 fields: [                  
-                  {
-                    id: { label: 'ID' },
+                  {                    
                     state: { label: 'State' },
                     startVlan: {
                       label: 'Start Vlan',
