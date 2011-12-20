@@ -1507,8 +1507,11 @@
       //do nothing
     }
     else {      
-      allowedActions.push("edit");      
-      allowedActions.push("copyTemplate");         
+      allowedActions.push("edit");   
+						
+			if(jsonObj.zoneid != null || jsonObj.zoneid != "-1")
+        allowedActions.push("copyTemplate");   
+      
       //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.   
     }
 
@@ -1546,8 +1549,10 @@
          //do nothing
        }
     else {      
-      allowedActions.push("edit");      
-      allowedActions.push("copyISO");      
+      allowedActions.push("edit");   
+			
+      if(jsonObj.zoneid != null || jsonObj.zoneid != "-1")			
+        allowedActions.push("copyISO");      
     }
 
     // "Create VM"
