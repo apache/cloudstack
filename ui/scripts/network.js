@@ -141,7 +141,8 @@
                         url: createURL('listNetworkOfferings'),
                         data: {
                           supportedServices: 'SourceNat',
-                          type: 'isolated'
+                          type: 'isolated',
+                          state: 'Enabled'
                         },
                         success: function(json) {
                           var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
@@ -165,8 +166,11 @@
                   data: args.data,
                   success: function(json) {
                     args.response.success({
-                      data: { state: 'Allocated' }
+                      data: json.createnetworkresponse.network
                     });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },
@@ -183,7 +187,8 @@
             vlan: { label: 'VLAN' },
             cidr: { label: 'CIDR' },
             state: { label: 'State', indicator: {
-              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on'
+              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on',
+              'Destroyed': 'off'
             } }
           },
           dataProvider: function(args) {
@@ -291,14 +296,8 @@
 									confirm: function(args) {
 										return 'Please confirm that you want to restart network';
 									},
-									success: function(args) {
-										return 'Network is being restarted';
-									},
 									notification: function(args) {
 										return 'Restarting network';
-									},
-									complete: function(args) {
-										return 'Network has been restarted';
 									}
 								},
 								notification: {
@@ -306,20 +305,14 @@
 								}												
 							},
 							
-              'delete': {
+              destroy: {
                 label: 'Delete network',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to delete network ?';
                   },
-                  success: function(args) {
-                    return 'Network is being deleted.';
-                  },
                   notification: function(args) {
                     return 'Deleting network';
-                  },
-                  complete: function(args) {
-                    return 'Network has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -333,7 +326,7 @@
                         {_custom:
                          {jobId: jid,
                           getUpdatedItem: function(json) {
-                            return {}; //nothing in this network needs to be updated, in fact, this whole template has being deleted
+                            return { state: 'Destroyed' }; //nothing in this network needs to be updated, in fact, this whole template has being deleted
                           }
                          }
                         }
