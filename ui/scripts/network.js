@@ -210,21 +210,8 @@
           detailView: {
             name: 'Guest network details',
             viewAll: { 
-							path: '_zone.guestIpRanges', 
-							label: 'IP ranges',
-              preFilter: function(args) {                        
-								if(args.context.networks[0].type == "Isolated") {												  
-									var services = args.context.networks[0].service;
-									if(services != null) {
-										for(var i=0; i < services.length; i++) {
-											var service = services[i];
-											if(service.name == "SourceNat")
-												return false;
-										}
-									}  								  
-								}
-								return true;
-              }											
+							path: 'network.ipAddresses', 
+							label: 'IP addresses'
 						},
             actions: {
               edit: {
