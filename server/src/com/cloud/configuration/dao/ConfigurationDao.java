@@ -69,4 +69,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     boolean isPremium();
     
     ConfigurationVO findByName(String name);
+
+	boolean update(String name, String category, String value);
 }

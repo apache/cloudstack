@@ -299,7 +299,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
 
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not configured originally. Set it default to " + localCidrs[0], "");
-                _configDao.update(Config.ManagementNetwork.key(), localCidrs[0]);
+                _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
             } else {
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not properly configured and we are not able to find a default setting", "");
@@ -316,7 +316,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @DB
-    public void updateConfiguration(long userId, String name, String value) {
+    public void updateConfiguration(long userId, String name, String category, String value) {
         if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
             value = null;
         }
@@ -332,7 +332,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        if (!_configDao.update(name, value)) {
+        if (!_configDao.update(name, category, value)) {
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
@@ -435,7 +435,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String value = cmd.getValue();
         UserContext.current().setEventDetails(" Name: " + name + " New Value: " + ((value == null) ? "" : value));
         // check if config value exists
-        if (_configDao.findByName(name) == null) {
+        ConfigurationVO config = _configDao.findByName(name);
+        if (config == null) {
             throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
         }
 
@@ -443,7 +444,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             return _configDao.findByName(name);
         }
 
-        updateConfiguration(userId, name, value);
+        updateConfiguration(userId, name, config.getCategory(), value);
         if (_configDao.getValue(name).equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {

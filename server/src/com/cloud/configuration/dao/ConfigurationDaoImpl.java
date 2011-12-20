@@ -122,10 +122,27 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return true;
     }
 
-    @Override
+    //Use update method with category instead
+    @Override @Deprecated
     public boolean update(String name, String value) {
     	Transaction txn = Transaction.currentTxn();
 		try {
+			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
+			stmt.setString(1, value);
+			stmt.setString(2, name);
+			stmt.executeUpdate();
+			return true;
+		} catch (Exception e) {
+			s_logger.warn("Unable to update Configuration Value", e);
+		}
+		return false;
+    }
+
+    @Override
+    public boolean update(String name, String category, String value) {
+    	Transaction txn = Transaction.currentTxn();
+		try {
+			value = "Hidden".equals(category) ? DBEncryptionUtil.encrypt(value) : value;
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
 			stmt.setString(1, value);
 			stmt.setString(2, name);
