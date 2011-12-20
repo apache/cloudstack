@@ -651,7 +651,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
             if (backedUp) {
                 if (backupSnapshotCommand.getSwift() != null ) {
-                    snapshot.setSwiftId(1L);
+                    snapshot.setSwiftId(swift.getId());
                     snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
                 } else {
                     snapshot.setSecHostId(secHost.getId());
