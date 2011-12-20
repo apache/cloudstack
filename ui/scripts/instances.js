@@ -255,86 +255,14 @@
                       networkData.account = g_account;
                     }
                     
+										var networkObjs;
                     $.ajax({
                       url: createURL('listNetworks'),
                       data: networkData,
                       dataType: "json",
                       async: false,
                       success: function(json) {
-                        var networks = json.listnetworksresponse.network;
-
-                        //***** check if there is an isolated network with sourceNAT (begin) *****
-                        /*
-                        var isolatedSourcenatNetwork = null;
-                        if(selectedZoneObj.securitygroupsenabled == false) {
-                          if (networks != null && networks.length > 0) {
-                            for (var i = 0; i < networks.length; i++) {
-                              if (networks[i].type == 'Isolated') {
-                                //loop through
-                                var sourceNatObj = ipFindNetworkServiceByName("SourceNat", networks[i]);
-                                if(sourceNatObj != null) {
-                                  isolatedSourcenatNetwork = networks[i];
-                                  break;
-                                }  
-                              }
-                            }
-                          }
-                          if (isolatedSourcenatNetwork == null) { //if there is no isolated network with sourceNat, create one.
-                            $.ajax({
-                              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-                                if (networkOfferings != null && networkOfferings.length > 0) {
-                                  for (var i = 0; i < networkOfferings.length; i++) {
-                                    if (networkOfferings[i].isdefault == true
-                                        && (networkOfferings[i].availability == "Required" || networkOfferings[i].availability == "Optional")
-                                       ) {
-                                         // Create a isolated network
-                                         var networkName = "Isolated Network";
-                                         var networkDesc = "A dedicated isolated network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";
-                                         $.ajax({
-                                           url: createURL("createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+args.currentData.zoneid),
-                                           dataType: "json",
-                                           async: false,
-                                           success: function(json) {
-                                             isolatedSourcenatNetwork = json.createnetworkresponse.network;
-                                             defaultNetworkArray.push(isolatedSourcenatNetwork);
-                                           }
-                                         });
-                                       }
-                                  }
-                                }
-                              }
-                            });
-                          }                          
-                        }
-                        */
-                        //***** check if there is an isolated network with sourceNAT (end) *****
-                   
-
-                        //***** populate all networks (begin) **********************************
-                        //isolatedSourcenatNetwork is first radio button in default network section. Show isolatedSourcenatNetwork when its networkofferingavailability is 'Required' or'Optional'
-                        /*
-                        if (isolatedSourcenatNetwork.networkofferingavailability == 'Required' || isolatedSourcenatNetwork.networkofferingavailability == 'Optional') {
-                          defaultNetworkArray.push(isolatedSourcenatNetwork);
-                        }
-                        */
-                        
-                        //default networks are in default network section 
-                        //non-default networks are in additional network section                         
-                        if (networks != null && networks.length > 0) {
-                          for (var i = 0; i < networks.length; i++) {    
-                            if (networks[i].isdefault) {     
-                              defaultNetworkArray.push(networks[i]);                              
-                            }
-                            else {
-                              optionalNetworkArray.push(networks[i]);
-                            }
-                          }
-                        }
-                        //***** populate all networks (end) ************************************
+                        networkObjs = json.listnetworksresponse.network;                        
                       }
                     });                                      
                     
@@ -346,13 +274,12 @@
                         networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;                                             
                       }
                     });
-                    
-                    
+                                      
                     args.response.success({
                       type: 'select-network',
                       data: {
-                        myNetworks: defaultNetworkArray,
-                        sharedNetworks: optionalNetworkArray,
+                        myNetworks: [], //not used any more
+                        sharedNetworks: networkObjs,
                         securityGroups: [],
                         networkOfferings: networkOfferingObjs
                       }
