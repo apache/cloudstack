@@ -957,7 +957,23 @@
 
                   detailView: {
                     name: 'Guest network details',
-                    viewAll: { path: '_zone.guestIpRanges', label: 'IP ranges' },
+                    viewAll: { 
+										  path: '_zone.guestIpRanges', 
+											label: 'IP ranges',
+                      preFilter: function(args) {                        
+												if(selectedGuestNetworkObj.type == "Isolated") {												  
+													var services = selectedGuestNetworkObj.service;
+													if(services != null) {
+														for(var i=0; i < services.length; i++) {
+																var service = services[i];
+																if(service.name == "sourceNAT")
+																	return false;
+														}
+													}  								  
+												}
+												return true;
+                      }											
+									  },
                     actions: {
                       edit: {
                         label: 'Edit',
@@ -1015,7 +1031,7 @@
 												label: 'Restart network',
 												action: function(args) {												  
 													$.ajax({
-														url: createURL("restartNetwork&id=" + args.context.networks[0].id),
+														url: createURL("restartNetwork&cleanup=true&id=" + args.context.networks[0].id),
 														dataType: "json",
 														async: true,
 														success: function(json) {														  
