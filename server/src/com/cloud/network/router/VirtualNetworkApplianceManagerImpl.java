@@ -100,7 +100,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.dao.EventDao;
@@ -187,7 +186,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserStatsLogVO;
 import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
@@ -253,10 +251,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     UserDao _userDao = null;
     @Inject
-    AccountDao _accountDao = null;
-    @Inject
-    DomainDao _domainDao = null;
-    @Inject
     UserStatisticsDao _userStatsDao = null;
     @Inject
     VolumeDao _volsDao = null;
@@ -271,10 +265,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     VMTemplateHostDao _vmTemplateHostDao = null;
     @Inject
-    ResourceLimitDao _limitDao = null;
-    @Inject
-    CapacityDao _capacityDao = null;
-    @Inject
     UserStatsLogDao _userStatsLogDao = null;
     @Inject
     AgentManager _agentMgr;
@@ -285,19 +275,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     AccountManager _accountMgr;
     @Inject
-    AccountService _accountService;
-    @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    AsyncJobManager _asyncMgr;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     UserVmDao _userVmDao;
     @Inject
     FirewallRulesDao _firewallRulesDao;
-    @Inject
-    NetworkRuleConfigDao _networkRuleConfigDao;
     @Inject
     UserStatisticsDao _statsDao = null;
     @Inject
@@ -675,7 +659,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ConfigurationException(msg);
         }
 
-        _systemAcct = _accountService.getSystemAccount();
+        _systemAcct = _accountMgr.getSystemAccount();
 
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
@@ -1254,7 +1238,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             NicProfile defaultNic = new NicProfile();
             //if source nat service is supported by the network, get the source nat ip address
             if (publicNetwork) {
-                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountMgr.getSystemUser().getId());
                 defaultNic.setDefaultNic(true);
                 defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
                 defaultNic.setGateway(sourceNatIp.getGateway());
@@ -1487,7 +1471,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             if (!skip) {
                 if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
                 }
                 if (router != null) {
                     runningRouters.add(router);
