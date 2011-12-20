@@ -5677,65 +5677,7 @@
                 notification: {
                   poll: function(args) { args.complete(); }
                 }
-              },
-
-              //Add IP range has been moved from pod page to guest network in zone chart
-              /*
-              addIpRange: {
-                label: 'Add IP range' ,
-                messages: {
-                  confirm: function(args) {
-                    return 'Please confirm that you want to add IP range to this pod';
-                  },
-                  success: function(args) {
-                    return 'IP range is being added.';
-                  },
-                  notification: function(args) {
-                    return 'Adding IP range';
-                  },
-                  complete: function(args) {
-                    return 'IP range has been added.';
-                  }
-                },
-
-                createForm: {
-                  title: 'Add IP range',
-                  fields: {
-                    gateway: { label: 'Guest gateway' },
-                    netmask: { label: 'Guest netmask' },
-                    startip: { label: 'Guest start IP' },
-                    endip: { label: 'Guest end IP' }
-                  }
-                },
-
-                action: function(args) {
-                  var array1 = [];
-                  array1.push("&vlan=untagged");
-                  array1.push("&zoneid=" + args.context.zones[0].id);
-                  array1.push("&podId=" + args.context.pods[0].id);
-                  array1.push("&forVirtualNetwork=false"); //direct VLAN
-                  array1.push("&gateway=" + todb(args.data.gateway));
-                  array1.push("&netmask=" + todb(args.data.netmask));
-                  array1.push("&startip=" + todb(args.data.startip));
-                  if(args.data.endip != null && args.data.endip.length > 0)
-                    array1.push("&endip=" + todb(args.data.endip));
-
-                  $.ajax({
-                    url: createURL("createVlanIpRange" + array1.join("")),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      var item = json.createvlaniprangeresponse.vlan;
-                      args.response.success({data: item});
-                    }
-                  });
-                },
-                notification: {
-                  poll: function(args) { args.complete(); }
-                }
               }
-              */
-
             },
             tabs: {
               details: {
@@ -7164,9 +7106,10 @@
         listView: {
           section: 'primary-storage',
           fields: {
-            name: { label: 'Name' },
-            zonename: { label: 'Zone' },
-            podname: { label: 'Pod' }
+            name: { label: 'Name' },            
+            podname: { label: 'Pod' },
+						clustername: { label: 'Cluster' },
+						path: { label: 'Path' }
           },
 
           dataProvider: function(args) {
@@ -7690,7 +7633,27 @@
 
           detailView: {
             name: "Primary storage details",
-            actions: {
+            actions: {						 
+							edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];							
+                  array1.push("&tags=" + todb(args.data.tags));
+                  
+                  $.ajax({
+                    url: createURL("updateStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {										  
+                      var item = json.updatestoragepoolresponse.storagepool;
+                      args.response.success({data: item});
+                    },
+                    error: function(XMLHttpResponse) {
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                  });
+                }
+              },							
+													
               enableMaintenanceMode: {
                 label: 'Enable Maintenace' ,
                 action: function(args) {
@@ -7819,9 +7782,12 @@
                   },
                   {
                     id: { label: 'ID' },
-                    state: { label: 'State' },
-                    zonename: { label: 'Zone' },
-                    podname: { label: 'Pod' },
+                    state: { label: 'State' },  
+										tags: { 
+										  label: 'Storage tags',
+											isEditable: true
+										},
+										podname: { label: 'Pod' },
                     clustername: { label: 'Cluster' },
                     type: { label: 'Type' },
                     ipaddress: { label: 'IP Address' },
@@ -7843,12 +7809,10 @@
                         else
                           return cloudStack.converters.convertBytes(args);
                       }
-                    },
-                    tags: { label: 'Primary tags' }
+                    }                   
                   }
                 ],
-
-                //dataProvider: testData.dataProvider.detailView('primaryStorage')
+                
                 dataProvider: function(args) {
                   args.response.success({
                     actionFilter: primarystorageActionfilter,
@@ -8712,6 +8676,8 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
+		allowedActions.push("edit");
+		
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
       allowedActions.push("enableMaintenanceMode");
     }
