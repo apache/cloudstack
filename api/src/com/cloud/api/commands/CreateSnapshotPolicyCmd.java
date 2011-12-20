@@ -27,6 +27,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotPolicyResponse;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
@@ -100,16 +103,27 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
-        if (volume != null) {
-            return volume.getAccountId();
+        if (volume == null) {
+        	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
         }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        Account account = _accountService.getAccount(volume.getAccountId());
+        //Can create templates for enabled projects/accounts only
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            if (project.getState() != Project.State.Active) {
+                throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
+            }
+        } else if (account.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+        }
+        
+        return volume.getAccountId();
     }
     
     @Override
     public void execute(){
-        SnapshotPolicy result = _snapshotService.createPolicy(this);
+        SnapshotPolicy result = _snapshotService.createPolicy(this, _accountService.getAccount(getEntityOwnerId()));
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);
             response.setResponseName(getCommandName());

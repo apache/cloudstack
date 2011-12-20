@@ -54,9 +54,10 @@ public interface SnapshotService {
      * 
      * @param cmd
      *            the command that
+     * @param policyOwner TODO
      * @return the newly created snapshot policy if success, null otherwise
      */
-    SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd);
+    SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner);
 
     /**
      * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled

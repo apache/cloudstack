@@ -1126,7 +1126,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     @DB
-    public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd) {
+    public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
         VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
         if (volume == null) {
@@ -1139,7 +1139,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
-        if ( volume.getTemplateId() != null ) {
+        if (volume.getTemplateId() != null ) {
             VMTemplateVO  template = _templateDao.findById(volume.getTemplateId());
             if( template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM ) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");

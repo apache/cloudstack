@@ -106,21 +106,16 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-    	Long volumeId = getVolumeId();
-        Long accountId = null;
-
-        Volume volume = _entityMgr.findById(Volume.class, volumeId);
-        if (volume != null) {
-            accountId = volume.getAccountId();
-        } else {
+        
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume == null) {
         	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
         }
-       
         
-        Account account = _accountService.getAccount(accountId);
+        Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        	Project project = _projectService.findByProjectAccountId(accountId);
+        	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
             }
@@ -128,7 +123,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
         
-        return accountId;
+        return volume.getAccountId();
     }
 
     @Override
