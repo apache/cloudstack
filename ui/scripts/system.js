@@ -966,7 +966,7 @@
 													if(services != null) {
 														for(var i=0; i < services.length; i++) {
 																var service = services[i];
-																if(service.name == "sourceNAT")
+																if(service.name == "SourceNat")
 																	return false;
 														}
 													}  								  
