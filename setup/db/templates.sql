@@ -159,7 +159,7 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (127, 10, 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (128, 10, 'Ubuntu 9.04 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (129, 10, 'Ubuntu 8.10 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (130, 10, 'Ubuntu 8.04 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (131, 10, 'Red Hat Enterprise Linux 2');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (131, 4, 'Red Hat Enterprise Linux 2');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (132, 2, 'Debian GNU/Linux 6(32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (133, 2, 'Debian GNU/Linux 6(64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (134, 3, 'Oracle Enterprise Linux 5.5 (32-bit)');
