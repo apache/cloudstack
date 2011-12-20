@@ -375,21 +375,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshot = null;
      
         boolean backedUp = false;
-        
+        UserVmVO uservm = null;
         // does the caller have the authority to act on this volume
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
         
         try {
-            if (volume != null && _volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
-                /* KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume */
-                UserVmVO uservm = _vmDao.findById(volume.getInstanceId());
-                if (uservm != null) {
-                    UserVmVO vm = _vmDao.acquireInLockTable(uservm.getId(), 10);
-                    if (vm == null) {
-                        throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
-                    }
-                }
-            }
+    
             Long poolId = volume.getPoolId();
             if (poolId == null) {
                 throw new CloudRuntimeException("You cannot take a snapshot of a volume until it has been attached to an instance");
@@ -418,7 +409,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                                 + userVm.getState().toString() + " state");
                     }
                     
-                    if(userVm.getHypervisorType() == HypervisorType.VMware) {
+                    if(userVm.getHypervisorType() == HypervisorType.VMware || userVm.getHypervisorType() == HypervisorType.KVM) {
                     	List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
                     	if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
