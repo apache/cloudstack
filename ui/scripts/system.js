@@ -2875,7 +2875,6 @@
             fields: {
               name: { label: 'Zone' },
               networktype: { label: 'Network Type' },
-              allocationstate: { label: 'Allocation State' },
               domainid: {
                 label: 'Public',
                 converter: function(args) {
@@ -2884,7 +2883,11 @@
                   else
                     return "No";
                 }
-              }
+              },
+              allocationstate: { label: 'Allocation State', indicator: { 
+                'Enabled': 'on',
+                'Disabled': 'off'
+              } }
             },
             actions: {
               add: {
