@@ -360,7 +360,7 @@ public class Upgrade2214to30 implements DbUpgrade {
     	PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement("select id, value from host_details");
+            pstmt = conn.prepareStatement("select id, value from host_details where name = 'password'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);

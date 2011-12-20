@@ -57,7 +57,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NfsUtils;
@@ -534,16 +533,16 @@ public class DatabaseConfig {
     		stmt.setLong(2, 1);
     		stmt.setString(3, "mount.path");
     		if (nfs) {
-    			stmt.setString(4, DBEncryptionUtil.encrypt(mountPoint));
+    			stmt.setString(4, mountPoint);
     		} else {
-                stmt.setString(4, DBEncryptionUtil.encrypt(url.replaceFirst("file:/", "")));
+                stmt.setString(4, url.replaceFirst("file:/", ""));
             }
     		stmt.executeUpdate();
 
     		stmt.setLong(1, 3);
     		stmt.setLong(2, 1);
     		stmt.setString(3, "orig.url");
-    		stmt.setString(4, DBEncryptionUtil.encrypt(url));
+    		stmt.setString(4, url);
     		stmt.executeUpdate();
     		
             stmt = txn.prepareAutoCloseStatement(insertSql2);

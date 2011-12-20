@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.ejb.Local;
 
 import com.cloud.host.DetailVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -51,7 +52,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         sc.setParameters("hostId", hostId);
         sc.setParameters("name", name);
         
-        return findOneIncludingRemovedBy(sc);
+        DetailVO detail = findOneIncludingRemovedBy(sc);
+        if("password".equals(name) && detail != null){
+        	detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
+        }
+        return detail;
     }
 
     @Override
@@ -62,7 +67,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         List<DetailVO> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (DetailVO result : results) {
-            details.put(result.getName(), result.getValue());
+        	if("password".equals(result.getName())){
+        		details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
+        	} else {
+        		details.put(result.getName(), result.getValue());
+        	}
         }
         return details;
     }
@@ -87,7 +96,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         expunge(sc);
         
         for (Map.Entry<String, String> detail : details.entrySet()) {
-            DetailVO vo = new DetailVO(hostId, detail.getKey(), detail.getValue());
+        	String value = detail.getValue();
+        	if("password".equals(detail.getKey())){
+        		value = DBEncryptionUtil.encrypt(value);
+        	}
+            DetailVO vo = new DetailVO(hostId, detail.getKey(), value);
             persist(vo);
         }
         txn.commit();

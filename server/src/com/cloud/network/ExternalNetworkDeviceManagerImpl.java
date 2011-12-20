@@ -98,7 +98,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject PortForwardingRulesDao _portForwardingRulesDao;
     @Inject LoadBalancerDao _loadBalancerDao;
     @Inject ConfigurationDao _configDao;
-    @Inject HostDetailsDao _detailsDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject NicDao _nicDao;
     @Inject VpnUserDao _vpnUsersDao;

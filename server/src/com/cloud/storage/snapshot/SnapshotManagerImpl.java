@@ -152,8 +152,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     protected SnapshotScheduleDao _snapshotScheduleDao;
     @Inject
-    protected HostDetailsDao _detailsDao;
-    @Inject
     protected DomainDao _domainDao;
     @Inject
     protected StorageManager _storageMgr;

@@ -240,8 +240,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected HostDao _hostDao = null;
     @Inject
-    protected HostDetailsDao _detailsDao = null;
-    @Inject
     protected DomainRouterDao _routerDao = null;
     @Inject
     protected ServiceOfferingDao _offeringDao = null;

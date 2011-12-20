@@ -194,8 +194,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Inject
     VlanDao _vlanDao;
     @Inject
-    HostDetailsDao _hostDetailsDao;
-    @Inject
     IPAddressDao _publicIpAddressDao;
     @Inject
     DataCenterIpAddressDao _privateIpAddressDao;
@@ -343,7 +341,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
+                pstmt.setString(1, value);
                 pstmt.setString(2, "guest.network.device");
 
                 pstmt.executeUpdate();
@@ -354,7 +352,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
+                pstmt.setString(1, value);
                 pstmt.setString(2, "private.network.device");
 
                 pstmt.executeUpdate();
@@ -365,7 +363,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
+                pstmt.setString(1, value);
                 pstmt.setString(2, "public.network.device");
 
                 pstmt.executeUpdate();
@@ -376,7 +374,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
+                pstmt.setString(1, value);
                 pstmt.setString(2, "storage.network.device1");
 
                 pstmt.executeUpdate();
@@ -387,7 +385,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
+                pstmt.setString(1, value);
                 pstmt.setString(2, "storage.network.device2");
 
                 pstmt.executeUpdate();

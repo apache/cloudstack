@@ -38,7 +38,7 @@ public class DetailVO {
     @Column(name="name")
     private String name;
     
-    @Column(name="value", encryptable=true)
+    @Column(name="value")
     private String value;
     
     protected DetailVO() {

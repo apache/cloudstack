@@ -88,7 +88,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected DataCenterDao _dcDao;
     @Inject protected HostPodDao _podDao;
     @Inject protected ClusterDao _clusterDao;
-    @Inject protected HostDetailsDao _hostDetailsDao = null;
     @Inject protected GuestOSDao _guestOSDao = null;
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DiskOfferingDao _diskOfferingDao;

@@ -134,8 +134,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Inject
     DataCenterDao _dcDao;
     @Inject
-    HostDetailsDao _detailsDao;
-    @Inject
     NetworkManager _networkMgr;
     @Inject
     InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
@@ -329,7 +327,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer) {
-        Map<String, String> lbDetails = _detailsDao.findDetails(externalLoadBalancer.getId());
+        Map<String, String> lbDetails = _hostDetailDao.findDetails(externalLoadBalancer.getId());
         ExternalLoadBalancerResponse response = new ExternalLoadBalancerResponse();
         response.setId(externalLoadBalancer.getId());
         response.setIpAddress(externalLoadBalancer.getPrivateIpAddress());
@@ -650,7 +648,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     private boolean externalLoadBalancerIsInline(HostVO externalLoadBalancer) {
-        DetailVO detail = _detailsDao.findDetail(externalLoadBalancer.getId(), "inline");
+        DetailVO detail = _hostDetailDao.findDetail(externalLoadBalancer.getId(), "inline");
         return (detail != null && detail.getValue().equals("true"));
     }
 
