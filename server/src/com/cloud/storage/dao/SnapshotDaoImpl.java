@@ -60,6 +60,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> HostIdSearch;
     private final SearchBuilder<SnapshotVO> AccountIdSearch;
     private final SearchBuilder<SnapshotVO> InstanceIdSearch;
+    private final SearchBuilder<SnapshotVO> StatusSearch;
     private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
     
     protected final VMInstanceDaoImpl _instanceDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
@@ -168,6 +169,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
         
+        StatusSearch = createSearchBuilder();
+        StatusSearch.and("volumeId", StatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        StatusSearch.and("status", StatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        StatusSearch.done();
+        
         CountSnapshotsByAccount = createSearchBuilder(Long.class);
         CountSnapshotsByAccount.select(null, Func.COUNT, null);        
         CountSnapshotsByAccount.and("account", CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -270,12 +276,20 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status) {
     	SearchCriteria<SnapshotVO> sc = this.InstanceIdSearch.create();
     	
-    	if (status != null) {
-    	    sc.setParameters("status", status.toString());
+    	if (status != null && status.length != 0) {
+    	    sc.setParameters("status", (Object[])status);
     	}
     	
     	sc.setJoinParameters("instanceSnapshots", "state", Volume.State.Ready);
     	sc.setJoinParameters("instanceVolumes", "instanceId", instanceId);
         return listBy(sc, null);
+    }
+    
+    @Override
+    public List<SnapshotVO> listByStatus(long volumeId, Snapshot.Status... status) {
+    	SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
+    	sc.setParameters("volumeId", volumeId);
+    	sc.setParameters("status", (Object[])status);
+    	return listBy(sc, null);
     }
 }

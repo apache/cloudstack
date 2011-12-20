@@ -1567,15 +1567,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException {
 
-        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
-        if (snapshots != null && snapshots.size() > 0) {
-            throw new CloudRuntimeException("Unable to move volume " + volume.getId() + " due to there are snapshots for this volume");
-        }
-
-        List<SnapshotPolicyVO> snapshotPolicys = _snapshotPolicyDao.listByVolumeId(volume.getId());
-        if (snapshotPolicys != null && snapshotPolicys.size() > 0) {
-            throw new CloudRuntimeException("Unable to move volume " + volume.getId() + " due to there are snapshot policyes for this volume");
-        }
+    
 
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
@@ -2440,6 +2432,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             throw new InvalidParameterValueException("Unable to aquire volume with ID: " + volumeId);
         }
         
+        if (!_snapshotMgr.canOperateOnVolume(volume)) {
+        	throw new InvalidParameterValueException("There are snapshot creating on it, Unable to delete the volume");
+        }
+        
         //permission check
         _accountMgr.checkAccess(caller, null, volume);
 
@@ -2622,6 +2618,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	boolean transitResult = false;
     	try {
     		for (Volume volume : volumes) {
+    			if (!_snapshotMgr.canOperateOnVolume((VolumeVO)volume)) {
+    	    		throw new CloudRuntimeException("There are snapshots creating on this volume, can not move this volume");
+    	    	}
+    			
     			try {
     				if (!stateTransitTo(volume, Volume.Event.MigrationRequested)) {
     					throw new ConcurrentOperationException("Failed to transit volume state");

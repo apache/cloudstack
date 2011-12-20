@@ -33,10 +33,10 @@ usage() {
 }
 
 qemu_img="cloud-qemu-img"
-which $qemu_img
+which $qemu_img >& /dev/null
 if [ $? -gt 0 ]
 then
-   which qemu-img
+   which qemu-img >& /dev/null
    if [ $? -eq 0 ]
    then
        qemu_img="qemu-img"

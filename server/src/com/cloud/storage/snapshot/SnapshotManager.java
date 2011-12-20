@@ -137,4 +137,6 @@ public interface SnapshotManager {
     void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId );
 
     void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
+
+	boolean canOperateOnVolume(VolumeVO volume);
 }

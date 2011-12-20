@@ -372,6 +372,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	throw new InvalidParameterValueException("No such volume exist");
         }
         
+        if (volume.getState() != Volume.State.Ready) {
+        	throw new InvalidParameterValueException("Volume is not in ready state");
+        }
+        
         SnapshotVO snapshot = null;
      
         boolean backedUp = false;
@@ -1505,6 +1509,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
         return false;
+    }
+    
+    @Override
+    public boolean canOperateOnVolume(VolumeVO volume) {
+    	List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Status.Creating, Status.CreatedOnPrimary, Status.BackingUp);
+    	if (snapshots.size() > 0) {
+    		return false;
+    	}
+    	return true;
     }
 
 }
