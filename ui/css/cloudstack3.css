@@ -1054,6 +1054,7 @@ div.list-view td.state span {
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
+  background: url(../images/sprites.png) -6px -536px;
 }
 
 div.list-view td.state.on span {
