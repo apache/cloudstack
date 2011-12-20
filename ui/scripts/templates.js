@@ -701,16 +701,16 @@
               details: {
                 title: 'Template Details',
 
-                /*
-                 preFilter: function(args) {
-                 if(isAdmin()) {
-                 args.$form.find('.form-item[rel=storage]').css('display', 'inline-block');
-                 }
-                 else {
-                 args.$form.find('.form-item[rel=storage]').hide();
-                 }
-                 },
-                 */
+                preFilter: function(args) {
+                  var hiddenFields;
+                  if(isAdmin()) {
+                    hiddenFields = [];
+                  }
+                  else {
+                    hiddenFields = ["hypervisor"];
+                  }
+                  return hiddenFields;
+                },
 
                 fields: [
                   {
@@ -1389,18 +1389,7 @@
 
             tabs: {
               details: {
-                title: 'ISO Details',
-
-                /*
-                 preFilter: function(args) {
-                 if(isAdmin()) {
-                 args.$form.find('.form-item[rel=storage]').css('display', 'inline-block');
-                 }
-                 else {
-                 args.$form.find('.form-item[rel=storage]').hide();
-                 }
-                 },
-                 */
+                title: 'ISO Details',                
 
                 fields: [
                   {

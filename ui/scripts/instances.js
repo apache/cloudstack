@@ -1469,6 +1469,18 @@
           // Details tab
           details: {
             title: 'Details',
+						
+						preFilter: function(args) {
+							var hiddenFields;
+							if(isAdmin()) {
+								hiddenFields = [];
+							}
+							else {
+								hiddenFields = ["hypervisor"];
+							}
+							return hiddenFields;
+						},
+						
             fields: [
               {
                 name: { label: 'Name', isEditable: false }
