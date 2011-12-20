@@ -2773,6 +2773,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String value = cmd.getValue();
         String description = cmd.getDescription();
         try {
+        	if("Hidden".equals(category)){
+        		value = DBEncryptionUtil.encrypt(value);
+        	}
             ConfigurationVO entity = new ConfigurationVO(category, instance, component, name, value, description);
             _configDao.persist(entity);
             s_logger.info("Successfully added configuration value into db: category:" + category + " instance:" + instance + " component:" + component + " name:" + name + " value:" + value);

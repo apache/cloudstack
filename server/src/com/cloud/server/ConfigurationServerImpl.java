@@ -485,14 +485,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.info("Generated SSL keystore.");
                 }
                 String base64Keystore = getBase64Keystore(keystorePath);
-                ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", base64Keystore, "SSL Keystore for the management servers");
+                ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", DBEncryptionUtil.encrypt(base64Keystore), "SSL Keystore for the management servers");
             	_configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
             } else if (keystoreFile.exists()) { // and dbExisted
                 // Check if they are the same one, otherwise override with local keystore
                 String base64Keystore = getBase64Keystore(keystorePath);
                 if (base64Keystore.compareTo(dbString) != 0) {
-                    _configDao.update("ssl.keystore", base64Keystore);
+                    _configDao.update("ssl.keystore", DBEncryptionUtil.encrypt(base64Keystore));
                     s_logger.info("Updated database keystore with local one.");
                 }
             } else { // !keystoreFile.exists() and dbExisted
