@@ -377,6 +377,13 @@
           },
           resetPassword: {
             label: 'Reset password',
+            preAction: function(args) {
+              cloudStack.dialog.notice({
+                message: 'You cannot reset your password.'
+              });
+
+              return false;
+            },
             action: function(args) {
               args.response.success({});
             },
