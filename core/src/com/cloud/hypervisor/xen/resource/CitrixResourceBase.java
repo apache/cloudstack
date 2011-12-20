@@ -5442,25 +5442,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
                     throw new InternalErrorException("Failed to create the volume folder.");
                 }
-                VDI vdi = VDI.getByUuid(conn, volumeUUID);
-                String pUuid = getVhdParent(conn, srUuid, vdi.getUuid(conn), IsISCSI(primaryStoragePool.getType(conn)));
-                if( pUuid != null ) {
-                    SR secondaryStorage = null;
-                    try {
-                        // Create a SR for the volume UUID folder
-                        secondaryStorage = createNfsSRbyURI(conn, new URI(secondaryStorageURL + "/volumes/" + volumeFolder), false);
-                        // Look up the volume on the source primary storage pool
-                        VDI srcVolume = getVDIbyUuid(conn, volumeUUID);
-                        // Copy the volume to secondary storage
-                        VDI destVolume = cloudVDIcopy(conn, srcVolume, secondaryStorage, wait);
-                        String destVolumeUUID = destVolume.getUuid(conn);
-                        return new CopyVolumeAnswer(cmd, true, null, null, destVolumeUUID);
-                    } finally {
-                        removeSR(conn, secondaryStorage);
-                    }
-                } else {
-                    String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid, wait);
-                    return new CopyVolumeAnswer(cmd, true, null, null, uuid);
+                SR secondaryStorage = null;
+                try {
+                    // Create a SR for the volume UUID folder
+                    secondaryStorage = createNfsSRbyURI(conn, new URI(secondaryStorageURL + "/volumes/" + volumeFolder), false);
+                    // Look up the volume on the source primary storage pool
+                    VDI srcVolume = getVDIbyUuid(conn, volumeUUID);
+                    // Copy the volume to secondary storage
+                    VDI destVolume = cloudVDIcopy(conn, srcVolume, secondaryStorage, wait);
+                    String destVolumeUUID = destVolume.getUuid(conn);
+                    return new CopyVolumeAnswer(cmd, true, null, null, destVolumeUUID);
+                } finally {
+                    removeSR(conn, secondaryStorage);
                 }
             } else {
                 try {
