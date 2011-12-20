@@ -5,6 +5,9 @@
     var $container = args.$container;
     var state = {}; // Hold wizard form state
 
+    var launchStart; // Holds last launch callback, in case of error
+    var $launchState;
+
     /**
      * Successful installation action
      */
@@ -36,8 +39,10 @@
      * @param stateStepID ID to group state elements in (i.e., zone, pod, cluster, ...)
      * @param $elem (optional) Element containing <form>, to serialize for state
      */
-    var goTo = cloudStack._goto = function(stepID, stateID, $elem) {
-      var $nextStep = steps[stepID]();
+    var goTo = cloudStack._goto = function(stepID, stateID, $elem, options) {
+      if (!options) options = {};
+
+      var $nextStep = steps[stepID]({ nextStep: options.nextStep });
       var $body = $installWizard.find('.body');
 
       if (stateID && $elem) {
@@ -83,7 +88,7 @@
         $prev.click(function() {
           goTo(prevStepID);
         });
-        
+
         return function(args) {
           showDiagram(diagram);
 
@@ -95,7 +100,7 @@
           );
         };
       },
-      
+
       /**
        * A standard form-based wizard step template
        * -- relies on createForm for form generation
@@ -134,7 +139,7 @@
         $form.find('.form-item').addClass('field');
         $prev.appendTo($form.find('form'));
         $save.appendTo($form.find('form'));
-        
+
         // Submit handler
         $form.find('form').submit(function() {
           form.completeAction($form);
@@ -153,8 +158,19 @@
         $container.append($form.prepend($title));
 
         showTooltip($form, tooltipID);
-        
+
         return function(args) {
+          var overrideGotoEvent = function(event) {
+            goTo(args.nextStep);
+
+            return false;
+          };
+
+          if (args && args.nextStep) {
+            $save.unbind('click');
+            $save.click(overrideGotoEvent);
+          }
+
           // Setup diagram, tooltips
           showDiagram(diagram);
           setTimeout(function() {
@@ -350,7 +366,7 @@
         nextStepID: 'addZone',
         diagram: '.part.zone'
       }),
-      
+
       /**
        * Add zone form
        */
@@ -622,31 +638,66 @@
       launch: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-              .html('Now building your cloud...');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('');
+              .html('Now building your cloud...').appendTo($intro);
+        var $subtitle = $('<div></div>').addClass('subtitle').html('').appendTo($intro);
 
-        cloudStack.installWizard.action({
-          data: state,
-          response: {
-            message: function(msg) {
-              var $li = $('<li>').html(msg);
-              
-              $subtitle.append($li);
-
-              $li.siblings().addClass('complete');
-            },
-            success: function() {
-              goTo('complete');
-            }
+        var doAction = function() {
+          if (launchStart) {
+            $('.subtitle').children().remove();
           }
-        });
+          
+          cloudStack.installWizard.action({
+            data: state,
+            startFn: launchStart,
+            response: {
+              message: function(msg) {
+                var $li = $('<li>').html(msg);
 
+                if (launchStart) {
+                  $li.appendTo('.subtitle');
+                  $li.parent().find('li')
+                    .filter(function() {
+                      return this != $li.get(0);
+                    }).addClass('complete');
+                } else {
+                  $subtitle.append($li);
+                  $li.siblings().addClass('complete'); 
+                }
+              },
+              success: function() {
+                goTo('complete');
+              },
+              error: function(stepID, message, callback) {
+                if (launchStart) {
+                  $subtitle = $('.subtitle');
+                  $subtitle.children().remove();
+                  $('li').children().remove();
+                }
+
+                launchStart = callback;
+                $subtitle.find('li:last').addClass('error');
+
+                $subtitle.append(
+                  $('<p>').html(
+                    'Something went wrong; you may go back and correct any errors.'
+                  ),
+                  $('<div>').addClass('button').append(
+                    $('<span>').html('Go back')
+                  ).click(function() {
+                    goTo(stepID, null, null, {
+                      nextStep: 'launch'
+                    });
+                  })
+                );
+              }
+            }
+          });
+        };
+
+        doAction();
         showDiagram('.part.loading');
 
-        return $intro.append(
-          $title, $subtitle
-        );
+        return $intro;
       },
 
       complete: function(args) {

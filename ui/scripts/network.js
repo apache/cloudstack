@@ -54,15 +54,30 @@
     sectionSelect: {
       preFilter: function(args) {
         var isSecurityGroupEnabled = false;
-        
+        var hasIsolatedNetworks = false;
+
         $.ajax({
           url: createURL('listNetworks'),
           data: {
             supportedServices: 'SecurityGroup'
           },
-          dataType: 'json',
           async: false,
           success: function(data) {
+            $.ajax({
+              url: createURL('listNetworks'),
+              data: {
+                type: 'isolated',
+                supportedServices: 'SourceNat'
+              },
+              async: false,
+              success: function(data) {
+                if (data.listnetworksresponse.network &&
+                    data.listnetworksresponse.network.length) {
+                  hasIsolatedNetworks = true;
+                }
+              }
+            });
+
             if (data.listnetworksresponse.network &&
                 data.listnetworksresponse.network.length) {
               isSecurityGroupEnabled = true;
@@ -70,7 +85,9 @@
           }
         });
 
-        if (isSecurityGroupEnabled) return ['securityGroups'];
+        if (isSecurityGroupEnabled && !hasIsolatedNetworks) return ['securityGroups'];
+        if (isSecurityGroupEnabled && hasIsolatedNetworks) return ['securityGroups', 'networks'];
+
         return ['networks'];
       },
       label: 'Select view'
@@ -79,16 +96,95 @@
       networks: {
         id: 'networks',
         type: 'select',
-        title: 'Networks',
+        title: 'Guest Networks',
         listView: {
+          actions: {
+            add: {
+              label: 'Add guest network',
+              createForm: {
+                title: 'Add new guest network',
+                desc: 'Please specify name and zone for this network; note that network will be isolated and source NAT-enabled.',
+                fields: {
+                  name: { label: 'Name', validation: { required: true } },
+                  displayText: { label: 'Display Text', validation: { required: true }},
+                  zoneId: {
+                    label: 'Zone',
+                    validation: { required: true },
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listZones'),
+                        data: {
+                          type: 'Advanced'
+                        },
+                        success: function(json) {
+                          var zones = $.grep(json.listzonesresponse.zone, function(zone) {
+                            return zone.networktype == 'Advanced';
+                          });
+
+                          args.response.success({
+                            data: $.map(zones, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
+                        }
+                      });
+                    }
+                  },
+                  networkOfferingId: {
+                    label: 'Network Offering',
+                    validation: { required: true },
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listNetworkOfferings'),
+                        data: {
+                          supportedServices: 'SourceNat',
+                          type: 'isolated'
+                        },
+                        success: function(json) {
+                          var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+                          args.response.success({
+                            data: $.map(networkOfferings, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
+                        }
+                      });
+                    }
+                  }
+                }
+              },
+              action: function(args) {
+                $.ajax({
+                  url: createURL('createNetwork'),
+                  data: args.data,
+                  success: function(json) {
+                    args.response.success({
+                      data: { state: 'Allocated' }
+                    });
+                  }
+                });
+              },
+              messages: {
+                notification: function() { return 'Added guest network'; }
+              }
+            }
+          },
           id: 'networks',
           fields: {
             name: { label: 'Name' },
             zonename: { label: 'Zone' },
             type: { label: 'Type' },
-            traffictype: { label: 'Traffic Type' },
-            gateway: { label: 'Gateway' },
-            state: { label: 'State', indicator: { 'Implemented': 'on', 'Setup': 'on' } }
+            vlan: { label: 'VLAN' },
+            cidr: { label: 'CIDR' },
+            state: { label: 'State', indicator: {
+              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on'
+            } }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -112,87 +208,275 @@
           },
 
           detailView: {
-            name: 'Network details',
-            viewAll: { path: 'network.ipAddresses', label: 'Associated IP Addresses' },
+            name: 'Guest network details',
+            viewAll: { 
+							path: '_zone.guestIpRanges', 
+							label: 'IP ranges',
+              preFilter: function(args) {                        
+								if(args.context.networks[0].type == "Isolated") {												  
+									var services = args.context.networks[0].service;
+									if(services != null) {
+										for(var i=0; i < services.length; i++) {
+											var service = services[i];
+											if(service.name == "SourceNat")
+												return false;
+										}
+									}  								  
+								}
+								return true;
+              }											
+						},
             actions: {
               edit: {
-                label: 'Edit network',
+                label: 'Edit',
                 messages: {
-                  notification: function() { return 'Updated network'; }
+                  confirm: function(args) {
+                    return 'Are you sure you want to edit network?';
+                  },
+                  success: function(args) {
+                    return 'Network is being edited.';
+                  },
+                  notification: function(args) {
+                    return 'Editing network';
+                  },
+                  complete: function(args) {
+                    return 'Network has been edited.';
+                  }
                 },
                 action: function(args) {
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));
+
+                  //args.data.networkofferingid is null when networkofferingid field is hidden
+                  if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid)
+                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    
+
+                  //args.data.networkdomain is null when networkdomain field is hidden
+                  if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
+                    array1.push("&networkdomain=" + todb(args.data.networkdomain));
+
                   $.ajax({
-                    url: createURL('updateNetwork'),
-                    data: $.extend(args.data, {
-                      id: args.context.networks[0].id
-                    }),
+                    url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                    dataType: "json",
                     success: function(json) {
-                      args.response.success({
-                        _custom: {
-                          jobId: json.updatenetworkresponse.jobid
+                      var jid = json.updatenetworkresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {
+                            var item = json.queryasyncjobresultresponse.jobresult.network;
+                            return {data: item};
+                          }
+                         }
                         }
-                      });
-                    },
-                    error: function(json) {
-                      args.response.error(parseXMLHttpResponse(json));
+                      );
                     }
                   });
                 },
-                notification: { poll: pollAsyncJobResult }
+                notification: {  
+                  poll: pollAsyncJobResult
+                }
+              },
+							
+							'restart': { 											  
+								label: 'Restart network',
+								action: function(args) {												  
+									$.ajax({
+										url: createURL("restartNetwork&cleanup=true&id=" + args.context.networks[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {														  
+											var jid = json.restartnetworkresponse.jobid;
+											args.response.success(
+												{_custom:
+												 {jobId: jid,
+													getUpdatedItem: function(json) {																	  
+														return json.queryasyncjobresultresponse.jobresult.network;
+													}
+												 }
+												}
+											);
+										}
+									});
+								},
+								messages: {
+									confirm: function(args) {
+										return 'Please confirm that you want to restart network';
+									},
+									success: function(args) {
+										return 'Network is being restarted';
+									},
+									notification: function(args) {
+										return 'Restarting network';
+									},
+									complete: function(args) {
+										return 'Network has been restarted';
+									}
+								},
+								notification: {
+									poll: pollAsyncJobResult
+								}												
+							},
+							
+              'delete': {
+                label: 'Delete network',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete network ?';
+                  },
+                  success: function(args) {
+                    return 'Network is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting network';
+                  },
+                  complete: function(args) {
+                    return 'Network has been deleted.';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetwork&id=" + args.context.networks[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.deletenetworkresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return {}; //nothing in this network needs to be updated, in fact, this whole template has being deleted
+                          }
+                         }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
               }
             },
             tabs: {
               details: {
                 title: 'Details',
+                preFilter: function(args) {
+                  var hiddenFields = [];
+                  var zone;
+
+                  $.ajax({
+                    url: createURL('listZones'),
+                    data: {
+                      id: args.context.networks[0].zoneid
+                    },
+                    async: false,
+                    success: function(json) {
+                      zone = json.listzonesresponse.zone[0];
+                    }
+                  });
+                  
+                  if(zone.networktype == "Basic") {
+                    hiddenFields.push("account");
+                    hiddenFields.push("gateway");
+                    //hiddenFields.push("netmask");                            
+                  }
+
+                  if(args.context.networks[0].type == "Isolated") {
+                    hiddenFields.push("networkofferingdisplaytext");
+                    hiddenFields.push("networkdomaintext");
+                    hiddenFields.push("gateway");
+                    //hiddenFields.push("netmask");                            
+                  }
+                  else { //selectedGuestNetworkObj.type == "Shared"
+                    hiddenFields.push("networkofferingid");
+                    hiddenFields.push("networkdomain");
+                  }
+                  return hiddenFields;
+                },
                 fields: [
                   {
-                    name: { label: 'Name' }
-                  },
-                  {
-                    type: { label: 'Type' },
-                    displaytext: { label: 'Description' },
-                    traffictype: { label: 'Traffic Type' },
-                    gateway: { label: 'Gateway' },
-                    networkofferingid: {
-                      label: 'Network Offering',
-                      isEditable: true,
-                      select: function(args) {
-                        $.ajax({
-                          url: createURL('listNetworkOfferings'),
-                          data: {
-                            state: 'enabled',
-                            traffictype: args.context.networks[0].traffictype,
-                            guestiptype: args.context.networks[0].type
-                          },
-                          success: function(json) {
-                            args.response.success({
-                              data: $.map(
-                                json.listnetworkofferingsresponse.networkoffering,
-                                function(networkOffering) {
-                                  return {
-                                    id: networkOffering.id,
-                                    description: networkOffering.name
-                                  };
-                                }
-                              )
-                            });
-                          },
-                          error: function(json) {
-                            args.response.error(parseXMLHttpResponse(json));
-                          }
-                        });
-                      }
+                    name: {
+                      label: 'Name',
+                      isEditable: true
                     }
                   },
                   {
-                    startip: { label: 'Start IP' },
-                    endip: { label: 'End IP' }
+                    id: { label: 'ID' },
+                    displaytext: {
+                      label: 'Description',
+                      isEditable: true
+                    },
+                    type: {
+                      label: 'Type'
+                    },
+                    state: {
+                      label: 'State'
+                    },                           
+                    restartrequired: {
+                      label: 'Restart required',
+                      converter: function(booleanValue) {
+                        if(booleanValue == true)
+                          return "<font color='red'>Yes</font>";
+                        else if(booleanValue == false)
+                          return "No";
+                      }
+                    },                           
+                    vlan: { label: 'VLAN ID' },
+                    scope: { label: 'Scope' },
+                    networkofferingdisplaytext: { label: 'Network offering' },
+                    networkofferingid: {
+                      label: 'Network offering',
+                      isEditable: true,
+                      select: function(args){
+                        var items = [];
+                        $.ajax({
+                          url: createURL("listNetworkOfferings&networkid=" + args.context.networks[0].id),
+                          dataType: "json",
+                          async: false,
+                          success: function(json) {
+                            var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                            $(networkOfferingObjs).each(function() {
+                              items.push({id: this.id, description: this.displaytext});
+                            });
+                          }
+                        });
+                        $.ajax({
+                          url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),  //include currently selected network offeirng to dropdown
+                          dataType: "json",
+                          async: false,
+                          success: function(json) {
+                            var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                            $(networkOfferingObjs).each(function() {
+                              items.push({id: this.id, description: this.displaytext});
+                            });
+                          }
+                        });
+                        args.response.success({data: items});
+                      }
+                    },
+                    
+                    networkofferingidText: {
+                      label: 'Network offering ID'
+                    },
+                    
+                    gateway: { label: 'Gateway' },
+                    //netmask: { label: 'Netmask' },                            
+                    cidr: { label: 'CIDR' },
+                    networkdomaintext: {
+                      label: 'Network domain'
+                    },
+                    networkdomain: {
+                      label: 'Network domain',
+                      isEditable: true
+                    }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({ data: args.context.networks[0] });
+                dataProvider: function(args) {    
+                  args.response.success({data: args.context.networks[0]});
                 }
-              }
+              },
             }
           }
         }
@@ -1245,7 +1529,7 @@
                                   poll: pollAsyncJobResult
                                 }
                               });
-                            }, 
+                            },
                             error: function(data) {
                               args.response.error(parseXMLHttpResponse(data));
                             }
