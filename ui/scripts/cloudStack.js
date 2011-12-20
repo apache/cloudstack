@@ -37,7 +37,9 @@
     /**
      * Generic error handling
      */
+		
     $.ajaxSetup({
+		  url: clientApiUrl,
       async: true,
       dataType: 'json',
       cache: false,
@@ -161,8 +163,8 @@
         }
 
         $.ajax({
-          //type: "POST",
-          url: createURL("login") + array1.join(""),
+          type: "POST",
+          data: "command=login" + array1.join("") + "&response=json",					
           dataType: "json",
           async: false,
           success: function(json) {
