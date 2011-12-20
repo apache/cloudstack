@@ -86,8 +86,8 @@
             name: { label: 'Name' },
             zonename: { label: 'Zone' },
             type: { label: 'Type' },
-            traffictype: { label: 'Traffic Type' },
-            gateway: { label: 'Gateway' },
+            vlan: { label: 'VLAN' },
+            cidr: { label: 'CIDR' },
             state: { label: 'State', indicator: { 'Implemented': 'on', 'Setup': 'on' } }
           },
           dataProvider: function(args) {
