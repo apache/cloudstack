@@ -3691,14 +3691,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
 
+        List<PublicIp> staticNatIps = new ArrayList<PublicIp>();
+        for (StaticNat rule : staticNats) {
+            IPAddressVO staticNatIP = _ipAddressDao.findById(rule.getSourceIpAddressId());
+            PublicIp publicIp = new PublicIp(staticNatIP, _vlanDao.findById(staticNatIP.getVlanId()), NetUtils.createSequenceBasedMacAddress(staticNatIP.getMacAddress()));
+            staticNatIps.add(publicIp);
+        }
+            
         boolean success = true;
+        boolean handled = false;
         Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
         for (NetworkElement ne : _networkElements) {
             try {
                 if (!(ne instanceof StaticNatServiceProvider)) {
                     continue;
                 }
-                boolean handled = ((StaticNatServiceProvider)ne).applyStaticNats(network, staticNats);
+
+                // associate the IP's with StaticNatServiceProvider for the network
+                handled = ((StaticNatServiceProvider)ne).applyIps(network, staticNatIps);
+                if(!handled) {
+                    s_logger.debug(ne.getName() +" did not assocate IP with source Nat service provider for the network " + network.getId() + "so skippg apply static nats");
+                    continue;
+                }
+
+                handled = ((StaticNatServiceProvider)ne).applyStaticNats(network, staticNats);
                 s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
