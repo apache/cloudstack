@@ -284,10 +284,10 @@
 								listView: {
 									fields: {
 										name: { label: 'Pod name' },
-										gateway: { label: 'Gateway' },
-										netmask: { label: 'Netmask' },
-										startip: { label: 'Start IP' },
-										endip: { label: 'End IP' }
+										gateway: { label: 'Reserved system gateway' },
+										netmask: { label: 'Reserved system netmask' },
+										startip: { label: 'Reserved system start IP' },
+										endip: { label: 'Reserved system end IP' }
 									},
 									dataProvider: function(args) {										
 										$.ajax({
