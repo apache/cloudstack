@@ -76,8 +76,6 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -85,7 +83,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -145,7 +142,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -180,7 +176,6 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
@@ -1320,6 +1315,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 //Router is the network element, we don't know the hypervisor type yet.
                 //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
                 List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                if (supportedHypervisors.isEmpty()) {
+                	throw new InsufficientServerCapacityException("Unable to create virtual router, there are no clusters in the zone ", DataCenter.class, dest.getDataCenter().getId());
+                }
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
                     try {
