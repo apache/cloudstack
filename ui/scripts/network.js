@@ -165,7 +165,7 @@
                   data: args.data,
                   success: function(json) {
                     args.response.success({
-                      data: { state: 'Allocated' }
+                      data: json.createnetworkresponse.network
                     });
                   }
                 });
