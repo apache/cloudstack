@@ -1010,6 +1010,47 @@
                           poll: pollAsyncJobResult
                         }
                       },
+											
+											'restart': { 											  
+												label: 'Restart network',
+												action: function(args) {												  
+													$.ajax({
+														url: createURL("restartNetwork&id=" + args.context.networks[0].id),
+														dataType: "json",
+														async: true,
+														success: function(json) {														  
+															var jid = json.restartnetworkresponse.jobid;
+															args.response.success(
+																{_custom:
+																 {jobId: jid,
+																	getUpdatedItem: function(json) {																	  
+																		return json.queryasyncjobresultresponse.jobresult.network;
+																	}
+																 }
+																}
+															);
+														}
+													});
+												},
+												messages: {
+													confirm: function(args) {
+														return 'Please confirm that you want to restart network';
+													},
+													success: function(args) {
+														return 'Network is being restarted';
+													},
+													notification: function(args) {
+														return 'Restarting network';
+													},
+													complete: function(args) {
+														return 'Network has been restarted';
+													}
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}												
+											},
+											
                       'delete': {
                         label: 'Delete network',
                         messages: {
