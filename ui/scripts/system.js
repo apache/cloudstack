@@ -8027,8 +8027,8 @@
           section: 'guest-IP-range',
           fields: {
             //id: { label: 'ID' },
-            podname: { label: 'Pod' },
-            vlan: { label: 'VLAN' },
+            //podname: { label: 'Pod' },
+            //vlan: { label: 'VLAN' },
             startip: { label: 'Start IP' },
             endip: { label: 'End IP' }
           },
@@ -8138,6 +8138,7 @@
               },
 
               action: function(args) {
+							  /*
                 if(selectedZoneObj.networktype == "Basic") {
                   var array2 = [];
 
@@ -8145,7 +8146,7 @@
                   if(args.data.podId != "0") {
                     podId = args.data.podId;
                   }
-                  else { //args.data.podId==0, create pod first
+                  else { 
                     var array1 = [];
                     array1.push("&zoneId=" + selectedZoneObj.id);
                     array1.push("&name=" + todb(args.data.podname));
@@ -8153,7 +8154,7 @@
                     array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
                     array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
 
-                    var endip = args.data.reservedSystemEndIp;      //optional
+                    var endip = args.data.reservedSystemEndIp;      
                     if (endip != null && endip.length > 0)
                       array1.push("&endIp=" + todb(endip));
 
@@ -8164,10 +8165,6 @@
                       success: function(json) {
                         var item = json.createpodresponse.pod;
                         podId = item.id;
-                      },
-                      error: function(XMLHttpResponse) {
-                        //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                        //args.response.error(errorMsg);
                       }
                     });
                   }
@@ -8178,7 +8175,7 @@
                   array2.push("&podId=" + podId);
                   array2.push("&vlan=untagged");
                   array2.push("&zoneid=" + selectedZoneObj.id);
-                  array2.push("&forVirtualNetwork=false"); //direct VLAN
+                  array2.push("&forVirtualNetwork=false"); 
                   array2.push("&gateway=" + todb(args.data.guestGateway));
                   array2.push("&netmask=" + todb(args.data.guestNetmask));
                   array2.push("&startip=" + todb(args.data.guestStartIp));
@@ -8199,7 +8196,9 @@
                     }
                   });
                 }
-                else {   //selectedZoneObj.networktype == "Advanced"
+								*/
+								
+                //else {   //selectedZoneObj.networktype == "Advanced"
                   var array2 = [];
                   array2.push("&startip=" + args.data.guestStartIp);
                   var endip = args.data.guestEndIp;
@@ -8217,7 +8216,7 @@
                       args.response.error(errorMsg);
                     }
                   });
-                }
+                //}
               },
 
               notification: {
