@@ -21,7 +21,6 @@
  */
 package com.cloud.acl;
 
-import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;

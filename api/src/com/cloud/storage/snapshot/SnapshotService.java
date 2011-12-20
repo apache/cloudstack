@@ -27,6 +27,7 @@ import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
 
 public interface SnapshotService {
 
@@ -53,9 +54,10 @@ public interface SnapshotService {
      * 
      * @param cmd
      *            the command that
+     * @param policyOwner TODO
      * @return the newly created snapshot policy if success, null otherwise
      */
-    SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd);
+    SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner);
 
     /**
      * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled
@@ -82,10 +84,11 @@ public interface SnapshotService {
 
     /**
      * Create a snapshot of a volume
-     * 
+     * @param snapshotOwner TODO
      * @param cmd
      *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
+     * 
      * @return the Snapshot that was created
      */
-    Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId);
+    Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);
 }

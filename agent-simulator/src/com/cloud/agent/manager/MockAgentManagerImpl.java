@@ -29,7 +29,9 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.resource.AgentRoutingResource;
@@ -261,21 +263,20 @@ public class MockAgentManagerImpl implements MockAgentManager {
                 AgentStorageResource storageResource = new AgentStorageResource();
                 try {
                     Map<String, Object> params =  new HashMap<String, Object>();
+                    Map<String, String> details = new HashMap<String, String>();
                     params.put("guid", this.guid);
+                    details.put("guid", this.guid);
                     storageResource.configure("secondaryStorage", params);
                     storageResource.start();
+                    //on the simulator the ssvm is as good as a direct agent
+                    _resourceMgr.addHost(mockHost.getDataCenterId(), storageResource, Host.Type.SecondaryStorageVM, details);
+                    _resources.put(this.guid, storageResource);
                 } catch (ConfigurationException e) {
                     s_logger.debug("Failed to load secondary storage resource: " + e.toString());
                     return;
                 }
-                Map<String, String> details = new HashMap<String, String>();
-                
-                _resourceMgr.addHost(this.dcId, storageResource, Type.SecondaryStorageVM, details);
-                _resources.put(this.guid, storageResource);
-            }
-            
+            }            
         }
-
     }
 
     @Override

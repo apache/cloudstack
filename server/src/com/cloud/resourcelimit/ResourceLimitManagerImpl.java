@@ -200,7 +200,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     @Override
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type) {
         
-    	long max = -1; //if resource limit is not found, then we treat it as unlimited
+    	long max = Resource.RESOURCE_UNLIMITED; //if resource limit is not found, then we treat it as unlimited
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(account.getId(), ResourceOwnerType.Account, type);
 
         // Check if limit is configured for account
@@ -224,7 +224,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
 
     @Override
     public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type) {
-        long max = -1;
+        long max = Resource.RESOURCE_UNLIMITED;
 
         // Check account
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(domain.getId(), ResourceOwnerType.Domain, type);
@@ -274,11 +274,11 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             // Check account limits
             long accountLimit = findCorrectResourceLimitForAccount(account, type);
             long potentialCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type) + numResources;
-            if (accountLimit != -1 && potentialCount > accountLimit) {
-                String message = "Maximum number of resources of type \"" + type + "\" for account name=" + account.getAccountName()
+            if (accountLimit != Resource.RESOURCE_UNLIMITED && potentialCount > accountLimit) {
+                String message = "Maximum number of resources of type '" + type + "' for account name=" + account.getAccountName()
                 + " in domain id=" + account.getDomainId() + " has been exceeded.";
                 if (project != null) {
-                    message = "Maximum number of resources of type \"" + type + "\" for project name=" + project.getName()
+                    message = "Maximum number of resources of type '" + type + "' for project name=" + project.getName()
                     + " in domain id=" + account.getDomainId() + " has been exceeded.";
                 }
                 throw new ResourceAllocationException(message, type);
@@ -295,10 +295,10 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             while (domainId != null) {
                 DomainVO domain = _domainDao.findById(domainId);
                 ResourceLimitVO domainLimit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
-                if (domainLimit != null) {
+                if (domainLimit != null && domainLimit.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
                     long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                     if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                        throw new ResourceAllocationException("Maximum number of resources of type \"" + type + "\" for domain id=" + domainId + " has been exceeded.", type);
+                        throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId + " has been exceeded.", type);
                     }
                 }
                 
@@ -458,8 +458,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         Account caller = UserContext.current().getCaller();
 
         if (max == null) {
-            max = new Long(-1);
-        } else if (max < -1) {
+            max = new Long(Resource.RESOURCE_UNLIMITED);
+        } else if (max.longValue() < Resource.RESOURCE_UNLIMITED) {
             throw new InvalidParameterValueException("Please specify either '-1' for an infinite limit, or a limit that is at least '0'.");
         }
 

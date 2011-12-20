@@ -103,7 +103,3 @@ CREATE TABLE `cloud`.`mocksecurityrules` (
   INDEX `i_mocksecurityrules__vmid`(`vmid`),
   INDEX `i_mocksecurityrules__hostid`(`hostid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
--- Some alterations reqd for the simulator to work with a regular DB
-ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `simulator_network_label` varchar(255) COMMENT  'The name labels needed for identifying the simulator'

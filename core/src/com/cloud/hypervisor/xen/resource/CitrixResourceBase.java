@@ -253,7 +253,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected long _dcId;
     protected String _pod;
     protected String _cluster;
-    protected static final XenServerPoolVms s_vms = new XenServerPoolVms();
+    private static final XenServerPoolVms s_vms = new XenServerPoolVms();
     protected String _privateNetworkName;
     protected String _linkLocalPrivateNetworkName;
     protected String _publicNetworkName;
@@ -1081,7 +1081,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
-            s_logger.debug("The VM " + vmName + " is in Starting state.");
+            s_logger.debug("1. The VM " + vmName + " is in Starting state.");
             s_vms.put(_cluster, _name, vmName, State.Starting);
 
             Host host = Host.getByUuid(conn, _host.uuid);
@@ -1164,7 +1164,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } finally {
             synchronized (s_vms) {
                 if (state != State.Stopped) { 
-                	s_logger.debug("The VM " + vmName + " is in " + state + " state.");
+                	s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
                     s_vms.put(_cluster, _name, vmName, state);
                 } else {
                 	s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
@@ -2168,7 +2168,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Integer vncPort = null;
         if (state == State.Running) {
             synchronized (s_vms) {
-            	s_logger.debug("The VM " + vmName + " is in " + State.Running + " state");
+            	s_logger.debug("3. The VM " + vmName + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, vmName, State.Running);
             }
         }
@@ -2191,7 +2191,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (NicTO nic : nics) {
                 getNetwork(conn, nic);
             }
-            s_logger.debug("The VM " +  vm.getName() + " is in " + State.Migrating + " state");
+            s_logger.debug("4. The VM " +  vm.getName() + " is in " + State.Migrating + " state");
             s_vms.put(_cluster, _name, vm.getName(), State.Migrating);
 
             return new PrepareForMigrationAnswer(cmd);
@@ -2428,7 +2428,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         state = s_vms.getState(_cluster, vmName);
         
-        s_logger.debug("The VM " + vmName + " is in " + State.Stopping + " state");
+        s_logger.debug("5. The VM " + vmName + " is in " + State.Stopping + " state");
         s_vms.put(_cluster, _name, vmName, State.Stopping);
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
@@ -2495,7 +2495,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
-        	s_logger.debug("The VM " + vmName + " is in " + state + " state");
+        	s_logger.debug("6. The VM " + vmName + " is in " + state + " state");
             s_vms.put(_cluster, _name, vmName, state);
         }
 
@@ -2618,7 +2618,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
-        s_logger.debug("The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
+        s_logger.debug("7. The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
         s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
         try {
             Set<VM> vms = null;
@@ -2642,7 +2642,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new RebootAnswer(cmd, "reboot succeeded", null, null);
         } finally {
-            s_logger.debug("The VM " + cmd.getVmName() + " is in " + State.Running + " state");
+            s_logger.debug("8. The VM " + cmd.getVmName() + " is in " + State.Running + " state");
             s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
         }
     }
@@ -3136,7 +3136,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 State state = s_vms.getState(_cluster, vmName);
                 
-                s_logger.debug("The VM " + vmName + " is in " + State.Stopping + " state");
+                s_logger.debug("9. The VM " + vmName + " is in " + State.Stopping + " state");
                 s_vms.put(_cluster, _name, vmName, State.Stopping);
 
                 try {
@@ -3198,7 +3198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.getMessage();
                         s_logger.warn(msg, e);
                     } finally {
-                    	s_logger.debug("The VM " + vmName + " is in " + state + " state");
+                    	s_logger.debug("10. The VM " + vmName + " is in " + state + " state");
                         s_vms.put(_cluster, _name, vmName, state);
                     }
                 }
@@ -5442,25 +5442,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
                     throw new InternalErrorException("Failed to create the volume folder.");
                 }
-                VDI vdi = VDI.getByUuid(conn, volumeUUID);
-                String pUuid = getVhdParent(conn, srUuid, vdi.getUuid(conn), IsISCSI(primaryStoragePool.getType(conn)));
-                if( pUuid != null ) {
-                    SR secondaryStorage = null;
-                    try {
-                        // Create a SR for the volume UUID folder
-                        secondaryStorage = createNfsSRbyURI(conn, new URI(secondaryStorageURL + "/volumes/" + volumeFolder), false);
-                        // Look up the volume on the source primary storage pool
-                        VDI srcVolume = getVDIbyUuid(conn, volumeUUID);
-                        // Copy the volume to secondary storage
-                        VDI destVolume = cloudVDIcopy(conn, srcVolume, secondaryStorage, wait);
-                        String destVolumeUUID = destVolume.getUuid(conn);
-                        return new CopyVolumeAnswer(cmd, true, null, null, destVolumeUUID);
-                    } finally {
-                        removeSR(conn, secondaryStorage);
-                    }
-                } else {
-                    String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid, wait);
-                    return new CopyVolumeAnswer(cmd, true, null, null, uuid);
+                SR secondaryStorage = null;
+                try {
+                    // Create a SR for the volume UUID folder
+                    secondaryStorage = createNfsSRbyURI(conn, new URI(secondaryStorageURL + "/volumes/" + volumeFolder), false);
+                    // Look up the volume on the source primary storage pool
+                    VDI srcVolume = getVDIbyUuid(conn, volumeUUID);
+                    // Copy the volume to secondary storage
+                    VDI destVolume = cloudVDIcopy(conn, srcVolume, secondaryStorage, wait);
+                    String destVolumeUUID = destVolume.getUuid(conn);
+                    return new CopyVolumeAnswer(cmd, true, null, null, destVolumeUUID);
+                } finally {
+                    removeSR(conn, secondaryStorage);
                 }
             } else {
                 try {
@@ -6644,7 +6637,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         s_logger.warn("Detecting a change in host for " + vm);
                         changes.put(vm, new Pair<String, State>(host_uuid, newState));
                         
-                        s_logger.debug("The VM " + vm + " is in " + newState + " state");
+                        s_logger.debug("11. The VM " + vm + " is in " + newState + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                         continue;
                     }
@@ -6668,7 +6661,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 } else if (oldState.second() == State.Starting) {
                     if (newState == State.Running) { 
-                    	s_logger.debug("The VM " + vm + " is in " + State.Running + " state");
+                    	s_logger.debug("12. The VM " + vm + " is in " + State.Running + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Stopped) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in starting the vm.");
@@ -6680,13 +6673,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 } else if (oldState.second() == State.Stopping) {
                     if (newState == State.Stopped) {
-                    	s_logger.debug("The VM " + vm + " is in " + State.Stopped + " state");
+                    	s_logger.debug("13. The VM " + vm + " is in " + State.Stopped + " state");
                         s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Running) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
                     }
                 } else if (oldState.second() != newState) {
-                	s_logger.debug("The VM " + vm + " is in " + newState + " state was " + oldState.second());
+                	s_logger.debug("14. The VM " + vm + " is in " + newState + " state was " + oldState.second());
                     s_vms.put(_cluster, host_uuid, vm, newState);
                     if (newState == State.Stopped) {
                         /*

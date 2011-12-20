@@ -200,7 +200,6 @@ else:
 	conf.env.MSLOGDIR = _join(conf.env.LOCALSTATEDIR,"log",conf.env.MSPATH)
 	conf.env.MSMNTDIR = _join(conf.env.SHAREDSTATEDIR,conf.env.PACKAGE,"mnt")
 	conf.check_tool('compiler_cc')
-	conf.check_cc(lib='pthread')
 	conf.check_cc(lib='dl')
 	conf.check_tool('usermgmt')
 	conf.check_message_1('Determining management server user name')

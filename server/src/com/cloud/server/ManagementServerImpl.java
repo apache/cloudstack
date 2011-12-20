@@ -217,6 +217,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -1294,8 +1295,9 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
+        
         List<HypervisorType> hypers = null;
-        if( ! isIso ) {
+        if(!isIso) {
             hypers =  _resourceMgr.listAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
@@ -3483,7 +3485,7 @@ public class ManagementServerImpl implements ManagementServer {
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), UUID.randomUUID().toString());
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
         }
         return _hashKey;
     }
@@ -3657,7 +3659,7 @@ public class ManagementServerImpl implements ManagementServer {
             DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
             if (nv.getValue().equals(cmd.getUsername())) {
                 DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, cmd.getPassword());
-                nvp.setValue(cmd.getPassword());
+                nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
                 _detailsDao.persist(nvp);
             } else {
                 throw new InvalidParameterValueException("The username is not under use by management server.");
@@ -3675,7 +3677,7 @@ public class ManagementServerImpl implements ManagementServer {
                 DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
                 if (nv.getValue().equals(cmd.getUsername())) {
                     DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                    nvp.setValue(cmd.getPassword());
+                    nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
                     _detailsDao.persist(nvp);
                 } else {
                     // if one host in the cluster has diff username then rollback to maintain consistency

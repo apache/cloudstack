@@ -59,7 +59,7 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
      */
     public String getValue(String name);
     
-    public String getValueAndInitIfNotExist(String name, String initValue);
+    public String getValueAndInitIfNotExist(String name, String category, String initValue);
     
 
     /**
@@ -70,5 +70,5 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     
     ConfigurationVO findByName(String name);
 
-    ConfigurationVO persistConfigValue(ConfigurationVO config);
+	boolean update(String name, String category, String value);
 }

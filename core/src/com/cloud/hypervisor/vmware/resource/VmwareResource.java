@@ -933,10 +933,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource DhcpEntryCommand: " + _gson.toJson(cmd));
         }
 
+        // ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $ns $staticrt" >/dev/null
         String args = " " + cmd.getVmMac();
         args += " " + cmd.getVmIpAddress();
         args += " " + cmd.getVmName();
+        
+        if (cmd.getDefaultRouter() != null) {
+            args += " " + cmd.getDefaultRouter();
+        }
+        
+        if (cmd.getDefaultDns() != null) {
+            args += " " + cmd.getDefaultDns();
+        }
 
+        if (cmd.getStaticRoutes() != null) {
+            args +=  " " + cmd.getStaticRoutes();
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/edithosts.sh " + args);
         }

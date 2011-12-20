@@ -1069,8 +1069,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
 
             if (lastState != state) {
-                _configDao.update(Config.ConsoleProxyManagementLastState.key(), lastState.toString());
-                _configDao.update(Config.ConsoleProxyManagementState.key(), state.toString());
+                _configDao.update(Config.ConsoleProxyManagementLastState.key(), Config.ConsoleProxyManagementLastState.getCategory(), lastState.toString());
+                _configDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), state.toString());
             }
 
             txn.commit();
@@ -1109,7 +1109,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
 
             if (lastState != state) {
-                _configDao.update(Config.ConsoleProxyManagementState.key(), lastState.toString());
+                _configDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
             }
 
             txn.commit();

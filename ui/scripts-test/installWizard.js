@@ -218,7 +218,9 @@
 
     action: function(args) {
       var complete = args.response.success;
+      var error = args.response.error;
       var message = args.response.message;
+      var startFn = args.startFn;
 
       var createZone = function(args) {
         message('Creating zone');
@@ -245,6 +247,7 @@
         message('Creating cluster');
         setTimeout(function() {
           createHost();
+          //error('addCluster', 'Could not create cluster.', createPod);
         }, 500);
       };
 
@@ -274,7 +277,11 @@
         setTimeout(complete, 5000);
       };
 
-      createZone();
+      if (startFn) {
+        startFn();
+      } else {
+        createZone();        
+      }
     }
   };
 }(jQuery, cloudStack, testData));

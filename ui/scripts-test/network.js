@@ -402,7 +402,7 @@
 
                   staticNATDataProvider: function(args) {
                     args.response.success({
-                      data: testData.data.ipAddresses[0]
+                      data: testData.data.networks[0]
                     });
                   },
 
@@ -667,7 +667,7 @@
               vpn: {
                 title: 'VPN',
                 custom: function(args) {
-                  var ipAddress = args.context.ipAddresses[0].ipaddress;
+                  var ipAddress = args.context.networks[0].ipaddress;
                   var psk = '081XufGFmEDBAEfsfdXTNpramSZ';
 
                   return $('<div>').append(

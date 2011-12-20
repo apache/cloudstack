@@ -76,8 +76,6 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -85,7 +83,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -100,7 +97,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.dao.EventDao;
@@ -146,7 +142,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -181,13 +176,11 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserStatsLogVO;
 import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
@@ -253,10 +246,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     UserDao _userDao = null;
     @Inject
-    AccountDao _accountDao = null;
-    @Inject
-    DomainDao _domainDao = null;
-    @Inject
     UserStatisticsDao _userStatsDao = null;
     @Inject
     VolumeDao _volsDao = null;
@@ -271,10 +260,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     VMTemplateHostDao _vmTemplateHostDao = null;
     @Inject
-    ResourceLimitDao _limitDao = null;
-    @Inject
-    CapacityDao _capacityDao = null;
-    @Inject
     UserStatsLogDao _userStatsLogDao = null;
     @Inject
     AgentManager _agentMgr;
@@ -285,19 +270,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     AccountManager _accountMgr;
     @Inject
-    AccountService _accountService;
-    @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    AsyncJobManager _asyncMgr;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     UserVmDao _userVmDao;
     @Inject
     FirewallRulesDao _firewallRulesDao;
-    @Inject
-    NetworkRuleConfigDao _networkRuleConfigDao;
     @Inject
     UserStatisticsDao _statsDao = null;
     @Inject
@@ -675,7 +654,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ConfigurationException(msg);
         }
 
-        _systemAcct = _accountService.getSystemAccount();
+        _systemAcct = _accountMgr.getSystemAccount();
 
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
@@ -1254,7 +1233,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             NicProfile defaultNic = new NicProfile();
             //if source nat service is supported by the network, get the source nat ip address
             if (publicNetwork) {
-                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountMgr.getSystemUser().getId());
                 defaultNic.setDefaultNic(true);
                 defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
                 defaultNic.setGateway(sourceNatIp.getGateway());
@@ -1336,6 +1315,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 //Router is the network element, we don't know the hypervisor type yet.
                 //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
                 List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                if (supportedHypervisors.isEmpty()) {
+                	throw new InsufficientServerCapacityException("Unable to create virtual router, there are no clusters in the zone ", DataCenter.class, dest.getDataCenter().getId());
+                }
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
                     try {
@@ -1346,9 +1328,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             s_logger.debug(hType + " won't support system vm, skip it");
                             continue;
                         }
+                        
+                        boolean offerHA = routerOffering.getOfferHA();
+                        /* We don't provide HA to redundant router VMs, admin should own it all, and redundant router themselves are HA */
+                        if (isRedundant) {
+                            offerHA = false;
+                        }
 
                         router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
+                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, offerHA, false);
                         router.setRole(Role.VIRTUAL_ROUTER);
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                         break;
@@ -1481,7 +1469,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             if (!skip) {
                 if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
                 }
                 if (router != null) {
                     runningRouters.add(router);
@@ -2153,6 +2141,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 		//check if DNS provider is the domR
 		if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
 			return null;
+		}
+		
+		NetworkOfferingVO offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
+		if (offering.getRedundantRouter()) {
+		    return findGatewayIp(userVmId);
 		}
 		
 		//find domR's nic in the network

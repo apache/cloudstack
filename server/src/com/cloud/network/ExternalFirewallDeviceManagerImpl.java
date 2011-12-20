@@ -113,7 +113,6 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject HostDao _hostDao;
     @Inject NetworkServiceMapDao _ntwkSrvcProviderDao;
     @Inject DataCenterDao _dcDao;
-    @Inject HostDetailsDao _detailsDao;
     @Inject NetworkManager _networkMgr;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject NicDao _nicDao;
@@ -316,7 +315,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     }
 
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall) {
-        Map<String, String> fwDetails = _detailsDao.findDetails(externalFirewall.getId());
+        Map<String, String> fwDetails = _hostDetailDao.findDetails(externalFirewall.getId());
         ExternalFirewallResponse response = new ExternalFirewallResponse();
         response.setId(externalFirewall.getId());
         response.setIpAddress(externalFirewall.getPrivateIpAddress());

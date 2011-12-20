@@ -153,6 +153,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ListTemplateCommand)cmd);
         } else if (cmd instanceof downloadSnapshotFromSwiftCommand){
             return execute((downloadSnapshotFromSwiftCommand)cmd);
+        } else if (cmd instanceof DeleteSnapshotBackupCommand){
+            return execute((DeleteSnapshotBackupCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand){
             return execute((DeleteSnapshotsDirCommand)cmd);
         } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
@@ -391,6 +393,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     }
                 }
             }
+
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
             String msg = cmd + " Command failed due to " + e.toString();

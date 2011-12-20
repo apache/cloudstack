@@ -18,6 +18,9 @@
 package com.cloud.api.commands;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -32,6 +35,7 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -54,7 +58,12 @@ public class AssignVMCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
+    //Network information
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids that will be part of VM network after move")
+    private List<Long> networkIds;
 
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,6 +78,10 @@ public class AssignVMCmd extends BaseCmd  {
 
 	public Long getDomainId() {
 		return domainId;
+	}
+	
+	public List<Long> getNetworkIds() {
+		return networkIds;
 	}
 
     /////////////////////////////////////////////////////

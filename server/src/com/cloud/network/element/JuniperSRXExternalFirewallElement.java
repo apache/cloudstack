@@ -176,16 +176,6 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
     
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddresses) throws ResourceUnavailableException {
-        if (!canHandle(network)) {
-            return false;
-        }
-        
-        return applyIps(network, ipAddresses);
-    }
-    
-
-    @Override
     public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
@@ -505,4 +495,10 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     public boolean verifyServicesCombination(List<String> services) {
         return true;
     }
+
+	@Override
+	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

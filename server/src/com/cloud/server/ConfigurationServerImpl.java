@@ -174,16 +174,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     String instance = "DEFAULT";
                     String component = c.getComponent();
                     String value = c.getDefaultValue();
+                    value = ("Hidden".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
                     _configDao.persist(configVO);
                 }
             }
             
-            _configDao.update("secondary.storage.vm", "true");
+            _configDao.update(Config.UseSecondaryStorageVm.key(), Config.UseSecondaryStorageVm.getCategory(), "true");
             s_logger.debug("ConfigurationServer made secondary storage vm required.");
 
-            _configDao.update("secstorage.encrypt.copy", "true");
+            _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "true");
             s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 
             _configDao.update("secstorage.secure.copy.cert", "realhostip");
@@ -201,7 +202,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
             if (mountParent != null) {
-                _configDao.update("mount.parent", mountParent);
+                _configDao.update(Config.MountParent.key(), Config.MountParent.getCategory(), mountParent);
                 s_logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
             } else {
                 s_logger.debug("ConfigurationServer could not detect mount.parent.");
@@ -209,7 +210,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             String hostIpAdr = NetUtils.getDefaultHostIp();
             if (hostIpAdr != null) {
-                _configDao.update("host", hostIpAdr);
+                _configDao.update(Config.ManagementHostIPAdr.key(), Config.ManagementHostIPAdr.getCategory(), hostIpAdr);
                 s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
             }
 
@@ -266,7 +267,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         updateCloudIdentifier();
         
         // Set init to true
-        _configDao.update("init", "true");
+        _configDao.update("init", "Hidden", "true");
     }
 
     
@@ -402,7 +403,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update("cloud.identifier", uuid);
+            _configDao.update(Config.CloudIdentifier.key(),Config.CloudIdentifier.getCategory(), uuid);
         }
     }
 
@@ -485,14 +486,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.info("Generated SSL keystore.");
                 }
                 String base64Keystore = getBase64Keystore(keystorePath);
-                ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", base64Keystore, "SSL Keystore for the management servers");
+                ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", DBEncryptionUtil.encrypt(base64Keystore), "SSL Keystore for the management servers");
             	_configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
             } else if (keystoreFile.exists()) { // and dbExisted
                 // Check if they are the same one, otherwise override with local keystore
                 String base64Keystore = getBase64Keystore(keystorePath);
                 if (base64Keystore.compareTo(dbString) != 0) {
-                    _configDao.update("ssl.keystore", base64Keystore);
+                    _configDao.update("ssl.keystore", "Hidden", base64Keystore);
                     s_logger.info("Updated database keystore with local one.");
                 }
             } else { // !keystoreFile.exists() and dbExisted
@@ -702,7 +703,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             SecretKey key = generator.generateKey();
             encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
 
-            _configDao.update("security.singlesignon.key", encodedKey);
+            _configDao.update(Config.SSOKey.key(), Config.SSOKey.getCategory(), encodedKey);
         } catch (NoSuchAlgorithmException ex) {
             s_logger.error("error generating sso key", ex);
         }

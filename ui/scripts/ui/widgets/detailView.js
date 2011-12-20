@@ -689,6 +689,7 @@
           value.selected = $value.html();
 
           value.select({
+            context: context,
             response: {
               success: function(args) {
                 // Get matching select data
@@ -731,7 +732,14 @@
         }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
 
       // 'View all' button
-      if (detailViewArgs.viewAll) {
+      var showViewAll = detailViewArgs.viewAll ?
+            (
+              detailViewArgs.viewAll.preFilter ?
+                detailViewArgs.viewAll.preFilter({
+                  context: context
+                }) : true
+            ) : true;
+      if (detailViewArgs.viewAll && showViewAll) {
         $('<div>')
           .addClass('view-all')
           .append(

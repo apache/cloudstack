@@ -1993,7 +1993,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	getUsage.add("-d", vif);
         }
 
-        getUsage.add(" -i ", privateIpAddress);
+        getUsage.add("-i", privateIpAddress);
         final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
         String result = getUsage.execute(usageParser);
         if (result != null) {
@@ -3434,8 +3434,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		}
     		
     		if (oldStats != null) {
-    			stats.setNetworkReadKBs((rx - oldStats._rx)/1000);
-    			stats.setNetworkWriteKBs((tx - oldStats._tx)/1000);
+    			long deltarx = rx - oldStats._rx;
+    			if (deltarx > 0)
+    				stats.setNetworkReadKBs(deltarx/1000);
+    			long deltatx = tx - oldStats._tx;
+    			if (deltatx > 0)
+    				stats.setNetworkWriteKBs(deltatx/1000);
     		}
     		
     		vmStats newStat = new vmStats();

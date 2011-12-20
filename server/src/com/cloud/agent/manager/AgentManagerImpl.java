@@ -153,8 +153,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     @Inject
     protected HostDao _hostDao = null;
     @Inject
-    protected HostDetailsDao _detailsDao = null;
-    @Inject
     protected DataCenterDao _dcDao = null;
     @Inject
     protected DataCenterIpAddressDao _privateIPAddressDao = null;
@@ -172,8 +170,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected StoragePoolDao _storagePoolDao = null;
     @Inject
     protected StoragePoolHostDao _storagePoolHostDao = null;
-    @Inject
-    protected HostDetailsDao _hostDetailsDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
     @Inject

@@ -18,6 +18,8 @@
 package com.cloud.configuration;
 
 public interface Resource {
+	
+	public static final short RESOURCE_UNLIMITED = -1;
     
     public enum ResourceType{
         user_vm ("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),

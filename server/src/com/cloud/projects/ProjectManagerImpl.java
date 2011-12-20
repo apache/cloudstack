@@ -546,6 +546,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
         }
+        
+        //User can be added to Active project only
+        if (project.getState() != Project.State.Active) {
+        	throw new InvalidParameterValueException("Can't add account to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+        }
        
         //check that account-to-add exists
         Account account = null;
@@ -916,6 +921,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACTIVATE, eventDescription = "activating project")
+    @DB
     public Project activateProject(long projectId) {
         Account caller = UserContext.current().getCaller();
         
@@ -941,8 +947,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             throw new InvalidParameterValueException("Can't activate the project in " + currentState + " state");
         }
         
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         project.setState(Project.State.Active);
         _projectDao.update(projectId, project);
+        
+        _accountMgr.enableAccount(project.getProjectAccountId());
+        
+        txn.commit();
         
         return _projectDao.findById(projectId);
     }
@@ -970,7 +983,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
     }
     
-    private boolean suspendProject(ProjectVO project) throws ConcurrentOperationException, ResourceUnavailableException{
+    private boolean suspendProject(ProjectVO project) throws ConcurrentOperationException, ResourceUnavailableException {
+    	
         s_logger.debug("Marking project " + project + " with state " + State.Suspended + " as a part of project suspend...");
         project.setState(State.Suspended);
         boolean updateResult = _projectDao.update(project.getId(), project);
@@ -979,7 +993,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             long projectAccountId = project.getProjectAccountId();
             if (!_accountMgr.disableAccount(projectAccountId)) {
                 s_logger.warn("Failed to suspend all project's " + project + " resources; the resources will be suspended later by background thread");
-            } 
+            }
         } else {
             throw new CloudRuntimeException("Failed to mark the project " + project + " with state " + State.Suspended);
         }

@@ -825,7 +825,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                 } catch (Exception e) {
                     s_logger.error("Failed to start instance " + vm, e);
-                    throw new AgentUnavailableException("Unable to start instance", destHostId, e);
+                    throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
                 } finally {
                     if (startedVm == null && canRetry) {
                         _workDao.updateStep(work, Step.Release);

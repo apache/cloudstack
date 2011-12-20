@@ -230,8 +230,10 @@
 
     action: function(args) {
       var complete = args.response.success;
+      var error = args.response.error;
       var message = args.response.message;
       var data = args.data;
+      var startFn = args.startFn;
 
       var createZone = function(args) {
         message('Creating zone');
@@ -388,10 +390,7 @@
                                                       args.complete({ data: { zone: zoneObj } });
                                                     }
                                                   },
-                                                  error: function(XMLHttpResponse) {
-                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                    alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
-                                                  }
+                                                  error: args.error
                                                 });
                                               });
                                             }
@@ -402,13 +401,12 @@
                                         }
                                       }
                                     },
-                                    error: function(XMLHttpResponse) {
-                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                      alert("configureVirtualRouterElement failed. Error: " + errorMsg);
-                                    }
+                                    error: args.error
                                   });
                                 });
-                              }
+                              },
+
+                              error: args.error
                             });
                           }
                           else if (result.jobstatus == 2) {
@@ -416,24 +414,21 @@
                           }
                         }
                       },
-                      error: function(XMLHttpResponse) {
-                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                        alert("updatePhysicalNetwork failed. Error: " + errorMsg);
-                      }
+                      error: args.error
                     });
                   });
                 }
               });
               //NaaS (end)
             },
-            error: function(XMLHttpResponse) {
-              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-              args.response.error(errorMsg);
-            }
+            error: args.error
           });
         };
 
-        addZoneAction({ data: data.zone, complete: createPod });
+        addZoneAction({ data: data.zone, complete: createPod, error: function(json) {
+          debugger;
+          error('addZone', parseXMLHttpResponse(json), createZone);
+        } });
       };
 
       var createPod = function(args) {
@@ -458,7 +453,7 @@
           },
           error: function(XMLHttpResponse) {
             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-            args.response.error(errorMsg);
+            error(errorMsg);
           }
         });
       };
@@ -571,17 +566,19 @@
                   success: function(json) {
                     //var item = json.createvlaniprangeresponse.vlan;
                   },
-                  error: function(XMLHttpResponse) {
-                    //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    //args.response.error(errorMsg);
+                  error: function(json) {
+                    error('addNetwork', parseXMLHttpResponse(json), function() {
+                      createNetwork(args);
+                    });
                   }
                 });
 
               }
             },
-            error: function(XMLHttpResponse) {
-              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-              args.response.error(errorMsg);
+            error: function(json) {
+              error('addNetwork', parseXMLHttpResponse(json), function() {
+                createNetwork(args);
+              });
             }
           });
         };
@@ -602,6 +599,11 @@
               response: {
                 success: function(successArgs) {
                   createCluster({ data: $.extend(args.data, { guestNetwork: successArgs.data })});
+                },
+                error: function(json) {
+                  error('addNetwork', parseXMLHttpResponse(json), function() {
+                    createNetwork(args);
+                  });
                 }
               },
               data: {
@@ -615,7 +617,7 @@
                 networkOfferingId: networkOfferingID
               }
             });
-          }
+          }          
         });
       };
 
@@ -637,6 +639,11 @@
               data: $.extend(args.data, {
                 cluster: data.addclusterresponse.cluster[0]
               })
+            });
+          },
+          error: function(json) {
+            error('addCluster', parseXMLHttpResponse(json), function() {
+              createCluster(args);
             });
           }
         });
@@ -663,6 +670,11 @@
               data: $.extend(args.data, {
                 host: data.addhostresponse.host[0]
               })
+            });
+          },
+          error: function(json) {
+            error('addHost', parseXMLHttpResponse(json), function() {
+              createHost(args);
             });
           }
         });
@@ -734,7 +746,11 @@
         }, 5000);
       };
 
-      createZone();
+      if (startFn) {
+        startFn();
+      } else {
+        createZone();        
+      }
     }
   };
 }(jQuery, cloudStack, testData));

@@ -23,6 +23,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
+
 @Entity
 @Table(name="configuration")
 public class ConfigurationVO implements Configuration{
@@ -36,7 +38,7 @@ public class ConfigurationVO implements Configuration{
 	@Column(name="name")
     private String name;
 	
-	@Column(name="value", length=4095, encryptable=true)
+	@Column(name="value", length=4095)
     private String value;
 	
 	@Column(name="description", length=1024)
@@ -89,7 +91,7 @@ public class ConfigurationVO implements Configuration{
 	}
 
 	public String getValue() {
-		return value;
+		return ("Hidden".equals(getCategory()) ? DBEncryptionUtil.decrypt(value) : value);
 	}
 	
 	public void setValue(String value) {

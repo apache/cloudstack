@@ -195,8 +195,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected ClusterManager                 _clusterMgr;
     @Inject
     protected StoragePoolHostDao             _storagePoolHostDao;
-    @Inject
-    protected HostDetailsDao                 _detailsDao;
     @Inject(adapter = PodAllocator.class)
     protected Adapters<PodAllocator> _podAllocators = null;
 
@@ -1800,9 +1798,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             return false;
         }
         
-        DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
+        DetailVO nv = _hostDetailsDao.findDetail(hostId, ApiConstants.USERNAME);
         String username = nv.getValue();
-        nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+        nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         String password = nv.getValue();
         UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
         attache.updatePassword(cmd);

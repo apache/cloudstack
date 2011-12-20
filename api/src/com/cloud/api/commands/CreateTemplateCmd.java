@@ -35,7 +35,10 @@ import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -185,20 +188,35 @@ import com.cloud.user.UserContext;
     public long getEntityOwnerId() {
         Long volumeId = getVolumeId();
         Long snapshotId = getSnapshotId();
+        Long accountId = null;
         if (volumeId != null) {
             Volume volume = _entityMgr.findById(Volume.class, volumeId);
             if (volume != null) {
-                return volume.getAccountId();
+                accountId = volume.getAccountId();
+            } else {
+            	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
             }
         } else {
             Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
             if (snapshot != null) {
-                return snapshot.getAccountId();
+                accountId = snapshot.getAccountId();
+            } else {
+            	throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
             }
         }
-
-        // bad id given, parent this command to SYSTEM so ERROR events are tracked
-        return Account.ACCOUNT_ID_SYSTEM;
+        
+        Account account = _accountService.getAccount(accountId);
+        //Can create templates for enabled projects/accounts only
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        	Project project = _projectService.findByProjectAccountId(accountId);
+            if (project.getState() != Project.State.Active) {
+                throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
+            }
+        } else if (account.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+        }
+        
+        return accountId;
     }
 
     @Override
@@ -223,13 +241,12 @@ import com.cloud.user.UserContext;
     @Override
     public void create() throws ResourceAllocationException {
         if (isBareMetal()) {
-            _bareMetalVmService.createPrivateTemplateRecord(this);
+            _bareMetalVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
             /*Baremetal creates template record after taking image proceeded, use vmId as entity id here*/
             this.setEntityId(vmId);
         } else {
             VirtualMachineTemplate template = null;
-            template = _userVmService.createPrivateTemplateRecord(this);
-
+            template = _userVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
             if (template != null) {
                 this.setEntityId(template.getId());
             } else {

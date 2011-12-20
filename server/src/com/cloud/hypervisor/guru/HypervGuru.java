@@ -29,7 +29,6 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Inject GuestOSDao _guestOsDao;
     @Inject HostDao _hostDao;
-    @Inject HostDetailsDao _hostDetailsDao;
 
     protected HypervGuru() {
     	super();

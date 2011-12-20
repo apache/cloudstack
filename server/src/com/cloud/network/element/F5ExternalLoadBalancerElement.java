@@ -66,6 +66,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
@@ -440,4 +441,10 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     public boolean verifyServicesCombination(List<String> services) {
         return true;
     }
+
+	@Override
+	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+		// return true, as IP will be associated as part of LB rule configuration
+		return true;
+	}
 }

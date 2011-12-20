@@ -32,4 +32,6 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long>{
     boolean canModifyProjectAccount(long accountId, long projectAccountId);
     
     List<Long> listPermittedAccountIds(long accountId);
+    
+    List<Long> listAdministratedProjects(long adminAccountId);
 }

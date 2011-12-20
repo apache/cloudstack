@@ -433,22 +433,6 @@
                     <div class="desc">Choose this network model if you wish to enable VLAN support. This network model provides the most flexibility in allowing administrators to provide custom network offerings such as providing firewall, vpn, or load balancer support as well as enabling direct vs virtual networking.</div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label>Advanced</label>
-
-                    <div class="isolation-mode">
-                      <h3>Isolation mode</h3>
-                      <div class="select-area">
-                        <input type="radio" name="isolation-mode" value="vlan"
-                               checked="checked" disabled="disabled" />
-                        <label>VLAN</label>
-                        <div class="desc">Choose this if you wish to use zone-wide VLANs to provide guest VM isolation.</div>
-                      </div>
-                      <div class="select-area">
-                        <input type="radio" name="isolation-mode" value="security-groups"
-                               disabled="disabled" />
-                        <label>Security Groups</label>
-                        <div class="desc">Choose this if you wish to use security groups to provide guest VM isolation.</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -544,6 +528,15 @@
                   </div>
 
                   <div class="conditional basic">
+                    <!-- Enable security groups -->
+                    <div class="field">
+                      <div class="name">
+                        <span>Enable security groups</span>
+                      </div>
+                      <div class="value">
+                        <input type="checkbox" name="security-groups-enabled" />
+                      </div>
+                    </div>
                     <!-- Network Offering -->
                     <div class="field">
                       <div class="name">
@@ -779,13 +772,13 @@
                   <div class="overview">
                     <!-- Running -->
                     <div class="overview-item running">
-                      <div class="total" data-item="virtualMachinesRunning">12</div>
+                      <div class="total" data-item="runningInstances">5</div>
                       <div class="label">Running</div>
                     </div>
 
                     <!-- Stopped -->
                     <div class="overview-item stopped">
-                      <div class="total" data-item="virtualMachinesStopped">2</div>
+                      <div class="total" data-item="stoppedInstances">10</div>
                       <div class="label">Stopped</div>
                     </div>
                   </div>
@@ -796,27 +789,18 @@
                   <span class="header">Storage</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <div class="total" data-item="storageCapacityTotal">171</div>
-                    <div class="label">GB/mo</div>
+                    <div class="total" data-item="totalVolumes">10</div>
+                    <div class="label">volumes</div>
                   </div>
                 </li>
 
                 <!-- Bandwidth -->
-                <li class="block bandwidth">
+                <li class="block storage bandwidth">
                   <span class="header">Bandwidth</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <!-- In -->
-                    <div class="overview-item in">
-                      <div class="total" data-item="virtualMachinesRunning">2.3</div>
-                      <div class="label">In GB</div>
-                    </div>
-
-                    <!-- Out -->
-                    <div class="overview-item out">
-                      <div class="total" data-item="virtualMachinesRunning">1.5</div>
-                      <div class="label">Out GB</div>
-                    </div>
+                    <div class="total" data-item="totalBandwidth">200</div>
+                    <div class="label">mb/s</div>
                   </div>
                 </li>
               </ul>
@@ -829,47 +813,9 @@
               <div class="head">
                 <span>Users</span>
               </div>
-              <ul class="status_box good">
+              <ul class="status_box good" data-item="users">
                 <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
+                  <span class="header" data-list-item="account"></span>
                   <div class="icon"></div>
                 </li>
               </ul>
@@ -886,20 +832,20 @@
             <ul>
               <!-- IP addresses -->
               <li class="odd">
-                <div class="total"><span>171</span></div>
+                <div class="total"><span data-item="totalIPAddresses"></span></div>
                 <div class="desc">IP addresses</div>
               </li>
 
               <!-- Load balancing policies -->
               <li>
-                <div class="total"><span>04</span></div>
+                <div class="total"><span data-item="totalLoadBalancers"></span></div>
                 <div class="desc">Load balancing policies</div>
               </li>
 
-              <!-- Security Groups -->
+              <!-- Port forwarding policies -->
               <li class="odd">
-                <div class="total"><span>23</span></div>
-                <div class="desc">Security groups</div>
+                <div class="total"><span data-item="totalPortForwards"></span></div>
+                <div class="desc">Port forwarding policies</div>
               </li>
 
               <!-- Blank -->
@@ -930,50 +876,10 @@
                 <span class="arrow"></span>
               </div>
             </div>
-            <ul>
+            <ul data-item="events">
               <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
+                <div class="date"><span data-list-item="date"></span></div>
+                <div class="desc" data-list-item="desc"></div>
               </li>
             </ul>
           </div>

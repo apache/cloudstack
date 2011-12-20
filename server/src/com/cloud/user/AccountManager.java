@@ -88,5 +88,7 @@ public interface AccountManager extends AccountService {
     Pair<User, Account> findUserByApiKey(String apiKey);
 
     boolean lockAccount(long accountId);
+
+	boolean enableAccount(long accountId);
    
 }

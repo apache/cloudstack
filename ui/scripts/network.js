@@ -86,8 +86,8 @@
             name: { label: 'Name' },
             zonename: { label: 'Zone' },
             type: { label: 'Type' },
-            traffictype: { label: 'Traffic Type' },
-            gateway: { label: 'Gateway' },
+            vlan: { label: 'VLAN' },
+            cidr: { label: 'CIDR' },
             state: { label: 'State', indicator: { 'Implemented': 'on', 'Setup': 'on' } }
           },
           dataProvider: function(args) {
@@ -114,6 +114,33 @@
           detailView: {
             name: 'Network details',
             viewAll: { path: 'network.ipAddresses', label: 'Associated IP Addresses' },
+            actions: {
+              edit: {
+                label: 'Edit network',
+                messages: {
+                  notification: function() { return 'Updated network'; }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('updateNetwork'),
+                    data: $.extend(args.data, {
+                      id: args.context.networks[0].id
+                    }),
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.updatenetworkresponse.jobid
+                        }
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -125,7 +152,37 @@
                     type: { label: 'Type' },
                     displaytext: { label: 'Description' },
                     traffictype: { label: 'Traffic Type' },
-                    gateway: { label: 'Gateway' }
+                    gateway: { label: 'Gateway' },
+                    networkofferingid: {
+                      label: 'Network Offering',
+                      isEditable: true,
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL('listNetworkOfferings'),
+                          data: {
+                            state: 'enabled',
+                            traffictype: args.context.networks[0].traffictype,
+                            guestiptype: args.context.networks[0].type
+                          },
+                          success: function(json) {
+                            args.response.success({
+                              data: $.map(
+                                json.listnetworkofferingsresponse.networkoffering,
+                                function(networkOffering) {
+                                  return {
+                                    id: networkOffering.id,
+                                    description: networkOffering.name
+                                  };
+                                }
+                              )
+                            });
+                          },
+                          error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                          }
+                        });
+                      }
+                    }
                   },
                   {
                     startip: { label: 'Start IP' },

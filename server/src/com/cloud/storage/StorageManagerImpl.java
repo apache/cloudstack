@@ -222,8 +222,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject
     protected ConsoleProxyDao _consoleProxyDao;
     @Inject
-    protected HostDetailsDao _detailsDao;
-    @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
     protected SnapshotManager _snapMgr;

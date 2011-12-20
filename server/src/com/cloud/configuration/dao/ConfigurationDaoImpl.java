@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -78,14 +77,17 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             		_configs.put(config.getName(), config.getValue());
             }
 
-            sc = InstanceSearch.create();
-            sc.setParameters("instance", instance);
+            if(!"DEFAULT".equals(instance)){
+            	//Default instance params are already added, need not add again 
+            	sc = InstanceSearch.create();
+            	sc.setParameters("instance", instance);
 
-            configurations = listIncludingRemovedBy(sc);
+            	configurations = listIncludingRemovedBy(sc);
 
-            for (ConfigurationVO config : configurations) {
-            	if (config.getValue() != null)
-            		_configs.put(config.getName(), config.getValue());
+            	for (ConfigurationVO config : configurations) {
+            		if (config.getValue() != null)
+            			_configs.put(config.getName(), config.getValue());
+            	}
             }
 
         }
@@ -120,12 +122,29 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return true;
     }
 
-    @Override
+    //Use update method with category instead
+    @Override @Deprecated
     public boolean update(String name, String value) {
     	Transaction txn = Transaction.currentTxn();
 		try {
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
-			stmt.setString(1, DBEncryptionUtil.encrypt(value));
+			stmt.setString(1, value);
+			stmt.setString(2, name);
+			stmt.executeUpdate();
+			return true;
+		} catch (Exception e) {
+			s_logger.warn("Unable to update Configuration Value", e);
+		}
+		return false;
+    }
+
+    @Override
+    public boolean update(String name, String category, String value) {
+    	Transaction txn = Transaction.currentTxn();
+		try {
+			value = "Hidden".equals(category) ? DBEncryptionUtil.encrypt(value) : value;
+			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
+			stmt.setString(1, value);
 			stmt.setString(2, name);
 			stmt.executeUpdate();
 			return true;
@@ -137,22 +156,13 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     
     @Override
     public String getValue(String name) {
-    	SearchCriteria<ConfigurationVO> sc = NameSearch.create();
-        sc.setParameters("name", name);
-        List<ConfigurationVO> configurations = listIncludingRemovedBy(sc);
-        
-        if (configurations.size() == 0) {
-        	return null;
-        }
-        
-        ConfigurationVO config = configurations.get(0);
-        String value = config.getValue();
-        return value;
+    	ConfigurationVO config =  findByName(name);
+        return (config == null) ? null : config.getValue();
     }
     
     @Override
     @DB
-    public String getValueAndInitIfNotExist(String name, String initValue) {
+    public String getValueAndInitIfNotExist(String name, String category, String initValue) {
     	Transaction txn = Transaction.currentTxn();
     	PreparedStatement stmt = null;
     	PreparedStatement stmtInsert = null;
@@ -166,19 +176,26 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 				returnValue =  rs.getString(1);
 				if(returnValue != null) {
 					txn.commit();
-					return DBEncryptionUtil.decrypt(returnValue);
+					if("Hidden".equals(category)){
+						return DBEncryptionUtil.decrypt(returnValue);
+					} else {
+						return returnValue;
+					}
 				} else {
 					// restore init value
 					returnValue = initValue;
 				}
 			}
 			stmt.close();
-			
+
+			if("Hidden".equals(category)){
+				initValue = DBEncryptionUtil.encrypt(initValue);
+			}
 			stmtInsert = txn.prepareAutoCloseStatement(
 				"INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '') ON DUPLICATE KEY UPDATE value=?");
 			stmtInsert.setString(1, name);
-			stmtInsert.setString(2, DBEncryptionUtil.encrypt(initValue));
-			stmtInsert.setString(3, DBEncryptionUtil.encrypt(initValue));
+			stmtInsert.setString(2, initValue);
+			stmtInsert.setString(3, initValue);
 			if(stmtInsert.executeUpdate() < 1) {
 				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
 			}
@@ -197,16 +214,4 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return findOneIncludingRemovedBy(sc);
     }
     
-    @Override
-    public ConfigurationVO persistConfigValue(ConfigurationVO config) {
-        ConfigurationVO vo = findByName(config.getName());
-        if (vo != null) {
-            return vo;
-        }
-        try {
-            return persist(config);
-        } catch (EntityExistsException e) {
-            return findByName(config.getName());
-        }
-    }
 }
