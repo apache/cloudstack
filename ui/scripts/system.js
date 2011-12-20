@@ -2906,6 +2906,7 @@
                           }
                         });
 
+												var networkOfferingObjsWithSG = [];
 												var networkOfferingObjsWithoutSG = [];
                         $.ajax({
                           url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
@@ -2923,8 +2924,10 @@
 																	break;
 																}
 															}															
-															if(includingSGP == false) //withoutSG
-																networkOfferingObjsWithoutSG.push(this);																											
+															if(includingSGP == false) //without SG
+																networkOfferingObjsWithoutSG.push(this);
+                              else //with SG
+                                networkOfferingObjsWithSG.push(this);															
 														});														
                           }
                         });
@@ -2936,7 +2939,7 @@
                           networkOfferings: networkOfferingObjsWithoutSG,
 
                           // Security group-enabled offerings
-                          securityGroupNetworkOfferings: networkOfferingObjs
+                          securityGroupNetworkOfferings: networkOfferingObjsWithSG
                         });
                       },
 
