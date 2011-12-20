@@ -25,6 +25,7 @@
           indicator: {
             'Running': 'on',
             'Stopped': 'off',
+            'Destroyed': 'off',
             'Error': 'off'
           }
         }
