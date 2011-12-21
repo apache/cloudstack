@@ -695,6 +695,10 @@ body.login {
   background: url(../images/icons.png) -1px -224px;
 }
 
+.install-wizard .step.intro .subtitle li.error {
+  background: url(../images/icons.png) -1px -190px;
+}
+
 .install-wizard .step.intro .subtitle li img {
   float: right;
 }
