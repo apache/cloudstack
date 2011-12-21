@@ -430,7 +430,7 @@
             data: data.zone,
             complete: steps.createPod,
             error: function(json) {
-              error('addZone', parseXMLHttpResponse(json), 'createZone');
+              error('addZone', parseXMLHttpResponse(json), { fn: 'createZone', args: args });
             }
           });
         },
@@ -456,7 +456,7 @@
               steps.createNetwork({ data: $.extend(args.data, { pod: item })});
             },
             error: function(json) {
-              error('addPod', parseXMLHttpResponse(json), 'createPod');
+              error('addPod', parseXMLHttpResponse(json), { fn: 'createPod', args: args });
             }
           });
         },
@@ -600,7 +600,7 @@
                     steps.createCluster({ data: $.extend(args.data, { guestNetwork: successArgs.data })});
                   },
                   error: function(json) {
-                    error('addNetwork', parseXMLHttpResponse(json), 'createNetwork');
+                    error('addNetwork', parseXMLHttpResponse(json), { fn: 'createNetwork', args: args });
                   }
                 },
                 data: {
@@ -639,7 +639,7 @@
               });
             },
             error: function(json) {
-              error('addCluster', parseXMLHttpResponse(json), 'createCluster');
+              error('addCluster', parseXMLHttpResponse(json), { fn: 'createCluster', args: args });
             }
           });
         },
@@ -668,7 +668,7 @@
               });
             },
             error: function(json) {
-              error('addHost', parseXMLHttpResponse(json), 'createHost');
+              error('addHost', parseXMLHttpResponse(json), { fn: 'createHost', args: args });
             }
           });
         },
@@ -696,7 +696,7 @@
               });
             },
             error: function(json) {
-              error('addPrimaryStorage', parseXMLHttpResponse(json), 'createPrimaryStorage');
+              error('addPrimaryStorage', parseXMLHttpResponse(json), { fn: 'createPrimaryStorage', args: args });
             }            
           });
         },
@@ -716,7 +716,7 @@
               steps.pollSystemVMs();
             },
             error: function(json) {
-              error('addSecondaryStorage', parseXMLHttpResponse(json), 'createSecondaryStorage');
+              error('addSecondaryStorage', parseXMLHttpResponse(json), { fn: 'createSecondaryStorage', args: args });
             }
           });
         },
@@ -747,7 +747,7 @@
       };
 
       if (startFn) {
-        steps[startFn]();
+        steps[startFn.fn](startFn.args);
       } else {
         steps.createZone();
       }
