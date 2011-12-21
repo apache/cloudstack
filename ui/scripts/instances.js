@@ -1081,29 +1081,8 @@
           resetPassword: {
             label: 'Reset password',
             messages: {
-              confirm: function(args) {
-                /*
-                 if (jsonObj.passwordenabled == false) {
-                 $("#dialog_info")
-                 .text(dictionary["message.action.reset.password.off"])
-                 .dialog('option', 'buttons', {
-                 "OK": function() {
-                 $(this).dialog("close");
-                 }
-                 }).dialog("open");
-                 return;
-                 } else if (jsonObj.state != 'Stopped') {
-                 $("#dialog_info")
-                 .text(dictionary["message.action.reset.password.warning"])
-                 .dialog('option', 'buttons', {
-                 "OK": function() {
-                 $(this).dialog("close");
-                 }
-                 }).dialog("open");
-                 return;
-                 }
-                 */
-                return 'Are you sure you want to reset password?';
+              confirm: function(args) {                
+                return 'Please confirm that you want to reset password.';
               },
               success: function(args) {
                 return 'Password is being reset.';
@@ -1115,6 +1094,19 @@
                 return 'Password has been reset to ' + args.password;
               }
             },
+												
+						preAction: function(args) {    
+							var jsonObj = args.context.instances[0];							
+							if (jsonObj.passwordenabled == false) {
+							  cloudStack.dialog.notice({ message: 'The template this instance was created with is not password enabled' });							
+								return false;
+							} 
+							else if (jsonObj.state != 'Stopped') {
+								cloudStack.dialog.notice({ message: 'Your instance must be stopped before attempting to change its current password' });
+								return false;
+							}
+            },
+												
             action: function(args) {
               $.ajax({
                 url: createURL("resetPasswordForVirtualMachine&id=" + args.data.id),
