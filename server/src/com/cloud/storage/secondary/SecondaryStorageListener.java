@@ -28,10 +28,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.cluster.ManagementServerNode;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
 import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {

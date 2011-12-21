@@ -24,6 +24,9 @@
 
 package com.cloud.storage.swift;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -40,11 +43,15 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateSwiftVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -68,6 +75,10 @@ public class SwiftManagerImpl implements SwiftManager {
     private ConfigurationDao _configDao;
     @Inject
     private AgentManager _agentMgr;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    VMTemplateZoneDao _vmTmpltZoneDao;
 
     @Override
     public SwiftTO getSwiftTO(Long swiftId) {
@@ -169,6 +180,55 @@ public class SwiftManagerImpl implements SwiftManager {
         } else {
             _vmTmpltSwiftlDao.remove(tmpltSwiftRef.getId());
             s_logger.debug("Deleted template " + cmd.getId() + " in Swift");
+        }
+    }
+
+    @Override
+    public void propagateTemplateOnAllZones(Long tmpltId) {
+        String msg;
+        SwiftTO swift = getSwiftTO();
+        if (swift == null) {
+            msg = "There is no Swift in this setup";
+            s_logger.trace(msg);
+            return;
+        }
+        VMTemplateSwiftVO tmpltSwiftRef = _vmTmpltSwiftlDao.findOneByTemplateId(tmpltId);
+        if (tmpltSwiftRef != null) {
+            List<DataCenterVO> dcs = _dcDao.listAll();
+            for (DataCenterVO dc : dcs) {
+                VMTemplateZoneVO tmpltZoneVO = new VMTemplateZoneVO(dc.getId(), tmpltId, new Date());
+                try {
+                    _vmTmpltZoneDao.persist(tmpltZoneVO);
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
+    @Override
+    public void propagateSwiftTmplteOnZone(Long zoneId) {
+        String msg;
+        SwiftTO swift = getSwiftTO();
+        if (swift == null) {
+            msg = "There is no Swift in this setup";
+            s_logger.trace(msg);
+            return;
+        }
+        List<Long> tmpltIds = new ArrayList<Long>();
+        List<VMTemplateSwiftVO> tmpltSwiftRefs = _vmTmpltSwiftlDao.listAll();
+        if (tmpltSwiftRefs == null) {
+            return;
+        }
+        for (VMTemplateSwiftVO tmpltSwiftRef : tmpltSwiftRefs) {
+            Long tmpltId = tmpltSwiftRef.getTemplateId();
+            if (!tmpltIds.contains(tmpltId)) {
+                tmpltIds.add(tmpltId);
+                VMTemplateZoneVO tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmpltId, new Date());
+                try {
+                    _vmTmpltZoneDao.persist(tmpltZoneVO);
+                } catch (Exception e) {
+                }
+            }
         }
     }
 

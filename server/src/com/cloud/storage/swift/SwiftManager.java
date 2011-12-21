@@ -46,4 +46,8 @@ public interface SwiftManager extends Manager {
     void deleteIso(DeleteIsoCmd cmd);
 
     void deleteTemplate(DeleteTemplateCmd cmd);
+
+    void propagateTemplateOnAllZones(Long tmpltId);
+
+    void propagateSwiftTmplteOnZone(Long zoneId);
 }

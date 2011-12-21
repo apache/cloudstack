@@ -102,7 +102,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -136,6 +135,7 @@ import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -233,6 +233,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
     @Inject 
     PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    SwiftManager _swiftMgr;
     
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -1467,6 +1469,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             
             // Create deafult networks
             createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);
+
+            _swiftMgr.propagateSwiftTmplteOnZone(zone.getId());
             txn.commit();
             return zone;
         } catch (Exception ex) {

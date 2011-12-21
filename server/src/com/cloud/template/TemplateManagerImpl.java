@@ -549,6 +549,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
             VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), templateHostRef.getSize(), templateHostRef.getPhysicalSize());
             _tmpltSwiftDao.persist(tmpltSwift);
+            _swiftMgr.propagateTemplateOnAllZones(templateHostRef.getTemplateId());
         } catch (Exception e) {
             String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + e.toString();
             s_logger.warn(errMsg);
