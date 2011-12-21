@@ -20,10 +20,10 @@
           label: 'Volumes',
           fields: {
             name: { label: 'Name' },
-            state: { label: 'State' },
             type: { label: 'Type' },
-            storagetype: { label: 'Storage Type' },                    
-            vmdisplayname: { label: 'VM Display Name' }          
+            storagetype: { label: 'Storage Type' },
+            vmdisplayname: { label: 'VM Display Name' },
+            state: { label: 'State', indicator: { 'Ready': 'on' } }
           },
 
           // List view actions
@@ -872,7 +872,7 @@
                   poll: pollAsyncJobResult
                 }
               },
-                            
+
               migrateToAnotherStorage: {
                 label: 'Migrate volume to another primary storage',
                 messages: {
@@ -896,15 +896,15 @@
                     storageId: {
                       label: 'Primary storage',
                       validation: { required: true },
-                      select: function(args) {     
-                        $.ajax({  
+                      select: function(args) {
+                        $.ajax({
                           url: createURL("listStoragePools&zoneid=" + args.context.volumes[0].zoneid),
                           dataType: "json",
                           async: true,
-                          success: function(json) {                        
+                          success: function(json) {
                             var pools = json.liststoragepoolsresponse.storagepool;
                             var items = [];
-                            $(pools).each(function() {                          
+                            $(pools).each(function() {
                               items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
@@ -914,7 +914,7 @@
                     }
                   }
                 },
-                action: function(args) {                  
+                action: function(args) {
                   $.ajax({
                     url: createURL("migrateVolume&storageid=" + args.data.storageId + "&volumeid=" + args.context.volumes[0].id),
                     dataType: "json",
@@ -924,8 +924,8 @@
                       args.response.success(
                         {_custom:
                          {jobId: jid,
-                          getUpdatedItem: function(json) {  
-                            return json.queryasyncjobresultresponse.jobresult.volume;                       
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.volume;
                           },
                           getActionFilter: function() {
                             return volumeActionfilter;
@@ -939,8 +939,8 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              },   
-             
+              },
+
               'destroy': {
                 label: 'Delete volume',
                 messages: {
@@ -1051,9 +1051,9 @@
           label: 'Snapshots',
           fields: {
             volumename: { label: 'Volume' },
-            state: { label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' } },
             intervaltype: { label: 'Interval Type' },
-            created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
+            created: { label: 'Date', converter: cloudStack.converters.toLocalDate },
+            state: { label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' } }
           },
 
           actions: {
@@ -1348,15 +1348,15 @@
                   title: 'Create volume',
                   desc: '',
                   fields: {
-                    name: { 
-										  label: 'Name', 
-											validation: { 
-											  required: true 
-											}
-										}
+                    name: {
+                      label: 'Name',
+                      validation: {
+                        required: true
+                      }
+                    }
                   }
                 },
-                action: function(args) {   
+                action: function(args) {
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
 
