@@ -2260,7 +2260,7 @@ div.list-view div.toolbar div.section-switcher div.section-select {
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select select {
-  width: 146px;
+  width: 93px;
   margin-right: 13px;
 }
 
@@ -2280,7 +2280,7 @@ div.list-view div.toolbar div.section-switcher div.section-select label {
 /*Breadcrumbs*/
 div.toolbar div.filters {
   margin: 5px 0px 0 12px;
-  width: 211px;
+  width: 165px;
   float: left;
 }
 
