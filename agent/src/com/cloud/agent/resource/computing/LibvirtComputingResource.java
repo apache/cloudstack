@@ -1427,7 +1427,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 _storage.mkdirs(templatePath);
 
     		 String tmplPath = templateInstallFolder + File.separator + tmplFileName;
-    		 Script command = new Script(_createTmplPath, _timeout, s_logger);
+    		 Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
     		 command.add("-t", templatePath);
     		 command.add("-n", tmplFileName);
     		 command.add("-f", snapshot.getPath());
@@ -1489,7 +1489,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 String tmpltPath = secondaryStorage.getLocalPath() + File.separator + templateInstallFolder;
         	 _storage.mkdirs(tmpltPath);
         	 
-        	 Script command = new Script(_createTmplPath, _timeout, s_logger);
+        	 Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
         	 command.add("-f", disk.getPath());
         	 command.add("-t", tmpltPath);
         	 command.add("-n", cmd.getUniqueName() + ".qcow2");
