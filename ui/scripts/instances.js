@@ -1528,7 +1528,7 @@
                 },
                 domain: { label: 'Domain', isEditable: false },
                 account: { label: 'Account', isEditable: false },
-                created: { label: 'Created', isEditable: false }
+                created: { label: 'Created', isEditable: false, converter: cloudStack.converters.toLocalDate }
               }
             ],
 

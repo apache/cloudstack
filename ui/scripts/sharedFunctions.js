@@ -204,6 +204,19 @@ cloudStack.converters = {
       return (bytes / 1024 / 1024 / 1024 / 1024).toFixed(2) + " TB";
     }
   },
+	toLocalDate: function(UtcDate) {	 
+		var localDate = "";		
+		if (UtcDate != null && UtcDate.length > 0) {
+	    var disconnected = new Date();
+	    disconnected.setISO8601(UtcDate);	
+	    	
+	    if(g_timezoneoffset != null) 
+	      localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
+	    else 
+	      localDate = disconnected.getTimePlusTimezoneOffset(0);	 
+    }
+		return localDate; 		
+	},
   toBooleanText: function(booleanValue) {
     if(booleanValue == true)
       return "Yes";
