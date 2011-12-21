@@ -17,7 +17,7 @@ echo Enable public ip returned $ret >> [RROUTER_LOG]
 if [ $ret -ne 0 ]
 then
     echo Fail to enable public ip! >> [RROUTER_LOG]
-    ifconfig eth2 down
+    [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
     service keepalived stop >> [RROUTER_LOG] 2>&1
     service conntrackd stop >> [RROUTER_LOG] 2>&1
     echo Status: FAULT \($last_msg\) >> [RROUTER_LOG]

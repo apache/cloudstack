@@ -11,7 +11,7 @@ then
         service keepalived stop >> [RROUTER_LOG] 2>&1
         service conntrackd stop >> [RROUTER_LOG] 2>&1
 	pkill -9 keepalived >> [RROUTER_LOG] 2>&1
-        ifconfig eth2 down >> [RROUTER_LOG] 2>&1
+        [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
         echo Status: FAULT \(keepalived process is dead\) >> [RROUTER_LOG]
         exit
     fi
