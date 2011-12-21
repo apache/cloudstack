@@ -376,8 +376,12 @@
                 }
               },
               action: function(args) {
+							  var apiCmd = "extractTemplate&mode=HTTP_DOWNLOAD&id=" + args.context.templates[0].id;
+								if(args.context.templates[0].zoneid != null)
+									apiCmd += "&zoneid=" + args.context.templates[0].zoneid;
+										
                 $.ajax({
-                  url: createURL("extractTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&mode=HTTP_DOWNLOAD"),
+                  url: createURL(apiCmd),
                   dataType: "json",
                   async: true,
                   success: function(json) {
@@ -622,9 +626,13 @@
                     return htmlMsg2;
                   }
                 },
-                action: function(args) {
+                action: function(args) {								  
+								  var apiCmd = "extractTemplate&mode=HTTP_DOWNLOAD&id=" + args.context.templates[0].id;
+									if(args.context.templates[0].zoneid != null)
+									  apiCmd += "&zoneid=" + args.context.templates[0].zoneid;
+								
                   $.ajax({
-                    url: createURL("extractTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&mode=HTTP_DOWNLOAD"),
+                    url: createURL(apiCmd),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -1065,8 +1073,12 @@
                 }
               },
               action: function(args) {
+							  var apiCmd = "extractIso&mode=HTTP_DOWNLOAD&id=" + args.context.isos[0].id;
+								if(args.context.isos[0].zoneid != null)
+									apiCmd += "&zoneid=" + args.context.isos[0].zoneid;
+							
                 $.ajax({
-                  url: createURL("extractIso&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + "&mode=HTTP_DOWNLOAD"),
+                  url: createURL(apiCmd),
                   dataType: "json",
                   async: true,
                   success: function(json) {
@@ -1311,9 +1323,13 @@
                     return htmlMsg2;
                   }
                 },
-                action: function(args) {
+                action: function(args) {								 
+									var apiCmd = "extractIso&mode=HTTP_DOWNLOAD&id=" + args.context.isos[0].id;
+									if(args.context.isos[0].zoneid != null)
+									  apiCmd += "&zoneid=" + args.context.isos[0].zoneid;
+										
                   $.ajax({
-                    url: createURL("extractIso&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + "&mode=HTTP_DOWNLOAD"),
+                    url: createURL(apiCmd),
                     dataType: "json",
                     async: true,
                     success: function(json) {

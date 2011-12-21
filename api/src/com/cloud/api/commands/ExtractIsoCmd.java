@@ -52,7 +52,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     private String url;
 
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone where the ISO is originally located")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="the ID of the zone where the ISO is originally located")
     private Long zoneId;
     
     @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
