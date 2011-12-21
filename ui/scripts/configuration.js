@@ -1626,17 +1626,24 @@
                     },
                     traffictype: {
                       label: 'Traffic type'
+                    },
+                    supportedServices: {
+                      label: 'Services'
                     }
                   }
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: networkOfferingActionfilter,
-                      data:args.context.networkOfferings[0]
-                    }
-                  );
+                  var networkOffering = args.context.networkOfferings[0];
+                  
+                  args.response.success({
+                    actionFilter: networkOfferingActionfilter,
+                    data: $.extend(args.context.networkOfferings[0], {
+                      supportedServices: $.map(networkOffering.service, function(service) {
+                        return service.name;
+                      }).join(', ')
+                    })
+                  });
                 }
               }
             }
