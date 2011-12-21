@@ -42,7 +42,6 @@
     var goTo = cloudStack._goto = function(stepID, stateID, $elem, options) {
       if (!options) options = {};
 
-      var $nextStep = steps[stepID]({ nextStep: options.nextStep });
       var $body = $installWizard.find('.body');
 
       if (stateID && $elem) {
@@ -50,8 +49,11 @@
       }
 
       $body.children().fadeOut('fast', function() {
+        var $nextStep = steps[stepID]({ nextStep: options.nextStep });
+
         $body.children().detach();
-        $nextStep.addClass('step').hide().appendTo($body).fadeIn();
+        $nextStep.appendTo($body).hide();
+        $nextStep.addClass('step').fadeIn();
       });
     };
 
@@ -161,7 +163,7 @@
 
         return function(args) {
           var overrideGotoEvent = function(event) {
-            goTo(args.nextStep);
+            goTo(args.nextStep, stateID, $form);
 
             return false;
           };
@@ -377,7 +379,7 @@
         tooltipID: 'addZone',
         diagram: '.part.zone',
         prevStepID: 'addZoneIntro',
-        nextStepID: 'addPodIntro',
+        nextStepID: 'addPod',
         form: {
           name: { label: 'Name', validation: { required: true } },
           dns1: { label: 'DNS 1', validation: { required: true } },
@@ -633,69 +635,77 @@
       },
 
       /**
+       * Pre-launch test -- after error correction
+       */
+      launchInfoError: function(args) {
+        var $intro = $('<div></div>').addClass('intro');
+        var $title = $('<div></div>').addClass('title')
+              .html('Corrections saved.');
+        var $subtitle = $('<div></div>').addClass('subtitle')
+              .html('Click the button to retry launch.');
+        var $continue = elems.nextButton('Launch');
+
+        $continue.click(function() {
+          goTo('launch');
+
+          return false;
+        });
+
+        showDiagram('.part.zone, .part.secondaryStorage');
+
+        return $intro.append(
+          $title, $subtitle,
+          $continue
+        );
+      },
+
+      /**
        * Initiates launch tasks
        */
       launch: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-              .html('Now building your cloud...').appendTo($intro);
-        var $subtitle = $('<div></div>').addClass('subtitle').html('').appendTo($intro);
+        var $intro = $('<div>').addClass('intro');
+        var $title = $('<div>').addClass('title')
+              .html('Now building your cloud...');
+        var $subtitle = $('<div></div>').addClass('subtitle');
 
-        var doAction = function() {
-          if (launchStart) {
-            $('.subtitle').children().remove();
-          }
-          
-          cloudStack.installWizard.action({
-            data: state,
-            startFn: launchStart,
-            response: {
-              message: function(msg) {
-                var $li = $('<li>').html(msg);
-
-                if (launchStart) {
-                  $li.appendTo('.subtitle');
-                  $li.parent().find('li')
-                    .filter(function() {
-                      return this != $li.get(0);
-                    }).addClass('complete');
-                } else {
-                  $subtitle.append($li);
-                  $li.siblings().addClass('complete'); 
-                }
-              },
-              success: function() {
-                goTo('complete');
-              },
-              error: function(stepID, message, callback) {
-                if (launchStart) {
-                  $subtitle = $('.subtitle');
-                  $subtitle.children().remove();
-                  $('li').children().remove();
-                }
-
-                launchStart = callback;
-                $subtitle.find('li:last').addClass('error');
-
-                $subtitle.append(
-                  $('<p>').html(
-                    'Something went wrong; you may go back and correct any errors.'
-                  ),
-                  $('<div>').addClass('button').append(
-                    $('<span>').html('Go back')
-                  ).click(function() {
-                    goTo(stepID, null, null, {
-                      nextStep: 'launch'
-                    });
-                  })
-                );
-              }
-            }
-          });
-        };
-
-        doAction();
         showDiagram('.part.loading');
+        $intro.append(
+          $title, $subtitle
+        );
+
+        cloudStack.installWizard.action({
+          data: state,
+          startFn: launchStart,
+          response: {
+            message: function(msg) {
+              var $li = $('<li>').html(msg);
+
+              $subtitle.append($li);
+              $li.siblings().addClass('complete');
+            },
+            success: function() {
+              goTo('complete');
+            },
+            error: function(stepID, message, callback) {
+              launchStart = callback;
+              $subtitle.find('li:last').addClass('error');
+
+              $subtitle.append(
+                $('<p>').html(
+                  'Something went wrong; you may go back and correct any errors:<br/>'
+                    + message
+                ),
+                $('<div>').addClass('button').append(
+                  $('<span>').html('Go back')
+                ).click(function() {
+                  goTo(stepID, null, null, {
+                    nextStep: 'launchInfoError'
+                  });
+                })
+              );
+            }
+          }
+        });
 
         return $intro;
       },
