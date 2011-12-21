@@ -1483,23 +1483,7 @@
                 state: { label: 'State', isEditable: false },
                 zonename: { label: 'Zone', isEditable: false },
                 hypervisor: { label: 'Hypervisor', isEditable: false },
-                templatename: { label: 'Template', isEditable: false },
-                templateid: {
-                  label: 'Template type',
-                  isEditable: false
-                  /*
-                   ,
-                   select: function(args) {
-                   var items = [];
-
-                   $(testData.data.templates).each(function() {
-                   items.push({ id: this.id, description: this.name });
-                   });
-
-                   args.response.success({ data: items });
-                   }
-                   */
-                },
+                templatename: { label: 'Template name', isEditable: false },                
                 guestosid: {
                   label: 'OS Type',
                   isEditable: true,
