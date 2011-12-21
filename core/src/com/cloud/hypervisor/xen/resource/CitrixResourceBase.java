@@ -2606,7 +2606,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             hvm = "false";
         }
 
-        String vncport = callHostPlugin(conn, "vmops", "getvncport", "domID", record.domid.toString(), "hvm", hvm);
+        String vncport = callHostPlugin(conn, "vmops", "getvncport", "domID", record.domid.toString(), "hvm", hvm, "version", _host.product_version);
         if (vncport == null || vncport.isEmpty()) {
             return -1;
         }
@@ -3823,6 +3823,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
             }
+            Host.Record hr = myself.getRecord(conn);
+            _host.product_version = hr.softwareVersion.get("product_version").trim();
+
             XsLocalNetwork privateNic = getManagementNetwork(conn);
             _privateNetworkName = privateNic.getNetworkRecord(conn).nameLabel;
             _host.privatePif = privateNic.getPifRecord(conn).uuid;
@@ -6490,6 +6493,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         public String pool;
         public int speed;
         public int cpus;
+        public String product_version;
 
         @Override
         public String toString() {

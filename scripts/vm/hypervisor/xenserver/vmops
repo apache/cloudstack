@@ -48,12 +48,17 @@ def setup_iscsi(session, args):
 def getvncport(session, args):
     domid = args['domID']
     hvm = args['hvm']
+    version = args['version']
     if hvm == 'true':
         path1 = "/local/domain/" + domid + "/qemu-pid"
         path2 = "/local/domain/" + domid + "/console/vnc-port"
     else:
-        path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
-        path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
+        if version == '6.0.0':
+            path1 = "/local/domain/" + domid + "/vncterm-pid"
+            path2 = "/local/domain/" + domid + "/console/vnc-port"
+        else:
+            path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
+            path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
     try:
         cmd = ["xenstore-read", path1]
         pid = util.pread2(cmd)
