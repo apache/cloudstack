@@ -216,7 +216,12 @@
             name: 'Guest network details',
             viewAll: { 
 							path: 'network.ipAddresses', 
-							label: 'IP addresses'
+							label: 'IP addresses',
+              preFilter: function(args) {
+                if (args.context.networks[0].state == 'Destroyed') return false;
+
+                return true;
+              }
 						},
             actions: {
               edit: {
@@ -405,11 +410,16 @@
                     },                           
                     vlan: { label: 'VLAN ID' },
                     scope: { label: 'Scope' },
-                    networkofferingdisplaytext: { label: 'Network offering' },
+                    //networkofferingdisplaytext: { label: 'Network offering' },
                     networkofferingid: {
                       label: 'Network offering',
                       isEditable: true,
                       select: function(args){
+                        if (args.context.networks[0].state == 'Destroyed') {
+                          args.response.success({ data: [] });
+                          return;
+                        }
+                        
                         var items = [];
                         $.ajax({
                           url: createURL("listNetworkOfferings&networkid=" + args.context.networks[0].id),
@@ -437,10 +447,6 @@
                       }
                     },
                     
-                    networkofferingidText: {
-                      label: 'Network offering ID'
-                    },
-                    
                     gateway: { label: 'Gateway' },
                     //netmask: { label: 'Netmask' },                            
                     cidr: { label: 'CIDR' },
@@ -453,8 +459,16 @@
                     }
                   }
                 ],
-                dataProvider: function(args) {    
-                  args.response.success({data: args.context.networks[0]});
+                dataProvider: function(args) {
+                  args.response.success({
+                    actionFilter: function(args) {
+                      if (args.context.networks[0].state == 'Destroyed')
+                        return [];
+
+                      return args.context.actions;
+                    },
+                    data: args.context.networks[0]
+                  });
                 }
               },
             }
