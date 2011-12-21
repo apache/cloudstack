@@ -1019,7 +1019,7 @@
                     },
                     vmname: { label: 'VM Name' },
                     vmdisplayname: { label: 'VM Display Name' },
-                    created: { label: 'Created' },
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
                     domain: { label: 'Domain' },
                     account: { label: 'Account' }
                   }
@@ -1434,7 +1434,7 @@
                     intervaltype: { label: 'Interval Type' },
                     domain: { label: 'Domain' },
                     account: { label: 'Account' },
-                    created: { label: 'Created' }
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
