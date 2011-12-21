@@ -378,7 +378,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             Long domainId = account.getDomainId();
             while (domainId != null) {
                 ResourceLimitVO domainLimit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                if (domainLimit != null) {
+                if (domainLimit != null && domainLimit.getMax().longValue() != -1) {
                     long domainCount = _resourceCountDao.getDomainCount(domainId, type);
                     if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
                         return true;
