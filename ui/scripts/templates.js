@@ -24,6 +24,7 @@
             zonename: { label: 'Zone' },
             hypervisor: { label: 'Hypervisor' }
           },
+          reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
           actions: {
             add: {
               label: 'Create template',
@@ -832,6 +833,9 @@
             size: { label: 'Size' },
             zonename: { label: 'Zone' }
           },
+          
+          reorder: cloudStack.api.actions.sort('updateIso', 'isos'),
+
           actions: {
             add: {
               label: 'Create ISO',

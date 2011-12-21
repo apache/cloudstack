@@ -394,3 +394,45 @@ timezoneMap['Australia/Brisbane']='[UTC+10:00] Eastern Standard Time (Queensland
 timezoneMap['Australia/Canberra']='[UTC+10:00] Eastern Standard Time (New South Wales)';
 timezoneMap['Pacific/Guam']='[UTC+10:00] Chamorro Standard Time';
 timezoneMap['Pacific/Auckland']='[UTC+12:00] New Zealand Standard Time';
+
+// CloudStack common API helpers
+cloudStack.api = {
+  actions: {
+    sort: function(updateCommand, objType) {
+      var action = function(args) {
+        $.ajax({
+          url: createURL(updateCommand),
+          data: {
+            id: args.context[objType].id,
+            sortKey: args.index
+          },
+          success: function(json) {
+            args.response.success();
+          },
+          error: function(json) {
+            args.response.error(parseXMLHttpResponse(json));
+          }
+        });
+
+      };
+
+      return {
+        moveTop: {
+          action: action
+        },
+        moveBottom: {
+          action: action
+        },
+        moveUp: {
+          action: action
+        },
+        moveDown: {
+          action: action
+        },
+        moveDrag: {
+          action: action
+        }
+      }
+    }
+  }
+};

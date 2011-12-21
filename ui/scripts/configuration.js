@@ -17,6 +17,8 @@
             displaytext: { label: 'Description' }
           },
 
+          reorder: cloudStack.api.actions.sort('updateServiceOffering', 'serviceOfferings'),
+
           actions: {
             add: {
               label: 'Add service offering',
@@ -314,6 +316,8 @@
             displaytext: { label: 'Description' }
           },
 
+          reorder: cloudStack.api.actions.sort('updateServiceOffering', 'systemServiceOfferings'),
+
           actions: {
             add: {
               label: 'Add system service offering',
@@ -605,21 +609,24 @@
           label: 'Disk offerings',
           fields: {
             name: { label: 'Name' },
-            displaytext: { label: 'Description' },            
-			iscustomized: {
-			  label: 'Custom disk size',
-			  converter: cloudStack.converters.toBooleanText
-			},
-			disksize: {
-			  label: 'Disk Size',
-			  converter: function(args) {					    
-				if(args != 0)
-				  return args + " GB";
-				else
-				  return "N/A";
-			  }
-			}			
+            displaytext: { label: 'Description' },
+            iscustomized: {
+              label: 'Custom disk size',
+              converter: cloudStack.converters.toBooleanText
+            },
+            disksize: {
+              label: 'Disk Size',
+              converter: function(args) {
+                if(args != 0)
+                  return args + " GB";
+                else
+                  return "N/A";
+              }
+            }
           },
+
+          reorder: cloudStack.api.actions.sort('updateDiskOffering', 'diskOfferings'),
+
           dataProvider: function(args) {
             $.ajax({
               url: createURL("listDiskOfferings&page="+args.page+"&pagesize="+pageSize),
@@ -816,7 +823,7 @@
                     },
                     disksize: {
                       label: 'Disk Size',
-                      converter: function(args) {					    
+                      converter: function(args) {
 						if(args != 0)
                           return args + " GB";
 						else
@@ -841,7 +848,7 @@
           }
         }
       },
-        
+
       hypervisorCapabilities: {
         type: 'select',
         title: 'Hypervisor capabilities',
@@ -870,48 +877,48 @@
 
           detailView: {
             name: 'Details',
-            actions: {              
+            actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) {   
-                  var array1 = [];                 
-                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));                  
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));
                   $.ajax({
                     url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
                     dataType: "json",
-                    success: function(json) {                      
+                    success: function(json) {
                       var item = json.updatehypervisorcapabilitiesresponse['null'];
                       args.response.success({data: item});
                     },
                     error: function(data) {
                       args.response.error(parseXMLHttpResponse(data));
                     }
-                  });                  
+                  });
                 }
-              }                          
+              }
             },
 
             tabs: {
               details: {
                 title: 'Details',
-                fields: [                  
+                fields: [
                   {
-                    id: { label: 'ID' },                   
+                    id: { label: 'ID' },
                     hypervisor: { label: 'Hypervisor' },
                     hypervisorversion: { label: 'Hypervisor version' },
-                    maxguestslimit: { 
+                    maxguestslimit: {
                       label: 'Max guest limit',
                       isEditable: true
                     },
                     securitygroupenabled: {
                       label: 'Security group enabled',
                       converter: cloudStack.converters.toBooleanText
-                    }    
+                    }
                   }
                 ],
-                dataProvider: function(args) {               
+                dataProvider: function(args) {
                   args.response.success(
-                    {                      
+                    {
                       data:args.context.hypervisorCapabilities[0]
                     }
                   );
@@ -921,7 +928,7 @@
           }
         }
       },
-            
+
       networkOfferings: {
         type: 'select',
         title: 'Network offerings',
@@ -929,11 +936,10 @@
           id: 'networkOfferings',
           label: 'Network offerings',
           fields: {
-            name: { label: 'Name' },           
-            guestiptype: { label: 'Guest type' },
-            availability: { label: 'Availability' },           
+            name: { label: 'Name' },
             state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }}
           },
+
           dataProvider: function(args) {
             $.ajax({
               url: createURL('listNetworkOfferings'),
@@ -975,7 +981,7 @@
                         services[serviceData[1]] = formData[
                           'service.' + serviceData[1] + '.provider'
                         ];
-                    } 
+                    }
                   } else if (value != '') { // Normal data
                     inputData[key] = value;
                   }
@@ -1025,7 +1031,7 @@
                   name: { label: 'Name', validation: { required: true } },
 
                   displayText: { label: 'Display Text', validation: { required: true } },
-                
+
                   networkRate: { label: 'Network Rate' },
 
                   trafficType: {
@@ -1087,7 +1093,7 @@
                                 };
                               })
                             )
-                          });                          
+                          });
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));
@@ -1097,8 +1103,8 @@
                   },
 
                   specifyVlan: { label: 'Specify VLAN', isBoolean: true },
-          
-                  supportedServices: { 
+
+                  supportedServices: {
                     label: 'Supported Services',
 
                     dynamic: function(args) {
@@ -1112,7 +1118,7 @@
                           $(networkServices).each(function() {
                             var name = this.name;
                             var providers = this.provider;
-                            
+
                             var id = {
                               isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
                               capabilities: 'service' + '.' + name + '.' + 'capabilities',
@@ -1120,7 +1126,7 @@
                             };
 
                             fields[id.isEnabled] = { label: name, isBoolean: true };
-                            fields[id.provider] = { 
+                            fields[id.provider] = {
                               label: name + ' Provider',
                               isHidden: true,
                               dependsOn: id.isEnabled,
@@ -1159,7 +1165,7 @@
                   });
                 }
               },
-              
+
               messages: {
                 notification: function(args) {
                   return 'Added network offering';
@@ -1264,6 +1270,8 @@
             }
           },
 
+          reorder: cloudStack.api.actions.sort('updateNetworkOffering', 'networkOfferings'),
+
           detailView: {
             name: 'Network offering details',
             actions: {
@@ -1285,7 +1293,7 @@
                           services[serviceData[1]] = formData[
                             'service.' + serviceData[1] + '.provider'
                           ];
-                      } 
+                      }
                     } else if (value != '') { // Normal data
                       inputData[key] = value;
                     }
@@ -1334,7 +1342,7 @@
                     name: { label: 'Name', validation: { required: true } },
 
                     displayText: { label: 'Display Text', validation: { required: true } },
-                    
+
                     networkRate: { label: 'Network Rate' },
 
                     trafficType: {
@@ -1396,7 +1404,7 @@
                                   };
                                 })
                               )
-                            });                          
+                            });
                           },
                           error: function(data) {
                             args.response.error(parseXMLHttpResponse(data));
@@ -1406,8 +1414,8 @@
                     },
 
                     specifyVlan: { label: 'Specify VLAN', isBoolean: true },
-                    
-                    supportedServices: { 
+
+                    supportedServices: {
                       label: 'Supported Services',
 
                       dynamic: function(args) {
@@ -1421,7 +1429,7 @@
                             $(networkServices).each(function() {
                               var name = this.name;
                               var providers = this.provider;
-                              
+
                               var id = {
                                 isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
                                 capabilities: 'service' + '.' + name + '.' + 'capabilities',
@@ -1429,7 +1437,7 @@
                               };
 
                               fields[id.isEnabled] = { label: name, isBoolean: true };
-                              fields[id.provider] = { 
+                              fields[id.provider] = {
                                 label: name + ' Provider',
                                 isHidden: true,
                                 dependsOn: id.isEnabled,
@@ -1460,7 +1468,7 @@
                     tags: { label: 'Tags' }
                   }
                 },
-                
+
                 messages: {
                   notification: function(args) {
                     return 'Added network offering';
@@ -1668,7 +1676,7 @@
     if (jsonObj.state == 'Destroyed' || jsonObj.isdefault) {
       return [];
     }
-    
+
     var allowedActions = ['destroy'];
     allowedActions.push("edit");
     if(jsonObj.state == "Enabled")

@@ -561,17 +561,17 @@
       $th.html(field.label);
     });
 
+    if (reorder) {
+      $thead.append(
+        $('<th>').html('Order').addClass('reorder-actions reduced-hide')
+      );
+    }
+
     if (actions && renderActionCol(actions)) {
       $thead.append(
         $('<th></th>')
           .html('Actions')
           .addClass('actions reduced-hide')
-      );
-    }
-
-    if (reorder) {
-      $thead.append(
-        $('<th>').html('Order').addClass('reorder-actions reduced-hide')
       );
     }
 
@@ -788,6 +788,30 @@
 
       // Add reorder actions
       if (reorder) {
+        var sort = function($tr, action) {
+          var $listView = $tr.closest('.list-view');
+          var viewArgs = $listView.data('view-args');
+          var context = $.extend(
+            true, {},
+            $tr.closest('.list-view').data('view-args').context
+          );
+          var rowIndex = $tr.closest('tbody').find('tr').size() - ($tr.index());
+
+          context[viewArgs.activeSection] = $tr.data('json-obj');
+          
+          action.action({
+            context: context,
+            index: rowIndex,
+            response: {
+              success: function(args) {},
+              error: function(args) {
+                // Move back to previous position
+                rowActions.moveTo($tr, rowIndex);
+              }
+            }
+          });
+        };
+
         $('<td>').addClass('actions reorder').appendTo($tr).append(function() {
           var $td = $(this);
 
@@ -812,20 +836,11 @@
               .click(function() {
                 if (actionName == 'moveDrag') return false;
 
-                var rowIndex = $tr.index();
                 rowActions[actionName]($tr);
-
-                action.action({
-                  response: {
-                    success: function(args) {
-                      $tr.closest('.data-table').dataTable('selectRow', $tr.index());
-                    },
-                    error: function(args) {
-                      // Move back to previous position
-                      rowActions.moveTo($tr, rowIndex);
-                    }
-                  }
+                $tr.closest('tbody').find('tr').each(function() {
+                  sort($(this), action);
                 });
+                $tr.closest('.data-table').dataTable('selectRow', $tr.index());
 
                 return false;
               });
@@ -844,14 +859,8 @@
             stop: function(event, ui) {
               rowActions._std($tr, function() {});
 
-              reorder.moveDrag.action({
-                response: {
-                  success: function(args) {},
-                  error: function(args) {
-                    $tr.closest('tbody').sortable('cancel');
-                    rowActions._std($tr, function() {});
-                  }
-                }
+              $tr.closest('tbody').find('tr').each(function() {
+                sort($(this), reorder.moveDrag);
               });
             }
           });
