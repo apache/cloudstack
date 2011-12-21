@@ -102,6 +102,7 @@ function JsX11KeyboardMapper() {
 	KeyboardMapper.apply(this, arguments);
 	
 	this.jsX11KeysymMap = [];
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] = 0xffe5;
 	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] = 0xff08;
 	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] = 0xff09;
 	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] = 0xff0d;
@@ -237,8 +238,8 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	// trouble-shooting
 	g_logger = new Logger();
 	
-	// g_logger.enable(true);
-	// g_logger.open();
+	//g_logger.enable(true);
+	//g_logger.open();
 	
 	var ajaxViewer = this;
 	this.imageLoaded = false;
