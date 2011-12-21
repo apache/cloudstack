@@ -1460,7 +1460,7 @@
                   return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;                  
                 },
                 title: function(args) {                                 
-                  return "console";  //can't have space in window name in window.open()                
+                  return "console" + args.context.instances[0].id;  //can't have space in window name in window.open()                
                 },
                 width: 820,
                 height: 640
