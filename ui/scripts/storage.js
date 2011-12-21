@@ -1348,17 +1348,15 @@
                   title: 'Create volume',
                   desc: '',
                   fields: {
-                    name: { label: 'Name', validation: { required: true }}
+                    name: { 
+										  label: 'Name', 
+											validation: { 
+											  required: true 
+											}
+										}
                   }
                 },
-                action: function(args) {
-                  /*
-                   var isValid = true;
-                   isValid &= validateString("Name", $thisDialog.find("#create_volume_name"), $thisDialog.find("#create_volume_name_errormsg"));
-                   if (!isValid)
-                   return;
-                   */
-
+                action: function(args) {   
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
 
