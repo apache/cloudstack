@@ -83,7 +83,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
 
         Long param1 = null;
         String sql = null;
-        if (accountId != null && accountId != Account.ACCOUNT_ID_SYSTEM) {
+        if (accountId != null) {
             sql = GET_USAGE_RECORDS_BY_ACCOUNT;
             param1 = accountId;
         } else if (domainId != null) {
