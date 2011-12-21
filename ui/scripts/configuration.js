@@ -605,13 +605,20 @@
           label: 'Disk offerings',
           fields: {
             name: { label: 'Name' },
-            displaytext: { label: 'Description' },
-            disksize: {
-              label: 'Disk Size',
-              converter: function(args) {
-                return args + " GB";
-              }
-            }
+            displaytext: { label: 'Description' },            
+			iscustomized: {
+			  label: 'Custom disk size',
+			  converter: cloudStack.converters.toBooleanText
+			},
+			disksize: {
+			  label: 'Disk Size',
+			  converter: function(args) {					    
+				if(args != 0)
+				  return args + " GB";
+				else
+				  return "N/A";
+			  }
+			}			
           },
           dataProvider: function(args) {
             $.ajax({
@@ -804,13 +811,16 @@
                       isEditable: true
                     },
                     iscustomized: {
-                      label: 'Customized',
+                      label: 'Custom disk size',
                       converter: cloudStack.converters.toBooleanText
                     },
                     disksize: {
                       label: 'Disk Size',
-                      converter: function(args) {
-                        return args + " GB";
+                      converter: function(args) {					    
+						if(args != 0)
+                          return args + " GB";
+						else
+						  return "N/A";
                       }
                     },
                     tags: { label: 'Storage tags' },
