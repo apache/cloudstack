@@ -3235,6 +3235,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vm.getType() != VirtualMachine.Type.User) {
             throw new InvalidParameterValueException("can only do storage migration on user vm");
         }
+        
+        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+        if (vols.size() > 1) {
+        	throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
+        }
 
         HypervisorType destHypervisorType = _clusterDao.findById(destPool.getClusterId()).getHypervisorType();
         if (vm.getHypervisorType() != destHypervisorType) {
