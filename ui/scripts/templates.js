@@ -800,7 +800,7 @@
 
                     domain: { label: 'Domain' },
                     account: { label: 'Account' },
-                    created: { label: 'Created' }
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
@@ -1486,7 +1486,7 @@
 
                     domain: { label: 'Domain' },
                     account: { label: 'Account' },
-                    created: { label: 'Created' }
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 

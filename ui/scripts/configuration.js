@@ -287,7 +287,7 @@
                     tags: { label: 'Storage tags' },
                     hosttags: { label: 'Host tags' },
                     domain: { label: 'Domain' },
-                    created: { label: 'Created' }
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
@@ -583,7 +583,7 @@
                     tags: { label: 'Storage tags' },
                     hosttags: { label: 'Host tags' },
                     domain: { label: 'Domain' },
-                    created: { label: 'Created' }
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 

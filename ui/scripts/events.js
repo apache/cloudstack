@@ -22,7 +22,7 @@
             type: { label: 'Type' },
             description: { label: 'Description' },
             username: { label: 'Initiated By' },
-            created: { label: 'Date' }
+            created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {            
             $.ajax({
@@ -44,7 +44,7 @@
                   {
                     type: { label: 'Type' },
                     description: { label: 'Description' },
-                    created: { label: 'Date' }
+                    created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 dataProvider: function(args) {								  
@@ -61,10 +61,9 @@
         listView: {
           id: 'alerts',
           label: 'Alerts',
-          fields: {
-            type: { label: 'Type' },
+          fields: {            
             description: { label: 'Description' },
-            sent: { label: 'Date' }
+            sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -84,9 +83,9 @@
                 title: 'Details',
                 fields: [
                   {
-                    type: { label: 'Type' },
+                    id: { label: 'ID' },
                     description: { label: 'Description' },
-                    sent: { label: 'Date' }
+                    sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 dataProvider: function(args) {								  

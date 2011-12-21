@@ -1053,7 +1053,7 @@
             volumename: { label: 'Volume' },
             state: { label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' } },
             intervaltype: { label: 'Interval Type' },
-            created: { label: 'Date' }
+            created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
           },
 
           actions: {

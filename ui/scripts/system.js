@@ -2015,7 +2015,7 @@
                             networkdomain: { label: 'Network domain' },
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },
-                            created: { label: 'Created' },
+                            created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
                             isredundantrouter: {
                               label: 'Redundant router',
                               converter: cloudStack.converters.toBooleanText
@@ -4139,7 +4139,7 @@
                               linklocalip: { label: 'Link local IP' },
                               hostname: { label: 'Host' },
                               gateway: { label: 'Gateway' },
-                              created: { label: 'Created' },
+                              created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
                               activeviewersessions: { label: 'Active sessions' }
                             }
                           ],
@@ -5315,7 +5315,7 @@
                     linklocalip: { label: 'Link local IP' },
                     hostname: { label: 'Host' },
                     gateway: { label: 'Gateway' },
-                    created: { label: 'Created' },
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
                     activeviewersessions: { label: 'Active sessions' }
                   }
                 ],
