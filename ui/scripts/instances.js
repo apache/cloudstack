@@ -1105,6 +1105,7 @@
 								cloudStack.dialog.notice({ message: 'Your instance must be stopped before attempting to change its current password' });
 								return false;
 							}
+							return true;
             },
 												
             action: function(args) {
@@ -1174,6 +1175,16 @@
                 }
               }
             },
+												
+						preAction: function(args) {    
+							var jsonObj = args.context.instances[0];							
+							if (jsonObj.state != 'Stopped') {
+							  cloudStack.dialog.notice({ message: 'Your instance must be stopped before attempting to change its current service offering.' });							
+								return false;
+							}               						
+              return true;							
+            },
+												
             action: function(args) {
               $.ajax({
                 url: createURL("changeServiceForVirtualMachine&id=" + args.context.instances[0].id + "&serviceOfferingId=" + args.data.serviceOffering),
