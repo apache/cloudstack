@@ -247,11 +247,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
                 + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
                 + " download " + container + " " + rfilename + " -o " + lFullPath);
-        String result = command.execute();
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
         if (result != null) {
-            String errMsg = "swiftDownload failed , err=" + result;
+            String errMsg = "swiftDownload failed  err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
+        }
+        if (parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            for (String line : lines) {
+                if (line.contains("Errno") || line.contains("failed")) {
+                    String errMsg = "swiftDownload failed , err=" + lines.toString();
+                    s_logger.warn(errMsg);
+                    return errMsg;
+                }
+            }
         }
         return null;
 
@@ -259,10 +270,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     String swiftUpload(SwiftTO swift, String container, String lDir, String lFilename) {
         Script command = new Script("/bin/bash", s_logger);
+        long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
         command.add("-c");
-        command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
-                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
-                + " upload " + container + " " + lFilename);
+        File file = new File(lDir + "/" + lFilename);
+        long size = file.length();
+        if (size <= SWIFT_MAX_SIZE) {
+            command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
+                    + " -K " + swift.getKey() + " upload " + container + " " + lFilename);
+        } else {
+            command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
+                    + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + lFilename);
+        }
+
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -273,7 +292,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (parser.getLines() != null) {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
-                if (line.contains("Errno")) {
+                if (line.contains("Errno") || line.contains("failed")) {
                     String errMsg = "swiftUpload failed , err=" + lines.toString();
                     s_logger.warn(errMsg);
                     return errMsg;
@@ -321,7 +340,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (parser.getLines() != null) {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
-                if (line.contains("Errno")) {
+                if (line.contains("Errno") || line.contains("failed")) {
                     String errMsg = "swiftDelete failed , err=" + lines.toString();
                     s_logger.warn(errMsg);
                     return errMsg;
