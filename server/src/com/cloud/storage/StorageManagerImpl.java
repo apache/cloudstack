@@ -2700,7 +2700,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     					VolumeVO volume = (VolumeVO)volumes.get(i);
     					Long oldPoolId = volume.getPoolId();
     					volume.setPath(answer.getVolumePath());
-    					volume.setFolder(answer.getVolumeFolder());
+    					volume.setFolder(destPool.getPath());
     					volume.setPodId(destPool.getPodId());
     					volume.setPoolId(destPool.getId());
     					volume.setLastPoolId(oldPoolId);
