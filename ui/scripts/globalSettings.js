@@ -19,6 +19,7 @@
               async: true,
               success: function(json) {                
                 var item = json.updateconfigurationresponse.configuration;
+                cloudStack.dialog.notice({ message: 'Please restart your management server for your change to take effect.' });
                 args.response.success({data: item});
               },
               error: function(json) {                
