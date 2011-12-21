@@ -1,8 +1,12 @@
 #!/bin/bash
 
-ifconfig eth2 down && \
-ifconfig eth2 hw ether [ETH2MAC] && \
-ifconfig eth2 [ETH2IP] netmask [ETH2MASK] && \
-ifconfig eth2 up && \
+set -e
+
+ip link|grep BROADCAST|grep -v eth0|grep -v eth1|cut -d ":" -f 2 > /tmp/iflist
+while read i
+do
+    ifconfig $i down
+    ifconfig $i up
+done < /tmp/iflist
 ip route add default via [GATEWAY] dev eth2 && \
 service dnsmasq restart
