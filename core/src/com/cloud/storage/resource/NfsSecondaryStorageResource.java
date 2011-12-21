@@ -272,14 +272,28 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
         command.add("-c");
-        File file = new File(lDir + "/" + lFilename);
-        long size = file.length();
-        if (size <= SWIFT_MAX_SIZE) {
-            command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                    + " -K " + swift.getKey() + " upload " + container + " " + lFilename);
+        List<String> files = new ArrayList<String>();
+        if (lFilename.equals("*")) {
+            File dir = new File(lDir);
+            for (String file : dir.list()) {
+                if (file.startsWith(".")) {
+                    continue;
+                }
+                files.add(file);
+            }
         } else {
-            command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                    + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + lFilename);
+            files.add(lFilename);
+        }
+
+        for (String file : files) {
+            long size = file.length();
+            if (size <= SWIFT_MAX_SIZE) {
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
+                        + " -K " + swift.getKey() + " upload " + container + " " + lFilename);
+            } else {
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
+                        + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + lFilename);
+            }
         }
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
