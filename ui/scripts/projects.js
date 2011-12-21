@@ -614,6 +614,66 @@
               }
             },
 
+            disable: {
+              label: 'Suspend project',
+              action: function(args) {
+                $.ajax({
+                  url: createURL('suspendProject'),
+                  data: {
+                    id: args.context.projects[0].id
+                  },
+                  success: function(json) {
+                    args.response.success({
+                      _custom: {
+                        jobId: json.suspendprojectresponse.jobid,
+                        getUpdatedItem: function() {
+                          return { state: 'Suspended' };
+                        }
+                      }
+                    });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
+                  }
+                });
+              },
+              messages: {
+                confirm: function() { return 'Are you sure you want to suspend this project?'; },
+                notification: function() { return 'Suspended project'; }
+              },
+              notification: { poll: pollAsyncJobResult }
+            },
+
+            enable: {
+              label: 'Activate project',
+              action: function(args) {
+                $.ajax({
+                  url: createURL('activateProject'),
+                  data: {
+                    id: args.context.projects[0].id
+                  },
+                  success: function(json) {
+                    args.response.success({
+                      _custom: {
+                        jobId: json.activaterojectresponse.jobid, // NOTE: typo
+                        getUpdatedItem: function() {
+                          return { state: 'Active' };
+                        }
+                      }
+                    });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
+                  }
+                });
+              },
+              messages: {
+                confirm: function() { return 'Are you sure you want to activate this project?'; },
+                notification: function() { return 'Activated project'; }
+              },
+              notification: { poll: pollAsyncJobResult }
+            },
+
             destroy: {
               label: 'Remove project',
               action: function(args) {
@@ -756,8 +816,16 @@
   };
 
   var projectsActionFilter = function(args) {
+    var allowedActions = ['destroy'];
+    
     if (args.context.item.account == cloudStack.context.users[0].account || args.context.users[0].role == '1') {
-      return ['destroy'];
+      if (args.context.item.state == 'Suspended') {
+        allowedActions.push('enable');
+      } else if (args.context.item.state == 'Active') {
+        allowedActions.push('disable');
+      }
+      
+      return allowedActions;
     }
 
     return [];
