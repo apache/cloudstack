@@ -2115,8 +2115,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
         	Connect conn = LibvirtConnection.getConnection();
         	
+        	List<DiskDef> disks = getDisks(conn, vmName);
         	destroy_network_rules_for_vm(conn, vmName);
             String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
+            if (result == null) {
+            	for (DiskDef disk : disks) {
+            		if (disk.getDeviceType() == DiskDef.deviceType.CDROM && disk.getDiskPath() != null)
+            			cleanupDisk(conn, disk);
+            	}
+            }
             
             final String result2 = cleanupVnet(conn, cmd.getVnet());
            
@@ -2505,30 +2512,56 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	
-	 protected CheckSshAnswer execute(CheckSshCommand cmd) {
-	        String vmName = cmd.getName();
-	        String privateIp = cmd.getIp();
-	        int cmdPort = cmd.getPort();
-	        
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
-	        }
+	protected CheckSshAnswer execute(CheckSshCommand cmd) {
+		String vmName = cmd.getName();
+		String privateIp = cmd.getIp();
+		int cmdPort = cmd.getPort();
 
-	        try {
-	            String result = _virtRouterResource.connect(privateIp, cmdPort);
-	            if (result != null) {
-	                return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
-	            } 
-	        } catch (Exception e) {
-	            return new CheckSshAnswer(cmd, e);
-	        }
-	        
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Ping command port succeeded for vm " + vmName);
-	        }
-	        
-	        return new CheckSshAnswer(cmd);
-	    }
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
+		}
+
+		try {
+			String result = _virtRouterResource.connect(privateIp, cmdPort);
+			if (result != null) {
+				return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
+			} 
+		} catch (Exception e) {
+			return new CheckSshAnswer(cmd, e);
+		}
+
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Ping command port succeeded for vm " + vmName);
+		}
+
+		return new CheckSshAnswer(cmd);
+	}
+	
+	private boolean cleanupDisk(Connect conn, DiskDef disk) {
+		//need to umount secondary storage
+		String path = disk.getDiskPath();
+		String poolUuid = null;
+		if (path != null) {
+			String[] token = path.split("/");
+			if (token.length > 3) {
+				poolUuid = token[2];
+			}
+		}
+		
+		if (poolUuid == null) {
+			return true;
+		}
+
+		try {
+			KVMStoragePool pool = _storagePoolMgr.getStoragePool(poolUuid);
+			if (pool != null) {
+				pool.delete();
+			}
+			return true;
+		} catch (CloudRuntimeException e) {
+			return false;
+		}
+	}
 	
 	protected synchronized String attachOrDetachISO(Connect conn, String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException, InternalErrorException {
 		String isoXml = null;
@@ -2539,7 +2572,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(path);
 			KVMPhysicalDisk  isoVol = secondaryPool.getPhysicalDisk(name);
 			isoPath = isoVol.getPath();
-			
+
 			DiskDef iso = new DiskDef();
 			iso.defISODisk(isoPath);
 			isoXml = iso.toString();
@@ -2548,10 +2581,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			iso.defISODisk(null);
 			isoXml = iso.toString();
 		}
-		
-		return attachOrDetachDevice(conn, true, vmName, isoXml);
+
+		List<DiskDef> disks = getDisks(conn, vmName);
+		String result = attachOrDetachDevice(conn, true, vmName, isoXml);
+		if (result == null && !isAttach) {
+			for (DiskDef disk : disks) {
+				if (disk.getDeviceType() == DiskDef.deviceType.CDROM) {
+					cleanupDisk(conn, disk);
+				}
+			}
+			
+		}
+		return result;
 	}
-	
+
 	protected synchronized String attachOrDetachDisk(Connect conn, boolean attach, String vmName, KVMPhysicalDisk attachingDisk, int devId) throws LibvirtException, InternalErrorException {
 		List<DiskDef> disks = null;
 		Domain dm = null;
@@ -3339,6 +3382,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	} catch (Exception e) {
     		s_logger.debug("Failed to get dom xml: " + e.toString());
     		return new ArrayList<InterfaceDef>();
+    	} finally {
+    		try {
+    		if (dm != null) {
+    			dm.free();
+    		}
+    		} catch (LibvirtException e) {
+    			
+    		}
+    	}
+    }
+    
+    protected List<DiskDef> getDisks(Connect conn, String vmName) {
+    	LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+    	Domain dm = null;
+    	try {
+    		dm =  conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
+    		parser.parseDomainXML(dm.getXMLDesc(0));
+    	    return parser.getDisks();
+
+    	} catch (LibvirtException e) {
+    		s_logger.debug("Failed to get dom xml: " + e.toString());
+    		return new ArrayList<DiskDef>();
+    	} catch (Exception e) {
+    		s_logger.debug("Failed to get dom xml: " + e.toString());
+    		return new ArrayList<DiskDef>();
     	} finally {
     		try {
     		if (dm != null) {
