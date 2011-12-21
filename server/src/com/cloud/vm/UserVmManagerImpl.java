@@ -3361,6 +3361,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
         }
         
+        // make sure the accounts are under same domain
+        if (oldAccount.getDomainId() != newAccount.getDomainId()){
+        	 throw new InvalidParameterValueException("The account should be under smae domain for moving VM between two accounts. Old owner domain =" + oldAccount.getDomainId() +
+        			 " New owner domain=" + newAccount.getDomainId());
+        }
+        
         // don't allow to move the vm if there are existing PF/LB/Static Nat rules, existing Security groups or vm is assigned to static Nat ip
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(cmd.getVmId());
         if (ip != null){
@@ -3441,8 +3447,67 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // OS 3: update the network
         List<Long> networkIdList = cmd.getNetworkIds();
+        List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
+        
         if (zone.getNetworkType() == NetworkType.Basic) {
+        	//cleanup the old security groups
+            _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
         	//security groups will be recreated for the new account, when the VM is started
+            List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+
+            // Get default guest network in Basic zone
+            Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone.getId());
+
+            if (defaultNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
+            } else {
+                networkList.add(_networkDao.findById(defaultNetwork.getId()));
+            }
+
+            boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
+
+            if (securityGroupIdList != null && isVmWare) {
+                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkMgr.canAddDefaultSecurityGroup()) {
+                if (securityGroupIdList == null) {
+                    securityGroupIdList = new ArrayList<Long>();
+                }
+                SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(newAccount.getId());
+                if (defaultGroup != null) {
+                    //check if security group id list already contains Default security group, and if not - add it
+                    boolean defaultGroupPresent = false;
+                    for (Long securityGroupId : securityGroupIdList) {
+                        if (securityGroupId.longValue() == defaultGroup.getId()) {
+                            defaultGroupPresent = true;
+                            break;
+                        }
+                    }
+
+                    if (!defaultGroupPresent) {
+                        securityGroupIdList.add(defaultGroup.getId());
+                    }
+
+                } else {
+                    //create default security group for the account
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Couldn't find default security group for the account " + newAccount + " so creating a new one");
+                    }
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, newAccount.getDomainId(), newAccount.getId(), newAccount.getAccountName());
+                    securityGroupIdList.add(defaultGroup.getId());
+                }
+            }
+            
+
+            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+            NicProfile profile = new NicProfile();
+            profile.setDefaultNic(true);
+            networks.add(new Pair<NetworkVO, NicProfile>(networkList.get(0), profile));
+           
+            VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+            VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
+            _networkMgr.allocate(vmProfile, networks);
+
+            _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
         } else {
             if (zone.isSecurityGroupEnabled())  {
             	throw new InvalidParameterValueException("not yet tested for SecurityGroupEnabled advanced networks.");

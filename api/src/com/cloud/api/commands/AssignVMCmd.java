@@ -52,17 +52,20 @@ public class AssignVMCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the vm ID of the user VM to be moved")
     private Long virtualMachineId;
     
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
     
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     //Network information
     @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids that will be part of VM network after move")
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids that will be part of VM network after move in advanced network setting.")
     private List<Long> networkIds;
 
+    @IdentityMapper(entityTableName="security_group")
+    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is moved in a zone with Basic Network support.")
+    private List<Long> securityGroupIdList;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,6 +86,11 @@ public class AssignVMCmd extends BaseCmd  {
 	public List<Long> getNetworkIds() {
 		return networkIds;
 	}
+
+	public List<Long> getSecurityGroupIdList() {
+		return securityGroupIdList;
+	}
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
