@@ -3440,6 +3440,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
         
+        //don't allow to update network in Destroy state
+        if (network.getState() == Network.State.Destroy) {
+        	throw new InvalidParameterValueException("Don't allow to update network in state " + Network.State.Destroy);
+        }
+        
         // Don't allow to update system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
@@ -3516,18 +3521,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             restartNetwork = true;
         }
 
-        //1) Shutdown all the elements and cleanup all the rules
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
-        if (restartNetwork) {
-            s_logger.debug("Shutting down elements and resources for network id=" + networkId + " as a part of network update");
+        //1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate states - Shutdown and Implementing
+        boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
+    	if (restartNetwork) {
+    		if (validStateToShutdown) {
+    			s_logger.debug("Shutting down elements and resources for network id=" + networkId + " as a part of network update");
 
-            if (!shutdownNetworkElementsAndResources(context, true, network)) {
-                s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
-                throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
-            }
+                if (!shutdownNetworkElementsAndResources(context, true, network)) {
+                    s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network);
+                    throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network update: " + network);
+                }	
+    		} else {
+                throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network update: " + network + "; network is in wrong state: " + network.getState());
+            }   
         }
 
         //2) Only after all the elements and rules are shutdown properly, update the network VO
+    	//get updated network
+        network = _networksDao.findById(networkId);
+    	boolean validStateToImplement = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
+    	if (restartNetwork && !validStateToImplement) {
+            throw new CloudRuntimeException("Failed to implement the network elements and resources as a part of network update: " + network + "; network is in wrong state: " + network.getState());
+    	}
+    	
         if (networkOfferingId != null) {
             network.setNetworkOfferingId(networkOfferingId);
             _networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
@@ -3535,20 +3552,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _networksDao.update(networkId, network); 
         }
 
-        //get updated network
-        network = _networksDao.findById(networkId);
-
         //3) Implement the elements and rules again
         if (restartNetwork) {
-            DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
-
-            s_logger.debug("Implementing the network " + network + " elements and resources as a part of network update");        
-            try {
-                implementNetworkElementsAndResources(dest, context, network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
-            } catch (Exception ex) {
-                s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
-                throw new CloudRuntimeException("Failed to implement network " + network + " elements and resources as a part of network update");
-            }
+    		if (network.getState() != Network.State.Allocated) {
+    			DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+                s_logger.debug("Implementing the network " + network + " elements and resources as a part of network update");        
+                try {
+                    implementNetworkElementsAndResources(dest, context, network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
+                    throw new CloudRuntimeException("Failed to implement network " + network + " elements and resources as a part of network update");
+                }
+    		}
         }
 
         return getNetwork(network.getId());
