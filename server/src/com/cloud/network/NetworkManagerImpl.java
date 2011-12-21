@@ -2956,7 +2956,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if(element != null){
             Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
 
-            if (elementCapabilities == null || elementCapabilities.get(service) == null) {
+            if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
                 throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + provider);
             }
             serviceCapabilities = elementCapabilities.get(service);
@@ -2988,7 +2988,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if(element != null){
             Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
 
-            if (elementCapabilities == null || elementCapabilities.get(service) == null) {
+            if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
                 throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + provider);
             }
             serviceCapabilities = elementCapabilities.get(service);
