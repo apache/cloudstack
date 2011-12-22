@@ -4438,7 +4438,7 @@ label.error {
   float: left;
   display: block;
   clear: both;
-  margin: 0 0 0 58px;
+  margin: 12px 0 0 58px;
   /*+placement:shift 0px -6px;*/
   position: relative;
   left: 0px;
@@ -4454,6 +4454,10 @@ label.error {
   font-size: 11px;
   margin-right: 9px;
   margin-left: 2px;
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
 }
 
 .multi-wizard.instance-wizard .select-iso .wizard-step-conditional.select-iso .content .select.selected {
@@ -4474,6 +4478,10 @@ label.error {
   overflow: hidden;
   display: inline-block;
   z-index: 10;
+}
+
+.multi-wizard .select-iso .ui-tabs ul {
+  left: -148px;
 }
 
 .multi-wizard .ui-tabs ul li.first a {
