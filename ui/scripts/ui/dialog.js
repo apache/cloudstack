@@ -259,8 +259,7 @@
 
       var getFormValues = function() {
         var formValues = {};
-        $.each(args.form.fields, function(key) {
-        });
+        $.each(args.form.fields, function(key) {});
       };
 
       // Setup form validation
@@ -277,7 +276,7 @@
 
         if (!$formContainer.find('form').valid()) {
           // Ignore hidden field validation
-          if ($formContainer.find('input.error:visible').size()) {
+          if ($formContainer.find('input.error:visible, select.error:visible').size()) {
             return false;
           }
         }
