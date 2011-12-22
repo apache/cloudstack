@@ -230,7 +230,11 @@
     return this;
   };
 
-  // Events
+  // Setup notification listener -- accepts same args as
+  $(window).bind('cloudStack.addNotification', function(event, data) {
+    $('.notifications').notifications('add', data);
+  });
+
   $(document).click(function(event) {
     var $target = $(event.target);
     var $attachTo, $popup;
