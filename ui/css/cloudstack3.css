@@ -4481,7 +4481,9 @@ label.error {
 }
 
 .multi-wizard .select-iso .ui-tabs ul {
-  left: -148px;
+  float: left;
+  left: 0px;
+  top: 1px;
 }
 
 .multi-wizard .ui-tabs ul li.first a {
