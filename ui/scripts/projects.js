@@ -379,17 +379,12 @@
         }
       },
       actionPreFilter: function(args) {
-        if (!cloudStack.context.projects) { // This is for the new project wizard
+        if (!cloudStack.context.projects &&
+            args.context.multiRule[0].role != 'Admin') { // This is for the new project wizard
           return ['destroy'];
         }
 
-        var project = cloudStack.context.projects[0];
-        var projectOwner = project.account;
-        var rowAccount = args.context.multiRule[0].account;
-        var userAccount = cloudStack.context.users[0].account;
-        var isEditableRow = rowAccount != projectOwner && userAccount == projectOwner;
-
-        if (isEditableRow) {
+        if (args.context.multiRule[0].role != 'Admin') {
           return args.context.actions;
         }
 
