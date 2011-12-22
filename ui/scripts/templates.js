@@ -369,7 +369,7 @@
                 notification: function(args) {
                   return 'Downloading template';
                 },
-                complete: function(args) {
+                complete: function(args) {								  
                   var url = decodeURIComponent(args.url);
                   var htmlMsg = 'Please click <a href="#">00000</a> to download template';
                   var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
@@ -390,8 +390,8 @@
                     args.response.success(
                       {_custom:
                        {jobId: jid,
-                        getUpdatedItem: function(json) {
-                          return json.queryasyncjobresultresponse.jobresult.iso;
+                        getUpdatedItem: function(json) {												  
+                          return json.queryasyncjobresultresponse.jobresult.template;
                         },
                         getActionFilter: function() {
                           return templateActionfilter;
