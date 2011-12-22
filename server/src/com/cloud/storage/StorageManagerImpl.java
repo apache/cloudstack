@@ -134,6 +134,7 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -234,6 +235,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected VMTemplateHostDao _vmTemplateHostDao = null;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
+    @Inject
+    protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject
@@ -2514,14 +2517,20 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         sc.setParameters("id", template.getId());
         sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         sc.setJoinParameters("host", "dcId", vm.getDataCenterIdToDeployIn());
-
-        List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
-        if (sss.size() == 0) {
-            throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterIdToDeployIn());
+        List<VMTemplateSwiftVO> tsvs = _vmTemplateSwiftDao.listByTemplateId(template.getId());
+        Long size = null;
+        if (tsvs != null && tsvs.size() > 0) {
+            size = tsvs.get(0).getSize();
         }
-        VMTemplateHostVO ss = sss.get(0);
+        if (size == null) {
+            List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
+            if (sss == null || sss.size() == 0) {
+                throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterIdToDeployIn());
+            }
+            size = sss.get(0).getSize();
+        }
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), ss.getSize());
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
