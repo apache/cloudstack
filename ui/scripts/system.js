@@ -3386,6 +3386,7 @@
                       key: args.data.key
                     },
                     success: function(json) {
+										  havingSwift = true;
                       args.response.success();
                     },
                     error: function(json) {

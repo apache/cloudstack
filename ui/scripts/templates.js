@@ -1518,7 +1518,7 @@
     else {      
       allowedActions.push("edit");   
 						
-			if(jsonObj.zoneid != null || jsonObj.zoneid != "-1")
+			if(havingSwift == false)
         allowedActions.push("copyTemplate");   
       
       //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.   
@@ -1560,7 +1560,7 @@
     else {      
       allowedActions.push("edit");   
 			
-      if(jsonObj.zoneid != null || jsonObj.zoneid != "-1")			
+      if(havingSwift == false)		
         allowedActions.push("copyISO");      
     }
 

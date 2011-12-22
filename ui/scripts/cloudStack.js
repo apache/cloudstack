@@ -234,6 +234,17 @@
                 args.response.error();
               }
             });
+											
+						$.ajax({
+						  url: createURL("listSwift"),
+							dataType: "json",
+							async: false,
+							success: function(json) {							  
+								var items = json.ListSwiftresponse.swift;
+								if(items != null && items.length > 0) 
+								  havingSwift = true;								
+							}
+						});					
 
             // Get project configuration
             // TEMPORARY -- replace w/ output of capability response, etc., once implemented

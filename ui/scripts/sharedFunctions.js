@@ -29,6 +29,7 @@ var md5HashedLogin = false;
 var pageSize = 20;
 
 var rootAccountId = 1;
+var havingSwift = false;
 
 //async action
 var pollAsyncJobResult = function(args) {
