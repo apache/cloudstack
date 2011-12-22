@@ -430,7 +430,7 @@
         id: 'add-guest-network',
         stateID: 'guestNetwork',
         tooltipID: 'addGuestNetwork',
-        diagram: '.part.zone',
+        diagram: '.part.zone, .part.pod',
         prevStepID: 'addPod',
         nextStepID: 'addClusterIntro',
         form: {
