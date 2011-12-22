@@ -24,12 +24,16 @@
 
 package com.cloud.storage.swift;
 
+import java.util.List;
+
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
+import com.cloud.api.commands.ListSwiftCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
+import com.cloud.storage.SwiftVO;
 import com.cloud.utils.component.Manager;
 public interface SwiftManager extends Manager {
 
@@ -52,4 +56,6 @@ public interface SwiftManager extends Manager {
     void propagateSwiftTmplteOnZone(Long zoneId);
 
     Long chooseZoneForTmpltExtract(Long tmpltId);
+
+    List<SwiftVO> listSwift(ListSwiftCmd cmd);
 }

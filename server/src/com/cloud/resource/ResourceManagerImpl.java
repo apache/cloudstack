@@ -54,6 +54,7 @@ import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
+import com.cloud.api.commands.ListSwiftCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
@@ -107,6 +108,7 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.Swift;
+import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -513,6 +515,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Override
     public Swift discoverSwift(AddSwiftCmd cmd) throws DiscoveryException {
         return _swiftMgr.addSwift(cmd);
+    }
+
+    @Override
+    public List<SwiftVO> listSwift(ListSwiftCmd cmd) {
+        return _swiftMgr.listSwift(cmd);
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
