@@ -301,6 +301,7 @@
         });
 
         $advanced.click(function() {
+          $('html body').removeClass('install-wizard');
           complete();
 
           return false;
@@ -718,6 +719,8 @@
               .html('You may now continue.');
         var $continue = elems.nextButton('Launch');
 
+        $('html body').removeClass('install-wizard');
+
         showDiagram('');
 
         $continue.click(function() {
@@ -734,6 +737,7 @@
 
     var initialStep = steps.intro().addClass('step');
     showDiagram('');
+    $('html body').addClass('install-wizard');
 
     $installWizard.append(
       elems.header(),

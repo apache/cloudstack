@@ -29,7 +29,14 @@ body {
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
-  background: url(../images/bg-login.png);
+  background: #FFFFFF;
+}
+
+body.install-wizard {
+  font-family: sans-serif;
+  height: 769px !important;
+  overflow: auto;
+  background: #FFFFFF url(../images/bg-login.png);
 }
 
 #container {
