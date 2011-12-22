@@ -1011,6 +1011,7 @@
                 fields: {
                   destinationZoneId: {
                     label: 'Destination zone',
+										validation: { required: true },
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -1262,6 +1263,7 @@
                   fields: {
                     destinationZoneId: {
                       label: 'Destination zone',
+											validation: { required: true },
                       select: function(args) {
                         $.ajax({
                           url: createURL("listZones&available=true"),
