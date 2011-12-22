@@ -269,9 +269,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     String swiftUpload(SwiftTO swift, String container, String lDir, String lFilename) {
-        Script command = new Script("/bin/bash", s_logger);
         long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
-        command.add("-c");
         List<String> files = new ArrayList<String>();
         if (lFilename.equals("*")) {
             File dir = new File(lDir);
@@ -286,33 +284,36 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         for (String file : files) {
-            long size = file.length();
+            File f = new File(lDir + "/" + file);
+            long size = f.length();
+            Script command = new Script("/bin/bash", s_logger);
+            command.add("-c");
             if (size <= SWIFT_MAX_SIZE) {
                 command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                        + " -K " + swift.getKey() + " upload " + container + " " + lFilename);
+                        + " -K " + swift.getKey() + " upload " + container + " " + file);
             } else {
                 command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                        + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + lFilename);
+                        + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + file);
             }
-        }
-
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        String result = command.execute(parser);
-        if (result != null) {
-            String errMsg = "swiftUpload failed , err=" + result;
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        if (parser.getLines() != null) {
-            String[] lines = parser.getLines().split("\\n");
-            for (String line : lines) {
-                if (line.contains("Errno") || line.contains("failed")) {
-                    String errMsg = "swiftUpload failed , err=" + lines.toString();
-                    s_logger.warn(errMsg);
-                    return errMsg;
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            String result = command.execute(parser);
+            if (result != null) {
+                String errMsg = "swiftUpload failed , err=" + result;
+                s_logger.warn(errMsg);
+                return errMsg;
+            }
+            if (parser.getLines() != null) {
+                String[] lines = parser.getLines().split("\\n");
+                for (String line : lines) {
+                    if (line.contains("Errno") || line.contains("failed")) {
+                        String errMsg = "swiftUpload failed , err=" + lines.toString();
+                        s_logger.warn(errMsg);
+                        return errMsg;
+                    }
                 }
             }
         }
+
         return null;
     }
 
