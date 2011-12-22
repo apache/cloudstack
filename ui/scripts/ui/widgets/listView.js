@@ -2,53 +2,6 @@
  * Create dynamic list view based on data callbacks
  */
 (function($, cloudStack) {
-  /**
-   * Add 'pending' notification
-   */
-  var addNotification = function(notification, success, successArgs, error, errorArgs) {
-    if (!notification) {
-      success(successArgs);
-
-      return false;
-    };
-
-    var $notifications = $('div.notifications');
-
-    if (!notification.poll) {
-      $notifications.notifications('add', {
-        section: notification.section,
-        desc: notification.desc,
-        interval: 0,
-        poll: function(args) { success(successArgs); args.complete(); }
-      });
-    } else {
-      $notifications.notifications('add', {
-        section: notification.section,
-        desc: notification.desc,
-        interval: 5000,
-        _custom: notification._custom,
-        poll: function(args) {
-          var complete = args.complete;
-          var notificationError = args.error;
-
-          notification.poll({
-            _custom: args._custom,
-            complete: function(args) {
-              success($.extend(successArgs, args));
-              complete(args);
-            },
-            error: function(args) {
-              error($.extend(errorArgs, args));
-              notificationError(args);
-            }
-          });
-        }
-      });
-    }
-
-    return true;
-  };
-
   var uiActions = {
     standard: function($instanceRow, args, additional) {
       var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
@@ -110,7 +63,7 @@
               notification.desc = messages.notification(args.messageArgs);
               notification._custom = args._custom;
 
-              addNotification(
+              cloudStack.ui.notifications.add(
                 notification,
                 function(args) {
                   if ($item.is(':visible')) {
@@ -174,7 +127,7 @@
 
                 if (additional && additional.success) additional.success(args);
 
-                addNotification(
+                cloudStack.ui.notifications.add(
                   notification,
 
                   // Success
@@ -428,15 +381,14 @@
         var newName = $editInput.val();
         showLabel(newName, {
           success: function() {
-            addNotification(
+            cloudStack.ui.notifications.add(
               {
                 section: $instanceRow.closest('div.view').data('view-args').id,
-                desc: newName ? 'Set value of ' + $instanceRow.find('td.name span').html() + ' to ' + newName :
+                desc: newName ?
+                  'Set value of ' + $instanceRow.find('td.name span').html() + ' to ' + newName :
                   'Unset value for ' + $instanceRow.find('td.name span').html()
               },
-              function(args) {
-
-              },
+              function(args) {},
               [{ name: newName }]
             );
           }

@@ -34,6 +34,11 @@
 
         return false;
       };
+    },
+
+    // Trigger CloudStack UI event (cloudStack.*)
+    call: function(eventName, data) {
+      $(window).trigger('cloudStack.' + eventName, data);
     }
   };
 })(jQuery, cloudStack);
