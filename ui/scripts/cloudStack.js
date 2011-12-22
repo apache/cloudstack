@@ -23,9 +23,9 @@
       storage: {},
       network: {},
       templates: {},
+      events: {},
       accounts: {},
       domains: {},
-      events: {},
       system: {},
       projects: {},
       'global-settings': {},
@@ -92,9 +92,9 @@
           dataType: "json",
           async: false,
           success: function(json) {
-            /* g_supportELB: "guest"   à¥†à¤†ˆ€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+            /* g_supportELB: "guest"   à¥†à¤††à¥†à¤…†ˆ€” ips are allocated on guest network (so use 'forvirtualnetwork' = false)
              * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-             * g_supportELB: "false"   à¥†à¤†ˆ€“ no ELB support
+             * g_supportELB: "false"   à¥†à¤††à¥†à¤…†ˆ€“ no ELB support
              */
             g_capabilities = json.listcapabilitiesresponse.capability;
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean

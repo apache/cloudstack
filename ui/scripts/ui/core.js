@@ -123,7 +123,18 @@
               var $target = $(event.target);
               var $projectSwitcher = $(this);
               var $container = $('html body');
-              var $navDisabled = $('#navigation li.projects, #navigation li.system');
+              var $navDisabled = $(
+                $.map([
+                  'projects',
+                  'accounts',
+                  'domains',
+                  'system',
+                  'global-settings',
+                  'configuration'
+                ], function(id) {
+                  return '#navigation li.' + id;
+                }).join(',')
+              );
 
               if ($target.closest('.select.project-view').size()) {
                 $('#cloudStack3-container').addClass('project-view');
@@ -132,14 +143,12 @@
                   .siblings().removeClass('active');
 
                 // Activate project view
-                $navDisabled.addClass('disabled').attr({
-                  title: 'Projects and system resources can only be edited outside of project view.'
-                });
+                $navDisabled.hide();
                 cloudStack.uiCustom.projects({
                   $projectSelect: $projectSelect.hide().find('select')
                 });
               } else {
-                $navDisabled.removeClass('disabled').attr('title', '');
+                $navDisabled.show();
                 $('#cloudStack3-container').removeClass('project-view');
                 $projectSwitcher.removeClass('alt');
                 $projectSelect.hide();
