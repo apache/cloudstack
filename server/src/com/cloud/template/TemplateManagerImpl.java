@@ -330,6 +330,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
         }
         
+        if (zoneId == null) {
+            zoneId = _swiftMgr.chooseZoneForTmpltExtract(templateId);
+        }
+
         if (_dcDao.findById(zoneId) == null) {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }

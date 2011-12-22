@@ -50,4 +50,6 @@ public interface SwiftManager extends Manager {
     void propagateTemplateOnAllZones(Long tmpltId);
 
     void propagateSwiftTmplteOnZone(Long zoneId);
+
+    Long chooseZoneForTmpltExtract(Long tmpltId);
 }

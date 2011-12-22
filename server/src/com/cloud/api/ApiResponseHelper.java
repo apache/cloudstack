@@ -2167,8 +2167,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("template");
         response.setId(id);
         response.setName(ApiDBUtils.findTemplateById(id).getName());
-        response.setZoneId(zoneId);
-        response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+        if (zoneId != null) {
+            response.setZoneId(zoneId);
+            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+        }
         response.setMode(mode);
         response.setUploadId(uploadId);
         response.setState(uploadInfo.getUploadState().toString());

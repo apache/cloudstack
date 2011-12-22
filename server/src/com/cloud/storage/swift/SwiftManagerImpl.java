@@ -25,6 +25,7 @@
 package com.cloud.storage.swift;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +47,14 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.SwiftVO;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.SwiftDao;
+import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.utils.component.Inject;
@@ -76,9 +81,13 @@ public class SwiftManagerImpl implements SwiftManager {
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    DataCenterDao _dcDao;
+    private DataCenterDao _dcDao;
     @Inject
-    VMTemplateZoneDao _vmTmpltZoneDao;
+    private VMTemplateZoneDao _vmTmpltZoneDao;
+    @Inject
+    private VMTemplateHostDao _vmTmpltHostDao;
+    @Inject
+    private HostDao _hostDao;
 
     @Override
     public SwiftTO getSwiftTO(Long swiftId) {
@@ -230,6 +239,29 @@ public class SwiftManagerImpl implements SwiftManager {
                 }
             }
         }
+    }
+
+    @Override
+    public Long chooseZoneForTmpltExtract(Long tmpltId) {
+        SwiftTO swift = getSwiftTO();
+        if (swift == null) {
+            return null;
+        }
+        
+        List<VMTemplateHostVO> tmpltHosts = _vmTmpltHostDao.listByOnlyTemplateId(tmpltId);
+        if (tmpltHosts != null) {
+            Collections.shuffle(tmpltHosts);
+            for (VMTemplateHostVO tHost : tmpltHosts) {
+                HostVO host = _hostDao.findById(tHost.getHostId());
+                if (host != null) {
+                    return host.getDataCenterId();
+                }
+                throw new CloudRuntimeException("can not find secondary storage host");
+            }
+        }
+        List<DataCenterVO> dcs = _dcDao.listAll();
+        Collections.shuffle(dcs);
+        return dcs.get(0).getId();
     }
 
 
