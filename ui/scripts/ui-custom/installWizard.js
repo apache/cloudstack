@@ -13,6 +13,7 @@
      */
     var complete = function() {
       $installWizard.remove();
+      $('html body').removeClass('install-wizard');
 
       args.complete();
     };
@@ -301,7 +302,6 @@
         });
 
         $advanced.click(function() {
-          $('html body').removeClass('install-wizard');
           complete();
 
           return false;
@@ -718,8 +718,6 @@
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html('You may now continue.');
         var $continue = elems.nextButton('Launch');
-
-        $('html body').removeClass('install-wizard');
 
         showDiagram('');
 
