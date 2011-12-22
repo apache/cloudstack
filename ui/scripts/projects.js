@@ -154,7 +154,7 @@
             url: createURL('listLoadBalancerRules'),
             success: function(json) {
               dataFns.portForwardingRules($.extend(data, {
-                totalLoadBalancers: json.listloadbalancerrulesresponse ?
+                totalLoadBalancers: json.listloadbalancerrulesresponse.count ?
                   json.listloadbalancerrulesresponse.count : 0
               }));
             }
@@ -166,7 +166,7 @@
             url: createURL('listPortForwardingRules'),
             success: function(json) {
               dataFns.users($.extend(data, {
-                totalPortForwards: json.listportforwardingrulesresponse ?
+                totalPortForwards: json.listportforwardingrulesresponse.count ?
                   json.listportforwardingrulesresponse.count : 0
               }));
             }
