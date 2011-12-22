@@ -31,9 +31,7 @@ if [ $ret -ne 0 ]
 then
     echo Fail to switch conntrackd mode, but try to continue working >> [RROUTER_LOG]
 fi
-ping -n -c 3 [GATEWAY] >> [RROUTER_LOG] 2>&1 &
-sleep 3
-pkill ping
+[RROUTER_BIN_PATH]/arping_gateways.sh
 echo Status: MASTER >> [RROUTER_LOG]
 
 releaseLockFile $lock $locked
