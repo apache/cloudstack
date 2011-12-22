@@ -1648,7 +1648,6 @@
         allowedActions.push("detachISO");      
 
       allowedActions.push("resetPassword");
-      allowedActions.push("changeService");
 
       if(jsonObj.hypervisor == "BareMetal") {
         allowedActions.push("createTemplate");
