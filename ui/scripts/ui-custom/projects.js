@@ -4,7 +4,7 @@
      * User management multi-edit
      */
     userManagement: function(args) {
-      var multiEdit = !args.useInvites ? 
+      var multiEdit = !args.useInvites ?
             cloudStack.projects.addUserForm :
             cloudStack.projects.inviteForm;
 
@@ -62,7 +62,7 @@
                         } else {
                           $item.hide().html(value).fadeIn();
                         }
-                      }); 
+                      });
                     }
                   });
                 }
@@ -94,14 +94,14 @@
         if (g_capabilities.projectinviterequired) {
           tabs.invitations = function() {
             return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
-          };          
+          };
         }
 
         tabs.resources = function() {
           var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
           var $form = $('<form>');
           var $submit = $('<input>').attr({
-            type: 'submit'            
+            type: 'submit'
           }).val('Apply');
 
           cloudStack.projects.resourceManagement.dataProvider({
@@ -118,7 +118,7 @@
                     name: resource.type,
                     value: resource.value
                   }).addClass('required');
-                  
+
                   $field.append($label, $input);
                   $field.appendTo($form);
                 });
@@ -147,7 +147,7 @@
                       }
                     }
                   });
-                  
+
                   return false;
                 });
 
@@ -156,7 +156,7 @@
               }
             }
           });
-          
+
           return $resources;
         };
       }
@@ -167,14 +167,15 @@
       // Make UI tabs
       $.each(tabs, function(tabName, tab) {
         var $tab = $('<li>').appendTo($tabs.find('ul:first'));
+        var $tabContent = tab();
         var $tabLink = $('<a>')
               .attr({ href: '#project-view-dashboard-' + tabName })
-              .html(tab().data('tab-title'))
+              .html($tabContent.data('tab-title'))
               .appendTo($tab);
         var $content = $('<div>')
               .appendTo($tabs)
               .attr({ id: 'project-view-dashboard-' + tabName })
-              .append(tab);
+              .append($tabContent);
       });
 
       $tabs.find('ul li:first').addClass('first');
@@ -252,7 +253,7 @@
               var project = args.data;
 
               $(window).trigger('cloudStack.fullRefresh');
-              
+
               $loading.remove();
 
               // Confirmation
@@ -346,7 +347,7 @@
                                     var $instanceRow = args.$instanceRow;
 
                                     $instanceRow.animate({ opacity: 0.5 });
-                                    
+
                                     cloudStack.projects.addUserForm.actions.destroy.action({
                                       context: $.extend(true, {}, cloudStack.context, {
                                         projects: [project],
