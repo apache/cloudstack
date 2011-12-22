@@ -379,7 +379,7 @@
         tooltipID: 'addZone',
         diagram: '.part.zone',
         prevStepID: 'addZoneIntro',
-        nextStepID: 'addPod',
+        nextStepID: 'addPodIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
           dns1: { label: 'DNS 1', validation: { required: true } },
