@@ -142,7 +142,7 @@
             url: createURL('listPublicIpAddresses'),
             success: function(json) {
               dataFns.loadBalancingRules($.extend(data, {
-                totalIPAddresses: json.listpublicipaddressesresponse ?
+                totalIPAddresses: json.listpublicipaddressesresponse.count ?
                   json.listpublicipaddressesresponse.count : 0
               }));
             }
