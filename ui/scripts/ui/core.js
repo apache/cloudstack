@@ -123,6 +123,7 @@
               var $target = $(event.target);
               var $projectSwitcher = $(this);
               var $container = $('html body');
+              var $navDisabled = $('#navigation li.projects, #navigation li.system');
 
               if ($target.closest('.select.project-view').size()) {
                 $('#cloudStack3-container').addClass('project-view');
@@ -131,14 +132,14 @@
                   .siblings().removeClass('active');
 
                 // Activate project view
-                $('#navigation li.projects').addClass('disabled').attr({
-                  title: 'Projects can only be edited outside of project view.'
+                $navDisabled.addClass('disabled').attr({
+                  title: 'Projects and system resources can only be edited outside of project view.'
                 });
                 cloudStack.uiCustom.projects({
                   $projectSelect: $projectSelect.hide().find('select')
                 });
               } else {
-                $('#navigation li.projects').removeClass('disabled').attr('title', '');
+                $navDisabled.removeClass('disabled').attr('title', '');
                 $('#cloudStack3-container').removeClass('project-view');
                 $projectSwitcher.removeClass('alt');
                 $projectSelect.hide();
