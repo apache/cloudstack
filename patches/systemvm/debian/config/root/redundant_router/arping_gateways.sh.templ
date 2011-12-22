@@ -1,0 +1,10 @@
+ip link|grep BROADCAST|grep -v eth0|grep -v eth1|cut -d ":" -f 2 > /tmp/iflist
+while read i
+do
+    ip addr show $i|grep "inet " > /tmp/iplist_$i
+    while read line
+    do
+        ip=`echo $line|cut -d " " -f 2|cut -d "/" -f 1`
+        arping -I $i -A $ip -c 2 >> [RROUTER_LOG] 2>&1
+    done < /tmp/iplist_$i
+done < /tmp/iflist
