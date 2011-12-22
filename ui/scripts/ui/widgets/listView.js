@@ -186,8 +186,8 @@
                 );
               },
               error: function(message) {
-                if ($.isPlainObject(args.action.createForm)
-                    && args.action.addRow != 'false') {
+                if (($.isPlainObject(args.action.createForm) && args.action.addRow != 'false') ||
+                    (!args.action.createForm && args.action.addRow == 'true')) {
                   $instanceRow.remove();                  
                 }
 
