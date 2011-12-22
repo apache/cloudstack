@@ -430,8 +430,6 @@ def default_ebtables_rules():
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv6', '-j', 'DROP'])
         # deny vlan
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', '802_1Q', '-j', 'DROP'])
-        # deny all other 802. frames
-        util.pread2(['ebtables', '-A', 'FORWARD', '-j', 'DROP'])
     except:
         util.SMlog('Chain DEFAULT_EBTABLES already exists')
 
