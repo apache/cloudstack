@@ -391,9 +391,16 @@
                           $('.ui-dialog, .overlay').remove();
                         });
 
+                        $laterButton.click(function() {
+                          $(':ui-dialog, .overlay').remove();
+
+                          return false;
+                        });
+
                         return $review;
                       });
                     });
+                    $laterButton.html('Close').appendTo($userManagement);
 
                     return $userManagement;
                   });
