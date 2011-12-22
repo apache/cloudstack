@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $mountpoint $localmp
+mount -o tcp,soft,timeo=133,retrans=1 $mountpoint $localmp
 if [ $? -ne 0 ]; then
   echo "6#can't mount $mountpoint to $localmp"
   exit 0
