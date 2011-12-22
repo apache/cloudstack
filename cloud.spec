@@ -24,10 +24,6 @@ BuildRoot: %{_tmppath}/%{name}-%{_ver}-%{release}-build
 BuildRequires: java-1.6.0-openjdk-devel
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
-#BuildRequires: commons-codec
-#BuildRequires: commons-dbcp
-#BuildRequires: commons-collections
-BuildRequires: commons-httpclient
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
@@ -148,7 +144,6 @@ Requires: %{name}-python = %{version}
 # Requires: %{name}-agent
 Requires: tomcat6
 Requires: ws-commons-util
-#Requires: commons-codec
 Requires: jpackage-utils
 Requires: sudo
 Requires: /sbin/service
@@ -163,12 +158,6 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
-%endif
-
-%if 0%{?rhel} >= 5
-Requires: commons-dbcp
-Requires: commons-collection
-Requires: commons-httpclient
 %endif
 
 Group:     System Environment/Libraries
@@ -272,11 +261,7 @@ Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-agent-libs = %{version}
 Requires: python
 Requires: %{name}-python = %{version}
-Requires: commons-httpclient
 #Requires: commons-codec
-Requires: commons-collections
-Requires: commons-pool
-Requires: commons-dbcp
 Requires: jakarta-commons-logging
 Requires: jpackage-utils
 Requires: %{name}-daemonize
