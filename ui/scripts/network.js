@@ -530,8 +530,8 @@
                     });
                   },
 
-                  error: function(data) {
-                    args.response.error(parseXMLHttpResponse(data));
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },
