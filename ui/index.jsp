@@ -236,7 +236,7 @@
                                 <div class="field name hide-if-unselected">
                                   <div class="name">Name</div>
                                   <div class="value">
-                                    <input type="text" name="new-network-name" />
+                                    <input type="text" class="required" name="new-network-name" />
                                   </div>
                                 </div>
 

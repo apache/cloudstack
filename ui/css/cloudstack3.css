@@ -4928,6 +4928,10 @@ label.error {
   margin: 0 0 0 11px;
 }
 
+.multi-wizard.instance-wizard .select-network .select.new-network label.error {
+  display: none !important;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network .secondary-input {
   width: 97px;
   padding: 13px 0 17px;
