@@ -1503,12 +1503,22 @@
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: isoActionfilter,
-                      data:args.context.isos[0]
-                    }
-                  );
+								  var jsonObj = args.context.isos[0];
+									var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
+									if(jsonObj.zoneid != null)
+											apiCmd = apiCmd + "&zoneid="+jsonObj.zoneid;    
+								
+								  $.ajax({
+									  url: createURL(apiCmd),
+										dataType: "json",
+										success: function(json) {	
+											args.response.success({
+												actionFilter: isoActionfilter,
+												data: json.listisosresponse.iso[0]
+											});											
+										}
+									});
+								                  
                 }
               }
             }
