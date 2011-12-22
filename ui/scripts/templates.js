@@ -804,13 +804,23 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: templateActionfilter,
-                      data:args.context.templates[0]
-                    }
-                  );
+                dataProvider: function(args) {								 
+                  var jsonObj = args.context.templates[0];									
+									var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
+									if(jsonObj.zoneid != null)
+										apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;   
+										
+								  $.ajax({
+									  url: createURL(apiCmd),
+										dataType: "json",
+										success: function(json) {		
+											args.response.success({
+												actionFilter: templateActionfilter,
+												data: json.listtemplatesresponse.template[0]
+											});	
+										}
+									});		
+									
                 }
               }
             }
