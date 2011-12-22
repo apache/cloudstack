@@ -42,7 +42,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ListSwiftCmd;
+import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -266,7 +266,7 @@ public class SwiftManagerImpl implements SwiftManager {
     }
 
     @Override
-    public List<SwiftVO> listSwift(ListSwiftCmd cmd) {
+    public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
         if (cmd.getId() == null) {
             return _swiftDao.listAll();
         } else {

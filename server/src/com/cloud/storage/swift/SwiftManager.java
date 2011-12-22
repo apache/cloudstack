@@ -30,7 +30,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ListSwiftCmd;
+import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
@@ -57,5 +57,5 @@ public interface SwiftManager extends Manager {
 
     Long chooseZoneForTmpltExtract(Long tmpltId);
 
-    List<SwiftVO> listSwift(ListSwiftCmd cmd);
+    List<SwiftVO> listSwifts(ListSwiftsCmd cmd);
 }
