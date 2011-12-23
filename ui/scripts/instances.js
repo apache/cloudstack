@@ -305,9 +305,10 @@
                     args.response.success({
                       type: 'select-security-group',
                       data: {
-                        defaultNetworks: [],
-                        optionalNetworks: [],
-                        securityGroups: securityGroupArray
+											  myNetworks: [], //not used any more
+                        sharedNetworks: [],
+                        securityGroups: securityGroupArray,
+                        networkOfferings: []											
                       }
                     });
                   }
@@ -316,9 +317,10 @@
                     args.response.success({
                       type: 'nothing-to-select',
                       data: {
-                        defaultNetworks: [],
-                        optionalNetworks: [],
-                        securityGroups: []                        
+											  myNetworks: [], //not used any more
+                        sharedNetworks: [],
+                        securityGroups: [],
+                        networkOfferings: []	
                       }
                     });
                   }
