@@ -659,21 +659,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        String lbProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+        String fwProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Firewall);
+        
         for (NetworkElement element : _networkElements) {
             try {
                 if (element instanceof FirewallServiceProvider && element instanceof LoadBalancingServiceProvider) {
                     List<PublicIp> allIps = new ArrayList<PublicIp>();
-                    NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-
-                    //get the Provider for the LB Service for the offering of the network
-                    //FIXME - in post 3.0 we are going to support multiple providers for the same service per network offering
-                    List<String> providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Service.Lb);
-                    String lbProvider = providers.get(0);
-
-                    //get the Provider for the LB Service for the offering of the network
-                    //FIXME - in post 3.0 we are going to support multiple providers for the same service per network offering
-                    providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Service.Firewall);
-                    String fwProvider = providers.get(0);
 
                     if (lbProvider.equalsIgnoreCase(element.getProvider().getName()) && fwProvider.equalsIgnoreCase(element.getProvider().getName())) {
                         allIps.addAll(firewallPublicIps);
@@ -689,15 +681,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     FirewallServiceProvider fwElement = (FirewallServiceProvider)element;
                     fwElement.applyIps(network, allIps);
                 } else if (element instanceof FirewallServiceProvider) {
-                    FirewallServiceProvider fwProvider = (FirewallServiceProvider)element;
-                    fwProvider.applyIps(network, firewallPublicIps);
+                    FirewallServiceProvider fwElement = (FirewallServiceProvider)element;
+                    if (fwProvider.equalsIgnoreCase(element.getProvider().getName())) {
+                        fwElement.applyIps(network, firewallPublicIps);
+                    }
                 } else if (element instanceof LoadBalancingServiceProvider) {
-                    LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider) element;
-                    if (loadbalncerPublicIps != null && !loadbalncerPublicIps.isEmpty()) {
-                        lbProvider.applyLoadBalancerIp(network, publicIps);
+                    LoadBalancingServiceProvider lbElement = (LoadBalancingServiceProvider) element;
+                    if (lbProvider.equalsIgnoreCase(element.getProvider().getName())) {
+                        if (loadbalncerPublicIps != null && !loadbalncerPublicIps.isEmpty()) {
+                            lbElement.applyLoadBalancerIp(network, publicIps);
+                        }
                     }
                 } else {
-                        continue;
+                    continue;
                 }
             } catch (ResourceUnavailableException e) {
                 success = false;
