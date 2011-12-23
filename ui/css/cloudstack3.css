@@ -29,6 +29,14 @@ body {
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
+  background: #FFFFFF;
+}
+
+body.install-wizard {
+  font-family: sans-serif;
+  height: 769px !important;
+  overflow: auto;
+  background: #FFFFFF url(../images/bg-login.png);
 }
 
 #container {
@@ -354,7 +362,7 @@ body.login {
   color: #4A4A4A;
   font-size: 15px;
   line-height: 23px;
-  background: url(../images/bg-transparent-white.png);
+  background: url(../images/bg-gradient-white-transparent.png) repeat-x -114px -270px;
 }
 
 .install-wizard .step ul li {
@@ -383,15 +391,15 @@ body.login {
 
 .install-wizard .body {
   width: 1012px;
-  height: 626px;
+  height: 762px;
   margin: -352px auto auto;
   z-index: 10;
-  background: #FFFFFF -114px -141px;
-  /*+box-shadow:0px -7px 10px #C6C6C6;*/
-  -moz-box-shadow: 0px -7px 10px #C6C6C6;
-  -webkit-box-shadow: 0px -7px 10px #C6C6C6;
-  -o-box-shadow: 0px -7px 10px #C6C6C6;
-  box-shadow: 0px -7px 10px #C6C6C6;
+  background: url(../images/bg-gradient-white-transparent.png) repeat-x -114px -141px;
+  /*+box-shadow:0px -3px 4px #CFCFCF;*/
+  -moz-box-shadow: 0px -3px 4px #CFCFCF;
+  -webkit-box-shadow: 0px -3px 4px #CFCFCF;
+  -o-box-shadow: 0px -3px 4px #CFCFCF;
+  box-shadow: 0px -3px 4px #CFCFCF;
 }
 
 .install-wizard h2 {
@@ -602,11 +610,11 @@ body.login {
   -webkit-text-shadow: 0px 1px 0px #FFFFFF;
   -o-text-shadow: 0px 1px 0px #FFFFFF;
   text-shadow: 0px 1px 0px #FFFFFF;
-  /*+box-shadow:inset 0px 1px 5px #FFFFFF;*/
-  -moz-box-shadow: inset 0px 1px 5px #FFFFFF;
-  -webkit-box-shadow: inset 0px 1px 5px #FFFFFF;
-  -o-box-shadow: inset 0px 1px 5px #FFFFFF;
-  box-shadow: inset 0px 1px 5px #FFFFFF;
+  /*+box-shadow:0px 5px 9px #9F9F9F;*/
+  -moz-box-shadow: 0px 5px 9px #9F9F9F;
+  -webkit-box-shadow: 0px 5px 9px #9F9F9F;
+  -o-box-shadow: 0px 5px 9px #9F9F9F;
+  box-shadow: 0px 5px 9px #9F9F9F;
 }
 
 .install-wizard .step .setup-form .title {
@@ -2006,11 +2014,11 @@ div.toolbar div.text-search div.search-bar {
   z-index: 4;
   position: relative;
   border-right: 1px solid #8B8989;
-  /*+border-radius:3px 0 0 3px;*/
-  -moz-border-radius: 3px 0 0 3px;
-  -webkit-border-radius: 3px 0 0 3px;
-  -khtml-border-radius: 3px 0 0 3px;
-  border-radius: 3px 0 0 3px;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
 }
 
 div.toolbar div.text-search div.search-bar input {
@@ -2261,7 +2269,15 @@ div.list-view div.toolbar div.section-switcher div.section-select {
 
 div.list-view div.toolbar div.section-switcher div.section-select select {
   width: 142px;
+  height: 21px;
   margin-right: 13px;
+  font-size: 12px;
+  border: 1px solid #808080;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {
@@ -2306,6 +2322,7 @@ div.toolbar div.filters select {
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   padding: 0px 0 0;
+  margin: 1px 0 0;
 }
 
 #breadcrumbs {
@@ -4430,7 +4447,7 @@ label.error {
   float: left;
   display: block;
   clear: both;
-  margin: 0 0 0 58px;
+  margin: 12px 0 0 58px;
   /*+placement:shift 0px -6px;*/
   position: relative;
   left: 0px;
@@ -4446,6 +4463,10 @@ label.error {
   font-size: 11px;
   margin-right: 9px;
   margin-left: 2px;
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
 }
 
 .multi-wizard.instance-wizard .select-iso .wizard-step-conditional.select-iso .content .select.selected {
@@ -4466,6 +4487,12 @@ label.error {
   overflow: hidden;
   display: inline-block;
   z-index: 10;
+}
+
+.multi-wizard .select-iso .ui-tabs ul {
+  float: left;
+  left: 0px;
+  top: 1px;
 }
 
 .multi-wizard .ui-tabs ul li.first a {
@@ -4908,6 +4935,10 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select.new-network .field .value input {
   width: 138px;
   margin: 0 0 0 11px;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network label.error {
+  display: none !important;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network .secondary-input {

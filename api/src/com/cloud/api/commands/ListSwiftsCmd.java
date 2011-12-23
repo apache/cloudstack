@@ -35,9 +35,9 @@ import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
 @Implementation(description = "List Swift.", responseObject = HostResponse.class)
-public class ListSwiftCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSwiftCmd.class.getName());
-    private static final String s_name = "ListSwiftresponse";
+public class ListSwiftsCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
+    private static final String s_name = "listswiftresponse";
      
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,7 +67,7 @@ public class ListSwiftCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        List<? extends Swift> result = _resourceService.listSwift(this);
+        List<? extends Swift> result = _resourceService.listSwifts(this);
         ListResponse<SwiftResponse> response = new ListResponse<SwiftResponse>();
         List<SwiftResponse> swiftResponses = new ArrayList<SwiftResponse>();
 

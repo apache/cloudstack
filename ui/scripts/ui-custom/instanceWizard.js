@@ -583,7 +583,11 @@
 
           // Next button
           if ($target.closest('div.button.next').size()) {
-            if (!$form.valid()) return false;
+            if (!$form.valid()) {
+              if ($form.find('input.error:visible, select.error:visible').size()) {
+                return false;
+              }
+            }
 
             showStep($steps.filter(':visible').index() + 2);
 

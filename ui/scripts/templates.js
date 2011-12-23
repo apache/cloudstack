@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack, $, testData) {
 
   cloudStack.sections.templates = {
     title: 'Templates',
@@ -290,18 +290,13 @@
 
             copyTemplate: {
               label: 'Copy template',
+              addRow: 'false',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to copy template?';
                 },
-                success: function(args) {
-                  return 'Template is being copied.';
-                },
                 notification: function(args) {
                   return 'Copying template';
-                },
-                complete: function(args) {
-                  return 'Template has been copied.';
                 }
               },
               createForm: {
@@ -310,6 +305,7 @@
                 fields: {
                   destinationZoneId: {
                     label: 'Destination zone',
+                    validation: { required: true },
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -317,12 +313,21 @@
                         async: true,
                         success: function(json) {
                           args.response.success({
-                            data: $.map(json.listzonesresponse.zone, function(zone) {
-                              return {
-                                id: zone.id,
-                                description: zone.name
-                              };
-                            })
+                            data: $.map(
+                              $.grep(
+                                json.listzonesresponse.zone ? json.listzonesresponse.zone : [],
+                                
+                                function(zone) {
+                                  return zone.id != args.context.templates[0].zoneid;
+                                }
+                              ),
+                              function(zone) {
+                                return {
+                                  id: zone.id,
+                                  description: zone.name
+                                };
+                              }
+                            )
                           });
                         }
                       });
@@ -562,6 +567,7 @@
                   fields: {
                     destinationZoneId: {
                       label: 'Destination zone',
+                      validation: { required: true },
                       select: function(args) {
                         $.ajax({
                           url: createURL("listZones&available=true"),
@@ -804,13 +810,23 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: templateActionfilter,
-                      data:args.context.templates[0]
-                    }
-                  );
+                dataProvider: function(args) {								 
+                  var jsonObj = args.context.templates[0];									
+									var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
+									if(jsonObj.zoneid != null)
+										apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;   
+										
+								  $.ajax({
+									  url: createURL(apiCmd),
+										dataType: "json",
+										success: function(json) {		
+											args.response.success({
+												actionFilter: templateActionfilter,
+												data: json.listtemplatesresponse.template[0]
+											});	
+										}
+									});		
+									
                 }
               }
             }
@@ -995,19 +1011,14 @@
                 confirm: function(args) {
                   return 'Are you sure you want to copy ISO?';
                 },
-                success: function(args) {
-                  return 'ISO is being copied.';
-                },
                 notification: function(args) {
                   return 'Copying ISO';
-                },
-                complete: function(args) {
-                  return 'ISO has been copied.';
                 }
               },
               createForm: {
                 title: 'Copy ISO',
                 desc: '',
+                addRow: 'false',
                 fields: {
                   destinationZoneId: {
                     label: 'Destination zone',
@@ -1493,12 +1504,22 @@
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: isoActionfilter,
-                      data:args.context.isos[0]
-                    }
-                  );
+								  var jsonObj = args.context.isos[0];
+									var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
+									if(jsonObj.zoneid != null)
+											apiCmd = apiCmd + "&zoneid="+jsonObj.zoneid;    
+								
+								  $.ajax({
+									  url: createURL(apiCmd),
+										dataType: "json",
+										success: function(json) {	
+											args.response.success({
+												actionFilter: isoActionfilter,
+												data: json.listisosresponse.iso[0]
+											});											
+										}
+									});
+								                  
                 }
               }
             }
@@ -1609,4 +1630,4 @@
     return allowedActions;
   }
 
-})(cloudStack, testData);
+})(cloudStack, jQuery, testData);

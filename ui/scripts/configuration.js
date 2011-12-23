@@ -969,18 +969,24 @@
               action: function(args) {
                 var formData = args.data;
                 var inputData = {};
-                var services = {};
+                var serviceProviderMap = {};
+								var serviceCapabilityMap = {};
 
                 $.each(formData, function(key, value) {
                   var serviceData = key.split('.');
 
-                  if (serviceData.length > 1) {
+                  if (serviceData.length > 1) {									  
                     if (serviceData[0] == 'service' &&
                         serviceData[2] == 'isEnabled' &&
                         value == 'on') { // Services field
-                        services[serviceData[1]] = formData[
+                        serviceProviderMap[serviceData[1]] = formData[
                           'service.' + serviceData[1] + '.provider'
                         ];
+                    }
+										else if (serviceData[0] == 'service' &&
+                        serviceData[2].indexOf('Capability') != -1 &&
+                        value == 'on') { // Services field
+                        serviceCapabilityMap[serviceData[1]] = serviceData[2];
                     }
                   } else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -988,7 +994,7 @@
                 });
 
                 // Make supported services list
-                inputData['supportedServices'] = $.map(services, function(value, key) {
+                inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
                   return key;
                 }).join(',');
 
@@ -1000,12 +1006,25 @@
 
                 // Make service provider map
                 var serviceProviderIndex = 0;
-                $.each(services, function(key, value) {
+                $.each(serviceProviderMap, function(key, value) {
                   inputData['serviceProviderList[' + serviceProviderIndex + '].service'] = key;
                   inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                   serviceProviderIndex++;
                 });
-
+								
+								var serviceCapabilityIndex = 0;
+                $.each(serviceCapabilityMap, function(key, value) {								  
+								  var capabilityType = null;
+								  if(value == "redundantRouterCapability")
+									  capabilityType = "RedundantRouter";		
+								  if(capabilityType != null) {
+										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = key;
+										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = capabilityType;
+										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+										serviceCapabilityIndex++;
+									}											
+                });
+																
                 $.ajax({
                   url: createURL('createNetworkOffering'),
                   data: inputData,
@@ -1153,6 +1172,11 @@
                       });
                     }
                   },
+									
+									"service.SourceNat.redundantRouterCapability" : {
+										label: "Redundant router capability",
+										isBoolean: true
+									},
 
                   tags: { label: 'Tags' }
                 }

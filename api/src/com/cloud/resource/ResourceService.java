@@ -25,7 +25,7 @@ import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
-import com.cloud.api.commands.ListSwiftCmd;
+import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
@@ -94,5 +94,5 @@ public interface ResourceService {
     
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId);
 
-    List<? extends Swift> listSwift(ListSwiftCmd cmd);
+    List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
 }

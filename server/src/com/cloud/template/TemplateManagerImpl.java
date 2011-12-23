@@ -95,6 +95,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -1160,6 +1161,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	boolean result = adapter.delete(profile);
     	
     	if (result){
+            if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
+                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao.listByZoneTemplate(null, templateId);
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        _tmpltZoneDao.remove(templateZone.getId());
+                    }
+                }
+            }
     		return true;
     	}else{
     		throw new CloudRuntimeException("Failed to delete template");
@@ -1191,10 +1200,18 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
-    	boolean result = adapter.delete(profile);
-    	if (result){
-    		return true;
-    	}else{
+        boolean result = adapter.delete(profile);
+        if (result) {
+            if (cmd.getZoneId() == null && _swiftMgr.isSwiftEnabled()) {
+                List<VMTemplateZoneVO> templateZones = _tmpltZoneDao.listByZoneTemplate(null, templateId);
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        _tmpltZoneDao.remove(templateZone.getId());
+                    }
+                }
+            }
+            return true;
+        } else {
     		throw new CloudRuntimeException("Failed to delete ISO");
     	}
 	}

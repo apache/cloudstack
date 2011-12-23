@@ -1,53 +1,4 @@
 (function($, cloudStack) {
-  /**
-   * Add 'pending' notification
-   */
-  var addNotification = function(notification, success, successArgs, error, errorArgs) {
-    if (!notification) {
-      success(successArgs);
-
-      return false;
-    };
-
-    var $notifications = $('div.notifications');
-
-    if (!notification.poll) {
-      $notifications.notifications('add', {
-        section: notification.section,
-        desc: notification.desc,
-        interval: 0,
-        poll: function(args) { success(successArgs); args.complete(); }
-      });
-    } else {
-      $notifications.notifications('add', {
-        section: notification.section,
-        desc: notification.desc,
-        interval: 2000,
-        _custom: notification._custom,
-        poll: function(args) {
-          var complete = args.complete;
-          var notificationError = args.error;
-
-          notification.poll({
-            _custom: args._custom,
-            complete: function(args) {
-              success($.extend(successArgs, args));
-              complete(args);
-            },
-            error: function(args) {
-              error($.extend(errorArgs, args));
-              notificationError(args);
-
-              return cloudStack.dialog.error;
-            }
-          });
-        }
-      });
-    }
-
-    return true;
-  };
-
   var replaceListViewItem = function($detailView, newData) {
     var $row = $detailView.data('list-view-row');
 
@@ -141,7 +92,7 @@
               notification.desc = messages.notification(args.messageArgs);
               notification._custom = args._custom;
 
-              addNotification(
+              cloudStack.ui.notifications.add(
                 notification,
 
                 // Success
@@ -158,7 +109,9 @@
                 {},
 
                 // Error
-                function(args) {}
+                function(args) {
+                  $loading.remove();
+                }
               );
             }
           });
@@ -181,7 +134,7 @@
                 if (additional && additional.success) additional.success(args);
 
                 // Setup notification
-                addNotification(
+                cloudStack.ui.notifications.add(
                   notification,
                   function(args) {
                     if ($detailView.is(':visible')) {
@@ -208,13 +161,12 @@
 
                   // Error
                   function(args) {
-
+                    $loading.remove();
                   }
                 );
               },
               error: function(args) {
-                // if (args.message)
-                //   cloudStack.dialog.notice({ message: args.message });
+                $loading.remove();
               }
             }
           });
@@ -368,13 +320,13 @@
 
                 if (!action.notification) {
                   convertInputs($inputs);
-                  addNotification(
+                  cloudStack.ui.notifications.add(
                     notificationArgs, function() {}, []
                   );
                   replaceListViewItem($detailView, data);
                 } else {
                   $loading.appendTo($detailView);
-                  addNotification(
+                  cloudStack.ui.notifications.add(
                     $.extend(true, {}, action.notification, notificationArgs),
                     function(args) {
                       replaceListViewItem($detailView, data);

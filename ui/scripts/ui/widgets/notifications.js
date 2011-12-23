@@ -213,6 +213,10 @@
     }
   };
 
+  /**
+   * Define notification widget -- this is basically represented in a
+   * notifications icon, that contains a pop-up list of notifications
+   */
   $.fn.notifications = function(method, args) {
     var $attachTo = this;
     var $total = $attachTo.find('div.total span');
@@ -230,7 +234,60 @@
     return this;
   };
 
-  // Events
+  /**
+   * Notifications UI helpers
+   */
+  cloudStack.ui.notifications = {
+    add: function(notification, success, successArgs, error, errorArgs) {
+      if (!notification) {
+        success(successArgs);
+
+        return false;
+      };
+
+      var $notifications = $('div.notifications');
+
+      if (!notification.poll) {
+        cloudStack.ui.event.call('addNotification', {
+          section: notification.section,
+          desc: notification.desc,
+          interval: 0,
+          poll: function(args) { success(successArgs); args.complete(); }
+        });
+      } else {
+        cloudStack.ui.event.call('addNotification', {
+          section: notification.section,
+          desc: notification.desc,
+          interval: 5000,
+          _custom: notification._custom,
+          poll: function(args) {
+            var complete = args.complete;
+            var notificationError = args.error;
+
+            notification.poll({
+              _custom: args._custom,
+              complete: function(args) {
+                success($.extend(successArgs, args));
+                complete(args);
+              },
+              error: function(args) {
+                error($.extend(errorArgs, args));
+                notificationError(args);
+              }
+            });
+          }
+        });
+      }
+
+      return true;
+    }
+  };
+
+  // Setup notification listener -- accepts same args as
+  $(window).bind('cloudStack.addNotification', function(event, data) {
+    $('.notifications').notifications('add', data);
+  });
+
   $(document).click(function(event) {
     var $target = $(event.target);
     var $attachTo, $popup;

@@ -392,7 +392,7 @@
                       error: function(XMLHttpResponse) {      
                         isCreateNetworkSuccessful = false;                          
                         var errorMsg = "Failed to create new network, unable to proceed to deploy VM. Error: " + parseXMLHttpResponse(XMLHttpResponse);
-                        alert(errorMsg);
+                        //alert(errorMsg);
                         args.response.error(errorMsg);    //args.response.error(errorMsg) here doesn't show errorMsg. Waiting for Brian to fix it. use alert(errorMsg) to show errorMsg for now.                    
                       }  
                     });                     
@@ -460,8 +460,7 @@
                     );
                   },
                   error: function(XMLHttpResponse) {
-                    //args.response.error(); //wait for Brian to implement
-                    alert("Failed to deploy VM.");
+                    args.response.error(parseXMLHttpResponse(XMLHttpResponse)); //wait for Brian to implement
                   }
                 });
               }
@@ -1648,7 +1647,6 @@
         allowedActions.push("detachISO");      
 
       allowedActions.push("resetPassword");
-      allowedActions.push("changeService");
 
       if(jsonObj.hypervisor == "BareMetal") {
         allowedActions.push("createTemplate");

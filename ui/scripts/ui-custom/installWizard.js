@@ -13,6 +13,7 @@
      */
     var complete = function() {
       $installWizard.remove();
+      $('html body').removeClass('install-wizard');
 
       args.complete();
     };
@@ -379,7 +380,7 @@
         tooltipID: 'addZone',
         diagram: '.part.zone',
         prevStepID: 'addZoneIntro',
-        nextStepID: 'addPod',
+        nextStepID: 'addPodIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
           dns1: { label: 'DNS 1', validation: { required: true } },
@@ -430,7 +431,7 @@
         id: 'add-guest-network',
         stateID: 'guestNetwork',
         tooltipID: 'addGuestNetwork',
-        diagram: '.part.zone',
+        diagram: '.part.zone, .part.pod',
         prevStepID: 'addPod',
         nextStepID: 'addClusterIntro',
         form: {
@@ -734,6 +735,7 @@
 
     var initialStep = steps.intro().addClass('step');
     showDiagram('');
+    $('html body').addClass('install-wizard');
 
     $installWizard.append(
       elems.header(),

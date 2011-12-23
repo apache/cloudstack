@@ -61,6 +61,6 @@ update host_details set name='privateip' where host_id in (select id from host w
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.root.disk.controller', 'ide', 'Specify the default disk controller for root volumes, valid values are scsi, ide');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destory.forcestop', 'false', 'On destory, force-stop takes this value');
-
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.lock.timeout', '600', 'Lock wait timeout (seconds) while implementing network');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.disable.rpfilter','true','disable rp_filter on Domain Router VM public interfaces.');
 

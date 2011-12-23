@@ -35,7 +35,6 @@ INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-serve
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.uri','/admin?stats','Load Balancer(haproxy) uri.');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.auth','admin1:AdMiN123','Load Balancer(haproxy) authetication string in the format username:password');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.port','8081','Load Balancer(haproxy) stats port number.');
-INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.disable.rpfilter','true','disable rp_filter on Domain Router VM public interfaces.');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'use.external.dns', 'false', 'Bypass the cloudstack DHCP/DNS server vm name service, use zone external dns1 and dns2');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.enabled', 'false', 'Whether the load balancing service is enabled for basic zones');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.gc.interval.minutes', '120', 'Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5');

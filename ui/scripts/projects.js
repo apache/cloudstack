@@ -18,13 +18,13 @@
             success: function(json) {
               updatedResources++;
               if (updatedResources == totalResources) {
-                args.response.success();                
+                args.response.success();
               }
             }
           });
         });
       },
-      
+
       dataProvider: function(args) {
         $.ajax({
           url: createURL('listResourceLimits'),
@@ -70,7 +70,7 @@
             });
           }
         });
-       
+
       }
     },
 
@@ -80,9 +80,9 @@
           $.ajax({
             url: createURL('listVirtualMachines'),
             success: function(json) {
-              var instances = json.listvirtualmachinesresponse.virtualmachine ? 
+              var instances = json.listvirtualmachinesresponse.virtualmachine ?
                     json.listvirtualmachinesresponse.virtualmachine : [];
-              
+
               dataFns.storage($.extend(data, {
                 runningInstances: $.grep(instances, function(instance) {
                   return instance.state == 'Running';
@@ -124,7 +124,7 @@
                     id: network.networkofferingid
                   },
                   success: function(json) {
-                    totalBandwidth += 
+                    totalBandwidth +=
                     json.listnetworkofferingsresponse.networkoffering[0].networkrate;
                   }
                 });
@@ -142,7 +142,7 @@
             url: createURL('listPublicIpAddresses'),
             success: function(json) {
               dataFns.loadBalancingRules($.extend(data, {
-                totalIPAddresses: json.listpublicipaddressesresponse ?
+                totalIPAddresses: json.listpublicipaddressesresponse.count ?
                   json.listpublicipaddressesresponse.count : 0
               }));
             }
@@ -154,7 +154,7 @@
             url: createURL('listLoadBalancerRules'),
             success: function(json) {
               dataFns.portForwardingRules($.extend(data, {
-                totalLoadBalancers: json.listloadbalancerrulesresponse ?
+                totalLoadBalancers: json.listloadbalancerrulesresponse.count ?
                   json.listloadbalancerrulesresponse.count : 0
               }));
             }
@@ -166,7 +166,7 @@
             url: createURL('listPortForwardingRules'),
             success: function(json) {
               dataFns.users($.extend(data, {
-                totalPortForwards: json.listportforwardingrulesresponse ?
+                totalPortForwards: json.listportforwardingrulesresponse.count ?
                   json.listportforwardingrulesresponse.count : 0
               }));
             }
@@ -193,13 +193,19 @@
         events: function(data) {
           $.ajax({
             url: createURL('listEvents', { ignoreProject: true }),
+            data: {
+              page: 1,
+              pageSize: 8
+            },
             success: function(json) {
               var events = json.listeventsresponse.event;
 
               complete($.extend(data, {
                 events: $.map(events, function(event) {
                   return {
-                    date: event.created.substr(5, 2) + '/' + event.created.substr(8, 2) + '/' + event.created.substr(2, 2),
+                    date: event.created.substr(5, 2) +
+                      '/' + event.created.substr(8, 2) +
+                      '/' + event.created.substr(2, 2),
                     desc: event.description
                   };
                 })
@@ -381,7 +387,7 @@
       actionPreFilter: function(args) {
         if (!cloudStack.context.projects &&
             args.context.multiRule[0].role != 'Admin') { // This is for the new project wizard
-          return ['destroy'];
+            return ['destroy'];
         }
 
         if (args.context.multiRule[0].role != 'Admin') {
@@ -489,10 +495,10 @@
               data.listprojectsresponse.project ?
                 data.listprojectsresponse.project : [],
               function(elem) {
-              return $.extend(elem, {
-                displayText: elem.displaytext
-              });
-            })
+                return $.extend(elem, {
+                  displayText: elem.displaytext
+                });
+              })
           });
         }
       });
@@ -812,14 +818,14 @@
 
   var projectsActionFilter = function(args) {
     var allowedActions = ['destroy'];
-    
+
     if (args.context.item.account == cloudStack.context.users[0].account || args.context.users[0].role == '1') {
       if (args.context.item.state == 'Suspended') {
         allowedActions.push('enable');
       } else if (args.context.item.state == 'Active') {
         allowedActions.push('disable');
       }
-      
+
       return allowedActions;
     }
 
