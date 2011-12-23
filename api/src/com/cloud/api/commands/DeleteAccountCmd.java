@@ -72,7 +72,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = _entityMgr.findById(Account.class, getId());
+        Account account = UserContext.current().getCaller();// Let's give the caller here for event logging.
         if (account != null) {
             return account.getAccountId();
         }
