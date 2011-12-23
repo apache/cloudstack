@@ -234,17 +234,21 @@
                 args.response.error();
               }
             });
-											
-						$.ajax({
-						  url: createURL("listSwifts"),
-							dataType: "json",
-							async: false,
-							success: function(json) {							  
-								var items = json.ListSwiftresponse.swift;
-								if(items != null && items.length > 0) 
-								  havingSwift = true;								
-							}
-						});					
+
+            if (isAdmin()) {
+              $.ajax({
+                url: createURL("listSwifts"),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                  var items = json.ListSwiftresponse.swift;
+                  if(items != null && items.length > 0)
+                    havingSwift = true;
+                }
+              });
+            } else {
+              havingSwift = false;
+            }
 
             // Get project configuration
             // TEMPORARY -- replace w/ output of capability response, etc., once implemented
