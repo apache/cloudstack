@@ -77,9 +77,11 @@ public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long
 	}
 
 	@Override
-	public List<VMTemplateZoneVO> listByZoneTemplate(long zoneId, long templateId) {
+    public List<VMTemplateZoneVO> listByZoneTemplate(Long zoneId, long templateId) {
 		SearchCriteria<VMTemplateZoneVO> sc = ZoneTemplateSearch.create();
-	    sc.setParameters("zone_id", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
 	    sc.setParameters("template_id", templateId);
 	    return listBy(sc);
 	}	
