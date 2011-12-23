@@ -236,7 +236,7 @@
             });
 											
 						$.ajax({
-						  url: createURL("listSwift"),
+						  url: createURL("listSwifts"),
 							dataType: "json",
 							async: false,
 							success: function(json) {							  
