@@ -278,6 +278,10 @@ public class SwiftManagerImpl implements SwiftManager {
 
     }
 
+    @Override
+    public VMTemplateSwiftVO findByTmpltId(Long tmpltId) {
+        return _vmTmpltSwiftlDao.findOneByTemplateId(tmpltId);
+    }
 
     @Override
     public boolean stop() {

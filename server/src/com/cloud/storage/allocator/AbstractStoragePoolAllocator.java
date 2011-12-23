@@ -46,6 +46,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -54,6 +55,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -75,6 +77,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject ConfigurationDao _configDao;
     @Inject ClusterDao _clusterDao;
+    @Inject
+    SwiftManager _swiftMgr;
     float _storageOverprovisioningFactor;
     long _extraBytesPerVolume = 0;
     Random _rand;
@@ -238,7 +242,15 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		    VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(template.getId(), pool);
 
 		    if (templateHostVO == null) {
-		        s_logger.info("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
+                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(template.getId());
+                if (templateSwiftVO == null) {
+                    s_logger.info("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
+                }
+                long templateSize = templateSwiftVO.getPhysicalSize();
+                if (templateSize == 0) {
+                    templateSize = templateSwiftVO.getSize();
+                }
+                totalAllocatedSize += (templateSize + _extraBytesPerVolume);
 		        return false;
 		    } else {
 		        long templateSize = templateHostVO.getPhysicalSize();

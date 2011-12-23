@@ -475,7 +475,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.warn(errMsg);
             return errMsg;
         }
-        VMTemplateSwiftVO tmpltSwift = _tmpltSwiftDao.findOneByTemplateId(templateId);
+        VMTemplateSwiftVO tmpltSwift = _swiftMgr.findByTmpltId(templateId);
         if ( tmpltSwift == null ) {
             String errMsg = " Template " + templateId + " doesn't exist in swift";
             s_logger.warn(errMsg);
