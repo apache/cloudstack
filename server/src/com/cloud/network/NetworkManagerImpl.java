@@ -269,6 +269,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject 
     FirewallRulesDao _firewallDao;
     @Inject
+    PortForwardingRulesDao _portForwardingDao; 
+    @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject DomainRouterDao _routerDao;
     @Inject DomainManager _domainMgr;
@@ -576,7 +578,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        boolean success = applyIpAssociations(network, continueOnError, publicIps);
+        boolean success = applyIpAssociations(network, false, continueOnError, publicIps);
 
         if (success) {
             for (IPAddressVO addr : userIps) {
@@ -601,87 +603,81 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    protected boolean applyProviderIpAssociations(Network network, Purpose purpose, boolean continueOnError, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
+        List<PublicIp> firewallPublicIps = new ArrayList<PublicIp>();
+        List<PublicIp> loadbalncerPublicIps = new ArrayList<PublicIp>();
 
-        List<PublicIp> publicIps = new ArrayList<PublicIp>();
-        for (FirewallRule rule : rules) {
-        	IPAddressVO lbIp = _ipAddressDao.findById(rule.getSourceIpAddressId());
-            PublicIp publicIp = new PublicIp(lbIp, _vlanDao.findById(lbIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(lbIp.getMacAddress()));
-            publicIps.add(publicIp);
-        }
-
-        for (NetworkElement ne : _networkElements) {
-            try {
-                boolean handled;
-                switch (purpose) {
-                case LoadBalancing:
-                    if (!(ne instanceof LoadBalancingServiceProvider)) {
-                        continue;
-                    }
-                    LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider) ne;
-                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");
-                    handled = lbProvider.applyLoadBalancerIp(network, publicIps);
-                    break;
-
-                case PortForwarding:
-                    if (!(ne instanceof PortForwardingServiceProvider)) {
-                        continue;
-                    }
-                    PortForwardingServiceProvider pfProvider = (PortForwardingServiceProvider) ne;
-                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");               
-                    handled = pfProvider.applyIps(network, publicIps);
-                    break;
-
-                case StaticNat:
-                case Firewall: 
-                    if (!(ne instanceof FirewallServiceProvider)) {
-                        continue;
-                    }
-                    s_logger.trace("Asking " + ne + " to apply ip associations for " + purpose.toString() + " purpose");
-                    FirewallServiceProvider fwProvider = (FirewallServiceProvider) ne;
-                    handled = fwProvider.applyIps(network, publicIps);
-                    break;
-
-                default:
-                    s_logger.debug("Unable to handle IP association for purpose: " + purpose.toString());
-                    handled = false;
-                }
-                s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
-            } catch (ResourceUnavailableException e) {
-                success = false;
-                if (!continueOnError) {
-                    throw e;
+        if (publicIps != null && !publicIps.isEmpty()) {
+            for (PublicIp ip : publicIps) {
+                if (ip.isSourceNat()) {
+                	// Source nat ip address should always be sent first
+                    firewallPublicIps.add(0, ip);
+                } else if (ip.isOneToOneNat()) {
+                	firewallPublicIps.add(ip);
                 } else {
-                    s_logger.debug("Resource is not available: " + ne.getName(), e);
+                	//if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service provider
+                	if (ip.getState() == State.Allocating) {
+                		continue;
+                	}
+
+                	// check if any active rules are applied on the public IP
+                    Purpose purpose = getPublicIpPurpose(ip, false);
+                    if (purpose == null) {
+                    	// since no active rules are there check if any rules are applied on the public IP but are in revoking state 
+                    	purpose = getPublicIpPurpose(ip, true);
+                    	if (purpose == null) {
+                            // IP is not being used for any purpose so skip IPAssoc to network service provider
+                            continue;
+                    	} else {
+                    		if (rulesRevoked) {
+                                // no active rules/revoked rules are associated with this public IP, so remove the association with the provider
+                                ip.setState(State.Releasing);
+                    		} else {
+                    			if (ip.getState() == State.Releasing) {
+                    				// rules are not revoked yet, so don't let the network service provider revoke the IP association
+                    				// mark IP is allocated so that IP association will not be removed from the provider
+                                    ip.setState(State.Allocated);
+                    			}
+                    		}
+                    	}
+                    }
+
+                    switch(purpose) {
+                    case LoadBalancing:
+                        loadbalncerPublicIps.add(ip);
+                        break;
+
+                    case PortForwarding:
+                    case StaticNat:
+                    case Firewall:
+                        firewallPublicIps.add(ip);
+                        break;
+                    default:
+                    }
                 }
             }
         }
-        return success;
-    }
-    
-    protected boolean applyIpAssociations(Network network, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
-        boolean success = true;
-        List<PublicIp> srcNatpublicIps = new ArrayList<PublicIp>();
-
-        // apply IP only for source NAT public IP at this point. Depending on the network service for which 
-        // public IP will be used do IP Association to respective network service provider before apply rules
-        if (publicIps != null && !publicIps.isEmpty()) {
-	        for (PublicIp ip : publicIps) {
-	        	if (ip.isSourceNat()) {
-	        		srcNatpublicIps.add(ip);
-	        	}
-	        }
-        }
-
+        
         for (NetworkElement element : _networkElements) {
             try {
-                if (!(element instanceof FirewallServiceProvider)) {
-                    continue;
+                if (element instanceof FirewallServiceProvider && element instanceof LoadBalancingServiceProvider) {
+                        List<PublicIp> allIps = new ArrayList<PublicIp>();
+                        allIps.addAll(firewallPublicIps);
+                        allIps.addAll(loadbalncerPublicIps);
+                    FirewallServiceProvider fwProvider = (FirewallServiceProvider)element;
+                    fwProvider.applyIps(network, allIps);
+                } else if (element instanceof FirewallServiceProvider) {
+                    FirewallServiceProvider fwProvider = (FirewallServiceProvider)element;
+                    fwProvider.applyIps(network, firewallPublicIps);
+                } else if (element instanceof LoadBalancingServiceProvider) {
+                    LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider) element;
+                    if (loadbalncerPublicIps != null && !loadbalncerPublicIps.isEmpty()) {
+                        lbProvider.applyLoadBalancerIp(network, publicIps);
+                    }
+                } else {
+                        continue;
                 }
-                FirewallServiceProvider e = (FirewallServiceProvider)element;
-                s_logger.trace("Asking " + element + " to apply ip associations");
-                e.applyIps(network, srcNatpublicIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
@@ -691,10 +687,56 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
+
         return success;
     }
 
+    Purpose getPublicIpPurpose(PublicIp ip, boolean includeRevoked) {
+        if (includeRevoked) {
+            List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.LoadBalancing);
+            if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
+                    return Purpose.LoadBalancing;
+            }
 
+            List<FirewallRuleVO> firewall_rules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall);
+            if (firewall_rules != null && !firewall_rules.isEmpty()) {
+                    return Purpose.Firewall;
+            }
+
+            List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat);
+            if (staticNatRules != null && !staticNatRules.isEmpty()) {
+                    return Purpose.StaticNat;
+            }
+
+            List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByIp(ip.getId());
+            if (pfRules != null && !pfRules.isEmpty()) {
+                    return Purpose.PortForwarding;
+            }
+        } else {
+            List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.LoadBalancing);
+            if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
+                    return Purpose.LoadBalancing;
+            }
+
+            List<FirewallRuleVO> firewall_rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.Firewall);
+            if (firewall_rules != null && !firewall_rules.isEmpty()) {
+                    return Purpose.Firewall;
+            }
+
+            List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.StaticNat);
+            if (staticNatRules != null && !staticNatRules.isEmpty()) {
+                    return Purpose.StaticNat;
+            }
+
+            List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByIpAndNotRevoked(ip.getId());
+            if (pfRules != null && !pfRules.isEmpty()) {
+                    return Purpose.PortForwarding;
+            }
+        }
+
+        // we are here means, public IP has no active/revoked rules to know the purpose
+        return null;
+    }
 
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
@@ -2655,8 +2697,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
         Purpose purpose = rules.get(0).getPurpose();
 
-        // associate the IP with corresponding network service provider
-      	applyProviderIpAssociations(network, purpose, continueOnError, rules);
+        // get the list of public ip's owned by the network
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                publicIps.add(publicIp);
+            }
+        }
+
+        // rules can not programmed unless IP is associated with network service provider, so run IP assoication for
+        // the network so as to ensure IP is associated before applying rules (in add state)
+        applyIpAssociations(network, false, continueOnError, publicIps);
 
         for (NetworkElement ne : _networkElements) {
             try {
@@ -2696,6 +2749,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 success = false;
             }
         }
+
+        // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
+        applyIpAssociations(network, true, continueOnError, publicIps);
 
         return success;
     }
@@ -3701,35 +3757,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException {
-        if (staticNats == null || staticNats.size() == 0) {
+        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
+        boolean success = true;
+
+    	if (staticNats == null || staticNats.size() == 0) {
             s_logger.debug("There are no static nat rules for the network elements");
             return true;
         }
 
-        List<PublicIp> staticNatIps = new ArrayList<PublicIp>();
-        for (StaticNat rule : staticNats) {
-            IPAddressVO staticNatIP = _ipAddressDao.findById(rule.getSourceIpAddressId());
-            PublicIp publicIp = new PublicIp(staticNatIP, _vlanDao.findById(staticNatIP.getVlanId()), NetUtils.createSequenceBasedMacAddress(staticNatIP.getMacAddress()));
-            staticNatIps.add(publicIp);
+        // get the list of public ip's owned by the network
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                publicIps.add(publicIp);
+            }
         }
-            
-        boolean success = true;
-        boolean handled = false;
-        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
+
+        // static NAT rules can not programmed unless IP is associated with network service provider, so run IP association for
+        // the network so as to ensure IP is associated before applying rules (in add state)
+        applyIpAssociations(network, false, continueOnError, publicIps);
+
         for (NetworkElement ne : _networkElements) {
             try {
                 if (!(ne instanceof StaticNatServiceProvider)) {
                     continue;
                 }
 
-                // associate the IP's with StaticNatServiceProvider for the network
-                handled = ((StaticNatServiceProvider)ne).applyIps(network, staticNatIps);
-                if(!handled) {
-                    s_logger.debug(ne.getName() +" did not assocate IP with source Nat service provider for the network " + network.getId() + "so skippg apply static nats");
-                    continue;
-                }
-
-                handled = ((StaticNatServiceProvider)ne).applyStaticNats(network, staticNats);
+                boolean handled = ((StaticNatServiceProvider)ne).applyStaticNats(network, staticNats);
                 s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
@@ -3739,6 +3795,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 success = false;
             }
         }
+
+        // if all the rules configured on public IP are revoked then, dis-associate IP with network service provider
+        applyIpAssociations(network, true, continueOnError, publicIps);
 
         return success;
     }
@@ -4770,7 +4829,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         try {
-            if (!applyIpAssociations(network, true, publicIpsToRelease)) {
+            if (!applyIpAssociations(network, true, true, publicIpsToRelease)) {
                 s_logger.warn("Unable to apply ip address associations for " + network + " as a part of shutdownNetworkRules");
                 success = false;
             }
