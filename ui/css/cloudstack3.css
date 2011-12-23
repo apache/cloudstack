@@ -7121,6 +7121,22 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   margin: -2px 0 -4px auto;
 }
 
+#new-project-review-tabs-resouces {
+  background: #D2D2D2;
+}
+
+.new-project .resources .ui-widget-content {
+  background: #FFFFFF;
+}
+
+.new-project .resources .field {
+  height: 39px;
+  padding: 0;
+}
+
+.new-project .resources .field input {
+}
+
 .new-project .field span.value {
   color: #475765;
   /*+placement:shift 21px 20px;*/
@@ -7138,6 +7154,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #D2D2D2;
   text-align: right;
   padding: 20px 24px 0 0;
+}
+
+.new-project .resources .field label {
+  font-size: 14px;
+  height: auto;
+  padding: 10px 14px 14px 40px;
 }
 
 .new-project .field label.error {
@@ -7167,10 +7189,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -o-box-shadow: inset 0px 1px 0px #A1A1A1;
   box-shadow: inset 0px 1px 0px #A1A1A1;
   width: 506px;
-  height: 21px;
+  height: 20px;
   margin: 17px 25px 0 0;
   float: right;
   border: 1px solid #C7C7C7;
+}
+
+.new-project .resources .field input[type=text] {
+  margin: 6px 9px 0 0;
 }
 
 .new-project .button.cancel {
@@ -7375,6 +7401,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .new-project input[type=submit]:hover {
   background-position: -3px -369px;
+}
+
+.new-project .resources input[type=submit] {
+  display: none;
 }
 
 .new-project .multi-edit {
