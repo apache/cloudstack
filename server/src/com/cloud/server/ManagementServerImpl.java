@@ -1584,7 +1584,7 @@ public class ManagementServerImpl implements ManagementServer {
                     pendingEvents.add(event);
                 }
             }
-            return _eventDao.searchAllEvents(sc, searchFilter);
+            return pendingEvents;
         } else  {
         	return _eventDao.searchAllEvents(sc, searchFilter);
         }
