@@ -451,8 +451,15 @@
                     label: 'Instance',
                     select: function(args) {
                       var items = [];
+                      var url;
+
+                      if (cloudStack.context.projects && cloudStack.context.projects[0]) {
+                        url = args.context.volumes[0].zoneid;
+                      } else {
+                        url = args.context.volumes[0].zoneid + "&domainid=" + args.context.volumes[0].domainid + "&account=" + args.context.volumes[0].account;
+                      }
                       $.ajax({
-                        url: createURL("listVirtualMachines&state=Running&zoneid=" + args.context.volumes[0].zoneid + "&domainid=" + args.context.volumes[0].domainid + "&account=" + args.context.volumes[0].account),
+                        url: createURL("listVirtualMachines&state=Running&zoneid=" + url),
                         dataType: "json",
                         async: false,
                         success: function(json) {
@@ -463,7 +470,7 @@
                         }
                       });
                       $.ajax({
-                        url: createURL("listVirtualMachines&state=Stopped&zoneid=" + args.context.volumes[0].zoneid + "&domainid=" + args.context.volumes[0].domainid + "&account=" + args.context.volumes[0].account),
+                        url: createURL("listVirtualMachines&state=Stopped&zoneid=" + url),
                         dataType: "json",
                         async: false,
                         success: function(json) {
