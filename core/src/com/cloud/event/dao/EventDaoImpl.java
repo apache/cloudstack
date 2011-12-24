@@ -35,16 +35,9 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={EventDao.class})
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
 	public static final Logger s_logger = Logger.getLogger(EventDaoImpl.class.getName());
-	protected final SearchBuilder<EventVO> StartedEventsSearch;
 	protected final SearchBuilder<EventVO> CompletedEventSearch;
 	
 	public EventDaoImpl () {
-	    StartedEventsSearch = createSearchBuilder();
-	    StartedEventsSearch.and("state",StartedEventsSearch.entity().getState(),SearchCriteria.Op.NEQ);
-	    StartedEventsSearch.and("startId", StartedEventsSearch.entity().getStartId(), SearchCriteria.Op.EQ);
-	    StartedEventsSearch.and("createDate", StartedEventsSearch.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-	    StartedEventsSearch.done();
-	    
 	    CompletedEventSearch = createSearchBuilder();
 	    CompletedEventSearch.and("state",CompletedEventSearch.entity().getState(),SearchCriteria.Op.EQ);
 	    CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
@@ -63,16 +56,6 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
         return listIncludingRemovedBy(sc, null);
         
-    }
-    
-    @Override
-    public List<EventVO> listStartedEvents(Date minTime, Date maxTime) {
-        if (minTime == null || maxTime == null) return null;
-        SearchCriteria<EventVO> sc = StartedEventsSearch.create();
-        sc.setParameters("state", State.Completed);
-        sc.setParameters("startId", 0);
-        sc.setParameters("createDate", minTime, maxTime);
-        return listIncludingRemovedBy(sc, null);
     }
     
     @Override

@@ -34,6 +34,7 @@ import com.cloud.api.commands.ListSwiftsCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.utils.component.Manager;
 public interface SwiftManager extends Manager {
 
@@ -58,4 +59,6 @@ public interface SwiftManager extends Manager {
     Long chooseZoneForTmpltExtract(Long tmpltId);
 
     List<SwiftVO> listSwifts(ListSwiftsCmd cmd);
+
+    VMTemplateSwiftVO findByTmpltId(Long tmpltId);
 }

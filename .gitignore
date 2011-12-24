@@ -25,3 +25,4 @@ deps/cloud.userlibraries
 .DS_Store
 .idea
 *.iml
+*.swp

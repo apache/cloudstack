@@ -78,8 +78,6 @@ public interface ManagementServer extends ManagementService {
      */
     List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate);
 
-    List<EventVO> listPendingEvents(int entryTime, int duration);
-
     //FIXME - move all console proxy related commands to corresponding managers
     ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId);
 

@@ -24,10 +24,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SwiftResponse;
@@ -35,9 +34,9 @@ import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
 @Implementation(description = "List Swift.", responseObject = HostResponse.class)
-public class ListSwiftsCmd extends BaseCmd {
+public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
-    private static final String s_name = "listswiftresponse";
+    private static final String s_name = "listswiftsresponse";
      
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,12 +78,9 @@ public class ListSwiftsCmd extends BaseCmd {
                 swiftResponse.setObjectName("swift");
                 swiftResponses.add(swiftResponse);
             }
-            response.setResponses(swiftResponses);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Swift");
         }
+        response.setResponses(swiftResponses);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 }

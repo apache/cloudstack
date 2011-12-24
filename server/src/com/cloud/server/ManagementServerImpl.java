@@ -1500,13 +1500,6 @@ public class ManagementServerImpl implements ManagementServer {
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
 
-        if ((entryTime != null) && (duration != null)) {
-            if (entryTime <= duration) {
-                throw new InvalidParameterValueException("Entry time must be greater than duration");
-            }
-            return listPendingEvents(entryTime, duration);
-        }
-
         SearchBuilder<EventVO> sb = _eventDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
@@ -1519,6 +1512,9 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+        sb.and("state", sb.entity().getState(),SearchCriteria.Op.NEQ);
+	    sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
+	    sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
 
         if (isAdmin && permittedAccounts.isEmpty() && domainId != null) {
              // if accountId isn't specified, we can do a domain match for the admin case
@@ -1565,8 +1561,33 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (endDate != null) {
             sc.setParameters("createDateL", endDate);
         }
-
-        return _eventDao.searchAllEvents(sc, searchFilter);
+        
+        if ((entryTime != null) && (duration != null)) {
+            if (entryTime <= duration) {
+                throw new InvalidParameterValueException("Entry time must be greater than duration");
+            }
+            Calendar calMin = Calendar.getInstance();
+            Calendar calMax = Calendar.getInstance();
+            calMin.add(Calendar.SECOND, -entryTime);
+            calMax.add(Calendar.SECOND, -duration);
+            Date minTime = calMin.getTime();
+            Date maxTime = calMax.getTime();
+            
+    	    sc.setParameters("state", com.cloud.event.Event.State.Completed);
+            sc.setParameters("startId", 0);
+            sc.setParameters("createDate", minTime, maxTime);
+            List<EventVO> startedEvents = _eventDao.searchAllEvents(sc, searchFilter);
+            List<EventVO> pendingEvents = new ArrayList<EventVO>();
+            for (EventVO event : startedEvents) {
+                EventVO completedEvent = _eventDao.findCompletedEvent(event.getId());
+                if (completedEvent == null) {
+                    pendingEvents.add(event);
+                }
+            }
+            return pendingEvents;
+        } else  {
+        	return _eventDao.searchAllEvents(sc, searchFilter);
+        }
     }
 
 
@@ -3070,25 +3091,6 @@ public class ManagementServerImpl implements ManagementServer {
         cloudParams.add(signature);
 
         return cloudParams;
-    }
-
-    @Override
-    public List<EventVO> listPendingEvents(int entryTime, int duration) {
-        Calendar calMin = Calendar.getInstance();
-        Calendar calMax = Calendar.getInstance();
-        calMin.add(Calendar.SECOND, -entryTime);
-        calMax.add(Calendar.SECOND, -duration);
-        Date minTime = calMin.getTime();
-        Date maxTime = calMax.getTime();
-        List<EventVO> startedEvents = _eventDao.listStartedEvents(minTime, maxTime);
-        List<EventVO> pendingEvents = new ArrayList<EventVO>();
-        for (EventVO event : startedEvents) {
-            EventVO completedEvent = _eventDao.findCompletedEvent(event.getId());
-            if (completedEvent == null) {
-                pendingEvents.add(event);
-            }
-        }
-        return pendingEvents;
     }
 
     @Override

@@ -819,7 +819,7 @@
   var projectsActionFilter = function(args) {
     var allowedActions = ['destroy'];
 
-    if (args.context.item.account == cloudStack.context.users[0].account || args.context.users[0].role == '1') {
+    if (args.context.item.account == cloudStack.context.users[0].account || isAdmin()) {
       if (args.context.item.state == 'Suspended') {
         allowedActions.push('enable');
       } else if (args.context.item.state == 'Active') {

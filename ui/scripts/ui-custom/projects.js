@@ -13,75 +13,150 @@
       }));
     },
 
+    dashboardTabs: {
+      overview: function() {
+        var $dashboard = $('#template').find('.project-dashboard-view').clone();
+        $dashboard.data('tab-title', 'Dashboard');
+
+        var getData = function() {
+          // Populate data
+          $dashboard.find('[data-item]').hide();
+          var $loading = $('<div>').addClass('loading-overlay').prependTo($dashboard);
+          cloudStack.projects.dashboard({
+            response: {
+              success: function(args) {
+                $loading.remove();
+                var data = args.data;
+
+                // Iterate over data; populate corresponding DOM elements
+                $.each(data, function(key, value) {
+                  var $elem = $dashboard.find('[data-item=' + key + ']');
+
+                  // This assumes an array of data
+                  if ($elem.is('ul')) {
+                    $elem.show();
+                    var $liTmpl = $elem.find('li').remove();
+                    $(value).each(function() {
+                      var item = this;
+                      var $li = $liTmpl.clone().appendTo($elem).hide();
+
+                      $.each(item, function(arrayKey, arrayValue) {
+                        var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
+
+                        $arrayElem.html(arrayValue);
+                      });
+
+                      $li.attr({ title: item.description });
+
+                      $li.fadeIn();
+                    });
+                  } else {
+                    $elem.each(function() {
+                      var $item = $(this);
+                      if ($item.hasClass('chart-line')) {
+                        $item.show().animate({ width: value + '%' });
+                      } else {
+                        $item.hide().html(value).fadeIn();
+                      }
+                    });
+                  }
+                });
+              }
+            }
+          });
+        };
+
+        getData();
+
+        $dashboard.find('.button.manage-resources').click(function() {
+          $('.navigation-item.network').click();
+        });
+
+        $dashboard.find('.info-box.events .button').click(function() {
+          $('.navigation-item.events').click();
+        });
+
+        return $dashboard;
+      },
+
+      users: function() {
+        return $('<div>').addClass('management').data('tab-title', 'Users');
+      },
+
+      invitations: function() {
+        return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
+      },
+      
+      resources: function() {
+        var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
+        var $form = $('<form>');
+        var $submit = $('<input>').attr({
+          type: 'submit'
+        }).val('Apply');
+
+        cloudStack.projects.resourceManagement.dataProvider({
+          response: {
+            success: function(args) {
+              $(args.data).each(function() {
+                var resource = this;
+                var $field = $('<div>').addClass('field');
+                var $label = $('<label>').attr({
+                  for: resource.type
+                }).html(resource.label);
+                var $input = $('<input>').attr({
+                  type: 'text',
+                  name: resource.type,
+                  value: resource.value
+                }).addClass('required');
+
+                $field.append($label, $input);
+                $field.appendTo($form);
+              });
+
+              $form.validate();
+              $form.submit(function() {
+                if (!$form.valid) {
+                  return false;
+                }
+
+                var $loading = $('<div>').addClass('loading-overlay').appendTo($form);
+
+                cloudStack.projects.resourceManagement.update({
+                  data: cloudStack.serializeForm($form),
+                  response: {
+                    success: function(args) {
+                      $loading.remove();
+                      $('.notifications').notifications('add', {
+                        section: 'dashboard',
+                        desc: 'Updated project resources',
+                        interval: 1000,
+                        poll: function(args) {
+                          args.complete();
+                        }
+                      });
+                    }
+                  }
+                });
+
+                return false;
+              });
+
+              $submit.appendTo($form);
+              $form.appendTo($resources);
+            }
+          }
+        });
+
+        return $resources;
+      }
+    },
+
     /**
      * Projects dashboard
      */
     dashboard: function() {
       var tabs = {
-        overview: function() {
-          var $dashboard = $('#template').find('.project-dashboard-view').clone();
-          $dashboard.data('tab-title', 'Dashboard');
-
-          var getData = function() {
-            // Populate data
-            $dashboard.find('[data-item]').hide();
-            var $loading = $('<div>').addClass('loading-overlay').prependTo($dashboard);
-            cloudStack.projects.dashboard({
-              response: {
-                success: function(args) {
-                  $loading.remove();
-                  var data = args.data;
-
-                  // Iterate over data; populate corresponding DOM elements
-                  $.each(data, function(key, value) {
-                    var $elem = $dashboard.find('[data-item=' + key + ']');
-
-                    // This assumes an array of data
-                    if ($elem.is('ul')) {
-                      $elem.show();
-                      var $liTmpl = $elem.find('li').remove();
-                      $(value).each(function() {
-                        var item = this;
-                        var $li = $liTmpl.clone().appendTo($elem).hide();
-
-                        $.each(item, function(arrayKey, arrayValue) {
-                          var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
-
-                          $arrayElem.html(arrayValue);
-                        });
-
-                        $li.attr({ title: item.description });
-
-                        $li.fadeIn();
-                      });
-                    } else {
-                      $elem.each(function() {
-                        var $item = $(this);
-                        if ($item.hasClass('chart-line')) {
-                          $item.show().animate({ width: value + '%' });
-                        } else {
-                          $item.hide().html(value).fadeIn();
-                        }
-                      });
-                    }
-                  });
-                }
-              }
-            });
-          };
-
-          getData();
-
-          $dashboard.find('.button.manage-resources').click(function() {
-            $('.navigation-item.network').click();
-          });
-
-          $dashboard.find('.info-box.events .button').click(function() {
-            $('.navigation-item.events').click();
-          });
-
-          return $dashboard;
-        }
+        dashboard: pageElems.dashboardTabs.overview
       };
 
       // Only show management tabs to owner of project
@@ -89,78 +164,13 @@
         cloudStack.context.projects &&
           (cloudStack.context.projects[0].account == cloudStack.context.users[0].account)
       )) {
-        tabs.users = function() {
-          return $('<div>').addClass('management').data('tab-title', 'Users');
-        };
+        tabs.users = pageElems.dashboardTabs.users;
 
         if (g_capabilities.projectinviterequired) {
-          tabs.invitations = function() {
-            return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
-          };
+          tabs.invitations = pageElems.dashboardTabs.invitations;
         }
 
-        tabs.resources = function() {
-          var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
-          var $form = $('<form>');
-          var $submit = $('<input>').attr({
-            type: 'submit'
-          }).val('Apply');
-
-          cloudStack.projects.resourceManagement.dataProvider({
-            response: {
-              success: function(args) {
-                $(args.data).each(function() {
-                  var resource = this;
-                  var $field = $('<div>').addClass('field');
-                  var $label = $('<label>').attr({
-                    for: resource.type
-                  }).html(resource.label);
-                  var $input = $('<input>').attr({
-                    type: 'text',
-                    name: resource.type,
-                    value: resource.value
-                  }).addClass('required');
-
-                  $field.append($label, $input);
-                  $field.appendTo($form);
-                });
-
-                $form.validate();
-                $form.submit(function() {
-                  if (!$form.valid) {
-                    return false;
-                  }
-
-                  var $loading = $('<div>').addClass('loading-overlay').appendTo($form);
-
-                  cloudStack.projects.resourceManagement.update({
-                    data: cloudStack.serializeForm($form),
-                    response: {
-                      success: function(args) {
-                        $loading.remove();
-                        $('.notifications').notifications('add', {
-                          section: 'dashboard',
-                          desc: 'Updated project resources',
-                          interval: 1000,
-                          poll: function(args) {
-                            args.complete();
-                          }
-                        });
-                      }
-                    }
-                  });
-
-                  return false;
-                });
-
-                $submit.appendTo($form);
-                $form.appendTo($resources);
-              }
-            }
-          });
-
-          return $resources;
-        };
+        tabs.resources = pageElems.dashboardTabs.resources;
       }
 
       var $tabs = $('<div>').addClass('tab-content').append($('<ul>'));
@@ -328,7 +338,11 @@
                               );
 
                         var $users = $('<div>').attr({ id: 'new-project-review-tabs-users' }).appendTo($tabs);
-                        var $resouces = $('<div>').attr({ id: 'new-project-review-tabs-resouces' }).appendTo($tabs).html('(Resources go here)');
+                        cloudStack.context.projects = [project];
+                        var $resouces = $('<div>')
+                              .attr({ id: 'new-project-review-tabs-resouces' })
+                              .appendTo($tabs)
+                              .append(pageElems.dashboardTabs.resources);
 
                         $tabs.tabs();
 
@@ -383,11 +397,12 @@
                             }
                           }
                         });
-
+                        
                         // Save button
                         var $saveButton = $nextButton.clone().appendTo($review);
                         $saveButton.html('Save');
                         $saveButton.click(function() {
+                          $('#new-project-review-tabs-resouces').find('form').submit();
                           $('.ui-dialog, .overlay').remove();
                         });
 
@@ -399,11 +414,15 @@
 
                         return $review;
                       });
+                      
+                      $(':ui-dialog').dialog('option', 'position', 'center');
                     });
                     $laterButton.html('Close').appendTo($userManagement);
 
                     return $userManagement;
                   });
+
+                  $(':ui-dialog').dialog('option', 'position', 'center');
 
                   return false;
                 });

@@ -1758,11 +1758,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             if (!publicIps.isEmpty()) {
 
-                // Re-apply public ip addresses - should come before PF/LB/VPN
-                if (_networkMgr.isProviderSupportServiceInNetwork(router.getNetworkId(), Service.Firewall, provider)) {
-                    createAssociateIPCommands(router, publicIps, cmds, 0);
-                }
-
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
                 List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
