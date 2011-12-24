@@ -193,6 +193,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
+        sc.setParameters("download_state", Status.DOWNLOADED.toString());
 	    return findOneIncludingRemovedBy(sc);
 	}
 	
