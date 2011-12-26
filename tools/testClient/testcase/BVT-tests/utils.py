@@ -10,7 +10,6 @@ import time
 import remoteSSHClient
 from cloudstackAPI import *
 import cloudstackConnection
-#from cloudstackConnection import cloudConnection
 import configGenerator
 import logging  
 import string

@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2011 Citrix.  All rights reserved.
 #
-"""Test Information Services 
+"""Data for the BVT tests 
 """
 
 TEST_VM_LIFE_CYCLE_SERVICES = {

@@ -90,4 +90,3 @@ class Snapshot:
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = self.id
         apiclient.deleteSnapshot(cmd)
-
