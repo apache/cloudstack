@@ -49,7 +49,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
 public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
-    @Id
+	@Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
 	protected long id;
@@ -436,4 +436,28 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         }
         return toString;
     }
+    
+
+    @Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (id ^ (id >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		VMInstanceVO other = (VMInstanceVO) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
+
 }

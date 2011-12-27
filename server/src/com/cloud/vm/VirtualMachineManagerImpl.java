@@ -19,11 +19,14 @@ package com.cloud.vm;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -1704,19 +1707,43 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
 
-    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
+    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates, boolean init) {
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
-        List<VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
-        for (VMInstanceVO vm : vms) {
+        Set<VMInstanceVO> set_vms = Collections.synchronizedSet(new HashSet<VMInstanceVO>());
+        set_vms.addAll(_vmDao.listByClusterId(clusterId));
+        set_vms.addAll(_vmDao.listStartingByClusterId(clusterId));
+        
+        for (VMInstanceVO vm : set_vms) {
             if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
-            infos.remove(vm.getId());
+            AgentVmInfo info =  infos.remove(vm.getId());
+            if (init){ // mark the VMs real state on initial sync
+                VMInstanceVO castedVm = null;
+                if (info == null) {
+                    info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+                    castedVm = info.guru.findById(vm.getId());
+                } else {
+                    castedVm = info.vm;
+                }
+
+                try {
+                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid()); 
+                    long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+                    Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
+                    if (command != null){
+                        Answer answer = _agentMgr.send(hostId, command);
+                        if (!answer.getResult()) {
+                            s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
+                    e.printStackTrace();
+                }
+           }
+           
         }
-        // some VMs may be starting and will have last host id null
-        vms = _vmDao.listStartingByClusterId(clusterId);
-        for (VMInstanceVO vm : vms) {
-            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
-            infos.remove(vm.getId());
-        }
+            
         for (final AgentVmInfo left : infos.values()) {
             try {
                 Host host = _resourceMgr.findHostByGuid(left.getHostUuid());
@@ -1834,7 +1861,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         final String serverName = vm.getInstanceName();
 
         Command command = null;
-
+        s_logger.debug("VM " + serverName + ": cs state = " + serverState + " and realState = " + agentState);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("VM " + serverName + ": cs state = " + serverState + " and realState = " + agentState);
         }
@@ -2064,9 +2091,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 if (!hs.isExceuted()){
                     if (hs.isFull()) {
                         deltaSync(hs.getNewStates());
-                        fullSync(hs.getClusterId(), hs.getAllStates());
+                        fullSync(hs.getClusterId(), hs.getAllStates(), false);
                     } else if (hs.isDelta()){
                         deltaSync(hs.getNewStates());
+                    }
+                    else {
+                        fullSync(hs.getClusterId(), hs.getAllStates(), true);
                     }
                     hs.setExecuted();
                 }
