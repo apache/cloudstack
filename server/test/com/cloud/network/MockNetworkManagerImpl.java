@@ -729,4 +729,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
+	@Override
+	public boolean canAddDefaultSecurityGroup() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

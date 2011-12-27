@@ -291,4 +291,10 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         return null;
     }
 
+	@Override
+	public boolean enableAccount(long accountId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }
