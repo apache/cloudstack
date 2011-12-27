@@ -32,10 +32,6 @@ def describeResources(config):
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
 
-    prov = provider()
-    prov.vlan = config.get('cloudstack','guest.vlan')
-    z.providers.append(prov)
-
     p = pod()
     p.name = 'POD0'
     p.gateway = config.get('cloudstack', 'private.gateway')
