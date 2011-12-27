@@ -118,6 +118,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -908,6 +909,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         UpHostsInPoolSearch.selectField(UpHostsInPoolSearch.entity().getHostId());
         SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
+        hostSearch.and("resourceState", hostSearch.entity().getResourceState(), Op.EQ);
         UpHostsInPoolSearch.join("hosts", hostSearch, hostSearch.entity().getId(), UpHostsInPoolSearch.entity().getHostId(), JoinType.INNER);
         UpHostsInPoolSearch.and("pool", UpHostsInPoolSearch.entity().getPoolId(), Op.EQ);
         UpHostsInPoolSearch.done();
@@ -1881,6 +1883,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         SearchCriteria<Long> sc = UpHostsInPoolSearch.create();
         sc.setParameters("pool", pool.getId());
         sc.setJoinParameters("hosts", "status", Status.Up);
+		sc.setJoinParameters("hosts", "resourceState", ResourceState.Enabled);
 
         List<Long> hostIds = _storagePoolHostDao.customSearch(sc, null);
         Collections.shuffle(hostIds);

@@ -319,9 +319,9 @@ public class StatsCollector {
     	                    }
     					}
                     } catch (StorageUnavailableException e) {
-                        s_logger.info("Unable to reach " + pool);
+                        s_logger.info("Unable to reach " + pool, e);
                     } catch (Exception e) {
-                        s_logger.warn("Unable to get stats for " + pool);
+                        s_logger.warn("Unable to get stats for " + pool, e);
                     }
 				}
                 _storagePoolStats = storagePoolStats;
