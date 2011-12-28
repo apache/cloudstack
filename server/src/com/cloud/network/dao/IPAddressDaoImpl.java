@@ -208,7 +208,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
-
+    
+    @Override
+    public List<IPAddressVO> listByDcId(long dcId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        return listBy(sc);
+    }
+    
     @Override
     public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();

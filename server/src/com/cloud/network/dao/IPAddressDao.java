@@ -37,6 +37,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
 	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
+	List<IPAddressVO> listByDcId(long dcId); 
+	
 	List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat);
 	
 	List<IPAddressVO> listStaticNatPublicIps(long networkId);

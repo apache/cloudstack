@@ -108,6 +108,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -658,6 +659,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (startIp != null || endIp != null) {
             checkIpRange(startIp, endIp, cidrAddress, cidrSize);
         }
+        
+        // Check if the IP range overlaps with the public ip 
+        checkOverlapPublicIpRange(zoneId, startIp, endIp);
 
         // Check if the gateway is a valid IP address
         if (!NetUtils.isValidIp(gateway)) {
@@ -1150,6 +1154,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
+    private void checkOverlapPublicIpRange(Long zoneId, String startIp, String endIp) {
+        long privateStartIp = NetUtils.ip2Long(startIp);
+        long privateEndIp = NetUtils.ip2Long(endIp);
+
+        List<IPAddressVO> existingPublicIPs = _publicIpAddressDao.listByDcId(zoneId);
+        for (IPAddressVO publicIPVO : existingPublicIPs) {
+          long   publicIP = NetUtils.ip2Long(publicIPVO.getAddress().addr());
+          if ((publicIP >= privateStartIp) && (publicIP <= privateEndIp)) {
+              throw new InvalidParameterValueException("The Start IP and endIP address range overlap with Public IP :" + publicIPVO.getAddress().addr());
+          }
+        }
+    }
+    
+    private void checkOverlapPrivateIpRange(Long zoneId, String startIp, String endIp) {
+
+        List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
+        for (HostPodVO hostPod : podsInZone) {
+            String[] IpRange = hostPod.getDescription().split("-");
+            if (IpRange[0]==null || IpRange[1]==null) continue;
+            if (!NetUtils.isValidIp(IpRange[0]) ||  !NetUtils.isValidIp(IpRange[1])) continue;
+            if (NetUtils.ipRangesOverlap(startIp, endIp, IpRange[0], IpRange[1])) {
+                throw new InvalidParameterValueException("The Start IP and endIP address range overlap with private IP :" + IpRange[0] + ":" + IpRange[1]);
+            }
+        }
+    }
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_DELETE, eventDescription = "deleting zone", async = false)
@@ -2142,7 +2172,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 associateIpRangeToAccount = true;
             }
         }
-
+       
+        // Check if the IP range overlaps with the private ip 
+        checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
