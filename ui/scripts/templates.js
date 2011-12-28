@@ -912,13 +912,14 @@
 
                   isBootable: {
                     label: "Bootable",
-                    isBoolean: true
+                    isBoolean: true,
+										isChecked: true
                   },
 
                   osTypeId: {
                     label: 'OS Type',
                     dependsOn: 'isBootable',
-                    isHidden: true,
+                    isHidden: false,
                     validation: { required: true },
                     select: function(args) {
                       $.ajax({
