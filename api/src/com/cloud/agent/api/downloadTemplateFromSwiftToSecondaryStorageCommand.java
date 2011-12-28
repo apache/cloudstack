@@ -34,18 +34,20 @@ public class downloadTemplateFromSwiftToSecondaryStorageCommand extends Command 
     private Long dcId;
     private Long accountId;
     private Long templateId;
+    private String path;
 
     protected downloadTemplateFromSwiftToSecondaryStorageCommand() {
         
     }
    
-    public downloadTemplateFromSwiftToSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, int wait) {
+    public downloadTemplateFromSwiftToSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, String path, int wait) {
 
         this.swift = swift;
         this.secondaryStorageUrl = secondaryStorageUrl;
         this.dcId = dcId;
         this.accountId = accountId;
         this.templateId = templateId;
+        this.path = path;
         setWait(wait);
     }
 
@@ -71,6 +73,14 @@ public class downloadTemplateFromSwiftToSecondaryStorageCommand extends Command 
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     @Override

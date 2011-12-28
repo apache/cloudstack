@@ -1068,6 +1068,7 @@ CREATE TABLE  `cloud`.`template_swift_ref` (
   `swift_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
+  `path` varchar(255),
   `size` bigint unsigned,
   `physical_size` bigint unsigned DEFAULT 0,
   PRIMARY KEY  (`id`),

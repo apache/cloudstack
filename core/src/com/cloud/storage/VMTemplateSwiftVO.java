@@ -51,16 +51,20 @@ public class VMTemplateSwiftVO {
     @Column(name = GenericDaoBase.CREATED_COLUMN)
     private Date created = null;
 
+    @Column(name = "path")
+    private String path;
+
     @Column(name = "size")
     private long size;
 
     @Column(name = "physical_size")
     private long physicalSize;
 
-    public VMTemplateSwiftVO(long swiftId, long templateId, Date created, long size, long physicalSize) {
+    public VMTemplateSwiftVO(long swiftId, long templateId, Date created, String path, long size, long physicalSize) {
         this.swiftId = swiftId;
         this.templateId = templateId;
         this.created = created;
+        this.path = path;
         this.size = size;
         this.physicalSize = physicalSize;
     }
@@ -79,6 +83,10 @@ public class VMTemplateSwiftVO {
 
     public Date getCreated() {
         return created;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     public long getSwiftId() {

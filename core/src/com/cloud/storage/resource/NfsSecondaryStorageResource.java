@@ -174,18 +174,39 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long templateId = cmd.getTemplateId();
+        String path = cmd.getPath();
+        String errMsg;
+        String lDir = null;
         try {
             String parent = getRootDir(secondaryStorageUrl);
-            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
-            String result = swiftDownloadContainer(swift, "T-" + templateId.toString(), lPath);
+            lDir = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
+            String result = createLocalDir(lDir);
             if (result != null) {
-                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                errMsg = "downloadTemplateFromSwiftToSecondaryStorageCommand failed due to Create local directory failed";
                 s_logger.warn(errMsg);
-                return new Answer(cmd, false, errMsg);
+                throw new InternalErrorException(errMsg);
+            }
+            String lPath = lDir + "/" + path;
+            result = swiftDownload(swift, "T-" + templateId.toString(), path, lPath);
+            if (result != null) {
+                errMsg = "failed to download template " + path + " from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+            path = "template.properties";
+            lPath = lDir + "/" + path;
+            result = swiftDownload(swift, "T-" + templateId.toString(), path, lPath);
+            if (result != null) {
+                errMsg = "failed to download template " + path + " from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
             }
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
-            String errMsg = cmd + " Command failed due to " + e.toString();
+            if (lDir != null) {
+                deleteLocalDir(lDir);
+            }
+            errMsg = cmd + " Command failed due to " + e.toString();
             s_logger.warn(errMsg, e);
             return new Answer(cmd, false, errMsg);
         }

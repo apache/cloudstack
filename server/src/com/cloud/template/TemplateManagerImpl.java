@@ -365,31 +365,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (tmpltHostRef == null && _swiftMgr.isSwiftEnabled()) {
             SwiftTO swift = _swiftMgr.getSwiftTO(templateId);
             if (swift != null && sservers != null) {
-                for (HostVO secondaryStorageHost : sservers) {
-                    downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secondaryStorageHost.getName(), zoneId,
-                            template.getAccountId(), templateId, _primaryStorageDownloadWait);
-                    try {
-                        Answer answer = _agentMgr.sendToSSVM(zoneId, cmd);
-                        if (answer == null || !answer.getResult()) {
-                            String errMsg = "Failed to download template from Swift to secondary storage due to " + (answer == null ? "answer is null" : answer.getDetails());
-                            s_logger.warn(errMsg);
-                            throw new CloudRuntimeException(errMsg);
-                        }
-                        tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-                        if (tmpltHostRef != null) {
-                            if (tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                                tmpltHostRef = null;
-                            } else {
-                                break;
-                            }
-                        }
-
-                    } catch (Exception e) {
-                        String errMsg = "Failed to download template from Swift to secondary storage due to " + e.toString();
-                        s_logger.warn(errMsg);
-                        throw new CloudRuntimeException(errMsg);
-                    }
-                }
+                downloadTemplateFromSwiftToSecondaryStorage(zoneId, templateId);
             }
         }
         if (tmpltHostRef == null) {
@@ -496,7 +472,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
 
         downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
-                _primaryStorageDownloadWait);
+                tmpltSwift.getPath(), _primaryStorageDownloadWait);
         try {
             Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
             if (answer == null || !answer.getResult()) {
@@ -504,6 +480,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 s_logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
+            String installPath = "template/tmpl/" + dcId + "/" + template.getAccountId() + "/" + tmpltSwift.getPath();
+            VMTemplateHostVO tmpltHost = new VMTemplateHostVO(secHost.getId(), templateId, new Date(), 100, Status.DOWNLOADED, null, null, null, installPath, template.getUrl());
+            tmpltHost.setSize(tmpltSwift.getSize());
+            tmpltHost.setPhysicalSize(tmpltSwift.getPhysicalSize());
+            _tmpltHostDao.persist(tmpltHost);
         } catch (Exception e) {
             String errMsg = "Failed to download template from Swift to secondary storage due to " + e.toString();
             s_logger.warn(errMsg);
@@ -552,7 +533,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 }
                 return null;
             }
-            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), templateHostRef.getSize(), templateHostRef.getPhysicalSize());
+            String path = templateHostRef.getInstallPath();
+            int index = path.lastIndexOf('/');
+            path = path.substring(index + 1);
+            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), path, templateHostRef.getSize(), templateHostRef.getPhysicalSize());
             _tmpltSwiftDao.persist(tmpltSwift);
             _swiftMgr.propagateTemplateOnAllZones(templateHostRef.getTemplateId());
         } catch (Exception e) {
@@ -591,9 +575,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
         
-        if (templateHostRef == null) {
+        if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
             String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
             if (result != null) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
+            templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
+            if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
                 s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
                 return null;
             }

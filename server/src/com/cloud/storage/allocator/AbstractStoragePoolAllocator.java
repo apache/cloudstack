@@ -244,14 +244,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		    if (templateHostVO == null) {
                 VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(template.getId());
                 if (templateSwiftVO == null) {
-                    s_logger.info("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
+                    s_logger.error("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
+                    return false;
                 }
                 long templateSize = templateSwiftVO.getPhysicalSize();
                 if (templateSize == 0) {
                     templateSize = templateSwiftVO.getSize();
                 }
                 totalAllocatedSize += (templateSize + _extraBytesPerVolume);
-		        return false;
 		    } else {
 		        long templateSize = templateHostVO.getPhysicalSize();
 		        if ( templateSize == 0 ){
