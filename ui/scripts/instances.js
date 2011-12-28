@@ -533,10 +533,23 @@
           }
         },
         stop: {
-          label: 'Stop instance',
-          action: function(args) {
+          label: 'Stop instance',					
+					createForm: {
+						title: 'Stop instance',
+						desc: 'Please confirm that you want to stop this instance',
+						fields: {                 
+							forced: {
+								label: 'Force stop',
+								isBoolean: true,                   
+								isChecked: false
+							}                  
+						}
+					},		
+          action: function(args) {					  
+						var array1 = [];
+						array1.push("&forced=" + (args.data.forced == "on"));		
             $.ajax({
-              url: createURL("stopVirtualMachine&id=" + args.data.id),
+              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -570,8 +583,7 @@
               return args.name + ' has been stopped.';
             }
           },
-          notification: {
-            //poll: testData.notifications.testPoll
+          notification: {            
             poll: pollAsyncJobResult
           }
         },
@@ -793,28 +805,41 @@
           },
           stop: {
             label: 'Stop instance',
-            action: function(args) {
-              $.ajax({
-                url: createURL("stopVirtualMachine&id=" + args.data.id),
-                dataType: "json",
-                async: true,
-                success: function(json) {
-                  var jid = json.stopvirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
-                     {jobId: jid,
-                      getUpdatedItem: function(json) {
-                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                      },
-                      getActionFilter: function() {
-                        return vmActionfilter;
-                      }
-                     }
-                    }
-                  );
-                }
-              });
-            },
+						createForm: {
+							title: 'Stop instance',
+							desc: 'Please confirm that you want to stop this instance',
+							fields: {                 
+								forced: {
+									label: 'Force stop',
+									isBoolean: true,                   
+									isChecked: false
+								}                  
+							}
+						},		
+						action: function(args) {					  
+							var array1 = [];
+							array1.push("&forced=" + (args.data.forced == "on"));		
+							$.ajax({
+								url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.stopvirtualmachineresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+											},
+											getActionFilter: function() {
+												return vmActionfilter;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
             messages: {
               confirm: function(args) {
                 return 'Are you sure you want to stop ' + args.name + '?';
