@@ -156,6 +156,7 @@ ALTER TABLE `cloud`.`data_center` DROP COLUMN `guest_network_cidr`;
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`host` ADD CONSTRAINT `uc_host__uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`host` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'atomic increase count making status update operation atomical';
 
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`);
