@@ -405,9 +405,6 @@ def can_bridge_firewall(session, args):
     allow_egress_traffic(session)
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
-    if not os.path.exists('/var/cache/cloud'):
-        os.makedirs('/var/cache/cloud')
-    get_ipset_keyword()
  
     cleanup_rules_for_dead_vms(session)
     cleanup_rules(session, args)
@@ -1155,8 +1152,9 @@ def inflate_rules (zipped):
    return zlib.decompress(base64.b64decode(zipped))
 
 @echo
-def cache_ipset_keyword():
+def get_ipset_keyword():
     tmpname = 'ipsetqzvxtmp'
+    keyword = 'match-set'
     try:
         util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iptreemap'])
     except:
@@ -1173,32 +1171,6 @@ def cache_ipset_keyword():
        util.pread2(['/bin/bash', '-c', 'ipset -X ' + tmpname])
     except:
        pass
-       
-    cachefile = "/var/cache/cloud/ipset.keyword"
-    util.SMlog("Writing ipset keyword to " + cachefile)
-    cachef = open(cachefile, 'w')
-    try:
-        cachef.write(keyword)
-        cachef.write('\n')
-    except:
-        util.SMlog("Failed to write to cache file " + cachef)
-        
-    cachef.close()
-    return keyword
-    
-@echo
-def get_ipset_keyword():
-    cachefile = "/var/cache/cloud/ipset.keyword"
-    keyword = 'match-set'
-    
-    if not os.path.exists(cachefile):
-        util.SMlog("Failed to find ipset keyword cachefile %s" %cachefile)
-        keyword = cache_ipset_keyword()
-    else:
-        lines = (line.rstrip() for line in open(cachefile))
-        for line in lines:
-            keyword = line
-            break
 
     return keyword
 
@@ -1309,14 +1281,24 @@ def network_rules(session, args):
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
-                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, direction, '-j', action]
+<<<<<<< HEAD
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
             elif protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, direction, '-j', action]
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
+=======
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
+            elif protocol != 'icmp':
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
+>>>>>>> cf69a92... bug 11302: support new CSP for SP2.
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, keyword, '-j', action]
+<<<<<<< HEAD
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
+=======
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
+>>>>>>> cf69a92... bug 11302: support new CSP for SP2.
             cmds.append(iptables)
             util.SMlog(iptables)
         
