@@ -417,19 +417,21 @@
                                                 
                   array1.push("&networkIds=" + array2.join(","));
                 }
-                else if (step5ContainerType == 'select-security-group') {
-                  var securityGroupList;
-                  var groups = args.data["security-groups"];
-                  if(groups != null && groups.length > 0) {
-                    for(var i=0; i < groups.length; i++) {
-                      if(i == 0)
-                        securityGroupList = groups[i];
-                      else
-                        securityGroupList += ("," + groups[i]);
-                    }
+                else if (step5ContainerType == 'select-security-group') {     
+                  var checkedSecurityGroupIdArray;                 
+                  if(typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
+                    checkedSecurityGroupIdArray = args.data["security-groups"];                          
                   }
-                  if(securityGroupList != null)
-                    array1.push("&securitygroupids=" + securityGroupList);
+                  else if(typeof(args.data["security-groups"]) == "string" && args.data["security-groups"].length > 0) { //args.data["security-groups"] is a string, e.g. "2375f8cc-8a73-4b8d-9b26-50885a25ffe0"
+                    checkedSecurityGroupIdArray = [];
+                    checkedSecurityGroupIdArray.push(args.data["security-groups"]);
+                  }
+                  else { // typeof(args.data["security-groups"]) == null 
+                    checkedSecurityGroupIdArray = [];
+                  }
+									
+									if(checkedSecurityGroupIdArray.length > 0)
+									  array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));								
                 }
 
                 var displayname = args.data.displayname;
