@@ -62,27 +62,42 @@ if [[ $OSTYPE == "cygwin" ]] ; then
   PATHSEP=';'
 fi
 
-echo "Recreating Database."
+handle_error() {
+    mysqlout=$?
+    if [ $mysqlout -eq 1 ]; then
+        printf "Please enter root password for MySQL.\n" 
+        mysql --user=root --password < $1
+        if [ $? -ne 0 ]; then
+            printf "Error: Cannot execute $1\n"
+            exit 10
+        fi
+    elif [ $mysqlout -eq 127 ]; then
+        printf "Error: Cannot execute $1 - mysql command not found.\n"
+        exit 11
+    elif [ $mysqlout -ne 0 ]; then
+        printf "Error: Cannot execute $1\n"
+        exit 11
+    fi
+}
+
+echo "Recreating Database cloud."
 mysql --user=root --password=$3 < create-database.sql > /dev/null 2>/dev/null
-mysqlout=$?
-if [ $mysqlout -eq 1 ]; then
-  printf "Please enter root password for MySQL.\n" 
-  mysql --user=root --password < create-database.sql
-  if [ $? -ne 0 ]; then
-    printf "Error: Cannot execute create-database.sql\n"
-    exit 10
-  fi
-elif [ $mysqlout -eq 127 ]; then
-  printf "Error: Cannot execute create-database.sql - mysql command not found.\n"
-  exit 11
-elif [ $mysqlout -ne 0 ]; then
-  printf "Error: Cannot execute create-database.sql\n"
-  exit 11
-fi
+handle_error create-database.sql
+
+
+echo "Recreating Database cloud_usage"
+mysql --user=root --password=$3 < create-database-premium.sql > /dev/null 2>/dev/null
+handle_error create-database-premium.sql
 
 mysql --user=cloud --password=cloud cloud < create-schema.sql
 if [ $? -ne 0 ]; then
   printf "Error: Cannot execute create-schema.sql\n"
+  exit 11
+fi
+
+mysql --user=cloud --password=cloud < create-schema-premium.sql
+if [ $? -ne 0 ]; then
+  printf "Error: Cannot execute create-schema-premium.sql\n"
   exit 11
 fi
 
