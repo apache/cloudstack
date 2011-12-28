@@ -14,4 +14,10 @@ ALTER TABLE `cloud`.`host` DROP COLUMN `allocation_state`;
 
 ALTER TABLE `cloud`.`data_center` DROP COLUMN `vnet`;
 
-
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `dns_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `gateway_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `firewall_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `lb_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `userdata_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `vpn_service`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `dhcp_service`;

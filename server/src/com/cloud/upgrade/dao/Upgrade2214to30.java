@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -318,6 +319,7 @@ public class Upgrade2214to30 implements DbUpgrade {
     	encryptHostDetails(conn);
     	encryptVNCPassword(conn);
     	encryptUserCredentials(conn);
+    	createNetworkOfferingServices(conn);
     }
     
     private void encryptConfigValues(Connection conn) {
@@ -479,4 +481,83 @@ public class Upgrade2214to30 implements DbUpgrade {
             DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), true);
         }
     }
+
+    private void createNetworkOfferingServices(Connection conn) {
+    	PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service, unique_name from network_offerings where traffic_type='Guest'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String uniqueName = rs.getString(9);
+                
+                ArrayList<String> services = new ArrayList<String>();
+                if (rs.getLong(2) != 0) {
+                	services.add("Dns");
+                }
+                
+                if (rs.getLong(3) != 0) {
+                	services.add("Gateway");
+                }
+                
+                if (rs.getLong(4) != 0) {
+                	services.add("Firewall");
+                }
+                
+                if (rs.getLong(5) != 0) {
+                	services.add("Lb");
+                }
+                
+                if (rs.getLong(6) != 0) {
+                	services.add("UserData");
+                }
+                
+                if (rs.getLong(7) != 0) {
+                	services.add("Vpn");
+                }
+                
+                if (rs.getLong(8) != 0) {
+                	services.add("Dhcp");
+                }
+                
+                if (uniqueName.equalsIgnoreCase(NetworkOffering.DefaultSharedNetworkOfferingWithSGService.toString())) {
+                	services.add("SecurityGroup");
+                }
+                
+                if (uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString())) {
+                	services.add("SourceNat");
+                	services.add("PortForwarding");
+                	services.add("StaticNat");
+                }
+                
+                for (String service : services) {
+                    pstmt = conn.prepareStatement("INSERT INTO ntwk_offering_service_map (`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
+                    pstmt.setLong(1, id);
+                    pstmt.setString(2, service);
+                    if (service.equalsIgnoreCase("SecurityGroup")) {
+                        pstmt.setString(3, "SecurityGroupProvider");
+                    } else {
+                        pstmt.setString(3, "VirtualRouter");
+                    }
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade network offering", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close(); 
+                }
+               
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
 }

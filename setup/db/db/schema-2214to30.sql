@@ -291,27 +291,12 @@ ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFA
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 
 
-
-ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
-ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
-ALTER TABLE `cloud`.`network_offerings` DROP `concurrent_connections`;
 
 --;
 --NAAS;
 --;
-CREATE TABLE  `ntwk_offering_service_map` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
-  `service` varchar(255) NOT NULL COMMENT 'service',
-  `provider` varchar(255) COMMENT 'service provider',
-  `created` datetime COMMENT 'date created',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
-  UNIQUE (`network_offering_id`, `service`, `provider`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `ntwk_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -499,3 +484,49 @@ CREATE TABLE  `cloud`.`op_user_stats_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `simulator_network_label` varchar(255) COMMENT  'The name labels needed for identifying the simulator';
+
+--;
+-- Network offerings
+--;
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `dedicated_lb_service` int(1) unsigned NOT NULL DEFAULT 1 COMMENT 'true if the network offering provides a dedicated load balancer for each network';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `redundant_router_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the redundant router service';
+
+ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` DROP `concurrent_connections`;
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `state` char(32) COMMENT 'state of the network offering that has Disabled value by default';
+UPDATE `cloud`.`network_offerings` SET `state`='Enabled';
+UPDATE `cloud`.`network_offerings` SET `state`='Disabled' where `availability`='Unavailable';
+UPDATE `cloud`.`network_offerings` SET `availability`='Optional' where `availability`='Unavailable';
+UPDATE `cloud`.`network_offerings` SET `system_only`=0 where `traffic_type`='Guest';
+UPDATE `cloud`.`network_offerings` SET `specify_vlan`=1 where `unique_name`='System-Guest-Network';
+
+UPDATE `cloud`.`network_offerings` SET `unique_name`='DefaultSharedNetworkOfferingWithSGService' where `unique_name`='System-Guest-Network';
+UPDATE `cloud`.`network_offerings` SET `unique_name`='DefaultIsolatedNetworkOfferingWithSourceNatService' where `unique_name`='DefaultVirtualizedNetworkOffering';
+UPDATE `cloud`.`network_offerings` SET `unique_name`='DefaultSharedNetworkOffering' where `unique_name`='DefaultDirectNetworkOffering';
+
+UPDATE `cloud`.`network_offerings` SET `name`='DefaultSharedNetworkOfferingWithSGService' where `name`='System-Guest-Network';
+UPDATE `cloud`.`network_offerings` SET `name`='DefaultIsolatedNetworkOfferingWithSourceNatService' where `name`='DefaultVirtualizedNetworkOffering';
+UPDATE `cloud`.`network_offerings` SET `name`='DefaultSharedNetworkOffering' where `name`='DefaultDirectNetworkOffering';
+
+UPDATE `cloud`.`network_offerings` SET `guest_type`='Shared' where `guest_type`='Direct';
+UPDATE `cloud`.`network_offerings` SET `guest_type`='Isolated' where `guest_type`='Virtual';
+UPDATE `cloud`.`network_offerings` SET `availability`='Optional' where `availability`='Required' and `guest_type`='Shared';
+
+
+insert into network_offerings (`name`, `unique_name`, `display_text`, `traffic_type`, `system_only`, `specify_vlan`, `default`, `availability`, `state`, `guest_type`, `created`, `userdata_service`, `dns_service`, `dhcp_service`) values ('DefaultIsolatedNetworkOffering', 'DefaultIsolatedNetworkOffering', 'Offering for Isolated networks with no Source Nat service', 'Guest', 0, 1, 1, 'Optional', 'Enabled', 'Isolated', now(), 1, 1, 1);
+
+
+CREATE TABLE  `ntwk_offering_service_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
+  `service` varchar(255) NOT NULL COMMENT 'service',
+  `provider` varchar(255) COMMENT 'service provider',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
+  UNIQUE (`network_offering_id`, `service`, `provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
