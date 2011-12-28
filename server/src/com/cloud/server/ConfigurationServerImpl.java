@@ -192,8 +192,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             
             // Save default service offerings
-            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);            
-            createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
+            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", false, false, null);            
+            createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", false, false, null);
             // Save default disk offerings
             createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
             createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
