@@ -480,7 +480,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 s_logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-            String installPath = "template/tmpl/" + dcId + "/" + template.getAccountId() + "/" + tmpltSwift.getPath();
+            String installPath = "template/tmpl/" + template.getAccountId() + "/" + template.getId() + "/" + tmpltSwift.getPath();
             VMTemplateHostVO tmpltHost = new VMTemplateHostVO(secHost.getId(), templateId, new Date(), 100, Status.DOWNLOADED, null, null, null, installPath, template.getUrl());
             tmpltHost.setSize(tmpltSwift.getSize());
             tmpltHost.setPhysicalSize(tmpltSwift.getPhysicalSize());
