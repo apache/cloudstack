@@ -98,6 +98,12 @@ if [ $? -ne 0 ]; then
   exit 11
 fi
 
+mysql --user=cloud --password=cloud cloud < create-schema-premium.sql
+if [ $? -ne 0 ]; then
+  printf "Error: Cannot execute create-schema-premium.sql\n"
+  exit 11
+fi
+
 if [ "$1" != "" ]; then
   mysql --user=cloud --password=cloud cloud < $1
   if [ $? -ne 0 ]; then
