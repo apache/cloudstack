@@ -29,13 +29,12 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
-import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 
-public class Test2213To30DBUpgrade extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(Test2213To30DBUpgrade.class);
+public class Test2214To30DBUpgrade extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(Test2214To30DBUpgrade.class);
 
     @Override
     @Before
@@ -49,16 +48,15 @@ public class Test2213To30DBUpgrade extends TestCase {
     }
     
     public void test2213to30Upgrade() throws SQLException {
-        s_logger.debug("Finding sample data from 2.2.13");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.13/2.2.13_cloud_db_sample.sql", false, true);
+        s_logger.debug("Finding sample data from 2.2.14");
+        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.14/advance_zone_2.2.14.sql", false, true);
         
         Connection conn;
         PreparedStatement pstmt;
         
-        VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
         
-        checker.upgrade("2.2.13", "3.0.0");
+        checker.upgrade("2.2.14", "3.0.0");
         
         conn = Transaction.getStandaloneConnection();
         try {

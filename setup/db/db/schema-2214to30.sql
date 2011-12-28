@@ -242,7 +242,7 @@ UPDATE configuration SET description = '[''random'', ''firstfit'', ''userdispers
 
 
 --;
--- Usage db upgrade from 2.2.13 to 3.0;
+-- Usage db upgrade from 2.2.14 to 3.0;
 --;
 
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
