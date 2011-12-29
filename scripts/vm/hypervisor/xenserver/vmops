@@ -1316,7 +1316,7 @@ def network_rules(session, args):
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, keyword, '-j', action]
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, direction, '-j', action]
             cmds.append(iptables)
             util.SMlog(iptables)
         
