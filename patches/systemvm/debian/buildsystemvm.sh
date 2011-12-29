@@ -31,7 +31,7 @@ HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
-CLOUDSTACK_RELEASE=2.2
+CLOUDSTACK_RELEASE=3.0
 offset=4096
 baseimage() {
   mkdir -p $LOCATION
@@ -382,6 +382,8 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
   #keepalived and conntrackd
   chroot . apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
+  #ipcalc
+  chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
 
   echo "***** getting sun jre 6*********"
   chroot . echo 'sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
@@ -391,7 +393,6 @@ packages() {
 	sun-java6-bin shared/present-sun-dlj-v1-1 note
 	sun-java6-jre shared/present-sun-dlj-v1-1 note ' | chroot . debconf-set-selections
   chroot .  apt-get --no-install-recommends -q -y install  sun-java6-jre 
-
 }
 
 
@@ -425,6 +426,16 @@ services() {
   chroot . chkconfig --add cloud
   chroot . chkconfig cloud off
   chroot . chkconfig monit off
+}
+
+dhcp_fix() {
+  #deal with virtio DHCP issue, copy and install customized kernel module and iptables
+  mkdir -p tmp
+  cp /tmp/systemvm/xt_CHECKSUM.ko lib/modules/2.6.32-5-686-bigmem/kernel/net/netfilter
+  chroot . depmod -a 2.6.32-5-686-bigmem
+  cp /tmp/systemvm/iptables_1.4.8-3local1checksum1_i386.deb tmp/
+  chroot . dpkg -i tmp/iptables_1.4.8-3local1checksum1_i386.deb
+  rm tmp/iptables_1.4.8-3local1checksum1_i386.deb
 }
 
 cleanup() {
@@ -467,6 +478,11 @@ mkdir -p $LOCATION
 MOUNTPOINT=/mnt/$IMAGENAME/
 IMAGELOC=$LOCATION/$IMAGENAME.img
 scriptdir=$(dirname $PWD/$0)
+
+rm -rf /tmp/systemvm
+mkdir -p /tmp/systemvm
+cp ./xt_CHECKSUM.ko /tmp/systemvm
+cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
 
 rm -f $IMAGELOC
 begin=$(date +%s)
@@ -527,6 +543,9 @@ apache2
 
 echo "*************CONFIGURING VPN********************"
 vpn_config
+
+echo "*************FIX DHCP ISSUE********************"
+dhcp_fix
 
 echo "*************CLEANING UP********************"
 cleanup 

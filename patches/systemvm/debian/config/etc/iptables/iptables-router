@@ -23,4 +23,11 @@ COMMIT
 -A FORWARD -i eth0 -o eth2 -j ACCEPT
 -A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 COMMIT
-
+*mangle
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+-A POSTROUTING -p udp --dport bootpc -j CHECKSUM --checksum-fill
+COMMIT
