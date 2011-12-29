@@ -175,7 +175,9 @@ function JsX11KeyboardMapper() {
 	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
 	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
 	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false }
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true }
 	];
 }
 
