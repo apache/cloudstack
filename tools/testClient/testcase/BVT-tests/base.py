@@ -3,14 +3,14 @@
 # Copyright (c) 2011 Citrix.  All rights reserved.
 #
 
-""" Base class for all Cloudstack resources - Server, Volume, Snapshot etc
+""" Base class for all Cloudstack resources - Virtual machine, Volume, Snapshot etc
 """
 
 from utils import is_server_ssh_ready, random_gen
 from cloudstackAPI import *
 
-class Server:
-    """Manage server lifecycle
+class VirtualMachine:
+    """Manage virtual machine lifecycle
     """
     def __init__(self, items, services):
         self.__dict__.update(items)
@@ -29,9 +29,16 @@ class Server:
         cmd.zoneid = services["zoneid"]
         if "diskoffering" in services:
             cmd.diskofferingid = services["diskoffering"]
-        return Server(apiclient.deployVirtualMachine(cmd).__dict__, services)
+        return VirtualMachine(apiclient.deployVirtualMachine(cmd).__dict__, services)
 
-    def get_ssh_client(self):
+    def get_ssh_client(self, reconnect=False):
+            if reconnect:
+                self.ssh_client = is_server_ssh_ready(
+                                                    self.ipaddress,
+                                                    self.ssh_port,
+                                                    self.username,
+                                                    self.password
+                                                )
             self.ssh_client = self.ssh_client or is_server_ssh_ready(
                                                     self.ipaddress,
                                                     self.ssh_port,
@@ -44,6 +51,17 @@ class Server:
         cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
         cmd.id = self.id
         apiclient.destroyVirtualMachine(cmd)
+
+    def attach_volume(self, apiclient, volume):
+        cmd = attachVolume.attachVolumeCmd()
+        cmd.id = volume.id
+        cmd.virtualmachineid = self.id
+        return apiclient.attachVolume(cmd)
+
+    def detach_volume(self, apiclient, volume):
+        cmd = detachVolume.detachVolumeCmd()
+        cmd.id = volume.id
+        return apiclient.detachVolume(cmd)
 
 
 class Volume:
@@ -60,13 +78,23 @@ class Volume:
         cmd.zoneid = services["zoneid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
     
-
+    @classmethod
+    def create_custom_disk(cls, apiclient, services):
+        cmd = createVolume.createVolumeCmd()
+        cmd.name = services["diskname"]
+        cmd.diskofferingid = services["customdiskofferingid"]
+        cmd.size = services["customdisksize"]
+        cmd.zoneid = services["zoneid"]
+        return Volume(apiclient.createVolume(cmd).__dict__)
+  
+    
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services):
         cmd = createVolume.createVolumeCmd()    
         cmd.name = "-".join([services["diskname"], random_gen()])
         cmd.snapshotid = snapshot_id
         cmd.zoneid = services["zoneid"]
+        cmd.size = services["size"]
         return Volume(apiclient.createVolume(cmd).__dict__)
         
     def delete(self, apiclient):
@@ -90,3 +118,4 @@ class Snapshot:
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = self.id
         apiclient.deleteSnapshot(cmd)
+

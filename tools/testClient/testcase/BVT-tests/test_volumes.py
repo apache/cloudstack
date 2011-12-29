@@ -9,7 +9,7 @@ from cloudstackTestCase import *
 from cloudstackAPI import *
 from settings import *
 from utils import fetch_api_client, format_volume_to_ext3
-from base import Server, Volume
+from base import VirtualMachine, Volume
 #Import System modules
 import os
 import urllib2
@@ -20,38 +20,74 @@ services = TEST_VOLUME_SERVICES
 
 class TestCreateVolume(cloudstackTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = fetch_api_client()
+        cls.virtual_machine = VirtualMachine.create(cls.api_client, services)
+
     def setUp(self):
+
         self.apiClient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
     def test_01_create_volume(self):
-        """Test Volume creation
+        """Test Volume creation for all Disk Offerings (incl. custom)
         """
-        self.volume = Volume.create(self.apiClient, services)
-        
-        cmd = listVolumes.listVolumesCmd()
-        cmd.id = self.volume.id
-        list_volume_response = self.apiClient.listVolumes(cmd)
+        self.volumes = []
+        for k,v in services["volume_offerings"].items():
+            self.volumes.append(Volume.create(self.apiClient, v))
     
-        self.assertNotEqual(list_volume_response, None, "Check if volume exists in ListVolumes")
-        qresultset = self.dbclient.execute("select id from volumes where id = %s" %self.volume.id)
-        self.assertNotEqual(len(qresultset), 0, "Check if volume exists in Database")
-
+        self.volumes.append(Volume.create_custom_disk(self.apiClient, services))
+        #Attach a volume with different disk offerings and check the memory allocated to each of them
+        for volume in self.volumes:
+            cmd = listVolumes.listVolumesCmd()
+            cmd.id = volume.id
+            list_volume_response = self.apiClient.listVolumes(cmd)
+        
+            self.assertNotEqual(list_volume_response, None, "Check if volume exists in ListVolumes")
+            qresultset = self.dbclient.execute("select id from volumes where id = %s" %volume.id)
+            self.assertNotEqual(len(qresultset), 0, "Check if volume exists in Database")
+            attached_volume = self.virtual_machine.attach_volume(self.apiClient,volume)
+            ssh = self.virtual_machine.get_ssh_client()
+            
+            #ssh.execute("shutdown -r now")
+            #Sleep to ensure the machine is rebooted properly
+            time.sleep(120) 
+            
+            ssh = self.virtual_machine.get_ssh_client(True)
+            
+            res = ssh.execute("fdisk -l|grep /dev/sda|head -1") 
+            #Disk /dev/sda: 21.5 GB, 21474836480 bytes
+            
+            actual_disk_size = res[0].split()[4]
+            
+            self.assertEqual(str(list_volume_response[0].size), actual_disk_size, "Check if promised disk size actually available")
+            self.virtual_machine.detach_volume(self.apiClient,volume)
+    
     def tearDown(self):
-        self.volume.delete(self.apiClient)
+        for volume in self.volumes:
+            volume.delete(self.apiClient)
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.virtual_machine.delete(cls.api_client)
+    
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" %e)
  
 class TestVolumes(cloudstackTestCase):
 
     @classmethod    
     def setUpClass(cls):
         cls.api_client = fetch_api_client()
-        cls.server = Server.create(cls.api_client, services)
+        cls.virtual_machine = VirtualMachine.create(cls.api_client, services)
         cls.volume = Volume.create(cls.api_client, services)
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.server.delete(cls.api_client)
+            cls.virtual_machine.delete(cls.api_client)
             cls.volume.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" %e)
@@ -63,10 +99,7 @@ class TestVolumes(cloudstackTestCase):
     def test_02_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
-        cmd = attachVolume.attachVolumeCmd()
-        cmd.id = self.volume.id
-        cmd.virtualmachineid = self.server.id
-        self.apiClient.attachVolume(cmd)
+        self.virtual_machine.attach_volume(self.volume)
 
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(60)
@@ -82,11 +115,11 @@ class TestVolumes(cloudstackTestCase):
         self.assertNotEqual(len(qresultset), 0, "Check if volume exists in Database") 
         
         qresult = qresultset[0]
-        self.assertEqual(qresult[0], self.server.id, "Check if volume is assc. with server in Database") 
+        self.assertEqual(qresult[0], self.virtual_machine.id, "Check if volume is assc. with virtual machine in Database") 
         #self.assertEqual(qresult[1], 0, "Check if device is valid in the database")
 
         #Format the attached volume to a known fs
-        format_volume_to_ext3(self.server.get_ssh_client())
+        format_volume_to_ext3(self.virtual_machine.get_ssh_client())
 
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
@@ -114,10 +147,7 @@ class TestVolumes(cloudstackTestCase):
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
         """
-        cmd = detachVolume.detachVolumeCmd()
-        cmd.id = self.volume.id 
-        self.apiClient.detachVolume(cmd)
-
+        self.virtual_machine.detach_volume(self.virtual_machine)
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(60)
         cmd = listVolumes.listVolumesCmd()
@@ -132,7 +162,7 @@ class TestVolumes(cloudstackTestCase):
         self.assertNotEqual(len(qresultset), 0, "Check if volume exists in Database") 
 
         qresult = qresultset[0]
-        self.assertEqual(qresult[0], None, "Check if volume is unassc. with server in Database") 
+        self.assertEqual(qresult[0], None, "Check if volume is unassc. with virtual machine in Database") 
         self.assertEqual(qresult[1], None, "Check if no device is valid in the database") 
 
 
