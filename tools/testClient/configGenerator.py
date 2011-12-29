@@ -48,9 +48,10 @@ class zone():
         self.guestcidraddress = None
         self.internaldns2 = None
         self.securitygroupenabled = None
+        ''' Guest Vlan range - only advanced zone'''
+        self.vlan = None
         '''default public network, in advanced mode'''
         self.ipranges = []
-        '''tagged network, in advanced mode'''
         self.networks = []
         self.providers = []
         self.pods = []
@@ -61,8 +62,6 @@ class provider():
         self.name = None
         self.state = None
         self.broadcastdomainrange = 'ZONE'
-        ''' Guest Vlan range'''
-        self.vlan = None
         self.zoneid = None
         self.servicelist = []
 

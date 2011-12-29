@@ -127,7 +127,7 @@ class deployDataCenters():
             networkcmd.zoneid = zoneId
 
             ipranges = network.ipranges
-            if ipranges is not None:
+            if ipranges:
                 iprange = ipranges.pop()
                 networkcmd.startip = iprange.startip
                 networkcmd.endip = iprange.endip
@@ -140,21 +140,22 @@ class deployDataCenters():
             self.createVlanIpRanges(mode, ipranges, zoneId, networkId=networkId)
 
     def enablePhysicalNetwork(self, zoneid, vlan=None):
-            pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
-            pnets.zoneid = zoneid
-            pnets.state = 'Disabled'
-            pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
+        pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
+        pnets.zoneid = zoneid
+        pnets.state = 'Disabled'
+        pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
 
-            upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
-            upnet.state = 'Enabled'
-            upnet.id = pnetsresponse[0].id
-            if vlan is not None:
-                upnet.vlan = prov.vlan
-            upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
+        upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+        upnet.state = 'Enabled'
+        upnet.id = pnetsresponse[0].id
+        ''' enable guest VLAN in Advanced mode '''
+        if vlan:
+            upnet.vlan = vlan
+        upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
 
-            return pnetsresponse
+        return pnetsresponse
 
-    def configureProviders(self, phynetwrk, providers, zoneid, networktype):
+    def configureProviders(self, phynetwrk, providers, networktype):
         pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
         pnetprov.physicalnetworkid = phynetwrk[0].id
         pnetprov.state = 'Enabled'
@@ -173,7 +174,9 @@ class deployDataCenters():
         vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
 
         #Enable VirtualRouter provider by default
-        providers.append('VirtualRouter')
+        vrprovider = configGenerator.provider()
+        vrprovider.name = 'VirtualRouter'
+        providers.append(vrprovider)
 
         #Enable additional providers in this physical network by name
         for prov in providers:
@@ -184,7 +187,7 @@ class deployDataCenters():
             pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
 
             upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-            upnetprov.id = pnetprovs.id
+            upnetprov.id = pnetprovs[0].id
             upnetprov.state = 'Enabled'
             upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
             
@@ -205,23 +208,21 @@ class deployDataCenters():
             zoneId = zoneresponse.id
 
             '''enable physical networks and providers'''
-            phynetwrk = self.enablePhysicalNetwork(zoneid, prov.vlan)
-            self.configureProviders(phynetwrk, zone.providers, zoneId, zone.networktype)
+            phynetwrk = self.enablePhysicalNetwork(zoneId, zone.vlan)
+            self.configureProviders(phynetwrk, zone.providers, zone.networktype)
 
-            if mode == "Basic":
+            if zone.networktype == "Basic":
                 '''create the guest network from the sharednetworkoffering'''
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
                 listnetworkoffering.name = "DefaultSharedNetworkOfferingWithSGService"
                 listnetworkofferingresponse = self.apiClient.listNetworkOfferings(listnetworkoffering)
 
-                guestntwrk = network()
+                guestntwrk = configGenerator.network()
                 guestntwrk.displaytext = "guestNetworkForBasicZone"
                 guestntwrk.name = "guestNetworkForBasicZone"
                 guestntwrk.zoneid = zoneId
-                guestntwrk.networkofferingid = listnetworkserviceprovidersresponse[0].id
-                zone.networks.append(guestntwrk)
-
-            self.createnetworks(zone.networks, zoneId, zone.networktype)
+                guestntwrk.networkofferingid = listnetworkofferingresponse[0].id
+                self.createnetworks([guestntwrk], zoneId, zone.networktype)
             
             '''create pods'''
             self.createpods(zone.pods, zone, zoneId)
