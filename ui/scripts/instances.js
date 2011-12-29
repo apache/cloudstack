@@ -494,7 +494,7 @@
           label: 'Start instance' ,
           action: function(args) {
             $.ajax({
-              url: createURL("startVirtualMachine&id=" + args.data.id),
+              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -591,7 +591,7 @@
           label: 'Reboot instance',
           action: function(args) {
             $.ajax({
-              url: createURL("rebootVirtualMachine&id=" + args.data.id),
+              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -647,7 +647,7 @@
           },
           action: function(args) {
             $.ajax({
-              url: createURL("destroyVirtualMachine&id=" + args.data.id),
+              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -689,7 +689,7 @@
           },
           action: function(args) {
             $.ajax({
-              url: createURL("recoverVirtualMachine&id=" + args.data.id),
+              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -765,7 +765,7 @@
             label: 'Start instance' ,
             action: function(args) {
               $.ajax({
-                url: createURL("startVirtualMachine&id=" + args.data.id),
+                url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {
@@ -862,7 +862,7 @@
             label: 'Reboot instance',
             action: function(args) {
               $.ajax({
-                url: createURL("rebootVirtualMachine&id=" + args.data.id),
+                url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {
@@ -918,7 +918,7 @@
             },
             action: function(args) {
               $.ajax({
-                url: createURL("destroyVirtualMachine&id=" + args.data.id),
+                url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {
@@ -960,7 +960,7 @@
             },
             action: function(args) {
               $.ajax({
-                url: createURL("recoverVirtualMachine&id=" + args.data.id),
+                url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {
@@ -1138,7 +1138,7 @@
 												
             action: function(args) {
               $.ajax({
-                url: createURL("resetPasswordForVirtualMachine&id=" + args.data.id),
+                url: createURL("resetPasswordForVirtualMachine&id=" + args.context.instances[0].id),
                 dataType: "json",
                 async: true,
                 success: function(json) {
