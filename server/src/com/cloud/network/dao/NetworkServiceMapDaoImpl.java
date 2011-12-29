@@ -125,7 +125,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         sc.setParameters("service", service.getName());
         NetworkServiceMapVO ntwkSvc = findOneBy(sc);
         if (ntwkSvc == null) {
-            throw new UnsupportedServiceException("Service " + service + " is not supported in the network id=" + networkId);
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in the network id=" + networkId);
         }
         
         return ntwkSvc.getProvider();
