@@ -116,77 +116,77 @@ class deployDataCenters():
             secondarycmd.zoneid = zoneId
             self.apiClient.addSecondaryStorage(secondarycmd)
             
-    def createnetworks(self, networks, zoneId):
+    def createnetworks(self, networks, zoneId, mode):
         if networks is None:
             return
         for network in networks:
-            ipranges = network.ipranges
-            if ipranges is None:
-                continue
-            iprange = ipranges.pop()
             networkcmd = createNetwork.createNetworkCmd()
-            networkcmd.account = network.account
             networkcmd.displaytext = network.displaytext
-            networkcmd.domainid = network.domainid
-            networkcmd.endip = iprange.endip
-            networkcmd.gateway = iprange.gateway
-            networkcmd.isdefault = network.isdefault
-            networkcmd.isshared = network.isshared
             networkcmd.name = network.name
-            networkcmd.netmask = iprange.netmask
-            networkcmd.networkdomain = network.networkdomain
             networkcmd.networkofferingid = network.networkofferingid
+            networkcmd.zoneid = zoneId
+
+            ipranges = network.ipranges
+            if ipranges is not None:
+                iprange = ipranges.pop()
+                networkcmd.startip = iprange.startip
+                networkcmd.endip = iprange.endip
+                networkcmd.gateway = iprange.gateway
+                networkcmd.netmask = iprange.netmask
+
             networkcmdresponse = self.apiClient.createNetwork(networkcmd)
             networkId = networkcmdresponse.id
             
-            self.createVlanIpRanges("Advanced", ipranges, zoneId, networkId=networkId)
+            self.createVlanIpRanges(mode, ipranges, zoneId, networkId=networkId)
 
-    def configureProviders(self, providers, zoneid, networktype):
-        if providers == None:
-            return
-        for prov in providers:
+    def enablePhysicalNetwork(self, zoneid, vlan=None):
             pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
             pnets.zoneid = zoneid
             pnets.state = 'Disabled'
             pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
-            pnetid = pnetsresponse[0].id
 
             upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
             upnet.state = 'Enabled'
-            upnet.id = pnetid
-            upnet.vlan = prov.vlan
+            upnet.id = pnetsresponse[0].id
+            if vlan is not None:
+                upnet.vlan = prov.vlan
             upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
 
-            '''only for advanced zone - virtualrouter'''
-            if networktype == 'Advanced':
-                pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-                pnetprov.physicalnetworkid = pnetid
-                pnetprov.state = 'Enabled'
-                pnetprov.name = 'VirtualRouter'
-                vrprov = self.apiClient.listNetworkServiceProviders(pnetprov)
+            return pnetsresponse
 
-                vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
-                vrprov.nspid = vrprov.id
-                vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
-                vrprovid = vrprovresponse[0].id
+    def configureProviders(self, phynetwrk, providers, zoneid, networktype):
+        pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+        pnetprov.physicalnetworkid = phynetwrk[0].id
+        pnetprov.state = 'Enabled'
+        pnetprov.name = 'VirtualRouter'
+        vrprov = self.apiClient.listNetworkServiceProviders(pnetprov)
 
-                vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
-                vrconfig.enabled = 'true'
-                vrconfig.id = vrprovid
-                vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+        vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
+        vrprov.nspid = vrprov.id
+        vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
+        vrprovid = vrprovresponse[0].id
 
+        #Configure VirtualRouter Element
+        vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
+        vrconfig.enabled = 'true'
+        vrconfig.id = vrprovid
+        vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+
+        #Enable VirtualRouter provider by default
+        providers.append('VirtualRouter')
+
+        #Enable additional providers in this physical network by name
+        for prov in providers:
             pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-            pnetprov.physicalnetworkid = pnetid
+            pnetprov.physicalnetworkid = phynetwrk[0].id
+            pnetprov.name = prov.name
             pnetprov.state = 'Disabled'
             pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
 
-            '''enable all the providers'''
-            for pnetprov in pnetprovs:
-                 upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-                 upnetprov.id = pnetprov.id
-                 upnetprov.state = 'Enabled'
-                 upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
-
+            upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+            upnetprov.id = pnetprovs.id
+            upnetprov.state = 'Enabled'
+            upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
             
     def createZones(self, zones):
         for zone in zones:
@@ -205,7 +205,23 @@ class deployDataCenters():
             zoneId = zoneresponse.id
 
             '''enable physical networks and providers'''
-            self.configureProviders(zone.providers, zoneId, zone.networktype)
+            phynetwrk = self.enablePhysicalNetwork(zoneid, prov.vlan)
+            self.configureProviders(phynetwrk, zone.providers, zoneId, zone.networktype)
+
+            if mode == "Basic":
+                '''create the guest network from the sharednetworkoffering'''
+                listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
+                listnetworkoffering.name = "DefaultSharedNetworkOfferingWithSGService"
+                listnetworkofferingresponse = self.apiClient.listNetworkOfferings(listnetworkoffering)
+
+                guestntwrk = network()
+                guestntwrk.displaytext = "guestNetworkForBasicZone"
+                guestntwrk.name = "guestNetworkForBasicZone"
+                guestntwrk.zoneid = zoneId
+                guestntwrk.networkofferingid = listnetworkserviceprovidersresponse[0].id
+                zone.networks.append(guestntwrk)
+
+            self.createnetworks(zone.networks, zoneId, zone.networktype)
             
             '''create pods'''
             self.createpods(zone.pods, zone, zoneId)
@@ -213,8 +229,7 @@ class deployDataCenters():
             if zone.networktype == "Advanced":
                 '''create pubic network'''
                 self.createVlanIpRanges(zone.networktype, zone.ipranges, zoneId)
-            
-            self.createnetworks(zone.networks, zoneId)
+           
             '''create secondary storage'''
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
             
