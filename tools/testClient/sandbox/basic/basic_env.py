@@ -31,7 +31,8 @@ def describeResources(config):
     z.networktype = 'Basic'
     z.domain = 'cloud.basic'
 
-    sgprov = provider('SecurityGroupProvider') #SecurityGroup Provider
+    sgprov = provider() #SecurityGroup Provider
+    sgprov.name = 'SecurityGroupProvider'
     z.providers.append(sgprov)
 
     p = pod()
