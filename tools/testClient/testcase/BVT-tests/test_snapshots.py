@@ -30,8 +30,8 @@ class TestSnapshots(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-#        cls.virtual_machine.delete(cls.api_client)
-#        cls.virtual_machine_without_disk.delete(cls.api_client)
+        cls.virtual_machine.delete(cls.api_client)
+        cls.virtual_machine_without_disk.delete(cls.api_client)
         return
  
     def setUp(self):
@@ -44,55 +44,55 @@ class TestSnapshots(cloudstackTestCase):
 
     def tearDown(self):
         #Clean up, terminate the created instance, volumes and snapshots
-#        cleanup_resources(self.apiclient, self.cleanup)
+        cleanup_resources(self.apiclient, self.cleanup)
         return
 
 
-#    def test_01_snapshot_root_disk(self):
-#        """Test Snapshot Root Disk
-#        """     
-#        cmd = listVolumes.listVolumesCmd()
-#        cmd.virtualmachineid = self.virtual_machine_with_disk.id
-#        cmd.type = 'ROOT'
-#        
-#        volumes = self.apiclient.listVolumes(cmd)
-#        snapshot = Snapshot.create(self.apiclient, volumes[0].id)
-#
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.id = snapshot.id
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#
-#        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
-#        
-#        self.assertEqual(
-#                            list_snapshots[0].id,
-#                            snapshot.id,
-#                            "Check resource id in list resources call"
-#                        )
-#
-#    def test_02_snapshot_data_disk(self):
-#        """Test Snapshot Data Disk
-#        """     
-#
-#        cmd = listVolumes.listVolumesCmd()
-#        cmd.virtualmachineid = self.virtual_machine_with_disk.id
-#        cmd.type = 'DATADISK'
-#        
-#        volume = self.apiclient.listVolumes(cmd)
-#        snapshot = Snapshot.create(self.apiclient, volume[0].id)
-#
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.id = snapshot.id
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#
-#        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
-#        
-#        self.assertEqual(
-#                            list_snapshots[0].id,
-#                            snapshot.id,
-#                            "Check resource id in list resources call"
-#                        )
-#
+    def test_01_snapshot_root_disk(self):
+        """Test Snapshot Root Disk
+        """     
+        cmd = listVolumes.listVolumesCmd()
+        cmd.virtualmachineid = self.virtual_machine_with_disk.id
+        cmd.type = 'ROOT'
+        
+        volumes = self.apiclient.listVolumes(cmd)
+        snapshot = Snapshot.create(self.apiclient, volumes[0].id)
+
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.id = snapshot.id
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+
+        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        
+        self.assertEqual(
+                            list_snapshots[0].id,
+                            snapshot.id,
+                            "Check resource id in list resources call"
+                        )
+
+    def test_02_snapshot_data_disk(self):
+        """Test Snapshot Data Disk
+        """     
+
+        cmd = listVolumes.listVolumesCmd()
+        cmd.virtualmachineid = self.virtual_machine_with_disk.id
+        cmd.type = 'DATADISK'
+        
+        volume = self.apiclient.listVolumes(cmd)
+        snapshot = Snapshot.create(self.apiclient, volume[0].id)
+
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.id = snapshot.id
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+
+        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        
+        self.assertEqual(
+                            list_snapshots[0].id,
+                            snapshot.id,
+                            "Check resource id in list resources call"
+                        )
+
     def test_03_volume_from_snapshot(self):
         """Create volumes from snapshots 
         """
@@ -167,118 +167,118 @@ class TestSnapshots(cloudstackTestCase):
         self.assertEqual(random_data_1, returned_data_1, "Verify newly attached volume contents with existing one")
         return
     
-#    def test_04_delete_snapshot(self):
-#        """Test Delete Snapshot
-#        """
-#    
-#        cmd = listVolumes.listVolumesCmd()
-#        cmd.hostid = self.virtual_machine.id
-#        cmd.type = 'DATADISK'
-#        list_volumes = self.apiclient.listVolumes(cmd)
-#            
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.id = list_volumes[0].id
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#
-#        snapshot = Snapshot.create(self.apiclient,list_volumes[0].id)
-#        snapshot.delete(self.apiclient)
-#        #Sleep to ensure all database records are updated
-#        time.sleep(60)
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.id = snapshot.id
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#        
-#        self.assertEqual(list_snapshots, None, "Check if result exists in list item call")
-# 
-#    def test_05_recurring_snapshot_root_disk(self):
-#        """Test Recurring Snapshot Root Disk
-#        """     
-#        
-#        cmd = listVolumes.listVolumesCmd()
-#        cmd.virtualmachineid = self.virtual_machine_with_disk.id
-#        cmd.type = 'ROOT'
-#        
-#        volume = self.apiclient.listVolumes(cmd)
-#        
-#        cmd = createSnapshotPolicy.createSnapshotPolicyCmd()
-#        cmd.intervaltype=services["recurring_snapshot"]["intervaltype"]
-#        cmd.maxsnaps=services["recurring_snapshot"]["maxsnaps"]
-#        cmd.schedule=services["recurring_snapshot"]["schedule"]
-#        cmd.timezone=services["recurring_snapshot"]["timezone"]
-#        cmd.volumeid=volume[0].id
-#        recurring_snapshot = self.apiclient.createSnapshotPolicy(cmd)
-#        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
-#        cmd.id = recurring_snapshot.id
-#        cmd.volumeid=volume[0].id
-#        list_snapshots = self.apiclient.listSnapshotPolicies(cmd)
-#
-#        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
-#        
-#        self.assertEqual(
-#                            list_snapshots[0].id,
-#                            recurring_snapshot.id,
-#                            "Check recurring snapshot id in list resources call"
-#                        )
-#        self.assertEqual(
-#                            list_snapshots[0].maxsnaps,
-#                            services["recurring_snapshot"]["maxsnaps"],
-#                            "Check interval type in list resources call"
-#                        )
-#        
-#        #Sleep for 9 hours to check only 8 snapshots are retained
-#        time.sleep(32400)
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.volumeid=volume.id
-#        cmd.intervaltype = services["recurring_snapshot"]["intervaltype"]
-#        cmd.snapshottype = 'RECURRING'
-#        
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#        
-#        self.assertEqual(len(list_snapshots),8, "Check maximum number of recurring snapshots retained")
-#        
-#    def test_06_recurring_snapshot_data_disk(self):
-#        """Test Recurring Snapshot data Disk
-#        """     
-#        
-#        cmd = listVolumes.listVolumesCmd()
-#        cmd.virtualmachineid = self.virtual_machine_with_disk.id
-#        cmd.type = 'DATADISK'
-#        
-#        volume = self.apiclient.listVolumes(cmd)
-#        
-#        cmd = createSnapshotPolicy.createSnapshotPolicyCmd()
-#        cmd.intervaltype=services["recurring_snapshot"]["intervaltype"]
-#        cmd.maxsnaps=services["recurring_snapshot"]["maxsnaps"]
-#        cmd.schedule=services["recurring_snapshot"]["schedule"]
-#        cmd.timezone=services["recurring_snapshot"]["timezone"]
-#        cmd.volumeid=volume[0].id
-#        recurring_snapshot = self.apiclient.createSnapshotPolicy(cmd)
-#        
-#        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
-#        cmd.id = recurring_snapshot.id
-#        cmd.volumeid=volume[0].id
-#        list_snapshots = self.apiclient.listSnapshotPolicies(cmd)
-#
-#        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
-#        
-#        self.assertEqual(
-#                            list_snapshots[0].id,
-#                            recurring_snapshot.id,
-#                            "Check recurring snapshot id in list resources call"
-#                        )
-#        self.assertEqual(
-#                            list_snapshots[0].maxsnaps,
-#                            services["recurring_snapshot"]["maxsnaps"],
-#                            "Check interval type in list resources call"
-#                        )
-#        
-#        #Sleep for 9 hours to check only 8 snapshots are retained
-#        time.sleep(32400)
-#        cmd = listSnapshots.listSnapshotsCmd()
-#        cmd.volumeid=volume.id
-#        cmd.intervaltype = services["recurring_snapshot"]["intervaltype"]
-#        cmd.snapshottype = 'RECURRING'
-#        
-#        list_snapshots = self.apiclient.listSnapshots(cmd)
-#        
-#        self.assertEqual(len(list_snapshots),8, "Check maximum number of recurring snapshots retained")
+    def test_04_delete_snapshot(self):
+        """Test Delete Snapshot
+        """
+    
+        cmd = listVolumes.listVolumesCmd()
+        cmd.hostid = self.virtual_machine.id
+        cmd.type = 'DATADISK'
+        list_volumes = self.apiclient.listVolumes(cmd)
+            
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.id = list_volumes[0].id
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+
+        snapshot = Snapshot.create(self.apiclient,list_volumes[0].id)
+        snapshot.delete(self.apiclient)
+        #Sleep to ensure all database records are updated
+        time.sleep(60)
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.id = snapshot.id
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+        
+        self.assertEqual(list_snapshots, None, "Check if result exists in list item call")
+ 
+    def test_05_recurring_snapshot_root_disk(self):
+        """Test Recurring Snapshot Root Disk
+        """     
+        
+        cmd = listVolumes.listVolumesCmd()
+        cmd.virtualmachineid = self.virtual_machine_with_disk.id
+        cmd.type = 'ROOT'
+        
+        volume = self.apiclient.listVolumes(cmd)
+        
+        cmd = createSnapshotPolicy.createSnapshotPolicyCmd()
+        cmd.intervaltype=services["recurring_snapshot"]["intervaltype"]
+        cmd.maxsnaps=services["recurring_snapshot"]["maxsnaps"]
+        cmd.schedule=services["recurring_snapshot"]["schedule"]
+        cmd.timezone=services["recurring_snapshot"]["timezone"]
+        cmd.volumeid=volume[0].id
+        recurring_snapshot = self.apiclient.createSnapshotPolicy(cmd)
+        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
+        cmd.id = recurring_snapshot.id
+        cmd.volumeid=volume[0].id
+        list_snapshots = self.apiclient.listSnapshotPolicies(cmd)
+
+        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        
+        self.assertEqual(
+                            list_snapshots[0].id,
+                            recurring_snapshot.id,
+                            "Check recurring snapshot id in list resources call"
+                        )
+        self.assertEqual(
+                            list_snapshots[0].maxsnaps,
+                            services["recurring_snapshot"]["maxsnaps"],
+                            "Check interval type in list resources call"
+                        )
+        
+        #Sleep for 9 hours to check only 8 snapshots are retained
+        time.sleep(32400)
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.volumeid=volume.id
+        cmd.intervaltype = services["recurring_snapshot"]["intervaltype"]
+        cmd.snapshottype = 'RECURRING'
+        
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+        
+        self.assertEqual(len(list_snapshots),8, "Check maximum number of recurring snapshots retained")
+        
+    def test_06_recurring_snapshot_data_disk(self):
+        """Test Recurring Snapshot data Disk
+        """     
+        
+        cmd = listVolumes.listVolumesCmd()
+        cmd.virtualmachineid = self.virtual_machine_with_disk.id
+        cmd.type = 'DATADISK'
+        
+        volume = self.apiclient.listVolumes(cmd)
+        
+        cmd = createSnapshotPolicy.createSnapshotPolicyCmd()
+        cmd.intervaltype=services["recurring_snapshot"]["intervaltype"]
+        cmd.maxsnaps=services["recurring_snapshot"]["maxsnaps"]
+        cmd.schedule=services["recurring_snapshot"]["schedule"]
+        cmd.timezone=services["recurring_snapshot"]["timezone"]
+        cmd.volumeid=volume[0].id
+        recurring_snapshot = self.apiclient.createSnapshotPolicy(cmd)
+        
+        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
+        cmd.id = recurring_snapshot.id
+        cmd.volumeid=volume[0].id
+        list_snapshots = self.apiclient.listSnapshotPolicies(cmd)
+
+        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        
+        self.assertEqual(
+                            list_snapshots[0].id,
+                            recurring_snapshot.id,
+                            "Check recurring snapshot id in list resources call"
+                        )
+        self.assertEqual(
+                            list_snapshots[0].maxsnaps,
+                            services["recurring_snapshot"]["maxsnaps"],
+                            "Check interval type in list resources call"
+                        )
+        
+        #Sleep for 9 hours to check only 8 snapshots are retained
+        time.sleep(32400)
+        cmd = listSnapshots.listSnapshotsCmd()
+        cmd.volumeid=volume.id
+        cmd.intervaltype = services["recurring_snapshot"]["intervaltype"]
+        cmd.snapshottype = 'RECURRING'
+        
+        list_snapshots = self.apiclient.listSnapshots(cmd)
+        
+        self.assertEqual(len(list_snapshots),8, "Check maximum number of recurring snapshots retained")
