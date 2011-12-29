@@ -3446,11 +3446,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         txn.commit();
 
+        VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+        VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
+
         // OS 3: update the network
         List<Long> networkIdList = cmd.getNetworkIds();
         List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
         
         if (zone.getNetworkType() == NetworkType.Basic) {
+       	 	//cleanup the network for the oldOwner
+            _networkMgr.cleanupNics(vmOldProfile);
+            _networkMgr.expungeNics(vmOldProfile);
         	//cleanup the old security groups
             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
         	//security groups will be recreated for the new account, when the VM is started
@@ -3516,9 +3522,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
                     throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
                 }
-                VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-                VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
-
             	 //cleanup the network for the oldOwner
                 _networkMgr.cleanupNics(vmOldProfile);
                 _networkMgr.expungeNics(vmOldProfile);
