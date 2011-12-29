@@ -87,6 +87,33 @@ CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
   CONSTRAINT `fk_load_balancer_stickiness_policies__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `cloud`.`template_swift_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `swift_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `path` varchar(255),
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_template_swift_ref__swift_id` FOREIGN KEY `fk_template_swift_ref__swift_id` (`swift_id`) REFERENCES `swift` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_swift_ref__swift_id`(`swift_id`),
+  CONSTRAINT `fk_template_swift_ref__template_id` FOREIGN KEY `fk_template_swift_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_swift_ref__template_id`(`template_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`snapshots` DROP COLUMN `swift_name`;
+ALTER TABLE `cloud`.`swift` DROP COLUMN `hostname`;
+ALTER TABLE `cloud`.`swift` DROP COLUMN `token`;
+ALTER TABLE `cloud`.`swift` ADD COLUMN `uuid` varchar(40);
+ALTER TABLE `cloud`.`swift` ADD COLUMN `url` varchar(255) NOT NULL;
+ALTER TABLE `cloud`.`swift` ADD COLUMN `key` varchar(255) NOT NULL COMMENT 'token for this user';
+ALTER TABLE `cloud`.`swift` ADD COLUMN `created` datetime COMMENT 'date the swift first signed on';
+ALTER TABLE `cloud`.`swift` ADD CONSTRAINT `uc_swift_uuid` UNIQUE (`uuid`);
+
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'swift.enable', 'false', 'enable swift');
+
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.user.vms', '20', 'The default maximum number of user VMs that can be deployed for a project');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.public.ips', '20', 'The default maximum number of public IPs that can be consumed by a project');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.templates', '20', 'The default maximum number of templates that can be deployed for a project');
