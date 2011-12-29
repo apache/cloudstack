@@ -102,79 +102,80 @@ function JsX11KeyboardMapper() {
 	KeyboardMapper.apply(this, arguments);
 	
 	this.jsX11KeysymMap = [];
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] = 0xffe5;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] = 0xff08;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] = 0xff09;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] = 0xff0d;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] = 0xff1b;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] = 0xff63;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] = 0xffff;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] = 0xff50;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] = 0xff57;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] = 0xff55;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] = 0xff56;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] = 0xff51;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] = 0xff52;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] = 0xff53;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] = 0xff54;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] = 0xffbe;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] = 0xffbf;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] = 0xffc0;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] = 0xffc1;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] = 0xffc2;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] = 0xffc3;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] = 0xffc4;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] = 0xffc5;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] = 0xffc6;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] = 0xffc7;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] = 0xffc8;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] = 0xffc9;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] = 0xffe1;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] = 0xffe3;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] = 0xffe9;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_GRAVE_ACCENT] = 0x60;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SUBSTRACT] = 0x2d;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] = 0x2b;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_OPEN_BRACKET] = 0x5b;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CLOSE_BRACKET] = 0x5d;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACK_SLASH] = 0x7c;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SINGLE_QUOTE] = 0x22;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_COMMA] = 0x3c;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PERIOD] = 0x3e;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_FORWARD_SLASH] = 0x3f;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DASH] = 0x2d;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SEMI_COLON] = 0x3b;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_GRAVE_ACCENT] 	= AjaxViewer.X11_KEY_GRAVE_ACCENT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SUBSTRACT] 		= AjaxViewer.X11_KEY_SUBSTRACT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] 				= AjaxViewer.X11_KEY_ADD;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_OPEN_BRACKET] 	= AjaxViewer.X11_KEY_OPEN_BRACKET;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CLOSE_BRACKET] 	= AjaxViewer.X11_KEY_CLOSE_BRACKET;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACK_SLASH] 		= AjaxViewer.X11_KEY_BACK_SLASH;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SINGLE_QUOTE] 	= AjaxViewer.X11_KEY_SINGLE_QUOTE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_COMMA] 			= AjaxViewer.X11_KEY_COMMA;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PERIOD] 			= AjaxViewer.X11_KEY_PERIOD;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_FORWARD_SLASH] 	= AjaxViewer.X11_KEY_FORWARD_SLASH;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DASH] 			= AjaxViewer.X11_KEY_DASH;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SEMI_COLON] 		= AjaxViewer.X11_KEY_SEMI_COLON;
 
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD0] = 0x30;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD1] = 0x31;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD2] = 0x32;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD3] = 0x33;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD4] = 0x34;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD5] = 0x35;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD6] = 0x36;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD7] = 0x37;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD8] = 0x38;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD9] = 0x39;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] = 0x2e;
-	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DIVIDE] = 0x3f;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD0] 			= AjaxViewer.X11_KEY_NUMPAD0;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD1] 			= AjaxViewer.X11_KEY_NUMPAD1;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD2] 			= AjaxViewer.X11_KEY_NUMPAD2;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD3] 			= AjaxViewer.X11_KEY_NUMPAD3;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD4] 			= AjaxViewer.X11_KEY_NUMPAD4;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD5] 			= AjaxViewer.X11_KEY_NUMPAD5;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD6] 			= AjaxViewer.X11_KEY_NUMPAD6;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD7] 			= AjaxViewer.X11_KEY_NUMPAD7;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD8] 			= AjaxViewer.X11_KEY_NUMPAD8;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_NUMPAD9] 			= AjaxViewer.X11_KEY_NUMPAD9;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DIVIDE] 			= AjaxViewer.X11_KEY_DIVIDE;
+	
 	this.jsX11KeysymMap[AjaxViewer.JS_KEY_MULTIPLY] = [
-	    {type: AjaxViewer.KEY_DOWN, code: 0xffe1, modifiers: 0 },
-	    {type: AjaxViewer.KEY_DOWN, code: 0x2a, modifiers: 0 },
-	    {type: AjaxViewer.KEY_UP, code: 0x2a, modifiers: 0 },
-	    {type: AjaxViewer.KEY_UP, code: 0xffe1, modifiers: 0 }
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 },
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ASTERISK, modifiers: 0 },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0 }
 	];
 	
 	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ADD] = false;
 	this.jsKeyPressX11KeysymMap = [];
 	this.jsKeyPressX11KeysymMap[61] = [
-	    {type: AjaxViewer.KEY_DOWN, code: 0x2b, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: 0x2b, modifiers: 0, shift: false }
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false }
 	];
 	this.jsKeyPressX11KeysymMap[43] = [
-	    {type: AjaxViewer.KEY_DOWN, code: 0xffe1, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_DOWN, code: 0x2b, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: 0x2b, modifiers: 0, shift: false },
-	    {type: AjaxViewer.KEY_UP, code: 0xffe1, modifiers: 0, shift: false }
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false }
 	];
 }
 
@@ -358,30 +359,93 @@ AjaxViewer.JS_KEY_F11 = 122;
 AjaxViewer.JS_KEY_F12 = 123;
 AjaxViewer.JS_KEY_NUMLOCK = 144;
 AjaxViewer.JS_KEY_SCROLLLOCK = 145;
-AjaxViewer.JS_KEY_SEMI_COLON = 186;
-AjaxViewer.JS_KEY_EQUAL_SIGN = 187;
-AjaxViewer.JS_KEY_COMMA = 188;
-AjaxViewer.JS_KEY_DASH = 189;
-AjaxViewer.JS_KEY_PERIOD = 190;
-AjaxViewer.JS_KEY_FORWARD_SLASH = 191;
-AjaxViewer.JS_KEY_GRAVE_ACCENT = 192;
-AjaxViewer.JS_KEY_OPEN_BRACKET = 219;
-AjaxViewer.JS_KEY_BACK_SLASH = 220;
-AjaxViewer.JS_KEY_CLOSE_BRACKET = 221;
-AjaxViewer.JS_KEY_SINGLE_QUOTE = 222;
+AjaxViewer.JS_KEY_SEMI_COLON = 186;			// ;
+AjaxViewer.JS_KEY_EQUAL_SIGN = 187;			// =
+AjaxViewer.JS_KEY_COMMA = 188;				// ,
+AjaxViewer.JS_KEY_DASH = 189;				// -
+AjaxViewer.JS_KEY_PERIOD = 190;				// .
+AjaxViewer.JS_KEY_FORWARD_SLASH = 191;		// /
+AjaxViewer.JS_KEY_GRAVE_ACCENT = 192;		// `				
+AjaxViewer.JS_KEY_OPEN_BRACKET = 219;		// [
+AjaxViewer.JS_KEY_BACK_SLASH = 220;			// \
+AjaxViewer.JS_KEY_CLOSE_BRACKET = 221;		// ]
+AjaxViewer.JS_KEY_SINGLE_QUOTE = 222;		// '
 AjaxViewer.JS_NUMPAD_PLUS = 43;
 AjaxViewer.JS_KEY_NUM8 = 56;
 
 // keycode from Japanese keyboard
-AjaxViewer.JS_KEY_JP_COLON = 222;
-AjaxViewer.JS_KEY_JP_CLOSE_BRACKET = 220;
-AjaxViewer.JS_KEY_JP_AT_SIGN = 219;
-AjaxViewer.JS_KEY_JP_OPEN_BRACKET = 221;
-AjaxViewer.JS_KEY_JP_BACK_SLASH = 193;
+AjaxViewer.JS_KEY_JP_COLON = 222;			// :* on JP keyboard
+AjaxViewer.JS_KEY_JP_CLOSE_BRACKET = 220;	// [{ on JP keyboard
+AjaxViewer.JS_KEY_JP_AT_SIGN = 219;			// @` on JP keyboard
+AjaxViewer.JS_KEY_JP_OPEN_BRACKET = 221;	// [{ on JP keyboard
+AjaxViewer.JS_KEY_JP_BACK_SLASH = 193;		// \| on JP keyboard
 AjaxViewer.JS_KEY_JP_YEN_MARK = 255;
-AjaxViewer.JS_KEY_JP_EQUAL = 109;
-AjaxViewer.JS_KEY_JP_ACUTE = 107;
-	
+
+AjaxViewer.JS_KEY_JP_EQUAL = 109;			// -= ON JP keyboard
+AjaxViewer.JS_KEY_JP_ACUTE = 107;			// ^~ on JP keyboard
+
+// X11 keysym definitions
+AjaxViewer.X11_KEY_CAPSLOCK = 0xffe5;
+AjaxViewer.X11_KEY_BACKSPACE = 0xff08;
+AjaxViewer.X11_KEY_TAB = 0xff09;
+AjaxViewer.X11_KEY_ENTER = 0xff0d;
+AjaxViewer.X11_KEY_ESCAPE = 0xff1b;
+AjaxViewer.X11_KEY_INSERT = 0xff63;
+AjaxViewer.X11_KEY_DELETE = 0xffff;
+AjaxViewer.X11_KEY_HOME = 0xff50;
+AjaxViewer.X11_KEY_END = 0xff57;
+AjaxViewer.X11_KEY_PAGEUP = 0xff55;
+AjaxViewer.X11_KEY_PAGEDOWN = 0xff56;
+AjaxViewer.X11_KEY_LEFT = 0xff51;
+AjaxViewer.X11_KEY_UP = 0xff52;
+AjaxViewer.X11_KEY_RIGHT = 0xff53;
+AjaxViewer.X11_KEY_DOWN = 0xff54;
+AjaxViewer.X11_KEY_F1 = 0xffbe;
+AjaxViewer.X11_KEY_F2 = 0xffbf;
+AjaxViewer.X11_KEY_F3 = 0xffc0;
+AjaxViewer.X11_KEY_F4 = 0xffc1;
+AjaxViewer.X11_KEY_F5 = 0xffc2;
+AjaxViewer.X11_KEY_F6 = 0xffc3;
+AjaxViewer.X11_KEY_F7 = 0xffc4;
+AjaxViewer.X11_KEY_F8 = 0xffc5;
+AjaxViewer.X11_KEY_F9 = 0xffc6;
+AjaxViewer.X11_KEY_F10 = 0xffc7;
+AjaxViewer.X11_KEY_F11 = 0xffc8;
+AjaxViewer.X11_KEY_F12 = 0xffc9;
+AjaxViewer.X11_KEY_SHIFT = 0xffe1;
+AjaxViewer.X11_KEY_CTRL = 0xffe3;
+AjaxViewer.X11_KEY_ALT = 0xffe9;
+AjaxViewer.X11_KEY_GRAVE_ACCENT = 0x60;
+AjaxViewer.X11_KEY_SUBSTRACT = 0x2d;
+AjaxViewer.X11_KEY_ADD = 0x2b;
+AjaxViewer.X11_KEY_OPEN_BRACKET = 0x5b;
+AjaxViewer.X11_KEY_CLOSE_BRACKET = 0x5d;
+AjaxViewer.X11_KEY_BACK_SLASH = 0x7c;
+AjaxViewer.X11_KEY_REVERSE_SOLIUS = 0x5c;			// another back slash (back slash on JP keyboard)
+AjaxViewer.X11_KEY_SINGLE_QUOTE = 0x22;
+AjaxViewer.X11_KEY_COMMA = 0x3c;
+AjaxViewer.X11_KEY_PERIOD = 0x3e;
+AjaxViewer.X11_KEY_FORWARD_SLASH = 0x3f;
+AjaxViewer.X11_KEY_DASH = 0x2d;
+AjaxViewer.X11_KEY_COLON = 0x3a;
+AjaxViewer.X11_KEY_SEMI_COLON = 0x3b;
+AjaxViewer.X11_KEY_NUMPAD0 = 0x30;
+AjaxViewer.X11_KEY_NUMPAD1 = 0x31;
+AjaxViewer.X11_KEY_NUMPAD2 = 0x32;
+AjaxViewer.X11_KEY_NUMPAD3 = 0x33;
+AjaxViewer.X11_KEY_NUMPAD4 = 0x34;
+AjaxViewer.X11_KEY_NUMPAD5 = 0x35;
+AjaxViewer.X11_KEY_NUMPAD6 = 0x36;
+AjaxViewer.X11_KEY_NUMPAD7 = 0x37;
+AjaxViewer.X11_KEY_NUMPAD8 = 0x38;
+AjaxViewer.X11_KEY_NUMPAD9 = 0x39;
+AjaxViewer.X11_KEY_DECIMAL_POINT = 0x2e;
+AjaxViewer.X11_KEY_DIVIDE = 0x3f;
+AjaxViewer.X11_KEY_TILDE = 0x7e;				// ~
+AjaxViewer.X11_KEY_CIRCUMFLEX_ACCENT = 0x5e;	// ^
+AjaxViewer.X11_KEY_YEN_MARK = 0xa5;				// Japanese YEN mark
+AjaxViewer.X11_KEY_ASTERISK = 0x2a;
+
 AjaxViewer.getEventName = function(type) {
 	switch(type) {
 	case AjaxViewer.MOUSE_MOVE :
@@ -500,25 +564,58 @@ AjaxViewer.prototype = {
 		// setup Japanese keyboard translation table
 		var mapper = new JsX11KeyboardMapper();
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = mapper;
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_COLON] = 0x3a;
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_CLOSE_BRACKET] = 0x5d;
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_AT_SIGN] = 0x60;
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_OPEN_BRACKET] = 0x5b;
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_BACK_SLASH] = 0x5c;			// X11 REVERSE SOLIDUS
-		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_YEN_MARK] = 0xa5;			// X11 YEN SIGN
 		
+		// JP keyboard plugged in a English host OS
+/*		
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_COLON] = AjaxViewer.X11_KEY_COLON;
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_CLOSE_BRACKET] = AjaxViewer.X11_KEY_CLOSE_BRACKET;
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_AT_SIGN] = AjaxViewer.X11_KEY_GRAVE_ACCENT;
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_OPEN_BRACKET] = AjaxViewer.X11_KEY_OPEN_BRACKET;
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_BACK_SLASH] = AjaxViewer.X11_KEY_REVERSE_SOLIUS;		// X11 REVERSE SOLIDUS
+		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_YEN_MARK] = AjaxViewer.X11_KEY_YEN_MARK;				// X11 YEN SIGN
 		mapper.jsKeyPressX11KeysymMap[61] = [
-       	    {type: AjaxViewer.KEY_DOWN, code: 0x5e, modifiers: 0 },
-       	    {type: AjaxViewer.KEY_UP, code: 0x5e, modifiers: 0 },
-       	];
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_CIRCUMFLEX_ACCENT, modifiers: 0 },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_CIRCUMFLEX_ACCENT, modifiers: 0 },
+    	];
+		
 		mapper.jsKeyPressX11KeysymMap[43] = [
-       	    {type: AjaxViewer.KEY_DOWN, code: 0xffe1, modifiers: 0, shift: false },
-       	    {type: AjaxViewer.KEY_DOWN, code: 0x2b, modifiers: 0, shift: false },
-       	    {type: AjaxViewer.KEY_UP, code: 0x2b, modifiers: 0, shift: false },
-       	    {type: AjaxViewer.KEY_UP, code: 0xffe1, modifiers: 0, shift: false },
-       	    {type: AjaxViewer.KEY_DOWN, code: 0x7e, modifiers: 0, shift: true },
-       	    {type: AjaxViewer.KEY_UP, code: 0x7e, modifiers: 0, shift: true }
-       ];
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_TILDE, modifiers: 0, shift: true },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_TILDE, modifiers: 0, shift: true }
+        ];
+*/		
+		
+		// JP keyboard plugged in a Japanese host OS
+		mapper.jsX11KeysymMap[222] = AjaxViewer.X11_KEY_CIRCUMFLEX_ACCENT;
+		mapper.jsX11KeysymMap[220] = AjaxViewer.X11_KEY_YEN_MARK;
+		mapper.jsX11KeysymMap[219] = AjaxViewer.X11_KEY_OPEN_BRACKET;
+		mapper.jsX11KeysymMap[221] = AjaxViewer.X11_KEY_CLOSE_BRACKET;
+		mapper.jsX11KeysymMap[59] = AjaxViewer.X11_KEY_COLON;					// Firefox
+		mapper.jsX11KeysymMap[186] = AjaxViewer.X11_KEY_COLON;					// Chrome
+		mapper.jsX11KeysymMap[226] = AjaxViewer.X11_KEY_REVERSE_SOLIUS;			// \| key left to right SHIFT on JP keyboard
+		mapper.jsX11KeysymMap[240] = [
+      	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_CAPSLOCK, modifiers: 0 },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_CAPSLOCK, modifiers: 0 },
+    	];
+			
+		// for keycode 107, keypress 59
+		mapper.jsKeyPressX11KeysymMap[59] = [
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SEMI_COLON, modifiers: 0 },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SEMI_COLON, modifiers: 0 },
+    	];
+		
+		// for keycode 107, keypress 43
+		mapper.jsKeyPressX11KeysymMap[43] = [
+     	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: false },
+    	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: 0, shift: false },
+       	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
+       	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
+        ];
 	},
 	
 	getCurrentKeyboardMapper : function() {
