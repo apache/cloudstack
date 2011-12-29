@@ -227,6 +227,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         txn.start();
         ClusterVO cluster = createForUpdate();
         cluster.setName(null);
+        cluster.setGuid(null);
         
         update(id, cluster);
 
