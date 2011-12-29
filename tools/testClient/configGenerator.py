@@ -66,19 +66,6 @@ class provider():
         self.zoneid = None
         self.servicelist = []
 
-        #self.vpn_service_provided = None
-        #self.dhcp_service_provided = None
-        #self.dns_service_provided = None
-        #self.gateway_service_provided = None
-        #self.firewall_service_provided = None
-        #self.source_nat_service_provided = None
-        #self.load_balance_service_provided = None
-        #self.static_nat_service_provided = None
-        #self.port_forwarding_service_provided = None
-        #self.user_data_service_provided = None
-        #self.security_group_service_provided = None
-
-
 class pod():
     def __init__(self):
         self.gateway = None
@@ -125,10 +112,8 @@ class network():
         self.displaytext = None
         self.name = None
         self.zoneid = None
-        self.account = None
+        self.acltype = None
         self.domainid = None
-        self.isdefault = None
-        self.isshared = None
         self.networkdomain = None
         self.networkofferingid = None
         self.ipranges = []
