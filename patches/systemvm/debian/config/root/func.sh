@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# IMPORTANT: Ordering of lock:
-# biglock --> rrouter
+# Only one lock is allowed: biglock
 
 # getLockFile() parameters
 # $1 lock filename
