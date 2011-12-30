@@ -1718,27 +1718,24 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             AgentVmInfo info =  infos.remove(vm.getId());
             if (init){ // mark the VMs real state on initial sync
                 VMInstanceVO castedVm = null;
-                if (info == null) {
-                    info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                    castedVm = info.guru.findById(vm.getId());
-                } else {
-                    castedVm = info.vm;
-                }
-
-                try {
-                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid()); 
-                    long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
-                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-                    Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
-                    if (command != null){
-                        Answer answer = _agentMgr.send(hostId, command);
-                        if (!answer.getResult()) {
-                            s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
-                        }
-                    }
-                } catch (Exception e) {
-                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
-                    e.printStackTrace();
+                if (info == null && vm.getState() == State.Running) { // only work on VMs which were supposed to be running earlier
+                	info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+                	castedVm = info.guru.findById(vm.getId());
+	                try {
+	                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid()); 
+	                    long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+	                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+	                    Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
+	                    if (command != null){
+	                        Answer answer = _agentMgr.send(hostId, command);
+	                        if (!answer.getResult()) {
+	                            s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
+	                        }
+	                    }
+	                } catch (Exception e) {
+	                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
+	                    e.printStackTrace();
+	                }
                 }
            }
            
