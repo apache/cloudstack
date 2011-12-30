@@ -5409,8 +5409,11 @@
                   url: createURL("createPod" + array1.join("")),
                   dataType: "json",
                   success: function(json) {
-                    var item = json.createpodresponse.pod;
-                    args.response.success({data:item});
+                    var item = json.createpodresponse.pod;										
+                    args.response.success({
+										  actionFilter: podActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
+										  data:item
+										});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
