@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.identity.IdentityServiceImpl;
-import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -67,6 +65,8 @@ import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
+import com.cloud.identity.IdentityServiceImpl;
+import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.keystore.KeystoreDaoImpl;
 import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
@@ -78,9 +78,9 @@ import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
+import com.cloud.network.dao.LBStickinessPolicyDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
-import com.cloud.network.dao.LBStickinessPolicyDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkExternalFirewallDaoImpl;
@@ -118,8 +118,8 @@ import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
-import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
+import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
@@ -193,6 +193,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
     protected void populateDaos() {
@@ -336,10 +337,16 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateManagers() {
         addManager("StackMaidManager", CheckPointManagerImpl.class);
+        addManager("Cluster Manager", ClusterManagerImpl.class);
+        addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
+        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
+        addManager("SyncQueueManager", SyncQueueManagerImpl.class);
+        addManager("AsyncJobManager", AsyncJobManagerImpl.class);
+        addManager("AsyncJobExecutorContext", AsyncJobExecutorContextImpl.class);
+        addManager("configuration manager", ConfigurationManagerImpl.class);
         addManager("account manager", AccountManagerImpl.class);
         addManager("domain manager", DomainManagerImpl.class);
         addManager("resource limit manager", ResourceLimitManagerImpl.class);
-        addManager("configuration manager", ConfigurationManagerImpl.class);
         addManager("network manager", NetworkManagerImpl.class);
         addManager("download manager", DownloadMonitorImpl.class);
         addManager("upload manager", UploadMonitorImpl.class);
@@ -348,9 +355,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("vm manager", UserVmManagerImpl.class);
         addManager("upgrade manager", UpgradeManagerImpl.class);
         addManager("StorageManager", StorageManagerImpl.class);
-        addManager("SyncQueueManager", SyncQueueManagerImpl.class);
-        addManager("AsyncJobManager", AsyncJobManagerImpl.class);
-        addManager("AsyncJobExecutorContext", AsyncJobExecutorContextImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("Alert Manager", AlertManagerImpl.class);
         addManager("Template Manager", TemplateManagerImpl.class);
@@ -365,18 +369,14 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
         addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
-        addManager("Cluster Manager", ClusterManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
-        addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
         addManager("IdentityManager", IdentityServiceImpl.class);
-
         addManager("OCFS2Manager", OCFS2ManagerImpl.class);
         addManager("FirewallManager", FirewallManagerImpl.class);
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
-        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("ProjectManager", ProjectManagerImpl.class);
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
         addManager("SwiftManager", SwiftManagerImpl.class);
@@ -408,14 +408,14 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
     }
-    
+
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
         addService("NetscalerExternalLoadBalancerElementService", NetscalerLoadBalancerElementService.class, NetscalerExternalLoadBalancerElement.class);
         addService("F5LoadBalancerElementService", F5ExternalLoadBalancerElementService.class, F5ExternalLoadBalancerElement.class);
         addService("JuniperSRXFirewallElementService", JuniperSRXFirewallElementService.class, JuniperSRXExternalFirewallElement.class);
     }
-    
+
     @Override
     public synchronized Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
         if (_pluggableServices.size() == 0) {
