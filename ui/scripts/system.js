@@ -7509,8 +7509,11 @@
                   url: createURL("createStoragePool" + array1.join("")),
                   dataType: "json",
                   success: function(json) {
-                    var item = json.createstoragepoolresponse.storagepool[0];
-                    args.response.success({data: item});
+                    var item = json.createstoragepoolresponse.storagepool[0];								
+                    args.response.success({
+										  actionFilter: primarystorageActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
+										  data: item
+										});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -7906,8 +7909,11 @@
                   url: createURL("addSecondaryStorage&zoneId=" + zoneId + "&url=" + todb(url)),
                   dataType: "json",
                   success: function(json) {
-                    var item = json.addsecondarystorageresponse.secondarystorage;
-                    args.response.success({data:item});
+                    var item = json.addsecondarystorageresponse.secondarystorage;						
+                    args.response.success({
+										  actionFilter: secondarystorageActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
+										  data:item
+										});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
