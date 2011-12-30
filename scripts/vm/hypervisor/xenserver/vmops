@@ -390,7 +390,6 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
-    default_ebtables_rules()
     privnic = get_private_nic(session, args)
     result = 'true'
     try:
@@ -401,7 +400,8 @@ def can_bridge_firewall(session, args):
             util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
-            result = 'false'
+            return 'false'
+    default_ebtables_rules()
     allow_egress_traffic(session)
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
@@ -433,8 +433,19 @@ def default_ebtables_rules():
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv6', '-j', 'DROP'])
         # deny vlan
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', '802_1Q', '-j', 'DROP'])
+        # deny all others (e.g., 802.1d, CDP)
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES',  '-j', 'DROP'])
     except:
         util.SMlog('Chain DEFAULT_EBTABLES already exists')
+
+    #deny traffic from vms into hypervisor. Note: does not protect from vms in other pods
+    try:
+        util.pread2(['ebtables', '-D',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
+    except:
+        pass
+
+    util.pread2(['ebtables', '-A',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
+    
 
 @echo
 def allow_egress_traffic(session):
