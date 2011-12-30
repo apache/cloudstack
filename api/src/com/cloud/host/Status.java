@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.fsm.StateMachine;
 import com.cloud.utils.fsm.StateMachine2;
 
 public enum Status {
@@ -33,7 +32,7 @@ public enum Status {
     Alert(true, true, true),
     Removed(true, false, true),
     Error(true, false, true),
-    Rebalancing(false, false, false);
+    Rebalancing(true, false, true);
     
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
@@ -157,7 +156,9 @@ public enum Status {
         s_fsm.addTransition(Status.Alert, Event.ShutdownRequested, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
+        s_fsm.addTransition(Status.Rebalancing, Event.ManagementServerDown, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.AgentConnected, Status.Connecting);
+        s_fsm.addTransition(Status.Rebalancing, Event.AgentDisconnected, Status.Rebalancing);
         s_fsm.addTransition(Status.Error, Event.AgentConnected, Status.Connecting);
     }
 

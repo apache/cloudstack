@@ -557,6 +557,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return req.getSequence();
     }
 
+
     public void removeAgent(AgentAttache attache, Status nextState) {
         if (attache == null) {
             return;
@@ -580,6 +581,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         if (removed != null) {
             removed.disconnect(nextState);
+        }
+        
+        for (Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending Disconnect to listener: " + monitor.second().getClass().getName());
+            }
+            monitor.second().processDisconnect(hostId, nextState);
         }
     }
     
@@ -848,12 +856,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         removeAgent(attache, nextStatus);
         disconnectAgent(host, event, _nodeId);
 
-        for (Pair<Integer, Listener> monitor : _hostMonitors) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending Disconnect to listener: " + monitor.second().getClass().getName());
-            }
-            monitor.second().processDisconnect(hostId, nextStatus);
-        }
         return true;
     }
     
@@ -1014,7 +1016,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
 
-        if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert) {
+        if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {
             s_logger.info("Unable to disconnect host because it is not in the correct state: host=" + hostId + "; Status=" + host.getStatus());
             return false;
         }
