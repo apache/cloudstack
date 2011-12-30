@@ -68,6 +68,9 @@ EOF
 deb http://ftp.us.debian.org/debian/ squeeze main non-free
 deb-src http://ftp.us.debian.org/debian/ squeeze main non-free
 
+deb http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+deb-src http://backports.debian.org/debian-backports squeeze-backports main contrib non-free
+
 deb http://security.debian.org/ squeeze/updates main
 deb-src http://security.debian.org/ squeeze/updates main
 
@@ -165,7 +168,7 @@ link_in_boot = yes
 do_initrd = yes
 EOF
   touch /mnt/systemvm/boot/grub/default
-  chroot . apt-get install -qq -y --force-yes linux-image-686-bigmem
+  chroot . apt-get install -qq -y --force-yes -t squeeze-backports linux-image-686-bigmem
   cat >> etc/kernel-img.conf << EOF
 postinst_hook = /usr/sbin/update-grub
 postrm_hook   = /usr/sbin/update-grub
@@ -359,10 +362,11 @@ packages() {
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent sudo
   #fix hostname in openssh-server generated keys
   sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
-
+  #virt-what from stable is too old to detect kernel 2.6.39, use newer version
+  chroot .  apt-get --no-install-recommends -q -y --force-yes -t testing install virt-what
   #sysstat
   chroot . echo 'sysstat sysstat/enable boolean true' | chroot . debconf-set-selections
   chroot .  apt-get --no-install-recommends -q -y --force-yes install sysstat
@@ -431,8 +435,6 @@ services() {
 dhcp_fix() {
   #deal with virtio DHCP issue, copy and install customized kernel module and iptables
   mkdir -p tmp
-  cp /tmp/systemvm/xt_CHECKSUM.ko lib/modules/2.6.32-5-686-bigmem/kernel/net/netfilter
-  chroot . depmod -a 2.6.32-5-686-bigmem
   cp /tmp/systemvm/iptables_1.4.8-3local1checksum1_i386.deb tmp/
   chroot . dpkg -i tmp/iptables_1.4.8-3local1checksum1_i386.deb
   rm tmp/iptables_1.4.8-3local1checksum1_i386.deb
@@ -481,7 +483,6 @@ scriptdir=$(dirname $PWD/$0)
 
 rm -rf /tmp/systemvm
 mkdir -p /tmp/systemvm
-cp ./xt_CHECKSUM.ko /tmp/systemvm
 cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
 
 rm -f $IMAGELOC
