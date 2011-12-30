@@ -1583,6 +1583,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (add && correctVif == null) {
                 addVif = true;
             } else if (!add && firstIP) {
+                /* FIXME: This is incorrect. Because you can only tell if it's the first IP in this bundle of ip address which send to the router,
+                 * but don't know if it's the only IP left in the router - because we didn't send all the related vlan's IPs to the router now. */
                 removeVif = true;
             }
 
