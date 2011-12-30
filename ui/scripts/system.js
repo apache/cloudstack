@@ -5745,8 +5745,9 @@
             name: { label: 'Name' },
             podname: { label: 'Pod' },
             hypervisortype: { label: 'Hypervisor' },
-            allocationstate: { label: 'Allocation State' },
-            managedstate: { label: 'Managed State' }
+            //allocationstate: { label: 'Allocation State' },
+            //managedstate: { label: 'Managed State' },
+						state: { label: 'State' }
           },
 
           dataProvider: function(args) {
@@ -5758,8 +5759,17 @@
               url: createURL("listClusters" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
-              success: function(json) {
-                var items = json.listclustersresponse.cluster;
+              success: function(json) {                
+                var items = json.listclustersresponse.cluster;								
+								$(items).each(function(){								  
+									if(this.managedstate == "Managed") {
+									  this.state = this.allocationstate; //this.state == Enabled, Disabled
+									}	
+                  else {
+                    this.state = this.managedstate; //this.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
+                  }									
+								});
+																
                 args.response.success({
                   actionFilter: clusterActionfilter,
                   data:items
@@ -6309,12 +6319,11 @@
                     podname: { label: 'Pod' },
                     hypervisortype: { label: 'Hypervisor' },
                     clustertype: { label: 'Cluster type' },
-                    allocationstate: { label: 'Allocation State' },
-                    managedstate: { label: 'Managed State' }
+                    //allocationstate: { label: 'Allocation State' },
+                    //managedstate: { label: 'Managed State' },
+										state: { label: 'State' }
                   }
-                ],
-
-                //dataProvider: testData.dataProvider.detailView('clusters')
+                ],                
                 dataProvider: function(args) {
                   args.response.success({
                     actionFilter: clusterActionfilter,
@@ -8631,16 +8640,18 @@
   var clusterActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-
-    if(jsonObj.allocationstate == "Disabled")
-      allowedActions.push("enable");
-    else if(jsonObj.allocationstate == "Enabled")
-      allowedActions.push("disable");
-
-    if(jsonObj.managedstate == "Managed")
-      allowedActions.push("unmanage");
-    else //PrepareUnmanaged , PrepareUnmanagedError, Unmanaged
-      allowedActions.push("manage");
+		
+    if(jsonObj.state == "Enabled") {//managed, allocation enabled
+		  allowedActions.push("unmanage");
+      allowedActions.push("disable");			
+		}
+		else if(jsonObj.state == "Disabled") { //managed, allocation disabled
+		  allowedActions.push("unmanage");
+      allowedActions.push("enable");			
+		}
+		else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
+			allowedActions.push("manage");
+		}
 
     allowedActions.push("delete");
 
