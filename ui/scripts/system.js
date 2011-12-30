@@ -5926,7 +5926,10 @@
                   async: true,
                   success: function(json) {
                     var item = json.addclusterresponse.cluster[0];
-                    args.response.success({data: item});
+                    args.response.success({
+										  actionFilter: clusterActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
+										  data: item
+										});  
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -6645,7 +6648,7 @@
                   success: function(json) {
                     var item = json.addhostresponse.host[0];                   
                     args.response.success({
-                      actionFilter: hostActionfilter, //Brian, hostActionfilter() is not being applied here. Please fix widget code to apply actionFilter for a newly created host
+                      actionFilter: hostActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
                       data: item
                     });
                   },
