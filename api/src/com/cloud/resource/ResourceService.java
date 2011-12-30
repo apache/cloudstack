@@ -92,7 +92,7 @@ public interface ResourceService {
 
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
     
-    List<HypervisorType> getSupportedHypervisorTypes(long zoneId);
+    List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
 }

@@ -1218,12 +1218,21 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(long zoneId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId) {
         List<HypervisorType> hypervisorTypes = new ArrayList<HypervisorType>();
         
-        List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
+        List<ClusterVO> clustersForZone = new ArrayList<ClusterVO>();
+        if (podId != null) {
+        	clustersForZone = _clusterDao.listByPodId(podId);
+        } else {
+        	clustersForZone = _clusterDao.listByZoneId(zoneId);
+        }
+        
         for (ClusterVO cluster : clustersForZone) {
-            hypervisorTypes.add(cluster.getHypervisorType());
+        	HypervisorType hType = cluster.getHypervisorType();
+        	if (!forVirtualRouter || (forVirtualRouter && hType != HypervisorType.BareMetal && hType != HypervisorType.Ovm)) {
+                hypervisorTypes.add(hType);
+        	}
         }
         
         return hypervisorTypes;

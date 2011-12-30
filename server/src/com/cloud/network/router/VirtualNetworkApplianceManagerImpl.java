@@ -1149,7 +1149,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     /*
      * Ovm won't support any system. So we have to choose a partner cluster in the same pod to start domain router for us
      */
-    private HypervisorType getAClusterToStartDomainRouterForOvm(long podId) {
+    private HypervisorType getClusterToStartDomainRouterForOvm(long podId) {
         List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (ClusterVO cv : clusters) {
             if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
@@ -1176,7 +1176,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @DB
-    protected List<DomainRouterVO> findOrCreateVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner, boolean isRedundant) throws ConcurrentOperationException, InsufficientCapacityException {
+    protected List<DomainRouterVO> findOrDeployVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner, boolean isRedundant, Map<Param, Object> params) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
@@ -1195,11 +1195,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return null;
         }
         List<DomainRouterVO> routers;
+        Long podId = null;
         if (publicNetwork) {
             routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
         } else {
             if (isPodBased) {
-                Long podId = dest.getPod().getId();
+                podId = dest.getPod().getId();
                 routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.VIRTUAL_ROUTER);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
             } else {
@@ -1314,11 +1315,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 //Router is the network element, we don't know the hypervisor type yet.
                 //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
-                List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
+                
+                if (dest.getCluster() != null) {
+                    if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
+                    	supportedHypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+                    } else {
+                    	supportedHypervisors.add(dest.getCluster().getHypervisorType());
+                    }
+                } else {
+                    supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, podId);
+                }               
+                
                 if (supportedHypervisors.isEmpty()) {
+                	if (podId != null) {
+                    	throw new InsufficientServerCapacityException("Unable to create virtual router, there are no clusters in the pod ", Pod.class, podId);
+                	}
                 	throw new InsufficientServerCapacityException("Unable to create virtual router, there are no clusters in the zone ", DataCenter.class, dest.getDataCenter().getId());
                 }
-                int retry = 0;
+                
+                int allocateRetry = 0;
+                int startRetry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
                     try {
                         s_logger.debug("Allocating the domR with the hypervisor type " + hType);
@@ -1339,17 +1356,34 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, offerHA, false);
                         router.setRole(Role.VIRTUAL_ROUTER);
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
-                        break;
                     } catch (InsufficientCapacityException ex) {
-                        if (retry < 2) {
+                        if (allocateRetry < 2) {
                             s_logger.debug("Failed to allocate the domR with hypervisor type " + hType + ", retrying one more time");
+                            continue;
                         } else {
                             throw ex;
                         }
                     } finally {
-                        retry++;
+                        allocateRetry++;
+                    }
+                    
+                    try {
+                        router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
+                        break;
+                    } catch (InsufficientCapacityException ex) {
+                        if (startRetry < 2) {
+                            s_logger.debug("Failed to start the domR  " + router + " with hypervisor type " + hType + ", destroying it and recreating one more time");
+                            //destroy the router
+                            destroyRouter(router.getId());
+                            continue;
+                        } else {
+                            throw ex;
+                        }
+                    } finally {
+                        startRetry++;
                     }
                 }
+                
                 routers.add(router);
 
                 // Creating stats entry for router
@@ -1373,7 +1407,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-        if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
+    	
+    	if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
         }
 
@@ -1451,7 +1486,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
-        List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, isRedundant);
+        List<DomainRouterVO> routers = findOrDeployVirtualRouters(guestNetwork, dest, owner, isRedundant, params);
         List<DomainRouterVO> runningRouters = null;
 
         if (routers != null) {
