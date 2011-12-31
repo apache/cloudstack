@@ -83,6 +83,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SwiftResponse;
 import com.cloud.api.response.SystemVmInstanceResponse;
@@ -111,6 +112,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -3236,5 +3238,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         return lr;
     }
 
-
+	@Override
+    public StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result) {
+		StorageNetworkIpRangeResponse response = new StorageNetworkIpRangeResponse();
+		response.setId(result.getId());
+		response.setVlan(result.getVlan());
+		response.setEndIp(result.getEndIp());
+		response.setStartIp(result.getStartIp());
+		response.setPodId(result.getPodId());
+		response.setZoneId(result.getDataCenterId());
+		response.setNetworkId(result.getNetworkId());
+		return response;
+    }
 }

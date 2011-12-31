@@ -560,6 +560,33 @@ CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
   INDEX `i_op_dc_link_local_ip_address_alloc__nic_id_reservation_id`(`nic_id`,`reservation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `start_ip` char(40) NOT NULL COMMENT 'start ip address',
+  `end_ip` char(40) NOT NULL COMMENT 'end ip address',
+  `vlan` int unsigned DEFAULT NULL COMMENT 'vlan the storage network on',
+  `data_center_id` bigint unsigned NOT NULL,
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_storage_ip_range__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_storage_ip_range__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_storage_ip_range___network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`)
+  CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
+  `range_id` bigint unsigned NOT NULL COMMENT 'id of ip range in dc_storage_network_ip_range',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
+  `ip_address` char(40) NOT NULL COMMENT 'ip address',
+  `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for storage ips',
+  `cidr_size` int unsigned NOT NULL COMMENT 'CIDR size for storage network',
+  `taken` datetime COMMENT 'Date taken',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_storage_ip_address__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `cloud`.`host_pod_ref` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255),
