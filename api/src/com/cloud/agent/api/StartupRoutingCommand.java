@@ -23,6 +23,7 @@ import java.util.Map;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
 public class StartupRoutingCommand extends StartupCommand {
@@ -48,6 +49,7 @@ public class StartupRoutingCommand extends StartupCommand {
     long dom0MinMemory;
     boolean poolSync;
     Map<String, VmState> vms;
+    HashMap<String, Pair<String, State>> _clusterVMStates;
     String caps;
     String pool;
     HypervisorType hypervisorType;
@@ -127,6 +129,10 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
             this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
         }
     }
+    
+    public void setClusterVMStateChanges(HashMap<String, Pair<String, State>> allStates){
+    	_clusterVMStates = allStates;
+    }
 
     public int getCpus() {
         return cpus;
@@ -150,6 +156,10 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
 
     public Map<String, VmState> getVmStates() {
         return vms;
+    }
+    
+    public HashMap<String, Pair<String, State>> getClusterVMStateChanges() {
+        return _clusterVMStates;
     }
 
     public void setSpeed(long speed) {

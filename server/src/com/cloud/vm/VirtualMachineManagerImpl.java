@@ -2092,9 +2092,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     } else if (hs.isDelta()){
                         deltaSync(hs.getNewStates());
                     }
-                    else {
-                        fullSync(hs.getClusterId(), hs.getAllStates(), true);
-                    }
                     hs.setExecuted();
                 }
             } else if (!answer.getResult()) {
@@ -2169,6 +2166,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Long clusterId = agent.getClusterId();
         long agentId = agent.getId();
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
+        	StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+        	HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
+        	if (allStates != null){
+        		this.fullSync(clusterId, allStates, true);
+        	}
+        	
+        	// initiate the cron job
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
                     	Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
             try {

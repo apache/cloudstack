@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+/*  Copyright (C) 2012 Citrix.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -19,18 +19,20 @@ package com.cloud.agent.api;
 
 
 public class ClusterSyncCommand extends Command implements CronCommand {
-    private int _interval;
-    private int _skipSteps;  // skip this many steps for full sync
-    private int _steps;
-    private boolean _init;
-    private long _clusterId;
+    int _interval;
+    int _skipSteps;  // skip this many steps for full sync
+    int _steps;
+
+    long _clusterId;
+    
+    public ClusterSyncCommand() {
+    }
     
     public ClusterSyncCommand(int interval, int skipSteps, long clusterId){
         _interval = interval;
         _skipSteps = skipSteps;
         _clusterId = clusterId;
         _steps=0;
-    	_init=true;
     }
 
     @Override
@@ -44,10 +46,10 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     
     public void incrStep(){
         _steps++;
-        if (_steps>_skipSteps)_steps=0;
+        if (_steps>=_skipSteps)_steps=0;
     }
     
-    public boolean isRightStep(){ 
+    public boolean isRightStep(){
         return (_steps==0);
     }
     
@@ -58,14 +60,6 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     @Override
     public boolean executeInSequence() {
         return false;
-    }
-    
-    public boolean isInit(){
-    	return _init;
-    }
-    
-    public void unsetInit(){
-    	_init = false;
     }
     
 }

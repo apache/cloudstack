@@ -31,7 +31,6 @@ public class ClusterSyncAnswer extends Answer {
     
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
-    public static final int INITIAL_FULL_SYNC=2;
  
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
@@ -58,14 +57,6 @@ public class ClusterSyncAnswer extends Answer {
         _newStates = newStates;
         _allStates = allStates;
         _type = FULL_SYNC;
-        result = true;
-    }
-
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, HashMap<String, Pair<String, State>> allStates, boolean init){
-        _clusterId = clusterId;
-        _newStates = newStates;
-        _allStates = allStates;
-        _type = INITIAL_FULL_SYNC;
         result = true;
     }
 

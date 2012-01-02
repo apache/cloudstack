@@ -4032,6 +4032,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
+        
+        Pool pool;
+        try {
+            pool = Pool.getByUuid(conn, _host.pool);
+            Pool.Record poolr = pool.getRecord(conn);
+
+            Host.Record hostr = poolr.master.getRecord(conn);
+            if (_host.uuid.equals(hostr.uuid)) {
+            	HashMap<String, Pair<String, State>> allStates=fullClusterSync(conn);
+            	cmd.setClusterVMStateChanges(allStates);
+            }
+        } catch (Throwable e) {
+            s_logger.warn("Check for master failed, failing the FULL Cluster sync command");
+        } 
 
         StartupStorageCommand sscmd = initializeLocalSR(conn);
         if (sscmd != null) {
@@ -6590,17 +6604,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return  new Answer(cmd);
         } 
         HashMap<String, Pair<String, State>> newStates = deltaClusterSync(conn);
+        cmd.incrStep();
         if (cmd.isRightStep()){
-            cmd.incrStep();
             // do full sync
         	 HashMap<String, Pair<String, State>> allStates=fullClusterSync(conn);
-        	 if (cmd.isInit()){
-        		 cmd.unsetInit();
-        		 return new ClusterSyncAnswer(cmd.getClusterId(), newStates, allStates, true);
-        	 }
-        	 else {
-        		 return new ClusterSyncAnswer(cmd.getClusterId(), newStates, allStates);
-        	 }
+        	 return new ClusterSyncAnswer(cmd.getClusterId(), newStates, allStates);
         }
         else {
             cmd.incrStep();
