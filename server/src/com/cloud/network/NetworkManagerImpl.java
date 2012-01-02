@@ -3502,7 +3502,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId) {
         boolean restartNetwork = false;
@@ -3544,6 +3544,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	throw new InvalidParameterValueException("NetworkOffering and domain suffix upgrade can be perfomed for Isolated networks only");
         }
 
+        boolean networkOfferingChanged = false;
+        
         long oldNetworkOfferingId = network.getNetworkOfferingId();
         if (networkOfferingId != null) {
 
@@ -3566,6 +3568,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
                 }
                 restartNetwork = true;
+                networkOfferingChanged = true;
             }
         }
 
@@ -3619,8 +3622,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	}
     	
         if (networkOfferingId != null) {
-            network.setNetworkOfferingId(networkOfferingId);
-            _networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+        	if(networkOfferingChanged){
+        		Transaction txn = Transaction.currentTxn();
+                txn.start();
+        		network.setNetworkOfferingId(networkOfferingId);
+        		_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+        		//get all nics using this network
+        		//log remove usage events for old offering
+        		//log assign usage events for new offering
+                List<NicVO> nics = _nicDao.listByNetworkId(networkId);
+                for(NicVO nic : nics){
+                	long vmId = nic.getInstanceId();
+                	VMInstanceVO vm = _vmDao.findById(vmId);
+                	if(vm == null){
+                		s_logger.error("Vm for nic "+nic.getId()+" not found with Vm Id:"+vmId);
+                		continue;
+                	}
+                    long isDefault = (nic.isDefaultNic()) ? 1 : 0;
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), null, oldNetworkOfferingId, null, 0L);
+                    _usageEventDao.persist(usageEvent);                    
+                    usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
+                    _usageEventDao.persist(usageEvent);
+                }        		
+        		txn.commit();        		
+        	} else {
+        		network.setNetworkOfferingId(networkOfferingId);
+        		_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+        	}
         } else {
             _networksDao.update(networkId, network); 
         }
