@@ -18,6 +18,8 @@
 
 package com.cloud.server.auth;
 
+import java.util.Map;
+
 import com.cloud.utils.component.Adapter;
 
 /**
@@ -36,5 +38,5 @@ public interface UserAuthenticator extends Adapter {
 	 * @param domainId
 	 * @return true if the user has been successfully authenticated, false otherwise
 	 */
-	public boolean authenticate(String username, String password, Long domainId);
+	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
 }

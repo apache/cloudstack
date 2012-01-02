@@ -47,7 +47,7 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 	private UserAccountDao _userAccountDao;
 	
 	@Override
-	public boolean authenticate(String username, String password, Long domainId) {
+	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }

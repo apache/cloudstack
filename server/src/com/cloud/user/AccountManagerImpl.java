@@ -1549,7 +1549,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null) {
-            user = getUserAccount(username, password, domainId);
+            user = getUserAccount(username, password, domainId, requestParameters);
         } else {
             String key = _configDao.getValue("security.singlesignon.key");
             if (key == null) {
@@ -1657,16 +1657,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    private UserAccount getUserAccount(String username, String password, Long domainId) {
+    private UserAccount getUserAccount(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
         
         boolean authenticated = false;
-        // We only use the first adapter even if multiple have been configured
         for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();){
             UserAuthenticator authenticator = en.nextElement();
-            if (authenticator.authenticate(username, password, domainId)){
+            if (authenticator.authenticate(username, password, domainId, requestParameters)){
                 authenticated = true;
                 break;
             }
