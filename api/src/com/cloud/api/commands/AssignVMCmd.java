@@ -48,14 +48,16 @@ public class AssignVMCmd extends BaseCmd  {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the vm ID of the user VM to be moved")
     private Long virtualMachineId;
     
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="account name of the new VM owner.")
     private String accountName;
     
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+    @IdentityMapper(entityTableName="domain")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="domain id of the new VM owner.")
     private Long domainId;
 
     //Network information
