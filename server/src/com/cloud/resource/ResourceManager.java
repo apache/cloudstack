@@ -131,4 +131,6 @@ public interface ResourceManager extends ResourceService{
     String getHostTags(long hostId);
     
     List<PodCluster> listByDataCenter(long dcId);
+
+	List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId);
 }

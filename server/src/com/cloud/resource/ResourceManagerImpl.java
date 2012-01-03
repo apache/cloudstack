@@ -1100,7 +1100,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         try {
             processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
             if (maintain(hostId)) {
-                processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
+                processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, hostId);
                 return _hostDao.findById(hostId);
             } else {
                 throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
@@ -1926,6 +1926,17 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	    return sc.list();
     }
 
+	@Override
+    public List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		if (dcId != null){
+			sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		}
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
+	    return sc.list();
+    }
+	
 	@Override
     public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);

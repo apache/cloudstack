@@ -289,7 +289,7 @@ public class AlertManagerImpl implements AlertManager {
         	
 	        // Calculate CPU and RAM capacities
 	        // 	get all hosts...even if they are not in 'UP' state
-	        List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+	        List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);	        	        
 	        for (HostVO host : hosts) {
 	        	_capacityMgr.updateCapacityForHost(host);
 	        }

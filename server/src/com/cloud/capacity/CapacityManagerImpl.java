@@ -17,6 +17,7 @@
  */
 package com.cloud.capacity;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.DateUtil;
@@ -63,7 +66,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = CapacityManager.class)
-public class CapacityManagerImpl implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener {
+public class CapacityManagerImpl implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(CapacityManagerImpl.class);
     String _name;
     @Inject
@@ -107,6 +110,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
     @Override
     public boolean start() {
+    	_resourceMgr.registerResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, this);
+    	_resourceMgr.registerResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, this);
         return true;
     }
 
@@ -697,5 +702,55 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
         // TODO Auto-generated method stub
         return false;
     }
+
+	@Override
+	public void processCancelMaintenaceEventAfter(Long hostId) {
+		updateCapacityForHost(_hostDao.findById(hostId));		
+	}
+
+	@Override
+	public void processCancelMaintenaceEventBefore(Long hostId) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processDeletHostEventAfter(HostVO host) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processDeleteHostEventBefore(HostVO host) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processDiscoverEventAfter(
+			Map<? extends ServerResource, Map<String, String>> resources) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processDiscoverEventBefore(Long dcid, Long podId,
+			Long clusterId, URI uri, String username, String password,
+			List<String> hostTags) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processPrepareMaintenaceEventAfter(Long hostId) {		
+		_capacityDao.removeBy(Capacity.CAPACITY_TYPE_MEMORY, null, null, null, hostId);
+		_capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU, null, null, null, hostId);
+	}
+
+	@Override
+	public void processPrepareMaintenaceEventBefore(Long hostId) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }
