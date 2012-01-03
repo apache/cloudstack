@@ -6857,7 +6857,11 @@
 
           },
           detailView: {
-            name: "Host details",
+            name: "Host details",												
+						viewAll: {
+							label: 'Instances',
+							path: 'instances'
+						},				
             actions: {
               edit: {
                 label: 'Edit',

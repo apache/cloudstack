@@ -735,7 +735,10 @@
             }
           }
         }
-
+			       
+				if("hosts" in args.context)
+					array1.push("&hostid=" + args.context.hosts[0].id);				
+								
         $.ajax({
           url: createURL("listVirtualMachines&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
           dataType: "json",
