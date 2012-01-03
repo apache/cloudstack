@@ -19,8 +19,7 @@
             mine: { label: 'Mine' }
           },          
           fields: {
-            name: { label: 'Name' },
-            id: { label: 'ID' },
+            name: { label: 'Name' },           
             zonename: { label: 'Zone' },
             hypervisor: { label: 'Hypervisor' }
           },
@@ -844,9 +843,7 @@
             mine: { label: 'Mine' }
           },      
           fields: {
-            displaytext: { label: 'Name' },
-            id: { label: 'ID' },
-            size: { label: 'Size' },
+            displaytext: { label: 'Name' },            
             zonename: { label: 'Zone' }
           },
           
