@@ -852,7 +852,11 @@
                 createForm: {
                   label: 'Change password',
                   fields: {
-                    newPassword: { label: 'New password' }
+                    newPassword: { 
+										  label: 'New password',
+											isPassword: true, 
+											validation: { required: true }
+										}
                   }
                 },
                 action: function(args) {
