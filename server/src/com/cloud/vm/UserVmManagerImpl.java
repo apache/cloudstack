@@ -3432,10 +3432,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
             _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName()));
-            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, Long.valueOf(volumes.size()));
+            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
             volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
-            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, Long.valueOf(volumes.size()));
+            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
             		volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize()));
         }
