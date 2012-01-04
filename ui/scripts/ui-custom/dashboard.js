@@ -26,20 +26,24 @@
                   $.each(item, function(arrayKey, arrayValue) {
                     var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
 
-                    if ($arrayElem.hasClass('pie-chart')) {
-                      // Generate pie chart
-                      // -- values above 80 have a red color
-                      pieChart($arrayElem, [
-                        { data: [[1, 100 - arrayValue]], color: '#54697e' },
-                        { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
-                      ]);
-                    } else {
-                      if ($li.attr('concat-value') == 'true') {
-                        $arrayElem.html(arrayValue.substring(0, 50).concat('...'));
+                    $arrayElem.each(function() {
+                      var $arrayElem = $(this);
+                      
+                      if ($arrayElem.hasClass('pie-chart')) {
+                        // Generate pie chart
+                        // -- values above 80 have a red color
+                        pieChart($arrayElem, [
+                          { data: [[1, 100 - arrayValue]], color: '#54697e' },
+                          { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
+                        ]);
                       } else {
-                        $arrayElem.html(arrayValue);
+                        if ($li.attr('concat-value') == 'true') {
+                          $arrayElem.html(arrayValue.substring(0, 50).concat('...'));
+                        } else {
+                          $arrayElem.html(arrayValue);
+                        }
                       }
-                    }
+                    });
                   });
 
                   $li.attr({ title: item.description });

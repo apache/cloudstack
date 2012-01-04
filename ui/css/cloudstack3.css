@@ -3218,6 +3218,26 @@ Dialogs*/
   font-weight: bold;
 }
 
+.dashboard.admin .zone-stats ul li .pie-chart-container {
+  width: 95px;
+  height: 69px;
+  overflow: hidden;
+  float: left;
+  position: relative;
+}
+
+.dashboard.admin .zone-stats ul li .pie-chart-container .percent-label {
+  width: 52px;
+  color: #C98200;
+  /*+placement:shift 28px 31px;*/
+  position: relative;
+  left: 28px;
+  top: 31px;
+  position: absolute;
+  font-weight: bold;
+  text-align: center;
+}
+
 .dashboard.admin .zone-stats ul li .pie-chart {
   width: 70px;
   height: 66px;

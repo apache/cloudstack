@@ -1130,7 +1130,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Zone stat charts -->
           <div class="zone-stats">
             <ul data-item="zoneCapacities">
@@ -1138,7 +1138,10 @@
                 <div class="label">
                   Zone: <span data-list-item="zoneName"></span>
                 </div>
-                <div class="pie-chart" data-list-item="percent"></div>
+                <div class="pie-chart-container">
+                  <div class="percent-label"><span data-list-item="percent"></span>%</div>
+                  <div class="pie-chart" data-list-item="percent"></div>
+                </div>
                 <div class="info">
                   <div class="name" data-list-item="type"></div>
                   <div class="value">

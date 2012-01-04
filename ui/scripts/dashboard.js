@@ -234,7 +234,7 @@
                     return {
                       zoneName: capacity.zoneName,
                       type: cloudStack.converters.toAlertType(capacity.type),
-                      percent: capacity.percentused,
+                      percent: parseInt(capacity.percentused),
                       used: cloudStack.converters.convertByType(capacity.type, capacity.capacityused),
                       total: cloudStack.converters.convertByType(capacity.type, capacity.capacitytotal)
                     };
