@@ -38,9 +38,7 @@
 	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxen-jdom.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxrpc.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-jdom.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-mailapi.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-saxpath.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-smtp.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-wbem.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-xalan.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-xerces.jar"/>
