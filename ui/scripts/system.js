@@ -1155,7 +1155,7 @@
                                   return "<font color='red'>Yes</font>";
                                 else if(booleanValue == false)
                                   return "No";
-                              },
+                              }
                             },                           
                             vlan: { label: 'VLAN ID' },
                             scope: { label: 'Scope' },
@@ -1211,7 +1211,7 @@
                           selectedGuestNetworkObj = args.context.networks[0];                        
                           args.response.success({data: selectedGuestNetworkObj});
                         }
-                      },
+                      }
                     }
                   }
                 }
@@ -2034,7 +2034,7 @@
                             data: item
                           });
                         }
-                      },
+                      }
                     }
                   }
                 }
@@ -2052,7 +2052,7 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid,
+                            jobId: jid
                           }
                         }
                       );
@@ -2838,7 +2838,7 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid,
+                            jobId: jid
                           }
                         }
                       );
@@ -5692,7 +5692,7 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name', isEditable: true },
+                    name: { label: 'Name', isEditable: true }
                   },
                   {
                     id: { label: 'ID' },
@@ -6317,7 +6317,7 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' },
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
@@ -7073,7 +7073,7 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' },
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
@@ -7119,7 +7119,7 @@
                   });
                 }
 
-              },
+              }
             }
           }
         }
@@ -7805,7 +7805,7 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' },
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
@@ -8012,7 +8012,7 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' },
+                    name: { label: 'Name' }
                   },
                   {
                     id: { label: 'ID' },
