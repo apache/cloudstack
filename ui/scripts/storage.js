@@ -1495,12 +1495,10 @@
           }
         }
         else { // Disk not attached
+				  allowedActions.push("destroy");
           allowedActions.push("migrateToAnotherStorage");
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
-            if(jsonObj.vmname == null || jsonObj.vmname == "none") {
-              allowedActions.push("destroy");
-            }
           }
         }
       }
