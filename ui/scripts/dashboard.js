@@ -155,11 +155,72 @@
                 var hosts = json.listhostsresponse.host ?
                       json.listhostsresponse.host : [];
 
-                complete($.extend(data, {
+                dataFns.zoneCapacity($.extend(data, {
                   hostAlerts: $.map(hosts, function(host) {
                     return {
                       name: host.name,
                       description: 'Alert state detected for ' + host.name
+                    };
+                  })
+                }));
+              }
+            });
+          },
+
+          zoneCapacity: function(data) {
+            $.ajax({
+              url: createURL('listZones'),
+              data: {
+                showCapacities: true
+              },
+              success: function(json) {
+                var zones = json.listzonesresponse.zone ?
+                  json.listzonesresponse.zone : [];
+
+                var zoneCapacities = [];
+
+                $(zones).each(function() {
+                  var zone = this;
+                  var clusters;
+
+                  // Get cluster-level data
+                  $.ajax({
+                    url: createURL('listClusters'),
+                    data: {
+                      zoneId: zone.id,
+                      showCapacities: true
+                    },
+                    async: false,
+                    success: function(json) {
+                      var cluster = json.listclustersresponse.cluster;
+
+                      $(cluster).each(function() {
+                        var cluster = this;
+
+                        $(cluster.capacity).each(function() {
+                          var capacity = this;
+
+                          zoneCapacities.push($.extend(capacity, {
+                            zoneName: zone.name + '<br/>Cluster: ' + cluster.name
+                          }));
+                        });
+                      });
+                    }
+                  });
+                });
+
+                var sortFn = function(a, b) {
+                  return parseInt(a.percentused) < parseInt(b.percentused);
+                };
+
+                complete($.extend(data, {
+                  zoneCapacities: $.map(zoneCapacities.sort(sortFn), function(capacity) {
+                    return {
+                      zoneName: capacity.zoneName,
+                      type: cloudStack.converters.toAlertType(capacity.type),
+                      percent: capacity.percentused,
+                      used: cloudStack.converters.convertByType(capacity.type, capacity.capacityused),
+                      total: cloudStack.converters.convertByType(capacity.type, capacity.capacitytotal)
                     };
                   })
                 }));

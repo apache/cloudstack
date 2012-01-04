@@ -3067,32 +3067,38 @@ Dialogs*/
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
-  padding: 14px 14px 18px;
+  padding: 0px 8px 18px 0px;
   margin: 0 0 11px;
 }
 
 .dashboard.admin .dashboard-container.sub {
-  width: 45%;
+  width: 368px;
 }
 
 .dashboard.admin .dashboard-container.sub .button.view-all {
   font-size: 10px;
   float: right;
   clear: none;
-  padding: 3px 6px;
-  background: url(../images/bg-gradients.png) repeat-x 0px -164px;
-  border: 1px solid #B2B7BB;
+  /*+text-shadow:0px 1px 0px #333E49;*/
+  -moz-text-shadow: 0px 1px 0px #333E49;
+  -webkit-text-shadow: 0px 1px 0px #333E49;
+  -o-text-shadow: 0px 1px 0px #333E49;
+  text-shadow: 0px 1px 0px #333E49;
+  padding: 3px 8px 3px 10px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -411px;
+  border: 1px solid #383838;
   /*+border-radius:6px;*/
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
-  /*+box-shadow:0px 1px 1px #CBCBCB;*/
-  -moz-box-shadow: 0px 1px 1px #CBCBCB;
-  -webkit-box-shadow: 0px 1px 1px #CBCBCB;
-  -o-box-shadow: 0px 1px 1px #CBCBCB;
-  box-shadow: 0px 1px 1px #CBCBCB;
+  /*+box-shadow:0px 1px 1px #718CA5;*/
+  -moz-box-shadow: 0px 1px 1px #718CA5;
+  -webkit-box-shadow: 0px 1px 1px #718CA5;
+  -o-box-shadow: 0px 1px 1px #718CA5;
+  box-shadow: 0px 1px 1px #718CA5;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .dashboard.admin .dashboard-container.sub .title {
@@ -3101,20 +3107,44 @@ Dialogs*/
 
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
+  width: 766px;
+  height: 304px;
+  margin: 9px 0 0;
+  float: left;
 }
 
-.dashboard.admin .dashboard-container.head .top {
+.dashboard.admin .dashboard-container .top {
+  background: url(../images/bg-breadcrumb.png) repeat-x 0px -1px;
+  padding: 4px 4px 8px;
   width: 100%;
   float: left;
   margin: 0 0 9px;
+  color: #FFFFFF;
+  /*+border-radius:7px 7px 0 0;*/
+  -moz-border-radius: 7px 7px 0 0;
+  -webkit-border-radius: 7px 7px 0 0;
+  -khtml-border-radius: 7px 7px 0 0;
+  border-radius: 7px 7px 0 0;
 }
 
-.dashboard.admin .dashboard-container.head .title {
+.dashboard.admin .dashboard-container .title {
   float: left;
-  padding: 5px 0 0;
+  font-size: 12px;
+  font-weight: bold;
+  /*+text-shadow:0px 1px 1px #9A9A9A;*/
+  -moz-text-shadow: 0px 1px 1px #9A9A9A;
+  -webkit-text-shadow: 0px 1px 1px #9A9A9A;
+  -o-text-shadow: 0px 1px 1px #9A9A9A;
+  text-shadow: 0px 1px 1px #9A9A9A;
+  padding: 5px 0 0 4px;
 }
 
-.dashboard.admin .dashboard-container.head .title span {
+.dashboard.admin .dashboard-container .title span {
+  /*+text-shadow:0px 1px 1px #050607;*/
+  -moz-text-shadow: 0px 1px 1px #050607;
+  -webkit-text-shadow: 0px 1px 1px #050607;
+  -o-text-shadow: 0px 1px 1px #050607;
+  text-shadow: 0px 1px 1px #050607;
 }
 
 .dashboard.admin .dashboard-container.head .selects {
@@ -3140,6 +3170,61 @@ Dialogs*/
 }
 
 /**** Charts / stats*/
+.dashboard.admin .zone-stats {
+  width: 774px;
+  height: 294px;
+  overflow: auto;
+  overflow-x: hidden;
+  /*+placement:shift 0px -11px;*/
+  position: relative;
+  left: 0px;
+  top: -11px;
+}
+
+.dashboard.admin .zone-stats ul {
+  width: 796px;
+  /*+placement:shift -1px 0px;*/
+  position: relative;
+  left: -1px;
+  top: 0px;
+}
+
+.dashboard.admin .zone-stats ul li {
+  background: #FFFFFF url(../images/bg-gradients.png) repeat-x 0px -1244px;
+  width: 387px;
+  font-size: 11px;
+  border: 1px solid #BDBDBD;
+  border-left: none;
+  border-top: none;
+  height: 73px;
+  float: left;
+  position: relative;
+}
+
+.dashboard.admin .zone-stats ul li .label {
+  width: 103px;
+  float: left;
+  padding: 32px 26px 0 13px;
+}
+
+.dashboard.admin .zone-stats ul li .info {
+  float: left;
+  width: 120px;
+  margin: 12px 0 0;
+  color: #636363;
+}
+
+.dashboard.admin .zone-stats ul li .info .name {
+  font-weight: bold;
+}
+
+.dashboard.admin .zone-stats ul li .pie-chart {
+  width: 70px;
+  height: 66px;
+  float: left;
+  margin: 3px 27px 0 16px;
+}
+
 .dashboard.admin .dashboard-container .stats ul li {
   display: block;
   width: 97%;
@@ -3245,9 +3330,10 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
-  width: 362px;
-  height: 294px;
+  width: 356px;
+  height: 274px;
   overflow: auto;
+  margin: 0 0 0 16px;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
@@ -3274,7 +3360,8 @@ Dialogs*/
 
 .dashboard.admin .dashboard-container.sub.alerts ul li .content {
   height: 43px;
-  padding: 0 0 0 62px;
+  padding: 0 0px 0 63px;
+  margin: 0;
   background: url(../images/icons.png) no-repeat -601px -428px;
 }
 
@@ -3284,7 +3371,13 @@ Dialogs*/
 .dashboard.admin .dashboard-container.sub.alerts ul li span.title {
   font-weight: bold;
   font-size: 11px;
-  margin: 12px 0 0;
+  margin: 7px 0 0;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+  padding: 0;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li p {

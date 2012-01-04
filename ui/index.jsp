@@ -1080,79 +1080,6 @@
 
       <!-- Admin dashboard -->
       <div class="dashboard admin">
-        <!-- Capacity / stats -->
-        <div class="dashboard-container head">
-          <div class="top">
-            <div class="title">
-              <span>System-wide capacity</span>
-            </div>
-            <div class="selects" style="display:none;">
-              <div class="select">
-                <label>Zone:</label>
-                <select>
-                </select>
-              </div>
-              <div class="select">
-                <label>Pods:</label>
-                <select>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="stats">
-            <ul>
-              <li>
-                <div class="name">Public IP Addresses</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="publicIPAllocated">0</span> / <span class="total" data-item="publicIPTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="publicIPPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="publicIPPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">Private IP Addresses</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="privateIPAllocated"></span> / <span class="total" data-item="privateIPTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="privateIPPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="privateIPPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">Memory Allocated</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="memoryAllocated"></span> / <span class="total" data-item="memoryTotal"></span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="memoryPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="memoryPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">CPU Allocated</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="cpuAllocated"></span> / <span class="total" data-item="cpuTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="cpuPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="cpuPercentage"></span>%</div>
-              </li>
-            </ul>
-          </div>
-        </div>
-
         <!-- General alerts-->
         <div class="dashboard-container sub alerts first">
           <div class="top">
@@ -1160,7 +1087,7 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="alerts">
-            <li class="error">
+            <li class="error" concat-value="true">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
@@ -1176,13 +1103,53 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="hostAlerts">
-            <li class="error">
+            <li class="error" concat-value="true">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
               </div>
             </li>
           </ul>
+        </div>
+        <!-- Capacity / stats -->
+        <div class="dashboard-container head">
+          <div class="top">
+            <div class="title">
+              <span>System Capacity</span>
+            </div>
+            <div class="selects" style="display:none;">
+              <div class="select">
+                <label>Zone:</label>
+                <select>
+                </select>
+              </div>
+              <div class="select">
+                <label>Pods:</label>
+                <select>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Zone stat charts -->
+          <div class="zone-stats">
+            <ul data-item="zoneCapacities">
+              <li>
+                <div class="label">
+                  Zone: <span data-list-item="zoneName"></span>
+                </div>
+                <div class="pie-chart" data-list-item="percent"></div>
+                <div class="info">
+                  <div class="name" data-list-item="type"></div>
+                  <div class="value">
+                    <span class="used" data-list-item="used"></span>
+                    <span class="divider">/</span>
+                    <span class="total" data-list-item="total"></span>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -1559,6 +1526,21 @@
     <script src="lib/jquery.easing.js" type="text/javascript"></script>
     <script src="lib/jquery.validate.js" type="text/javascript"></script>
     <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
+
+    <!-- Flot -->
+    <script src="lib/excanvas.js"></script>
+    <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.crosshair.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.fillbetween.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.image.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.navigate.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.pie.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.resize.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.selection.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
+    <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
 
     <!-- UI -->
     <script src="scripts/ui/core.js" type="text/javascript"></script>

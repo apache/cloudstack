@@ -283,26 +283,38 @@ cloudStack.converters = {
   },
   toAlertType: function(alertCode) {
     switch (alertCode) {
-    case 0 : return "Capacity Threshold - Memory";
-    case 1 : return "Capacity Threshold - CPU";
-    case 2 : return "Capacity Threshold - Storage Used";
-    case 3 : return "Capacity Threshold - Storage Allocated";
-    case 4 : return "Capacity Threshold - Public IP";
-    case 5 : return "Capacity Threshold - Private IP";
-    case 6 : return "Monitoring - Host";
-    case 7 : return "Monitoring - VM";
-    case 8 : return "Monitoring - Domain Router";
-    case 9 : return "Monitoring - Console Proxy";
-    case 10 : return "Monitoring - Routing Host";
-    case 11 : return "Monitoring - Storage";
-    case 12 : return "Monitoring - Usage Server";
-    case 13 : return "Monitoring - Management Server";
-    case 14 : return "Migration - Domain Router";
-    case 15 : return "Migration - Console Proxy";
-    case 16 : return "Migration - User VM";
+    case 0 : return "Memory";
+    case 1 : return "CPU";
+    case 2 : return "Storage Used";
+    case 3 : return "Storage Allocated";
+    case 4 : return "Public IP";
+    case 5 : return "Private IP";
+    case 6 : return "Host";
+    case 7 : return "VM";
+    case 8 : return "Domain Router";
+    case 9 : return "Console Proxy";
+    case 10 : return "Routing Host";
+    case 11 : return "Storage";
+    case 12 : return "Usage Server";
+    case 13 : return "Management Server";
+    case 14 : return "Domain Router";
+    case 15 : return "Console Proxy";
+    case 16 : return "User VM";
     case 17 : return "VLAN";
-    case 18 : return "Monitoring - Secondary Storage VM";
+    case 18 : return "Secondary Storage VM";
     }
+  },
+  convertByType: function(alertCode, value) {
+    switch(alertCode) {
+      case 0: return cloudStack.converters.convertBytes(value);
+      case 1: return cloudStack.converters.convertHz(value);
+      case 2: return cloudStack.converters.convertBytes(value);
+      case 3: return cloudStack.converters.convertBytes(value);
+      case 6: return cloudStack.converters.convertBytes(value);
+      case 11: return cloudStack.converters.convertBytes(value);
+    }
+
+    return value;
   }
 }
 
