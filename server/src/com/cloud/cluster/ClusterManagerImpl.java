@@ -593,42 +593,65 @@ public class ClusterManagerImpl implements ClusterManager {
             public void run() {
                 Transaction txn = Transaction.open("ClusterHeartBeat");
                 try {
-                    txn.transitToUserManagedConnection(getHeartbeatConnection());
-                    if(s_logger.isTraceEnabled()) {
-                        s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
-                    }
-
-                    _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
-                    }
-
-                    if (!_peerScanInited) {
-                        _peerScanInited = true;
-                        initPeerScan();
-                    }
-
-                    peerScan();
+                    Profiler profiler = new Profiler();
+                    Profiler profilerHeartbeatUpdate = new Profiler();
+                    Profiler profilerPeerScan = new Profiler();
+                    Profiler profilerAgentLB = new Profiler();
                     
-                    //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
-                    if (_agentLBEnabled && !_agentLbHappened) {
-                        List<HostVO> allManagedRoutingAgents = _hostDao.listManagedRoutingAgents();
-                        List<HostVO> allAgents = _hostDao.listAllRoutingAgents();
-                        double allHostsCount = allAgents.size();
-                        double managedHostsCount = allManagedRoutingAgents.size();
-                        if (allHostsCount > 0.0) {
-                            double load = managedHostsCount/allHostsCount;
-                            if (load >= _connectedAgentsThreshold) {
-                                s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
-                                _rebalanceService.scheduleRebalanceAgents();
-                                _agentLbHappened = true;
-                            } else {
-                                s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
-                            }
-                        } 
+                    try {
+                        profiler.start();
+                        
+                        profilerHeartbeatUpdate.start();
+                        txn.transitToUserManagedConnection(getHeartbeatConnection());
+                        if(s_logger.isTraceEnabled()) {
+                            s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
+                        }
+    
+                        _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
+                        profilerHeartbeatUpdate.stop();
+    
+                        profilerPeerScan.start();
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
+                        }
+    
+                        if (!_peerScanInited) {
+                            _peerScanInited = true;
+                            initPeerScan();
+                        }
+    
+                        peerScan();
+                        profilerPeerScan.stop();
+                        
+                        profilerAgentLB.start();
+                        //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
+                        if (_agentLBEnabled && !_agentLbHappened) {
+                            List<HostVO> allManagedRoutingAgents = _hostDao.listManagedRoutingAgents();
+                            List<HostVO> allAgents = _hostDao.listAllRoutingAgents();
+                            double allHostsCount = allAgents.size();
+                            double managedHostsCount = allManagedRoutingAgents.size();
+                            if (allHostsCount > 0.0) {
+                                double load = managedHostsCount/allHostsCount;
+                                if (load >= _connectedAgentsThreshold) {
+                                    s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
+                                    _rebalanceService.scheduleRebalanceAgents();
+                                    _agentLbHappened = true;
+                                } else {
+                                    s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
+                                }
+                            } 
+                        }
+                        profilerAgentLB.stop();
+                    } finally {
+                        profiler.stop();
+                        
+                        if(profiler.getDuration() >= _heartbeatInterval) {
+                            s_logger.warn("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + 
+                                ", profilerHeartbeatUpdate: " + profilerHeartbeatUpdate.toString() +
+                                ", profilerPeerScan: " + profilerPeerScan.toString() +
+                                ", profilerAgentLB: " + profilerAgentLB.toString());
+                        }
                     }
-                    
                     
                 } catch(CloudRuntimeException e) {
                     s_logger.error("Runtime DB exception ", e.getCause());
