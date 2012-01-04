@@ -1191,7 +1191,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         try {
-            if (predefined == null || (predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+            if (predefined == null || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1205,7 +1205,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                 }
             } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null) {
-                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId(), predefined.getCidr());
+            	//don't allow to have 2 networks with the same cidr in the same zone for the account
+                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), plan.getDataCenterId(), predefined.getCidr());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));

@@ -33,7 +33,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
 
-    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr);
+    List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr);
 
     List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type);
 

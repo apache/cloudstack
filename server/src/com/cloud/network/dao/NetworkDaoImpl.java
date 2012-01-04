@@ -175,9 +175,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr) {
         SearchCriteria<NetworkVO> sc = AccountSearch.create();
-        sc.setParameters("offering", offeringId);
         sc.setJoinParameters("accounts", "account", accountId);
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("cidr", cidr);
