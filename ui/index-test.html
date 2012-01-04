@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <title>CloudStack</title>
@@ -7,8 +7,8 @@
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
 
     <!--[if IE 7]>
-    <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
-    <![endif]-->
+        <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
+        <![endif]-->
   </head>
   <body>
     <!-- CloudStack widget content -->
@@ -236,7 +236,7 @@
                                 <div class="field name hide-if-unselected">
                                   <div class="name">Name</div>
                                   <div class="value">
-                                    <input type="text" name="new-network-name" />
+                                    <input type="text" class="required" name="new-network-name" />
                                   </div>
                                 </div>
 
@@ -772,13 +772,13 @@
                   <div class="overview">
                     <!-- Running -->
                     <div class="overview-item running">
-                      <div class="total" data-item="virtualMachinesRunning">12</div>
+                      <div class="total" data-item="runningInstances">5</div>
                       <div class="label">Running</div>
                     </div>
 
                     <!-- Stopped -->
                     <div class="overview-item stopped">
-                      <div class="total" data-item="virtualMachinesStopped">2</div>
+                      <div class="total" data-item="stoppedInstances">10</div>
                       <div class="label">Stopped</div>
                     </div>
                   </div>
@@ -789,27 +789,18 @@
                   <span class="header">Storage</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <div class="total" data-item="storageCapacityTotal">171</div>
-                    <div class="label">GB/mo</div>
+                    <div class="total" data-item="totalVolumes">10</div>
+                    <div class="label">volumes</div>
                   </div>
                 </li>
 
                 <!-- Bandwidth -->
-                <li class="block bandwidth">
+                <li class="block storage bandwidth">
                   <span class="header">Bandwidth</span>
                   <div class="icon"></div>
                   <div class="overview">
-                    <!-- In -->
-                    <div class="overview-item in">
-                      <div class="total" data-item="virtualMachinesRunning">2.3</div>
-                      <div class="label">In GB</div>
-                    </div>
-
-                    <!-- Out -->
-                    <div class="overview-item out">
-                      <div class="total" data-item="virtualMachinesRunning">1.5</div>
-                      <div class="label">Out GB</div>
-                    </div>
+                    <div class="total" data-item="totalBandwidth">200</div>
+                    <div class="label">mb/s</div>
                   </div>
                 </li>
               </ul>
@@ -822,47 +813,9 @@
               <div class="head">
                 <span>Users</span>
               </div>
-              <ul class="status_box good">
+              <ul class="status_box good" data-item="users">
                 <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
-                  <div class="icon"></div>
-                </li>
-                <li class="block user">
-                  <span class="header">Will</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Brian</span>
-                  <div class="icon"></div>
-                </li>
-
-                <li class="block user">
-                  <span class="header">Sonny</span>
+                  <span class="header" data-list-item="account"></span>
                   <div class="icon"></div>
                 </li>
               </ul>
@@ -879,20 +832,20 @@
             <ul>
               <!-- IP addresses -->
               <li class="odd">
-                <div class="total"><span>171</span></div>
+                <div class="total"><span data-item="totalIPAddresses"></span></div>
                 <div class="desc">IP addresses</div>
               </li>
 
               <!-- Load balancing policies -->
               <li>
-                <div class="total"><span>04</span></div>
+                <div class="total"><span data-item="totalLoadBalancers"></span></div>
                 <div class="desc">Load balancing policies</div>
               </li>
 
-              <!-- Security Groups -->
+              <!-- Port forwarding policies -->
               <li class="odd">
-                <div class="total"><span>23</span></div>
-                <div class="desc">Security groups</div>
+                <div class="total"><span data-item="totalPortForwards"></span></div>
+                <div class="desc">Port forwarding policies</div>
               </li>
 
               <!-- Blank -->
@@ -923,50 +876,10 @@
                 <span class="arrow"></span>
               </div>
             </div>
-            <ul>
+            <ul data-item="events">
               <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li>
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
-              </li>
-              <li class="odd">
-                <div class="date"><span>12/01</span></div>
-                <div class="desc">Event</div>
+                <div class="date"><span data-list-item="date"></span></div>
+                <div class="desc" data-list-item="desc"></div>
               </li>
             </ul>
           </div>
@@ -1167,79 +1080,6 @@
 
       <!-- Admin dashboard -->
       <div class="dashboard admin">
-        <!-- Capacity / stats -->
-        <div class="dashboard-container head">
-          <div class="top">
-            <div class="title">
-              <span>System-wide capacity</span>
-            </div>
-            <div class="selects" style="display:none;">
-              <div class="select">
-                <label>Zone:</label>
-                <select>
-                </select>
-              </div>
-              <div class="select">
-                <label>Pods:</label>
-                <select>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="stats">
-            <ul>
-              <li>
-                <div class="name">Public IP Addresses</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="publicIPAllocated">0</span> / <span class="total" data-item="publicIPTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="publicIPPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="publicIPPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">Private IP Addresses</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="privateIPAllocated"></span> / <span class="total" data-item="privateIPTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="privateIPPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="privateIPPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">Memory Allocated</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="memoryAllocated"></span> / <span class="total" data-item="memoryTotal"></span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="memoryPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="memoryPercentage"></span>%</div>
-              </li>
-              <li>
-                <div class="name">CPU Allocated</div>
-                <div class="value">
-                  <div class="content">
-                    Allocated: <span class="allocated" data-item="cpuAllocated"></span> / <span class="total" data-item="cpuTotal">0</span>
-                  </div>
-                </div>
-                <div class="chart">
-                  <div class="chart-line" style="width: 0%;" data-item="cpuPercentage"></div>
-                </div>
-                <div class="percentage"><span class="value" data-item="cpuPercentage"></span>%</div>
-              </li>
-            </ul>
-          </div>
-        </div>
-
         <!-- General alerts-->
         <div class="dashboard-container sub alerts first">
           <div class="top">
@@ -1247,7 +1087,7 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="alerts">
-            <li class="error">
+            <li class="error" concat-value="true">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
@@ -1263,13 +1103,53 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="hostAlerts">
-            <li class="error">
+            <li class="error" concat-value="true">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
               </div>
             </li>
           </ul>
+        </div>
+        <!-- Capacity / stats -->
+        <div class="dashboard-container head">
+          <div class="top">
+            <div class="title">
+              <span>System Capacity</span>
+            </div>
+            <div class="selects" style="display:none;">
+              <div class="select">
+                <label>Zone:</label>
+                <select>
+                </select>
+              </div>
+              <div class="select">
+                <label>Pods:</label>
+                <select>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone stat charts -->
+          <div class="zone-stats">
+            <ul data-item="zoneCapacities">
+              <li>
+                <div class="label">
+                  Zone: <span data-list-item="zoneName"></span>
+                </div>
+                <div class="pie-chart" data-list-item="percent"></div>
+                <div class="info">
+                  <div class="name" data-list-item="type"></div>
+                  <div class="value">
+                    <span class="used" data-list-item="used"></span>
+                    <span class="divider">/</span>
+                    <span class="total" data-list-item="total"></span>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 

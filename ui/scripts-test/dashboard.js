@@ -41,6 +41,22 @@
             cpuAllocated: 500,
             cpuTotal: 1200,
             cpuPercentage: (1200 / 500) * 10,
+            zoneCapacities: [
+              {
+                type: 'Public IP',
+                zoneName: 'zone',
+                percent: 50,
+                total: 4,
+                used: 2
+              },
+              {
+                type: 'Storage Used',
+                zoneName: 'zone',
+                percent: 30,
+                total: '50 GB',
+                used: '15 GB'
+              }
+            ],
             alerts: $.map(testData.data.alerts, function(alert) {
               return {
                 name: 'System Alert',
