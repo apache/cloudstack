@@ -653,7 +653,9 @@ public class NetscalerResource implements ServerResource {
             }
 
             // destroy the VPX instance
-            vpxToDelete = ns.delete(_netscalerSdxService, vpxToDelete);
+            ns nsDelObj = new ns();
+            nsDelObj.set_id(vpxToDelete.get_id());
+            vpxToDelete = ns.delete(_netscalerSdxService, nsDelObj);
             String msg =  "Deleted VPX instance " + vpxName + " on Netscaler SDX " + _ip + " successfully.";
             s_logger.info(msg);
             return new DestroyLoadBalancerApplianceAnswer(cmd, true,msg);

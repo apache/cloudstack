@@ -20,6 +20,7 @@ package com.cloud.dc.dao;
 
 import java.util.List;
 
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.utils.Pair;
@@ -35,6 +36,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     String[] getNextAvailableMacAddressPair(long id);
     String[] getNextAvailableMacAddressPair(long id, long mask);
     Pair<String, Long> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
+    DataCenterIpAddressVO allocatePrivateIpAddress(long id, String reservationId);
     String allocateLinkLocalIpAddress(long id, long podId, long instanceId, String reservationId);
     String allocateVnet(long dcId, long physicalNetworkId, long accountId, String reservationId);
     

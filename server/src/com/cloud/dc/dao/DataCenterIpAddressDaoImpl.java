@@ -65,7 +65,27 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         txn.commit();
         return vo;
     }
-    
+
+    @DB
+    public DataCenterIpAddressVO takeDataCenterIpAddress(long dcId, String reservationId) {
+        SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("taken", (Date)null);
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        DataCenterIpAddressVO  vo = lockOneRandomRow(sc, true);
+        if (vo == null) {
+            txn.rollback();
+            return null;
+        }
+        vo.setTakenAt(new Date());
+        vo.setReservationId(reservationId);
+        update(vo.getId(), vo);
+        txn.commit();
+        return vo;
+    }
+
     @Override
     public boolean deleteIpAddressByPod(long podId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();

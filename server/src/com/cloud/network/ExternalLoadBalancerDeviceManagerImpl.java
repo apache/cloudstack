@@ -51,9 +51,12 @@ import com.cloud.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -179,6 +182,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     NetworkExternalFirewallDao _networkExternalFirewallDao;
     @Inject
     ExternalFirewallDeviceDao _externalFirewallDeviceDao;
+    @Inject
+    protected HostPodDao _podDao = null;
 
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
@@ -429,26 +434,24 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 if ((providerLbDevices != null) && (!providerLbDevices.isEmpty())) {
                     for (ExternalLoadBalancerDeviceVO lbProviderDevice : providerLbDevices) {
                         if (lbProviderDevice.getState() == LBDeviceState.Enabled) {
+                            // acquire a private IP from the data center which will be used as management IP of provisioned LB appliance,
+                            DataCenterIpAddressVO dcPrivateIp = _dcDao.allocatePrivateIpAddress(guestConfig.getDataCenterId(), lbProviderDevice.getUuid());
+                            if (dcPrivateIp == null) {
+                                throw new InsufficientNetworkCapacityException("failed to acquire a priavate IP in the zone " + guestConfig.getDataCenterId() +
+                                        " needed for management IP of the load balancer appliance", DataCenter.class, guestConfig.getDataCenterId());
+                            }
+                            Pod pod = _podDao.findById(dcPrivateIp.getPodId());
+                            String lbIP = dcPrivateIp.getIpAddress();
+                            String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
+                            String gateway = pod.getGateway();
+                            String username = "admin";
+                            String password = "admin";
 
-                            // FIXME: acquire a private IP from Pod network Guru needed for LB appliance to be provisioned
-                            // and a public IP from the public network guru, for self-if on the public subnet
-                            String lbIP = null;
-                            String netmask = null;
-                            String gateway = null;
-                            String username = null;
-                            String password = null;
-                            String publicIf = null;
-                            String privateIf = null;
-
-                            /*
-                            String lbIP = "10.223.103.254";
-                            String netmask = "255.255.248.0";
-                            String gateway = "10.223.102.1";
-                            String username = "nsroot1";
-                            String password = "nsroot1";
-                            String publicIf = "0/1";
-                            String privateIf = "0/2";
-                            */
+                            DetailVO lbHostDetails = null;
+                            lbHostDetails = _hostDetailDao.findDetail(lbProviderDevice.getHostId(), ApiConstants.PUBLIC_INTERFACE);
+                            String publicIf = lbHostDetails.getValue();
+                            lbHostDetails = _hostDetailDao.findDetail(lbProviderDevice.getHostId(), ApiConstants.PRIVATE_INTERFACE);
+                            String privateIf = lbHostDetails.getValue();
 
                             // send CreateLoadBalancerApplianceCommand to the host capable of provisioning
                             CreateLoadBalancerApplianceCommand lbProvisionCmd = new CreateLoadBalancerApplianceCommand(lbIP, netmask, gateway, username, password);
@@ -467,7 +470,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             //we have provisioned load balancer so add the appliance as cloudstack provisioned external load balancer
                             String dedicatedLb = offering.getDedicatedLB()?"true":"false";
                             String url = "https://" + lbIP + "?publicinterface="+publicIf+"&privateinterface="+privateIf+"&lbdevicededicated="+dedicatedLb;;
-                            ExternalLoadBalancerDeviceVO lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, "nsroot", "nsroot", answer.getDeviceName(), answer.getServerResource());
+                            ExternalLoadBalancerDeviceVO lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password, answer.getDeviceName(), answer.getServerResource());
 
                             if (lbAppliance != null) {
                                 // mark the load balancer as cloudstack managed
@@ -611,8 +614,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully destroyed load balancer appliance used for the network" + guestConfig.getId());
                     }
+                    deviceMapLock.unlock();
+
+                    // release the private IP back to dc pool, as the load balancer appliance is now destroyed
+                    _dcDao.releasePrivateIpAddress(lbHost.getPrivateIpAddress(), guestConfig.getDataCenterId(), null);
+                } else {
+                    deviceMapLock.unlock();
                 }
-                deviceMapLock.unlock();
+
                 return true;
             } else {
                 s_logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + "as failed to acquire lock ");
@@ -839,6 +848,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (add) {
             ExternalLoadBalancerDeviceVO lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
+            if (lbDeviceVO == null) {
+                String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
+                s_logger.error(msg);
+                throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
+            }
             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             s_logger.debug("Allocated external load balancer device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
         } else {
