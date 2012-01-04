@@ -170,7 +170,9 @@
           tabs.invitations = pageElems.dashboardTabs.invitations;
         }
 
-        tabs.resources = pageElems.dashboardTabs.resources;
+        if (isAdmin()) {
+          tabs.resources = pageElems.dashboardTabs.resources;          
+        }
       }
 
       var $tabs = $('<div>').addClass('tab-content').append($('<ul>'));
@@ -329,20 +331,27 @@
                                 $('<li>').addClass('first').append(
                                   $('<a>').attr({ href: '#new-project-review-tabs-users'}).html('Users')
                                 )
-                              )
-                              .append(
-                                // Resources tab
-                                $('<li>').addClass('last').append(
-                                  $('<a>').attr({ href: '#new-project-review-tabs-resouces'}).html('Resources')
-                                )
                               );
+                        
+                        if (isAdmin()) {
+                          $ul.append(
+                            // Resources tab
+                            $('<li>').addClass('last').append(
+                              $('<a>').attr({ href: '#new-project-review-tabs-resouces'}).html('Resources')
+                            )
+                          );
+                        }
 
                         var $users = $('<div>').attr({ id: 'new-project-review-tabs-users' }).appendTo($tabs);
                         cloudStack.context.projects = [project];
-                        var $resouces = $('<div>')
-                              .attr({ id: 'new-project-review-tabs-resouces' })
-                              .appendTo($tabs)
-                              .append(pageElems.dashboardTabs.resources);
+
+                        var $resources;
+                        if (isAdmin()) {
+                          $resouces = $('<div>')
+                            .attr({ id: 'new-project-review-tabs-resouces' })
+                            .appendTo($tabs)
+                            .append(pageElems.dashboardTabs.resources); 
+                        }
 
                         $tabs.tabs();
 
