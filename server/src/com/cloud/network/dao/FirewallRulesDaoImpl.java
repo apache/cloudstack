@@ -241,5 +241,21 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         
         return findOneBy(sc);
     }
+
+    @Override
+    public List<FirewallRuleVO> listByIp(long ipId) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipId", ipId);
+        
+        return listBy(sc);
+    }
     
+    @Override
+    public List<FirewallRuleVO> listByIpAndNotRevoked(long ipId) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("ipId", ipId);
+        sc.setParameters("state", State.Revoke);
+        
+        return listBy(sc);
+    }
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -84,9 +85,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
+public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -256,8 +256,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        if (canHandle(network, Service.Firewall)) {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
+        boolean canHandle = true;
+        for (Service service : services) {
+            if (!canHandle(network, service)) {
+                canHandle = false;
+                break;
+            }
+        }
+        if (canHandle) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
@@ -269,21 +276,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return false;
         }
     }
-
-	@Override
-	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        if (canHandle(network, Service.Lb)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router element doesn't need to associate load balancer ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
-                return true;
-            }
-            
-            return _routerMgr.associateIP(network, ipAddress, routers);
-        } else {
-            return false;
-        }
-	}
 
     @Override
     public Provider getProvider() {
@@ -660,4 +652,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return true;
     }
 
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
 }

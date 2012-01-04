@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
@@ -87,7 +89,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-            PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, JuniperSRXFirewallElementService{
+            PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService{
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
     
@@ -496,8 +498,13 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         return true;
     }
 
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
+
 	@Override
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
 	}

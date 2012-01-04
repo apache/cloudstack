@@ -19,6 +19,7 @@
  */
 package com.cloud.network;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -264,4 +265,8 @@ public interface NetworkManager extends NetworkService {
 	List<Service> listNetworkOfferingServices(long networkOfferingId);
 	
 	boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services);
+	
+    public Map<PublicIp, Set<Service>> getIpToServices(Network network, List<PublicIp> publicIps, boolean rulesRevoked);
+    
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
 }

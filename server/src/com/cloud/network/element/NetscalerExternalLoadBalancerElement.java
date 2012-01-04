@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -88,7 +89,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
 @Local(value=NetworkElement.class)
-public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
+public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerExternalLoadBalancerElement.class);
 
@@ -467,9 +468,14 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
         return true;
     }
 
-	@Override
-	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
 		// return true, as IP will be associated as part of LB rule configuration
-		return true;
-	}
+        return false;
+    }
+
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
 }

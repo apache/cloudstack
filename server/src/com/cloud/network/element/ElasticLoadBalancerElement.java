@@ -20,6 +20,7 @@ package com.cloud.network.element;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -54,7 +55,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 
 @Local(value=NetworkElement.class)
-public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
+public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     @Inject NetworkManager _networkManager;
@@ -181,9 +182,14 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         return true;
     }
 
-	@Override
-	public boolean applyLoadBalancerIp(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
 }

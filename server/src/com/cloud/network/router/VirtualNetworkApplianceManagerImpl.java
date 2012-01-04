@@ -146,6 +146,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
@@ -1781,13 +1782,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             long zoneId = router.getDataCenterIdToDeployIn();
 
             final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null, null);
-            List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
+            List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
                     PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                    publicIps.add(publicIp);
+                    allPublicIps.add(publicIp);
                 }
             }
+            
+            //Get public Ips that should be handled by router
+            Network network = _networkDao.findById(networkId);
+            Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(network, allPublicIps, false);
+            Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
+            // Only cover virtual router for now, if ELB use it this need to be modified
+            ArrayList<PublicIp> publicIps = providerToIpList.get(Provider.VirtualRouter);
 
             s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
 
@@ -1799,8 +1807,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<StaticNat> staticNats = new ArrayList<StaticNat>();
                 List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
 
+                // Re-apply public ip addresses - should come before PF/LB/VPN
+                if (_networkMgr.isProviderSupportServiceInNetwork(router.getNetworkId(), Service.Firewall, provider)) {
+                    createAssociateIPCommands(router, publicIps, cmds, 0);
+                }
+
                 //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
-                for (PublicIpAddress ip : publicIps) {
+                for (PublicIp ip : publicIps) {
                     if (_networkMgr.isProviderSupportServiceInNetwork(router.getNetworkId(), Service.PortForwarding, provider)) {
                         pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                     }

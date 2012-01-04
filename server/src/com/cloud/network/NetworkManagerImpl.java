@@ -126,10 +126,12 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
@@ -310,7 +312,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
     private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
 
-    private NetworkElement getElementImplementingProvider(String providerName){
+    public NetworkElement getElementImplementingProvider(String providerName){
         String elementName = s_providerToNetworkElementMap.get(providerName);
         NetworkElement element = _networkElements.get(elementName);
         return element;
@@ -603,104 +605,218 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
-        boolean success = true;
-        List<PublicIp> firewallPublicIps = new ArrayList<PublicIp>();
-        List<PublicIp> loadbalncerPublicIps = new ArrayList<PublicIp>();
+    private Map<Provider, Set<Service>> getProviderServiceMap(long networkId) {
+        Map<Provider, Set<Service>> map = new HashMap<Provider, Set<Service>>();
+        List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
+        for (NetworkServiceMapVO nsm : nsms) {
+            Set<Service> services = map.get(Provider.getProvider(nsm.getProvider()));
+            if (services == null) {
+                services = new HashSet<Service>();
+            }
+            services.add(Service.getService(nsm.getService()));
+            map.put(Provider.getProvider(nsm.getProvider()), services);
+        }
+        return map;
+    }
+    
+    private Map<Service, Set<Provider>> getServiceProviderMap(long networkId) {
+        Map<Service, Set<Provider>> map = new HashMap<Service, Set<Provider>>();
+        List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
+        for (NetworkServiceMapVO nsm : nsms) {
+            Set<Provider> providers = map.get(Service.getService(nsm.getService()));
+            if (providers == null) {
+                providers = new HashSet<Provider>();
+            }
+            providers.add(Provider.getProvider(nsm.getProvider()));
+            map.put(Service.getService(nsm.getService()), providers);
+        }
+        return map;
+    }
+    
+    /* Get a list of IPs, classify them by service */
+    @Override
+    public Map<PublicIp, Set<Service>> getIpToServices(Network network, List<PublicIp> publicIps, boolean rulesRevoked) {
+        Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
+            boolean gotSNAT = false;
             for (PublicIp ip : publicIps) {
+                Set<Service> services = ipToServices.get(ip);
+                if (services == null) {
+                    services = new HashSet<Service>();
+                }
                 if (ip.isSourceNat()) {
-                	// Source nat ip address should always be sent first
-                    firewallPublicIps.add(0, ip);
-                } else if (ip.isOneToOneNat()) {
-                	firewallPublicIps.add(ip);
-                } else {
-                	//if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service provider
-                	if (ip.getState() == State.Allocating) {
-                		continue;
-                	}
-
-                	// check if any active rules are applied on the public IP
-                    Purpose purpose = getPublicIpPurpose(ip, false);
-                    if (purpose == null) {
-                    	// since no active rules are there check if any rules are applied on the public IP but are in revoking state 
-                    	purpose = getPublicIpPurpose(ip, true);
-                    	if (purpose == null) {
-                            // IP is not being used for any purpose so skip IPAssoc to network service provider
-                            continue;
-                    	} else {
-                    		if (rulesRevoked) {
-                                // no active rules/revoked rules are associated with this public IP, so remove the association with the provider
-                                ip.setState(State.Releasing);
-                    		} else {
-                    			if (ip.getState() == State.Releasing) {
-                    				// rules are not revoked yet, so don't let the network service provider revoke the IP association
-                    				// mark IP is allocated so that IP association will not be removed from the provider
-                                    ip.setState(State.Allocated);
-                    			}
-                    		}
-                    	}
+                    if (!gotSNAT) {
+                        services.add(Service.SourceNat);
+                        gotSNAT = true;
+                    } else {
+                        //TODO throw proper exception
+                        throw new CloudRuntimeException("Multiply generic source NAT IPs in network " + network.getId() + "!");
                     }
+                }
+                ipToServices.put(ip, services);
+                
+              	//if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service provider
+                if (ip.getState() == State.Allocating) {
+                    continue;
+                }
 
-                    switch(purpose) {
-                    case LoadBalancing:
-                        loadbalncerPublicIps.add(ip);
-                        break;
-
-                    case PortForwarding:
-                    case StaticNat:
-                    case Firewall:
-                        firewallPublicIps.add(ip);
-                        break;
-                    default:
+                // check if any active rules are applied on the public IP
+                Set<Purpose> purposes = getPublicIpPurposeInRules(ip, false);
+                if (purposes == null || purposes.isEmpty()) {
+                    // since no active rules are there check if any rules are applied on the public IP but are in revoking state 
+                    purposes = getPublicIpPurposeInRules(ip, true);
+                    if (purposes == null || purposes.isEmpty()) {
+                        // IP is not being used for any purpose so skip IPAssoc to network service provider
+                        continue;
+                    } else {
+                        if (rulesRevoked) {
+                            // no active rules/revoked rules are associated with this public IP, so remove the association with the provider
+                            ip.setState(State.Releasing);
+                        } else {
+                            if (ip.getState() == State.Releasing) {
+                                // rules are not revoked yet, so don't let the network service provider revoke the IP association
+                                // mark IP is allocated so that IP association will not be removed from the provider
+                                ip.setState(State.Allocated);
+                            }
+                        }
                     }
+                }
+                if (purposes.contains(Purpose.StaticNat)) {
+                    services.add(Service.StaticNat);
+                }
+                if (purposes.contains(Purpose.LoadBalancing)) {
+                    services.add(Service.Lb);
+                }
+                if (purposes.contains(Purpose.PortForwarding)) {
+                    services.add(Service.PortForwarding);
+                }
+                if (purposes.contains(Purpose.Vpn)) {
+                    services.add(Service.Vpn);
+                }
+                if (services.isEmpty()) {
+                    continue;
+                }
+                ipToServices.put(ip, services);
+            }
+        }
+        return ipToServices;
+    }
+   
+    public boolean canIpUsedForService(Network network, PublicIp ip, Service service) {
+        // We need to check if it's non-conserve mode, then the new ip should not be used by any other services
+        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (offering.isConserveMode()) {
+            List<PublicIp> ipList = new ArrayList<PublicIp>();
+            ipList.add(ip);
+            Map<PublicIp, Set<Service>> ipToServices = getIpToServices(network, ipList, false);
+            Set<Service> currentServices = ipToServices.get(ip);
+            // Not used currently, safe
+            if (currentServices == null || currentServices.isEmpty()) {
+                return true;
+            }
+        }
+        Map<Service, Set<Provider>> serviceToProviders = getServiceProviderMap(network.getId());
+        Set<Provider> currentProviders = serviceToProviders.get(service);
+        if (currentProviders.size() > 1) {
+            throw new CloudRuntimeException("Can't support multiply providers for same service now!");
+        }
+        Provider currentProvider = (Provider)currentProviders.toArray()[0];
+        
+        return true;
+    }
+    
+    /* Return a mapping between NetworkElement in the network and the IP they should applied */
+    @Override
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
+        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (!offering.isConserveMode()) {
+            for (PublicIp ip : ipToServices.keySet()) {
+                Set<Service> services = ipToServices.get(ip);
+                if (services != null && services.size() > 1) {
+                    //TODO throw proper exception
+                    throw new CloudRuntimeException("");
                 }
             }
         }
-        
-        String lbProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
-        String fwProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Firewall);
-        
-        for (NetworkElement element : _networkElements) {
-            try {
-                if (element instanceof FirewallServiceProvider && element instanceof LoadBalancingServiceProvider) {
-                    List<PublicIp> allIps = new ArrayList<PublicIp>();
-
-                    if (lbProvider.equalsIgnoreCase(element.getProvider().getName()) && fwProvider.equalsIgnoreCase(element.getProvider().getName())) {
-                        allIps.addAll(firewallPublicIps);
-                        allIps.addAll(loadbalncerPublicIps);
-                    } else if (fwProvider.equalsIgnoreCase(element.getProvider().getName())) {
-                        allIps.addAll(firewallPublicIps);
-                    } else if (lbProvider.equalsIgnoreCase(element.getProvider().getName())) {
-                        allIps.addAll(loadbalncerPublicIps);
-                    } else {
-                    	continue;
-                    }
-
-                    FirewallServiceProvider fwElement = (FirewallServiceProvider)element;
-                    fwElement.applyIps(network, allIps);
-                } else if (element instanceof FirewallServiceProvider) {
-                    FirewallServiceProvider fwElement = (FirewallServiceProvider)element;
-                    if (fwProvider.equalsIgnoreCase(element.getProvider().getName())) {
-                        fwElement.applyIps(network, firewallPublicIps);
-                    }
-                } else if (element instanceof LoadBalancingServiceProvider) {
-                    LoadBalancingServiceProvider lbElement = (LoadBalancingServiceProvider) element;
-                    if (lbProvider.equalsIgnoreCase(element.getProvider().getName())) {
-                        if (loadbalncerPublicIps != null && !loadbalncerPublicIps.isEmpty()) {
-                            lbElement.applyLoadBalancerIp(network, publicIps);
-                        }
-                    }
-                } else {
+        Map<Service, Set<PublicIp>> serviceToIps = new HashMap<Service, Set<PublicIp>>();
+        for (PublicIp ip : ipToServices.keySet()) {
+            for (Service service : ipToServices.get(ip)) {
+                Set<PublicIp> ips = serviceToIps.get(service);
+                if (ips == null) {
+                    ips = new HashSet<PublicIp>();
+                }
+                ips.add(ip);
+                serviceToIps.put(service, ips);
+            }
+        }
+        //TODO Check different provider for same IP
+        Map<Provider, Set<Service>> providerToServices = getProviderServiceMap(network.getId());
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = new HashMap<Provider, ArrayList<PublicIp>>();
+        for (Provider provider: providerToServices.keySet()) {
+            Set<Service> services = providerToServices.get(provider);
+            //TODO add checking for services, multiply services may bind to one provider, which is invalid in non-conserved mode
+            ArrayList<PublicIp> ipList = new ArrayList<PublicIp>();
+            Set<PublicIp> ipSet = new HashSet<PublicIp>();
+            for (Service service: services) {
+                Set<PublicIp> serviceIps = serviceToIps.get(service);
+                if (serviceIps == null || serviceIps.isEmpty()) {
                     continue;
                 }
+                ipSet.addAll(serviceIps);
+            }
+            Set<PublicIp> sourceNatIps = serviceToIps.get(Service.SourceNat);
+            if (sourceNatIps != null && !sourceNatIps.isEmpty()) {
+                ipList.addAll(0, sourceNatIps);
+                ipSet.removeAll(sourceNatIps);
+            }
+            ipList.addAll(ipSet);
+            providerToIpList.put(provider, ipList);
+        }
+        return providerToIpList;
+    }
+    
+    protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
+        boolean success = true;
+        
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(network, publicIps, rulesRevoked);
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = getProviderToIpList(network, ipToServices);
+        
+        for (Provider provider : providerToIpList.keySet()) {
+            try {
+                ArrayList<PublicIp> ips = providerToIpList.get(provider);
+                if (ips == null || ips.isEmpty()) {
+                    continue;
+                }
+                IpDeployer deployer = null;
+                NetworkElement element = getElementImplementingProvider(provider.getName());
+                if (element instanceof SourceNatServiceProvider) {
+                    deployer = ((SourceNatServiceProvider)element).getIpDeployer(network);
+                } else if  (element instanceof StaticNatServiceProvider) {
+                    deployer = ((StaticNatServiceProvider)element).getIpDeployer(network);
+                } else if  (element instanceof LoadBalancingServiceProvider) {
+                    deployer = ((LoadBalancingServiceProvider)element).getIpDeployer(network);
+                } else if  (element instanceof PortForwardingServiceProvider) {
+                    deployer = ((PortForwardingServiceProvider)element).getIpDeployer(network);
+                } else if  (element instanceof RemoteAccessVPNServiceProvider) {
+                    deployer = ((RemoteAccessVPNServiceProvider)element).getIpDeployer(network);
+                } else {
+                    throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
+                }
+                Set<Service> services = new HashSet<Service>();
+                for (PublicIp ip : ips) {
+                    if (!ipToServices.containsKey(ip)) {
+                        continue;
+                    }
+                    services.addAll(ipToServices.get(ip));
+                }
+                deployer.applyIps(network, ips, services);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
                     throw e;
                 } else {
-                    s_logger.debug("Resource is not available: " + element.getName(), e);
+                    s_logger.debug("Resource is not available: " + provider.getName(), e);
                 }
             }
         }
@@ -708,51 +824,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    Purpose getPublicIpPurpose(PublicIp ip, boolean includeRevoked) {
+    Set<Purpose> getPublicIpPurposeInRules(PublicIp ip, boolean includeRevoked) {
+        Set<Purpose> result = new HashSet<Purpose>();
         if (includeRevoked) {
-            List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.LoadBalancing);
-            if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
-                    return Purpose.LoadBalancing;
+            List<FirewallRuleVO> rules = _firewallDao.listByIp(ip.getId());
+            if (rules == null || rules.isEmpty()) {
+                return null;
             }
-
-            List<FirewallRuleVO> firewall_rules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall);
-            if (firewall_rules != null && !firewall_rules.isEmpty()) {
-                    return Purpose.Firewall;
-            }
-
-            List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat);
-            if (staticNatRules != null && !staticNatRules.isEmpty()) {
-                    return Purpose.StaticNat;
-            }
-
-            List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByIp(ip.getId());
-            if (pfRules != null && !pfRules.isEmpty()) {
-                    return Purpose.PortForwarding;
+            
+            for (FirewallRuleVO rule : rules) {
+                // Firewall should attach to others, firewall rule alone make no sense
+                if (rule.getPurpose() != Purpose.Firewall) {
+                    result.add(rule.getPurpose());
+                }
             }
         } else {
-            List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.LoadBalancing);
-            if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
-                    return Purpose.LoadBalancing;
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ip.getId());
+            if (rules == null || rules.isEmpty()) {
+                return null;
             }
-
-            List<FirewallRuleVO> firewall_rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.Firewall);
-            if (firewall_rules != null && !firewall_rules.isEmpty()) {
-                    return Purpose.Firewall;
-            }
-
-            List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ip.getId(), Purpose.StaticNat);
-            if (staticNatRules != null && !staticNatRules.isEmpty()) {
-                    return Purpose.StaticNat;
-            }
-
-            List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByIpAndNotRevoked(ip.getId());
-            if (pfRules != null && !pfRules.isEmpty()) {
-                    return Purpose.PortForwarding;
+            
+            for (FirewallRuleVO rule : rules) {
+                // Firewall is attached to others, firewall rule alone make no sense
+                if (rule.getPurpose() != Purpose.Firewall) {
+                    result.add(rule.getPurpose());
+                }
             }
         }
 
-        // we are here means, public IP has no active/revoked rules to know the purpose
-        return null;
+        return result;
     }
 
     @Override
