@@ -13,6 +13,7 @@ COMMIT
 -A INPUT -i eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT 
 -A INPUT -i eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT 
 -A INPUT -i lo  -j ACCEPT 
+-A INPUT -p icmp --icmp-type 13 -j DROP
 -A INPUT -p icmp -j ACCEPT 
 -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
 -A INPUT -i eth1 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
