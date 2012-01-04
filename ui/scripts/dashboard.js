@@ -194,6 +194,7 @@
                     success: function(json) {
                       var cluster = json.listclustersresponse.cluster;
 
+                      // Get cluster-level data
                       $(cluster).each(function() {
                         var cluster = this;
 
@@ -204,6 +205,21 @@
                             zoneName: zone.name + '<br/>Cluster: ' + cluster.name
                           }));
                         });
+                      });
+
+                      // Get zone-level data
+                      $(zone.capacity).each(function() {
+                        var capacity = this;
+                        var existingCapacityTypes = $.map(zoneCapacities, function(capacity) {
+                          return capacity.type;
+                        });
+                        var isExistingCapacity = $.inArray(capacity.type, existingCapacityTypes) > -1;
+
+                        if (!isExistingCapacity) {
+                          zoneCapacities.push($.extend(capacity, {
+                            zoneName: zone.name
+                          }));
+                        }
                       });
                     }
                   });
