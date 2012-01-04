@@ -214,8 +214,8 @@
 
           detailView: {
             name: 'Guest network details',
-            viewAll: { 
-							path: 'network.ipAddresses', 
+            viewAll: {
+							path: 'network.ipAddresses',
 							label: 'IP addresses',
               preFilter: function(args) {
                 if (args.context.networks[0].state == 'Destroyed') return false;
@@ -247,7 +247,7 @@
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid)
-                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    
+                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
 
                   //args.data.networkdomain is null when networkdomain field is hidden
                   if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
@@ -271,24 +271,24 @@
                     }
                   });
                 },
-                notification: {  
+                notification: {
                   poll: pollAsyncJobResult
                 }
               },
-							
-							'restart': { 											  
+
+							'restart': {
 								label: 'Restart network',
-								action: function(args) {												  
+								action: function(args) {
 									$.ajax({
 										url: createURL("restartNetwork&cleanup=true&id=" + args.context.networks[0].id),
 										dataType: "json",
 										async: true,
-										success: function(json) {														  
+										success: function(json) {
 											var jid = json.restartnetworkresponse.jobid;
 											args.response.success(
 												{_custom:
 												 {jobId: jid,
-													getUpdatedItem: function(json) {																	  
+													getUpdatedItem: function(json) {
 														return json.queryasyncjobresultresponse.jobresult.network;
 													}
 												 }
@@ -307,9 +307,9 @@
 								},
 								notification: {
 									poll: pollAsyncJobResult
-								}												
+								}
 							},
-							
+
               destroy: {
                 label: 'Delete network',
                 messages: {
@@ -361,18 +361,18 @@
                       zone = json.listzonesresponse.zone[0];
                     }
                   });
-                  
+
                   if(zone.networktype == "Basic") {
                     hiddenFields.push("account");
                     hiddenFields.push("gateway");
-                    //hiddenFields.push("netmask");                            
+                    //hiddenFields.push("netmask");
                   }
 
                   if(args.context.networks[0].type == "Isolated") {
                     hiddenFields.push("networkofferingdisplaytext");
                     hiddenFields.push("networkdomaintext");
                     hiddenFields.push("gateway");
-                    //hiddenFields.push("netmask");                            
+                    //hiddenFields.push("netmask");
                   }
                   else { //selectedGuestNetworkObj.type == "Shared"
                     hiddenFields.push("networkofferingid");
@@ -398,7 +398,7 @@
                     },
                     state: {
                       label: 'State'
-                    },                           
+                    },
                     restartrequired: {
                       label: 'Restart required',
                       converter: function(booleanValue) {
@@ -407,7 +407,7 @@
                         else if(booleanValue == false)
                           return "No";
                       }
-                    },                           
+                    },
                     vlan: { label: 'VLAN ID' },
                     scope: { label: 'Scope' },
                     //networkofferingdisplaytext: { label: 'Network offering' },
@@ -419,7 +419,7 @@
                           args.response.success({ data: [] });
                           return;
                         }
-                        
+
                         var items = [];
                         $.ajax({
                           url: createURL("listNetworkOfferings&networkid=" + args.context.networks[0].id),
@@ -446,9 +446,9 @@
                         args.response.success({data: items});
                       }
                     },
-                    
+
                     gateway: { label: 'Gateway' },
-                    //netmask: { label: 'Netmask' },                            
+                    //netmask: { label: 'Netmask' },
                     cidr: { label: 'CIDR' },
                     networkdomaintext: {
                       label: 'Network domain'
@@ -470,7 +470,7 @@
                     data: args.context.networks[0]
                   });
                 }
-              },
+              }
             }
           }
         }

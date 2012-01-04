@@ -86,7 +86,7 @@
       invitations: function() {
         return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
       },
-      
+
       resources: function() {
         var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
         var $form = $('<form>');
@@ -101,7 +101,7 @@
                 var resource = this;
                 var $field = $('<div>').addClass('field');
                 var $label = $('<label>').attr({
-                  for: resource.type
+                  'for': resource.type
                 }).html(resource.label);
                 var $input = $('<input>').attr({
                   type: 'text',
@@ -397,7 +397,7 @@
                             }
                           }
                         });
-                        
+
                         // Save button
                         var $saveButton = $nextButton.clone().appendTo($review);
                         $saveButton.html('Save');
@@ -414,7 +414,7 @@
 
                         return $review;
                       });
-                      
+
                       $(':ui-dialog').dialog('option', 'position', 'center');
                     });
                     $laterButton.html('Close').appendTo($userManagement);

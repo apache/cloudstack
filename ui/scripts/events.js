@@ -3,11 +3,11 @@
     title: 'Events',
     id: 'events',
     sectionSelect: {
-      preFilter: function(args) {        
-        if(isAdmin()) 
+      preFilter: function(args) {
+        if(isAdmin())
           return ["events", "alerts"];
         else
-          return ["events"];      
+          return ["events"];
       },
       label: 'Select view'
     },
@@ -24,7 +24,7 @@
             username: { label: 'Initiated By' },
             created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
           },
-          dataProvider: function(args) {            
+          dataProvider: function(args) {
             $.ajax({
               url: createURL("listEvents&page="+args.page+"&pagesize="+pageSize),
               dataType: "json",
@@ -47,7 +47,7 @@
                     created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {
 								  args.response.success({data: args.context.events[0]});
 								}
               }
@@ -61,7 +61,7 @@
         listView: {
           id: 'alerts',
           label: 'Alerts',
-          fields: {            
+          fields: {
             description: { label: 'Description' },
             sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
           },
@@ -88,10 +88,10 @@
                     sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {
 								  args.response.success({data: args.context.alerts[0]});
 								}
-              },
+              }
             }
           }
         }
