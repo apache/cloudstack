@@ -530,7 +530,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             } else if (range.equalsIgnoreCase("instanceName")) {
                 if (!NetUtils.verifyInstanceName(value)) {
-                    return "Instance name can not contain hyphen, spaces and \"+\" char";
+                    return "Instance name can not contain hyphen, spaces and plus sign";
                 }
             }else {
                 String[] options = range.split(",");
