@@ -86,6 +86,8 @@ public class JuniperSrxResource implements ServerResource {
     private String _objectNameWordSep;
     private PrintWriter _toSrx;
     private BufferedReader _fromSrx;
+    private PrintWriter _UsagetoSrx;
+    private BufferedReader _UsagefromSrx;
     private static Integer _numRetries;
     private static Integer _timeoutInSeconds;
     private static String _publicZone;
@@ -429,7 +431,7 @@ public class JuniperSrxResource implements ServerResource {
         return new MaintainAnswer(cmd);
     }
 
-    private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
+    private ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
         try {	
             return getUsageAnswer(cmd);
         } catch (ExecutionException e) {
@@ -490,6 +492,46 @@ public class JuniperSrxResource implements ServerResource {
             s_logger.error(e);
             return false;
         }
+    }
+
+    /*
+     * The usage data will be handled on it's own socket, so usage 
+     * commands will use the following methods...
+     */
+    
+    private boolean openUsageSocket() {
+    	try {
+    		Socket s = new Socket(_ip, 3221);
+    		s.setKeepAlive(true);
+    		s.setSoTimeout(_timeoutInSeconds * 1000);
+    		_UsagetoSrx = new PrintWriter(s.getOutputStream(), true);
+    		_UsagefromSrx = new BufferedReader(new InputStreamReader(s.getInputStream()));
+    		return true;
+    	} catch (IOException e) {
+    		s_logger.error(e);
+    		return false;
+    	}
+    }
+    
+    private boolean closeUsageSocket() {
+        try {
+            if (_UsagetoSrx != null) {
+                _UsagetoSrx.close();
+            } 
+
+            if (_UsagefromSrx != null) {
+                _UsagefromSrx.close();
+            }
+
+            return true;
+        } catch (IOException e) {
+            s_logger.error(e);
+            return false;
+        }
+    }
+    
+    private String sendUsageRequest(String xmlRequest) throws ExecutionException {
+    	return sendRequestPrim(_UsagetoSrx, _UsagefromSrx, xmlRequest);
     }
 
     /*
@@ -2735,10 +2777,16 @@ public class JuniperSrxResource implements ServerResource {
 
     private ExternalNetworkResourceUsageAnswer getUsageAnswer(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
         try {	
+        	String socOpenException = "Failed to open a connection for Usage data.";
+        	String socCloseException = "Unable to close connection for Usage data.";
+        	if (!openUsageSocket()) {
+        		throw new ExecutionException(socOpenException);
+        	}
+ 
             ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
 
             String xml = SrxXml.FIREWALL_FILTER_BYTES_GETALL.getXml();
-            String rawUsageData = sendRequest(xml);		
+            String rawUsageData = sendUsageRequest(xml);		
             Document doc = getDocument(rawUsageData);
 
             NodeList counters = doc.getElementsByTagName("counter");
@@ -2768,10 +2816,13 @@ public class JuniperSrxResource implements ServerResource {
                     }
                 } 
             }
-
+            if (!closeUsageSocket()) {
+            	throw new ExecutionException(socCloseException);
+            }
             return answer;
         } catch (Exception e) {
-            throw new ExecutionException(e.getMessage());
+        	closeUsageSocket();
+        	throw new ExecutionException(e.getMessage());
         }
 
     }		
@@ -2856,7 +2907,7 @@ public class JuniperSrxResource implements ServerResource {
      * XML API commands
      */
     
-    private String sendRequest(String xmlRequest) throws ExecutionException {   
+    private String sendRequestPrim(PrintWriter sendStream, BufferedReader recvStream, String xmlRequest) throws ExecutionException {
         if (!xmlRequest.contains("request-login")) {
             s_logger.debug("Sending request: " + xmlRequest);
         } else {
@@ -2866,11 +2917,11 @@ public class JuniperSrxResource implements ServerResource {
         boolean timedOut = false;
         StringBuffer xmlResponseBuffer = new StringBuffer("");
         try {
-            _toSrx.write(xmlRequest);
-            _toSrx.flush();
+            sendStream.write(xmlRequest);
+            sendStream.flush();
 
             String line = "";           
-            while ((line = _fromSrx.readLine()) != null) {
+            while ((line = recvStream.readLine()) != null) {
                 xmlResponseBuffer.append(line);
                 if (line.contains("</rpc-reply>")) {
                     break;
@@ -2904,6 +2955,10 @@ public class JuniperSrxResource implements ServerResource {
             s_logger.error(errorMsg);
             throw new ExecutionException(errorMsg);
         }
+    }
+    
+    private String sendRequest(String xmlRequest) throws ExecutionException {
+    	return sendRequestPrim(_toSrx, _fromSrx, xmlRequest);
     }
 
     private boolean checkResponse(String xmlResponse, boolean errorKeyAndValue, String key, String value) {
