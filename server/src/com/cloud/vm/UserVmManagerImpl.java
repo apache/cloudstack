@@ -3436,7 +3436,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, Long.valueOf(volumes.size()));
-            _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName()));
+            _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+            		volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize()));
         }
 
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
