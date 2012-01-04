@@ -3486,15 +3486,59 @@
                     return 'Zone has been deleted.';
                   }
                 },
-                action: function(args) {
-                  $.ajax({
-                    url: createURL("deleteZone&id=" + args.context.physicalResources[0].id),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                    dataType: "json",
-                    async: true,
-                    success: function(json) {
-                      args.response.success({data:{}});
-                    }
-                  });
+                action: function(args) {								  
+									var zoneId = args.context.physicalResources[0].id; //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones. 
+									$.ajax({
+									  url: createURL("listPhysicalNetworks&zoneid=" + zoneId),
+										dataType: "json",
+										async: false,
+										success: function(json) {										
+											var items = json.listphysicalnetworksresponse.physicalnetwork;
+											var totalNumber = items.length;
+											var deletedNumber = 0;
+											
+											$(items).each(function() {											  
+												$.ajax({
+												  url: createURL("deletePhysicalNetwork&id=" + this.id),
+													dataType: "json",
+													success: function(json) {		
+														var jobId = json.deletephysicalnetworkresponse.jobid;
+														var timerKey = "asyncJob_" + jobId;
+														$("body").everyTime(2000, timerKey, function(){														  
+															$.ajax({
+															  url: createURL("queryAsyncJobResult&jobid=" + jobId),
+																dataType: "json",
+																success: function(json) {																  
+																  var result = json.queryasyncjobresultresponse;
+																	if(result.jobstatus == 0) {
+																	  return; //job has not completed yet
+																	}
+																	else {
+																	  $("body").stopTime(timerKey);
+																		if(result.jobstatus == 1) {  //success
+																		  deletedNumber++;
+																			if(deletedNumber == totalNumber) {																			  
+																				$.ajax({
+																					url: createURL("deleteZone&id=" + zoneId),  
+																					dataType: "json",                    
+																					success: function(json) {																					  
+																						args.response.success({data:{}}); //start spinning wheel
+																					}
+																				});																				
+																			}
+																		}
+																		else if(result.jobstatus == 2) { //fail
+																		  alert(fromdb(result.jobresult.errortext));
+																		}																	
+																	}
+																}
+															});															
+														});				
+													}
+												});
+											});
+										}
+									});										
                 },
                 notification: {
                   poll: function(args) { args.complete(); }
