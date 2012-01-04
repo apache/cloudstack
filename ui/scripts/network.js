@@ -45,6 +45,20 @@
       });
 
       return allowedActions;
+    },
+
+    securityGroups: function(args) {
+      var allowedActions = [];
+      var isSecurityGroupOwner = isAdmin() ||
+        args.context.item.account == args.context.users[0].account;
+
+      if (isSecurityGroupOwner &&
+          args.context.item.state != 'Destroyed' &&
+          args.context.item.name != 'default') {
+        allowedActions.push('destroy');
+      }
+
+      return allowedActions;
     }
   };
 
@@ -1877,14 +1891,24 @@
                     name: args.data.name,
                     description: args.data.description
                   },
-                  dataType: 'json',
-                  async: true,
                   success: function(data) {
                     args.response.success({
                       data: data.createsecuritygroupresponse.securitygroup
                     });
+                  },
+
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
                   }
                 });
+              },
+
+              notification: {
+                poll: function(args) {
+                  args.complete({
+                    actionFilter: actionFilters.securityGroups
+                  })
+                }
               },
 
               messages: {
@@ -1925,7 +1949,8 @@
                   async: true,
                   success: function(data) {
                     args.response.success({
-                      actionFilter: function() { return []; }
+                      actionFilter: actionFilters.securityGroups,
+                      data: { state: 'Destroyed' },
                     });
                   }
                 });
@@ -1941,7 +1966,10 @@
               async: true,
               success: function(json) {
                 var items = json.listsecuritygroupsresponse.securitygroup;
-                args.response.success({data:items});
+                args.response.success({
+                  actionFilter: actionFilters.securityGroups,
+                  data: items
+                });
               }
             });
           },
@@ -1970,7 +1998,10 @@
                     success: function(json) {
                       var items = json.listsecuritygroupsresponse.securitygroup;
                       if(items != null && items.length > 0) {
-                        args.response.success({data:items[0]});
+                        args.response.success({
+                          actionFilter: actionFilters.securityGroups,
+                          data:items[0]
+                        });
                       }
                     }
                   });
@@ -2152,6 +2183,42 @@
                   }
                 })
               }
+            },
+
+            actions: {
+              destroy: {
+                label: 'Delete security group',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete ' + args.name + '?';
+                  },
+                  notification: function(args) {
+                    return 'Deleted security group: ' + args.name;
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('deleteSecurityGroup'),
+                    data: {
+                      id: args.context.securityGroups[0].id
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {
+                      args.response.success();
+                    }
+                  });
+                },
+
+                notification: {
+                  poll: function(args) {
+                    args.complete({
+                      data: { state: 'Destroyed' },
+                      actionFilter: actionFilters.securityGroups
+                    });
+                  }
+                }
+              },
             }
           }
         }
