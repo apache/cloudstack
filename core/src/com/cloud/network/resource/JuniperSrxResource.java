@@ -85,6 +85,8 @@ public class JuniperSrxResource implements ServerResource {
     private String _objectNameWordSep;
     private PrintWriter _toSrx;
     private BufferedReader _fromSrx;
+    private PrintWriter _toUsageSrx;
+    private BufferedReader _fromUsageSrx;
     private static Integer _numRetries;
     private static Integer _timeoutInSeconds;
     private static String _publicZone;
@@ -423,7 +425,7 @@ public class JuniperSrxResource implements ServerResource {
         return new MaintainAnswer(cmd);
     }
 
-    private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
+    private ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
         try {	
             return getUsageAnswer(cmd);
         } catch (ExecutionException e) {
@@ -485,6 +487,48 @@ public class JuniperSrxResource implements ServerResource {
             return false;
         }
     }
+    
+    private boolean usageLogin() throws ExecutionException {
+        String xml = SrxXml.LOGIN.getXml();
+        xml = replaceXmlValue(xml, "username", _username);
+        xml = replaceXmlValue(xml, "password", _password);
+        return sendUsageRequestAndCheckResponse(SrxCommand.LOGIN, xml);
+    }
+
+    private boolean openUsageSocket() {
+        try {
+            Socket s = new Socket(_ip, 3221);
+            s.setKeepAlive(true);
+            s.setSoTimeout(_timeoutInSeconds * 1000);
+            _toUsageSrx = new PrintWriter(s.getOutputStream(), true);
+            _fromUsageSrx = new BufferedReader(new InputStreamReader(s.getInputStream()));
+
+            // return the result of login
+            return usageLogin();
+        } catch (Exception e) {
+            s_logger.error(e);
+            return false;
+        }
+    }
+
+    private boolean closeUsageSocket() {
+        try {
+            if (_toUsageSrx != null) {
+                _toUsageSrx.close();
+            } 
+
+            if (_fromUsageSrx != null) {
+                _fromUsageSrx.close();
+            }
+
+            return true;
+        } catch (IOException e) {
+            s_logger.error(e);
+            return false;
+        }
+    }
+
+    
 
     /*
      * Commit/rollback
@@ -2729,10 +2773,17 @@ public class JuniperSrxResource implements ServerResource {
 
     private ExternalNetworkResourceUsageAnswer getUsageAnswer(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
         try {	
+        	String socOpenException = "Failed to open a connection for Usage data.";
+        	String socCloseException = "Unable to close connection for Usage data.";
+        	
+        	if (!openUsageSocket()) {
+        		throw new ExecutionException(socOpenException);
+        	}
+        	
             ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
 
             String xml = SrxXml.FIREWALL_FILTER_BYTES_GETALL.getXml();
-            String rawUsageData = sendRequest(xml);		
+            String rawUsageData = sendUsageRequest(xml);		
             Document doc = getDocument(rawUsageData);
 
             NodeList counters = doc.getElementsByTagName("counter");
@@ -2761,6 +2812,10 @@ public class JuniperSrxResource implements ServerResource {
                     	updateUsageAnswer(answer, counterName, byteCount);     
                     }
                 } 
+            }
+
+            if (!closeUsageSocket()) {
+            	throw new ExecutionException(socCloseException);
             }
 
             return answer;
@@ -2900,6 +2955,56 @@ public class JuniperSrxResource implements ServerResource {
         }
     }
 
+    private String sendUsageRequest(String xmlRequest) throws ExecutionException {   
+        if (!xmlRequest.contains("request-login")) {
+            s_logger.debug("Sending request: " + xmlRequest);
+        } else {
+            s_logger.debug("Sending login request");
+        }
+                
+        boolean timedOut = false;
+        StringBuffer xmlResponseBuffer = new StringBuffer("");
+        try {
+            _toUsageSrx.write(xmlRequest);
+            _toUsageSrx.flush();
+
+            String line = "";           
+            while ((line = _fromUsageSrx.readLine()) != null) {
+                xmlResponseBuffer.append(line);
+                if (line.contains("</rpc-reply>")) {
+                    break;
+                }
+            }
+
+        } catch (SocketTimeoutException e) {
+            s_logger.debug(e);
+            timedOut = true;
+        } catch (IOException e) {
+            s_logger.debug(e);
+            return null;
+        }
+
+        String xmlResponse = xmlResponseBuffer.toString();
+        String errorMsg = null;
+
+        if (timedOut) {
+            errorMsg = "Timed out on XML request: " + xmlRequest;
+        } else if (xmlResponse.isEmpty()) {
+            errorMsg = "Received an empty XML response.";
+        } else if (xmlResponse.contains("Unexpected XML tag type")) {
+            errorMsg = "Sent a command without being logged in.";
+        } else if (!xmlResponse.contains("</rpc-reply>")) {
+            errorMsg = "Didn't find the rpc-reply tag in the XML response.";
+        }
+        
+        if (errorMsg == null) {
+            return xmlResponse;
+        } else {
+            s_logger.error(errorMsg);
+            throw new ExecutionException(errorMsg);
+        }
+    }
+
     private boolean checkResponse(String xmlResponse, boolean errorKeyAndValue, String key, String value) {
         if (!xmlResponse.contains("authentication-response")) {
             s_logger.debug("Checking response: " + xmlResponse);
@@ -2975,6 +3080,50 @@ public class JuniperSrxResource implements ServerResource {
         return checkResponse(xmlResponse, errorKeyAndValue, key, value);
     }
 
+    private boolean sendUsageRequestAndCheckResponse(SrxCommand command, String xmlRequest, String... keyAndValue) throws ExecutionException {
+        boolean errorKeyAndValue = false;
+        String key;
+        String value;
+
+        switch (command) {
+
+        case LOGIN:
+            key = "status";
+            value = "success";
+            break;
+
+        case OPEN_CONFIGURATION:
+        case CLOSE_CONFIGURATION:
+            errorKeyAndValue = true;
+            key = "error";
+            value = null;
+            break;
+
+        case COMMIT:
+            key = "commit-success";
+            value = null;
+            break;
+
+        case CHECK_IF_EXISTS:
+        case CHECK_IF_IN_USE:
+            assert (keyAndValue != null && keyAndValue.length == 2) : "If the SrxCommand is " + command + ", both a key and value must be specified.";
+
+            key = keyAndValue[0];
+            value = keyAndValue[1];
+            break;
+
+        default:
+            key = "load-success";
+            value = null;
+            break;
+
+        }
+
+        String xmlResponse = sendUsageRequest(xmlRequest);
+        return checkResponse(xmlResponse, errorKeyAndValue, key, value);
+    }
+
+    
     /*
      * XML utils
      */
