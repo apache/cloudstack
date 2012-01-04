@@ -776,6 +776,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network id is invalid: " + networkId);
         }
         
+        //check permissions
+        _accountMgr.checkAccess(caller, null, network);
+        
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         
         //allow associating IP addresses to guest network only

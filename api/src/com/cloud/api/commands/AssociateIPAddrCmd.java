@@ -115,7 +115,13 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                 String domain = _domainService.getDomain(getDomainId()).getName();
                 throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
             }
-            assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
+            
+            if (networks.size() < 1) {
+            	throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+            } else if (networks.size() > 1) {
+            	throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+            }
+            
             return networks.get(0).getId();
         } else {
             Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
@@ -128,13 +134,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
-        if (accountId == null) {
-            return UserContext.current().getCaller().getId();
-        }
-        
-        return accountId;
+    public long getEntityOwnerId() {      
+        //owner of the network should be the same as the owner of the ip
+        Network network = _networkService.getNetwork(getNetworkId());
+        return network.getAccountId();
     }
 
     @Override
