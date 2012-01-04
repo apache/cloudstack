@@ -5411,7 +5411,6 @@
                   success: function(json) {
                     var item = json.createpodresponse.pod;										
                     args.response.success({
-										  actionFilter: podActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
 										  data:item
 										});
                   },
@@ -5424,7 +5423,9 @@
 
               notification: {
                 poll: function(args) {
-                  args.complete();
+                  args.complete({
+                    actionFilter: podActionfilter
+                  });
                 }
               },
 
@@ -5750,7 +5751,7 @@
             hypervisortype: { label: 'Hypervisor' },
             //allocationstate: { label: 'Allocation State' },
             //managedstate: { label: 'Managed State' },
-						state: { label: 'State' }
+						state: { label: 'State', indicator: { 'Enabled': 'on', 'Destroyed': 'off'} }
           },
 
           dataProvider: function(args) {
@@ -5930,8 +5931,7 @@
                   success: function(json) {
                     var item = json.addclusterresponse.cluster[0];
                     args.response.success({
-										  actionFilter: clusterActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
-										  data: item
+										  data: $.extend(item, { state: 'Enabled' })
 										});  
                   },
                   error: function(XMLHttpResponse) {
@@ -5943,7 +5943,10 @@
 
               notification: {
                 poll: function(args) {
-                  args.complete();
+                  args.complete({
+										actionFilter: clusterActionfilter,
+                    data: { state: 'Enabled' }
+                  });
                 }
               }
             },
@@ -6651,7 +6654,6 @@
                   success: function(json) {
                     var item = json.addhostresponse.host[0];                   
                     args.response.success({
-                      actionFilter: hostActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
                       data: item
                     });
                   },
@@ -6664,7 +6666,9 @@
 
               notification: {
                 poll: function(args){
-                  args.complete();
+                  args.complete({
+                    actionFilter: hostActionfilter
+                  });
                 }
               },
 
@@ -7515,7 +7519,6 @@
                   success: function(json) {
                     var item = json.createstoragepoolresponse.storagepool[0];								
                     args.response.success({
-										  actionFilter: primarystorageActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
 										  data: item
 										});
                   },
@@ -7528,7 +7531,9 @@
 
               notification: {
                 poll: function(args){
-                  args.complete();
+                  args.complete({
+                    actionFilter: primarystorageActionfilter
+                  });
                 }
               },
 
@@ -7915,7 +7920,6 @@
                   success: function(json) {
                     var item = json.addsecondarystorageresponse.secondarystorage;						
                     args.response.success({
-										  actionFilter: secondarystorageActionfilter, //Brian, actionfilter is not being applied here. Please fix widget code to apply actionFilter to the newly created object.
 										  data:item
 										});
                   },
@@ -7928,7 +7932,9 @@
 
               notification: {
                 poll: function(args) {
-                  args.complete();
+                  args.complete({
+                    actionFilter: secondarystorageActionfilter
+                  });
                 }
               },
 
