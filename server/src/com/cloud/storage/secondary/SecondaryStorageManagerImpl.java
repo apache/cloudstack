@@ -525,7 +525,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         
         NetworkVO defaultNetwork = defaultNetworks.get(0);
 
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
@@ -1034,6 +1034,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 buf.append(" private.network.device=").append("eth").append(deviceId);
             } else if (nic.getTrafficType() == TrafficType.Public) {
                 buf.append(" public.network.device=").append("eth").append(deviceId);
+            } else if (nic.getTrafficType() == TrafficType.Storage) {
+            	buf.append(" storageip=").append(nic.getIp4Address());
+            	buf.append(" storagenetmask=").append(nic.getNetmask());
             }
         }
 

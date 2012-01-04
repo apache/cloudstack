@@ -19,7 +19,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a VLAN IP range.", responseObject=StorageNetworkIpRangeResponse.class)
+@Implementation(description="Creates a Storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class)
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 	
@@ -29,27 +29,23 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////    
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Have to be specified for Direct Untagged vlan only.")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="UUID of pod where the ip range belongs to")
     private Long podId;
     
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address")
     private String endIp;
     
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.INTEGER, description="the ID or VID of the VLAN. Optional, null means no vlan")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.INTEGER, description="Optional. the vlan the ip range sits on")
     private Integer vlan;
     
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="The uuid of zone")
     private Long zoneId;
-    
-    @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the network id")
-    private Long networkID;
-    
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for the Pod")
+        
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for storage network")
     private String netmask;
     
     /////////////////////////////////////////////////////
@@ -75,11 +71,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
-    public Long getNetworkID() {
-        return networkID;
-    }
-    
+        
     public String getNetmask() {
     	return netmask;
     }

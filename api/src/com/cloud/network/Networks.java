@@ -61,6 +61,7 @@ public class Networks {
         Vswitch("vs", String.class),
         LinkLocal(null, null),
         Vnet("vnet", Long.class),
+        Storage("storage", Integer.class),
         UnDecided(null, null);
         
         private String scheme;

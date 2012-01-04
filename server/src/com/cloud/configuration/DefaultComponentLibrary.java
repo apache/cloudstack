@@ -55,6 +55,8 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
+import com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl;
+import com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.EventDaoImpl;
@@ -71,6 +73,7 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
@@ -327,6 +330,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
         addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
+        addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);
+        addDao("StorageNetworkIpRangeDao", StorageNetworkIpRangeDaoImpl.class);
     }
 
     @Override
@@ -382,6 +387,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ProjectManager", ProjectManagerImpl.class);
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
         addManager("SwiftManager", SwiftManagerImpl.class);
+        addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
     }
 
     @Override

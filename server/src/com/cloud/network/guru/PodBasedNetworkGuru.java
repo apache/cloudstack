@@ -40,6 +40,7 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -58,6 +59,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
+    @Inject StorageNetworkManager _sNwMgr;
     Random _rand = new Random(System.currentTimeMillis());
 
     @Override
@@ -66,6 +68,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         
         if (type != TrafficType.Management && type != TrafficType.Storage) {
             return null;
+        }
+        
+        if (type == TrafficType.Storage && _sNwMgr.isStorageIpRangeAvailable()) {
+        	s_logger.debug("There is some storage ip available, let StorageNetworkGuru to handle storage traffic type, not me");
+        	return null;
         }
         
         NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
@@ -84,7 +91,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
-        assert (trafficType == TrafficType.Storage || trafficType == TrafficType.Management) : "Well, I can't take care of this config now can I? " + config; 
+        assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage: "Well, I can't take care of this config now can I? " + config; 
         
         if (nic != null) {
             if (nic.getRequestedIp() != null) {

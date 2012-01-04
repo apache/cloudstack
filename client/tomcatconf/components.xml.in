@@ -59,6 +59,7 @@
             <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
+            <adapter name="StorageNetworkGuru" class="com.cloud.network.guru.StorageNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.cluster.ClusterServiceAdapter">
             <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>

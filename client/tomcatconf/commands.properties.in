@@ -317,3 +317,10 @@ addTrafficType=com.cloud.api.commands.AddTrafficTypeCmd;1
 deleteTrafficType=com.cloud.api.commands.DeleteTrafficTypeCmd;1
 listTrafficTypes=com.cloud.api.commands.ListTrafficTypesCmd;1
 updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1
+
+#### Storage Network commands
+createStorageNetworkIpRange=com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;1
+deleteStorageNetworkIpRange=com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;1
+listStorageNetworkIpRange=com.cloud.api.commands.listStorageNetworkIpRangeCmd;1
+
+

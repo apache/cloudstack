@@ -589,10 +589,26 @@ setup_dhcpsrvr() {
   fi
 }
 
+setup_storage_network() {
+	if [ x"$STORAGE_IP" == "x" -o x"$STORAGE_NETMASK" == "x" ]
+	then
+		log_it "Incompleted parameters STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR. Cannot setup storage network"
+		return
+	fi
+	
+	echo "" >> /etc/network/interfaces
+	echo "auto eth3" >> /etc/network/interfaces
+	
+	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
+	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
+	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
+}
+
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   local hyp=$1
   setup_common eth0 eth1 eth2
+  setup_storage_network
   [ -n "$MTU" ] && ifconfig eth1 mtu $MTU
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
@@ -719,6 +735,9 @@ CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="unknown"
 BOOTPROTO="static"
 DISABLE_RP_FILTER="false"
+STORAGE_IP=""
+STORAGE_NETMASK=""
+STORAGE_CIDR=""
 
 for i in $CMDLINE
   do
@@ -787,8 +806,8 @@ for i in $CMDLINE
         SSHONGUEST=$VALUE
         ;;
       name)
-	NAME=$VALUE
-	;;
+	    NAME=$VALUE
+	    ;;
       dhcprange)
         DHCP_RANGE=$(echo $VALUE | tr ':' ',')
       	;;
@@ -797,7 +816,7 @@ for i in $CMDLINE
       	;;
       type)
         TYPE=$VALUE	
-	;;
+	    ;;
       defaultroute)
         DEFAULTROUTE=$VALUE	
 	;;
@@ -824,6 +843,15 @@ for i in $CMDLINE
         ;;
       mtu)
         MTU=$VALUE
+        ;;
+      storageip)
+        STORAGE_IP=$VALUE
+        ;;
+      storagenetmask)
+        STORAGE_NETMASK=$VALUE
+        ;;
+      storagecidr)
+        STORAGE_CIDR=$VALUE
         ;;
     esac
 done

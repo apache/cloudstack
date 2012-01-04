@@ -1,22 +1,34 @@
 package com.cloud.dc;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.SecondaryTable;
+import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
 @Entity
 @Table(name="dc_storage_network_ip_range")
+@SecondaryTables({@SecondaryTable(name="networks", pkJoinColumns={@PrimaryKeyJoinColumn(name="network_id", referencedColumnName="id")}),
+	@SecondaryTable(name="host_pod_ref", pkJoinColumns={@PrimaryKeyJoinColumn(name="pod_id", referencedColumnName="id")}),
+	@SecondaryTable(name="data_center", pkJoinColumns={@PrimaryKeyJoinColumn(name="data_center_id", referencedColumnName="id")}),
+})
 public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@Column(name = "uuid")
+	String uuid;
+	
 	@Column(name = "vlan")
-	private int vlan;
+	private Integer vlan;
 	
 	@Column(name = "data_center_id")
 	private long dataCenterId;
@@ -33,7 +45,17 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Column(name = "network_id")
 	private long networkId;
 	
-	public StorageNetworkIpRangeVO(long dcId, long podId, long networkId, String startIp, String endIp, int vlan) {
+	@Column(name = "uuid", table = "networks", insertable = false, updatable = false)
+	String networkUuid;
+	
+	@Column(name = "uuid", table = "host_pod_ref", insertable = false, updatable = false)
+	String podUuid;
+	
+	@Column(name = "uuid", table = "data_center", insertable = false, updatable = false)
+	String zoneUuid;
+	
+	public StorageNetworkIpRangeVO(long dcId, long podId, long networkId, String startIp, String endIp, Integer vlan) {
+		this();
 		this.dataCenterId = dcId;
 		this.podId = podId;
 		this.networkId = networkId;
@@ -43,7 +65,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	}
 		
 	protected StorageNetworkIpRangeVO() {
-		
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
 	public long getId() {
@@ -74,7 +96,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 		this.networkId = nwId;
 	}
 		
-	public int getVlan() {
+	public Integer getVlan() {
 		return vlan;
 	}
 	
@@ -93,8 +115,28 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	public void setEndIp(String end) {
 		this.endIp = end;
 	}
-	
+
 	public String getEndIp() {
 		return endIp;
+	}
+
+	@Override
+	public String getUuid() {
+		return uuid;
+	}
+
+	@Override
+	public String getPodUuid() {
+		return podUuid;
+	}
+
+	@Override
+	public String getNetworkUuid() {
+		return networkUuid;
+	}
+
+	@Override
+	public String getZoneUuid() {
+		return zoneUuid;
 	}
 }

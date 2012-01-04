@@ -1,17 +1,17 @@
 package com.cloud.dc;
 
 public interface StorageNetworkIpRange {
-	long getId();
+	String getUuid();
 	
-	int getVlan();
+	Integer getVlan();
 
-	long getPodId();
+	String getPodUuid();
 
 	String getStartIp();
 
 	String getEndIp();
 
-	long getNetworkId();
+	String getNetworkUuid();
 
-	long getDataCenterId();
+	String getZoneUuid();
 }

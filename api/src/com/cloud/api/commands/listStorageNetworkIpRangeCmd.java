@@ -34,15 +34,15 @@ public class listStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////   
 	
     @IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="optional parameter. Storaget network IP range id, if specicied, using it to search the range.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="optional parameter. Storaget network IP range uuid, if specicied, using it to search the range.")
     private Long rangeId;
     
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Pod id, if specicied and range id is absent, using it to search the range.")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Pod uuid, if specicied and range uuid is absent, using it to search the range.")
     private Long podId;
     
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="optional parameter. Zone id, if specicied and both pod id and range id are absent, using it to search the range.")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="optional parameter. Zone uuid, if specicied and both pod uuid and range uuid are absent, using it to search the range.")
     private Long zoneId;
     
     /////////////////////////////////////////////////////

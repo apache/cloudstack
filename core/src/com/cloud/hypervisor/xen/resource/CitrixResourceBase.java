@@ -650,6 +650,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 long account = Long.parseLong(nic.getBroadcastUri().getHost());
                 return createTunnelNetwork(conn, account);
             }
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Storage) {
+        	URI broadcastUri = nic.getBroadcastUri();
+        	if (broadcastUri == null) {
+        		return network.getNetwork();
+        	} else {
+        		long vlan = Long.parseLong(broadcastUri.getHost());
+        		return enableVlanNetwork(conn, vlan, network);
+        	}
         }
 
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());

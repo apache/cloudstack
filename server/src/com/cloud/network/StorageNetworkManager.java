@@ -8,5 +8,5 @@ public interface StorageNetworkManager extends Manager {
 
 	void releaseIpAddress(String ip);
 	
-	boolean isAStorageIpAddress(String ip);
+	boolean isStorageIpRangeAvailable();
 }

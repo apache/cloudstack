@@ -7,6 +7,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.SecondaryTable;
+import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -15,6 +18,7 @@ import com.cloud.network.IpAddress.State;
 
 @Entity
 @Table(name="op_dc_storage_network_ip_address")
+@SecondaryTables({@SecondaryTable(name = "dc_storage_network_ip_range", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "range_id", referencedColumnName = "id")})})
 public class StorageNetworkIpAddressVO {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +40,9 @@ public class StorageNetworkIpAddressVO {
 	
 	@Column(name = "mac_address")
 	long mac;
+	
+	@Column(name = "vlan", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+	Integer vlan;
 
 	protected StorageNetworkIpAddressVO() {
 	}
@@ -82,5 +89,9 @@ public class StorageNetworkIpAddressVO {
 	
 	public void setCidrSize(int cidr) {
 		this.cidrSize =cidr;
+	}
+	
+	public Integer getVlan() {
+		return vlan;
 	}
 }

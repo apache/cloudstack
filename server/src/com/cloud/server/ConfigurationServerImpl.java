@@ -79,6 +79,7 @@ import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.network.guru.PodBasedNetworkGuru;
 import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.guru.StorageNetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -953,7 +954,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         guruNames.put(TrafficType.Public, PublicNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Management, PodBasedNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Control, ControlNetworkGuru.class.getSimpleName());
-        guruNames.put(TrafficType.Storage, PodBasedNetworkGuru.class.getSimpleName());
+        guruNames.put(TrafficType.Storage, StorageNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Guest, DirectPodBasedNetworkGuru.class.getSimpleName());
         
         for (DataCenterVO zone : zones) {
@@ -978,7 +979,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     TrafficType trafficType= offering.getTrafficType();
                     
                     boolean isNetworkDefault = false;
-                    if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
+                    if (trafficType == TrafficType.Management) {
                         broadcastDomainType = BroadcastDomainType.Native;
                     } else if (trafficType == TrafficType.Control) {
                         broadcastDomainType = BroadcastDomainType.LinkLocal;
@@ -997,6 +998,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         }
                         
                         networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _domainSuffix;
+                    } else if (offering.getTrafficType() == TrafficType.Storage) {
+                    	broadcastDomainType = BroadcastDomainType.Storage;
                     }
                     
                     if (broadcastDomainType != null) {

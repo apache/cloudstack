@@ -37,7 +37,6 @@ import com.cloud.vm.Nic.ReservationStrategy;
 public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);
 	@Inject StorageNetworkManager _sNwMgr;
-	@Inject DataCenterDao _dcDao;
 	
 	protected StorageNetworkGuru() {
 		super();
@@ -45,7 +44,12 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 	
 	protected boolean canHandle(NetworkOffering offering) {
 		if (offering.getTrafficType() == TrafficType.Storage && offering.isSystemOnly()) {
-			return true;
+			if (_sNwMgr.isStorageIpRangeAvailable()) {
+				return true;
+			} else {
+				s_logger.debug("No storage network ip range availabe, let PodBasedNetworkGuru to handle storage traffic type, not me");
+				return false;
+			}
 		} else {
 			s_logger.trace("It's not storage network offering, skip it.");
 			return false;
@@ -93,48 +97,32 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 	public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
 		Pod pod = dest.getPod();
-		String ipAddress = null;
-		Long macLong = null;
-		Integer cidrSize = null;
+		Integer vlan = null;
 		
 		StorageNetworkIpAddressVO ip = _sNwMgr.acquireIpAddress(pod.getId());
-		if (ip != null) {
-			ipAddress = ip.getIpAddress();
-			macLong = ip.getMac();
-			cidrSize = ip.getCidrSize();
-		} else {
-			s_logger.debug("Can not get an ip from storage network ip range for pod " + pod.getId() + ", acquire one from managment ip range");
-			/* Pick up an ip from management ip range if there is no available in storage ip range because of either user not added it or run out of */
-			Pair<String, Long>ip1 = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), pod.getId(), nic.getId(),
-			        context.getReservationId());
-			if (ip1 == null) {
-				throw new InsufficientAddressCapacityException("Unable to get a storage network ip address", Pod.class, pod.getId());
-			}
-			ipAddress = ip1.first();
-			macLong = ip1.second();
-			cidrSize = pod.getCidrSize();
+		if (ip == null) {
+			throw new InsufficientAddressCapacityException("Unable to get a storage network ip address", Pod.class, pod.getId());
 		}
-		
-		nic.setIp4Address(ipAddress);
-		nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(macLong)));
+	
+		vlan = ip.getVlan();	
+		nic.setIp4Address(ip.getIpAddress());
+		nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac())));
 		nic.setFormat(AddressFormat.Ip4);
-		nic.setNetmask(NetUtils.getCidrNetmask(cidrSize));
-		nic.setBroadcastType(BroadcastDomainType.Native);
-        nic.setBroadcastUri(null);
+		nic.setNetmask(NetUtils.getCidrNetmask(ip.getCidrSize()));
+		nic.setBroadcastType(BroadcastDomainType.Storage);
+		if (vlan != null) {
+			nic.setBroadcastUri(BroadcastDomainType.Storage.toUri(vlan));
+		} else {
+			nic.setBroadcastUri(null);
+		}
         nic.setIsolationUri(null);
-        s_logger.debug("Allocated a nic " + nic + " for " + vm);
+        s_logger.debug("Allocated a storage nic " + nic + " for " + vm);
 	}
 
 	@Override
 	public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
-		if (_sNwMgr.isAStorageIpAddress(nic.getIp4Address())) {
-			_sNwMgr.releaseIpAddress(nic.getIp4Address());
-			s_logger.debug("Release an storage ip " + nic.getIp4Address());
-		} else {
-			_dcDao.releasePrivateIpAddress(nic.getId(), nic.getReservationId());
-			s_logger.debug("Release an storage ip that is from managment ip range " + nic.getIp4Address());
-		}
-		
+		_sNwMgr.releaseIpAddress(nic.getIp4Address());
+		s_logger.debug("Release an storage ip " + nic.getIp4Address());
 		nic.deallocate();
 		return true;
 	}

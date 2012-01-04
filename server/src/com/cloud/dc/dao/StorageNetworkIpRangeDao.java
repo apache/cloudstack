@@ -11,4 +11,6 @@ public interface StorageNetworkIpRangeDao extends GenericDao<StorageNetworkIpRan
 	List<StorageNetworkIpRangeVO> listByPodId(long podId);
 
 	List<StorageNetworkIpRangeVO> listByDataCenterId(long dcId);
+	
+	long countRanges();
 }

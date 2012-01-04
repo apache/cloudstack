@@ -29,7 +29,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the storage network IP range ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the uuid of the storage network ip range")
     private Long id;
     
     /////////////////////////////////////////////////////

@@ -91,7 +91,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		List<StorageNetworkIpRangeVO> curRanges = _sNwIpRangeDao.listByPodId(podId);
 		for (StorageNetworkIpRangeVO range : curRanges) {
 			if (NetUtils.ipRangesOverlap(startIp, endIp, range.getStartIp(), range.getEndIp())) {
-	            throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + range.getStartIp() + ":" + range.getEndIp());
+	            throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + range.getStartIp() + " - " + range.getEndIp());
 	        }
 		}
 	}
@@ -180,7 +180,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		StringBuilder res = new StringBuilder();
 		res.append("Below IP of range " + rangeId + " is still in use:");
 		for (String ip : ips) {
-			res.append(ip);
+			res.append(ip).append(",");
 		}
 		return res.toString();
 	}
@@ -269,10 +269,8 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
     }
 
 	@Override
-    public boolean isAStorageIpAddress(String ip) {
-	    SearchCriteriaService<StorageNetworkIpAddressVO, StorageNetworkIpAddressVO> sc = SearchCriteria2.create(StorageNetworkIpAddressVO.class);
-	    sc.addAnd(sc.getEntity().getIpAddress(), Op.EQ, ip);
-	    return sc.find() == null ? false : true;
+    public boolean isStorageIpRangeAvailable() {
+		return _sNwIpRangeDao.countRanges() > 0;
     }
 
 }

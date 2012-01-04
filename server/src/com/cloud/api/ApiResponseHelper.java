@@ -3241,13 +3241,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 	@Override
     public StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result) {
 		StorageNetworkIpRangeResponse response = new StorageNetworkIpRangeResponse();
-		response.setId(result.getId());
+		response.setUuid(result.getUuid());
 		response.setVlan(result.getVlan());
 		response.setEndIp(result.getEndIp());
 		response.setStartIp(result.getStartIp());
-		response.setPodId(result.getPodId());
-		response.setZoneId(result.getDataCenterId());
-		response.setNetworkId(result.getNetworkId());
+		response.setPodUuid(result.getPodUuid());
+		response.setZoneUuid(result.getZoneUuid());
+		response.setNetworkUuid(result.getNetworkUuid());
 		return response;
     }
 }

@@ -33,13 +33,13 @@ public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetwor
 		countInUserIp = createSearchBuilder(Long.class);
 		countInUserIp.select(null, Func.COUNT, null);
 		countInUserIp.and("rangeId", countInUserIp.entity().getRangeId(), Op.EQ);
-		countInUserIp.and("taken", countInUserIp.entity().getTakenAt(), Op.NULL);
+		countInUserIp.and("taken", countInUserIp.entity().getTakenAt(), Op.NNULL);
 		countInUserIp.done();
 		
 		listInUseIp = createSearchBuilder(String.class);
 		listInUseIp.selectField(listInUseIp.entity().getIpAddress());
 		listInUseIp.and("rangeId", listInUseIp.entity().getRangeId(), Op.EQ);
-		listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NULL);
+		listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NNULL);
 		listInUseIp.done();
 		
 		untakenIp = createSearchBuilder();
