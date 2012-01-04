@@ -93,14 +93,14 @@ public class ClusterManagerImpl implements ClusterManager {
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
 
 
-    private final List<ClusterManagerListener> listeners = new ArrayList<ClusterManagerListener>();
-    private final Map<Long, ManagementServerHostVO> activePeers = new HashMap<Long, ManagementServerHostVO>();
-    private int heartbeatInterval = ClusterManager.DEFAULT_HEARTBEAT_INTERVAL;
-    private int heartbeatThreshold = ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD;
+    private final List<ClusterManagerListener> _listeners = new ArrayList<ClusterManagerListener>();
+    private final Map<Long, ManagementServerHostVO> _activePeers = new HashMap<Long, ManagementServerHostVO>();
+    private int _heartbeatInterval = ClusterManager.DEFAULT_HEARTBEAT_INTERVAL;
+    private int _heartbeatThreshold = ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD;
 
-    private final Map<String, ClusterService> clusterPeers;
-    private final Map<String, Listener> asyncCalls;
-    private final Gson gson;
+    private final Map<String, ClusterService> _clusterPeers;
+    private final Map<String, Listener> _asyncCalls;
+    private final Gson _gson;
 
     @Inject
     private AgentManager _agentMgr;
@@ -141,10 +141,10 @@ public class ClusterManagerImpl implements ClusterManager {
     
     
     public ClusterManagerImpl() {
-        clusterPeers = new HashMap<String, ClusterService>();
-        asyncCalls = new HashMap<String, Listener>();
+        _clusterPeers = new HashMap<String, ClusterService>();
+        _asyncCalls = new HashMap<String, Listener>();
 
-        gson = GsonHelper.getGson();
+        _gson = GsonHelper.getGson();
 
         // executor to perform remote-calls in another thread context, to avoid potential
         // recursive remote calls between nodes
@@ -216,7 +216,7 @@ public class ClusterManagerImpl implements ClusterManager {
     public void broadcast(long agentId, Command[] cmds) {
         Date cutTime = DateUtil.currentGMTTime();
 
-        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
         for (ManagementServerHostVO peer : peers) {
             String peerName = Long.toString(peer.getMsid());
             if (getSelfPeerName().equals(peerName)) {
@@ -239,7 +239,7 @@ public class ClusterManagerImpl implements ClusterManager {
 
         if(s_logger.isDebugEnabled()) {
             s_logger.debug(getSelfPeerName() + " -> " + strPeer + "." + agentId + " " +
-                    gson.toJson(cmds, Command[].class));
+                    _gson.toJson(cmds, Command[].class));
         }
 
         for(int i = 0; i < 2; i++) {
@@ -256,7 +256,7 @@ public class ClusterManagerImpl implements ClusterManager {
                     }
 
                     long startTick = System.currentTimeMillis();
-                    String strResult = peerService.execute(getSelfPeerName(), agentId, gson.toJson(cmds, Command[].class), stopOnError);
+                    String strResult = peerService.execute(getSelfPeerName(), agentId, _gson.toJson(cmds, Command[].class), stopOnError);
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("Completed " + getSelfPeerName() + " -> " + strPeer + "." + agentId + "in " +
                                 (System.currentTimeMillis() - startTick) + " ms, result: " + strResult);
@@ -264,7 +264,7 @@ public class ClusterManagerImpl implements ClusterManager {
 
                     if(strResult != null) {
                         try {
-                            return gson.fromJson(strResult, Answer[].class);
+                            return _gson.fromJson(strResult, Answer[].class);
                         } catch(Throwable e) {
                             s_logger.error("Exception on parsing gson package from remote call to " + strPeer);
                         }
@@ -289,7 +289,7 @@ public class ClusterManagerImpl implements ClusterManager {
 
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId + " " +
-                    gson.toJson(cmds, Command[].class));
+                    _gson.toJson(cmds, Command[].class));
         }
 
         for(int i = 0; i < 2; i++) {
@@ -307,7 +307,7 @@ public class ClusterManagerImpl implements ClusterManager {
                         }
 
                         long startTick = System.currentTimeMillis();
-                        seq = peerService.executeAsync(getSelfPeerName(), agentId, gson.toJson(cmds, Command[].class), stopOnError);
+                        seq = peerService.executeAsync(getSelfPeerName(), agentId, _gson.toJson(cmds, Command[].class), stopOnError);
                         if(seq > 0) {
                             if(s_logger.isDebugEnabled()) {
                                 s_logger.debug("Completed Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId
@@ -339,7 +339,7 @@ public class ClusterManagerImpl implements ClusterManager {
     public boolean onAsyncResult(String executingPeer, long agentId, long seq, Answer[] answers) {
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Process Async-call result from remote peer " + executingPeer + ", {" +
-                    agentId + "-" + seq + "} answers: " + (answers != null ? gson.toJson(answers, Answer[].class): "null"));
+                    agentId + "-" + seq + "} answers: " + (answers != null ? _gson.toJson(answers, Answer[].class): "null"));
         }
 
         Listener listener = null;
@@ -390,7 +390,7 @@ public class ClusterManagerImpl implements ClusterManager {
     public boolean forwardAnswer(String targetPeer, long agentId, long seq, Answer[] answers) {
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Forward -> " + targetPeer + " Async-call answer {" + agentId + "-" + seq +
-                    "} " + (answers != null? gson.toJson(answers, Answer[].class):""));
+                    "} " + (answers != null? _gson.toJson(answers, Answer[].class):""));
         }
 
         final String targetPeerF = targetPeer;
@@ -416,7 +416,7 @@ public class ClusterManagerImpl implements ClusterManager {
                         s_logger.debug("Start forwarding Async-call answer {" + agentId + "-" + seq + "} to remote");
                     }
 
-                    result = peerService.onAsyncResult(getSelfPeerName(), agentIdF, seqF, gson.toJson(answersF, Answer[].class));
+                    result = peerService.onAsyncResult(getSelfPeerName(), agentIdF, seqF, _gson.toJson(answersF, Answer[].class));
 
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("Completed forwarding Async-call answer {" + agentId + "-" + seq + "} in " +
@@ -469,20 +469,20 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public void registerListener(ClusterManagerListener listener) {
         // Note : we don't check duplicates
-        synchronized (listeners) {
+        synchronized (_listeners) {
 
     		s_logger.info("register cluster listener " + listener.getClass());
     		
-        	listeners.add(listener);
+        	_listeners.add(listener);
         }
     }
 
     @Override
     public void unregisterListener(ClusterManagerListener listener) {
-        synchronized(listeners) {
+        synchronized(_listeners) {
     		s_logger.info("unregister cluster listener " + listener.getClass());
         	
-        	listeners.remove(listener);
+        	_listeners.remove(listener);
         }
     }
 
@@ -495,8 +495,8 @@ public class ClusterManagerImpl implements ClusterManager {
             }
         }
 
-        synchronized(listeners) {
-            for(ClusterManagerListener listener : listeners) {
+        synchronized(_listeners) {
+            for(ClusterManagerListener listener : _listeners) {
                 listener.onManagementNodeJoined(nodeList, _mshostId);
             }
         }
@@ -514,8 +514,8 @@ public class ClusterManagerImpl implements ClusterManager {
             }
         }
 
-        synchronized(listeners) {
-            for(ClusterManagerListener listener : listeners) {
+        synchronized(_listeners) {
+            for(ClusterManagerListener listener : _listeners) {
                 listener.onManagementNodeLeft(nodeList, _mshostId);
             }
         }
@@ -528,28 +528,28 @@ public class ClusterManagerImpl implements ClusterManager {
         if(s_logger.isDebugEnabled())
             s_logger.debug("Notify management server node isolation to listeners");
 
-        synchronized(listeners) {
-            for(ClusterManagerListener listener : listeners) {
+        synchronized(_listeners) {
+            for(ClusterManagerListener listener : _listeners) {
                 listener.onManagementNodeIsolated();
             }
         }
     }
 
     public ClusterService getPeerService(String strPeer) throws RemoteException {
-        synchronized(clusterPeers) {
-            if(clusterPeers.containsKey(strPeer)) {
-                return clusterPeers.get(strPeer);
+        synchronized(_clusterPeers) {
+            if(_clusterPeers.containsKey(strPeer)) {
+                return _clusterPeers.get(strPeer);
             }
         }
 
         ClusterService service = _currentServiceAdapter.getPeerService(strPeer);
 
         if(service != null) {
-            synchronized(clusterPeers) {
+            synchronized(_clusterPeers) {
                 // re-check the peer map again to deal with the
                 // race conditions
-                if(!clusterPeers.containsKey(strPeer)) {
-                    clusterPeers.put(strPeer, service);
+                if(!_clusterPeers.containsKey(strPeer)) {
+                    _clusterPeers.put(strPeer, service);
                 }
             }
         }
@@ -558,9 +558,9 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void invalidatePeerService(String strPeer) {
-        synchronized(clusterPeers) {
-            if(clusterPeers.containsKey(strPeer)) {
-                clusterPeers.remove(strPeer);
+        synchronized(_clusterPeers) {
+            if(_clusterPeers.containsKey(strPeer)) {
+                _clusterPeers.remove(strPeer);
             }
         }
     }
@@ -568,9 +568,9 @@ public class ClusterManagerImpl implements ClusterManager {
     private void registerAsyncCall(String strPeer, long seq, Listener listener) {
         String key = strPeer + "/" + seq;
 
-        synchronized(asyncCalls) {
-            if(!asyncCalls.containsKey(key)) {
-                asyncCalls.put(key, listener);
+        synchronized(_asyncCalls) {
+            if(!_asyncCalls.containsKey(key)) {
+                _asyncCalls.put(key, listener);
             }
         }
     }
@@ -578,9 +578,9 @@ public class ClusterManagerImpl implements ClusterManager {
     private Listener getAsyncCallListener(String strPeer, long seq) {
         String key = strPeer + "/" + seq;
 
-        synchronized(asyncCalls) {
-            if(asyncCalls.containsKey(key)) {
-                return asyncCalls.get(key);
+        synchronized(_asyncCalls) {
+            if(_asyncCalls.containsKey(key)) {
+                return _asyncCalls.get(key);
             }
         }
 
@@ -590,9 +590,9 @@ public class ClusterManagerImpl implements ClusterManager {
     private void unregisterAsyncCall(String strPeer, long seq) {
         String key = strPeer + "/" + seq;
 
-        synchronized(asyncCalls) {
-            if(asyncCalls.containsKey(key)) {
-                asyncCalls.remove(key);
+        synchronized(_asyncCalls) {
+            if(_asyncCalls.containsKey(key)) {
+                _asyncCalls.remove(key);
             }
         }
     }
@@ -603,48 +603,71 @@ public class ClusterManagerImpl implements ClusterManager {
             public void run() {
                 Transaction txn = Transaction.open("ClusterHeartBeat");
                 try {
-                    txn.transitToUserManagedConnection(getHeartbeatConnection());
-                    if(s_logger.isTraceEnabled()) {
-                        s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
-                    }
-
-                    _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
-                    }
-
-                    if (!_peerScanInited) {
-                        _peerScanInited = true;
-                        initPeerScan();
-                    }
-
-                    peerScan();
+                    Profiler profiler = new Profiler();
+                    Profiler profilerHeartbeatUpdate = new Profiler();
+                    Profiler profilerPeerScan = new Profiler();
+                    Profiler profilerAgentLB = new Profiler();
                     
-                    //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
-                    if (_agentLBEnabled && !_agentLbHappened) {
-                    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-                        sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
-                        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-                        List<HostVO> allManagedRoutingAgents = sc.list();
+                    try {
+                        profiler.start();
                         
-                        sc = SearchCriteria2.create(HostVO.class);
-                        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-                        List<HostVO> allAgents = sc.list();
-                        double allHostsCount = allAgents.size();
-                        double managedHostsCount = allManagedRoutingAgents.size();
-                        if (allHostsCount > 0.0) {
-                            double load = managedHostsCount/allHostsCount;
-                            if (load >= _connectedAgentsThreshold) {
-                                s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
-                                _rebalanceService.scheduleRebalanceAgents();
-                                _agentLbHappened = true;
-                            } else {
-                                s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
-                            }
-                        } 
+                        profilerHeartbeatUpdate.start();
+                        txn.transitToUserManagedConnection(getHeartbeatConnection());
+                        if(s_logger.isTraceEnabled()) {
+                            s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
+                        }
+    
+                        _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
+                        profilerHeartbeatUpdate.stop();
+    
+                        profilerPeerScan.start();
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
+                        }
+    
+                        if (!_peerScanInited) {
+                            _peerScanInited = true;
+                            initPeerScan();
+                        }
+    
+                        peerScan();
+                        profilerPeerScan.stop();
+                        
+                        profilerAgentLB.start();
+                        //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
+                        if (_agentLBEnabled && !_agentLbHappened) {
+                            SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                            sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
+                            sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+                            List<HostVO> allManagedRoutingAgents = sc.list();
+                            
+                            sc = SearchCriteria2.create(HostVO.class);
+                            sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+                            List<HostVO> allAgents = sc.list();
+                            double allHostsCount = allAgents.size();
+                            double managedHostsCount = allManagedRoutingAgents.size();
+                            if (allHostsCount > 0.0) {
+                                double load = managedHostsCount/allHostsCount;
+                                if (load >= _connectedAgentsThreshold) {
+                                    s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
+                                    _rebalanceService.scheduleRebalanceAgents();
+                                    _agentLbHappened = true;
+                                } else {
+                                    s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
+                                }
+                            } 
+                        }
+                        profilerAgentLB.stop();
+                    } finally {
+                        profiler.stop();
+                        
+                        if(profiler.getDuration() >= _heartbeatInterval) {
+                            s_logger.warn("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + 
+                                ", profilerHeartbeatUpdate: " + profilerHeartbeatUpdate.toString() +
+                                ", profilerPeerScan: " + profilerPeerScan.toString() +
+                                ", profilerAgentLB: " + profilerAgentLB.toString());
+                        }
                     }
-                    
                     
                 } catch(CloudRuntimeException e) {
                     s_logger.error("Runtime DB exception ", e.getCause());
@@ -797,7 +820,7 @@ public class ClusterManagerImpl implements ClusterManager {
         // upon startup, for all inactive management server nodes that we see at startup time, we will send notification also to help upper layer perform
         // missed cleanup
         Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
        
         // We don't have foreign key constraints to enforce the mgmt_server_id integrity in host table, when user manually 
         // remove records from mshost table, this will leave orphan mgmt_serve_id reference in host table.
@@ -828,14 +851,14 @@ public class ClusterManagerImpl implements ClusterManager {
     private void peerScan() {
         Date cutTime = DateUtil.currentGMTTime();
 
-        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
 
         List<ManagementServerHostVO> removedNodeList = new ArrayList<ManagementServerHostVO>();
         List<ManagementServerHostVO> invalidatedNodeList = new ArrayList<ManagementServerHostVO>();
 
         if(_mshostId != null) {
             // only if we have already attached to cluster, will we start to check leaving nodes
-            for(Map.Entry<Long, ManagementServerHostVO>  entry : activePeers.entrySet()) {
+            for(Map.Entry<Long, ManagementServerHostVO>  entry : _activePeers.entrySet()) {
 
                 ManagementServerHostVO current = getInListById(entry.getKey(), currentList);
                 if(current == null) {
@@ -869,7 +892,7 @@ public class ClusterManagerImpl implements ClusterManager {
         // process invalidated node list
         if(invalidatedNodeList.size() > 0) {
             for(ManagementServerHostVO mshost : invalidatedNodeList) {
-                activePeers.remove(mshost.getId());
+                _activePeers.remove(mshost.getId());
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
                 } catch(Exception e) {
@@ -886,7 +909,7 @@ public class ClusterManagerImpl implements ClusterManager {
             ManagementServerHostVO mshost = it.next();
             if(!pingManagementNode(mshost)) {
                 s_logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
-                activePeers.remove(mshost.getId());
+                _activePeers.remove(mshost.getId());
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
                 } catch(Exception e) {
@@ -904,8 +927,8 @@ public class ClusterManagerImpl implements ClusterManager {
 
         List<ManagementServerHostVO> newNodeList = new ArrayList<ManagementServerHostVO>();
         for(ManagementServerHostVO mshost : currentList) {
-            if(!activePeers.containsKey(mshost.getId())) {
-                activePeers.put(mshost.getId(), mshost);
+            if(!_activePeers.containsKey(mshost.getId())) {
+                _activePeers.put(mshost.getId(), mshost);
 
                 if(s_logger.isDebugEnabled()) {
                     s_logger.debug("Detected management node joined, id:" + mshost.getId() + ", nodeIP:" + mshost.getServiceIP());
@@ -986,7 +1009,7 @@ public class ClusterManagerImpl implements ClusterManager {
             }
 
             // use seperate thread for heartbeat updates
-            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), _heartbeatInterval, _heartbeatInterval, TimeUnit.MILLISECONDS);
             _notificationExecutor.submit(getNotificationTask());
 
         } catch (Throwable e) {
@@ -1064,12 +1087,12 @@ public class ClusterManagerImpl implements ClusterManager {
 
         String value = configs.get("cluster.heartbeat.interval");
         if (value != null) {
-            heartbeatInterval = NumbersUtil.parseInt(value, ClusterManager.DEFAULT_HEARTBEAT_INTERVAL);
+            _heartbeatInterval = NumbersUtil.parseInt(value, ClusterManager.DEFAULT_HEARTBEAT_INTERVAL);
         }
 
         value = configs.get("cluster.heartbeat.threshold");
         if (value != null) {
-            heartbeatThreshold = NumbersUtil.parseInt(value, ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD);
+            _heartbeatThreshold = NumbersUtil.parseInt(value, ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD);
         }
 
         File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
@@ -1141,7 +1164,7 @@ public class ClusterManagerImpl implements ClusterManager {
     public boolean isManagementNodeAlive(long msid) {
         ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
         if(mshost != null) {
-            if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - heartbeatThreshold) {
+            if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - _heartbeatThreshold) {
                 return true;
             }
         }
@@ -1194,20 +1217,20 @@ public class ClusterManagerImpl implements ClusterManager {
 
     @Override
     public int getHeartbeatThreshold() {
-        return this.heartbeatThreshold;
+        return this._heartbeatThreshold;
     }
 
     public int getHeartbeatInterval() {
-        return this.heartbeatInterval;
+        return this._heartbeatInterval;
     }
 
     public void setHeartbeatThreshold(int threshold) {
-        heartbeatThreshold = threshold;
+        _heartbeatThreshold = threshold;
     }
 
     private void checkConflicts() throws ConfigurationException {
         Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
         for(ManagementServerHostVO peer : peers) {
             String peerIP = peer.getServiceIP().trim();
             if(_clusterNodeIP.equals(peerIP)) {

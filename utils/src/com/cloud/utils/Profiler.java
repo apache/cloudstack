@@ -19,25 +19,46 @@
 package com.cloud.utils;
 
 public class Profiler {
-	private long startTickInMs;
-	private long stopTickInMs;
+	private Long startTickInMs;
+	private Long stopTickInMs;
 	
 	public Profiler() {
-		startTickInMs = 0;
-		stopTickInMs = 0;
+		startTickInMs = null;
+		stopTickInMs = null;
 	}
 	
 	public long start() {
 		startTickInMs = System.currentTimeMillis();
-		return startTickInMs;
+		return startTickInMs.longValue();
 	}
 	
 	public long stop() {
 		stopTickInMs = System.currentTimeMillis();
-		return stopTickInMs;
+		return stopTickInMs.longValue();
 	}
 	
 	public long getDuration() {
-		return stopTickInMs - startTickInMs;
+	    if(startTickInMs != null &&  stopTickInMs != null)
+	        return stopTickInMs.longValue() - startTickInMs.longValue();
+	    
+	    return -1;
+	}
+	
+	public boolean isStarted() {
+	    return startTickInMs != null;
+	}
+	
+	public boolean isStopped() {
+	    return stopTickInMs != null;
+	}
+	
+	public String toString() {
+	    if(startTickInMs == null)
+	        return "Not Started";
+	    
+	    if(stopTickInMs == null)
+	        return "Started but not stopped";
+	    
+	    return "Done. Duration: " + getDuration() + "ms";
 	}
 }
