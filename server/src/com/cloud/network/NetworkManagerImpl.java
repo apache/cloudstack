@@ -3883,7 +3883,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
+    public Map<String, Set<String>> listNetworkOfferingServicesAndProviders(long networkOfferingId) {
         Map<String, Set<String>> serviceProviderMap = new HashMap<String, Set<String>>();
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
 
@@ -3952,8 +3952,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     protected boolean canUpgradeProviders(long oldNetworkOfferingId, long newNetworkOfferingId) {
         //list of services and providers should be the same
-        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
-        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
+        Map<String, Set<String>> newServices = listNetworkOfferingServicesAndProviders(newNetworkOfferingId);
+        Map<String, Set<String>> oldServices = listNetworkOfferingServicesAndProviders(oldNetworkOfferingId);
 
         if (newServices.size() < oldServices.size()) {
             s_logger.debug("Network offering downgrade is not allowed: number of supported services for the new offering " + newNetworkOfferingId + " is less than the old offering " + oldNetworkOfferingId);
@@ -5428,5 +5428,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean canAddDefaultSecurityGroup() {
         String defaultAdding = _configDao.getValue(Config.SecurityGroupDefaultAdding.key());
         return (defaultAdding != null && defaultAdding.equalsIgnoreCase("true"));
+    }
+    
+    @Override
+    public List<Service> listNetworkOfferingServices(long networkOfferingId) {
+    	List<Service> services = new ArrayList<Service>();
+    	List<String> servicesStr = _ntwkOfferingSrvcDao.listServicesForNetworkOffering(networkOfferingId);
+    	for (String serviceStr : servicesStr) {
+    		services.add(Service.getService(serviceStr));
+    	}
+    	
+    	return services;
+    }
+    
+    @Override
+    public boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services) {
+    	long physicalNtwkId = findPhysicalNetworkId(zoneId, tags);
+    	boolean result = true;
+    	List<String> checkedProvider = new ArrayList<String>();
+    	for (Service service : services) {
+    		//get all the providers, and check if each provider is enabled
+    		List<String> providerNames = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(networkOfferingId, service);
+    		for (String providerName : providerNames) {
+    			if (!checkedProvider.contains(providerName)) {
+    				result = result && isProviderEnabledInPhysicalNetwork(physicalNtwkId, providerName);
+    			}
+    		}
+    	}
+    	
+    	return result;
     }
 }

@@ -35,6 +35,7 @@ public interface NetworkOfferingServiceMapDao extends GenericDao<NetworkOffering
    void deleteByOfferingId(long networkOfferingId);
    List<String> listProvidersForServiceForNetworkOffering(long networkOfferingId, Service service);
    boolean isProviderForNetworkOffering(long networkOfferingId, Provider provider);
+   List<String> listServicesForNetworkOffering(long networkOfferingId);
 }
 
 

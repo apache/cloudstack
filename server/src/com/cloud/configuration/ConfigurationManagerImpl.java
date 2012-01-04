@@ -103,12 +103,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -162,6 +162,8 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class ConfigurationManagerImpl implements ConfigurationManager, ConfigurationService {
@@ -3200,6 +3202,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (zoneId != null) {
             zone = getZone(zoneId);
+            if (zone == null) {
+            	throw new InvalidParameterValueException("Unable to find the zone by id=" + zoneId);
+            }
         }
 
         Object keyword = cmd.getKeyword();
@@ -3288,21 +3293,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         //filter by supported services
         boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
-        boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null);
+        boolean checkIfProvidersAreEnabled = (zoneId != null);
+        boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null || checkIfProvidersAreEnabled);
         
         if (parseOfferings) {
             List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
-            Service[] suppportedServices = null;
+            Service[] supportedServices = null;
             
             if (listBySupportedServices) {
-                suppportedServices = new Service[supportedServicesStr.size()];
+                supportedServices = new Service[supportedServicesStr.size()];
                 int i = 0;
                 for (String supportedServiceStr : supportedServicesStr) {
                     Service service = Service.getService(supportedServiceStr);
                     if (service == null) {
                         throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
                     } else {
-                        suppportedServices[i] = service;
+                        supportedServices[i] = service;
                     }
                     i++;
                 }
@@ -3310,9 +3316,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             
             for (NetworkOfferingVO offering : offerings) {
                 boolean addOffering = true;
+                List<Service> checkForProviders = new ArrayList<Service>();
                 
                 if (listBySupportedServices) {
-                    addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices);
+                    addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), supportedServices);
+                }
+                
+                if (checkIfProvidersAreEnabled) {
+                	if (supportedServices != null && supportedServices.length > 0) {
+                		checkForProviders = Arrays.asList(supportedServices);
+                	} else {
+                    	checkForProviders = _networkMgr.listNetworkOfferingServices(offering.getId());
+                	}
+                	
+                	addOffering = addOffering && _networkMgr.areServicesEnabledInZone(zoneId, offering.getId(), offering.getTags(), checkForProviders);
                 }
                 
                 if (sourceNatSupported != null) {

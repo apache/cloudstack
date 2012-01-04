@@ -39,6 +39,7 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
+    final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ServicesSearch;
     
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -59,6 +60,11 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         ProvidersSearch.and("service", ProvidersSearch.entity().getService(), SearchCriteria.Op.EQ);
         ProvidersSearch.select(null, Func.DISTINCT, ProvidersSearch.entity().getProvider());
         ProvidersSearch.done();
+        
+        ServicesSearch = createSearchBuilder(String.class);
+        ServicesSearch.and("networkOfferingId", ServicesSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
+        ServicesSearch.done();
     }
     
     @Override
@@ -126,5 +132,13 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
             return true;
         }
         return false;
+    }
+    
+    @Override
+    public List<String> listServicesForNetworkOffering(long networkOfferingId) {
+    	SearchCriteria<String> sc = ServicesSearch.create();;
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        
+        return customSearch(sc, null);
     }
 }

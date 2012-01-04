@@ -81,7 +81,9 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     private List<String> supportedServices;
     
     @Parameter(name=ApiConstants.SOURCE_NAT_SUPPORTED, type=CommandType.BOOLEAN, description="true if need to list only netwok offerings where source nat is supported, false otherwise")
-    private Boolean sourceNatSupported; 
+    private Boolean sourceNatSupported;
+    
+
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

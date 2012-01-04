@@ -260,4 +260,8 @@ public interface NetworkManager extends NetworkService {
 			HypervisorType hypervisorType);
 	
 	boolean canAddDefaultSecurityGroup();
+		
+	List<Service> listNetworkOfferingServices(long networkOfferingId);
+	
+	boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services);
 }
