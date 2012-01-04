@@ -1104,7 +1104,7 @@
 
     $('<tbody>').appendTo($table);
 
-    createHeader(listViewData.fields, $table, actions, { reorder: reorder });
+    createHeader(listViewData.fields, $table, listViewData.actions, { reorder: reorder });
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
 
@@ -1124,7 +1124,7 @@
         },
         ref: args.ref
       },
-      actions,
+      listViewData.actions,
       {
         context: args.context,
         reorder: reorder
