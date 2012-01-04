@@ -1069,15 +1069,23 @@
     })).appendTo($toolbar);
 
     if (listViewData.actions && listViewData.actions.add) {
-      $toolbar
-        .append(
-          $('<div>')
-            .addClass('button action add reduced-hide')
-            .data('list-view-action-id', 'add')
-            .append(
-              $('<span>').html(listViewData.actions.add.label)
-            )
-        );
+      var showAdd = listViewData.actions.add.preFilter ?
+        listViewData.actions.add.preFilter({
+          context: listViewData.context ?
+            listViewData.context : cloudStack.context
+        }) : true;
+      
+      if (showAdd) {
+        $toolbar
+          .append(
+            $('<div>')
+              .addClass('button action add reduced-hide')
+              .data('list-view-action-id', 'add')
+              .append(
+                $('<span>').html(listViewData.actions.add.label)
+              )
+          ); 
+      }
     }
 
     // List view header actions
