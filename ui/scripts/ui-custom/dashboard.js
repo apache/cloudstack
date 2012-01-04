@@ -1,6 +1,6 @@
 (function($, cloudStack) {
   cloudStack.uiCustom.dashboard = function() {
-   /**
+    /**
      * Retrieve chart data
      */
     var getData = function() {
@@ -30,8 +30,8 @@
                       // Generate pie chart
                       // -- values above 80 have a red color
                       pieChart($arrayElem, [
-                         { data: [[1, 100 - arrayValue]], color: '#54697e' },
-                         { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
+                        { data: [[1, 100 - arrayValue]], color: '#54697e' },
+                        { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
                       ]);
                     } else {
                       if ($li.attr('concat-value') == 'true') {
@@ -54,7 +54,7 @@
                   } else {
                     $item.hide().html(value).fadeIn();
                   }
-                }); 
+                });
               }
             });
           }
@@ -63,7 +63,7 @@
     };
 
     /**
-     * Render circulat pie chart, without labels
+     * Render circular pie chart, without labels
      */
     var pieChart = function($container, data) {
       $.plot($container, data, {
@@ -97,10 +97,10 @@
       $('#navigation li.events').click();
     });
 
- 
+
 
     getData();
-    
+
     return $dashboard;
   };
 }(jQuery, cloudStack));

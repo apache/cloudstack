@@ -16,9 +16,9 @@
             $.ajax({
               url: createURL('listVirtualMachines'),
               success: function(json) {
-                var instances = json.listvirtualmachinesresponse.virtualmachine ? 
-                      json.listvirtualmachinesresponse.virtualmachine : [];
-                
+                var instances = json.listvirtualmachinesresponse.virtualmachine ?
+                  json.listvirtualmachinesresponse.virtualmachine : [];
+
                 dataFns.account($.extend(data, {
                   runningInstances: $.grep(instances, function(instance) {
                     return instance.state == 'Running';
@@ -43,7 +43,7 @@
             }));
           }
         };
-        
+
         var complete = function(data) {
           args.response.success({
             data: data
@@ -129,7 +129,7 @@
               },
               success: function(json) {
                 var alerts = json.listalertsresponse.alert ?
-                      json.listalertsresponse.alert : [];
+                  json.listalertsresponse.alert : [];
 
                 dataFns.hostAlerts($.extend(data, {
                   alerts: $.map(alerts, function(alert) {
@@ -153,7 +153,7 @@
               },
               success: function(json) {
                 var hosts = json.listhostsresponse.host ?
-                      json.listhostsresponse.host : [];
+                  json.listhostsresponse.host : [];
 
                 dataFns.zoneCapacity($.extend(data, {
                   hostAlerts: $.map(hosts, function(host) {
@@ -252,7 +252,7 @@
         };
 
         dataFns.zones({});
-      } 
+      }
     }
   };
 })(jQuery, cloudStack, testData);
