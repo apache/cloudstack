@@ -45,6 +45,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
@@ -476,9 +477,28 @@ public class Agent implements HandlerFactory, IAgentControl {
                         cancelTasks();
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
+                    } else if (cmd instanceof ReadyCommand) {
+                    	ReadyCommand ready = (ReadyCommand)cmd;
+                    	s_logger.debug("Received shutdownCommand, due to: " + ready.getDetails());
+                    	if (ready.getDetails() != null) {
+                    		cancelTasks();
+                    		_reconnectAllowed = false;
+                    		answer = new Answer(cmd, true, null);
+                    	} else {
+                    		_inProgress.incrementAndGet();
+                    		try {
+                    			answer = _resource.executeRequest(cmd);
+                    		} finally {
+                    			_inProgress.decrementAndGet();
+                    		}
+                    		if (answer == null) {
+                    			s_logger.debug("Response: unsupported command" + cmd.toString());
+                    			answer = Answer.createUnsupportedCommandAnswer(cmd);
+                    		}
+                    	}
                     } else if (cmd instanceof AgentControlCommand) {
-                        answer = null;
-                        synchronized (_controlListeners) {
+                    	answer = null;
+                    	synchronized (_controlListeners) {
                             for (IAgentControlListener listener : _controlListeners) {
                                 answer = listener.processControlRequest(request, (AgentControlCommand) cmd);
                                 if (answer != null) {

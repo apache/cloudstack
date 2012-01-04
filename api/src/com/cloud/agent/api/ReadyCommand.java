@@ -18,7 +18,7 @@
 package com.cloud.agent.api;
 
 public class ReadyCommand extends Command {
-	
+	private String details;
 	public ReadyCommand() {
 		super();
 	}
@@ -37,6 +37,14 @@ public class ReadyCommand extends Command {
 	@Override
 	public boolean executeInSequence() {
 		return true;
+	}
+	
+	public void setDetails(String details) {
+		this.details = details;
+	}
+	
+	public String getDetails() {
+		return this.details;
 	}
 
 }
