@@ -281,7 +281,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _localGateway;
 
     public enum SRType {
-        NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA;
+        NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT;
         
         String _str;
         
@@ -3605,43 +3605,100 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg);
         }
         return null;
-
     }
 
-    protected StartupStorageCommand initializeLocalSR(Connection conn) {
-
-        SR lvmsr = getLocalLVMSR(conn);
-        if (lvmsr == null) {
-            return null;
-        }
+    protected SR getLocalEXTSR(Connection conn) {
         try {
-            String lvmuuid = lvmsr.getUuid(conn);
-            long cap = lvmsr.getPhysicalSize(conn);
-            if (cap < 0) {
-                return null;
+            Map<SR, SR.Record> map = SR.getAllRecords(conn);
+            for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
+                SR.Record srRec = entry.getValue();
+                if (SRType.EXT.equals(srRec.type)) {
+                    Set<PBD> pbds = srRec.PBDs;
+                    if (pbds == null) {
+                        continue;
+                    }
+                    for (PBD pbd : pbds) {
+                        Host host = pbd.getHost(conn);
+                        if (!isRefNull(host) && host.getUuid(conn).equals(_host.uuid)) {
+                            if (!pbd.getCurrentlyAttached(conn)) {
+                                pbd.plug(conn);
+                            }
+                            SR sr = entry.getKey();
+                            sr.scan(conn);
+                            return sr;
+                        }
+                    }
+                }
             }
-            long avail = cap - lvmsr.getPhysicalUtilisation(conn);
-            lvmsr.setNameLabel(conn, lvmuuid);
-            String name = "Cloud Stack Local Storage Pool for " + _host.uuid;
-            lvmsr.setNameDescription(conn, name);
-            Host host = Host.getByUuid(conn, _host.uuid);
-            String address = host.getAddress(conn);
-            StoragePoolInfo pInfo = new StoragePoolInfo(lvmuuid, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
-            StartupStorageCommand cmd = new StartupStorageCommand();
-            cmd.setPoolInfo(pInfo);
-            cmd.setGuid(_host.uuid);
-            cmd.setDataCenter(Long.toString(_dcId));
-            cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
-            return cmd;
         } catch (XenAPIException e) {
-            String msg = "build startupstoragecommand err in host:" + _host.uuid + e.toString();
+            String msg = "Unable to get local EXTSR in host:" + _host.uuid + e.toString();
             s_logger.warn(msg);
         } catch (XmlRpcException e) {
-            String msg = "build startupstoragecommand err in host:" + _host.uuid + e.getMessage();
+            String msg = "Unable to get local EXTSR in host:" + _host.uuid + e.getCause();
             s_logger.warn(msg);
         }
         return null;
+    }
 
+    protected StartupStorageCommand initializeLocalSR(Connection conn) {
+        SR lvmsr = getLocalLVMSR(conn);
+        if (lvmsr != null) {
+            try {
+                String lvmuuid = lvmsr.getUuid(conn);
+                long cap = lvmsr.getPhysicalSize(conn);
+                if (cap > 0) {
+                    long avail = cap - lvmsr.getPhysicalUtilisation(conn);
+                    lvmsr.setNameLabel(conn, lvmuuid);
+                    String name = "Cloud Stack Local LVM Storage Pool for " + _host.uuid;
+                    lvmsr.setNameDescription(conn, name);
+                    Host host = Host.getByUuid(conn, _host.uuid);
+                    String address = host.getAddress(conn);
+                    StoragePoolInfo pInfo = new StoragePoolInfo(lvmuuid, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
+                    StartupStorageCommand cmd = new StartupStorageCommand();
+                    cmd.setPoolInfo(pInfo);
+                    cmd.setGuid(_host.uuid);
+                    cmd.setDataCenter(Long.toString(_dcId));
+                    cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+                    return cmd;
+                }
+            } catch (XenAPIException e) {
+                String msg = "build local LVM info err in host:" + _host.uuid + e.toString();
+                s_logger.warn(msg);
+            } catch (XmlRpcException e) {
+                String msg = "build local LVM info err in host:" + _host.uuid + e.getMessage();
+                s_logger.warn(msg);
+            }
+        }
+
+        SR extsr = getLocalEXTSR(conn);
+        if (extsr != null) {
+            try {
+                String extuuid = extsr.getUuid(conn);
+                long cap = extsr.getPhysicalSize(conn);
+                if (cap > 0) {
+                    long avail = cap - extsr.getPhysicalUtilisation(conn);
+                    extsr.setNameLabel(conn, extuuid);
+                    String name = "Cloud Stack Local EXT Storage Pool for " + _host.uuid;
+                    extsr.setNameDescription(conn, name);
+                    Host host = Host.getByUuid(conn, _host.uuid);
+                    String address = host.getAddress(conn);
+                    StoragePoolInfo pInfo = new StoragePoolInfo(extuuid, address, SRType.EXT.toString(), SRType.EXT.toString(), StoragePoolType.EXT, cap, avail);
+                    StartupStorageCommand cmd = new StartupStorageCommand();
+                    cmd.setPoolInfo(pInfo);
+                    cmd.setGuid(_host.uuid);
+                    cmd.setDataCenter(Long.toString(_dcId));
+                    cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+                    return cmd;
+                }
+            } catch (XenAPIException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.toString();
+                s_logger.warn(msg);
+            } catch (XmlRpcException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.getMessage();
+                s_logger.warn(msg);
+            }
+        }
+        return null;
     }
 
     @Override

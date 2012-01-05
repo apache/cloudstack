@@ -386,7 +386,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(host.getId());
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
-            if (storagePool.getPoolType() == StoragePoolType.LVM) {
+            if (storagePool.getPoolType() == StoragePoolType.LVM || storagePool.getPoolType() == StoragePoolType.EXT)  {
                 SearchBuilder<VolumeVO> volumeSB = _volsDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
@@ -1335,7 +1335,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             throw new InvalidParameterValueException("Unable to find pool by id " + id);
         }
 
-        if (sPool.getPoolType().equals(StoragePoolType.LVM)) {
+        if (sPool.getPoolType().equals(StoragePoolType.LVM) || sPool.getPoolType().equals(StoragePoolType.EXT)) {
             s_logger.warn("Unable to delete local storage id:" + id);
             throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
         }
@@ -3082,7 +3082,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @DB
     public StoragePoolVO findLocalStorageOnHost(long hostId) {
         SearchCriteria<StoragePoolVO> sc = LocalStorageSearch.create();
-        sc.setParameters("type", new Object[]{StoragePoolType.Filesystem, StoragePoolType.LVM});
+        sc.setParameters("type", new Object[]{StoragePoolType.Filesystem, StoragePoolType.LVM, StoragePoolType.EXT});
         sc.setJoinParameters("poolHost", "hostId", hostId);
         List<StoragePoolVO> storagePools = _storagePoolDao.search(sc, null);
         if (!storagePools.isEmpty()) {

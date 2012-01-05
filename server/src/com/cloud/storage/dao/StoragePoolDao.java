@@ -92,8 +92,6 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
     
     List<StoragePoolVO> listPoolByHostPath(String host, String path);
     
-    void deleteStoragePoolRecords(ArrayList<Long> ids);
-    
     void updateDetails(long poolId, Map<String, String> details);
     
     Map<String, String> getDetails(long poolId);

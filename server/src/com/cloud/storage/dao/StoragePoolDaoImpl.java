@@ -240,17 +240,6 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	
 	@DB
 	@Override
-	public void deleteStoragePoolRecords(ArrayList<Long> ids)
-	{
-			SearchCriteria<StoragePoolVO> sc = DeleteLvmSearch.create();
-			sc.setParameters("ids", ids.toArray());
-			sc.setParameters("LVM", StoragePoolType.LVM);
-			sc.setParameters("Filesystem", StoragePoolType.Filesystem);
-			remove(sc);
-	}
-	
-	@DB
-	@Override
 	public List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details) {
 	    StringBuilder sql = new StringBuilder(DetailsSqlPrefix);
 	    if (clusterId != null) {

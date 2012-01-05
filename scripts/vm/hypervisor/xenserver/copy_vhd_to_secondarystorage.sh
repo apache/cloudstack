@@ -64,7 +64,7 @@ fi
 
 vhdfile=$localmp/${vdiuuid}.vhd
 
-if [ $type == "nfs" ]; then
+if [ $type == "nfs" -o $type == "ext" ]; then
   dd if=/var/run/sr-mount/$sruuid/${vdiuuid}.vhd of=$vhdfile bs=2M
   if [ $? -ne 0 ]; then
     echo "8#failed to copy /var/run/sr-mount/$sruuid/${vdiuuid}.vhd to secondarystorage"

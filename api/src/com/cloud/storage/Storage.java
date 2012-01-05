@@ -97,7 +97,8 @@ public class Storage {
         SharedMountPoint(true),
         VMFS(true),		// VMware VMFS storage
         PreSetup(true),  // for XenServer, Storage Pool is set up by customers. 
-        OCFS2(true);
+        OCFS2(true),
+        EXT(false);    // XenServer local EXT SR
         
         
         boolean shared;
