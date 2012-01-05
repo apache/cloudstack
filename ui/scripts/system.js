@@ -284,10 +284,10 @@
 								listView: {
 									fields: {
 										name: { label: 'Pod name' },
-										gateway: { label: 'Reserved system gateway' },
-										netmask: { label: 'Reserved system netmask' },
-										startip: { label: 'Reserved system start IP' },
-										endip: { label: 'Reserved system end IP' }
+										gateway: { label: 'Gateway' },  //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
+										netmask: { label: 'Netmask' },  //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
+										startip: { label: 'Start IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
+										endip: { label: 'End IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
 									},
 									dataProvider: function(args) {										
 										$.ajax({
