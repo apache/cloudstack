@@ -144,7 +144,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewll rule", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart,Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId, FirewallRule.FirewallRuleType type) throws NetworkRuleConflictException{
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
         
