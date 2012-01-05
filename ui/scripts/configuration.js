@@ -172,9 +172,21 @@
             }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {					 
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+						
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=false&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listServiceOfferings&issystem=false&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -471,9 +483,21 @@
             }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+					
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=true&page="+args.page+"&pagesize="+pageSize),
+              url: createURL("listServiceOfferings&issystem=true&page=" + args.page + "&pagesize=" + pageSize  + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -627,9 +651,21 @@
 
           reorder: cloudStack.api.actions.sort('updateDiskOffering', 'diskOfferings'),
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}				
+					
             $.ajax({
-              url: createURL("listDiskOfferings&page="+args.page+"&pagesize="+pageSize),
+              url: createURL("listDiskOfferings&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -860,9 +896,21 @@
             hypervisorversion: { label: 'Hypervisor version' },
             maxguestslimit: { label: 'Max guest limit' }
           },
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}				
+					
             $.ajax({
-              url: createURL("listHypervisorCapabilities&page="+args.page+"&pagesize="+pageSize),
+              url: createURL("listHypervisorCapabilities&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -940,9 +988,21 @@
             state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }}
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+					
             $.ajax({
-              url: createURL('listNetworkOfferings'),
+              url: createURL('listNetworkOfferings' + array1.join("")),
               data: {
                 page: args.page,
                 pagesize: pageSize
