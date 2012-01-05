@@ -2182,7 +2182,183 @@
                     });
                   }
                 })
-              }
+              },	
+							egressRules: {
+                title: 'Egress Rules',
+                custom: cloudStack.uiCustom.securityRules({
+                  noSelect: true,
+                  noHeaderActionsColumn: true,
+                  fields: {
+                    'protocol': {
+                      label: 'Protocol',
+                      select: function(args) {
+                        args.$select.change(function() {
+                          var $inputs = args.$form.find('th, td');
+                          var $icmpFields = $inputs.filter(function() {
+                            var name = $(this).attr('rel');
+
+                            return $.inArray(name, [
+                              'icmptype',
+                              'icmpcode'
+                            ]) > -1;
+                          });
+                          var $otherFields = $inputs.filter(function() {
+                            var name = $(this).attr('rel');
+
+                            return name != 'icmptype' &&
+                              name != 'icmpcode' &&
+                              name != 'protocol' &&
+                              name != 'add-rule' &&
+                              name != 'cidr' &&
+                              name != 'accountname' &&
+                              name != 'securitygroup';
+                          });
+
+                          if ($(this).val() == 'icmp') {
+                            $icmpFields.show();
+                            $otherFields.hide();
+                          } else {
+                            $icmpFields.hide();
+                            $otherFields.show();
+                          }
+                        });
+
+                        args.response.success({
+                          data: [
+                            { name: 'tcp', description: 'TCP' },
+                            { name: 'udp', description: 'UDP' },
+                            { name: 'icmp', description: 'ICMP' }
+                          ]
+                        });
+                      }
+                    },
+                    'startport': { edit: true, label: 'Start Port' },
+                    'endport': { edit: true, label: 'End Port' },
+                    'icmptype': { edit: true, label: 'ICMP Type', isHidden: true },
+                    'icmpcode': { edit: true, label: 'ICMP Code', isHidden: true },
+                    'cidr': { edit: true, label: 'CIDR', isHidden: true },
+                    'accountname': {
+                      edit: true,
+                      label: 'Account, Security Group',
+                      isHidden: true,
+                      range: ['accountname', 'securitygroup']
+                    },
+                    'add-rule': {
+                      label: 'Add',
+                      addButton: true
+                    }
+                  },
+                  add: {
+                    label: 'Add',
+                    action: function(args) {
+                      var data = {
+                        securitygroupid: args.context.securityGroups[0].id,
+                        protocol: args.data.protocol,
+                        domainid: args.context.securityGroups[0].domainid,
+                        account: args.context.securityGroups[0].account
+                      };
+
+                      // TCP / ICMP
+                      if (args.data.icmptype && args.data.icmpcode) { // ICMP
+                        $.extend(data, {
+                          icmptype: args.data.icmptype,
+                          icmpcode: args.data.icmpcode
+                        });
+                      } else { // TCP
+                        $.extend(data, {
+                          startport: args.data.startport,
+                          endport: args.data.endport
+                        });
+                      }
+
+                      // CIDR / account
+                      if (args.data.cidr) {
+                        data.cidrlist = args.data.cidr;
+                      } else {
+                        data['usersecuritygrouplist[0].account'] = args.data.accountname;
+                        data['usersecuritygrouplist[0].group'] = args.data.securitygroup;
+                      }
+
+                      $.ajax({
+                        url: createURL('authorizeSecurityGroupEgress'),
+                        data: data,
+                        dataType: 'json',
+                        async: true,
+                        success: function(data) {
+                          var jobId = data.authorizesecuritygroupegressresponse.jobid;
+
+                          args.response.success({
+                            _custom: {
+                              jobId: jobId
+                            },
+                            notification: {
+                              label: 'Add new egress rule',
+                              poll: pollAsyncJobResult
+                            }
+                          });
+                        }
+                      });
+                    }
+                  },
+                  actions: {
+                    destroy: {
+                      label: 'Remove Rule',
+                      action: function(args) {
+                        $.ajax({
+                          url: createURL('revokeSecurityGroupEgress'),
+                          data: {
+                            domainid: args.context.securityGroups[0].domainid,
+                            account: args.context.securityGroups[0].account,
+                            id: args.context.multiRule[0].id
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(data) {
+                            var jobID = data.revokesecuritygroupegress.jobid;
+
+                            args.response.success({
+                              _custom: {
+                                jobId: jobID
+                              },
+                              notification: {
+                                label: 'Revoke egress rule',
+                                poll: pollAsyncJobResult
+                              }
+                            });
+                          }
+                        });
+                      }
+                    }
+                  },
+                  ignoreEmptyFields: true,
+                  dataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listSecurityGroups'),
+                      data: {
+                        id: args.context.securityGroups[0].id
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        args.response.success({
+                          data: $.map(
+                            data.listsecuritygroupsresponse.securitygroup[0].egressrule,
+                            function(elem) {
+                              return {
+                                id: elem.ruleid,
+                                protocol: elem.protocol,
+                                startport: elem.startport ? elem.startport : elem.icmptype,
+                                endport: elem.endport ? elem.endport : elem.icmpcode,
+                                cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname)
+                              };
+                            }
+                          )
+                        });
+                      }
+                    });
+                  }
+                })
+              }							
             },
 
             actions: {
