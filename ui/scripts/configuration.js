@@ -824,10 +824,10 @@
                     disksize: {
                       label: 'Disk Size',
                       converter: function(args) {
-						if(args != 0)
+                        if(args != 0)
                           return args + " GB";
-						else
-						  return "N/A";
+                        else
+                          return "N/A";
                       }
                     },
                     tags: { label: 'Storage tags' },
@@ -970,24 +970,33 @@
                 var formData = args.data;
                 var inputData = {};
                 var serviceProviderMap = {};
-								var serviceCapabilityMap = {};
+                var serviceCapabilityMap = {};
 
                 $.each(formData, function(key, value) {
                   var serviceData = key.split('.');
 
-                  if (serviceData.length > 1) {									  
+                  if (serviceData.length > 1) {
                     if (serviceData[0] == 'service' &&
                         serviceData[2] == 'isEnabled' &&
                         value == 'on') { // Services field
-                        serviceProviderMap[serviceData[1]] = formData[
-                          'service.' + serviceData[1] + '.provider'
-                        ];
+
+                      serviceProviderMap[serviceData[1]] = formData[
+                        'service.' + serviceData[1] + '.provider'
+                      ];
+                    } else if (serviceData[0] == 'service' &&
+                               serviceData[2].indexOf('Capability') != -1 &&
+                               value == 'on') { // Services field
+
+                      serviceCapabilityMap[serviceData[1]] = serviceData[2];
                     }
-										else if (serviceData[0] == 'service' &&
-                        serviceData[2].indexOf('Capability') != -1 &&
-                        value == 'on') { // Services field
-                        serviceCapabilityMap[serviceData[1]] = serviceData[2];
-                    }
+                  } else if (key == 'lbIsolation') {
+                    inputData['servicecapabilitylist[0].service'] = 'lb';
+                    inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedLbIsolation';
+                    inputData['servicecapabilitylist[0].capabilityvalue'] = value;
+                  } else if (key == 'sourceNatType') {
+                    inputData['servicecapabilitylist[0].service'] = 'sourcenat';
+                    inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedSourceNatTypes';
+                    inputData['servicecapabilitylist[0].capabilityvalue'] = value;
                   } else if (value != '') { // Normal data
                     inputData[key] = value;
                   }
@@ -1011,20 +1020,20 @@
                   inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                   serviceProviderIndex++;
                 });
-								
-								var serviceCapabilityIndex = 0;
-                $.each(serviceCapabilityMap, function(key, value) {								  
-								  var capabilityType = null;
-								  if(value == "redundantRouterCapability")
-									  capabilityType = "RedundantRouter";		
-								  if(capabilityType != null) {
-										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = key;
-										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = capabilityType;
-										inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
-										serviceCapabilityIndex++;
-									}											
+
+                var serviceCapabilityIndex = 0;
+                $.each(serviceCapabilityMap, function(key, value) {
+                  var capabilityType = null;
+                  if(value == "redundantRouterCapability")
+                    capabilityType = "RedundantRouter";
+                  if(capabilityType != null) {
+                    inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = key;
+                    inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = capabilityType;
+                    inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                    serviceCapabilityIndex++;
+                  }
                 });
-																
+
                 $.ajax({
                   url: createURL('createNetworkOffering'),
                   data: inputData,
@@ -1172,11 +1181,41 @@
                       });
                     }
                   },
-									
-									"service.SourceNat.redundantRouterCapability" : {
-										label: "Redundant router capability",
-										isBoolean: true
-									},
+
+                  "service.SourceNat.redundantRouterCapability" : {
+                    label: "Redundant router capability",
+                    isHidden: true,
+                    dependsOn: 'service.SourceNat.isEnabled',
+                    isBoolean: true,
+                  },
+
+                  sourceNatType: {
+                    label: 'Supported Source NAT type',
+                    isHidden: true,
+                    dependsOn: 'service.SourceNat.isEnabled',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'peraccount', description: 'Per account'},
+                          { id: 'perzone', description: 'Per zone'},
+                        ]
+                      });
+                    }
+                  },
+
+                  lbIsolation: {
+                    label: 'LB isolation',
+                    isHidden: true,
+                    dependsOn: 'service.Lb.isEnabled',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'dedicated', description: 'Dedicated' },
+                          { id: 'shared', description: 'Shared' }
+                        ]
+                      })
+                    }
+                  },
 
                   tags: { label: 'Tags' }
                 }
@@ -1299,207 +1338,6 @@
           detailView: {
             name: 'Network offering details',
             actions: {
-              add: {
-                label: 'Add network offering',
-
-                action: function(args) {
-                  var formData = args.data;
-                  var inputData = {};
-                  var services = {};
-
-                  $.each(formData, function(key, value) {
-                    var serviceData = key.split('.');
-
-                    if (serviceData.length > 1) {
-                      if (serviceData[0] == 'service' &&
-                          serviceData[2] == 'isEnabled' &&
-                          value == 'on') { // Services field
-                          services[serviceData[1]] = formData[
-                            'service.' + serviceData[1] + '.provider'
-                          ];
-                      }
-                    } else if (value != '') { // Normal data
-                      inputData[key] = value;
-                    }
-                  });
-
-                  // Make supported services list
-                  inputData['supportedServices'] = $.map(services, function(value, key) {
-                    return key;
-                  }).join(',');
-
-                  if (inputData['specifyVlan'] == 'on') {
-                    inputData['specifyVlan'] = true;
-                  } else {
-                    inputData['specifyVlan'] = false;
-                  }
-
-                  // Make service provider map
-                  var serviceProviderIndex = 0;
-                  $.each(services, function(key, value) {
-                    inputData['serviceProviderList[' + serviceProviderIndex + '].service'] = key;
-                    inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
-                    serviceProviderIndex++;
-                  });
-
-                  $.ajax({
-                    url: createURL('createNetworkOffering'),
-                    data: inputData,
-                    dataType: 'json',
-                    async: true,
-                    success: function(data) {
-                      args.response.success({
-                        data: data.createnetworkofferingresponse.networkoffering,
-                        actionFilter: networkOfferingActionfilter
-                      });
-                    },
-                    error: function(data) {
-                      args.response.error(parseXMLHttpResponse(data));
-                    }
-                  });
-                },
-
-                createForm: {
-                  title: 'Add network offering',
-                  desc: 'Please specify the network offering',
-                  fields: {
-                    name: { label: 'Name', validation: { required: true } },
-
-                    displayText: { label: 'Display Text', validation: { required: true } },
-
-                    networkRate: { label: 'Network Rate' },
-
-                    trafficType: {
-                      label: 'Traffic Type', validation: { required: true },
-                      select: function(args) {
-                        args.response.success({
-                          data: [
-                            { id: 'GUEST', description: 'Guest' }
-                          ]
-                        });
-                      }
-                    },
-
-                    guestIpType: {
-                      label: 'Guest Type',
-                      select: function(args) {
-                        args.response.success({
-                          data: [
-                            { id: 'Isolated', description: 'Isolated' },
-                            { id: 'Shared', description: 'Shared' }
-                          ]
-                        });
-                      }
-                    },
-
-                    availability: {
-                      label: 'Availability',
-                      select: function(args) {
-                        args.response.success({
-                          data: [
-                            { id: 'Optional', description: 'Optional' },
-                            { id: 'Required', description: 'Required' },
-                            { id: 'Unavailable', description: 'Unavailable' }
-                          ]
-                        });
-                      }
-                    },
-
-                    serviceOfferingId: {
-                      label: 'Service Offering',
-                      select: function(args) {
-                        $.ajax({
-                          url: createURL('listServiceOfferings&issystem=true'),
-                          dataType: 'json',
-                          async: true,
-                          success: function(data) {
-                            var serviceOfferings = data.listserviceofferingsresponse.serviceoffering;
-
-                            args.response.success({
-                              data: $.merge(
-                                [{
-                                  id: null,
-                                  description: 'None'
-                                }],
-                                $.map(serviceOfferings, function(elem) {
-                                  return {
-                                    id: elem.id,
-                                    description: elem.name
-                                  };
-                                })
-                              )
-                            });
-                          },
-                          error: function(data) {
-                            args.response.error(parseXMLHttpResponse(data));
-                          }
-                        });
-                      }
-                    },
-
-                    specifyVlan: { label: 'Specify VLAN', isBoolean: true },
-
-                    supportedServices: {
-                      label: 'Supported Services',
-
-                      dynamic: function(args) {
-                        $.ajax({
-                          url: createURL('listSupportedNetworkServices'),
-                          dataType: 'json',
-                          async: true,
-                          success: function(data) {
-                            var networkServices = data.listsupportednetworkservicesresponse.networkservice;
-                            var fields = {};
-                            $(networkServices).each(function() {
-                              var name = this.name;
-                              var providers = this.provider;
-
-                              var id = {
-                                isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
-                                capabilities: 'service' + '.' + name + '.' + 'capabilities',
-                                provider: 'service' + '.' + name + '.' + 'provider'
-                              };
-
-                              fields[id.isEnabled] = { label: name, isBoolean: true };
-                              fields[id.provider] = {
-                                label: name + ' Provider',
-                                isHidden: true,
-                                dependsOn: id.isEnabled,
-                                select: function(args) {
-                                  args.response.success({
-                                    data: $.map(providers, function(provider) {
-                                      return {
-                                        id: provider.name,
-                                        description: provider.name
-                                      };
-                                    })
-                                  });
-                                }
-                              };
-                            });
-
-                            args.response.success({
-                              fields: fields
-                            });
-                          },
-                          error: function(data) {
-                            args.response.error(parseXMLHttpResponse(data));
-                          }
-                        });
-                      }
-                    },
-
-                    tags: { label: 'Tags' }
-                  }
-                },
-
-                messages: {
-                  notification: function(args) {
-                    return 'Added network offering';
-                  }
-                }
-              },
-
               enable: {
                 label: 'Enable network offering',
                 messages: {
@@ -1653,18 +1491,27 @@
                     },
                     supportedServices: {
                       label: 'Services'
+                    },
+                    serviceCapabilities: {
+                      label: 'Service Capabilities'
                     }
                   }
                 ],
 
                 dataProvider: function(args) {
                   var networkOffering = args.context.networkOfferings[0];
-                  
+
                   args.response.success({
                     actionFilter: networkOfferingActionfilter,
                     data: $.extend(args.context.networkOfferings[0], {
                       supportedServices: $.map(networkOffering.service, function(service) {
                         return service.name;
+                      }).join(', '),
+
+                      serviceCapabilities: $.map(networkOffering.service, function(service) {
+                        return $.map(service.capability, function(capability) {
+                          return capability.name + ': ' + capability.value;
+                        }).join(', ');
                       }).join(', ')
                     })
                   });
@@ -1718,4 +1565,3 @@
   };
 
 })(cloudStack, testData, jQuery);
-
