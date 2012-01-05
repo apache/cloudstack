@@ -39,7 +39,12 @@
           actions: {
             add: {
               label: 'Create account',
-
+							preFilter: function(args) {							  
+								if(isAdmin()) 								
+								  return true;
+								else
+								  return false;
+							},							
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to create an account?';
