@@ -3122,6 +3122,7 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("firewallRuleUiEnabled", (firewallRuleUiEnabled != null && firewallRuleUiEnabled.equals("true")) ? true : false);
         capabilities.put("firewallRuleUiEnabled", (firewallRuleUiEnabled != null && firewallRuleUiEnabled.equals("true")) ? true : false);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
+        capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         return capabilities;
     }
 

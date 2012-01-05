@@ -318,6 +318,7 @@ public class ApiConstants {
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";
     public static final String RESTART_REQUIRED = "restartrequired";
+    public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

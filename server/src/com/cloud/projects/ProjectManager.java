@@ -15,4 +15,6 @@ public interface ProjectManager extends ProjectService {
     List<Long> listPermittedProjectAccounts(long accountId);
 
 	boolean projectInviteRequired();
+	
+	boolean allowUserToCreateProject();
 }

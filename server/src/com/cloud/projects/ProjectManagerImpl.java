@@ -113,7 +113,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
-    protected boolean _allowUserToCreateProjet = true;
+    protected boolean _allowUserToCreateProject = true;
     protected ScheduledExecutorService _executor;
     protected int _projectCleanupExpInvInterval = 60; //Interval defining how often project invitation cleanup thread is running
     
@@ -125,7 +125,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
         _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()))*1000;
-        _allowUserToCreateProjet = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
+        _allowUserToCreateProject = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
         
         
         // set up the email system for project invitations
@@ -173,7 +173,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Account owner = caller;
         
         //check if the user authorized to create the project
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && !_allowUserToCreateProjet) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && !_allowUserToCreateProject) {
         	throw new PermissionDeniedException("Regular user is not permitted to create a project");
         }
         
@@ -1147,4 +1147,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 		return _invitationRequired;
 	}
 
+    @Override
+    public boolean allowUserToCreateProject() {
+    	return _allowUserToCreateProject;
+    }
+    
 }

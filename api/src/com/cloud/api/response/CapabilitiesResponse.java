@@ -41,6 +41,10 @@ public class CapabilitiesResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.PROJECT_INVITE_REQUIRED) @Param(description="If invitation confirmation is required when add account to project")
     private Boolean projectInviteRequired;
+    
+    @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS) @Param(description="true if regular user is allowed to create projects")
+    private Boolean allowUsersCreateProjects;
+
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -65,4 +69,9 @@ public class CapabilitiesResponse extends BaseResponse {
 	public void setProjectInviteRequired(Boolean projectInviteRequired) {
 		this.projectInviteRequired = projectInviteRequired;
 	}
+
+	public void setAllowUsersCreateProjects(Boolean allowUsersCreateProjects) {
+		this.allowUsersCreateProjects = allowUsersCreateProjects;
+	}
+
 }

@@ -52,6 +52,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setSupportELB((String)capabilities.get("supportELB"));
         response.setFirewallRuleUiEnabled((Boolean) capabilities.get("firewallRuleUiEnabled"));
         response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
+        response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
