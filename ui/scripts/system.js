@@ -289,9 +289,20 @@
 										startip: { label: 'Start IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
 										endip: { label: 'End IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
 									},
-									dataProvider: function(args) {										
+									dataProvider: function(args) {	                    
+										var array1 = [];  
+										if(args.filterBy != null) {          
+											if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+												switch(args.filterBy.search.by) {
+												case "name":
+													if(args.filterBy.search.value.length > 0)
+														array1.push("&keyword=" + args.filterBy.search.value);
+													break;
+												}
+											}
+										}
 										$.ajax({
-											url: createURL("listPods&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize),  
+											url: createURL("listPods&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),  
 											dataType: "json",
 											async: true,
 											success: function(json) {												
