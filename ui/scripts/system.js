@@ -5529,7 +5529,17 @@
           },
 
           dataProvider: function(args) {
-            var array1 = [];
+            var array1 = [];						
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}						
             array1.push("&zoneid=" + args.context.zones[0].id);
             if("pods" in args.context)
               array1.push("&podid=" + args.context.pods[0].id);
