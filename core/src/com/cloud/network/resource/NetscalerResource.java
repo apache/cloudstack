@@ -91,7 +91,12 @@ public class NetscalerResource implements ServerResource {
     private String _guid;
     private boolean _inline;
     private boolean _isSdx;
+    private boolean _cloudManaged;
     private String _deviceName;
+    private String _publicIP;
+    private String _publicIPNetmask;
+    private String _publicIPGateway;
+    private String _publicIPVlan;
 
     private static final Logger s_logger = Logger.getLogger(NetscalerResource.class);
     protected Gson _gson;
@@ -169,6 +174,10 @@ public class NetscalerResource implements ServerResource {
 
             _inline = Boolean.parseBoolean((String) params.get("inline"));
 
+            if (((String) params.get("cloudmanaged")) != null) {
+                _cloudManaged = Boolean.parseBoolean((String) params.get("cloudmanaged"));
+            }
+
             // validate device configuration parameters
             login();
             validateDeviceType(_deviceName);
@@ -176,6 +185,15 @@ public class NetscalerResource implements ServerResource {
 
             //enable load balancing feature 
             enableLoadBalancingFeature();
+
+            //if the the device is cloud stack provisioned then make it part of the public network
+            if (_cloudManaged) {
+            	_publicIP = (String) params.get("publicip");
+            	_publicIPGateway = (String) params.get("publicipgateway");
+            	_publicIPNetmask = (String) params.get("publicipnetmask");
+            	_publicIPVlan = (String) params.get("publicipvlan");
+                addGuestVlanAndSubnet(Long.parseLong(_publicIPVlan), _publicIP, _publicIPNetmask, false);
+            }
 
             return true;
         } catch (Exception e) {
@@ -242,7 +260,7 @@ public class NetscalerResource implements ServerResource {
                 return;
             } else {
                 Interface publicIf = Interface.get(_netscalerService, publicInterface);
-                Interface privateIf = Interface.get(_netscalerService, publicInterface);
+                Interface privateIf = Interface.get(_netscalerService, privateInterface);
                 if (publicIf != null || privateIf != null) {
                     return;
                 } else {
@@ -352,7 +370,7 @@ public class NetscalerResource implements ServerResource {
 
                 if (ip.isAdd()) {
                     // Add a new guest VLAN and its subnet and bind it to private interface
-                    addGuestVlanAndSubnet(guestVlanTag, vlanSelfIp, vlanNetmask);
+                    addGuestVlanAndSubnet(guestVlanTag, vlanSelfIp, vlanNetmask, true);
                 } else {
                     // Check and delete guest VLAN with this tag, self IP, and netmask
                     deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
@@ -573,14 +591,16 @@ public class NetscalerResource implements ServerResource {
 
         try {
             String vpxName = "Cloud-VPX-"+cmd.getLoadBalancerIP();
-            String ip = cmd.getLoadBalancerIP();
+            String username = "admin";
+            String password = "admin";
+
             ns ns_obj = new ns();
             ns_obj.set_name(vpxName);
             ns_obj.set_ip_address(cmd.getLoadBalancerIP());
             ns_obj.set_netmask(cmd.getNetmask());
             ns_obj.set_gateway(cmd.getGateway());
-            ns_obj.set_username(cmd.getUsername());
-            ns_obj.set_password(cmd.getPassword());
+            ns_obj.set_username(username);
+            ns_obj.set_password(password);
 
             // configure VPX instances with defaults
             ns_obj.set_feature_license("Standard");
@@ -590,7 +610,42 @@ public class NetscalerResource implements ServerResource {
             ns_obj.set_nsroot_profile("NS_nsroot_profile");
             ns_obj.set_number_of_ssl_cores(0);
             ns_obj.set_image_name("NSVPX-XEN-9.3-52.4_nc.xva");
-            ns_obj.set_if_10_1(new Boolean(true));
+
+            String publicIf = _publicInterface;
+            String privateIf = _privateInterface;
+            
+            // enable to interfaces which are in use
+            if (publicIf.equals("10/1") || privateIf.equals("10/1")) {
+                ns_obj.set_if_10_1(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/2") || privateIf.equals("10/2")) {
+                ns_obj.set_if_10_2(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/3") || privateIf.equals("10/3")) {
+                ns_obj.set_if_10_3(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/4") || privateIf.equals("10/4")) {
+                ns_obj.set_if_10_4(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/5") || privateIf.equals("10/5")) {
+                ns_obj.set_if_10_5(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/6") || privateIf.equals("10/6")) {
+                ns_obj.set_if_10_6(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/7") || privateIf.equals("10/7")) {
+                ns_obj.set_if_10_7(new Boolean(true));
+            }
+
+            if (publicIf.equals("10/8") || privateIf.equals("10/8")) {
+                ns_obj.set_if_10_8(new Boolean(true));
+            }
 
             // create new VPX instance
             ns newVpx = ns.add(_netscalerSdxService, ns_obj);
@@ -616,17 +671,41 @@ public class NetscalerResource implements ServerResource {
             if (!newVpx.get_ns_state().equalsIgnoreCase("up")) {
                 new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
             }
+
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Successfully provisioned VPX instance " + vpxName + " on the Netscaler SDX device " + _ip);
             }
-            return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource());
+
+            // FIXME: once VPX comes up there is time lag before we can actually login to VPX, so wait 
+            Thread.sleep(20000);
+
+            // physical interfaces on the SDX range from 10/1 to 10/8 of which two different port or same port can be used for public and private interfaces
+            // However the VPX instances created will have interface range start from 10/1 but will only have as many interfaces enabled while creating the VPX instance
+  
+           	int publicIfnum = Integer.parseInt(_publicInterface.substring(_publicInterface.lastIndexOf("/") + 1));
+           	int privateIfnum = Integer.parseInt(_privateInterface.substring(_privateInterface.lastIndexOf("/") + 1));
+
+            // FIXME: check for better way of doing this from API, instead of making assumption on interface name
+            if (publicIfnum == privateIfnum) {
+            	publicIf = "10/1";
+            	privateIf = "10/1"; 	
+            } else if (publicIfnum > privateIfnum) {
+                privateIf = "10/1";
+            	publicIf = "10/2";
+            } else {
+                publicIf = "10/1";
+            	privateIf = "10/2"; 		
+            }
+
+            return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource(),
+            		publicIf, privateIf, username, password);
         } catch (Exception e) {
 
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } 
 
-            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance", null, null, null);
+            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance", null, null, null, null, null, null, null);
         }
     }
 
@@ -683,7 +762,7 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private void addGuestVlanAndSubnet(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
+    private void addGuestVlanAndSubnet(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean guestVlan) throws ExecutionException {
         try {
             if (!nsVlanExists(vlanTag)) {
                 // add new vlan
@@ -716,7 +795,11 @@ public class NetscalerResource implements ServerResource {
 
                 // bind vlan to the private interface
                 vlan_interface_binding vlanBinding = new vlan_interface_binding();
-                vlanBinding.set_ifnum(_privateInterface);
+                if (guestVlan) {
+                    vlanBinding.set_ifnum(_privateInterface);
+                } else {
+                    vlanBinding.set_ifnum(_publicInterface);
+                }
                 vlanBinding.set_tagged(true);
                 vlanBinding.set_id(vlanTag);
                 try {
@@ -730,7 +813,8 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 if (apiCallResult.errorcode != 0) {
-                    throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + _privateInterface + " due to " + apiCallResult.message);
+                	String vlanInterface = guestVlan ? _privateInterface : _publicInterface;
+                    throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + vlanInterface + " due to " + apiCallResult.message);
                 }
             } else {
                 throw new ExecutionException("Failed to configure Netscaler device for vlan with tag " + vlanTag + " as vlan already exisits");

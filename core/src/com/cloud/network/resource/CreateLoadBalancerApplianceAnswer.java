@@ -26,13 +26,22 @@ public class CreateLoadBalancerApplianceAnswer extends Answer {
     String deviceName;
     String providerName;
     ServerResource serverResource;
+    String username;
+    String password;
+    String publicInterface;
+    String privateInterface;
 
-    public CreateLoadBalancerApplianceAnswer(Command cmd, boolean success, String details, String deviceName, String providerName, ServerResource serverResource) {
+    public CreateLoadBalancerApplianceAnswer(Command cmd, boolean success, String details, String deviceName, String providerName, ServerResource serverResource, 
+    		String publicInterface, String privateInterface, String username, String password) {
         this.deviceName = deviceName;
         this.providerName = providerName;
         this.serverResource = serverResource;
         this.result = success;
         this.details = details;
+        this.username = username;
+        this.password = password;
+        this.publicInterface = publicInterface;
+        this.privateInterface = privateInterface;
     }
 
     public String getDeviceName() {
@@ -45,5 +54,21 @@ public class CreateLoadBalancerApplianceAnswer extends Answer {
     
     public ServerResource getServerResource() {
         return serverResource;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getPublicInterface() {
+    	return publicInterface;
+    }
+
+    public String getPrivateInterface() {
+    	return privateInterface;
     }
 }

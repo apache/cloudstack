@@ -27,13 +27,13 @@ public class CreateLoadBalancerApplianceCommand extends NetworkElementCommand {
     String gateway;
     String username;
     String password;
+    String publicInterface;
+    String privateInterface;
     
-    public CreateLoadBalancerApplianceCommand(String ip, String netmask, String gateway, String username, String password) {
+    public CreateLoadBalancerApplianceCommand(String ip, String netmask, String gateway) {
         this.ip = ip;
         this.netmask = netmask;
         this.gateway = gateway;
-        this.username = username;
-        this.password = password;
     }
 
     public String getLoadBalancerIP() {
@@ -46,13 +46,5 @@ public class CreateLoadBalancerApplianceCommand extends NetworkElementCommand {
 
     public String getGateway() {
         return gateway;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
     }
 }
