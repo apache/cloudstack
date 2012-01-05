@@ -7599,8 +7599,7 @@
         listView: {
           section: 'seconary-storage',
           fields: {
-            name: { label: 'Name' },
-            zonename: { label: 'Zone' }
+            name: { label: 'Name' }
           },
 
           dataProvider: function(args) {
