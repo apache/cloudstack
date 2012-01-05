@@ -41,11 +41,11 @@ import com.cloud.api.ResponseObject;
 import com.cloud.api.ResponseObjectTypeAdapter;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.identity.dao.IdentityDao;
-import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.uuididentity.dao.IdentityDaoImpl;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 

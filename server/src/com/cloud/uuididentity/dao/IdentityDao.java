@@ -16,7 +16,7 @@
  * 
  */
 
-package com.cloud.identity.dao;
+package com.cloud.uuididentity.dao;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.utils.db.GenericDao;

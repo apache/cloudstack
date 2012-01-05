@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.identity.dao;
+package com.cloud.uuididentity.dao;
 
 import javax.persistence.Entity;
 

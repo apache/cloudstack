@@ -30,7 +30,6 @@ import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.identity.dao.IdentityDao;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -48,6 +47,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.uuididentity.dao.IdentityDao;
 
 /**
  * A class that dispatches API commands to the appropriate manager for execution.
