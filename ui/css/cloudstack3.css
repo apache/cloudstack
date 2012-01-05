@@ -1267,7 +1267,6 @@ div.list-view td.state.off span {
   border: 1px solid #CFC9C9;
   background: #E4E6E7;
   margin-top: 11px;
-  text-indent: 0;
 }
 
 .detail-group table tr,
@@ -1291,11 +1290,16 @@ div.list-view td.state.off span {
   border-top: 1px solid #F2F0F0;
 }
 
-.detail-group table td.name {
+.detail-group .main-groups table td.name {
   width: 113px;
   color: #6393F1;
   padding: 14px 12px 13px 13px;
   border: none;
+  text-indent: 0;
+}
+
+.detail-group .main-groups table td.value {
+  text-indent: 0;
 }
 
 .detail-group.head table td.name {
