@@ -1509,9 +1509,9 @@
                       }).join(', '),
 
                       serviceCapabilities: $.map(networkOffering.service, function(service) {
-                        return $.map(service.capability, function(capability) {
+                        return service.capability ? $.map(service.capability, function(capability) {
                           return capability.name + ': ' + capability.value;
-                        }).join(', ');
+                        }).join(', ') : null;
                       }).join(', ')
                     })
                   });
