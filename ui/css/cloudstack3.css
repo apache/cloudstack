@@ -4890,6 +4890,10 @@ label.error {
   text-shadow: 0px 1px 1px #FFFFFF;
 }
 
+.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size {
+  position: relative;
+}
+
 .multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size input[type=radio] {
   float: left;
 }
@@ -4898,6 +4902,13 @@ label.error {
   float: left;
   width: 28px;
   margin: 6px -1px 0 8px;
+}
+
+.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size label.error {
+  position: absolute;
+  top: 29px;
+  left: 242px;
+  font-size: 10px;
 }
 
 /*** Network*/

@@ -173,7 +173,7 @@
                   <div class="slider custom-size"></div>
                   <label class="size">100 GB</label>
 
-                  <input type="text" name="size" value="1" />
+                  <input type="text" class="required digits" name="size" value="1" />
                   <label class="size">GB</label>
                 </div>
               </div>
