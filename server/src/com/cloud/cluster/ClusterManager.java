@@ -28,7 +28,7 @@ import com.cloud.utils.component.Manager;
 
 public interface ClusterManager extends Manager {
 	public static final int DEFAULT_HEARTBEAT_INTERVAL = 1500;
-	public static final int DEFAULT_HEARTBEAT_THRESHOLD = 60000;
+	public static final int DEFAULT_HEARTBEAT_THRESHOLD = 150000;
 	public static final String ALERT_SUBJECT = "cluster-alert";
 	
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError);
