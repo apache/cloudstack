@@ -583,8 +583,20 @@
 
           },
 
-          dataProvider: function(args) {
-            var apiCmd = "listVolumes&page=" + args.page + "&pagesize=" + pageSize;
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+											
+            var apiCmd = "listVolumes&page=" + args.page + "&pagesize=" + pageSize+ array1.join("");
             if(args.context != null) {
               if("instances" in args.context) {
                 apiCmd += "&virtualMachineId=" + args.context.instances[0].id;
