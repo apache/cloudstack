@@ -1532,38 +1532,7 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
-                      },
-
-                      restart: {
-                        label: 'reboot router',
-                        messages: {
-                          confirm: function(args) {
-                            return 'Are you sure you want to reboot router?';
-                          },
-                          notification: function(args) {
-                            return 'rebooting router';
-                          }
-                        },
-                        action: function(args) {												  
-                          $.ajax({
-													  url: createURL('restartNetwork&id=' + args.context.routers[0].guestnetworkid),
-                            //url: createURL('rebootRouter&id=' + args.context.routers[0].id),
-                            dataType: 'json',
-                            async: true,
-                            success: function(json) {
-                              var jid = json.restartnetworkresponse.jobid;
-                              args.response.success({
-                                _custom: {
-                                  jobId: jid
-                                }
-                              });
-                            }
-                          });
-                        },
-                        notification: {
-                          poll: pollAsyncJobResult
-                        }
-                      },
+                      },      
 
                       changeService: {
                         label: 'Change service offering',
