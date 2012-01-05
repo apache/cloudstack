@@ -80,6 +80,9 @@
                       complete({
                         $item: $instanceRow
                       });
+                    },
+                    error: function(args) {
+                      cloudStack.dialog.notice({ message: args });
                     }
                   }
                 });
