@@ -1067,7 +1067,7 @@
           },
 
           detachISO: {
-            label: 'Detach instance',
+            label: 'Detach ISO',
             messages: {
               confirm: function(args) {
                 return 'Are you sure you want to detach ISO ?';
