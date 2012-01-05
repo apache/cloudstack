@@ -23,14 +23,18 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -42,11 +46,11 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 
 public class SshKeysDistriMonitor implements Listener {
 	  private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
-		private final VirtualNetworkApplianceManager _routerMgr;
+	  	AgentManager _agentMgr;
 		private final HostDao _hostDao;
 		private ConfigurationDao _configDao;
-	    public SshKeysDistriMonitor(VirtualNetworkApplianceManager mgr, HostDao host, ConfigurationDao config) {
-	    	this._routerMgr = mgr;
+	    public SshKeysDistriMonitor(AgentManager mgr, HostDao host, ConfigurationDao config) {
+	    	this._agentMgr = mgr;
 	    	_hostDao = host;
 	    	_configDao = config;
 	    }
@@ -81,9 +85,13 @@ public class SshKeysDistriMonitor implements Listener {
 	    			Map<String, String> configs = _configDao.getConfiguration("management-server", new HashMap<String, Object>());
 	    			String pubKey = configs.get("ssh.publickey");
 	    			String prvKey = configs.get("ssh.privatekey");
-	    			if (!_routerMgr.sendSshKeysToHost(host.getId(), pubKey, prvKey)) {
+	    			
+	    			try {
+	    				ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
+		    			Commands c = new Commands(cmds);
+	    				_agentMgr.send(host.getId(), c, this);
+	    			} catch (AgentUnavailableException e) {
 	    				s_logger.debug("Failed to send keys to agent: " + host.getId());
-	    				throw new ConnectionException(true, "Unable to send keys to the agent");
 	    			}
 	    		}
 	    	}

@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
@@ -351,7 +352,7 @@ public class AgentShell implements IAgentShell {
         	if (!developer) {
         		throw new ConfigurationException("Unable to find the guid");
         	}
-	        _guid = MacAddress.getMacAddress().toString(":");
+	        _guid = UUID.randomUUID().toString();
         }
 
         return true;
@@ -530,7 +531,11 @@ public class AgentShell implements IAgentShell {
             
             String instance = getProperty(null, "instance");
             if (instance == null) {
-                instance = "";
+            	if (Boolean.parseBoolean(getProperty(null, "developer"))) {
+            		instance = UUID.randomUUID().toString();
+            	} else {
+            		instance = "";
+            	}
             } else {
                 instance += ".";
             }

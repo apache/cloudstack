@@ -1993,8 +1993,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         } catch (ClosedChannelException e) {
         	s_logger.debug("Failed to send startupanswer: " + e.toString());
         	return null;
-        }
-        
+        }        
         if (attache == null) {
         	return null;
         }
