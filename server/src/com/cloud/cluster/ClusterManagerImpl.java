@@ -50,8 +50,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
+import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -110,6 +112,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private ClusterServiceAdapter _currentServiceAdapter;
 
     private ManagementServerHostDao _mshostDao;
+    private ManagementServerHostPeerDao _mshostPeerDao;
     private HostDao _hostDao;
     private HostTransferMapDao _hostTransferDao;
 
@@ -667,6 +670,8 @@ public class ClusterManagerImpl implements ClusterManager {
                     }
 
                     invalidHeartbeatConnection();
+                } catch(ActiveFencingException e) {
+                    queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                 } catch (Throwable e) {
                     if(isRootCauseConnectionRelated(e.getCause())) {
                         s_logger.error("DB communication problem detected");
@@ -788,6 +793,34 @@ public class ClusterManagerImpl implements ClusterManager {
             this._notificationMsgs.add(msg);
             this._notificationMsgs.notifyAll();
         }
+        
+        switch(msg.getMessageType()) {
+        case nodeAdded:
+            {
+                List<ManagementServerHostVO> l = msg.getNodes();
+                if(l != null && l.size() > 0) {
+                    for(ManagementServerHostVO mshost: l) {
+                        _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Up);
+                    }
+                }
+            }
+            break;
+            
+        case nodeRemoved:
+            {
+                List<ManagementServerHostVO> l = msg.getNodes();
+                if(l != null && l.size() > 0) {
+                    for(ManagementServerHostVO mshost: l) {
+                        _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Down);
+                    }
+                }
+            }
+            break;
+            
+        default :
+            break;
+        
+        }
     }
 
     private ClusterManagerMessage getNextNotificationMessage() {
@@ -832,7 +865,7 @@ public class ClusterManagerImpl implements ClusterManager {
         }
     }
 
-    private void peerScan() {
+    private void peerScan() throws ActiveFencingException {
         Date cutTime = DateUtil.currentGMTTime();
 
         List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
@@ -841,6 +874,13 @@ public class ClusterManagerImpl implements ClusterManager {
         List<ManagementServerHostVO> invalidatedNodeList = new ArrayList<ManagementServerHostVO>();
 
         if(_mshostId != null) {
+            
+            if(_mshostPeerDao.countStateSeenInPeers(_mshostId, _runId, ManagementServerHost.State.Down) > 0) {
+                String msg = "We have detected that at least one management server peer reports that this management server is down, perform active fencing to avoid split-brain situation";
+                s_logger.error(msg);
+                throw new ActiveFencingException(msg);
+            }
+            
             // only if we have already attached to cluster, will we start to check leaving nodes
             for(Map.Entry<Long, ManagementServerHostVO>  entry : _activePeers.entrySet()) {
 
@@ -991,6 +1031,8 @@ public class ClusterManagerImpl implements ClusterManager {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
             }
+            
+            _mshostPeerDao.clearPeerInfo(_mshostId);
 
             // use seperate thread for heartbeat updates
             _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), _heartbeatInterval, _heartbeatInterval, TimeUnit.MILLISECONDS);
@@ -1051,7 +1093,12 @@ public class ClusterManagerImpl implements ClusterManager {
         if (_mshostDao == null) {
             throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
         }
-
+        
+        _mshostPeerDao = locator.getDao(ManagementServerHostPeerDao.class);
+        if (_mshostPeerDao == null) {
+            throw new ConfigurationException("Unable to get " + ManagementServerHostPeerDao.class.getName());
+        }
+        
         _hostDao = locator.getDao(HostDao.class);
         if (_hostDao == null) {
             throw new ConfigurationException("Unable to get " + HostDao.class.getName());

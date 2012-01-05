@@ -740,6 +740,20 @@ CREATE TABLE  `cloud`.`mshost` (
   INDEX `i_mshost__last_update`(`last_update`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `cloud`.`mshost_peer` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `owner_mshost` bigint unsigned NOT NULL,
+  `peer_mshost` bigint unsigned NOT NULL,
+  `peer_runid` bigint NOT NULL,
+  `peer_state` varchar(10) NOT NULL DEFAULT 'Down',
+  `last_update` DATETIME NULL COMMENT 'Last record update time',
+  
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_mshost_peer__owner_mshost` FOREIGN KEY (`owner_mshost`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mshost_peer__peer_mshost` FOREIGN KEY (`peer_mshost`) REFERENCES `mshost`(`id`),
+  UNIQUE `i_mshost_peer__owner_peer_runid`(`owner_mshost`, `peer_mshost`, `peer_runid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`host_tags` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',

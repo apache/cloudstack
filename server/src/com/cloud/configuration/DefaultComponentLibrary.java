@@ -39,6 +39,7 @@ import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
+import com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
@@ -223,6 +224,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ConsoleProxyDao", ConsoleProxyDaoImpl.class);
         addDao("SecondaryStorageVmDao", SecondaryStorageVmDaoImpl.class);
         addDao("ManagementServerHostDao", ManagementServerHostDaoImpl.class);
+        addDao("ManagementServerHostPeerDao", ManagementServerHostPeerDaoImpl.class);
         addDao("AgentUpgradeDao", AgentUpgradeDaoImpl.class);
         addDao("SnapshotDao", SnapshotDaoImpl.class);
         addDao("AsyncJobDao", AsyncJobDaoImpl.class);
