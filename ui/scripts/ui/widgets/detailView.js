@@ -442,7 +442,8 @@
             viewAllID.custom({
               $browser: $browser,
               context: $detailView.data('view-args').context,
-              listViewArgs: $detailView.data('list-view').data('view-args')
+              listViewArgs: $detailView.data('list-view') ?
+                $detailView.data('list-view').data('view-args') : null
             })
           );
         }

@@ -9,6 +9,7 @@
       cloudStack.sections.dashboard[dashboardType].dataProvider({
         response: {
           success: function(args) {
+            var $browser = $dashboard.closest('#browser .container');
             var data = args.data;
 
             // Iterate over data; populate corresponding DOM elements
@@ -22,6 +23,26 @@
                 $(value).each(function() {
                   var item = this;
                   var $li = $liTmpl.clone().appendTo($elem).hide();
+
+                  if ($li.is('.zone-stats li')) {
+                    $li.click(function() {
+                      $browser.cloudBrowser('addPanel', {
+                        title: 'Zone details',
+                        parent: $dashboard.closest('.panel'),
+                        complete: function($newPanel) {
+                          $newPanel.detailView($.extend(true, {},
+                            cloudStack.sections.dashboard.admin.zoneDetailView,
+                            {
+                              $browser: $browser,
+                              context: $.extend(true, {}, cloudStack.context, {
+                                physicalResources: [{ id: item.zoneID }]
+                              })
+                            }
+                          ));
+                        }
+                      })
+                    });
+                  }
 
                   $.each(item, function(arrayKey, arrayValue) {
                     var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
