@@ -1064,11 +1064,22 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
+                    id: { label: 'id' },
                     networkname: { label: 'Network' },
+                    networktype: { label: 'Network Type' },
+                    networkid: { label: 'Network ID' },
+                    associatednetworkid: { label: 'Assoc. Network ID' },
                     state: { label: 'State' },
+                    domain: { label: 'Domain' },
+                    account: { label: 'Account' },
                     zonename: { label: 'Zone' },
                     vlanname: { label: 'VLAN' },
-                    issourcenat: { label: 'Source NAT' }
+                    issourcenat: { label: 'Source NAT', isBoolean: true, converter: function(value) {
+                      return value ? 'Yes' : 'No';
+                    } },
+                    isstaticnat: { label: 'Static NAT', isBoolean: true, converter: function(value) {
+                      return value ? 'Yes' : 'No';
+                    } }
                   }
                 ],
 
@@ -1109,6 +1120,7 @@
                               // Check if data retrieval complete
                               item.network = data.listnetworksresponse.network[0];
                               item.networkname = item.network.name;
+                              item.networktype = item.network.type;
 
                               args.response.success({
                                 actionFilter: actionFilters.ipAddress,
