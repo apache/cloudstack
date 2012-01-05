@@ -507,6 +507,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
+%attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/*.sql
 %{_datadir}/%{name}/setup/db/*.sql
