@@ -479,7 +479,8 @@
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
                 switch(args.filterBy.search.by) {
                 case "name":
-                  array1.push("&keyword=" + args.filterBy.search.value);
+								  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
                   break;
                 }
               }
@@ -1185,7 +1186,8 @@
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
                 switch(args.filterBy.search.by) {
                 case "name":
-                  array1.push("&keyword=" + args.filterBy.search.value);
+								  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
                   break;
                 }
               }
