@@ -45,6 +45,9 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Column(name = "network_id")
 	private long networkId;
 	
+	@Column(name="netmask")
+	private String netmask;
+	
 	@Column(name = "uuid", table = "networks", insertable = false, updatable = false)
 	String networkUuid;
 	
@@ -54,7 +57,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Column(name = "uuid", table = "data_center", insertable = false, updatable = false)
 	String zoneUuid;
 	
-	public StorageNetworkIpRangeVO(long dcId, long podId, long networkId, String startIp, String endIp, Integer vlan) {
+	public StorageNetworkIpRangeVO(long dcId, long podId, long networkId, String startIp, String endIp, Integer vlan, String netmask) {
 		this();
 		this.dataCenterId = dcId;
 		this.podId = podId;
@@ -62,6 +65,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 		this.startIp = startIp;
 		this.endIp = endIp;
 		this.vlan = vlan;
+		this.netmask = netmask;
 	}
 		
 	protected StorageNetworkIpRangeVO() {
@@ -118,6 +122,14 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 
 	public String getEndIp() {
 		return endIp;
+	}
+	
+	public String getNetmask() {
+		return netmask;
+	}
+	
+	public void setNetmask(String netmask) {
+		this.netmask = netmask;
 	}
 
 	@Override

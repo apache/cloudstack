@@ -14,8 +14,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.network.IpAddress.State;
-
 @Entity
 @Table(name="op_dc_storage_network_ip_address")
 @SecondaryTables({@SecondaryTable(name = "dc_storage_network_ip_range", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "range_id", referencedColumnName = "id")})})
@@ -27,16 +25,16 @@ public class StorageNetworkIpAddressVO {
 
 	@Column(name = "range_id")
 	long rangeId;
-		
-	@Column(name = "cidr_size")
-	int cidrSize;
-	
+			
 	@Column(name = "ip_address", updatable = false, nullable = false)
 	String ipAddress;
 
 	@Column(name = "taken")
 	@Temporal(value = TemporalType.TIMESTAMP)
 	private Date takenAt;
+	
+	@Column(name = "netmask", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+	private String netmask;
 	
 	@Column(name = "mac_address")
 	long mac;
@@ -83,12 +81,12 @@ public class StorageNetworkIpAddressVO {
 		this.mac = mac;
 	}
 	
-	public int getCidrSize() {
-		return cidrSize;
+	public String getNetmask() {
+		return netmask;
 	}
 	
-	public void setCidrSize(int cidr) {
-		this.cidrSize =cidr;
+	public void setNetmask(String netmask) {
+		this.netmask = netmask;
 	}
 	
 	public Integer getVlan() {

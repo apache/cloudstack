@@ -566,6 +566,7 @@ CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
   `start_ip` char(40) NOT NULL COMMENT 'start ip address',
   `end_ip` char(40) NOT NULL COMMENT 'end ip address',
   `vlan` int unsigned DEFAULT NULL COMMENT 'vlan the storage network on',
+  `netmask` varchar(15) NOT NULL COMMENT 'netmask for storage network',
   `data_center_id` bigint unsigned NOT NULL,
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
@@ -581,7 +582,6 @@ CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
   `range_id` bigint unsigned NOT NULL COMMENT 'id of ip range in dc_storage_network_ip_range',
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for storage ips',
-  `cidr_size` int unsigned NOT NULL COMMENT 'CIDR size for storage network',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE

@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpAddressVO;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -22,7 +21,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.net.Ip4Address;
@@ -108,7 +106,7 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 		nic.setIp4Address(ip.getIpAddress());
 		nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac())));
 		nic.setFormat(AddressFormat.Ip4);
-		nic.setNetmask(NetUtils.getCidrNetmask(ip.getCidrSize()));
+		nic.setNetmask(ip.getNetmask());
 		nic.setBroadcastType(BroadcastDomainType.Storage);
 		if (vlan != null) {
 			nic.setBroadcastUri(BroadcastDomainType.Storage.toUri(vlan));

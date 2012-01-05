@@ -96,13 +96,10 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		}
 	}
 		
-	private void createStorageIpEntires(Transaction txn, long rangeId, String startIp, String endIp, String netmask, long zoneId) throws SQLException {
+	private void createStorageIpEntires(Transaction txn, long rangeId, String startIp, String endIp, long zoneId) throws SQLException {
         long startIPLong = NetUtils.ip2Long(startIp);
         long endIPLong = NetUtils.ip2Long(endIp);
-        String cidr = NetUtils.ipAndNetMaskToCidr(startIp, netmask);
-        String[] cidrPair = cidr.split("\\/");
-        int cidrSize = Integer.parseInt(cidrPair[1]);
-		String insertSql = "INSERT INTO `cloud`.`op_dc_storage_network_ip_address` (range_id, ip_address, mac_address, cidr_size, taken) VALUES (?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?)";
+		String insertSql = "INSERT INTO `cloud`.`op_dc_storage_network_ip_address` (range_id, ip_address, mac_address, taken) VALUES (?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
 		String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
 		PreparedStatement stmt = null;
 		Connection conn = txn.getConnection();
@@ -112,8 +109,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 			stmt.setLong(1, rangeId);
 			stmt.setString(2, NetUtils.long2Ip(startIPLong++));
 			stmt.setLong(3, zoneId);
-			stmt.setInt(4, cidrSize);
-			stmt.setNull(5, java.sql.Types.DATE);
+			stmt.setNull(4, java.sql.Types.DATE);
             stmt.executeUpdate();
             stmt.close();
             
@@ -138,6 +134,10 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 			endIp = startIp;
 		}
 		
+		if (!NetUtils.isValidNetmask(netmask)) {
+			throw new CloudRuntimeException("Invalid netmask:" + netmask);
+		}
+		
 		List<NetworkVO> nws = _networkDao.listByZoneAndTrafficType(zoneId, TrafficType.Storage);
 		if (nws.size() == 0) {
 			throw new CloudRuntimeException("Cannot find storage network in zone " + zoneId);
@@ -154,10 +154,10 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		StorageNetworkIpRangeVO range = null;
 
 		txn.start();
-		range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIp, vlan);
+		range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIp, vlan, netmask);
 		_sNwIpRangeDao.persist(range);
 		try {
-			createStorageIpEntires(txn, range.getId(), startIp, endIp, netmask, zoneId);
+			createStorageIpEntires(txn, range.getId(), startIp, endIp, zoneId);
 		} catch (SQLException e) {
 			txn.rollback();
 			StringBuilder err = new StringBuilder();
