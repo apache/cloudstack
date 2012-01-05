@@ -328,10 +328,21 @@
 
           dataProvider: function(args) {
             var array1 = [];
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+						
             if("domains" in args.context)
               array1.push("&domainid=" + args.context.domains[0].id);
             $.ajax({
-              url: createURL("listAccounts" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listAccounts" + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -714,10 +725,22 @@
             firstname: { label: 'First name' },
             lastname: { label: 'Last name' }
           },
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+										
             var accountObj = args.context.accounts[0];
             $.ajax({
-              url: createURL("listUsers&domainid=" + fromdb(accountObj.domainid) + "&account=" + todb(fromdb(accountObj.name))),
+              url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + accountObj.name + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               success: function(json) {
                 args.response.success({
