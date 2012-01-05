@@ -114,6 +114,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _localgw;
 	private String _eth1mask;
 	private String _eth1ip;
+	private String _storageIp;
+	private String _storageNetmask;
 	final private String _parent = "/mnt/SecStorage";
 	final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
@@ -555,7 +557,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
             String nfsHostIp = nfsHostAddr.getHostAddress();
 
-            addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, nfsHostIp);
+            addRouteToInternalIpOrCidr(_storageIp, _storageIp, _storageNetmask, nfsHostIp);
             String nfsPath = nfsHostIp + ":" + uri.getPath();
             String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
             String root = _parent + "/" + dir;
@@ -918,6 +920,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         _publicIp = (String) params.get("eth2ip");
         _hostname = (String) params.get("name");
         
+        _storageIp = (String) params.get("storageip");
+        if (_storageIp == null) {
+        	s_logger.warn("Wait, there is no storageip in /proc/cmdline, something wrong!");
+        }
+        _storageNetmask = (String) params.get("storagenetmask");
         super.configure(name, params);
         
         _params = params;
