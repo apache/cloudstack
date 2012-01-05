@@ -10,7 +10,6 @@
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
 NFSSR.py=/opt/xensource/sm
-nfs.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 hostvmstats.py=..,0755,/opt/xensource/sm
