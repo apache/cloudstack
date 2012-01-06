@@ -631,9 +631,9 @@
                     return 'Take snapshot';
                   }
                 },
-                action: function(args) {
+                action: function(args) {								  
                   $.ajax({
-                    url: createURL("createSnapshot&volumeid=" + args.data.id),
+                    url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id),
                     dataType: "json",
                     async: true,
                     success: function(json) {
