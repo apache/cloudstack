@@ -7164,86 +7164,24 @@
                 }
               },
 
-              action: function(args) {
-							  /*
-                if(selectedZoneObj.networktype == "Basic") {
-                  var array2 = [];
-
-                  var podId;
-                  if(args.data.podId != "0") {
-                    podId = args.data.podId;
-                  }
-                  else { 
-                    var array1 = [];
-                    array1.push("&zoneId=" + selectedZoneObj.id);
-                    array1.push("&name=" + todb(args.data.podname));
-                    array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
-                    array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
-                    array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
-
-                    var endip = args.data.reservedSystemEndIp;      
-                    if (endip != null && endip.length > 0)
-                      array1.push("&endIp=" + todb(endip));
-
-                    $.ajax({
-                      url: createURL("createPod" + array1.join("")),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var item = json.createpodresponse.pod;
-                        podId = item.id;
-                      }
-                    });
-                  }
-                  if(podId == null)  {
-                    alert("podId is null, so unable to create IP range on pod level");
-                    return;
-                  }
-                  array2.push("&podId=" + podId);
-                  array2.push("&vlan=untagged");
-                  array2.push("&zoneid=" + selectedZoneObj.id);
-                  array2.push("&forVirtualNetwork=false"); 
-                  array2.push("&gateway=" + todb(args.data.guestGateway));
-                  array2.push("&netmask=" + todb(args.data.guestNetmask));
-                  array2.push("&startip=" + todb(args.data.guestStartIp));
-                  var endip = args.data.guestEndIp;
-                  if(endip != null && endip.length > 0)
-                    array2.push("&endip=" + todb(endip));
-                  $.ajax({
-                    url: createURL("createVlanIpRange" + array2.join("")),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      var item = json.createvlaniprangeresponse.vlan;
-                      args.response.success({data:item});
-                    },
-                    error: function(XMLHttpResponse) {
-                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                      args.response.error(errorMsg);
-                    }
-                  });
-                }
-								*/
-								
-                //else {   //selectedZoneObj.networktype == "Advanced"
-                  var array2 = [];
-                  array2.push("&startip=" + args.data.guestStartIp);
-                  var endip = args.data.guestEndIp;
-                  if(endip != null && endip.length > 0)
-                    array2.push("&endip=" + endip);
-                  $.ajax({
-                    url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
-                    dataType: "json",
-                    success: function(json) {
-                      var item = json.createvlaniprangeresponse.vlan;
-                      args.response.success({data:item});
-                    },
-                    error: function(XMLHttpResponse) {
-                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                      args.response.error(errorMsg);
-                    }
-                  });
-                //}
+              action: function(args) {		                
+								var array2 = [];
+								array2.push("&startip=" + args.data.guestStartIp);
+								var endip = args.data.guestEndIp;
+								if(endip != null && endip.length > 0)
+									array2.push("&endip=" + endip);
+								$.ajax({
+									url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
+									dataType: "json",
+									success: function(json) {
+										var item = json.createvlaniprangeresponse.vlan;
+										args.response.success({data:item});
+									},
+									error: function(XMLHttpResponse) {
+										var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+										args.response.error(errorMsg);
+									}
+								});                
               },
 
               notification: {
@@ -7275,7 +7213,7 @@
                   return 'IP range has been deleted.';
                 }
               },
-              action: function(args) {
+              action: function(args) {							
                 $.ajax({
                   url: createURL("deleteVlanIpRange&id=" + args.data.id),
                   dataType: "json",
