@@ -698,8 +698,8 @@ public class ApiDBUtils {
     	return details.isEmpty() ? null : details;
     }
 
-    public static Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
-        return _networkMgr.listNetworkOfferingServicesAndProviders(networkOfferingId);
+    public static Map<Service, Set<Provider>> listNetworkOfferingServices(long networkOfferingId) {
+        return _networkMgr.getNetworkOfferingServiceProvidersMap(networkOfferingId);
     }
     
     public static List<Service> getElementServices(Provider provider) {

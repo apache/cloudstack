@@ -84,7 +84,7 @@ public interface NetworkService {
 
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
     
-    Map<String, Set<String>> listNetworkOfferingServicesAndProviders(long networkOfferingId);
+    Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags);
 

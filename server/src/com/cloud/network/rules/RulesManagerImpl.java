@@ -45,12 +45,16 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -190,6 +194,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else {
             checkRuleAndUserVm(rule, vm, caller);
         }
+            
+        _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
 
         // Verify that vm has nic in the network
         Ip dstIp = rule.getDestinationIpAddress();
@@ -264,6 +270,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long accountId = ipAddress.getAccountId();
         Long domainId = ipAddress.getDomainId();
 
+        _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
 
         String dstIp = _networkMgr.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
 
@@ -375,6 +382,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (ip != null) {
             throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + vmId + " is already associated with ip id=" + ip.getId());
         }
+        
+        _networkMgr.checkIpForService(ip, Service.StaticNat);
 
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);

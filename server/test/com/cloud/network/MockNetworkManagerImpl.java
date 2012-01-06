@@ -429,7 +429,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Map<String, Set<String>> listNetworkOfferingServicesAndProviders(long networkOfferingId) {
+    public Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId) {
         return null;
     }
 

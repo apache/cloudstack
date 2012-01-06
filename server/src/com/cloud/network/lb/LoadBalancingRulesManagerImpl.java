@@ -584,6 +584,19 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
         
+        Long ipAddrId = lb.getSourceIpAddressId();
+
+        IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
+        
+        // Validate ip address
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + " doesn't exist in the system");
+        } else if (ipAddress.isOneToOneNat()) {
+            throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddress.getAddress());
+        } 
+        
+        _networkMgr.checkIpForService(ipAddress, Service.Lb);
+        
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
         if (result == null){
             result = createLoadBalancer(lb, openFirewall);

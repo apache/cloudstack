@@ -605,7 +605,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    private Map<Provider, Set<Service>> getProviderServiceMap(long networkId) {
+    private Map<Provider, Set<Service>> getProviderServicesMap(long networkId) {
         Map<Provider, Set<Service>> map = new HashMap<Provider, Set<Service>>();
         List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
         for (NetworkServiceMapVO nsm : nsms) {
@@ -619,7 +619,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return map;
     }
     
-    private Map<Service, Set<Provider>> getServiceProviderMap(long networkId) {
+    private Map<Service, Set<Provider>> getServiceProvidersMap(long networkId) {
         Map<Service, Set<Provider>> map = new HashMap<Service, Set<Provider>>();
         List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
         for (NetworkServiceMapVO nsm : nsms) {
@@ -635,7 +635,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     /* Get a list of IPs, classify them by service */
     @Override
-    public Map<PublicIp, Set<Service>> getIpToServices(Network network, List<PublicIp> publicIps, boolean rulesRevoked) {
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked) {
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -650,9 +650,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         services.add(Service.SourceNat);
                         gotSNAT = true;
                     } else {
-                        //TODO throw proper exception
-                        throw new CloudRuntimeException("Multiply generic source NAT IPs in network " + network.getId() + "!");
+                        throw new CloudRuntimeException("Multiply generic source NAT IPs provided!");
                     }
+                }
+                if (ip.isOneToOneNat()) {
+                    services.add(Service.StaticNat);
                 }
                 ipToServices.put(ip, services);
                 
@@ -703,30 +705,77 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return ipToServices;
     }
    
-    public boolean canIpUsedForService(Network network, PublicIp ip, Service service) {
-        // We need to check if it's non-conserve mode, then the new ip should not be used by any other services
-        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (offering.isConserveMode()) {
-            List<PublicIp> ipList = new ArrayList<PublicIp>();
-            ipList.add(ip);
-            Map<PublicIp, Set<Service>> ipToServices = getIpToServices(network, ipList, false);
-            Set<Service> currentServices = ipToServices.get(ip);
-            // Not used currently, safe
-            if (currentServices == null || currentServices.isEmpty()) {
-                return true;
-            }
+    public boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
+        // If it's non-conserve mode, then the new ip should not be used by any other services
+        List<PublicIp> ipList = new ArrayList<PublicIp>();
+        ipList.add(ip);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false);
+        Set<Service> currentServices = ipToServices.get(ip);
+        // Not used currently, safe
+        if (currentServices == null || currentServices.isEmpty()) {
+            return true;
         }
-        Map<Service, Set<Provider>> serviceToProviders = getServiceProviderMap(network.getId());
-        Set<Provider> currentProviders = serviceToProviders.get(service);
-        if (currentProviders.size() > 1) {
-            throw new CloudRuntimeException("Can't support multiply providers for same service now!");
+        // Since it's non-conserve mode, only one service should used for IP
+        if (currentServices.size() != 1) {
+            throw new CloudRuntimeException("There are multiply services used ip " + ip.getAddress() + ".");
         }
-        Provider currentProvider = (Provider)currentProviders.toArray()[0];
-        
+        if (service != null && (Service)currentServices.toArray()[0] != service) {
+            throw new CloudRuntimeException("The IP " + ip.getAddress() + " is already used as " + ((Service)currentServices.toArray()[0]).getName() + " rather than " + service.getName());
+        }
         return true;
     }
     
-    /* Return a mapping between NetworkElement in the network and the IP they should applied */
+    protected boolean canIpsUsedForNonConserve(List<PublicIp> publicIps) {
+        boolean result = true;
+        for (PublicIp ip : publicIps) {
+            result = canIpUsedForNonConserveService(ip, null);
+            if (!result) {
+                break;
+            }
+        }
+        return result;
+    }
+    
+    public boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false);
+        Map<Service, Set<Provider>> serviceToProviders = getNetworkOfferingServiceProvidersMap(offeringId);
+        for (PublicIp ip : ipToServices.keySet()) {
+            Set<Service> services = ipToServices.get(ip);
+            Provider provider = null;
+            for (Service service : services) {
+                Provider curProvider = (Provider)serviceToProviders.get(service).toArray()[0];
+                //We don't support multiply providers for one service now
+                if (provider == null) {
+                    provider = curProvider;
+                    continue;
+                }
+                if (!provider.equals(curProvider)) {
+                    throw new CloudRuntimeException("There would be multiply providers for IP " + ip.getAddress() + " with the new network offering!");
+                }
+            }
+        }
+        return true;
+    }
+    
+    public boolean canIpUsedForConserveService(PublicIp publicIp, Service service) {
+        Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(publicIp.getAssociatedWithNetworkId());
+        List<PublicIp> ipList = new ArrayList<PublicIp>();
+        ipList.add(publicIp);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false);
+        Set<Service> services = ipToServices.get(publicIp);
+        if (services == null || services.isEmpty()) {
+            return true;
+        }
+        //We only support one provider for one service now
+        Provider oldProvider = (Provider)serviceToProviders.get((Service)services.toArray()[0]).toArray()[0];
+        Provider newProvider = (Provider)serviceToProviders.get(service).toArray()[0];
+        if (!oldProvider.equals(newProvider)) {
+            throw new CloudRuntimeException("There would be multiply providers for IP " + publicIp.getAddress() + "!");
+        }
+        return true;
+    }
+    
+    /* Return a mapping between provider in the network and the IP they should applied */
     @Override
     public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -734,8 +783,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (PublicIp ip : ipToServices.keySet()) {
                 Set<Service> services = ipToServices.get(ip);
                 if (services != null && services.size() > 1) {
-                    //TODO throw proper exception
-                    throw new CloudRuntimeException("");
+                    throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiply services!");
                 }
             }
         }
@@ -751,11 +799,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         //TODO Check different provider for same IP
-        Map<Provider, Set<Service>> providerToServices = getProviderServiceMap(network.getId());
+        Map<Provider, Set<Service>> providerToServices = getProviderServicesMap(network.getId());
         Map<Provider, ArrayList<PublicIp>> providerToIpList = new HashMap<Provider, ArrayList<PublicIp>>();
         for (Provider provider: providerToServices.keySet()) {
             Set<Service> services = providerToServices.get(provider);
-            //TODO add checking for services, multiply services may bind to one provider, which is invalid in non-conserved mode
             ArrayList<PublicIp> ipList = new ArrayList<PublicIp>();
             Set<PublicIp> ipSet = new HashSet<PublicIp>();
             for (Service service: services) {
@@ -779,7 +826,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
         
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(network, publicIps, rulesRevoked);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, rulesRevoked);
         Map<Provider, ArrayList<PublicIp>> providerToIpList = getProviderToIpList(network, ipToServices);
         
         for (Provider provider : providerToIpList.keySet()) {
@@ -2817,7 +2864,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
         Purpose purpose = rules.get(0).getPurpose();
-
+        
         // get the list of public ip's owned by the network
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
@@ -3668,7 +3715,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Network offering " + networkOffering + " contained external network elements, can't be upgraded from a CIDR specify network!");
                 }
                 //check if the network is upgradable
-                if (!canUpgrade(oldNetworkOfferingId, networkOfferingId)) {
+                if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
                 }
                 restartNetwork = true;
@@ -3987,20 +4034,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Map<String, Set<String>> listNetworkOfferingServicesAndProviders(long networkOfferingId) {
-        Map<String, Set<String>> serviceProviderMap = new HashMap<String, Set<String>>();
+    public Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId) {
+        Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Service, Set<Provider>>();
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
 
         for (NetworkOfferingServiceMapVO instance : map) {
             String service = instance.getService();
-            Set<String> providers;
-            if (serviceProviderMap.containsKey(service)) {
-                providers = serviceProviderMap.get(service);
-            } else {
-                providers = new HashSet<String>();
+            Set<Provider> providers;
+            providers = serviceProviderMap.get(service);
+            if (providers == null) {
+                providers = new HashSet<Provider>();
             }
-            providers.add(instance.getProvider());
-            serviceProviderMap.put(service, providers);
+            providers.add(Provider.getProvider(instance.getProvider()));
+            serviceProviderMap.put(Service.getService(service), providers);
         }
 
         return serviceProviderMap;
@@ -4011,7 +4057,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, service, provider);
     }
 
-    protected boolean canUpgrade(long oldNetworkOfferingId, long newNetworkOfferingId) {
+    protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
 
@@ -4049,22 +4095,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different traffic types, can't upgrade");
             return false;
         }
-
-        return true;
+        
+        //Check all ips
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                publicIps.add(publicIp);
+            }
+        }
+        if (oldNetworkOffering.isConserveMode() && !newNetworkOffering.isConserveMode()) {
+            return canIpsUsedForNonConserve(publicIps);
+        }
+        
+        return canIpsUseOffering(publicIps, newNetworkOfferingId);
     }
 
 
     protected boolean canUpgradeProviders(long oldNetworkOfferingId, long newNetworkOfferingId) {
         //list of services and providers should be the same
-        Map<String, Set<String>> newServices = listNetworkOfferingServicesAndProviders(newNetworkOfferingId);
-        Map<String, Set<String>> oldServices = listNetworkOfferingServicesAndProviders(oldNetworkOfferingId);
+        Map<Service, Set<Provider>> newServices = getNetworkOfferingServiceProvidersMap(newNetworkOfferingId);
+        Map<Service, Set<Provider>> oldServices = getNetworkOfferingServiceProvidersMap(oldNetworkOfferingId);
 
         if (newServices.size() < oldServices.size()) {
             s_logger.debug("Network offering downgrade is not allowed: number of supported services for the new offering " + newNetworkOfferingId + " is less than the old offering " + oldNetworkOfferingId);
             return false;
         }
 
-        for (String service : oldServices.keySet()) {
+        for (Service service : oldServices.keySet()) {
 
             //1)check that all old services are present in the new network offering
             if (!newServices.containsKey(service)) {
@@ -4072,18 +4131,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 return false;
             }  
 
-            Set<String> newProviders = newServices.get(service);
-            Set<String> oldProviders = oldServices.get(service);
+            Set<Provider> newProviders = newServices.get(service);
+            Set<Provider> oldProviders = oldServices.get(service);
 
             //2) Can upgrade only from internal provider to external provider. Any other combinations are not allowed
-            for (String oldProvider : oldProviders) {
+            for (Provider oldProvider : oldProviders) {
                 if (newProviders.contains(oldProvider)) {
                     s_logger.trace("New list of providers contains provider " + oldProvider);
                     continue;
                 }
                 //iterate through new providers and check that the old provider can upgrade
-                for (String newProvider : newProviders) {
-                    if (!(!Provider.getProvider(oldProvider).isExternal() && Provider.getProvider(newProvider).isExternal())) {
+                for (Provider newProvider : newProviders) {
+                    if (!(!oldProvider.isExternal() && newProvider.isExternal())) {
                         s_logger.debug("Can't downgrade from network offering " + oldNetworkOfferingId + " to the new networkOffering " + newNetworkOfferingId);
                         return false;
                     }
@@ -5561,5 +5620,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	}
     	
     	return result;
+    }
+
+    @Override
+    public boolean checkIpForService(IPAddressVO userIp, Service service) {
+        Long networkId = userIp.getAssociatedWithNetworkId();
+        NetworkVO network = _networksDao.findById(networkId);
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (offering.getGuestType() != GuestType.Isolated) {
+            return true;
+        }
+        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+        if (!offering.isConserveMode()) {
+            return canIpUsedForNonConserveService(publicIp, service);
+        }
+        return canIpUsedForConserveService(publicIp, service);
     }
 }

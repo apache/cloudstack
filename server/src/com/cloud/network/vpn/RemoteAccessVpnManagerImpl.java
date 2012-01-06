@@ -40,6 +40,7 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -114,12 +115,15 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (ipAddr == null) {
             throw new InvalidParameterValueException("Unable to create remote access vpn, invalid public IP address id" + publicIpId);
         }
-
+        
         _accountMgr.checkAccess(caller, null, ipAddr);
 
         if (!ipAddr.readyToUse() || ipAddr.getAssociatedWithNetworkId() == null) {
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
         }
+        
+        IPAddressVO ipAddress = _ipAddressDao.findById(publicIpId);
+        _networkMgr.checkIpForService(ipAddress, Service.Vpn);
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
        

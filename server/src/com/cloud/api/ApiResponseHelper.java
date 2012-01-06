@@ -2596,31 +2596,31 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setState(offering.getState().name());
         
-        Map<String, Set<String>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (String service : serviceProviderMap.keySet()) {
+        for (Service service : serviceProviderMap.keySet()) {
             ServiceResponse svcRsp = new ServiceResponse();
             //skip gateway service
-            if (service.equalsIgnoreCase(Service.Gateway.getName())) {
+            if (service == Service.Gateway) {
             	continue;
             }
-            svcRsp.setName(service);
+            svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (String provider : serviceProviderMap.get(service)) {
+            for (Provider provider : serviceProviderMap.get(service)) {
                 ProviderResponse providerRsp = new ProviderResponse();
-                providerRsp.setName(provider);
+                providerRsp.setName(provider.getName());
                 providers.add(providerRsp);
             }
             svcRsp.setProviders(providers);
 
-            if (Service.Lb.getName().equalsIgnoreCase(service)) {
+            if (Service.Lb == service) {
                 List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
                 CapabilityResponse lbIsoaltion = new CapabilityResponse();
                 lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
                 lbIsoaltion.setValue(offering.getDedicatedLB()?"dedicated":"shared");
                 lbCapResponse.add(lbIsoaltion);
                 svcRsp.setCapabilities(lbCapResponse);
-            } else if (Service.SourceNat.getName().equalsIgnoreCase(service)) {
+            } else if (Service.SourceNat == service) {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
                 CapabilityResponse sharedSourceNat = new CapabilityResponse();
                 sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
