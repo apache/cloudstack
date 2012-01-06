@@ -421,12 +421,17 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
         boolean removeDisabledZones = false;
+        String keyword = cmd.getKeyword();
         if (domainId != null) {
             // for domainId != null
             // right now, we made the decision to only list zones associated with this domain
-            dcs = _dcDao.findZonesByDomainId(domainId); // private zones
+            dcs = _dcDao.findZonesByDomainId(domainId, keyword); // private zones
         } else if ((account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            dcs = _dcDao.listAll(); // all zones
+        	if (keyword != null) {
+                dcs = _dcDao.findByKeyword(keyword);
+            } else {
+            	dcs = _dcDao.listAll(); // all zones
+            }
         } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             // it was decided to return all zones for the user's domain, and everything above till root
             // list all zones belonging to this domain, and all of its parents
@@ -435,7 +440,7 @@ public class ManagementServerImpl implements ManagementServer {
             DomainVO domainRecord = _domainDao.findById(account.getDomainId());
             if (domainRecord != null) {
                 while (true) {
-                    dcs.addAll(_dcDao.findZonesByDomainId(domainRecord.getId()));
+                    dcs.addAll(_dcDao.findZonesByDomainId(domainRecord.getId(), keyword));
                     if (domainRecord.getParent() != null) {
                         domainRecord = _domainDao.findById(domainRecord.getParent());
                     } else {
@@ -444,7 +449,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
             // add all public zones too
-            dcs.addAll(_dcDao.listPublicZones());
+            dcs.addAll(_dcDao.listPublicZones(keyword));
             removeDisabledZones = true;
         } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             // it was decided to return all zones for the domain admin, and everything above till root
@@ -454,7 +459,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (domainRecord != null) {
                 DomainVO localRecord = domainRecord;
                 while (true) {
-                    dcs.addAll(_dcDao.findZonesByDomainId(localRecord.getId()));
+                    dcs.addAll(_dcDao.findZonesByDomainId(localRecord.getId(), keyword));
                     if (localRecord.getParent() != null) {
                         localRecord = _domainDao.findById(localRecord.getParent());
                     } else {
@@ -473,12 +478,12 @@ public class ManagementServerImpl implements ManagementServer {
                 }
                 // now make a search for zones based on this
                 if (allChildDomainIds.size() > 0) {
-                    List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()));
+                    List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()), keyword);
                     dcs.addAll(childZones);
                 }
             }
             // add all public zones too
-            dcs.addAll(_dcDao.listPublicZones());
+            dcs.addAll(_dcDao.listPublicZones(keyword));
             removeDisabledZones = true;
         }
 
@@ -810,6 +815,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
+        String keyword = cmd.getKeyword();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
@@ -841,6 +847,13 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
         }
 
+        if (keyword != null) {
+            SearchCriteria<ClusterVO> ssc = _clusterDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+        
         return _clusterDao.search(sc, searchFilter);
     }
 
@@ -3715,7 +3728,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, Long startIndex, Long pageSizeVal){
+    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal){
         Filter searchFilter = new Filter(HypervisorCapabilitiesVO.class, "id", true, startIndex, pageSizeVal);
         SearchCriteria<HypervisorCapabilitiesVO> sc = _hypervisorCapabilitiesDao.createSearchCriteria();
 
@@ -3727,6 +3740,12 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
         }
 
+        if (keyword != null) {
+            SearchCriteria<HypervisorCapabilitiesVO> ssc = _hypervisorCapabilitiesDao.createSearchCriteria();
+            ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("hypervisorType", SearchCriteria.Op.SC, ssc);
+        }
+        
         return _hypervisorCapabilitiesDao.search(sc, searchFilter);
         
     }

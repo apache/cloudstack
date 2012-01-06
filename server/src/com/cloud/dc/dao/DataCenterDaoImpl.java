@@ -96,17 +96,50 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public List<DataCenterVO> findChildZones(Object[] ids){
+    public List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword){
+    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+    	sc.setParameters("domainId", domainId);
+    	if (keyword != null) {
+            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+        return listBy(sc);    	
+    }
+    
+    @Override
+    public List<DataCenterVO> findChildZones(Object[] ids, String keyword){
     	SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
     	sc.setParameters("domainid", ids);
+    	if (keyword != null) {
+            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
         return listBy(sc);  
     }
     
     @Override
-    public List<DataCenterVO> listPublicZones(){
+    public List<DataCenterVO> listPublicZones(String keyword){
     	SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
+    	if (keyword != null) {
+            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
     	//sc.setParameters("domainId", domainId);
         return listBy(sc);    	    	
+    }
+    
+    @Override
+    public List<DataCenterVO> findByKeyword(String keyword){
+    	SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+    	ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+    	ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        return listBy(ssc);
     }
     
     @Override

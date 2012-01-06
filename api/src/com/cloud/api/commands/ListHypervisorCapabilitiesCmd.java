@@ -77,7 +77,7 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends HypervisorCapabilities> hpvCapabilities = _mgr.listHypervisorCapabilities(getId(), getHypervisor(), this.getStartIndex(), this.getPageSizeVal());
+        List<? extends HypervisorCapabilities> hpvCapabilities = _mgr.listHypervisorCapabilities(getId(), getHypervisor(), getKeyword(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<HypervisorCapabilitiesResponse> response = new ListResponse<HypervisorCapabilitiesResponse>();
         List<HypervisorCapabilitiesResponse> hpvCapabilitiesResponses = new ArrayList<HypervisorCapabilitiesResponse>();
         for (HypervisorCapabilities capability : hpvCapabilities) {

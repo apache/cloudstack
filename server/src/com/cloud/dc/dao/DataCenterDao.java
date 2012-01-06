@@ -58,9 +58,9 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
 	List<DataCenterVO> findZonesByDomainId(Long domainId);
 
-	List<DataCenterVO> listPublicZones();
+	List<DataCenterVO> listPublicZones(String keyword);
 
-	List<DataCenterVO> findChildZones(Object[] ids);
+	List<DataCenterVO> findChildZones(Object[] ids, String keyword);
 
     void loadDetails(DataCenterVO zone);
     void saveDetails(DataCenterVO zone);
@@ -75,4 +75,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     void addVnet(long dcId, long physicalNetworkId, int start, int end);
     void deleteVnet(long physicalNetworkId);
     List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
+
+	List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword);
+
+	List<DataCenterVO> findByKeyword(String keyword);
 }
