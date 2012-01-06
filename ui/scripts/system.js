@@ -3402,9 +3402,9 @@
                               return 'Starting system VM';
                             }
                           },
-                          action: function(args) {
+                          action: function(args) {													
                             $.ajax({
-                              url: createURL('startSystemVm&id=' + args.data.id),
+                              url: createURL('startSystemVm&id=' + args.context.systemVMs[0].id),
                               dataType: 'json',
                               async: true,
                               success: function(json) {
@@ -3438,9 +3438,9 @@
                               return 'Stopping system VM';
                             }
                           },
-                          action: function(args) {
+                          action: function(args) {												
                             $.ajax({
-                              url: createURL('stopSystemVm&id=' + args.data.id),
+                              url: createURL('stopSystemVm&id=' + args.context.systemVMs[0].id),
                               dataType: 'json',
                               async: true,
                               success: function(json) {
@@ -3474,9 +3474,9 @@
                               return 'rebooting system VM';
                             }
                           },
-                          action: function(args) {
+                          action: function(args) {													 
                             $.ajax({
-                              url: createURL('rebootSystemVm&id=' + args.data.id),
+                              url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id),
                               dataType: 'json',
                               async: true,
                               success: function(json) {
@@ -3510,9 +3510,9 @@
                               return 'Destroyping system VM';
                             }
                           },
-                          action: function(args) {
+                          action: function(args) {												
                             $.ajax({
-                              url: createURL('destroySystemVm&id=' + args.data.id),
+                              url: createURL('destroySystemVm&id=' + args.context.systemVMs[0].id),
                               dataType: 'json',
                               async: true,
                               success: function(json) {
