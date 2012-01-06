@@ -490,7 +490,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     results[i++] = null;
                 }
             } catch (Throwable e) {
-                s_logger.error("SetPortForwardingRulesCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e));
+                s_logger.error("SetPortForwardingRulesCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
                 results[i++] = "Failed";
                 endResult = false;
             }
@@ -539,7 +539,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 		} catch (Throwable e) {
 			s_logger.error("SetFirewallRulesCommand(args: " + args
 					+ ") failed on setting one rule due to "
-					+ VmwareHelper.getExceptionMessage(e));
+					+ VmwareHelper.getExceptionMessage(e), e);
 			//FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
             for (int i=0; i < results.length; i++) {
                 results[i] = "Failed";
@@ -589,7 +589,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     results[i++] = null;
                 }
             } catch (Throwable e) {
-                s_logger.error("SetStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e));
+                s_logger.error("SetStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
                 results[i++] = "Failed";
                 endResult = false;
             }
@@ -922,7 +922,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         } catch (Throwable e) {
             String msg = "SavePasswordCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
         return new Answer(cmd);
@@ -972,7 +972,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         } catch (Throwable e) {
             String msg = "DhcpEntryCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -1002,7 +1002,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         } catch (Throwable e) {
             String msg = "CheckRouterCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new CheckRouterAnswer(cmd, msg);
         }
         return new CheckRouterAnswer(cmd, result.second(), true);
@@ -1031,7 +1031,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         } catch (Throwable e) {
             String msg = "GetDomRVersionCmd failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new GetDomRVersionAnswer(cmd, msg);
         }
         String[] lines = result.second().split("&");
@@ -1064,7 +1064,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         } catch (Throwable e) {
             String msg = "BumpUpPriorityCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
         if (result.second() == null || result.second().isEmpty()) {
@@ -1129,7 +1129,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         } catch (Throwable e) {
             String msg = "VmDataCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
         return new Answer(cmd);
@@ -1666,7 +1666,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "RemoteAccessVpnCfg command failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -1705,7 +1705,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 String msg = "VpnUserCfg command failed due to " + VmwareHelper.getExceptionMessage(e);
-                s_logger.error(msg);
+                s_logger.error(msg, e);
                 return new Answer(cmd, false, msg);
             }
         }
@@ -1844,7 +1844,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            s_logger.error("Unable to query host runtime info due to : " + VmwareHelper.getExceptionMessage(e));
+            s_logger.error("Unable to execute GetVmStatsCommand due to : " + VmwareHelper.getExceptionMessage(e), e);
         }
 
         Answer answer = new GetVmStatsAnswer(cmd, vmStatsMap);
@@ -1871,7 +1871,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            s_logger.error("Unable to query host runtime info due to " + VmwareHelper.getExceptionMessage(e));
+            s_logger.error("Unable to execute CheckHealthCommand due to " + VmwareHelper.getExceptionMessage(e), e);
         }
         return new CheckHealthAnswer(cmd, false);
     }
@@ -2058,7 +2058,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
                 invalidateServiceContext();
             }
-            s_logger.error("Unexpected exception: " + VmwareHelper.getExceptionMessage(e));
+            s_logger.error("Unexpected exception: " + VmwareHelper.getExceptionMessage(e), e);
 
             return new CheckVirtualMachineAnswer(cmd, state, vncPort);
         }
@@ -2103,7 +2103,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "Unexcpeted exception " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new PrepareForMigrationAnswer(cmd, msg);
         }
     }
@@ -2154,7 +2154,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "MigrationCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.warn(msg);
+            s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
             synchronized (_vms) {
@@ -2214,7 +2214,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "ModifyStoragePoolCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
     }
@@ -2289,7 +2289,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new AttachVolumeAnswer(cmd, msg);
         }
     }
@@ -2357,11 +2357,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if(cmd.isAttach()) {
 	            String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
-	            s_logger.error(msg);
+	            s_logger.error(msg, e);
 	            return new Answer(cmd, false, msg);
             } else {
 	            String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
-	            s_logger.warn(msg);
+	            s_logger.warn(msg, e);
 	            s_logger.warn("For detachment failure, we will eventually continue on to allow deassociating it from CloudStack DB");
 	            return new Answer(cmd);
             }
@@ -2447,7 +2447,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String details = "BackupSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
+            s_logger.error(details, e);
             return new BackupSnapshotAnswer(cmd, false, details, null, true);
         }
     }
@@ -2473,7 +2473,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             details = "CreateVolumeFromSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
+            s_logger.error(details, e);
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
@@ -2497,7 +2497,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String details = "CreatePrivateTemplateFromVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
+            s_logger.error(details, e);
             return new CreatePrivateTemplateAnswer(cmd, false, details);
         }
     }
@@ -2522,7 +2522,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String details = "CreatePrivateTemplateFromSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
+            s_logger.error(details, e);
             return new CreatePrivateTemplateAnswer(cmd, false, details);
         }
     }
@@ -2570,7 +2570,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String msg = "Unable to execute GetStorageStatsCommand(storageId : " + cmd.getStorageId() + ", localPath: " + cmd.getLocalPath() + ", poolType: " + cmd.getPooltype() + ") due to "
             + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new GetStorageStatsAnswer(cmd, msg);
         }
     }
@@ -2612,7 +2612,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "GetVncPortCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new GetVncPortAnswer(cmd, msg);
         }
     }
@@ -2683,7 +2683,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "PrimaryStorageDownloadCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new PrimaryStorageDownloadAnswer(msg);
         }
     }
@@ -2820,7 +2820,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
     }
@@ -2855,7 +2855,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "CopyVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new CopyVolumeAnswer(cmd, false, msg, null, null);
         }
     }
@@ -3000,7 +3000,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             return new CreateAnswer(cmd, new Exception(e));
         }
     }
@@ -3247,7 +3247,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         } catch (Throwable e) {
             String msg = "querying host network info failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+            s_logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -3362,7 +3362,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            s_logger.error("Unable to perform sync information collection process at this point due to " + VmwareHelper.getExceptionMessage(e));
+            s_logger.error("Unable to perform sync information collection process at this point due to " + VmwareHelper.getExceptionMessage(e), e);
             return null;
         }
         return changes;
@@ -3695,7 +3695,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return result.second();
         } catch (Throwable e) {
-            s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIpAddress + "), domR may not be ready yet. failure due to " + VmwareHelper.getExceptionMessage(e));
+            s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIpAddress + "), domR may not be ready yet. failure due to " 
+                + VmwareHelper.getExceptionMessage(e), e);
         }
 
         return null;
@@ -3713,7 +3714,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     stats[1] += (new Long(splitResult[i++])).longValue();
                 }
             } catch (Throwable e) {
-                s_logger.warn("Unable to parse return from script return of network usage command: " + e.toString());
+                s_logger.warn("Unable to parse return from script return of network usage command: " + e.toString(), e);
             }
         }
         return stats;
