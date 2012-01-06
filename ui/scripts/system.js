@@ -5406,8 +5406,11 @@
                         success: function(json) {
                           clusterObjs = json.listclustersresponse.cluster;
                           var items = [];
-                          $(clusterObjs).each(function() {
-                            items.push({id: this.id, description: this.name});
+                          $(clusterObjs).each(function() {													  
+													  if(("clusters" in args.context) && (this.id == args.context.clusters[0].id))
+													    items.unshift({id: this.id, description: this.name});
+													  else
+                              items.push({id: this.id, description: this.name});
                           });
                           args.response.success({data: items});
                         }
