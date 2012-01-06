@@ -458,6 +458,7 @@ fi
 %{_javadir}/%{name}-commons-codec-1.5.jar
 %{_javadir}/%{name}-commons-dbcp-1.4.jar
 %{_javadir}/%{name}-commons-pool-1.5.6.jar
+%{_javadir}/%{name}-commons-httpclient-3.1.jar
 %{_javadir}/%{name}-google-gson-1.7.1.jar
 %{_javadir}/%{name}-netscaler.jar
 %{_javadir}/%{name}-netscaler-sdx.jar

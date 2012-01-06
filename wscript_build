@@ -110,9 +110,7 @@ def build_thirdparty_dir ():
 	Utils.pprint ("GREEN", "Installed files of thirdparty/")
 
 def build_dependences ():
-	excludes = ["cloud-xstream-1.3.1.jar", "cloud-commons-dbcp-1.2.2.jar", 
-				"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
-				"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
+	excludes = ["cloud-xstream-1.3.1.jar", "cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 				"cloud-ws-commons-util-1.0.2.jar",
 				"cloud-commons-collections-3.2.1.jar"]
 
