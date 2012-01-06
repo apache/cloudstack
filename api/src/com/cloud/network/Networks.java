@@ -117,17 +117,17 @@ public class Networks {
         }
         
         public static TrafficType getTrafficType(String type) {
-        	if (type.equals("Public")) {
+        	if ("Public".equals(type)) {
         		return Public;
-        	} else if (type.endsWith("Guest")) {
+        	} else if ("Guest".equals(type)) {
         		return Guest;
-        	} else if (type.endsWith("Storage")) {
+        	} else if ("Storage".equals(type)) {
         		return Storage;
-        	} else if (type.endsWith("Management")) {
+        	} else if ("Management".equals(type)) {
         		return Management;
-        	} else if (type.endsWith("Control")) {
+        	} else if ("Control".equals(type)) {
         		return Control;
-        	} else if (type.endsWith("Vpn")) {
+        	} else if ("Vpn".equals(type)) {
         		return Vpn;
         	} else {
         		return None;

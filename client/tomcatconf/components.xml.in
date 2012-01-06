@@ -52,14 +52,33 @@
             <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
         </adapters>
         <adapters key="com.cloud.network.guru.NetworkGuru">
+            <!--
+                 NOTE: The order of those gurus implicates priority of network traffic types the guru implements.
+                 The upper the higher priority. It effects listTafficTypeImplementors API which returns impelmentor
+                 of a specific network traffic.
+                 A fair question is, if two gurus implement the same two network traffic types, but these traffic types
+                 have cross priority, how to rank them? For example:
+                    GuruA (TrafficTypeA, TrafficTypeB)
+                    GuruB (TrafficTypeA, TrafficTypeB)
+                 we want GuruB.TrafficTypeB > GuruA.TrafficTypeB and GuruB.TrafficTypeA < GuruA.TrafficTypeA. As the priority
+                 implicated by order can not map to multiple traffic type, you have to do implement GuruC which inherits GuruB
+                 for TrafficTypeB. Then ranking them in order of:
+                    GuruC (TrafficTypeB)
+                    GuruA (TrafficTypeA, TrafficTypeB)
+                    GuruB (TrafficTypeA, TrafficTypeB)
+                 now GuruC represents TrafficTypeB with highest priority while GuruA represents TrafficTypeA with highest pirority.
+
+                 However, above case barely happens.
+            -->
+
+            <adapter name="StorageNetworkGuru" class="com.cloud.network.guru.StorageNetworkGuru"/>
             <adapter name="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru"/>
-            <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
             <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
             <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
             <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
-            <adapter name="StorageNetworkGuru" class="com.cloud.network.guru.StorageNetworkGuru"/>
+            <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.cluster.ClusterServiceAdapter">
             <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>

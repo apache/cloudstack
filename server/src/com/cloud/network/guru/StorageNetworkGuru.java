@@ -32,7 +32,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.Nic.ReservationStrategy;
 
 @Local(value = NetworkGuru.class)
-public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
+public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);
 	@Inject StorageNetworkManager _sNwMgr;
 	
@@ -59,12 +59,7 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
     
 	protected boolean canHandle(NetworkOffering offering) {
 		if (isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly()) {
-			if (_sNwMgr.isStorageIpRangeAvailable()) {
-				return true;
-			} else {
-				s_logger.debug("No storage network ip range availabe, let PodBasedNetworkGuru to handle storage traffic type, not me");
-				return false;
-			}
+			return true;
 		} else {
 			s_logger.trace("It's not storage network offering, skip it.");
 			return false;
@@ -77,6 +72,10 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 			return null;
 		}
 		
+		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+			return super.design(offering, plan, userSpecified, owner);
+		}
+		
 		NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup,
 		        plan.getDataCenterId(), plan.getPhysicalNetworkId());
 		return config;
@@ -86,13 +85,20 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 	public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException {
 		assert network.getTrafficType() == TrafficType.Storage : "Why are you sending this configuration to me " + network;
+		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+			return super.implement(network, offering, destination, context);
+		}
 		return network;
 	}
 
 	@Override
 	public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
-	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 		assert network.getTrafficType() == TrafficType.Storage : "Well, I can't take care of this config now can I? " + network; 
+		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+			return super.allocate(network, nic, vm);
+		}
+		
 		return new NicProfile(ReservationStrategy.Start, null, null, null, null);
 	}
 
@@ -110,7 +116,12 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 
 	@Override
 	public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
-	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+			super.reserve(nic, network, vm, dest, context);
+			return;
+		}
+		
 		Pod pod = dest.getPod();
 		Integer vlan = null;
 		
@@ -136,6 +147,10 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 
 	@Override
 	public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+			return super.release(nic, vm, reservationId);
+		}
+		
 		_sNwMgr.releaseIpAddress(nic.getIp4Address());
 		s_logger.debug("Release an storage ip " + nic.getIp4Address());
 		nic.deallocate();

@@ -235,8 +235,8 @@ public enum Config {
     
 	// XenServer
     XenPublicNetwork("Network", ManagementServer.class, String.class, "xen.public.network.device", null, "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", null),
-    XenStorageNetwork1("Network", ManagementServer.class, String.class, "xen.storage.network.device1", "cloud-stor1", "Specify when there are storage networks", null),
-    XenStorageNetwork2("Network", ManagementServer.class, String.class, "xen.storage.network.device2", "cloud-stor2", "Specify when there are storage networks", null),
+    XenStorageNetwork1("Network", ManagementServer.class, String.class, "xen.storage.network.device1", null, "Specify when there are storage networks", null),
+    XenStorageNetwork2("Network", ManagementServer.class, String.class, "xen.storage.network.device2", null, "Specify when there are storage networks", null),
     XenPrivateNetwork("Network", ManagementServer.class, String.class, "xen.private.network.device", null, "Specify when the private network name is different", null),
     NetworkGuestCidrLimit("Network", NetworkManager.class, Integer.class, "network.guest.cidr.limit", "22", "size limit for guest cidr; can't be less than this value", null),
     XenSetupMultipath("Advanced", ManagementServer.class, String.class, "xen.setup.multipath", "false", "Setup the host to do multipath", null),

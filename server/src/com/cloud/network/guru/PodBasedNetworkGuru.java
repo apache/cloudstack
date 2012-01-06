@@ -36,11 +36,11 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -88,10 +88,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (type == TrafficType.Storage && _sNwMgr.isStorageIpRangeAvailable()) {
-        	s_logger.debug("There is some storage ip available, let StorageNetworkGuru to handle storage traffic type, not me");
+        	s_logger.debug("There is an storage network ip range, let StorageNetworkGuru to handle TrafficType.Storage");
         	return null;
         }
-        
+                
         NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         return config;
     }

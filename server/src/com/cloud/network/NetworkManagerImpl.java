@@ -5661,7 +5661,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			}
 		} else {
 			for (NetworkGuru guru : _networkGurus) {
-				results.add(new Pair<TrafficType, String>(TrafficType.getTrafficType(type), guru.getName()));
+				TrafficType[] allTypes = guru.getSupportedTrafficType();
+				for (TrafficType t : allTypes) {
+					results.add(new Pair<TrafficType, String>(t, guru.getName()));
+				}
 			}
 		}
 		
