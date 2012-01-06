@@ -525,9 +525,22 @@
             state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' } }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+					
+					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("");					
             $.ajax({
-              url: createURL('listProjects', { ignoreProject: true }),
+              url: createURL(apiCmd, { ignoreProject: true }),
               dataType: 'json',
               async: true,
               success: function(data) {
