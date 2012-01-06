@@ -509,6 +509,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
         int i = 0;
         Boolean destsAvailable = false;
+        String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
+        List<String>  dstSubRule = new ArrayList<String>();
+        List<String>  dstWithCookieSubRule = new ArrayList<String>();
         for (DestinationTO dest : lbTO.getDestinations()) {
             // add line like this: "server  65_37_141_30-80_3 10.1.1.4:80 check"
             if (dest.isRevoked()) {
@@ -519,15 +522,18 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     .append(Integer.toString(i++)).append(" ")
                     .append(dest.getDestIp()).append(":")
                     .append(dest.getDestPort()).append(" check");
-            result.add(sb.toString());
+            dstSubRule.add(sb.toString());
+            if (stickinessSubRule != null) {
+                sb.append(" cookie ").append(dest.getDestIp().replace(".", "_"))
+                .append('-').append(dest.getDestPort()).toString();
+                dstWithCookieSubRule.add(sb.toString());
+            }
             destsAvailable = true;
         }
-        
-        String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
+
         Boolean httpbasedStickiness = false;
-        /* attach stickiness sub rule only if the destinations are avilable */
+        /* attach stickiness sub rule only if the destinations are available */
         if ((stickinessSubRule != null) && (destsAvailable == true)) {
-            result.add(stickinessSubRule);
             for (StickinessPolicyTO stickinessPolicy : lbTO.getStickinessPolicies()) {
                 if (stickinessPolicy == null)
                     continue;
@@ -535,6 +541,14 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     httpbasedStickiness = true;
                 }
             }
+            if (httpbasedStickiness) {
+                result.addAll(dstWithCookieSubRule);
+            }else {
+                result.addAll(dstSubRule);
+            }
+            result.add(stickinessSubRule);
+        }else {
+            result.addAll(dstSubRule);
         }
         if ((stickinessSubRule != null) && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause:  backends are unavailable");
