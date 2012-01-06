@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
 import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
+import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
 import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -119,6 +120,67 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
             stmt.close();
         }
 	}
+	
+	@Override
+	@DB
+    public StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd) {
+	    Integer vlan = cmd.getVlan();
+	    Long rangeId = cmd.getId();
+	    String startIp = cmd.getStartIp();
+	    String endIp = cmd.getEndIp();
+	    String netmask = cmd.getNetmask();
+	    
+		if (netmask != null && !NetUtils.isValidNetmask(netmask)) {
+			throw new CloudRuntimeException("Invalid netmask:" + netmask);
+		}
+		
+		if (_sNwIpDao.countInUseIpByRangeId(rangeId) > 0) {
+			throw new CloudRuntimeException("Cannot update the range," + getInUseIpAddress(rangeId));
+		}
+		
+		StorageNetworkIpRangeVO range = _sNwIpRangeDao.findById(rangeId);
+		if (range == null) {
+			throw new CloudRuntimeException("Cannot find storage ip range " + rangeId);
+		}
+		
+		if (startIp != null || endIp != null) {
+			long podId = range.getPodId();
+			startIp = startIp == null ? range.getStartIp() : startIp;
+			endIp = endIp == null ? range.getEndIp() : endIp;
+			checkOverlapPrivateIpRange(podId, startIp, endIp);
+			checkOverlapStorageIpRange(podId, startIp, endIp);
+		}
+		
+		Transaction txn = Transaction.currentTxn();
+		txn.start();
+		try {
+			range = _sNwIpRangeDao.acquireInLockTable(range.getId());
+			if (range == null) {
+				throw new CloudRuntimeException("Cannot acquire lock on storage ip range " + rangeId);
+			}
+			StorageNetworkIpRangeVO vo = _sNwIpRangeDao.createForUpdate();
+			if (vlan != null) {
+				vo.setVlan(vlan);
+			}
+			if (startIp != null) {
+				vo.setStartIp(startIp);
+			}
+			if (endIp != null) {
+				vo.setEndIp(endIp);
+			}
+			if (netmask != null) {
+				vo.setNetmask(netmask);
+			}
+			_sNwIpRangeDao.update(rangeId, vo);
+		} finally {
+			if (range != null) {
+				_sNwIpRangeDao.releaseFromLockTable(range.getId());
+			}
+		}
+		txn.commit();
+		
+	    return _sNwIpRangeDao.findById(rangeId);
+    }
 	
 	@Override
 	@DB
@@ -272,5 +334,4 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
     public boolean isStorageIpRangeAvailable() {
 		return _sNwIpRangeDao.countRanges() > 0;
     }
-
 }

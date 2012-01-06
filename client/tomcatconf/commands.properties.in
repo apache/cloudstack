@@ -323,5 +323,6 @@ listTafficTypeImplementors=com.cloud.api.commands.ListTafficTypeImplementorsCmd;
 createStorageNetworkIpRange=com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;1
 deleteStorageNetworkIpRange=com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;1
 listStorageNetworkIpRange=com.cloud.api.commands.listStorageNetworkIpRangeCmd;1
+updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;1
 
 

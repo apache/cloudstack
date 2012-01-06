@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
 import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
+import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
 import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
 import com.cloud.dc.StorageNetworkIpRange;
 
@@ -14,4 +15,6 @@ public interface StorageNetworkService {
 	void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd);
 
 	List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd);
+	
+	StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd);
 }
