@@ -321,6 +321,8 @@ public class ApiConstants {
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
     public static final String CONSERVE_MODE = "conservemode";
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
+    public static final String KEYWORD = "keyword";
+    public static final String LIST_ALL = "listall";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

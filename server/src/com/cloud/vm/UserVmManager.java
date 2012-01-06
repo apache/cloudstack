@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -84,10 +85,15 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      * Obtains a list of virtual machines by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
      * @param c
-     * @param skipProjectVms TODO
+     * @param caller TODO
+     * @param domainId TODO
+     * @param isRecursive TODO
+     * @param permittedAccounts TODO
+     * @param listAll TODO
+     * @param listProjectResourcesCriteria TODO
      * @return List of UserVMs.
      */
-    List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms);
+    List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
     String getChecksum(Long hostId, String templatePath);
 }

@@ -49,11 +49,9 @@ import com.cloud.api.commands.ListSSHKeyPairsCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
-import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
-import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterSSHKeyPairCmd;
@@ -61,9 +59,7 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
-import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
-import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.async.AsyncJob;
@@ -89,7 +85,6 @@ import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.utils.Pair;
@@ -180,14 +175,6 @@ public interface ManagementService {
      */
     List<? extends VirtualRouter> searchForRouters(ListRoutersCmd cmd);
 
-    /**
-     * revisit Obtains a list of storage volumes by the specified search criteria. Can search by: "userId", "vType",
-     * "instanceId", "dataCenterId", "podId", "hostId"
-     * 
-     * @param cmd
-     * @return List of Volumes.
-     */
-    List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
 
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId", "address"
@@ -246,16 +233,6 @@ public interface ManagementService {
     List<? extends Capacity> listCapacities(ListCapacityCmd cmd);
 
     /**
-     * List the permissions on a template. This will return a list of account names that have been granted permission to launch
-     * instances from the template.
-     * 
-     * @param cmd
-     *            the command wrapping the search criteria (template id)
-     * @return list of account names that have been granted permission to launch instances from the template
-     */
-    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
-
-    /**
      * List ISOs that match the specified criteria.
      * 
      * @param cmd
@@ -310,10 +287,6 @@ public interface ManagementService {
      * @return -- ArrayList of <CloudId+Signature>
      */
     ArrayList<String> getCloudIdentifierResponse(long userId);
-
-    boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
-
-    boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
 
     boolean updateHostPassword(UpdateHostPasswordCmd cmd);
 

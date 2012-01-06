@@ -51,8 +51,14 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.ListIsoPermissionsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.ListTemplatePermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
+import com.cloud.api.commands.UpdateIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -77,6 +83,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -97,6 +106,7 @@ import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -186,6 +196,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject AccountService _accountService;
     @Inject ResourceLimitService _resourceLimitMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
+    @Inject LaunchPermissionDao _launchPermissionDao;
+    @Inject ProjectManager _projectMgr;
+
+    
     int _primaryStorageDownloadWait;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
@@ -1214,4 +1228,186 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	    
 	    return null;
 	}
+	
+    @Override
+    public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Long id = cmd.getId();
+
+        if (id == Long.valueOf(1)) {
+            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+        }
+
+        VirtualMachineTemplate template = getTemplate(id);
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
+        }
+        
+        if (cmd instanceof ListTemplatePermissionsCmd) {
+            if (template.getFormat().equals(ImageFormat.ISO)) {
+                throw new InvalidParameterValueException("Please provide a valid template");
+            }
+        } else if (cmd instanceof ListIsoPermissionsCmd) {
+            if (!template.getFormat().equals(ImageFormat.ISO)) {
+                throw new InvalidParameterValueException("Please provide a valid iso");
+            }
+        }
+
+        if (!template.isPublicTemplate()) {
+            _accountMgr.checkAccess(caller, null, template);
+        }
+
+        List<String> accountNames = new ArrayList<String>();
+        List<LaunchPermissionVO> permissions = _launchPermissionDao.findByTemplate(id);
+        if ((permissions != null) && !permissions.isEmpty()) {
+            for (LaunchPermissionVO permission : permissions) {
+                Account acct = _accountDao.findById(permission.getAccountId());
+                accountNames.add(acct.getAccountName());
+            }
+        }
+        return accountNames;
+    }
+    
+    @DB
+    @Override
+    public boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) {
+        Transaction txn = Transaction.currentTxn();
+
+        // Input validation
+        Long id = cmd.getId();
+        Account caller = UserContext.current().getCaller();
+        List<String> accountNames = cmd.getAccountNames();
+        List<Long> projectIds = cmd.getProjectIds();
+        Boolean isFeatured = cmd.isFeatured();
+        Boolean isPublic = cmd.isPublic();
+        Boolean isExtractable = cmd.isExtractable();
+        String operation = cmd.getOperation();
+        String mediaType = "";
+
+        VMTemplateVO template = _tmpltDao.findById(id);
+
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find " + mediaType + " with id " + id);
+        }
+
+        if (cmd instanceof UpdateTemplatePermissionsCmd) {
+            mediaType = "template";
+            if (template.getFormat().equals(ImageFormat.ISO)) {
+                throw new InvalidParameterValueException("Please provide a valid template");
+            }
+        }
+        if (cmd instanceof UpdateIsoPermissionsCmd) {
+            mediaType = "iso";
+            if (!template.getFormat().equals(ImageFormat.ISO)) {
+                throw new InvalidParameterValueException("Please provide a valid iso");
+            }
+        }
+        
+        //convert projectIds to accountNames
+        if (projectIds != null) {
+            for (Long projectId : projectIds) {
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                accountNames.add(_accountMgr.getAccount(project.getProjectAccountId()).getAccountName());
+            }
+        }
+
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+
+        // If the template is removed throw an error.
+        if (template.getRemoved() != null) {
+            s_logger.error("unable to update permissions for " + mediaType + " with id " + id + " as it is removed  ");
+            throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
+        }
+
+        if (id == Long.valueOf(1)) {
+            throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
+        }
+
+        boolean isAdmin = _accountMgr.isAdmin(caller.getType());
+        boolean allowPublicUserTemplates = Boolean.valueOf(_configDao.getValue("allow.public.user.templates"));
+        if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
+            throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
+        }
+
+        if (accountNames != null) {
+            if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) {
+                throw new InvalidParameterValueException("Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions."
+                        + "  Given operation is: '" + operation + "'");
+            }
+        }
+
+        Long accountId = template.getAccountId();
+        if (accountId == null) {
+            // if there is no owner of the template then it's probably already a public template (or domain private template) so
+            // publishing to individual users is irrelevant
+            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
+        }
+
+        VMTemplateVO updatedTemplate = _tmpltDao.createForUpdate();
+
+        if (isPublic != null) {
+            updatedTemplate.setPublicTemplate(isPublic.booleanValue());
+        }
+
+        if (isFeatured != null) {
+            updatedTemplate.setFeatured(isFeatured.booleanValue());
+        }
+        
+       if (isExtractable != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {//Only ROOT admins allowed to change this powerful attribute
+           updatedTemplate.setExtractable(isExtractable.booleanValue());
+       }else if (isExtractable != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+           throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+       }
+
+       _tmpltDao.update(template.getId(), updatedTemplate);
+
+        Long domainId = caller.getDomainId();
+        if ("add".equalsIgnoreCase(operation)) {
+            txn.start();
+            for (String accountName : accountNames) {
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (permittedAccount != null) {
+                    if (permittedAccount.getId() == caller.getId()) {
+                        continue; // don't grant permission to the template owner, they implicitly have permission
+                    }
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
+                    if (existingPermission == null) {
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId());
+                        _launchPermissionDao.persist(launchPermission);
+                    }
+                } else {
+                    txn.rollback();
+                    throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + ", account not found.  "
+                            + "No permissions updated, please verify the account names and retry.");
+                }
+            }
+            txn.commit();
+        } else if ("remove".equalsIgnoreCase(operation)) {
+            List<Long> accountIds = new ArrayList<Long>();
+            for (String accountName : accountNames) {
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (permittedAccount != null) {
+                    accountIds.add(permittedAccount.getId());
+                }
+            }
+            _launchPermissionDao.removePermissions(id, accountIds);
+        } else if ("reset".equalsIgnoreCase(operation)) {
+            // do we care whether the owning account is an admin? if the
+            // owner is an admin, will we still set public to false?
+            updatedTemplate = _tmpltDao.createForUpdate();
+            updatedTemplate.setPublicTemplate(false);
+            updatedTemplate.setFeatured(false);
+            _tmpltDao.update(template.getId(), updatedTemplate);
+            _launchPermissionDao.removeAllPermissions(id);
+        }
+        return true;
+    }
+    
 }

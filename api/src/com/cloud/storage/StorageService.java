@@ -24,7 +24,7 @@ import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
+import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -32,7 +32,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 
 public interface StorageService {
     /**
@@ -108,5 +107,7 @@ public interface StorageService {
     public StoragePool getStoragePool(long id);
 
 	Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
+
+	List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
 
 }

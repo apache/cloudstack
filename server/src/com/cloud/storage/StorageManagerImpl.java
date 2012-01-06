@@ -69,6 +69,7 @@ import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
+import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
@@ -117,6 +118,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
@@ -159,6 +161,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -3272,5 +3275,98 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	secHost.setName(newUrl);
     	_hostDao.update(secHost.getId(), secHost);
     	return secHost;
+    }
+    
+    @Override
+    public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Long id = cmd.getId();
+        Long vmInstanceId = cmd.getVirtualMachineId();
+        String name = cmd.getVolumeName();
+        String keyword = cmd.getKeyword();
+        String type = cmd.getType();
+
+        Long zoneId = cmd.getZoneId();
+        Long podId = null;
+        // Object host = null; TODO
+        if (_accountMgr.isAdmin(caller.getType())) {
+            podId = cmd.getPodId();
+            // host = cmd.getHostId(); TODO
+        }
+        
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+
+        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        // hack for now, this should be done better but due to needing a join I opted to
+        // do this quickly and worry about making it pretty later
+        SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
+        sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        // Only return volumes that are not destroyed
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
+
+        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
+        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.NEQ);
+        sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+
+        // display UserVM volumes only
+        SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
+        vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
+        vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
+        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        
+        // now set the SC criteria...
+        SearchCriteria<VolumeVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
+        if (keyword != null) {
+            SearchCriteria<VolumeVO> ssc = _volumeDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+        
+        sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+       
+        if (type != null) {
+            sc.setParameters("volumeType", "%" + type + "%");
+        }
+        if (vmInstanceId != null) {
+            sc.setParameters("instanceId", vmInstanceId);
+        }
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+
+        // Don't return DomR and ConsoleProxy volumes
+        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+
+        // Only return volumes that are not destroyed
+        sc.setParameters("state", Volume.State.Destroy);
+
+        return _volumeDao.search(sc, searchFilter);
     }
 }

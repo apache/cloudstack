@@ -24,6 +24,7 @@ import com.cloud.domain.PartOf;
 
 public interface Project extends PartOf, Identity {
     public enum State {Active, Disabled, Suspended}
+    public enum ListProjectResourcesCriteria {ListProjectResourcesOnly, SkipProjectResources}
 
     String getDisplayText();
 

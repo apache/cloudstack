@@ -29,8 +29,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -45,22 +43,18 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -174,8 +168,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
-        Long accountId = ipAddress.getAccountId();
-        Long domainId = ipAddress.getDomainId();
+        Long accountId = ipAddress.getAllocatedToAccountId();
+        Long domainId = ipAddress.getAllocatedInDomainId();
         
         // start port can't be bigger than end port
         if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
@@ -267,8 +261,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
-        Long accountId = ipAddress.getAccountId();
-        Long domainId = ipAddress.getDomainId();
+        Long accountId = ipAddress.getAllocatedToAccountId();
+        Long domainId = ipAddress.getAllocatedInDomainId();
 
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
 
@@ -547,14 +541,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
         Long ipId = cmd.getIpAddressId();
         Long id = cmd.getId();
-        String path = null;
 
-        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        List<Long> permittedAccounts = accountDomainPair.first();
-        Long domainId = accountDomainPair.second();
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -564,27 +557,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _domainMgr.getDomain(caller.getDomainId());
-            path = domain.getPath();
-        }
-
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<PortForwardingRuleVO> sb = _portForwardingDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
 
-        if (path != null) {
-            // for domain admin we should show only subdomains information
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -594,19 +577,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             sc.setParameters("ip", ipId);
         }
 
-        if (domainId != null) {
-            sc.setParameters("domainId", domainId);
-        }
-        
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        }
-
         sc.setParameters("purpose", Purpose.PortForwarding);
-
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
-        }
 
         return _portForwardingDao.search(sc, filter);
     }
@@ -743,7 +714,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         for (IPAddressVO ip : ips) {
             // Get nic IP4 address
             String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
-            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), networkId, ip.getId(), dstIp, false);
+            StaticNatImpl staticNat = new StaticNatImpl(ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), networkId, ip.getId(), dstIp, false);
             staticNats.add(staticNat);
         }
         
@@ -760,13 +731,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId) {
-        Account caller = UserContext.current().getCaller();
-        String path = null;
-
-        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, accountName, domainId, projectId);
-        List<Long> permittedAccounts = accountDomainPair.first();
-        domainId = accountDomainPair.second();
+    public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll) {
+    	Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -776,25 +743,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _domainMgr.getDomain(caller.getDomainId());
-            path = domain.getPath();
-        }
-
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, accountName, projectId, permittedAccounts, listAll, id);
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, start, size);
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("id", sb.entity().getId(), Op.EQ);
 
-        if (path != null) {
-            // for domain admin we should show only subdomains information
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
 
         if (vmId != null) {
             SearchBuilder<IPAddressVO> ipSearch = _ipAddressDao.createSearchBuilder();
@@ -803,27 +760,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
-
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sc.setParameters("purpose", Purpose.StaticNat);
+        
         if (id != null) {
             sc.setParameters("id", id);
         }
 
         if (ipId != null) {
             sc.setParameters("ip", ipId);
-        }
-
-        if (domainId != null) {
-            sc.setParameters("domainId", domainId);
-        }
-        
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        }
-
-        sc.setParameters("purpose", Purpose.StaticNat);
-
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         if (vmId != null) {
@@ -1128,7 +1073,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
         }
         
-        StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAccountId(), sourceIp.getDomainId(), networkId, sourceIpId, dstIp, forRevoke);
+        StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAllocatedToAccountId(), sourceIp.getAllocatedInDomainId(), networkId, sourceIpId, dstIp, forRevoke);
         staticNats.add(staticNat);
         
         try {

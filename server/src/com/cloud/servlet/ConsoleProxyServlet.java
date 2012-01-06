@@ -440,7 +440,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
     public boolean verifyUser(Long userId) {
     	// copy from ApiServer.java, a bit ugly here
-    	User user = _accountMgr.getUser(userId);
+    	User user = _accountMgr.getUserIncludingRemoved(userId);
     	Account account = null;
     	if (user != null) {
     	    account = _accountMgr.getAccount(user.getAccountId());

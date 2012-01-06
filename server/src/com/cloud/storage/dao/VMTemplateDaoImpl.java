@@ -43,6 +43,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -429,8 +430,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
 	@Override
-	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller, boolean skipProjectTemplates) {
-        
+	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         StringBuilder builder = new StringBuilder();
         if (!permittedAccounts.isEmpty()) {
             for (Account permittedAccount : permittedAccounts) {
@@ -478,34 +478,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	String whereClause = "";
         	
         	//All joins have to be made before we start setting the condition settings
-        	boolean joinedWithAccounts = false;
-        	if (skipProjectTemplates || (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.featured))) {
+        	if ((listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources 
+        			|| (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.featured))) && 
+        			!(caller.getType() != Account.ACCOUNT_TYPE_NORMAL && templateFilter == TemplateFilter.all)) {
         		whereClause += " INNER JOIN account a on (t.account_id = a.id)";
-        		joinedWithAccounts = true;
         		if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {                	            		
             		 whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";     
-             		if (skipProjectTemplates) {
+             		if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
             			whereClause += " AND a.type != " + Account.ACCOUNT_TYPE_PROJECT;
             		}
-        		}else if (skipProjectTemplates) {
-        			whereClause += " WHERE a.type != " + Account.ACCOUNT_TYPE_PROJECT;
+        		}else 
+        			if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+        				whereClause += " WHERE a.type != " + Account.ACCOUNT_TYPE_PROJECT;
         		}
-        	}
-
-        	if (!isIso) {
-        	    if ( hypers.isEmpty() ) {
-        	        return templateZonePairList;
-        	    } else {
-        	        StringBuilder relatedHypers = new StringBuilder();
-        	        for (HypervisorType hyper : hypers ) {
-        	            relatedHypers.append("'");
-        	            relatedHypers.append(hyper.toString());
-                        relatedHypers.append("'");
-        	            relatedHypers.append(",");
-        	        }
-        	        relatedHypers.setLength(relatedHypers.length()-1);
-                    whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
-        	    }
         	}
         	
             if (!permittedAccounts.isEmpty()) {
@@ -543,6 +528,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	attr += " WHERE ";
             }
             
+            if (!isIso) {
+        	    if ( hypers.isEmpty() ) {
+        	        return templateZonePairList;
+        	    } else {
+        	        StringBuilder relatedHypers = new StringBuilder();
+        	        for (HypervisorType hyper : hypers ) {
+        	            relatedHypers.append("'");
+        	            relatedHypers.append(hyper.toString());
+                        relatedHypers.append("'");
+        	            relatedHypers.append(",");
+        	        }
+        	        relatedHypers.setLength(relatedHypers.length()-1);
+                    whereClause += attr + " t.hypervisor_type IN (" + relatedHypers + ")";
+        	    }
+        	}
+            
             if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)  && !isAdmin(caller.getType()) ) {
             	whereClause += attr + "t.account_id IN (" + permittedAccountsStr + ")";
             }
@@ -552,29 +553,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	if (!permittedAccounts.isEmpty()) {
             	    whereClause += attr + "(dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
             	}            	            
-            } else if (templateFilter == TemplateFilter.sharedexecutable && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            	if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
+                whereClause += " AND t.account_id IN (" + permittedAccountsStr + ")";
+            } else if (templateFilter == TemplateFilter.sharedexecutable) {
             		whereClause += " LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE" +
                 	" (t.account_id IN (" + permittedAccountsStr + ") OR" +
-                	" lp.account_id IN (" + permittedAccountsStr + "))";
-            	} else {
-            		if (!joinedWithAccounts) {
-            			whereClause += " INNER JOIN account a on (t.account_id = a.id)";
-            		}
-            		whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
-            	}	
-            }else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            	// This has been moved up since it involved Joins
-            }
-            else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
+                	" lp.account_id IN (" + permittedAccountsStr + "))";	
+            } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
             	whereClause += attr + "(t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
             } else if (templateFilter == TemplateFilter.community) {
             	whereClause += attr + "t.public = 1 AND t.featured = 0";
             	if (!permittedAccounts.isEmpty()) {
             	    whereClause += attr + "(dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
             	}
-            } else if (templateFilter == TemplateFilter.all && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-        		whereClause += attr;
             } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && !isIso) {
             	return templateZonePairList;
             }

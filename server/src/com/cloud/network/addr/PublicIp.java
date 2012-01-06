@@ -100,16 +100,6 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
-    public Long getAllocatedToAccountId() {
-        return _addr.getAllocatedToAccountId();
-    }
-
-    @Override
-    public Long getAllocatedInDomainId() {
-        return _addr.getAllocatedInDomainId();
-    }
-
-    @Override
     public long getVlanId() {
         return _vlan.getId();
     }
@@ -180,5 +170,15 @@ public class PublicIp implements PublicIpAddress {
 	@Override
 	public void setState(State state) {
 		_addr.setState(state);
+	}
+
+	@Override
+	public Long getAllocatedToAccountId() {
+		return _addr.getAllocatedToAccountId();
+	}
+
+	@Override
+	public Long getAllocatedInDomainId() {
+		return _addr.getAllocatedInDomainId();
 	}
 }

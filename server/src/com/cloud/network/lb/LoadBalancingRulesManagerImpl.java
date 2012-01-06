@@ -40,8 +40,6 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -80,13 +78,13 @@ import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -646,7 +644,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         txn.start();
         
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), 
-                lb.getAlgorithm(), network.getId(), ipAddr.getAccountId(), ipAddr.getDomainId());
+                lb.getAlgorithm(), network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         newRule = _lbDao.persist(newRule);
         
@@ -976,45 +974,31 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
         Long ipId = cmd.getPublicIpId();
         Long zoneId = cmd.getZoneId();
-        String path = null;
+        Long id = cmd.getId();
+        String name = cmd.getLoadBalancerRuleName();
+        String keyword = cmd.getKeyword();
+        Long instanceId = cmd.getVirtualMachineId();
+        
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        List<Long> permittedAccounts = accountDomainPair.first();
-        Long domainId = accountDomainPair.second();
-
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _domainMgr.getDomain(caller.getDomainId());
-            path = domain.getPath();
-        }
-
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object id = cmd.getId();
-        Object name = cmd.getLoadBalancerRuleName();
-        Object keyword = cmd.getKeyword();
-        Object instanceId = cmd.getVirtualMachineId();
-
         SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
             lbVMSearch.and("instanceId", lbVMSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
             sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId(), JoinBuilder.JoinType.INNER);
-        }
-
-        if (path != null) {
-            // for domain admin we should show only subdomains information
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if (zoneId != null) {
@@ -1024,11 +1008,12 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
         SearchCriteria<LoadBalancerVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
         if (keyword != null) {
             SearchCriteria<LoadBalancerVO> ssc = _lbDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
@@ -1046,18 +1031,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         if (instanceId != null) {
             sc.setJoinParameters("lbVMSearch", "instanceId", instanceId);
-        }
-
-        if (domainId != null) {
-            sc.setParameters("domainId", domainId);
-        }
-        
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        }
-
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         if (zoneId != null) {

@@ -354,17 +354,17 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
             List<String> IpList = new ArrayList<String>() ;
             for(IPAddressVO ip : allocatedIps){
-                if(ip.getAccountId() == AccountVO.ACCOUNT_ID_SYSTEM){
+                if(ip.getAllocatedToAccountId() == AccountVO.ACCOUNT_ID_SYSTEM){
                     //Ignore usage for system account
                     continue;
                 }
                 String address = (ip.getAddress()).toString();
                 if(ipAssigment.containsKey(address)){
                     // Ip was assigned during the current period but not release till Date now
-                    IpPartialUsage.add(new UsageIPAddressVO(ip.getAccountId(), address, ipAssigment.get(address), now));
+                    IpPartialUsage.add(new UsageIPAddressVO(ip.getAllocatedToAccountId(), address, ipAssigment.get(address), now));
                 } else {
                     // Ip was not assigned or released during current period. Consider entire duration for usage calculation (lastCollection to now)
-                    fullDurationIpUsage.add(new UsageIPAddressVO(ip.getAccountId(), address, lastCollection, now));
+                    fullDurationIpUsage.add(new UsageIPAddressVO(ip.getAllocatedToAccountId(), address, lastCollection, now));
                     //Store just the Ips to send the list as part of DirectNetworkUsageCommand
                     IpList.add(address);
                 }

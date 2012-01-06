@@ -24,7 +24,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -34,7 +35,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.network.router.VirtualRouter;
 
 @Implementation(description="List routers.", responseObject=DomainRouterResponse.class)
-public class ListRoutersCmd extends BaseListCmd {
+public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 
     private static final String s_name = "listroutersresponse";
@@ -42,13 +43,6 @@ public class ListRoutersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the name of the account associated with the router. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the router. If used with the account parameter, lists all routers associated with an account in the specified domain.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
@@ -75,22 +69,10 @@ public class ListRoutersCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
-    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getHostId() {
         return hostId;
@@ -118,10 +100,6 @@ public class ListRoutersCmd extends BaseListCmd {
     
     public Long getNetworkId() {
         return networkId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     /////////////////////////////////////////////////////

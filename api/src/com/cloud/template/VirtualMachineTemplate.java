@@ -35,7 +35,7 @@ public interface VirtualMachineTemplate extends ControlledEntity {
         sharedexecutable,   // ready templates that have been granted to the calling user by another user
         executable,         // templates that are owned by the calling user, or public templates, that can be used to deploy a new VM
         community,          // returns templates that have been marked as public but not featured
-        all                 // all templates (only usable by ROOT admins)
+        all                 // all templates (only usable by admins)
     }
 
     /**

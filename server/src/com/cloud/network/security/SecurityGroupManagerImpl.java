@@ -45,17 +45,15 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
 import com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;
+import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
 import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
-import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
 import com.cloud.api.commands.RevokeSecurityGroupEgressCmd;
+import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -68,13 +66,14 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.SecurityGroupWork.Step;
-import com.cloud.network.security.dao.SecurityGroupRuleDao;
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupRuleDao;
 import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
-import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -92,7 +91,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -110,7 +108,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -1079,12 +1076,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Override
     public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
         Long instanceId = cmd.getVirtualMachineId();
         String securityGroup = cmd.getSecurityGroupName();
-        Long projectId = cmd.getProjectId();
         Long id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (instanceId != null) {
@@ -1096,60 +1094,18 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             return listSecurityGroupRulesByVM(instanceId.longValue());
         }
 
-        if (_accountMgr.isAdmin(caller.getType())) {
-            if (domainId != null) {
-                Domain domain = _domainMgr.getDomain(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-                }
-                _accountMgr.checkAccess(caller, domain);
-                if (accountName != null) {
-                    Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                    if (account == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    _accountMgr.checkAccess(caller, null, account);
-                    permittedAccounts.add(account.getId());
-                }
-            }
-        } else {
-            // regular user can see only his own security groups
-            permittedAccounts.add(caller.getId());
-        }
-        
-        //set project information
-        if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
-
         List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
+        
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Object keyword = cmd.getKeyword();
-
         SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        // only do a recursive domain search if the search is not limited by account or instance
-        if (permittedAccounts.isEmpty() && instanceId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
         SearchCriteria<SecurityGroupVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1157,16 +1113,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         if (securityGroup != null) {
             sc.setParameters("name", securityGroup);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        }
-
-        // only do a recursive domain search if the search is not limited by account or instance
-        if (permittedAccounts.isEmpty() && instanceId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            DomainVO domain = _domainDao.findById(caller.getDomainId());
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
         if (keyword != null) {

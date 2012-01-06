@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -34,7 +34,7 @@ import com.cloud.network.Network;
 
 
 @Implementation(description="Lists all available networks.", responseObject=NetworkResponse.class)
-public class ListNetworksCmd extends BaseListCmd {
+public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String _name = "listnetworksresponse";
 
@@ -44,13 +44,6 @@ public class ListNetworksCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list networks by id")
     private Long id;
-    
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a VLAN")
-    private Long domainId;
     
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
@@ -68,10 +61,6 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="type of the traffic")
     private String trafficType;
     
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list networks by project id")
-    private Long projectId;
-    
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
@@ -88,14 +77,6 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
-    }
-    
-    public String getAccountName() {
-        return accountName;
-    }
-    
-    public Long getDomainId() {
-        return domainId;
     }
     
     public Long getZoneId() {
@@ -116,10 +97,6 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public String getTrafficType() {
         return trafficType;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     public Long getPhysicalNetworkId() {

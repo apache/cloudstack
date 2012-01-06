@@ -40,13 +40,6 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List template visibility and permissions for the specified account. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List template visibility and permissions by domain. If used with the account parameter, specifies in which domain the specified account exists.")
-    private Long domainId;
-
     @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the template ID")
     private Long id;
@@ -54,14 +47,6 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -99,7 +84,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        List<String> accountNames = _mgr.listTemplatePermissions(this);
+        List<String> accountNames = _templateService.listTemplatePermissions(this);
         
         Account account = UserContext.current().getCaller();
         boolean isAdmin = (isAdmin(account.getType()));

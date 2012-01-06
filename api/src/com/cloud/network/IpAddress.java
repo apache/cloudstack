@@ -37,7 +37,7 @@ import com.cloud.utils.net.Ip;
  *   - DomainId = domain of the account owner.
  *   - Allocated = time it was allocated.
  */
-public interface IpAddress extends ControlledEntity {
+public interface IpAddress extends ControlledEntity{
     enum State {
         Allocating,  // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated,   // The IP address is in used.
@@ -48,10 +48,6 @@ public interface IpAddress extends ControlledEntity {
     long getDataCenterId();
 
     Ip getAddress();
-    
-    Long getAllocatedToAccountId();
-    
-    Long getAllocatedInDomainId();
     
     Date getAllocatedTime();
     
@@ -77,4 +73,8 @@ public interface IpAddress extends ControlledEntity {
     long getId();
     
     void setState(IpAddress.State state);
+
+	Long getAllocatedToAccountId();
+
+	Long getAllocatedInDomainId();
 }

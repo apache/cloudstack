@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,7 +33,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.storage.Snapshot;
 
 @Implementation(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
-public class ListSnapshotsCmd extends BaseListCmd {
+public class ListSnapshotsCmd extends BaseListProjectAndAccountResourcesCmd {
 	public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
     private static final String s_name = "listsnapshotsresponse";
@@ -41,13 +41,6 @@ public class ListSnapshotsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists snapshot belongig to the specified account. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshots for the specified account in this domain.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="snapshots")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists snapshot by snapshot ID")
@@ -66,24 +59,9 @@ public class ListSnapshotsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, description="the ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all snapshots from the parent specified by the domain id till leaves.")
-    private Boolean recursive;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list snapshots by project")
-    private Long projectId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -103,14 +81,6 @@ public class ListSnapshotsCmd extends BaseListCmd {
 
     public Long getVolumeId() {
         return volumeId;
-    }
-
-    public Boolean isRecursive() {
-        return recursive;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
     
     /////////////////////////////////////////////////////

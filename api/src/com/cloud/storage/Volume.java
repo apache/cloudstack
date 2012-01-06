@@ -18,16 +18,11 @@
 package com.cloud.storage;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.template.BasedOn;
-import com.cloud.utils.fsm.FiniteState;
-import com.cloud.utils.fsm.StateMachine;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
-import com.cloud.vm.VirtualMachine;
 
 public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.State> {
     enum Type {

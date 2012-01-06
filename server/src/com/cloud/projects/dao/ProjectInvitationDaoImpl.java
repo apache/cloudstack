@@ -22,7 +22,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     
     protected ProjectInvitationDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getForAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectId", AllFieldsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("created", AllFieldsSearch.entity().getCreated(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -34,7 +34,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         
         InactiveSearch = createSearchBuilder();
         InactiveSearch.and("id", InactiveSearch.entity().getId(), SearchCriteria.Op.EQ);
-        InactiveSearch.and("accountId", InactiveSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        InactiveSearch.and("accountId", InactiveSearch.entity().getForAccountId(), SearchCriteria.Op.EQ);
         InactiveSearch.and("projectId", InactiveSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         InactiveSearch.and("created", InactiveSearch.entity().getCreated(), SearchCriteria.Op.LTEQ);
         InactiveSearch.and("state", InactiveSearch.entity().getState(), SearchCriteria.Op.EQ);

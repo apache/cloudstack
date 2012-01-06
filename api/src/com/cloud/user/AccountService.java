@@ -20,12 +20,15 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -155,7 +158,7 @@ public interface AccountService {
 	
 	User getActiveUser(long userId);
 	
-	User getUser(long userId);
+	User getUserIncludingRemoved(long userId);
 	
 	boolean isRootAdmin(short accountType);
 	
@@ -169,5 +172,9 @@ public interface AccountService {
 
 	List<? extends UserAccount> searchForUsers(ListUsersCmd cmd)
 			throws PermissionDeniedException;
+	
+    void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
+    
+    void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
 
 }

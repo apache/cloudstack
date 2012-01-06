@@ -18,6 +18,7 @@
 package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -55,6 +55,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
@@ -337,7 +338,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize) {
+    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive) {
         Account caller = UserContext.current().getCaller();
         Long accountId = null;
         String path = null;
@@ -362,11 +363,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                     accountId = owner.getId();
                 }
             }
-            
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(caller.getDomainId());
-                path = domain.getPath();
-            }
         } else {
             if (accountName != null && !accountName.equals(caller.getAccountName())) {
                 throw new PermissionDeniedException("Can't list account " + accountName + " projects; unauthorized");
@@ -377,6 +373,17 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             }
             
             accountId = caller.getId();
+        }
+        
+        if (!listAll) {
+        	if (domainId == null && accountId == null) {
+        		accountId = caller.getId();
+        	} else {
+        		if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || !isRecursive) {
+                    DomainVO domain = _domainDao.findById(caller.getDomainId());
+                    path = domain.getPath();
+                }
+        	}
         }
         
         if (path != null) {
@@ -395,6 +402,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
+        }
+        
+        if (domainId != null) {
+            sc.addAnd("domainId", Op.EQ, domainId);
         }
         
         if (name != null) {
@@ -757,64 +768,23 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal) {
-        Account caller = UserContext.current().getCaller();
-        Long accountId = null;
-        String domainPath = null;
+    public List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll) {
+    	Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
         
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (domainId == null) {
-                domainPath = _domainMgr.getDomain(caller.getDomainId()).getPath();
-            } 
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            // regular user is constraint to only his account
-            accountId = caller.getId();
-        }
-        
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-            _accountMgr.checkAccess(caller, domain);
-
-            if (accountName != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                }
-
-                _accountMgr.checkAccess(caller, null, account);
-                accountId = account.getId();
-            }
-        }
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, accountName, null, permittedAccounts, listAll, id);
         Filter searchFilter = new Filter(ProjectInvitationVO.class, "id", true, startIndex, pageSizeVal);
-        
         SearchBuilder<ProjectInvitationVO> sb = _projectInvitationDao.createSearchBuilder();
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
         sb.and("projectId", sb.entity().getProjectId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("created", sb.entity().getCreated(), SearchCriteria.Op.GT);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-        if (domainPath != null) {
-            // do a domain LIKE match for the admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
         SearchCriteria<ProjectInvitationVO> sc = sb.create();
-        
-        if (domainPath != null) {
-            sc.setJoinParameters("domainSearch", "path", domainPath);
-        }
-        
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        }
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
         
         if (projectId != null){
             sc.setParameters("projectId", projectId);

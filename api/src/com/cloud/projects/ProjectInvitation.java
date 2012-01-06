@@ -2,14 +2,16 @@ package com.cloud.projects;
 
 import java.util.Date;
 
-public interface ProjectInvitation {
+import com.cloud.acl.ControlledEntity;
+
+public interface ProjectInvitation extends ControlledEntity{
     public enum State {Pending, Completed, Expired, Declined}
 
     long getId();
 
     long getProjectId();
 
-    Long getAccountId();
+    Long getForAccountId();
 
     String getToken();
 
@@ -19,6 +21,6 @@ public interface ProjectInvitation {
 
     State getState();
 
-    Long getDomainId();
+    Long getInDomainId();
 
 }

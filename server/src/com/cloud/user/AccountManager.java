@@ -18,6 +18,7 @@
 
 package com.cloud.user;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
@@ -26,7 +27,10 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 /**
  * AccountManager includes logic that deals with accounts, domains, and users.
@@ -41,10 +45,6 @@ public interface AccountManager extends AccountService {
     boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
     
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
-    
-    void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
-    
-    void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
 
 	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 
@@ -90,5 +90,16 @@ public interface AccountManager extends AccountService {
     boolean lockAccount(long accountId);
 
 	boolean enableAccount(long accountId);
+
+	void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,
+			boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+	void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
+			Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+	ListProjectResourcesCriteria buildACLSearchParameters(Account caller, Long domainId,
+			boolean isRecursive, String accountName, Long projectId,
+			List<Long> permittedAccounts,
+			boolean listAll, Long id);
    
 }

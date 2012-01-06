@@ -431,7 +431,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Transaction txn = Transaction.currentTxn();
 
-        Account owner = _accountMgr.getAccount(addr.getAccountId());
+        Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
         long isSourceNat = (addr.isSourceNat()) ? 1 : 0;
 
         txn.start();
@@ -1044,7 +1044,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         IpAddress ipToAssoc = getIp(cmd.getEntityId());
         if (ipToAssoc != null) {
             _accountMgr.checkAccess(caller, null, ipToAssoc);
-            owner = _accountMgr.getAccount(ipToAssoc.getAccountId());
+            owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
             s_logger.debug("Unable to find ip address by id: " + cmd.getEntityId());
             return null;
@@ -1931,7 +1931,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Check for account wide pool. It will have an entry for account_vlan_map.
-        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAccountId(), ipVO.getVlanId()) != null) {
+        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {
             throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
         }
 
@@ -2410,6 +2410,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Boolean restartRequired= cmd.getRestartRequired();
+        boolean listAll = cmd.listAll();
+        boolean isRecursive = cmd.isRecursive();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2440,7 +2442,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        if (!_accountMgr.isAdmin(caller.getType())) {
+        if (!_accountMgr.isAdmin(caller.getType()) || !listAll) {
             permittedAccounts.add(caller.getId());
             domainId = caller.getDomainId();
         }
@@ -2498,10 +2500,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (isSystem == null || !isSystem) {
             //Get domain level networks
-            if (domainId != null) {
+            if (domainId != null && !listAll) {
                 networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, domainId));
             } else if (permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path));
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path, isRecursive));
             }
 
             //get account specific networks
@@ -2623,12 +2625,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.search(sc, searchFilter);
     }
 
-    private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path) {
+    private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
 
         if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
+        	if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", path + "%");
+        	} else {
+                sc.setJoinParameters("domainSearch", "path", path);
+        	}
         }
 
         return _networksDao.search(sc, searchFilter);
@@ -3599,18 +3605,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // don't decrement resource count for direct ips
             if (ip.getAssociatedWithNetworkId() != null) {
-                _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+                _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAllocatedToAccountId(), ResourceType.public_ip);
             }
 
             long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
 
             // Save usage event
-            if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+            if (ip.getAllocatedToAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 VlanVO vlan = _vlanDao.findById(ip.getVlanId());
 
                 String guestType = vlan.getVlanType().toString();
 
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
                 _usageEventDao.persist(usageEvent);
             }
 

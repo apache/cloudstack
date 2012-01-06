@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,7 +33,7 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccount;
 
 @Implementation(description="Lists user accounts", responseObject=UserResponse.class)
-public class ListUsersCmd extends BaseListCmd {
+public class ListUsersCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
     private static final String s_name = "listusersresponse";
@@ -42,15 +42,8 @@ public class ListUsersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List user by account. Must be used with the domainId parameter.")
-    private String accountName;
-
     @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
     private Long accountType;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List all users in a domain. If used with the account parameter, lists an account in a specific domain.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="user")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List user by ID.")
@@ -66,16 +59,9 @@ public class ListUsersCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
-    }
 
     public Long getAccountType() {
         return accountType;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public Long getId() {
@@ -94,7 +80,7 @@ public class ListUsersCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }

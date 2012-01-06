@@ -24,17 +24,17 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.rules.LoadBalancer;
 
 @Implementation(description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
-public class ListLoadBalancerRulesCmd extends BaseListCmd {
+public class ListLoadBalancerRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerrulesresponse";
@@ -42,13 +42,6 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the load balancer rule. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of the load balancer rule. If used with the account parameter, lists load balancer rules for the account in the specified domain.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the load balancer rule")
@@ -68,22 +61,10 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "the availability zone ID")
     private Long zoneId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list port forwarding rules by project")
-    private Long projectId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -103,10 +84,6 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     // ///////////////////////////////////////////////////

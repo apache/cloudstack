@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -34,7 +34,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
 
 @Implementation(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
-public class ListPublicIpAddressesCmd extends BaseListCmd {
+public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
@@ -43,15 +43,8 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all public IP addresses by account. Must be used with the domainId parameter.")
-    private String accountName;
-
     @Parameter(name=ApiConstants.ALLOCATED_ONLY, type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
@@ -74,10 +67,6 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.FOR_LOAD_BALANCING, type=CommandType.BOOLEAN, description="list only ips used for load balancing")
     private Boolean forLoadBalancing;
     
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list ips by project")
-    private Long projectId;
-    
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses by physical network id")
     private Long physicalNetworkId;
@@ -93,16 +82,8 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         return id;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
     public Boolean isAllocatedOnly() {
         return allocatedOnly;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public Boolean isForVirtualNetwork() {
@@ -119,10 +100,6 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
     
     public Long getPhysicalNetworkId() {

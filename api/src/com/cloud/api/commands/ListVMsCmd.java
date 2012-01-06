@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiConstants.VMDetails;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,7 +36,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
-public class ListVMsCmd extends BaseListCmd {
+public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";
@@ -44,16 +44,6 @@ public class ListVMsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
-    private Long domainId;
-
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="Must be used with domainId parameter. Defaults to false, but if true, lists all vms from the parent specified by the domain id till leaves.")
-    private Boolean recursive;
 
     @IdentityMapper(entityTableName="instance_group")
     @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
@@ -94,10 +84,6 @@ public class ListVMsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
     private Long storageId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list vms by project")
-    private Long projectId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]" )
     private List<String> viewDetails; 
@@ -106,14 +92,6 @@ public class ListVMsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getGroupId() {
         return groupId;
@@ -154,10 +132,6 @@ public class ListVMsCmd extends BaseListCmd {
     public Long getNetworkId() {
         return networkId;
     }
-
-    public Boolean isRecursive() {
-        return recursive;
-    }
         
     public String getHypervisor() {
 		return hypervisor;
@@ -166,11 +140,6 @@ public class ListVMsCmd extends BaseListCmd {
     public Long getStorageId() {
         return storageId;
     }
-
-    public Long getProjectId() {
-        return projectId;
-    }
-
     
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;

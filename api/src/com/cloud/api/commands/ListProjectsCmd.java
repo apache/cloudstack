@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +32,7 @@ import com.cloud.api.response.ProjectResponse;
 import com.cloud.projects.Project;
 
 @Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectResponse.class)
-public class ListProjectsCmd extends BaseListCmd {
+public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectsCmd.class.getName());
     private static final String s_name = "listprojectsresponse";
 
@@ -43,13 +43,6 @@ public class ListProjectsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
     private Long id;
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list projects availabe for specified account")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list projects for the domain specified")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list projects by name")
     private String name;
@@ -66,14 +59,6 @@ public class ListProjectsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public String getName() {
@@ -95,7 +80,7 @@ public class ListProjectsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, accountName, domainId, this.getKeyword(), this.getStartIndex(), this.getPageSizeVal());
+        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), this.listAll(), this.isRecursive());
         ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
         List<ProjectResponse> projectResponses = new ArrayList<ProjectResponse>();
         for (Project project : projects) {

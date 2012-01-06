@@ -42,13 +42,6 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists snapshot policies for the specified account. Must be used with domainid parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshot policies for the specified account in this domain.")
-    private Long domainId;
-
     @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
@@ -56,14 +49,6 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getVolumeId() {
         return volumeId;

@@ -24,8 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -33,7 +32,7 @@ import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimit;
 
 @Implementation(description="Lists resource limits.", responseObject=ResourceLimitResponse.class)
-public class ListResourceLimitsCmd extends BaseListCmd {
+public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
     private static final String s_name = "listresourcelimitsresponse";
@@ -41,17 +40,6 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Lists resource limits by account. Must be used with the domainId parameter.")
-    private String accountName;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Lists resource limits by project")
-    private Long projectId;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists resource limits by domain ID. If used with the account parameter, lists resource limits for a specified account in a specified domain.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists resource limits by ID.")
     private Long id;
@@ -66,14 +54,6 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -94,7 +74,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, finalyzeAccountId(accountName, domainId, projectId, false), domainId, resourceType, this.getStartIndex(), this.getPageSizeVal());
+        List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(), resourceType, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimit limit : result) {

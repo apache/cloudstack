@@ -21,6 +21,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     private static final Logger s_logger = Logger.getLogger(ProjectDaoImpl.class);
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
+    protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
    
     protected ProjectDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -84,7 +85,6 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     public List<ProjectVO> listByState(Project.State state) {
         SearchCriteria<ProjectVO> sc = AllFieldsSearch.create();
         sc.setParameters("state", state);
-        
         return listBy(sc);
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+ * Copyright (C) 2012 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,21 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.projects.dao;
 
-import java.util.List;
+package com.cloud.api;
 
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectVO;
-import com.cloud.utils.db.GenericDao;
+public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd{
+	
+    @IdentityMapper(entityTableName="projects")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+    private Long projectId;
 
-public interface ProjectDao extends GenericDao<ProjectVO, Long>{
-
-    ProjectVO findByNameAndDomain(String name, long domainId);
-
-    Long countProjectsForDomain(long domainId);
-    
-    ProjectVO findByProjectAccountId(long projectAccountId);
-    
-    List<ProjectVO> listByState(Project.State state);
+    public Long getProjectId() {
+        return projectId;
+    }
 }

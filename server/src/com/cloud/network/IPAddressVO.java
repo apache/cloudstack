@@ -31,6 +31,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
 import com.cloud.utils.net.Ip;
@@ -94,6 +95,14 @@ public class IPAddressVO implements IpAddress, Identity {
 	
     @Column(name="physical_network_id")
     private Long physicalNetworkId;
+    
+	@Column(name="account_id")
+	@Transient
+	private Long accountId = null;
+	
+	@Transient
+    @Column(name="domain_id")
+    private Long domainId = null;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -136,6 +145,11 @@ public class IPAddressVO implements IpAddress, Identity {
 		return allocatedToAccountId;
 	}
 	
+    @Override
+    public Long getAllocatedInDomainId() {
+        return allocatedInDomainId;
+    }
+	
 	@Override
 	public Long getAssociatedWithNetworkId() {
 	    return associatedWithNetworkId;
@@ -152,11 +166,6 @@ public class IPAddressVO implements IpAddress, Identity {
 
     public void setAssociatedWithVmId(Long associatedWithVmId) {
         this.associatedWithVmId = associatedWithVmId;
-    }
-
-    @Override
-    public Long getAllocatedInDomainId() {
-        return allocatedInDomainId;
     }
     
 	@Override

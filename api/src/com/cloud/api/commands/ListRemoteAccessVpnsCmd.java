@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,7 +33,7 @@ import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
 
 @Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
-public class ListRemoteAccessVpnsCmd extends BaseListCmd {
+public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
 
     private static final String s_name = "listremoteaccessvpnsresponse";
@@ -42,39 +42,17 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the remote access vpn. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of the remote access vpn rule. If used with the account parameter, lists remote access vpns for the account in the specified domain.")
-    private Long domainId;
-
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
     private Long publicIpId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list remote access vpn by project")
-    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
     
     public Long getPublicIpId() {
         return publicIpId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     /////////////////////////////////////////////////////

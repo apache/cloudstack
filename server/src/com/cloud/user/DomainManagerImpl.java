@@ -320,16 +320,23 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     }
     
     @Override
-    public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
-        Long domainId = cmd.getId();
+    public List<DomainVO> searchForDomains(ListDomainsCmd cmd){
         Account caller = UserContext.current().getCaller();
-        String path = null;
-
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            DomainVO domain = _domainDao.findById(caller.getDomainId());
-            if (domain != null) {
-                path = domain.getPath();
+        Long domainId = cmd.getId();
+        boolean listAll = cmd.listAll();
+        boolean isRecursive = false;
+        
+        if (domainId != null) {
+            Domain domain = getDomain(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
+            _accountMgr.checkAccess(caller, domain);
+        } else {
+    		domainId = caller.getDomainId();
+    		if (listAll) {
+    			isRecursive = true;
+    		}
         }
 
         Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -361,11 +368,11 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         }
 
         if (domainId != null) {
-            sc.setParameters("id", domainId);
-        }
-
-        if (path != null) {
-            sc.setParameters("path", "%" + path + "%");
+        	if (isRecursive) {
+        		sc.setParameters("path", getDomain(domainId).getPath() + "%");
+        	} else {
+        		sc.setParameters("id", domainId);
+        	}
         }
         
         //return only Active domains to the API
@@ -375,33 +382,28 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     }
     
     @Override
-    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
-        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {   
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
         Boolean isRecursive = cmd.isRecursive();
         Object keyword = cmd.getKeyword();
+        boolean listAll = cmd.listAll();
         String path = null;
-
-        if (isRecursive == null) {
-            isRecursive = false;
-        }
-
+        
         Account caller = UserContext.current().getCaller();
         if (domainId != null) {
-            if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("Unable to list domains children for domain id " + domainId + ", permission denied.");
-            }
+        	_accountMgr.checkAccess(caller, getDomain(domainId));
         } else {
             domainId = caller.getDomainId();
         }
 
         DomainVO domain = _domainDao.findById(domainId);
-        if (domain != null && isRecursive) {
+        if (domain != null && isRecursive && !listAll) {
             path = domain.getPath();
             domainId = null;
         }
 
+        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path, true);
 
         return domainList;

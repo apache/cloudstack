@@ -38,7 +38,7 @@ public interface ProjectService {
      */
     Project getProject(long id);
     
-    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize);
+    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
     
@@ -58,7 +58,7 @@ public interface ProjectService {
     
     List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
     
-    List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal);
+    List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive, boolean listAll);
     
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
     

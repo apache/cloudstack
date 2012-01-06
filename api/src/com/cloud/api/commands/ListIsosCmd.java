@@ -25,7 +25,8 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all available ISO files.", responseObject=TemplateResponse.class)
-public class ListIsosCmd extends BaseListCmd {
+public class ListIsosCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
     private static final String s_name = "listisosresponse";
@@ -47,15 +48,8 @@ public class ListIsosCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the ISO file. Must be used with the domainId parameter.")
-    private String accountName;
-
     @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if the ISO is bootable, false otherwise")
     private Boolean bootable;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available ISO files by ID of a domain. If used with the account parameter, lists all available ISO files for the account in the ID of a domain.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
@@ -84,24 +78,13 @@ public class ListIsosCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone")
     private Long zoneId;
     
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list isos by project")
-    private Long projectId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
-    }
 
     public Boolean isBootable() {
         return bootable;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public String getHypervisor() {
@@ -130,10 +113,6 @@ public class ListIsosCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
     
     public boolean listInReadyState() {

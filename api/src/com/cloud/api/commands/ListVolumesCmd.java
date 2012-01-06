@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,7 +33,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.storage.Volume;
 
 @Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
-public class ListVolumesCmd extends BaseListCmd {
+public class ListVolumesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
@@ -41,13 +41,6 @@ public class ListVolumesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists all disk volumes for the specified domain ID. If used with the account parameter, returns all disk volumes for an account in the specified domain ID.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="list volumes on specified host")
@@ -74,25 +67,11 @@ public class ListVolumesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
-
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all volumes from the parent specified by the domain id till leaves.")
-    private Boolean recursive;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
-    private Long projectId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getHostId() {
         return hostId;
@@ -121,14 +100,6 @@ public class ListVolumesCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
-    public Boolean isRecursive() {
-        return recursive;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
-    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -146,7 +117,7 @@ public class ListVolumesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Volume> volumes = _mgr.searchForVolumes(this);
+        List<? extends Volume> volumes = _storageService.searchForVolumes(this);
 
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();

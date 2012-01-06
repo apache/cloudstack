@@ -22,8 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
+import com.cloud.api.BaseListAccountResourcesCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.AsyncJobResponse;
@@ -31,19 +30,12 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 
 @Implementation(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
-public class ListAsyncJobsCmd extends BaseListCmd {
+public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     private static final String s_name = "listasyncjobsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the async job (this account is the job initiator). Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the async job.  If used with the account parameter, returns async jobs for the account in the specified domain.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.START_DATE, type=CommandType.TZDATE, description="the start date of the async job")
     private Date startDate;
@@ -52,14 +44,6 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Date getStartDate() {
         return startDate;

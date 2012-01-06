@@ -17,7 +17,6 @@
  */
 package com.cloud.network.dao;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value=NetworkServiceMapDao.class) @DB(txn=false)
 public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
@@ -59,7 +57,6 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
-        
     }
     
     @Override

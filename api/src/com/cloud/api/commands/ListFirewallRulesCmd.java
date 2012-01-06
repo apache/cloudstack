@@ -23,7 +23,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +33,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.FirewallRule;
 
 @Implementation(description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
-public class ListFirewallRulesCmd extends BaseListCmd {
+public class ListFirewallRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
 
     private static final String s_name = "listfirewallrulesresponse";
@@ -47,29 +48,10 @@ public class ListFirewallRulesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="the id of IP address of the firwall services")
     private Long ipAddressId;
-    
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists firewall rules for the specified account in this domain.")
-    private Long domainId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
-    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
     
     public Long getIpAddressId() {
         return ipAddressId;
@@ -77,10 +59,6 @@ public class ListFirewallRulesCmd extends BaseListCmd {
     
     public Long getId() {
         return id;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     /////////////////////////////////////////////////////

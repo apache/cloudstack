@@ -53,7 +53,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -66,9 +65,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Snapshot;
@@ -111,8 +109,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -886,8 +882,16 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override
     public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) {
         Long volumeId = cmd.getVolumeId();
-        Boolean isRecursive = cmd.isRecursive();
-        Long projectId = cmd.getProjectId();
+        String name = cmd.getSnapshotName();
+        Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
+        String snapshotTypeStr = cmd.getSnapshotType();
+        String intervalTypeStr = cmd.getIntervalType();
+        
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         // Verify parameters
         if (volumeId != null) {
@@ -897,98 +901,20 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
 
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        if ((caller == null) || _accountMgr.isAdmin(caller.getType())) {
-            if (domainId != null) {
-                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list templates for domain " + domainId + ", permission denied.");
-                }
-            } else if ((caller != null) && ((caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN))) {
-                domainId = caller.getDomainId();
-                isRecursive = true;
-            }
-
-            if (domainId != null && accountName != null) {
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    permittedAccounts.add(userAccount.getId());
-                } else {
-                    throw new InvalidParameterValueException("Could not find account:" + accountName + " in domain:" + domainId);
-                }
-            }
-        } else {
-            permittedAccounts.add(caller.getId());
-        }
-
-        if (isRecursive == null) {
-            isRecursive = false;
-        }
-        
-        //set project information
-        boolean skipProjectSnapshots = true;
-        if (projectId != null) {
-        	if (projectId == -1) {
-                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        	} else {
-        		permittedAccounts.clear();
-                Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-                }
-                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-                }
-                permittedAccounts.add(project.getProjectAccountId());
-        	}
-        	skipProjectSnapshots = false;
-        }
-
-        Object name = cmd.getSnapshotName();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        Object snapshotTypeStr = cmd.getSnapshotType();
-        Object intervalTypeStr = cmd.getIntervalType();
-
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
 
-        SearchBuilder<AccountVO> accountSearch = null;
-        if ((permittedAccounts.isEmpty()) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            accountSearch = _accountDao.createSearchBuilder();
-            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            if (isRecursive) {
-                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            } else {
-                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
-            }
-            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
-        }
-        
-        if (skipProjectSnapshots) {
-        	if(accountSearch == null){
-        		accountSearch = _accountDao.createSearchBuilder();
-       	 		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        	}
-        	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-        }
-
         SearchCriteria<SnapshotVO> sc = sb.create();
-        
-        if (skipProjectSnapshots) {
-        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
-        }
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
@@ -1006,18 +932,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             SearchCriteria<SnapshotVO> ssc = _snapshotDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
-            if (isRecursive) {
-                joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                joinSearch.setJoinParameters("domainSearch", "path", domain.getPath());
-            }
         }
 
         if (snapshotTypeStr != null) {

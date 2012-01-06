@@ -24,17 +24,16 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.Event;
 
 @Implementation(description="A command to list events.", responseObject=EventResponse.class)
-public class ListEventsCmd extends BaseListCmd {
+public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 
     private static final String s_name = "listeventsresponse";
@@ -42,13 +41,6 @@ public class ListEventsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account for the event. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID for the event. If used with the account parameter, returns all events for an account in the specified domain ID.")
-    private Long domainId;
 
     @IdentityMapper(entityTableName="event")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the event")
@@ -71,22 +63,10 @@ public class ListEventsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the event type (see event types)")
     private String type;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list events by projectId")
-    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -114,10 +94,6 @@ public class ListEventsCmd extends BaseListCmd {
 
     public String getType() {
         return type;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
 
     /////////////////////////////////////////////////////

@@ -26,6 +26,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
@@ -116,7 +118,13 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() {
-        // method is implemented in updateTemplate/updateIsoPermissions
+    public void execute(){
+        boolean result = _templateService.updateTemplateOrIsoPermissions(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template/iso permissions");
+        }
     }
 }

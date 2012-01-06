@@ -798,7 +798,7 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public boolean verifyUser(Long userId) {
-        User user = _accountMgr.getUser(userId);
+        User user = _accountMgr.getUserIncludingRemoved(userId);
         Account account = null;
         if (user != null) {
             account = _accountMgr.getAccount(user.getAccountId());

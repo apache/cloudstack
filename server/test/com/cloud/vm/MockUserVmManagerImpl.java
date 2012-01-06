@@ -38,6 +38,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -171,7 +172,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
         return null;
     }

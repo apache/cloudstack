@@ -319,13 +319,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         // Get stopped and running VMs
         int vmStopped = 0;
         int vmRunning = 0;
+        
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        permittedAccounts.add(account.getId());
 
-        Long[] accountIds = new Long[1];
-        accountIds[0] = account.getId();
-
-        Criteria c1 = new Criteria();
-        c1.addCriteria(Criteria.ACCOUNTID, accountIds);
-        List<? extends UserVm> virtualMachines = ApiDBUtils.searchForUserVMs(c1);
+        List<? extends UserVm> virtualMachines = ApiDBUtils.searchForUserVMs(new Criteria(), permittedAccounts);
 
         // get Running/Stopped VMs
         for (Iterator<? extends UserVm> iter = virtualMachines.iterator(); iter.hasNext();) {
@@ -3026,15 +3024,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProjectName(ApiDBUtils.findProjectById(invite.getProjectId()).getName());
         response.setInvitationState(invite.getState().toString());
         
-        if (invite.getAccountId() != null) {
-            Account account = ApiDBUtils.findAccountById(invite.getAccountId());
+        if (invite.getForAccountId() != null) {
+            Account account = ApiDBUtils.findAccountById(invite.getForAccountId());
             response.setAccountName(account.getAccountName());
             
         } else {
             response.setEmail(invite.getEmail());
         }
        
-        populateDomain(response, invite.getDomainId());
+        populateDomain(response, invite.getInDomainId());
         
         response.setObjectName("projectinvitation");
         return response;

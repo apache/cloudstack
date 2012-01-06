@@ -24,7 +24,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -32,7 +33,7 @@ import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 
 @Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class) 
-public class ListSSHKeyPairsCmd extends BaseListCmd {
+public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSSHKeyPairsCmd.class.getName());
     private static final String s_name = "listsshkeypairsresponse";
     

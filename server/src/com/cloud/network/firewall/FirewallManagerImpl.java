@@ -33,8 +33,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.commands.ListFirewallRulesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -61,16 +59,15 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -170,8 +167,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         
         if (ipAddress != null) {
         	networkId = ipAddress.getAssociatedWithNetworkId();
-        	accountId = ipAddress.getAccountId();
-        	domainId = ipAddress.getDomainId();
+        	accountId = ipAddress.getAllocatedToAccountId();
+        	domainId = ipAddress.getAllocatedInDomainId();
         }
         
         Transaction txn = Transaction.currentTxn();
@@ -196,14 +193,13 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     
     @Override
     public List<? extends FirewallRule> listFirewallRules(ListFirewallRulesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
         Long ipId = cmd.getIpAddressId();
         Long id = cmd.getId();
-        String path = null;
-
-        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        List<Long> permittedAccounts = accountDomainPair.first();
-        Long domainId = accountDomainPair.second();
+        
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -213,27 +209,17 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _domainMgr.getDomain(caller.getDomainId());
-            path = domain.getPath();
-        }
-
+        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
         Filter filter = new Filter(FirewallRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
 
-        if (path != null) {
-            // for domain admin we should show only subdomains information
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
         SearchCriteria<FirewallRuleVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -243,19 +229,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             sc.setParameters("ip", ipId);
         }
 
-        if (domainId != null) {
-            sc.setParameters("domainId", domainId);
-        }
-        
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        }
-
         sc.setParameters("purpose", Purpose.Firewall);
-
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
-        }
 
         return _firewallDao.search(sc, filter);
     }

@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +32,7 @@ import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.projects.ProjectInvitation;
 
 @Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectInvitationResponse.class)
-public class ListProjectInvitationsCmd extends BaseListCmd {
+public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectInvitationsCmd.class.getName());
     private static final String s_name = "listprojectinvitationsresponse";
 
@@ -42,13 +42,6 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list by project id")
     private Long projectId;
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
-    private String accountName;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all invitations in specified domain")
-    private Long domainId;
    
     @Parameter(name=ApiConstants.ACTIVE_ONLY, type=CommandType.BOOLEAN, description="if true, list only active invitations - having Pending state and ones that are not timed out yet")
     private boolean activeOnly;
@@ -64,14 +57,6 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     public Long getProjectId() {
         return projectId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public boolean isActiveOnly() {
@@ -97,7 +82,7 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, accountName, domainId, state, activeOnly, this.getStartIndex(), this.getPageSizeVal());
+        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(), this.isRecursive(), this.listAll());
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
         List<ProjectInvitationResponse> projectInvitationResponses = new ArrayList<ProjectInvitationResponse>();
         for (ProjectInvitation invite : invites) {

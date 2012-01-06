@@ -45,11 +45,14 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list children domain by parent domain ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
-    private Boolean recursive;
-
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domains by name")
     private String domainName;
+    
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
+    private Boolean recursive;
+    
+    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
+    private Boolean listAll;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,12 +62,16 @@ public class ListDomainChildrenCmd extends BaseListCmd {
         return id;
     }
 
-    public Boolean isRecursive() {
-        return recursive;
-    }
-
     public String getDomainName() {
         return domainName;
+    }
+    
+    public boolean listAll() {
+        return listAll == null ? false : listAll;
+    }
+    
+    public boolean isRecursive() {
+        return recursive == null ? false : recursive;
     }
 
     /////////////////////////////////////////////////////

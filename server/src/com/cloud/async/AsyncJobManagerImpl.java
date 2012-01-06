@@ -297,7 +297,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
             throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
         }
        
-        User userJobOwner = _accountMgr.getUser(job.getUserId());
+        User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
         Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
         
         //check permissions

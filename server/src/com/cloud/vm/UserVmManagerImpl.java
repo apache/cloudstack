@@ -18,9 +18,6 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
-import com.cloud.network.rules.FirewallRule;
-
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,7 +116,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IPAddressVO;
@@ -140,6 +136,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroup;
@@ -154,7 +151,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -2893,80 +2890,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Boolean isRecursive = cmd.isRecursive();
-        String hypervisor = cmd.getHypervisor();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        String path = null;
-        Long projectId = cmd.getProjectId();
+    	 Account caller = UserContext.current().getCaller();
+         Long domainId = cmd.getDomainId();
+         boolean isRecursive = cmd.isRecursive();
+         List<Long> permittedAccounts = new ArrayList<Long>();
+         String hypervisor = cmd.getHypervisor();
+         String accountName = cmd.getAccountName();
+         Long projectId = cmd.getProjectId();
+         boolean listAll = cmd.listAll();
+         Long id = cmd.getId();
 
-        if (isRecursive != null && isRecursive && domainId == null) {
-            throw new InvalidParameterValueException("Please enter a parent domain id for listing vms recursively");
-        }
-
-        if (domainId != null) {
-            // Verify if user is authorized to see instances belonging to the domain
-            DomainVO domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-            _accountMgr.checkAccess(caller, domain);
-        }
-
-        boolean isAdmin = false;
-
-        if (_accountMgr.isAdmin(caller.getType())) {
-            isAdmin = true;
-            if (accountName != null && domainId != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null) {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-                permittedAccounts.add(account.getId());
-            }
-
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                if (isRecursive == null) {
-                    DomainVO domain = _domainDao.findById(caller.getDomainId());
-                    path = domain.getPath();
-                }
-            }
-        } else {
-            //regular user can't specify any other domain rather than his own
-            if (domainId != null && domainId.longValue() != caller.getDomainId()) {
-                throw new PermissionDeniedException("Caller is not authorised to see domain id=" + domainId + " entries");
-            }
-            permittedAccounts.add(caller.getId());
-        }
-
-        if (isRecursive != null && isRecursive && isAdmin) {
-            if (isRecursive) {
-                DomainVO domain = _domainDao.findById(domainId);
-                path = domain.getPath();
-                domainId = null;
-            }
-        }
-
-        //set project information
-        boolean skipProjectVms = true;
-        if (projectId != null) {
-        	if (projectId == -1) {
-                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        	} else {
-        		permittedAccounts.clear();
-                Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-                }
-                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-                }
-                permittedAccounts.add(project.getProjectAccountId());
-        	}
-        	skipProjectVms = false;
-        }
+         ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, accountName, projectId, permittedAccounts, listAll, id);
 
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
@@ -2982,10 +2916,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             c.addCriteria(Criteria.DOMAINID, domainId);
         }
 
-        if (path != null) {
-            c.addCriteria(Criteria.PATH, path);
-        }
-
         if (HypervisorType.getType(hypervisor) != HypervisorType.None) {
             c.addCriteria(Criteria.HYPERVISOR, hypervisor);
         } else if (hypervisor != null) {
@@ -2993,7 +2923,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // ignore these search requests if it's not an admin
-        if (isAdmin) {
+        if (_accountMgr.isAdmin(caller.getType())) {
             c.addCriteria(Criteria.PODID, cmd.getPodId());
             c.addCriteria(Criteria.HOSTID, cmd.getHostId());
             c.addCriteria(Criteria.STORAGE_ID, cmd.getStorageId());
@@ -3002,18 +2932,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (!permittedAccounts.isEmpty()) {
             c.addCriteria(Criteria.ACCOUNTID, permittedAccounts.toArray());
         }
-        c.addCriteria(Criteria.ISADMIN, isAdmin);
+        c.addCriteria(Criteria.ISADMIN, _accountMgr.isAdmin(caller.getType()));
 
-        return searchForUserVMs(c, skipProjectVms);
+        return searchForUserVMs(c, caller, domainId, isRecursive, permittedAccounts, listAll, listProjectResourcesCriteria);
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
         SearchBuilder<UserVmVO> sb = _vmDao.createSearchBuilder();
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
         Object id = c.getCriteria(Criteria.ID);
         Object name = c.getCriteria(Criteria.NAME);
         Object state = c.getCriteria(Criteria.STATE);
@@ -3026,15 +2956,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         assert c.getCriteria(Criteria.IPADDRESS) == null : "We don't support search by ip address on VM any more.  If you see this assert, it means we have to find a different way to search by the nic table.";
         Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object path = c.getCriteria(Criteria.PATH);
         Object networkId = c.getCriteria(Criteria.NETWORKID);
         Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
         Object storageId = c.getCriteria(Criteria.STORAGE_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
@@ -3044,19 +2971,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-
-        if (path != null) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (skipProjectVms) {
-        	 SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-        	 accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
 
         if (groupId != null && (Long) groupId == -1) {
             SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
@@ -3087,9 +3001,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
-        if (skipProjectVms) {
-        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
-        }
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         
         if (groupId != null && (Long) groupId == -1) {
             sc.setJoinParameters("vmSearch", "instanceId", (Object) null);
@@ -3109,24 +3021,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (id != null) {
             sc.setParameters("id", id);
-        }
-
-        if (accountIds != null) {
-            if (accountIds.length == 1) {
-                if (accountIds[0] != null) {
-                    sc.setParameters("accountIdEQ", accountIds[0]);
-                }
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
-        }
-
-        if (domainId != null) {
-            sc.setParameters("domainId", domainId);
-        }
-
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         if (networkId != null) {

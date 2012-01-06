@@ -61,6 +61,9 @@ public class InstanceGroupVO implements InstanceGroup, Identity {
     @Column(name="uuid")
     private String uuid;
     
+	@Column(name="type", table="account", insertable=false, updatable=false)
+	private short accountType;
+    
     public InstanceGroupVO(String name, long accountId) {
         this.name = name;
         this.accountId = accountId;
@@ -110,4 +113,9 @@ public class InstanceGroupVO implements InstanceGroup, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+    
+	@Override
+	public Short getAccountType() {
+		return accountType;
+	}
 }

@@ -29,7 +29,7 @@ public abstract class BaseListCmd extends BaseCmd {
     // ///////// BaseList API parameters /////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = "keyword", type = CommandType.STRING, description = "List by keyword")
+    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, description = "List by keyword")
     private String keyword;
 
     // FIXME: Need to be able to specify next/prev/first/last, so Integer might not be right
@@ -38,6 +38,8 @@ public abstract class BaseListCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER)
     private Integer pageSize;
+    
+
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////

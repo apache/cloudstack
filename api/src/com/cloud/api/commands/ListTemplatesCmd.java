@@ -25,7 +25,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +38,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @Implementation(description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
-public class ListTemplatesCmd extends BaseListCmd {
+public class ListTemplatesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
     private static final String s_name = "listtemplatesresponse";
@@ -46,13 +46,6 @@ public class ListTemplatesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list template by account. Must be used with the domainId parameter.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all templates in specified domain. If used with the account parameter, lists all templates for an account in the specified domain.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
@@ -74,22 +67,9 @@ public class ListTemplatesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list templates by zoneId")
     private Long zoneId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list templates by project")
-    private Long projectId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public String getHypervisor() {
         return hypervisor;
@@ -109,10 +89,6 @@ public class ListTemplatesCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-    
-    public Long getProjectId() {
-        return projectId;
     }
     
     public boolean listInReadyState() {

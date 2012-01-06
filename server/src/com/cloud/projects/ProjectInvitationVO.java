@@ -27,10 +27,10 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     private long projectId;
 
     @Column(name="account_id")
-    private Long accountId;
+    private Long forAccountId;
     
     @Column(name="domain_id")
-    private Long domainId;
+    private Long inDomainId;
     
     @Column(name="token")
     private String token;
@@ -53,8 +53,8 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     }
     
     public ProjectInvitationVO(long projectId, Long accountId, Long domainId, String email, String token) {
-       this.accountId = accountId;
-       this.domainId = domainId;
+       this.forAccountId = accountId;
+       this.inDomainId = domainId;
        this.projectId = projectId;
        this.email = email;
        this.token = token;
@@ -72,8 +72,8 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     }
 
     @Override
-    public Long getAccountId() {
-        return accountId;
+    public Long getForAccountId() {
+        return forAccountId;
     }
 
     @Override
@@ -103,13 +103,13 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("ProjectInvitation[");
-        buf.append(id).append("|projectId=").append(projectId).append("|accountId=").append(accountId).append("]");
+        buf.append(id).append("|projectId=").append(projectId).append("|accountId=").append(forAccountId).append("]");
         return buf.toString();
     }
 
     @Override
-    public Long getDomainId() {
-        return domainId;
+    public Long getInDomainId() {
+        return inDomainId;
     }
     
     @Override
@@ -119,5 +119,15 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return inDomainId == null ? -1 : inDomainId;
+    }
+    
+    @Override
+    public long getAccountId() {
+        return forAccountId == null ? -1 : forAccountId;
     }
 }

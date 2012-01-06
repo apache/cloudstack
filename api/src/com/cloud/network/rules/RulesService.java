@@ -25,7 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 public interface RulesService {
-    List<? extends FirewallRule> searchStaticNatRules(Long ipId,  Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId);
+    List<? extends FirewallRule> searchStaticNatRules(Long ipId,  Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between

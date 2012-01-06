@@ -100,7 +100,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIpId());
         if (addr != null) {
-            return addr.getAllocatedToAccountId();
+            return addr.getAccountId();
         }
 
         // bad address given, parent this command to SYSTEM so ERROR events are tracked

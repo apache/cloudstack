@@ -25,5 +25,6 @@ public interface InstanceGroup extends ControlledEntity {
     long getId();
     String getName();
     Date getCreated();
+	Short getAccountType();
 
 }

@@ -23,6 +23,7 @@ import java.util.Set;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -51,7 +52,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> listReadyTemplates();
 	public List<VMTemplateVO> listByAccountId(long accountId);
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable,
-			DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, boolean skipProjectTemplates);
+			DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria);
 	
     public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
             Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller);

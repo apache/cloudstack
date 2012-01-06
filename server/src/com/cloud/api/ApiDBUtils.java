@@ -288,8 +288,8 @@ public class ApiDBUtils {
         return _ms.getVersion();
     }
 
-    public static List<UserVmVO> searchForUserVMs(Criteria c) {
-        return _userVmMgr.searchForUserVMs(c, true);
+    public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null);
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {

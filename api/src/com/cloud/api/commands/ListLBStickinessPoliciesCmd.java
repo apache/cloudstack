@@ -30,9 +30,10 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.LBStickinessResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.rules.LoadBalancer;
-
+import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class)
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
@@ -75,8 +76,10 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
         ListResponse<LBStickinessResponse> response = new ListResponse<LBStickinessResponse>();
         
         if (lb != null) {
+        	//check permissions
+        	Account caller = UserContext.current().getCaller();
+        	_accountService.checkAccess(caller, null, lb);
             List<? extends StickinessPolicy> stickinessPolicies = _lbService.searchForLBStickinessPolicies(this);
-
             LBStickinessResponse spResponse = _responseGenerator.createLBStickinessPolicyResponse(stickinessPolicies, lb);
             spResponses.add(spResponse);
             response.setResponses(spResponses);

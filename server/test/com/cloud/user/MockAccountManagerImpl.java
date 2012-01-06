@@ -141,7 +141,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public User getUser(long userId) {
+    public User getUserIncludingRemoved(long userId) {
         // TODO Auto-generated method stub
         return null;
     }
