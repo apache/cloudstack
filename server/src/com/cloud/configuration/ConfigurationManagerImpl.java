@@ -3030,31 +3030,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        //validate if conserve mode can be supported
-        if (conserveMode) {
-            boolean pass = true;
-            Iterator it = serviceProviderMap.entrySet().iterator();
-            Set<Provider> providers = new HashSet<Provider>();
-            while (it.hasNext()) {
-                Map.Entry pairs = (Map.Entry)it.next();
-                Set<Provider> v = (Set<Provider>)pairs.getValue();
-                if (v.size() == 0) {
-                    continue;
-                }
-                if (v.size() > 1) {
-                    pass = false;
-                    break;
-                }
-                providers.add((Provider) v.toArray()[0]);
-            }
-            if (providers.size() != 1) {
-                pass = false;
-            }
-            if (!pass) {
-                throw new InvalidParameterValueException("Can't enable conserve mode for the network offering, due to multiply providers existed!");
-            }
-        }
-        
         //validate providers combination here
         _networkMgr.canProviderSupportServices(providerCombinationToVerify);
         
