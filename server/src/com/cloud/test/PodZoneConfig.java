@@ -365,7 +365,8 @@ public class PodZoneConfig {
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
             for (TrafficType traffic : TrafficType.values()) {
-                if(traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn)){
+                if(traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn) ||
+                        traffic.equals(TrafficType.None)){
                     continue;
                 }
                 stmt.setLong(1, id);
