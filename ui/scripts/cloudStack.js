@@ -9,8 +9,11 @@
       else if(isDomainAdmin()) {
         return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
       }
-      else { //normal user
+      else if (g_userProjectsEnabled) {
         return ["dashboard", "instances", "storage", "network", "templates", "events", "projects"];
+      }
+      else { //normal user
+        return ["dashboard", "instances", "storage", "network", "templates", "events"];
       }
     },
     sections: {
@@ -98,6 +101,9 @@
 
             g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
             $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
+
+            g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
+            $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 
             if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
               g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
@@ -211,6 +217,9 @@
                   g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
                   $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
                 }
+
+                g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
+                $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 
                 args.response.success({
                   data: {
