@@ -20,6 +20,9 @@ package com.cloud.uuididentity.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import javax.ejb.Local;
 
@@ -99,7 +102,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		try {
 	        try {
 	            pstmt = txn.prepareAutoCloseStatement(
-	            	String.format("SELECT uuid FROM %s WHERE id=? OR uuid=?", tableName)
+	            	String.format("SELECT uuid FROM `%s` WHERE id=? OR uuid=?", tableName)
 	        		// String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
 	        	);
 	            
@@ -130,4 +133,65 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		
 		return identityString;
 	}
+    
+    @DB
+    public void initializeDefaultUuid(String tableName) {
+        assert(tableName != null);
+        List<Long> l = getNullUuidRecords(tableName);
+        
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            try {
+                txn.start();
+                for(Long id : l) {
+                    setInitialUuid(tableName, id);
+                }
+                txn.commit();
+            } catch (SQLException e) {
+                txn.rollback();
+                s_logger.error("Unexpected exception ", e);
+            }
+        } finally {
+            txn.close();
+        }
+    }
+    
+    @DB
+    List<Long> getNullUuidRecords(String tableName) {
+        List<Long> l = new ArrayList<Long>();
+        
+        PreparedStatement pstmt = null;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            try {
+                pstmt = txn.prepareAutoCloseStatement(
+                    String.format("SELECT id FROM `%s` WHERE uuid IS NULL", tableName)
+                );
+                
+                ResultSet rs = pstmt.executeQuery();
+                while(rs.next()) {
+                    l.add(rs.getLong(1));
+                }
+            } catch (SQLException e) {
+                s_logger.error("Unexpected exception ", e);
+            }
+        } finally {
+            txn.close();
+        }
+        return l;
+    }
+    
+    @DB
+    void setInitialUuid(String tableName, long id) throws SQLException {
+        Transaction txn = Transaction.currentTxn();
+        
+        PreparedStatement pstmtUpdate = null;
+        pstmtUpdate = txn.prepareAutoCloseStatement(
+            String.format("UPDATE `%s` SET uuid=? WHERE id=?", tableName)
+        );
+        
+        pstmtUpdate.setString(1, UUID.randomUUID().toString());
+        pstmtUpdate.setLong(2, id);
+        pstmtUpdate.executeUpdate();
+    }
 }
