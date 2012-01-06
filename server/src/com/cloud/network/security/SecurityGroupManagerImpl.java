@@ -603,8 +603,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             if (icmpType == -1 && icmpCode != -1) {
                 throw new InvalidParameterValueException("Invalid icmp type range");
             }
-            if (icmpCode > 255) {
-                throw new InvalidParameterValueException("Invalid icmp code ");
+            if (icmpCode > 255 || icmpType > 255 || icmpCode < -1 || icmpType < -1) {
+                throw new InvalidParameterValueException("Invalid icmp type/code ");
             }
             startPortOrType = icmpType;
             endPortOrCode = icmpCode;
