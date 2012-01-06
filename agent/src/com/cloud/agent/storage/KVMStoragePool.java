@@ -20,4 +20,5 @@ public interface KVMStoragePool {
 	public StoragePoolType getType();
 	public boolean delete();
 	PhysicalDiskFormat getDefaultFormat();
+	public boolean createFolder(String path);
 }

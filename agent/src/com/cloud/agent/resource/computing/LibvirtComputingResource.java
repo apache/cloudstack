@@ -996,15 +996,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    String volumeName = UUID.randomUUID().toString();
 
 	    if (copyToSecondary) {
+	    	String destVolumeName = volumeName + ".qcow2";
 	    	KVMPhysicalDisk volume = primaryPool.getPhysicalDisk(cmd.getVolumePath());
 	    	String volumeDestPath = "/volumes/" + cmd.getVolumeId() + File.separator;
+	    	secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl);
+	    	secondaryStoragePool.createFolder(volumeDestPath);
+	    	secondaryStoragePool.delete();
 	    	secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl + volumeDestPath);
-	    	_storagePoolMgr.copyPhysicalDisk(volume, volumeName, secondaryStoragePool);
+	    	_storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, secondaryStoragePool);
 	    	return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
 	    } else {
-	    	volumePath =  "/volumes/" + cmd.getVolumeId() + File.separator + volumePath;
+	    	volumePath =  "/volumes/" + cmd.getVolumeId() + File.separator;
 	    	secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl + volumePath);
-	    	KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(cmd.getVolumePath());
+	    	KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(cmd.getVolumePath() + ".qcow2");
 	    	_storagePoolMgr.copyPhysicalDisk(volume, volumeName, primaryPool);
 	    	return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
 	    }

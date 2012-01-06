@@ -134,4 +134,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	public boolean delete() {
 		return this._storageAdaptor.deleteStoragePool(this);
 	}
+	
+	@Override
+	public boolean createFolder(String path) {
+		return this._storageAdaptor.createFolder(this.uuid, path);
+	}
 }

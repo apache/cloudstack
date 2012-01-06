@@ -71,6 +71,9 @@ public class LibvirtStorageVolumeDef {
 		}
 		storageVolBuilder.append("<target>\n");
 		storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");
+		storageVolBuilder.append("<permissions>");
+		storageVolBuilder.append("<mode>0744</mode>");
+		storageVolBuilder.append("</permissions>");
 		storageVolBuilder.append("</target>\n");
 		if (_backingPath != null) {
 			storageVolBuilder.append("<backingStore>\n");

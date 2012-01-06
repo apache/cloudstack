@@ -60,6 +60,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         _manageSnapshotPath = Script.findScript("scripts/storage/qcow2/", "managesnapshot.sh");
     }
     
+    @Override
+    public boolean createFolder(String uuid, String path) {
+    	String mountPoint = _mountPoint + File.separator + uuid;
+    	File f = new File(mountPoint + path);
+    	if (!f.exists()) {
+    		f.mkdirs();
+    	}
+    	return true;
+    }
     
     public StorageVol getVolume(StoragePool pool, String volName) {
         StorageVol vol = null;
@@ -590,7 +599,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		String destPath = newDisk.getPath();
 
 		Script.runSimpleBashScript("qemu-img convert -f " + disk.getFormat() + " -O " + newDisk.getFormat() + " " + sourcePath + " " + destPath); 
-		
 		return newDisk;
 	}
 
@@ -658,5 +666,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		
 		return true;
 	}
+
+	
     
 }

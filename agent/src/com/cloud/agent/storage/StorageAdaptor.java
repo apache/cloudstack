@@ -2,6 +2,8 @@ package com.cloud.agent.storage;
 
 import java.util.List;
 
+import org.libvirt.StoragePool;
+
 import com.cloud.agent.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 
@@ -22,5 +24,6 @@ public interface StorageAdaptor {
 	public KVMPhysicalDisk getPhysicalDiskFromURI(String uri);
 	public boolean refresh(KVMStoragePool pool);
 	public boolean deleteStoragePool(KVMStoragePool pool);
+	public boolean createFolder(String uuid, String path);
 
 }
