@@ -71,7 +71,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed")
     private Integer networkRate;
     
-    @Parameter(name=ApiConstants.CONSERVE_MODE, type=CommandType.BOOLEAN, required = true, description="true if the network offering is IP conserve mode enabled")
+    @Parameter(name=ApiConstants.CONSERVE_MODE, type=CommandType.BOOLEAN, description="true if the network offering is IP conserve mode enabled")
     private Boolean conserveMode;
     
     @IdentityMapper(entityTableName="disk_offering")
@@ -139,6 +139,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Boolean getConserveMode() {
+        if (conserveMode == null) {
+            return true;
+        }
         return conserveMode;
     }
 
