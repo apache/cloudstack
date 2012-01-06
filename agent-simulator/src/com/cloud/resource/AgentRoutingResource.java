@@ -46,7 +46,7 @@ import com.cloud.vm.VirtualMachine.State;
 public class AgentRoutingResource extends AgentStorageResource {
     private static final Logger s_logger = Logger.getLogger(AgentRoutingResource.class);
 
-    protected Map<String, State> _vms = new HashMap<String, State>(20);
+    protected Map<String, State> _vms = new HashMap<String, State>();
     protected String _mountParent;
 
 
@@ -90,6 +90,12 @@ public class AgentRoutingResource extends AgentStorageResource {
     public PingCommand getCurrentStatus(long id) {
         if (isStopped()) {
             return null;
+        }
+        synchronized (_vms) {
+        	if (_vms.size() == 0) {
+        		//load vms state from database
+        		_vms.putAll(_simMgr.getVmStates(hostGuid));
+        	}
         }
         final HashMap<String, State> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
