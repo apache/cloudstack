@@ -2506,6 +2506,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } else if (nic.getType() == TrafficType.Management) {
             intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
+        } else if (nic.getType() == TrafficType.Storage) {
+        	String storageBrName = nic.getName() == null ? _privBridgeName : nic.getName();
+        	intf.defBridgeNet(storageBrName, null, nic.getMac(), model);
         }
 
         return intf;
