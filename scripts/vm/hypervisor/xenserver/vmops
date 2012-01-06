@@ -673,7 +673,8 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
             #accept arp replies into the bridge as long as the source mac and ips match the vm
             util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'ACCEPT'])
             #accept any arp requests from this vm. In the future this can be restricted to deny attacks on hosts
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])
+            #also important to restrict source ip and src mac in these requests as they can be used to update arp tables on destination
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'RETURN'])
             #accept any arp requests to this vm as long as the request is for this vm's ip
             util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
             #accept any arp replies to this vm as long as the mac and ip matches
