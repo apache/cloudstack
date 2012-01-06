@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+/*  Copyright (C) 2012 Citrix.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -27,21 +27,27 @@ public class ClusterSyncAnswer extends Answer {
     private HashMap<String, Pair<String, State>> _newStates;
     private HashMap<String, Pair<String, State>> _allStates;
     private int _type = -1; // 0 for full, 1 for delta
+    private boolean _isExecuted=false;
     
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
+ 
+    // this is here because a cron command answer is being sent twice
+    //  AgentAttache.processAnswers
+    //  AgentManagerImpl.notifyAnswersToMonitors
+    public boolean isExceuted(){
+        return _isExecuted;
+    }
     
-    public ClusterSyncAnswer(long clusterId) {
-        _clusterId = clusterId;
-        result = false;
-        this.details = "Ignore sync as this is not a pool master";
-        _type = -1;
+    public void setExecuted(){
+        _isExecuted = true;
     }
     
 
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates){
         _clusterId = clusterId;
         _newStates = newStates;
+        _allStates = null;
         _type = DELTA_SYNC;
         result = true;
     }
