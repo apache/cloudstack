@@ -152,251 +152,7 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            },
-            
-            recurringSnapshot: {
-              label: 'Setup recurring snapshots',
-              action: {
-                custom: cloudStack.uiCustom.recurringSnapshots({
-                  desc: 'You can setup recurring snapshot schedules by selecting from the available options below and applying your policy preference.',
-                  dataProvider: function(args) {
-                    $.ajax({
-                      url: createURL('listSnapshotPolicies'),
-                      data: {
-                        volumeid: args.context.volumes[0].id
-                      },
-                      async: true,
-                      dataType: 'json',
-                      success: function(data) {
-                        args.response.success({
-                          data: $.map(
-                            data.listsnapshotpoliciesresponse.snapshotpolicy ? data.listsnapshotpoliciesresponse.snapshotpolicy : [],
-                            function(snapshot, index) {
-                              return {
-                                id: snapshot.id,
-                                type: snapshot.intervaltype,
-                                time: snapshot.intervaltype > 0 ?
-                                  snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
-                                  snapshot.schedule,
-                                timezone: snapshot.timezone,
-                                keep: snapshot.maxsnaps,
-                                'day-of-week': snapshot.intervaltype == 2 ?
-                                  snapshot.schedule.split(':')[2] : null,
-                                'day-of-month': snapshot.intervaltype == 3 ?
-                                  snapshot.schedule.split(':')[2] : null
-                              };
-                            }
-                          )
-                        });
-                      }
-                    });
-                  },
-                  actions: {
-                    add: function(args) {
-                      var snap = args.snapshot;
-
-                      var data = {
-                        keep: snap.maxsnaps,
-                        timezone: snap.timezone
-                      };
-
-                      var convertTime = function(minute, hour, meridiem, extra) {
-                        var convertedHour = meridiem == 'PM' ?
-                              (hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
-                        var time = minute + ':' + convertedHour;
-                        if (extra) time += ':' + extra;
-
-                        return time;
-                      };
-
-                      switch (snap['snapshot-type']) {
-                      case 'hourly': // Hourly
-                        $.extend(data, {
-                          schedule: snap.schedule
-                        }); break;
-
-                      case 'daily': // Daily
-                        $.extend(data, {
-                          schedule: convertTime(
-                            snap['time-minute'],
-                            snap['time-hour'],
-                            snap['time-meridiem']
-                          )
-                        }); break;
-
-                      case 'weekly': // Weekly
-                        $.extend(data, {
-                          schedule: convertTime(
-                            snap['time-minute'],
-                            snap['time-hour'],
-                            snap['time-meridiem'],
-                            snap['day-of-week']
-                          )
-                        }); break;
-
-                      case 'monthly': // Monthly
-                        $.extend(data, {
-                          schedule: convertTime(
-                            snap['time-minute'],
-                            snap['time-hour'],
-                            snap['time-meridiem'],
-                            snap['day-of-month']
-                          )
-                        }); break;
-                      }
-
-                      $.ajax({
-                        url: createURL('createSnapshotPolicy'),
-                        data: {
-                          volumeid: args.context.volumes[0].id,
-                          intervaltype: snap['snapshot-type'],
-                          maxsnaps: snap.maxsnaps,
-                          schedule: data.schedule,
-                          timezone: snap.timezone
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(successData) {
-                          var snapshot = successData.createsnapshotpolicyresponse.snapshotpolicy;
-
-                          args.response.success({
-                            data: {
-                              id: snapshot.id,
-                              type: snapshot.intervaltype,
-                              time: snapshot.intervaltype > 0 ?
-                                snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
-                                snapshot.schedule,
-                              timezone: snapshot.timezone,
-                              keep: snapshot.maxsnaps,
-                              'day-of-week': snapshot.intervaltype == 2 ?
-                                snapshot.schedule.split(':')[2] : null,
-                              'day-of-month': snapshot.intervaltype == 3 ?
-                                snapshot.schedule.split(':')[2] : null
-                            }
-                          });
-                        }
-                      });
-                    },
-                    remove: function(args) {
-                      $.ajax({
-                        url: createURL('deleteSnapshotPolicies'),
-                        data: {
-                          id: args.snapshot.id
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(data) {
-                          args.response.success();
-                        }
-                      });
-                    }
-                  },
-
-                  // Select data
-                  selects: {
-                    schedule: function(args) {
-                      var time = [];
-
-                      for (var i = 1; i <= 59; i++) {
-                        time.push({
-                          id: i,
-                          name: i
-                        });
-                      }
-
-                      args.response.success({
-                        data: time
-                      });
-                    },
-                    timezone: function(args) {
-                      args.response.success({
-                        data: $.map(timezoneMap, function(value, key) {
-                          return {
-                            id: key,
-                            name: value
-                          };
-                        })
-                      });
-                    },
-                    'day-of-week': function(args) {
-                      args.response.success({
-                        data: [
-                          { id: 1, name: 'Sunday' },
-                          { id: 2, name: 'Monday' },
-                          { id: 3, name: 'Tuesday' },
-                          { id: 4, name: 'Wednesday' },
-                          { id: 5, name: 'Thursday' },
-                          { id: 6, name: 'Friday' },
-                          { id: 7, name: 'Saturday' }
-                        ]
-                      });
-                    },
-
-                    'day-of-month': function(args) {
-                      var time = [];
-
-                      for (var i = 1; i <= 31; i++) {
-                        time.push({
-                          id: i,
-                          name: i
-                        });
-                      }
-
-                      args.response.success({
-                        data: time
-                      });
-                    },
-
-                    'time-hour': function(args) {
-                      var time = [];
-
-                      for (var i = 1; i <= 12; i++) {
-                        time.push({
-                          id: i,
-                          name: i
-                        });
-                      }
-
-                      args.response.success({
-                        data: time
-                      });
-                    },
-
-                    'time-minute': function(args) {
-                      var time = [];
-
-                      for (var i = 0; i <= 59; i++) {
-                        time.push({
-                          id: i < 10 ? '0' + i : i,
-                          name: i < 10 ? '0' + i : i
-                        });
-                      }
-
-                      args.response.success({
-                        data: time
-                      });
-                    },
-
-                    'time-meridiem': function(args) {
-                      args.response.success({
-                        data: [
-                          { id: 'AM', name: 'AM' },
-                          { id: 'PM', name: 'PM' }
-                        ]
-                      });
-                    }
-                  }
-                })
-              },
-              messages: {
-                notification: function(args) {
-                  return 'Setup recurring snapshot';
-                }
-              },
-              notification: {
-                poll: testData.notifications.testPoll
-              }
-            }            
+            }  
 
           },
 
@@ -474,7 +230,251 @@
                   poll: pollAsyncJobResult
                 }
               },
+							
+							recurringSnapshot: {
+								label: 'Setup recurring snapshots',
+								action: {
+									custom: cloudStack.uiCustom.recurringSnapshots({
+										desc: 'You can setup recurring snapshot schedules by selecting from the available options below and applying your policy preference.',
+										dataProvider: function(args) {
+											$.ajax({
+												url: createURL('listSnapshotPolicies'),
+												data: {
+													volumeid: args.context.volumes[0].id
+												},
+												async: true,
+												dataType: 'json',
+												success: function(data) {
+													args.response.success({
+														data: $.map(
+															data.listsnapshotpoliciesresponse.snapshotpolicy ? data.listsnapshotpoliciesresponse.snapshotpolicy : [],
+															function(snapshot, index) {
+																return {
+																	id: snapshot.id,
+																	type: snapshot.intervaltype,
+																	time: snapshot.intervaltype > 0 ?
+																		snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
+																		snapshot.schedule,
+																	timezone: snapshot.timezone,
+																	keep: snapshot.maxsnaps,
+																	'day-of-week': snapshot.intervaltype == 2 ?
+																		snapshot.schedule.split(':')[2] : null,
+																	'day-of-month': snapshot.intervaltype == 3 ?
+																		snapshot.schedule.split(':')[2] : null
+																};
+															}
+														)
+													});
+												}
+											});
+										},
+										actions: {
+											add: function(args) {
+												var snap = args.snapshot;
 
+												var data = {
+													keep: snap.maxsnaps,
+													timezone: snap.timezone
+												};
+
+												var convertTime = function(minute, hour, meridiem, extra) {
+													var convertedHour = meridiem == 'PM' ?
+																(hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
+													var time = minute + ':' + convertedHour;
+													if (extra) time += ':' + extra;
+
+													return time;
+												};
+
+												switch (snap['snapshot-type']) {
+												case 'hourly': // Hourly
+													$.extend(data, {
+														schedule: snap.schedule
+													}); break;
+
+												case 'daily': // Daily
+													$.extend(data, {
+														schedule: convertTime(
+															snap['time-minute'],
+															snap['time-hour'],
+															snap['time-meridiem']
+														)
+													}); break;
+
+												case 'weekly': // Weekly
+													$.extend(data, {
+														schedule: convertTime(
+															snap['time-minute'],
+															snap['time-hour'],
+															snap['time-meridiem'],
+															snap['day-of-week']
+														)
+													}); break;
+
+												case 'monthly': // Monthly
+													$.extend(data, {
+														schedule: convertTime(
+															snap['time-minute'],
+															snap['time-hour'],
+															snap['time-meridiem'],
+															snap['day-of-month']
+														)
+													}); break;
+												}
+
+												$.ajax({
+													url: createURL('createSnapshotPolicy'),
+													data: {
+														volumeid: args.context.volumes[0].id,
+														intervaltype: snap['snapshot-type'],
+														maxsnaps: snap.maxsnaps,
+														schedule: data.schedule,
+														timezone: snap.timezone
+													},
+													dataType: 'json',
+													async: true,
+													success: function(successData) {
+														var snapshot = successData.createsnapshotpolicyresponse.snapshotpolicy;
+
+														args.response.success({
+															data: {
+																id: snapshot.id,
+																type: snapshot.intervaltype,
+																time: snapshot.intervaltype > 0 ?
+																	snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
+																	snapshot.schedule,
+																timezone: snapshot.timezone,
+																keep: snapshot.maxsnaps,
+																'day-of-week': snapshot.intervaltype == 2 ?
+																	snapshot.schedule.split(':')[2] : null,
+																'day-of-month': snapshot.intervaltype == 3 ?
+																	snapshot.schedule.split(':')[2] : null
+															}
+														});
+													}
+												});
+											},
+											remove: function(args) {
+												$.ajax({
+													url: createURL('deleteSnapshotPolicies'),
+													data: {
+														id: args.snapshot.id
+													},
+													dataType: 'json',
+													async: true,
+													success: function(data) {
+														args.response.success();
+													}
+												});
+											}
+										},
+
+										// Select data
+										selects: {
+											schedule: function(args) {
+												var time = [];
+
+												for (var i = 1; i <= 59; i++) {
+													time.push({
+														id: i,
+														name: i
+													});
+												}
+
+												args.response.success({
+													data: time
+												});
+											},
+											timezone: function(args) {
+												args.response.success({
+													data: $.map(timezoneMap, function(value, key) {
+														return {
+															id: key,
+															name: value
+														};
+													})
+												});
+											},
+											'day-of-week': function(args) {
+												args.response.success({
+													data: [
+														{ id: 1, name: 'Sunday' },
+														{ id: 2, name: 'Monday' },
+														{ id: 3, name: 'Tuesday' },
+														{ id: 4, name: 'Wednesday' },
+														{ id: 5, name: 'Thursday' },
+														{ id: 6, name: 'Friday' },
+														{ id: 7, name: 'Saturday' }
+													]
+												});
+											},
+
+											'day-of-month': function(args) {
+												var time = [];
+
+												for (var i = 1; i <= 31; i++) {
+													time.push({
+														id: i,
+														name: i
+													});
+												}
+
+												args.response.success({
+													data: time
+												});
+											},
+
+											'time-hour': function(args) {
+												var time = [];
+
+												for (var i = 1; i <= 12; i++) {
+													time.push({
+														id: i,
+														name: i
+													});
+												}
+
+												args.response.success({
+													data: time
+												});
+											},
+
+											'time-minute': function(args) {
+												var time = [];
+
+												for (var i = 0; i <= 59; i++) {
+													time.push({
+														id: i < 10 ? '0' + i : i,
+														name: i < 10 ? '0' + i : i
+													});
+												}
+
+												args.response.success({
+													data: time
+												});
+											},
+
+											'time-meridiem': function(args) {
+												args.response.success({
+													data: [
+														{ id: 'AM', name: 'AM' },
+														{ id: 'PM', name: 'PM' }
+													]
+												});
+											}
+										}
+									})
+								},
+								messages: {
+									notification: function(args) {
+										return 'Setup recurring snapshot';
+									}
+								},
+								notification: {
+									poll: testData.notifications.testPoll
+								}
+							},            
+													
               attachDisk: {
                 addRow: 'false',
                 label: 'Attach Disk',
