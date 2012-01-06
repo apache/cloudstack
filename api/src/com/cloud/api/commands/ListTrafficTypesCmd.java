@@ -86,6 +86,4 @@ public class ListTrafficTypesCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-
-
 }

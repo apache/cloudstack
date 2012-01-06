@@ -58,6 +58,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.ListTafficTypeImplementorsCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -5646,4 +5647,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return canIpUsedForConserveService(publicIp, service);
     }
+    
+	@Override
+	public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTafficTypeImplementorsCmd cmd) {
+		String type = cmd.getTrafficType();
+		List<Pair<TrafficType, String>> results = new ArrayList<Pair<TrafficType, String>>();
+		if (type != null) {
+			for (NetworkGuru guru : _networkGurus) {
+				if (guru.isMyTrafficType(TrafficType.getTrafficType(type))) {
+					results.add(new Pair<TrafficType, String>(TrafficType.getTrafficType(type), guru.getName()));
+					break;
+				}
+			}
+		} else {
+			for (NetworkGuru guru : _networkGurus) {
+				results.add(new Pair<TrafficType, String>(TrafficType.getTrafficType(type), guru.getName()));
+			}
+		}
+		
+		return results;
+	}
 }

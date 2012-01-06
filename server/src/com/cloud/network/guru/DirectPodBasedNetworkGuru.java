@@ -79,7 +79,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles system Direct pod based network
-        if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest) {
+        if (dc.getNetworkType() == NetworkType.Basic && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest Direct Pod based networks");

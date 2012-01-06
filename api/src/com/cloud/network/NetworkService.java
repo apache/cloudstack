@@ -24,6 +24,7 @@ import java.util.Set;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.ListTafficTypeImplementorsCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -36,6 +37,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 
 public interface NetworkService {
 
@@ -129,4 +131,6 @@ public interface NetworkService {
     PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
     
     Network getExclusiveGuestNetwork(long zoneId);
+    
+    List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTafficTypeImplementorsCmd cmd);
 }

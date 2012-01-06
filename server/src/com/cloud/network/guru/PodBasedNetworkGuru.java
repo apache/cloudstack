@@ -61,12 +61,29 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject DataCenterDao _dcDao;
     @Inject StorageNetworkManager _sNwMgr;
     Random _rand = new Random(System.currentTimeMillis());
+    
+    private static final TrafficType[] _trafficTypes = {TrafficType.Management, TrafficType.Storage};
+    
+    @Override
+    public boolean isMyTrafficType(TrafficType type) {
+    	for (TrafficType t : _trafficTypes) {
+    		if (t == type) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
 
+    @Override
+    public TrafficType[] getSupportedTrafficType() {
+    	return _trafficTypes;
+    }
+    
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         TrafficType type = offering.getTrafficType();
         
-        if (type != TrafficType.Management && type != TrafficType.Storage) {
+        if (!isMyTrafficType(type)) {
             return null;
         }
         

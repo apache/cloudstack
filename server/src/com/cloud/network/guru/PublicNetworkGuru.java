@@ -74,8 +74,25 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     IPAddressDao _ipAddressDao;
 
+    private static final TrafficType[] _trafficTypes = {TrafficType.Public};
+    
+    @Override
+    public boolean isMyTrafficType(TrafficType type) {
+    	for (TrafficType t : _trafficTypes) {
+    		if (t == type) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+
+    @Override
+    public TrafficType[] getSupportedTrafficType() {
+    	return _trafficTypes;
+    }
+    
     protected boolean canHandle(NetworkOffering offering) {
-        return offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly();
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly();
     }
 
     @Override

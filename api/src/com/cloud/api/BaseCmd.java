@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.response.TrafficTypeImplementorResponse;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;

@@ -74,10 +74,27 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    
+    private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
+    
+    @Override
+    public boolean isMyTrafficType(TrafficType type) {
+    	for (TrafficType t : _trafficTypes) {
+    		if (t == type) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
 
+    @Override
+    public TrafficType[] getSupportedTrafficType() {
+    	return _trafficTypes;
+    }
+    
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles only Guest networks in Advance zone with source nat service disabled
-        if (dc.getNetworkType() == NetworkType.Advanced && !_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)&& offering.getTrafficType() == TrafficType.Guest) {
+        if (dc.getNetworkType() == NetworkType.Advanced && !_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)&& isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest Direct networks");

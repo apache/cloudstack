@@ -99,6 +99,7 @@ public class Networks {
      * Different types of network traffic in the data center. 
      */
     public enum TrafficType {
+    	None,
         Public,
         Guest,
         Storage,
@@ -115,6 +116,23 @@ public class Networks {
             return false;
         }
         
+        public static TrafficType getTrafficType(String type) {
+        	if (type.equals("Public")) {
+        		return Public;
+        	} else if (type.endsWith("Guest")) {
+        		return Guest;
+        	} else if (type.endsWith("Storage")) {
+        		return Storage;
+        	} else if (type.endsWith("Management")) {
+        		return Management;
+        	} else if (type.endsWith("Control")) {
+        		return Control;
+        	} else if (type.endsWith("Vpn")) {
+        		return Vpn;
+        	} else {
+        		return None;
+        	}
+        }
     };
     
     public enum IsolationType {

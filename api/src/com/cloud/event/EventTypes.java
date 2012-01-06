@@ -172,7 +172,6 @@ public class EventTypes {
 	
 	public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
 	public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
-	public static final String EVENT_STORAGE_IP_RANGE_LIST = "STORAGE.IP.RANGE.LIST";
 
 	// Configuration Table
 	public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";

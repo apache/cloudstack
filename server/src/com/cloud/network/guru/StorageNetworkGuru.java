@@ -40,8 +40,25 @@ public class StorageNetworkGuru extends AdapterBase implements NetworkGuru {
 		super();
 	}
 	
+    private static final TrafficType[] _trafficTypes = {TrafficType.Storage};
+    
+    @Override
+    public boolean isMyTrafficType(TrafficType type) {
+    	for (TrafficType t : _trafficTypes) {
+    		if (t == type) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+
+    @Override
+    public TrafficType[] getSupportedTrafficType() {
+    	return _trafficTypes;
+    }
+    
 	protected boolean canHandle(NetworkOffering offering) {
-		if (offering.getTrafficType() == TrafficType.Storage && offering.isSystemOnly()) {
+		if (isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly()) {
 			if (_sNwMgr.isStorageIpRangeAvailable()) {
 				return true;
 			} else {

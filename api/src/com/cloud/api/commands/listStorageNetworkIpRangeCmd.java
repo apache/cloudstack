@@ -6,17 +6,15 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.dc.StorageNetworkIpRange;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -24,7 +22,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @Implementation(description="List a storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class)
-public class listStorageNetworkIpRangeCmd extends BaseAsyncCmd {
+public class listStorageNetworkIpRangeCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(listStorageNetworkIpRangeCmd.class);
 	
 	String s_name = "liststoragenetworkiprangeresponse";
@@ -60,16 +58,6 @@ public class listStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public Long getZoneId() {
     	return zoneId;
     }
-    
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_STORAGE_IP_RANGE_LIST;
-	}
-
-	@Override
-	public String getEventDescription() {
-		return "List storage network IP range";
-	}
 
 	@Override
 	public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,

@@ -78,16 +78,33 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     protected NetworkDao _networkDao;
     Random _rand = new Random(System.currentTimeMillis());
 
+    private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
+    
     String _defaultGateway;
     String _defaultCidr;
 
     protected GuestNetworkGuru() {
         super();
     }
+    
+    @Override
+    public boolean isMyTrafficType(TrafficType type) {
+    	for (TrafficType t : _trafficTypes) {
+    		if (t == type) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
 
+    @Override
+    public TrafficType[] getSupportedTrafficType() {
+    	return _trafficTypes;
+    }
+    
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == Network.GuestType.Isolated  && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)) {
+        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated  && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks with service  " + Service.SourceNat + " enabled in zone of type " + NetworkType.Advanced);
