@@ -2902,6 +2902,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String tags = cmd.getTags();
         String trafficTypeString = cmd.getTraffictype();
         boolean specifyVlan = cmd.getSpecifyVlan();
+        boolean conserveMode = cmd.getConserveMode();
         String availabilityStr = cmd.getAvailability();
         Integer networkRate = cmd.getNetworkRate();
         TrafficType trafficType = null;
@@ -3029,9 +3030,34 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
+        //validate if conserve mode can be supported
+        if (conserveMode) {
+            boolean pass = true;
+            Iterator it = serviceProviderMap.entrySet().iterator();
+            Set<Provider> providers = new HashSet<Provider>();
+            while (it.hasNext()) {
+                Map.Entry pairs = (Map.Entry)it.next();
+                Set<Provider> v = (Set<Provider>)pairs.getValue();
+                if (v.size() == 0) {
+                    continue;
+                }
+                if (v.size() > 1) {
+                    pass = false;
+                    break;
+                }
+                providers.add((Provider) v.toArray()[0]);
+            }
+            if (providers.size() != 1) {
+                pass = false;
+            }
+            if (!pass) {
+                throw new InvalidParameterValueException("Can't enable conserve mode for the network offering, due to multiply providers existed!");
+            }
+        }
+        
         //validate providers combination here
         _networkMgr.canProviderSupportServices(providerCombinationToVerify);
-
+        
         // verify the LB service capabilities specified in the network offering
         Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
         if (!serviceProviderMap.containsKey(Service.Lb) && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
@@ -3051,7 +3077,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         
         return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
-                false, serviceOfferingId, serviceCapabilityMap);
+                false, serviceOfferingId, conserveMode, serviceCapabilityMap);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3099,7 +3125,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, 
-            Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
+            Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3150,7 +3176,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat, redundantRouter);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter);
         
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

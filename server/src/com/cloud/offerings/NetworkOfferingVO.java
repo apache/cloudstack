@@ -112,6 +112,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     @Column(name="redundant_router_service")
     boolean redundantRouter;
 
+    @Column(name="conserve_mode")
+    boolean conserveMode;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -252,7 +255,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType) {
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -266,14 +269,15 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.uuid = UUID.randomUUID().toString();
         this.tags = tags;
         this.guestType = guestType;
+        this.conserveMode = conserveMode;
         this.dedicatedLB = true;
         this.sharedSourceNat =false;
         this.redundantRouter= false;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
-        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType);
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType, conserveMode);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -288,7 +292,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true);
         this.state = State.Enabled;
     }
     
@@ -317,6 +321,15 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     
     public void setUniqueName(String uniqueName) {
     	this.uniqueName = uniqueName;
+    }
+
+    @Override
+    public boolean isConserveMode() {
+        return conserveMode;
+    }
+
+    public void setConserveMode(boolean conserveMode) {
+        this.conserveMode = conserveMode;
     }
     
 }

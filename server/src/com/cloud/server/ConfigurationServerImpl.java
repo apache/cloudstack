@@ -878,7 +878,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared Security group enabled networks", 
                 TrafficType.Guest, 
                 false, true, null, null, true, Availability.Optional, 
-                null, Network.GuestType.Shared);
+                null, Network.GuestType.Shared, true);
         
         deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
@@ -895,7 +895,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks", 
                 TrafficType.Guest, 
                 false, true, null, null, true, Availability.Optional, 
-                null, Network.GuestType.Shared);
+                null, Network.GuestType.Shared, true);
         
         defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
@@ -912,7 +912,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated networks with Source Nat service enabled", 
                 TrafficType.Guest, 
                 false, false, null, null, true, Availability.Required, 
-                null, Network.GuestType.Isolated);
+                null, Network.GuestType.Isolated, true);
         
         defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
@@ -930,7 +930,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated networks with no Source Nat service", 
                 TrafficType.Guest, 
                 false, true, null, null, true, Availability.Optional, 
-                null, Network.GuestType.Isolated);
+                null, Network.GuestType.Isolated, true);
         
         defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);

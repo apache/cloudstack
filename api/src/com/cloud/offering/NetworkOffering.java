@@ -95,4 +95,6 @@ public interface NetworkOffering {
     boolean getSharedSourceNat();
     
     boolean getRedundantRouter();
+    
+    boolean isConserveMode();
 }

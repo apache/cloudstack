@@ -497,6 +497,7 @@ ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physic
 ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
 
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `conserve` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering is IP conserve mode enabled';
 UPDATE `cloud`.`configuration` set value='true' where name='firewall.rule.ui.enabled';
 CREATE TABLE  `cloud`.`op_user_stats_log` (
   `user_stats_id` bigint unsigned NOT NULL,
