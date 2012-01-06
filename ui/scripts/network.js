@@ -205,9 +205,20 @@
               'Destroyed': 'off'
             } }
           },
-          dataProvider: function(args) {
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}											
             $.ajax({
-              url: createURL('listNetworks'),
+              url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: {
                 type: 'isolated',
                 supportedServices: 'SourceNat'
