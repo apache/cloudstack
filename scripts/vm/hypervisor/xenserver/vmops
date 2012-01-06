@@ -620,10 +620,12 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
             util.SMlog("Failed to create ebtables antispoof chain, skipping")
             return 'true'
 
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
+    # always start after the first rule in the FORWARD chain that jumps to DEFAULT_EBTABLES chain
     try:
         for vif in vifs:
             util.pread2(['ebtables', '-I', 'FORWARD', '2', '-i',  vif,  '-j', vm_chain])
-            util.pread2(['ebtables', '-I', 'FORWARD', '2', '-o',  vif, '-j', vm_chain])
+            util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
         return 'false'
@@ -657,9 +659,10 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
             util.SMlog("Failed to create arptables rule, skipping")
             return 'true'
 
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
     try:
         for vif in vifs:
-           util.pread2(['arptables',  '-A', 'FORWARD', '-i',  vif, '-j', vm_chain])
+           util.pread2(['arptables',  '-I', 'FORWARD', '-i',  vif, '-j', vm_chain])
            util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
@@ -801,6 +804,8 @@ def default_network_rules(session, args):
         #don't let vm spoof its ip address
         for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip,'-p', 'udp', '--dport', '53', '-j', 'RETURN'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
         
         for v in vifs:
