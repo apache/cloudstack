@@ -1553,7 +1553,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
+                cmd = new CreatePrivateTemplateFromVolumeCommand(pool.getUuid(), secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
 
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

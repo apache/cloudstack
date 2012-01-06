@@ -25,7 +25,7 @@ package com.cloud.agent.api;
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
  */
 public class SnapshotCommand extends Command {
-    private String primaryStoragePoolNameLabel;
+    protected String primaryStoragePoolNameLabel;
     private String snapshotUuid;
     private String snapshotName;
     private String secondaryStorageUrl;
