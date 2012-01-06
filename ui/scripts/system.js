@@ -1679,11 +1679,7 @@
                             }
                           }
                         },
-                        action: function(args) {
-                          if(args.data.hostId == null) {
-                            args.response.error("Host field is required");
-                            return;
-                          }
+                        action: function(args) {												                      
                           $.ajax({
                             url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.routers[0].id),
                             dataType: "json",
@@ -3586,13 +3582,9 @@
                               }
                             }
                           },
-                          action: function(args) {
-                            if(args.data.hostId == null) {
-                              args.response.error("Host field is required");
-                              return;
-                            }
+                          action: function(args) {													                           
                             $.ajax({
-                              url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.data.id),
+                              url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.systemVMs[0].id),
                               dataType: "json",
                               async: true,
                               success: function(json) {
