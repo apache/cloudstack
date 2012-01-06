@@ -69,6 +69,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -103,6 +104,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -469,27 +471,44 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             //we have provisioned load balancer so add the appliance as cloudstack provisioned external load balancer
                             String dedicatedLb = offering.getDedicatedLB()?"true":"false";
 
-                            // acquire a public IP to associate with lb appliance (used as subnet IP to make the appliance part of private network)
+                            //acquire a public IP to associate with lb appliance (used as subnet IP to make the appliance part of private network)
                             PublicIp publicIp = _networkMgr.assignPublicIpAddress(guestConfig.getDataCenterId(), null, _accountMgr.getSystemAccount(), VlanType.VirtualNetwork, null, null);
-                            IPAddressVO ipvo = _ipAddressDao.findById(publicIp.getId());
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
                             String publicIPVlanTag = publicIp.getVlanTag();
                             String publicIP = publicIp.getAddress().toString();
-                            
+
                             String url = "https://" + lbIP + "?publicinterface=" + publicIf + "&privateinterface=" + privateIf + "&lbdevicededicated=" + dedicatedLb +
-                            		"&cloudmanaged=true" + "&publicip=" + publicIP + "&publicipnetmask=" + publicIPNetmask + "&publicipvlan="+ publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
-                            ExternalLoadBalancerDeviceVO lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(), createLbAnswer.getServerResource());
+                                    "&cloudmanaged=true" + "&publicip=" + publicIP + "&publicipnetmask=" + publicIPNetmask + "&publicipvlan="+ publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
+                            ExternalLoadBalancerDeviceVO lbAppliance = null;
+                            try {
+                                lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(), createLbAnswer.getServerResource());
+                            } catch (Exception e) {
+                                s_logger.error("Failed to add load balancer appliance in to cloudstack due to " + e.getMessage() + ". So provisioned load balancer appliance will be destroyed.");
+                            }
 
                             if (lbAppliance != null) {
-                                // mark the load balancer as cloudstack managed
+                                // mark the load balancer as cloudstack managed and set parent host id on which lb appliance is provisioned 
                                 ExternalLoadBalancerDeviceVO managedLb = _externalLoadBalancerDeviceDao.findById(lbAppliance.getId());
                                 managedLb.setIsManagedDevice(true);
-                                // set parent host id on which lb appliance is provisioned 
                                 managedLb.setParentHostId(lbProviderDevice.getHostId());
                                 _externalLoadBalancerDeviceDao.update(lbAppliance.getId(), managedLb);
                             } else {
-                            	_networkMgr.releasePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                                // failed to add the provisioned load balancer into cloudstack so destroy the appliance
+                                DestroyLoadBalancerApplianceCommand lbDeleteCmd = new DestroyLoadBalancerApplianceCommand(lbIP);
+                                DestroyLoadBalancerApplianceAnswer answer = null;
+                                try {
+                                    answer = (DestroyLoadBalancerApplianceAnswer) _agentMgr.easySend(lbProviderDevice.getHostId(), lbDeleteCmd);
+                                    if (answer == null || !answer.getResult()) {
+                                        s_logger.warn("Failed to destroy load balancer appliance created");
+                                    } else {
+                                        // release the public & private IP back to dc pool, as the load balancer appliance is now destroyed
+                                        _dcDao.releasePrivateIpAddress(lbIP, guestConfig.getDataCenterId(), null);
+                                        _networkMgr.releasePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                                    }
+                                } catch (Exception e) {
+                                    s_logger.warn("Failed to destroy load balancer appliance created for the network" + guestConfig.getId() + " due to " + e.getMessage());
+                                }
                             }
                         }
                     }
@@ -607,8 +626,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 txn.commit();
 
                 if (!lbInUse && lbCloudManaged) {
-                    // send DestroyLoadBalancerApplianceCommand to the host where load balancer appliance 
-                    // is provisioned as this is the last network using it
+                    // send DestroyLoadBalancerApplianceCommand to the host where load balancer appliance is provisioned
                     Host lbHost = _hostDao.findById(lbDevice.getHostId());
                     String lbIP = lbHost.getPrivateIpAddress();
                     DestroyLoadBalancerApplianceCommand lbDeleteCmd = new DestroyLoadBalancerApplianceCommand(lbIP);
@@ -627,10 +645,16 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     }
                     deviceMapLock.unlock();
 
+                    // remove the provisioned load balancer appliance from cloudstack
+                    deleteExternalLoadBalancer(lbHost.getId());
+
                     // release the private IP back to dc pool, as the load balancer appliance is now destroyed
                     _dcDao.releasePrivateIpAddress(lbHost.getPrivateIpAddress(), guestConfig.getDataCenterId(), null);
-                    
-                    //FIXME : release the public IP allocated for this LB appliance
+
+                    // release the public IP allocated for this LB appliance
+                    DetailVO publicIpDetail = _hostDetailDao.findDetail(lbHost.getId(), "publicip");
+                    IPAddressVO ipVo = _ipAddressDao.findByIpAndDcId(guestConfig.getDataCenterId(), publicIpDetail.toString());
+                    _networkMgr.releasePublicIpAddress(ipVo.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                 } else {
                     deviceMapLock.unlock();
                 }
@@ -1213,7 +1237,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        // TODO Auto-generated method stub
-        return null;
+        if (host.getType() != com.cloud.host.Host.Type.ExternalLoadBalancer) {
+            return null;
+        }
+        return new DeleteHostAnswer(true);
     }
 }

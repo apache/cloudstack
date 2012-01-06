@@ -256,9 +256,7 @@ public class NetscalerResource implements ServerResource {
 
     private void validateInterfaces(String publicInterface, String privateInterface) throws ExecutionException {
         try {
-            if (_isSdx) { 
-                return;
-            } else {
+            if (!_isSdx && !_cloudManaged) {
                 Interface publicIf = Interface.get(_netscalerService, publicInterface);
                 Interface privateIf = Interface.get(_netscalerService, privateInterface);
                 if (publicIf != null || privateIf != null) {
@@ -266,7 +264,7 @@ public class NetscalerResource implements ServerResource {
                 } else {
                     throw new ExecutionException("Invalid interface name specified for public/private interfaces.");
                 }
-            } 
+            }
         } catch (nitro_exception e) {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
                 throw new ExecutionException("Invalid interface name specified for public and private interfaces.");
@@ -280,7 +278,7 @@ public class NetscalerResource implements ServerResource {
 
     private void validateDeviceType(String deviceType) throws ExecutionException {
         try {
-            if (!_isSdx) {
+            if (!_isSdx && !_cloudManaged) {
                 nshardware nsHw =  com.citrix.netscaler.nitro.resource.config.ns.nshardware.get(_netscalerService);
                 if (nsHw == null) {
                     throw new ExecutionException("Failed to get the hardware description of the Netscaler device at " + _ip);
@@ -291,7 +289,7 @@ public class NetscalerResource implements ServerResource {
                     }
                     throw new ExecutionException("Netscalar device type specified does not match with the actuall device type.");
                 }
-            } else {
+            } else if (_isSdx) {
                 mps serviceVM = mps.get(_netscalerSdxService);
                 if (serviceVM != null) {
                     if (serviceVM.get_platform().contains("SDX") || serviceVM.get_product().contains("SDX")) {
@@ -656,10 +654,10 @@ public class NetscalerResource implements ServerResource {
 
             // wait for VPX instance to start-up
             long startTick = System.currentTimeMillis();
-            long startWaitMins = 200000;
-            while(!newVpx.get_ns_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMins) {
+            long startWaitMilliSeconds = 600000;
+            while(!newVpx.get_ns_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
                 try { 
-                    Thread.sleep(1000);
+                    Thread.sleep(10000);
                 } catch(InterruptedException e) {
                 }
                 ns refreshNsObj = new ns();
@@ -669,15 +667,35 @@ public class NetscalerResource implements ServerResource {
 
             // if vpx instance never came up then error out
             if (!newVpx.get_ns_state().equalsIgnoreCase("up")) {
-                new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
+                return new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
+            }
+
+            // wait till NS service in side VPX is actually ready
+            startTick = System.currentTimeMillis();
+            boolean nsServiceUp = false;
+            long nsServiceWaitMilliSeconds = 60000;
+            while (System.currentTimeMillis() - startTick < nsServiceWaitMilliSeconds) {
+                try {
+                    nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
+                    _netscalerService.set_credential(username, password);
+                    _netscalerService.set_timeout(_timeout);
+                    apiCallResult = _netscalerService.login();
+                    if (apiCallResult.errorcode == 0) {
+                        nsServiceUp = true;
+                        break;
+                    }
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+
+            if (!nsServiceUp) {
+                return new Answer(cmd, new ExecutionException("Failed to create VPX instance " + vpxName + " on the netscaler SDX device " + _ip));
             }
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Successfully provisioned VPX instance " + vpxName + " on the Netscaler SDX device " + _ip);
             }
-
-            // FIXME: once VPX comes up there is time lag before we can actually login to VPX, so wait 
-            Thread.sleep(20000);
 
             // physical interfaces on the SDX range from 10/1 to 10/8 of which two different port or same port can be used for public and private interfaces
             // However the VPX instances created will have interface range start from 10/1 but will only have as many interfaces enabled while creating the VPX instance
@@ -816,8 +834,6 @@ public class NetscalerResource implements ServerResource {
                 	String vlanInterface = guestVlan ? _privateInterface : _publicInterface;
                     throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + vlanInterface + " due to " + apiCallResult.message);
                 }
-            } else {
-                throw new ExecutionException("Failed to configure Netscaler device for vlan with tag " + vlanTag + " as vlan already exisits");
             }
         }  catch (nitro_exception e) {
             throw new ExecutionException("Failed to implement guest network on the Netscaler device due to " + e.getMessage());

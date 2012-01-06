@@ -56,7 +56,9 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	IPAddressVO findByAssociatedVmId(long vmId);
 	
 	IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress);
-	
+
+	public IPAddressVO findByIpAndDcId(long dcId, String ipAddress);
+
 	List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
 	long countFreeIPs();
