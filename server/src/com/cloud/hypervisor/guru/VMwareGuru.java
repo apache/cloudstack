@@ -266,6 +266,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     				long checkPointId = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName));
     				cmd.setContextParam("worker", workerName);
     				cmd.setContextParam("checkpoint", String.valueOf(checkPointId));
+
+    				// some commands use 2 workers
+                    String workerName2 = _vmwareMgr.composeWorkerName();
+                    long checkPointId2 = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName2));
+                    cmd.setContextParam("worker2", workerName2);
+                    cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
     			}
     			
     			return cmdTarget.first().getId();
