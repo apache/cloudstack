@@ -178,7 +178,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 					if(vmMo == null) {
 						dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 						
-						workerVMName = hostService.getWorkerName(context, cmd);
+						workerVMName = hostService.getWorkerName(context, cmd, 0);
 	
 						// attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
 						if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier._otherGuest.toString(), morDs, false)) {
@@ -206,11 +206,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 	                }
 				}
 				
-                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId,
-                        volumeId, cmd.getVolumePath(), snapshotUuid,
-                        secondaryStoragePoolURL, prevSnapshotUuid,
-                        prevBackupUuid,
-                        UUID.randomUUID().toString().replace("-", ""));
+	            snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStoragePoolURL, prevSnapshotUuid, prevBackupUuid,
+	                    hostService.getWorkerName(context, cmd, 1));
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -330,7 +327,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 			Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo,
 					accountId, templateId, cmd.getTemplateName(),
 					secondaryStoragePoolURL, volumePath, 
-					hostService.getWorkerName(context, cmd));
+					hostService.getWorkerName(context, cmd, 0));
 
 			return new CreatePrivateTemplateAnswer(cmd, true, null,
 					result.first(), result.third(), result.second(),
@@ -393,10 +390,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
 			Pair<String, String> result;
 			if (cmd.toSecondaryStorage()) {
-				result = copyVolumeToSecStorage(
-						hyperHost, vmName, volumeId, cmd.getPool().getUuid(), volumePath,
+				result = copyVolumeToSecStorage(hostService,
+						hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath,
 						secondaryStorageURL,
-						hostService.getWorkerName(context, cmd));
+						hostService.getWorkerName(context, cmd, 0));
 			} else {
 				StorageFilerTO poolTO = cmd.getPool();
 
@@ -455,8 +452,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
 			DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
 			details = createVolumeFromSnapshot(hyperHost, primaryDsMo,
-					newVolumeName, accountId, volumeId,
-					secondaryStoragePoolURL, backedUpSnapshotUuid);
+					newVolumeName, accountId, volumeId, secondaryStoragePoolURL, backedUpSnapshotUuid);
 			if (details == null) {
 				success = true;
 			}
@@ -812,8 +808,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
     
-    private Pair<String, String> copyVolumeToSecStorage(VmwareHypervisorHost hyperHost, String vmName, long volumeId, String poolId, String volumePath, 
+    private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, 
+        String vmName, long volumeId, String poolId, String volumePath, 
         String secStorageUrl, String workerVmName) throws Exception {
+        
         String volumeFolder = String.valueOf(volumeId) + "/";
         VirtualMachineMO workerVm=null;
         VirtualMachineMO vmMo=null;
@@ -830,12 +828,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
-                //create a dummy worker vm for attaching the volume
+                // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                 //restrict VM name to 32 chars, (else snapshot descriptor file name will be truncated to 32 chars of vm name)
-                String workerVMName = UUID.randomUUID().toString().replaceAll("-", "");
                 VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
-                vmConfig.setName(workerVMName);
+                vmConfig.setName(workerVmName);
                 vmConfig.setMemoryMB((long) 4);
                 vmConfig.setNumCPUs(1);
                 vmConfig.setGuestId(VirtualMachineGuestOsIdentifier._otherGuest.toString());
@@ -854,7 +851,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmConfig.setDeviceChange(new VirtualDeviceConfigSpec[] { scsiControllerSpec });
 	
                 hyperHost.createVm(vmConfig);
-                workerVm = hyperHost.findVmOnHyperHost(workerVMName);
+                workerVm = hyperHost.findVmOnHyperHost(workerVmName);
                 if (workerVm == null) {
                     String msg = "Unable to create worker VM to execute CopyVolumeCommand";
                     s_logger.error(msg);
@@ -869,7 +866,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, workerVmName);
+            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, 
+                hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
             return new Pair<String, String>(volumeFolder, exportName);
 
         } finally {

@@ -13,5 +13,5 @@ public interface VmwareHostService {
 	void invalidateServiceContext(VmwareContext context);
 	VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
 
-	String getWorkerName(VmwareContext context, Command cmd);
+	String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
 }

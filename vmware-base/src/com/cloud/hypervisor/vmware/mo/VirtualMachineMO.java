@@ -1411,19 +1411,32 @@ public class VirtualMachineMO extends BaseMO {
 		HostMO hostMo = getRunningHost();
 		VirtualMachineConfigInfo vmConfigInfo = getConfigInfo();
 		
-		hostMo.createBlankVm(clonedVmName, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false);
-		VirtualMachineMO clonedVmMo = hostMo.findVmOnHyperHost(clonedVmName);
+		if(!hostMo.createBlankVm(clonedVmName, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false))
+		    throw new Exception("Unable to create a blank VM");
 		
-		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-	    VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-	    deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
-	    
-	    VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, -1, disks, morDs, -1, 1);
-	    
-	    deviceConfigSpecArray[0].setDevice(device);
-		deviceConfigSpecArray[0].setOperation(VirtualDeviceConfigSpecOperation.add);
-	    vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
-	    clonedVmMo.configureVm(vmConfigSpec);
+		VirtualMachineMO clonedVmMo = hostMo.findVmOnHyperHost(clonedVmName);
+		if(clonedVmMo == null)
+		    throw new Exception("Unable to find just-created blank VM");
+		
+		boolean bSuccess = false;
+		try {
+    		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+    	    VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+    	    deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
+    	    
+    	    VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, -1, disks, morDs, -1, 1);
+    	    
+    	    deviceConfigSpecArray[0].setDevice(device);
+    		deviceConfigSpecArray[0].setOperation(VirtualDeviceConfigSpecOperation.add);
+    	    vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
+    	    clonedVmMo.configureVm(vmConfigSpec);
+    	    bSuccess = true;
+		} finally {
+		    if(!bSuccess) {
+		        clonedVmMo.detachAllDisks();
+		        clonedVmMo.destroy();
+		    }
+		}
 	}
 	
 	public void plugDevice(VirtualDevice device) throws Exception {

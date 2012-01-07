@@ -747,6 +747,11 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 if(checkPointIdStr != null) {
                     _checkPointMgr.popCheckPoint(Long.parseLong(checkPointIdStr));
                 }
+                
+                checkPointIdStr = answer.getContextParam("checkpoint2");
+                if(checkPointIdStr != null) {
+                    _checkPointMgr.popCheckPoint(Long.parseLong(checkPointIdStr));
+                }
             }
         }
 

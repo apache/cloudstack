@@ -2874,7 +2874,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (cmd.getDiskCharacteristics().getType() == Volume.Type.ROOT) {
                 if (cmd.getTemplateUrl() == null) {
                     // create a root volume for blank VM
-                    String dummyVmName = getWorkerName(context, cmd);
+                    String dummyVmName = getWorkerName(context, cmd, 0);
                     VirtualMachineMO vmMo = null;
 
                     try {
@@ -2958,7 +2958,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 VirtualMachineMO vmMo = null;
                 String volumeUuid = UUID.randomUUID().toString().replace("-", "");
                 String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeUuid);
-                String dummyVmName = getWorkerName(context, cmd);
+                String dummyVmName = getWorkerName(context, cmd, 0);
                 try {
                     vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
                     if (vmMo == null) {
@@ -3950,7 +3950,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     @DB
-    public String getWorkerName(VmwareContext context, Command cmd) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String vmName = mgr.composeWorkerName();
 

@@ -72,11 +72,17 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer =  _resource.defaultAction(cmd);
         }
 
+        // special handling to pass-back context info for cleanups
         if(cmd.getContextParam("execid") != null) {
             answer.setContextParam("execid", cmd.getContextParam("execid"));
         }
+        
         if(cmd.getContextParam("checkpoint") != null) {
             answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
+        }
+        
+        if(cmd.getContextParam("checkpoint2") != null) {
+            answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
         }
 
         return answer;
@@ -241,9 +247,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getWorkerName(VmwareContext context, Command cmd) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
         assert(cmd.getContextParam("worker") != null);
-        return cmd.getContextParam("worker");
+        assert(workerSequence < 2);
+        
+        if(workerSequence == 0)
+            return cmd.getContextParam("worker");
+        return cmd.getContextParam("worker2");
     }
 
     @Override
