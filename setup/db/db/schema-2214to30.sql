@@ -559,3 +559,31 @@ CREATE TABLE  `ntwk_offering_service_map` (
   CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(40),
+  `start_ip` char(40) NOT NULL COMMENT 'start ip address',
+  `end_ip` char(40) NOT NULL COMMENT 'end ip address',
+  `vlan` int unsigned DEFAULT NULL COMMENT 'vlan the storage network on',
+  `netmask` varchar(15) NOT NULL COMMENT 'netmask for storage network',
+  `data_center_id` bigint unsigned NOT NULL,
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_storage_ip_range__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_storage_ip_range__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_storage_ip_range__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`),
+  CONSTRAINT `uc_storage_ip_range__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
+  `range_id` bigint unsigned NOT NULL COMMENT 'id of ip range in dc_storage_network_ip_range',
+  `ip_address` char(40) NOT NULL COMMENT 'ip address',
+  `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for storage ips',
+  `taken` datetime COMMENT 'Date taken',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
