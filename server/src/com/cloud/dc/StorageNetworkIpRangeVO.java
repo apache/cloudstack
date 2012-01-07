@@ -16,7 +16,7 @@ import javax.persistence.Table;
 @Table(name="dc_storage_network_ip_range")
 @SecondaryTables({@SecondaryTable(name="networks", pkJoinColumns={@PrimaryKeyJoinColumn(name="network_id", referencedColumnName="id")}),
 	@SecondaryTable(name="host_pod_ref", pkJoinColumns={@PrimaryKeyJoinColumn(name="pod_id", referencedColumnName="id")}),
-	@SecondaryTable(name="data_center", pkJoinColumns={@PrimaryKeyJoinColumn(name="data_center_id", referencedColumnName="id")}),
+	@SecondaryTable(name="data_center", pkJoinColumns={@PrimaryKeyJoinColumn(name="data_center_id", referencedColumnName="id")})
 })
 public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
 	@Id
