@@ -232,8 +232,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
 
         long[] hostIdsToTryFirst = null;
-        if (vm != null && vm.getHostId() != null) {
-            hostIdsToTryFirst = new long[] { vm.getHostId() };
+        if (vm != null) {
+            if(vm.getHostId() != null) {
+                hostIdsToTryFirst = new long[] { vm.getHostId() };
+            } else if(vm.getLastHostId() != null) {
+                hostIdsToTryFirst = new long[] { vm.getLastHostId() };
+            }
         }
 
         List<Long> hostIdsToAvoid = new ArrayList<Long>();
