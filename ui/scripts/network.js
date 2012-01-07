@@ -1962,34 +1962,7 @@
                   description: { label: 'Description' }
                 }
               }
-            },
-            destroy: {
-              label: 'Delete security group',
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to delete ' + args.name + '?';
-                },
-                notification: function(args) {
-                  return 'Deleted security group: ' + args.name;
-                }
-              },
-              action: function(args) {
-                $.ajax({
-                  url: createURL('deleteSecurityGroup'),
-                  data: {
-                    id: args.context.securityGroups[0].id
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      actionFilter: actionFilters.securityGroups,
-                      data: { state: 'Destroyed' },
-                    });
-                  }
-                });
-              }
-            }
+            }            
           },
           
           dataProvider: function(args) {					  
@@ -2029,6 +2002,8 @@
                     name: { label: 'Name' }
                   },
                   {
+									  id: { label: 'ID' },
+										description: { label: 'Description' },									
                     domain: { label: 'Domain' },
                     account: { label: 'Account' }
                   }
