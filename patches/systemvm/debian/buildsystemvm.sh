@@ -440,6 +440,14 @@ dhcp_fix() {
   rm tmp/iptables_1.4.8-3local1checksum1_i386.deb
 }
 
+install_xs_tool() {
+  #deal with virtio DHCP issue, copy and install customized kernel module and iptables
+  mkdir -p tmp
+  cp /tmp/systemvm/xe-guest-utilities_5.6.0-595_i386.deb tmp/
+  chroot . dpkg -i tmp/xe-guest-utilities_5.6.0-595_i386.deb
+  rm tmp/xe-guest-utilities_5.6.0-595_i386.deb
+}
+
 cleanup() {
   rm -f usr/sbin/policy-rc.d
   rm -f root/config.dat
@@ -484,6 +492,7 @@ scriptdir=$(dirname $PWD/$0)
 rm -rf /tmp/systemvm
 mkdir -p /tmp/systemvm
 cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
+cp ./xe-guest-utilities_5.6.0-595_i386.deb /tmp/systemvm
 
 rm -f $IMAGELOC
 begin=$(date +%s)
@@ -547,6 +556,9 @@ vpn_config
 
 echo "*************FIX DHCP ISSUE********************"
 dhcp_fix
+
+echo "*************INSTALL XS TOOLS********************"
+install_xs_tool
 
 echo "*************CLEANING UP********************"
 cleanup 
