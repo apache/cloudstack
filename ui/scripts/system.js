@@ -5104,8 +5104,11 @@
                         success: function(json) {
                           var pods = json.listpodsresponse.pod;
                           var items = [];
-                          $(pods).each(function() {
-                            items.push({id: this.id, description: this.name});
+                          $(pods).each(function() {													 
+														if(("pods" in args.context) && (this.id == args.context.pods[0].id))
+													    items.unshift({id: this.id, description: this.name});
+													  else															
+                              items.push({id: this.id, description: this.name});
                           });
                           args.response.success({data: items});
                         }
