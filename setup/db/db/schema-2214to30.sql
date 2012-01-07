@@ -587,3 +587,4 @@ CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
   CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+update networks set guru_name='StorageNetworkGuru' where traffic_type='Storage';
