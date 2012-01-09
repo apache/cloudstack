@@ -175,9 +175,15 @@ public class ApiDispatcher {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
 
         if (cmd instanceof BaseListCmd) {
-            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (unpackedParams.get(ApiConstants.PAGE_SIZE) != null)) {
+        	Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
+        	Long pageSize = null;
+        	if (pageSizeObj != null) {
+        		pageSize = Long.valueOf((String)pageSizeObj);
+        	}
+        	
+            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && pageSize != BaseListCmd.PAGESIZE_UNLIMITED)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
-            } else if ((unpackedParams.get(ApiConstants.PAGE_SIZE) == null) && (unpackedParams.get(ApiConstants.PAGE) != null)) {
+            } else if (pageSize == null && (unpackedParams.get(ApiConstants.PAGE) != null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
             }
         }
