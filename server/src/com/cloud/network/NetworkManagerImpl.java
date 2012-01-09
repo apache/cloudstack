@@ -58,7 +58,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.ListTafficTypeImplementorsCmd;
+import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -5655,7 +5655,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
 	@Override
-	public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTafficTypeImplementorsCmd cmd) {
+	public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {
 		String type = cmd.getTrafficType();
 		List<Pair<TrafficType, String>> results = new ArrayList<Pair<TrafficType, String>>();
 		if (type != null) {

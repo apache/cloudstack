@@ -21,8 +21,8 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 @Implementation(description="Lists implementors of implementor of a network traffic type or implementors of all network traffic types", responseObject=TrafficTypeImplementorResponse.class)
-public class ListTafficTypeImplementorsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListTafficTypeImplementorsCmd.class);
+public class ListTrafficTypeImplementorsCmd extends BaseListCmd {
+	public static final Logger s_logger = Logger.getLogger(ListTrafficTypeImplementorsCmd.class);
 	private static final String _name = "listtraffictypeimplementorsresponse";
 	
     /////////////////////////////////////////////////////
