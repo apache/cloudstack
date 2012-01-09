@@ -6303,11 +6303,7 @@
 								}
 							}
 						}						
-            array1.push("&zoneid=" + args.context.zones[0].id);
-            if("pods" in args.context)
-              array1.push("&podid=" + args.context.pods[0].id);
-            if("clusters" in args.context)
-              array1.push("&clusterid=" + args.context.clusters[0].id);
+            array1.push("&zoneid=" + args.context.zones[0].id);            
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
