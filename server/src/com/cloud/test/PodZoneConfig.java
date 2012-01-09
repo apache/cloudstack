@@ -306,6 +306,9 @@ public class PodZoneConfig {
         columns = "(id ";
         values = "('" + id + "'";
         
+        columns += ", name ";
+        values += ",'physical network'";
+        
         columns += ", data_center_id ";
         values += ",'" + dcId + "'";
         
