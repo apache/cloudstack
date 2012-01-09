@@ -6,7 +6,7 @@
 usage() {
   printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] \n" $(basename $0) 
 }
-
+options='tcp,soft,timeo=133,retrans=1'
 cleanup()
 {
   if [ ! -z $snapshotdir ]; then 
@@ -47,7 +47,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $snapshoturl $snapshotdir
+mount -o $options $snapshoturl $snapshotdir
 if [ $? -ne 0 ]; then
   rmdir $snapshotdir
   echo "5#can not mount $snapshoturl to $snapshotdir"
@@ -63,7 +63,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $templateurl $templatedir
+mount -o $options $templateurl $templatedir
 if [ $? -ne 0 ]; then
   rmdir $templatedir
   templatedir=""

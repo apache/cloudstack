@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version 2.2.13.20111117130644
+# Version @VERSION@
 #
 # A plugin for executing script needed by vmops cloud 
 
@@ -47,12 +47,17 @@ def setup_iscsi(session, args):
 def getvncport(session, args):
     domid = args['domID']
     hvm = args['hvm']
+    version = args['version']
     if hvm == 'true':
         path1 = "/local/domain/" + domid + "/qemu-pid"
         path2 = "/local/domain/" + domid + "/console/vnc-port"
     else:
-        path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
-        path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
+        if version == '6.0.0':
+            path1 = "/local/domain/" + domid + "/vncterm-pid"
+            path2 = "/local/domain/" + domid + "/console/vnc-port"
+        else:
+            path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
+            path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
     try:
         cmd = ["xenstore-read", path1]
         pid = util.pread2(cmd)
@@ -381,7 +386,6 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
-    default_ebtables_rules()
     privnic = get_private_nic(session, args)
     result = 'true'
     try:
@@ -392,7 +396,8 @@ def can_bridge_firewall(session, args):
             util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
-            result = 'false'
+            return 'false'
+    default_ebtables_rules()
     allow_egress_traffic(session)
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
@@ -421,10 +426,19 @@ def default_ebtables_rules():
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv6', '-j', 'DROP'])
         # deny vlan
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', '802_1Q', '-j', 'DROP'])
-        # deny all other 802. frames
-        util.pread2(['ebtables', '-A', 'FORWARD', '-j', 'DROP'])
+        # deny all others (e.g., 802.1d, CDP)
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES',  '-j', 'DROP'])
     except:
         util.SMlog('Chain DEFAULT_EBTABLES already exists')
+
+    #deny traffic from vms into hypervisor. Note: does not protect from vms in other pods
+    try:
+        util.pread2(['ebtables', '-D',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
+    except:
+        pass
+
+    util.pread2(['ebtables', '-A',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
+    
 
 @echo
 def allow_egress_traffic(session):
@@ -595,10 +609,12 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
             util.SMlog("Failed to create ebtables antispoof chain, skipping")
             return 'true'
 
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
+    # always start after the first rule in the FORWARD chain that jumps to DEFAULT_EBTABLES chain
     try:
         for vif in vifs:
             util.pread2(['ebtables', '-I', 'FORWARD', '2', '-i',  vif,  '-j', vm_chain])
-            util.pread2(['ebtables', '-I', 'FORWARD', '2', '-o',  vif, '-j', vm_chain])
+            util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
         return 'false'
@@ -632,9 +648,10 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
             util.SMlog("Failed to create arptables rule, skipping")
             return 'true'
 
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
     try:
         for vif in vifs:
-           util.pread2(['arptables',  '-A', 'FORWARD', '-i',  vif, '-j', vm_chain])
+           util.pread2(['arptables',  '-I', 'FORWARD', '-i',  vif, '-j', vm_chain])
            util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
         util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
@@ -645,7 +662,8 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
             #accept arp replies into the bridge as long as the source mac and ips match the vm
             util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'ACCEPT'])
             #accept any arp requests from this vm. In the future this can be restricted to deny attacks on hosts
-            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])
+            #also important to restrict source ip and src mac in these requests as they can be used to update arp tables on destination
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'RETURN'])
             #accept any arp requests to this vm as long as the request is for this vm's ip
             util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
             #accept any arp replies to this vm as long as the mac and ip matches
@@ -770,6 +788,8 @@ def default_network_rules(session, args):
         #don't let vm spoof its ip address
         for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
         util.pread2(['iptables', '-A', vmchain_default, '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)

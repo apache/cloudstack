@@ -1054,7 +1054,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
+        SearchBuilder<SecurityGroupRulesVO> sb = _securityGroupRulesDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
@@ -1067,7 +1067,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        SearchCriteria<SecurityGroupVO> sc = sb.create();
+        SearchCriteria<SecurityGroupRulesVO> sc = sb.create();
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1094,11 +1094,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
-        for (SecurityGroupVO group : securityGroups) {
-            securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
-        }
-
+        securityRulesList = _securityGroupRulesDao.search(sc, searchFilter);
+        
         return securityRulesList;
     }
 

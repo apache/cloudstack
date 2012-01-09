@@ -18,7 +18,6 @@
 package com.cloud.configuration;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +37,9 @@ import com.cloud.certificate.dao.CertificateDaoImpl;
 import com.cloud.cluster.CheckPointManagerImpl;
 import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
-import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
+import com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
@@ -73,8 +72,8 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
-import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
@@ -98,7 +97,6 @@ import com.cloud.network.ovs.dao.VmFlowLogDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
-import com.cloud.network.security.SecurityGroupManagerImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
@@ -138,7 +136,6 @@ import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.TemplateManagerImpl;
-import com.cloud.upgrade.DatabaseUpgradeChecker;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.SSHKeyPairDaoImpl;
@@ -150,7 +147,6 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
@@ -228,6 +224,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ConsoleProxyDao", ConsoleProxyDaoImpl.class);
         addDao("SecondaryStorageVmDao", SecondaryStorageVmDaoImpl.class);
         addDao("ManagementServerHostDao", ManagementServerHostDaoImpl.class);
+        addDao("ManagementServerHostPeerDao", ManagementServerHostPeerDaoImpl.class);
         addDao("AgentUpgradeDao", AgentUpgradeDaoImpl.class);
         addDao("SnapshotDao", SnapshotDaoImpl.class);
         addDao("AsyncJobDao", AsyncJobDaoImpl.class);
@@ -286,8 +283,13 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateManagers() {
         addManager("StackMaidManager", CheckPointManagerImpl.class);
-        addManager("account manager", AccountManagerImpl.class);
+        addManager("Cluster Manager", ClusterManagerImpl.class);
+        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
+        addManager("SyncQueueManager", SyncQueueManagerImpl.class);
+        addManager("AsyncJobManager", AsyncJobManagerImpl.class);
+        addManager("AsyncJobExecutorContext", AsyncJobExecutorContextImpl.class);
         addManager("configuration manager", ConfigurationManagerImpl.class);
+        addManager("account manager", AccountManagerImpl.class);
         addManager("network manager", NetworkManagerImpl.class);
         addManager("download manager", DownloadMonitorImpl.class);
         addManager("upload manager", UploadMonitorImpl.class);
@@ -296,9 +298,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("vm manager", UserVmManagerImpl.class);
         addManager("upgrade manager", UpgradeManagerImpl.class);
         addManager("StorageManager", StorageManagerImpl.class);
-        addManager("SyncQueueManager", SyncQueueManagerImpl.class);
-        addManager("AsyncJobManager", AsyncJobManagerImpl.class);
-        addManager("AsyncJobExecutorContext", AsyncJobExecutorContextImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("Alert Manager", AlertManagerImpl.class);
         addManager("Template Manager", TemplateManagerImpl.class);
@@ -313,7 +312,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
         addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
-        addManager("Cluster Manager", ClusterManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
@@ -322,7 +320,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("OCFS2Manager", OCFS2ManagerImpl.class);
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
-        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
     }
 

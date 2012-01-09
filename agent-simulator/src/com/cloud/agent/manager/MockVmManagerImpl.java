@@ -263,6 +263,12 @@ public class MockVmManagerImpl implements MockVmManager {
 
     @Override
     public NetworkUsageAnswer getNetworkUsage(NetworkUsageCommand cmd) {
+    	try {
+    		Thread.sleep(500);
+    		s_logger.debug("get network usage for router: " + cmd.getDomRName());
+    	} catch (InterruptedException e) {
+    		
+    	}
         return new NetworkUsageAnswer(cmd, null, 100L, 100L);
     }
 

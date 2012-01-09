@@ -33,7 +33,7 @@ public enum Status {
     Maintenance(false, false, false),
     Alert(true, true, true),
     Removed(true, false, true),
-    Rebalancing(false, false, false);
+    Rebalancing(true, false, true);
     
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
@@ -194,6 +194,7 @@ public enum Status {
         s_fsm.addTransition(Status.Alert, Event.AgentDisconnected, Status.Alert);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
+        s_fsm.addTransition(Status.Rebalancing, Event.ManagementServerDown, Status.Disconnected);
     }
 
     public static void main(String[] args) {

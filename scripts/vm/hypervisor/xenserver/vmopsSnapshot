@@ -284,9 +284,9 @@ def makedirs(path):
 
 def mount(remoteDir, localDir):
     makedirs(localDir)
-    
+    options = "soft,tcp,timeo=133,retrans=1"
     try: 
-        cmd = ['mount', '-o', 'tcp', remoteDir, localDir]
+        cmd = ['mount', '-o', options, remoteDir, localDir]
         txt = util.pread2(cmd)
     except:
         txt = ''

@@ -667,7 +667,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("-t", "nfs");
         if (_inSystemVM) {
         	//Fedora Core 12 errors out with any -o option executed from java
-        	command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
+            command.add("-o", "soft,timeo=133,retrans=1,tcp,acdirmax=0,acdirmin=0");
         }
         command.add(nfsPath);
         command.add(root);

@@ -15,36 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api;
 
-public class ReadyCommand extends Command {
-	private String details;
-	public ReadyCommand() {
-		super();
-	}
+package com.cloud.cluster.dao;
 
-	private Long dcId;
-	
-	public ReadyCommand(Long dcId) {
-		super();
-		this.dcId = dcId;
-	}
-	
-	public Long getDataCenterId() {
-		return dcId;
-	}
-	
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
-	
-	public void setDetails(String details) {
-		this.details = details;
-	}
-	
-	public String getDetails() {
-		return this.details;
-	}
+import com.cloud.cluster.ManagementServerHost;
+import com.cloud.cluster.ManagementServerHostPeerVO;
+import com.cloud.utils.db.GenericDao;
 
+public interface ManagementServerHostPeerDao extends GenericDao<ManagementServerHostPeerVO, Long> {
+    void clearPeerInfo(long ownerMshost);
+    void updatePeerInfo(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState);
+    int countStateSeenInPeers(long mshost, long runid, ManagementServerHost.State state);
 }

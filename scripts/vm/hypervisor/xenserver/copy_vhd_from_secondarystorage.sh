@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp,ro $mountpoint $localmp
+mount -o tcp,soft,ro,timeo=133,retrans=1 $mountpoint $localmp
 if [ $? -ne 0 ]; then
   echo "6#can't mount $mountpoint to $localmp"
   exit 0
@@ -87,7 +87,7 @@ copyvhd()
       cleanup
      exit 0
     fi
-    if [ $type != "nfs" ]; then
+    if [ $type != "nfs" -a $type != "ext" ]; then
       dd if=$srcvhd of=$desvhd bs=512 seek=$(($(($vsize/512))-1)) count=1
       $VHDUTIL modify -s $vsize -n $desvhd
       if [ $? -ne 0 ]; then
@@ -107,7 +107,7 @@ copyvhd()
   fi
 }
 
-if [ $type == "nfs" ]; then
+if [ $type == "nfs" -o $type == "ext" ]; then
   uuid=$(uuidgen -r)
   desvhd=/var/run/sr-mount/$sruuid/$uuid
   copyvhd $desvhd $vhdfile 0 $type

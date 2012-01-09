@@ -15,36 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api;
 
-public class ReadyCommand extends Command {
-	private String details;
-	public ReadyCommand() {
-		super();
-	}
+package com.cloud.cluster;
 
-	private Long dcId;
-	
-	public ReadyCommand(Long dcId) {
-		super();
-		this.dcId = dcId;
-	}
-	
-	public Long getDataCenterId() {
-		return dcId;
-	}
-	
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
-	
-	public void setDetails(String details) {
-		this.details = details;
-	}
-	
-	public String getDetails() {
-		return this.details;
-	}
+public class ActiveFencingException extends Exception {
+    private static final long serialVersionUID = -3975376101728211726L;
 
+    public ActiveFencingException(String message) {
+        super(message);
+    }
+
+    public ActiveFencingException(String message, Throwable th) {
+        super(message, th);
+    }
 }

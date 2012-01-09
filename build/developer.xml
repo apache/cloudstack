@@ -103,8 +103,8 @@
       <jvmarg value="-Dcom.sun.management.jmxremote.port=${jmxport}"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
-      <jvmarg value="-Xms256m"/>
-      <jvmarg value="-Xmx384m"/>
+      <jvmarg value="-Xms${JAVAHEAPMEMMIN}"/>
+      <jvmarg value="-Xmx${JAVAHEAPMEMMAX}"/>
       <jvmarg value="-ea"/>
       <arg value="start"/>
     </java>
@@ -119,8 +119,8 @@
 	  <jvmarg value="-Xdebug"/>
       <jvmarg value="${debug.jvmarg}"/>
       <jvmarg value="-ea"/>
-      <jvmarg value="-Xms256m"/>
-      <jvmarg value="-Xmx384m"/>
+      <jvmarg value="-Xms${JAVAHEAPMEMMIN}"/>
+      <jvmarg value="-Xmx${JAVAHEAPMEMMAX}"/>
     </java>
   </target>
 

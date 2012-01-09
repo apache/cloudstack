@@ -45,6 +45,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
@@ -116,6 +117,8 @@ public class Agent implements HandlerFactory, IAgentControl {
     AtomicInteger               _inProgress           = new AtomicInteger();
 
     StartupTask                 _startup              = null;
+    long  _startupWaitDefault = 180000;
+    long  _startupWait = _startupWaitDefault;
     boolean                     _reconnectAllowed     = true;
     //For time sentitive task, e.g. PingTask
     private ThreadPoolExecutor     _ugentTaskPool;
@@ -281,7 +284,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 s_logger.debug("Adding a watch list");
             }
             final WatchTask task = new WatchTask(link, request, this);
-            _timer.schedule(task, delay, period);
+            _timer.schedule(task, 0, period);
             _watchList.add(task);
         }
     }
@@ -314,7 +317,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         synchronized (this) {
             _startup = new StartupTask(link);
-            _timer.schedule(_startup, 180000);
+            _timer.schedule(_startup, _startupWait);
         }
         try {
             link.send(request.toBytes());
@@ -476,9 +479,28 @@ public class Agent implements HandlerFactory, IAgentControl {
                         cancelTasks();
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
+                    } else if (cmd instanceof ReadyCommand) {
+                    	ReadyCommand ready = (ReadyCommand)cmd;
+                    	s_logger.debug("Received shutdownCommand, due to: " + ready.getDetails());
+                    	if (ready.getDetails() != null) {
+                    		cancelTasks();
+                    		_reconnectAllowed = false;
+                    		answer = new Answer(cmd, true, null);
+                    	} else {
+                    		_inProgress.incrementAndGet();
+                    		try {
+                    			answer = _resource.executeRequest(cmd);
+                    		} finally {
+                    			_inProgress.decrementAndGet();
+                    		}
+                    		if (answer == null) {
+                    			s_logger.debug("Response: unsupported command" + cmd.toString());
+                    			answer = Answer.createUnsupportedCommandAnswer(cmd);
+                    		}
+                    	}
                     } else if (cmd instanceof AgentControlCommand) {
-                        answer = null;
-                        synchronized (_controlListeners) {
+                    	answer = null;
+                    	synchronized (_controlListeners) {
                             for (IAgentControlListener listener : _controlListeners) {
                                 answer = listener.processControlRequest(request, (AgentControlCommand) cmd);
                                 if (answer != null) {
@@ -773,6 +795,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             // TimerTask.cancel may fail depends on the calling context
             if (!cancelled) {
                 cancelled = true;
+                _startupWait = _startupWaitDefault;
                 s_logger.debug("Startup task cancelled");
                 return super.cancel();
             }
@@ -787,6 +810,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 }
                 cancelled = true;
                 _startup = null;
+                _startupWait = _startupWaitDefault *2;
                 reconnect(_link);
             }
         }

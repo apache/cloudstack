@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount -o tcp $mountpoint $localmp
+mount -o tcp,soft,timeo=133,retrans=1 $mountpoint $localmp
 if [ $? -ne 0 ]; then
   echo "6#can't mount $mountpoint to $localmp"
   exit 0
@@ -64,7 +64,7 @@ fi
 
 vhdfile=$localmp/${vdiuuid}.vhd
 
-if [ $type == "nfs" ]; then
+if [ $type == "nfs" -o $type == "ext" ]; then
   dd if=/var/run/sr-mount/$sruuid/${vdiuuid}.vhd of=$vhdfile bs=2M
   if [ $? -ne 0 ]; then
     echo "8#failed to copy /var/run/sr-mount/$sruuid/${vdiuuid}.vhd to secondarystorage"
