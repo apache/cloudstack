@@ -54,6 +54,8 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.Script2;
+import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -127,14 +129,14 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 						+ injectScript);
 			}
 
-			final Script command = new Script(scriptPath, s_logger);
+			final Script2 command = new Script2(scriptPath, s_logger);
 			command.add("ping");
 			command.add("hostname="+ipmiIp);
 			command.add("usrname="+username);
-			command.add("password="+password);
+			command.add("password="+password, ParamType.PASSWORD);
 			final String result = command.execute();
 			if (result != null) {
-				s_logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", ipmiIp, username, password, result));
+				s_logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", ipmiIp, username, "******", result));
 				return null;
 			}
 			
@@ -180,7 +182,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 			_dcDao.update(zone.getId(), zone);
 			
 			s_logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3%s," +
-					"cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", ipmiIp, username, password, cpuNum, cpuCapacity, memCapacity));
+					"cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", ipmiIp, username, "******", cpuNum, cpuCapacity, memCapacity));
 			return resources;
 		} catch (Exception e) {
 			s_logger.warn("Can not set up bare metal agent", e);

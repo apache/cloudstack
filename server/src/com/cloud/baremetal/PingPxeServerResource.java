@@ -87,13 +87,13 @@ public class PingPxeServerResource extends PxeServerResourceBase {
 		
 		com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
 		
-		s_logger.debug(String.format("Trying to connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
+		s_logger.debug(String.format("Trying to connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
 		try {
 			sshConnection.connect(null, 60000, 60000);
 			if (!sshConnection.authenticateWithPassword(_username, _password)) {
 				s_logger.debug("SSH Failed to authenticate");
 				throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username,
-						_password));
+						"******"));
 			}
 			
 			String cmd = String.format("[ -f /%1$s/pxelinux.0 ] && [ -f /%2$s/kernel ] && [ -f /%3$s/initrd.gz ] ", _tftpDir, _tftpDir, _tftpDir);
