@@ -340,6 +340,7 @@ CREATE TABLE  `ntwk_service_map` (
 CREATE TABLE `cloud`.`physical_network` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
+  `name` varchar(255) NOT NULL,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
   `vnet` varchar(255),
   `speed` varchar(32),  

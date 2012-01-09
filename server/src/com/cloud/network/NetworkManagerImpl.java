@@ -4172,7 +4172,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_CREATE, eventDescription = "Creating Physical Network", create = true)
-    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags) {
+    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags, String name) {
         // Check if zone exists
         if (zoneId == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -4245,7 +4245,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         try {
             txn.start();
             // Create the new physical network in the database
-            PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange);
+            PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange, name);
             pNetwork.setTags(tags);
             pNetwork.setIsolationMethods(isolationMethods);
 
@@ -4265,7 +4265,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize){
+    public List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name){
         Filter searchFilter = new Filter(PhysicalNetworkVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<PhysicalNetworkVO> sc = _physicalNetworkDao.createSearchCriteria();
 
@@ -4276,6 +4276,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
+        
+        if (name != null) {
+        	sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+        
         return _physicalNetworkDao.search(sc, searchFilter);     
     }
 

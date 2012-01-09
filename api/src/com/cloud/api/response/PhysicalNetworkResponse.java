@@ -31,6 +31,9 @@ public class PhysicalNetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the uuid of the physical network")
     private String id;
     
+    @SerializedName(ApiConstants.NAME) @Param(description="name of the physical network")
+    private String name;
+    
     @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE) @Param(description="Broadcast domain range of the physical network")
     private String broadcastDomainRange;
     
@@ -111,5 +114,7 @@ public class PhysicalNetworkResponse extends BaseResponse{
         this.isolationMethods = buf.delete(buf.length()-1, buf.length()).toString();
     }
 
-
+	public void setName(String name) {
+		this.name = name;
+	}
 }

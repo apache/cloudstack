@@ -52,8 +52,10 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the physical network")
     private Long zoneId;
-
     
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="search by name")
+    private String networkName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +66,10 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public String getNetworkName() {
+    	return networkName;
     }
     
     /////////////////////////////////////////////////////
@@ -82,7 +88,7 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetwork> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal());
+        List<? extends PhysicalNetwork> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
         if (result != null) {
             ListResponse<PhysicalNetworkResponse> response = new ListResponse<PhysicalNetworkResponse>();
             List<PhysicalNetworkResponse> networkResponses = new ArrayList<PhysicalNetworkResponse>();

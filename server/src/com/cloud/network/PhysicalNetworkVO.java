@@ -50,7 +50,10 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     long id;
     
     @Column(name="uuid")
-    private String uuid;    
+    private String uuid;
+    
+	@Column(name="name")
+	private String name;
 
     @Column(name="data_center_id")
     long dataCenterId;
@@ -92,7 +95,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         
     }
     
-    public PhysicalNetworkVO(long dataCenterId, String vnet, String speed, Long domainId, BroadcastDomainRange broadcastDomainRange) {
+    public PhysicalNetworkVO(long dataCenterId, String vnet, String speed, Long domainId, BroadcastDomainRange broadcastDomainRange, String name) {
         this.dataCenterId = dataCenterId;
         this.setVnet(vnet);
         this.setSpeed(speed);
@@ -104,6 +107,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         }
         this.state = State.Disabled;
         this.uuid = UUID.randomUUID().toString();
+        this.name = name;
     }
 
     @Override
@@ -218,4 +222,9 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    @Override
+	public String getName() {
+		return name;
+	}
 }

@@ -68,6 +68,9 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, description="the isolation method for the physical network[VLAN/L3/GRE]")
     private List<String> isolationMethods;
+    
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the physical network")
+    private String networkName;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,11 +108,11 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
         return speed;
     }
     
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
+    public String getNetworkName() {
+		return networkName;
+	}
+    
+	@Override
     public String getCommandName() {
         return s_name;
     }
@@ -137,8 +140,12 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return  "creating Physical Network. Id: "+getEntityId();
-    }    
+    }
     
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Physical Network Id: "+getEntityId());
@@ -154,7 +161,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags());
+        PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags(), getNetworkName());
         if (result != null) {
             setEntityId(result.getId());
         } else {

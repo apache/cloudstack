@@ -135,13 +135,14 @@ public class Upgrade2214to30 implements DbUpgrade {
             rs.close();
             pstmt.close();
 
-            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet FROM data_center");
+            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name FROM data_center");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
                 long domainId = rs.getLong(2);
                 String networkType = rs.getString(3);
                 String vnet = rs.getString(4);
+                String zoneName = rs.getString(5);
                 
                 //add p.network
                 PreparedStatement pstmt2 = conn.prepareStatement(getNextNetworkSequenceSql);
@@ -169,11 +170,12 @@ public class Upgrade2214to30 implements DbUpgrade {
                 values += ",'" + domainId + "'";
                 values += ",'" + broadcastDomainRange + "'";
                 values += ",'Enabled'";
+                values += ",'" + zoneName + "-pNtwk";
                 values += ")";
                 
                 s_logger.debug("Adding PhysicalNetwork "+physicalNetworkId+" for Zone id "+ zoneId);
                 
-                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, domain_id, broadcast_domain_range, state) VALUES " + values;
+                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, domain_id, broadcast_domain_range, state, name) VALUES " + values;
                 pstmtUpdate = conn.prepareStatement(sql);
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();

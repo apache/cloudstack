@@ -67,4 +67,6 @@ public interface PhysicalNetwork {
 
     String getUuid();
 
+	String getName();
+
 }

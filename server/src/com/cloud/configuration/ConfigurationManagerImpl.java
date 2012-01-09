@@ -1522,7 +1522,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }else{
             broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.ZONE.toString();
         }
-        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zone.getId(), null, null, null, broadcastDomainRange, domainId, null);
+        
+        String pNtwkName = zone.getName() + "-pNtwk";
+        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zone.getId(), null, null, null, broadcastDomainRange, domainId, null, pNtwkName);
         
         //String defaultXenLabel = "cloud-private";
         

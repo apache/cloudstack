@@ -3077,6 +3077,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if(result.getState() != null){
             response.setState(result.getState().toString());
         }
+        
+        response.setName(result.getName());
+        
         response.setObjectName("physicalnetwork");
         return response;
     }
