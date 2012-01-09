@@ -1112,47 +1112,8 @@ dictionary = {
                 <a id="show_ingressrule_link" href="#" style="float:left;"><fmt:message key="label.show.ingress.rule"/></a>
                 <a id="hide_ingressrule_link" href="#" style="float:left;display:none" ><fmt:message key="label.hide.ingress.rule"/></a>
             </div>
-        </div>       
-        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
-            <div class="gridrow_loader">
-            </div>
-            <p id="description">
-                <fmt:message key="label.waiting"/> &hellip;
-            </p>
-        </div>
-    </div> 
-    <div class="grid_rows odd" id="row_container_edit" style="display:none; border-bottom:none;">
-        <div class="grid_row_cell" style="width: 20%; ">
-            <input id="name" class="text" style="width: 70%;" type="text" />
-            <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-        </div>
-        <div class="grid_row_cell" style="width: 14%; ">
-            <div class="row_celltitles" id="public_port"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 14%; ">
-            <div class="row_celltitles" id="private_port"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 15%; ">
-            <select id="algorithm_select" class="select" style="width: 70%;">                 
-            </select>
-        </div>        
-        <div class="grid_row_cell" style="width: 10%; ">
-            <div class="row_celltitles" id="state"></div>
-        </div>        
-        <div class="grid_row_cell" style="width: 25%; ">
-            <div class="row_celltitles">
-                <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/></a>
-                <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;"><fmt:message key="label.cancel"/></a>
-            </div>
-        </div>
-        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
-            <div class="gridrow_loader">
-            </div>
-            <p id="description">
-                <fmt:message key="label.waiting"/> &hellip;
-            </p>
-        </div>
-    </div>  
+        </div>  
+    </div>     
     <div class="grid_detailspanel" id="management_area" style="display: none;">
         <div class="grid_details_pointer">
         </div>
