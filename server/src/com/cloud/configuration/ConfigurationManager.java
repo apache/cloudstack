@@ -214,5 +214,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @throws  
      */
     Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
+
+    void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
+
+    void checkCidrVlanOverlap(long zoneId, String cidr);
     
 }

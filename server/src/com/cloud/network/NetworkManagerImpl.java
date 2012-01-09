@@ -2006,7 +2006,52 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _nicDao.expunge(nic.getId());
         }
     }
+    
+    private String getCidrAddress(String cidr) {
+        String[] cidrPair = cidr.split("\\/");
+        return cidrPair[0];
+    }
 
+    private int getCidrSize(String cidr) {
+        String[] cidrPair = cidr.split("\\/");
+        return Integer.parseInt(cidrPair[1]);
+    }
+
+    public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
+        if (zoneId == null) {
+            return;
+        }
+        List<NetworkVO> networks = _networksDao.listByZone((long)zoneId);
+        Map<Long, String> networkToCidr = new HashMap<Long, String>();
+        for (NetworkVO network : networks) {
+            if (network.getGuestType() != GuestType.Isolated) {
+                continue;
+            }
+            networkToCidr.put(network.getId(), network.getCidr());
+        }
+        if (networkToCidr == null || networkToCidr.isEmpty()) {
+            return;
+        }
+        
+        String currCidrAddress = getCidrAddress(cidr);
+        int currCidrSize = getCidrSize(cidr);
+        
+        for (long networkId : networkToCidr.keySet()) {
+            String ntwkCidr = networkToCidr.get(networkId);
+            String ntwkCidrAddress = getCidrAddress(ntwkCidr);
+            int ntwkCidrSize = getCidrSize(ntwkCidr);
+            
+            long cidrSizeToUse = currCidrSize < ntwkCidrSize ? currCidrSize : ntwkCidrSize;
+            
+            String ntwkCidrSubnet = NetUtils.getCidrSubNet(getCidrAddress(ntwkCidr), cidrSizeToUse);
+            String cidrSubnet = NetUtils.getCidrSubNet(currCidrAddress, cidrSizeToUse);
+            
+            if (cidrSubnet.equals(ntwkCidrSubnet)) {
+                throw new InvalidParameterValueException("Warning: The existing network " + networkId + " have conflict CIDR subnets with new network!");
+            }
+        }
+    }
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
@@ -2174,7 +2219,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (cidr != null && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
             throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external firewall!");
         }
-
+        
+        checkVirtualNetworkCidrOverlap(zoneId, cidr);
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
 

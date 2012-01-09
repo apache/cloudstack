@@ -636,7 +636,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
     }
+    
+    @Override
+    public void checkCidrVlanOverlap(long zoneId, String cidr) {
+            // Prevent using the same CIDR for POD and virtual networking
+            List<VlanVO> vlans = _vlanDao.listByZoneAndType(zoneId, VlanType.VirtualNetwork);
+            for (VlanVO vlan : vlans) {
+                String vlanCidr = NetUtils.ipAndNetMaskToCidr(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                String[] cidrPairVlan = vlanCidr.split("\\/");
+                String[] vlanIpRange = NetUtils.getIpRangeFromCidr(cidrPairVlan[0], Long.valueOf(cidrPairVlan[1]));
 
+                String[] cidrPairPod = cidr.split("\\/");
+                String[] podIpRange = NetUtils.getIpRangeFromCidr(cidrPairPod[0], Long.valueOf(cidrPairPod[1]));
+
+                if (NetUtils.ipRangesOverlap(vlanIpRange[0], vlanIpRange[1], podIpRange[0], podIpRange[1])) {
+                    throw new InvalidParameterValueException("Pod's cidr conflicts with cidr of virtual network in zone id=" + zoneId);
+                }
+            }
+    }
+    
     private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationStateStr, boolean checkForDuplicates,
             boolean skipGatewayOverlapCheck) {
         if (checkForDuplicates) {
@@ -684,28 +702,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
         if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
-            // Check if the CIDR conflicts with the Guest Network or other pods
-            HashMap<Long, List<Object>> currentPodCidrSubnets = _podDao.getCurrentPodCidrSubnets(zoneId, podId);
-            List<Object> newCidrPair = new ArrayList<Object>();
-            newCidrPair.add(0, cidrAddress);
-            newCidrPair.add(1, new Long(cidrSize));
-            currentPodCidrSubnets.put(new Long(-1), newCidrPair);
-            checkPodCidrSubnets(zoneId, currentPodCidrSubnets);
-
-            // Prevent using the same CIDR for POD and virtual networking
-            List<VlanVO> vlans = _vlanDao.listByZoneAndType(zoneId, VlanType.VirtualNetwork);
-            for (VlanVO vlan : vlans) {
-                String vlanCidr = NetUtils.ipAndNetMaskToCidr(vlan.getVlanGateway(), vlan.getVlanNetmask());
-                String[] cidrPairVlan = vlanCidr.split("\\/");
-                String[] vlanIpRange = NetUtils.getIpRangeFromCidr(cidrPairVlan[0], Long.valueOf(cidrPairVlan[1]));
-
-                String[] cidrPairPod = cidr.split("\\/");
-                String[] podIpRange = NetUtils.getIpRangeFromCidr(cidrPairPod[0], Long.valueOf(cidrPairPod[1]));
-
-                if (NetUtils.ipRangesOverlap(vlanIpRange[0], vlanIpRange[1], podIpRange[0], podIpRange[1])) {
-                    throw new InvalidParameterValueException("Pod's cidr conflicts with cidr of virtual network in zone id=" + zoneId);
-                }
-            }
+            checkPodCidrSubnets(zoneId, podId, cidr);
+            checkCidrVlanOverlap(zoneId, cidr);
         }
 
         Grouping.AllocationState allocationState = null;
@@ -2692,16 +2690,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return pod.getCidrSize();
     }
 
-    private void checkPodCidrSubnets(long dcId, HashMap<Long, List<Object>> currentPodCidrSubnets) {
+    @Override
+    public void checkPodCidrSubnets(long dcId, Long podIdToBeSkipped, String cidr) {
         // For each pod, return an error if any of the following is true:
-        // 1. The pod's CIDR subnet conflicts with the guest network subnet
-        // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other
-        // pod
+        // The pod's CIDR subnet conflicts with the CIDR subnet of any other pod
         
-        // Iterate through all pods in this zone
+        // Check if the CIDR conflicts with the Guest Network or other pods
+        long skipPod = 0;
+        if (podIdToBeSkipped != null) {
+            skipPod = podIdToBeSkipped;
+        }
+        HashMap<Long, List<Object>> currentPodCidrSubnets = _podDao.getCurrentPodCidrSubnets(dcId, skipPod);
+        List<Object> newCidrPair = new ArrayList<Object>();
+        newCidrPair.add(0, getCidrAddress(cidr));
+        newCidrPair.add(1, getCidrSize(cidr));
+        currentPodCidrSubnets.put(new Long(-1), newCidrPair);
         
         String zoneName = getZoneName(dcId);
         
+        // Iterate through all pods in this zone
         for (Long podId : currentPodCidrSubnets.keySet()) {
             String podName;
             if (podId.longValue() == -1) {
@@ -2719,8 +2726,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
             String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
             
-            //TODO add checking for CIDR of guest network in this data center
-
             // Iterate through the rest of the pods
             for (Long otherPodId : currentPodCidrSubnets.keySet()) {
                 if (podId.equals(otherPodId)) {
