@@ -317,7 +317,7 @@
         var parentDomain = args.context.parentDomain;
         if(parentDomain == null) { //draw root node
           $.ajax({
-            url: createURL("listDomains&id=" + g_domainid),
+            url: createURL("listDomains&id=" + g_domainid + '&listAll=true'),
             dataType: "json",
             async: false,
             success: function(json) {

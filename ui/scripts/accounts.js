@@ -199,7 +199,7 @@
             if("domains" in args.context)
               array1.push("&domainid=" + args.context.domains[0].id);
             $.ajax({
-              url: createURL("listAccounts" + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listAccounts" + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true'),
               dataType: "json",
               async: true,
               success: function(json) {
