@@ -49,6 +49,7 @@ public class ListTrafficTypeImplementorsCmd extends BaseListCmd {
 			TrafficTypeImplementorResponse p = new TrafficTypeImplementorResponse();
 			p.setTrafficType(r.first().toString());
 			p.setImplementor(r.second());
+			p.setObjectName("traffictypeimplementorresponse");
 			responses.add(p);
 		}
 		

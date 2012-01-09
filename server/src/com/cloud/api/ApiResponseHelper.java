@@ -3246,6 +3246,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 		response.setPodUuid(result.getPodUuid());
 		response.setZoneUuid(result.getZoneUuid());
 		response.setNetworkUuid(result.getNetworkUuid());
+		response.setObjectName("storagenetworkiprange");
 		return response;
     }
 }

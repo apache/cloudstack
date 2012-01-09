@@ -185,7 +185,6 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 	@Override
 	@DB
 	public StorageNetworkIpRange createIpRange(CreateStorageNetworkIpRangeCmd cmd) throws SQLException {
-		Long zoneId = cmd.getZoneId();
 		Long podId = cmd.getPodId();
 		String startIp = cmd.getStartIp();
 		String endIp = cmd.getEndIp();
@@ -199,6 +198,12 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		if (!NetUtils.isValidNetmask(netmask)) {
 			throw new CloudRuntimeException("Invalid netmask:" + netmask);
 		}
+		
+		HostPodVO pod = _podDao.findById(podId);
+		if (pod == null) {
+			throw new CloudRuntimeException("Cannot find pod " + podId);
+		}
+		Long zoneId = pod.getDataCenterId();
 		
 		List<NetworkVO> nws = _networkDao.listByZoneAndTrafficType(zoneId, TrafficType.Storage);
 		if (nws.size() == 0) {

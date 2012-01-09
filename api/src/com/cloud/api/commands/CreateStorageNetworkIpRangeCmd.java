@@ -28,7 +28,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////    
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="UUID of pod where the ip range belongs to")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required=true, description="UUID of pod where the ip range belongs to")
     private Long podId;
     
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address")
@@ -37,12 +37,8 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address")
     private String endIp;
     
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.INTEGER, description="Optional. the vlan the ip range sits on")
+	@Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. The vlan the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly reterive bridge from pyhsical network traffic type table")
     private Integer vlan;
-    
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="The uuid of zone")
-    private Long zoneId;
         
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for storage network")
     private String netmask;
@@ -66,11 +62,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public Integer getVlan() {
         return vlan;
     }
-    
-    public Long getZoneId() {
-        return zoneId;
-    }
-        
+            
     public String getNetmask() {
     	return netmask;
     }

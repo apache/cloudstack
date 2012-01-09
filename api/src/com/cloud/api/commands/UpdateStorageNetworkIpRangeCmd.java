@@ -19,7 +19,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a Storage network IP range.", responseObject=UpdateStorageNetworkIpRangeCmd.class)
+@Implementation(description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=UpdateStorageNetworkIpRangeCmd.class)
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
 	private static final String s_name = "updatestoragenetworkiprangeresponse";
@@ -28,7 +28,7 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	@IdentityMapper(entityTableName="dc_storage_network_ip_range")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="UUID of storage network ip range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="UUID of storage network ip range")
     private Long id;
 	
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address")
