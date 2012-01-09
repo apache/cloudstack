@@ -12,7 +12,7 @@ from cloudstackAPI import *
 import cloudstackConnection
 #from cloudstackConnection import cloudConnection
 import configGenerator
-import logging  
+import logging
 import string
 import random
 
@@ -53,7 +53,7 @@ def format_volume_to_ext3(ssh_client, device="/dev/sda" ):
             "mkfs.ext3 %s1" %device,
            ]
     for c in cmds:
-        print ssh_client.execute(c)
+        ssh_client.execute(c)
 
 def fetch_api_client(config_file='datacenterCfg'):
     """Fetch the Cloudstack API Client"""
@@ -64,10 +64,10 @@ def fetch_api_client(config_file='datacenterCfg'):
     return cloudstackAPIClient.CloudStackAPIClient(
             cloudstackConnection.cloudConnection(
                                                 mgt.mgtSvrIp,
-                                                mgt.port, 
-                                                mgt.apiKey, 
-                                                mgt.securityKey, 
-                                                asyncTimeout, 
+                                                mgt.port,
+                                                mgt.apiKey,
+                                                mgt.securityKey,
+                                                asyncTimeout,
                                                 testClientLogger
                                                 )
                                             )
