@@ -148,7 +148,7 @@
 
                 dataProvider: function(args) {
                   $.ajax({
-                    url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
+                    url: createURL("listNetworks&listAll=true&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -270,7 +270,7 @@
                 ],
                 dataProvider: function(args) {                  
                   $.ajax({
-                    url: createURL("listNetworks&issystem=true&trafficType=Management&zoneId=" + selectedZoneObj.id),
+                    url: createURL("listNetworks&listAll=true&issystem=true&trafficType=Management&zoneId=" + selectedZoneObj.id),
                     dataType: "json",
                     success: function(json) {                      
                       selectedManagementNetworkObj =json.listnetworksresponse.network[0];
@@ -494,7 +494,7 @@
                     dataProvider: function(args) { //only basic zone has IP Range tab                      
                       selectedGuestNetworkObj = null;
                       $.ajax({
-                        url: createURL("listNetworks&trafficType=Guest&zoneid=" + selectedZoneObj.id),
+                        url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneid=" + selectedZoneObj.id),
                         dataType: "json",
                         async: false,
                         success: function(json) {                         
@@ -903,7 +903,7 @@
                         // Only 1 guest network is allowed per basic zone,
                         // so don't show the dialog in this case
                         $.ajax({
-                          url: createURL('listNetworks'),
+                          url: createURL('listNetworks&listAll=true'),
                           data: {
                             trafficType: 'guest',
                             zoneId: zone.id
@@ -949,7 +949,7 @@
 										}
 										
                     $.ajax({
-                      url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
