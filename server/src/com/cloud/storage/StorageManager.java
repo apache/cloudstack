@@ -222,4 +222,6 @@ public interface StorageManager extends Manager {
 
 	Host updateSecondaryStorage(long secStorageId, String newUrl);
 
+	List<Long> getUpHostsInPool(long poolId);
+
 }

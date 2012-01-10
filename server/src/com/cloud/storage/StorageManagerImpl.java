@@ -1882,13 +1882,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
 
     @Override
-    public Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException {
+    public List<Long> getUpHostsInPool(long poolId){
         SearchCriteria<Long> sc = UpHostsInPoolSearch.create();
-        sc.setParameters("pool", pool.getId());
+        sc.setParameters("pool", poolId);
         sc.setJoinParameters("hosts", "status", Status.Up);
-		sc.setJoinParameters("hosts", "resourceState", ResourceState.Enabled);
+        sc.setJoinParameters("hosts", "resourceState", ResourceState.Enabled);
+        return _storagePoolHostDao.customSearch(sc, null);
+    }
 
-        List<Long> hostIds = _storagePoolHostDao.customSearch(sc, null);
+    @Override
+    public Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException {
+        List<Long> hostIds = getUpHostsInPool(pool.getId());
         Collections.shuffle(hostIds);
         if (hostIdsToTryFirst != null) {
             for (int i = hostIdsToTryFirst.length - 1; i >= 0; i--) {
@@ -1902,7 +1906,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             hostIds.removeAll(hostIdsToAvoid);
         }
         if ( hostIds == null || hostIds.isEmpty() ) {
-            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getId() + " due to there is no hosts up in this cluster", pool.getId() );
+            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getId() + " due to there is no enabled hosts up in this cluster", pool.getId() );
         }
         for (Long hostId : hostIds) {
             try {
