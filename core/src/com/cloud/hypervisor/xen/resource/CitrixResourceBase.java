@@ -3075,35 +3075,37 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
+        String backupUuid = UUID.randomUUID().toString();
         String results = callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
-                "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId
-                .toString(), "volumeId", volumeId.toString(), "secondaryStorageMountPath",
-                secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "isISCSI",
-                isISCSI.toString());
-
+                "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(),
+                "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath,
+                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString());
+        String errMsg = null;
         if (results == null || results.isEmpty()) {
-            // errString is already logged.
-            return null;
-        }
-
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        backupSnapshotUuid = tmp[1];
-
-        // status == "1" if and only if backupSnapshotUuid != null
-        // So we don't rely on status value but return backupSnapshotUuid as an
-        // indicator of success.
-        String failureString = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
-                + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
-                + secondaryStorageMountPath;
-        if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
-            s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
-                    + " to secondary storage");
+            errMsg = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
+                    + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
+                    + secondaryStorageMountPath + " due to null";
         } else {
-            s_logger.debug(failureString + ". Failed with status: " + status);
-            return null;
+
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            backupSnapshotUuid = tmp[1];
+            // status == "1" if and only if backupSnapshotUuid != null
+            // So we don't rely on status value but return backupSnapshotUuid as an
+            // indicator of success.
+            if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
+                s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
+                        + " to secondary storage");
+                return backupSnapshotUuid;
+            } else {
+                errMsg = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
+                        + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
+                        + secondaryStorageMountPath + " due to " + tmp[1];
+            }
         }
-        return backupSnapshotUuid;
+        s_logger.warn(errMsg);
+        return null;
+
     }
 
     protected String callHostPluginAsync(Connection conn, String plugin, String cmd, int wait, String... params) {
