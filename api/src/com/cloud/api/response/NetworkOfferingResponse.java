@@ -52,6 +52,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.SPECIFY_VLAN) @Param(description="true if network offering supports vlans, false otherwise")
     private Boolean specifyVlan;
     
+    @SerializedName(ApiConstants.CONSERVE_MODE) @Param(description="true if network offering is ip conserve mode enabled")
+    private Boolean conserveMode;
+    
     @SerializedName(ApiConstants.AVAILABILITY) @Param(description="availability of the network offering")
     private String availability;
     
@@ -100,6 +103,10 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setSpecifyVlan(Boolean specifyVlan) {
         this.specifyVlan = specifyVlan;
+    }
+
+    public void setConserveMode(Boolean conserveMode) {
+        this.conserveMode = conserveMode;
     }
 
     public void setAvailability(String availability) {
