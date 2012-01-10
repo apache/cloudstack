@@ -1541,6 +1541,10 @@
                       label: 'Specify VLAN',
                       converter:cloudStack.converters.toBooleanText
                     },
+										conservemode: {
+                      label: 'Conserve mode',
+                      converter:cloudStack.converters.toBooleanText
+                    },
                     networkrate: {
                       label: 'Network rate',
                       converter: function(args) {
