@@ -3354,6 +3354,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
         
         if (zone.getNetworkType() == NetworkType.Basic) {
+        	 if (networkIdList != null && !networkIdList.isEmpty()) {
+                 throw new InvalidParameterValueException("Can't move vm with network Ids; this is a basic zone VM");
+             }
        	 	//cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
             _networkMgr.expungeNics(vmOldProfile);
