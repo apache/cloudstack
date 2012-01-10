@@ -82,12 +82,9 @@
                   domainid: {
                     label: 'Domain',
                     validation: { required: true },
-                    select: function(args) {										  
-											var array1 = [];
-											if(isAdmin())
-											  array1.push("&listAll=true");
+                    select: function(args) {	
                       $.ajax({
-                        url: createURL("listDomains" + array1.join("")),
+                        url: createURL("listDomains&listAll=true"),
                         dataType: "json",
                         async: false,
                         success: function(json) {

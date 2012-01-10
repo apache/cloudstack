@@ -647,7 +647,7 @@
                               }
                               else { //list all domains
                                 $.ajax({
-                                  url: createURL("listDomains"),
+                                  url: createURL("listDomains&listAll=true"),
                                   dataType: "json",
                                   async: false,
                                   success: function(json) {
@@ -2636,7 +2636,7 @@
                       // Step 2: Setup Zone
                       function(args) {
                         $.ajax({
-                          url: createURL("listDomains"),
+                          url: createURL("listDomains&listAll=true"),
                           dataType: "json",
                           async: false,
                           success: function(json) {
