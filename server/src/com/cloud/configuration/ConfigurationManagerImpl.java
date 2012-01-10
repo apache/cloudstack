@@ -704,7 +704,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
             checkPodCidrSubnets(zoneId, podId, cidr);
             checkCidrVlanOverlap(zoneId, cidr);
-            _networkMgr.checkVirtualNetworkCidrOverlap(zoneId, cidr);
         }
 
         Grouping.AllocationState allocationState = null;
