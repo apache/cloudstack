@@ -37,6 +37,11 @@ usage() {
 }
 
 create_usage_rules () {
+  iptables-save|grep "INPUT -j NETWORK_STATS" > /dev/null
+  if [ $? -eq 0 ]
+  then
+      return $?
+  fi
   iptables -N NETWORK_STATS > /dev/null
   iptables -I FORWARD -j NETWORK_STATS > /dev/null
   iptables -I INPUT -j NETWORK_STATS > /dev/null
@@ -50,6 +55,11 @@ create_usage_rules () {
 
 add_public_interface () {
   local pubIf=$1
+  iptables-save|grep "NETWORK_STATS -i eth0 -o $pubIf" > /dev/null
+  if [ $? -eq 0 ]
+  then
+      return $?
+  fi
   iptables -A NETWORK_STATS -i eth0 -o $pubIf > /dev/null
   iptables -A NETWORK_STATS -i $pubIf -o eth0 > /dev/null
   iptables -A NETWORK_STATS -o $pubIf ! -i eth0 -p tcp > /dev/null
@@ -91,7 +101,7 @@ iflag=
 aflag=
 dflag=
 
-while getopts 'cgra:d:' OPTION
+while getopts 'cgria:d:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -105,6 +115,8 @@ do
         ;;
   d)    dflag=1
         publicIf="$OPTARG"
+        ;;
+  i)    #Do nothing, since it's parameter for host script
         ;;
   ?)	usage
                 unlock_exit 2 $lock $locked
