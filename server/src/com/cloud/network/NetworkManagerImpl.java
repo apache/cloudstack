@@ -2022,6 +2022,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zoneId == null) {
             return;
         }
+        if (cidr == null) {
+            return;
+        }
         List<NetworkVO> networks = _networksDao.listByZone((long)zoneId);
         Map<Long, String> networkToCidr = new HashMap<Long, String>();
         for (NetworkVO network : networks) {
@@ -2221,7 +2224,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external firewall!");
         }
         
-        checkVirtualNetworkCidrOverlap(zoneId, cidr);
+        if (cidr != null) {
+            checkVirtualNetworkCidrOverlap(zoneId, cidr);
+        }
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
