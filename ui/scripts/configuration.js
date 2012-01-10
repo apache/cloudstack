@@ -1073,6 +1073,12 @@
                   inputData['specifyVlan'] = false;
                 }
 
+								if (inputData['conservemode'] == 'on') {
+                  inputData['conservemode'] = true;
+                } else {
+                  inputData['conservemode'] = false;
+                }
+								
                 // Make service provider map
                 var serviceProviderIndex = 0;
                 $.each(serviceProviderMap, function(key, value) {
@@ -1277,6 +1283,8 @@
                     }
                   },
 
+									conservemode: { label: 'Conserve mode', isBoolean: true },
+									
                   tags: { label: 'Tags' }
                 }
               },
