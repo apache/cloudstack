@@ -3265,6 +3265,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         			 " New owner domain=" + newAccount.getDomainId());
         }
         
+        // make sure the accounts are not same
+        if (oldAccount.getAccountId() == newAccount.getAccountId()){
+       	    throw new InvalidParameterValueException("The account should be same domain for moving VM between two accounts. Account id =" + oldAccount.getAccountId());
+        }
+        
         // don't allow to move the vm if there are existing PF/LB/Static Nat rules, existing Security groups or vm is assigned to static Nat ip
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(cmd.getVmId());
         if (ip != null){
