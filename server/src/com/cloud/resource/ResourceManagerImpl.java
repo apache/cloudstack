@@ -64,6 +64,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -109,9 +110,11 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -199,12 +202,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected StoragePoolHostDao             _storagePoolHostDao;
     @Inject(adapter = PodAllocator.class)
     protected Adapters<PodAllocator> _podAllocators = null;
+    @Inject
+    protected VMTemplateDao  _templateDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
     protected HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();
 
     protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
+    private HypervisorType _defaultSystemVMHypervisor;
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -1199,6 +1205,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
         return true;
     }
 
@@ -1236,6 +1243,62 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         return hypervisorTypes;
+    }
+    
+    @Override
+    public HypervisorType getDefaultHypervisor(long zoneId) {
+    	HypervisorType defaultHyper = HypervisorType.None;
+    	if (_defaultSystemVMHypervisor != HypervisorType.None) {
+    		defaultHyper = _defaultSystemVMHypervisor;
+    	}
+    	
+    	DataCenterVO dc = _dcDao.findById(zoneId);
+    	if (dc == null) {
+    		return HypervisorType.None;
+    	}
+    	_dcDao.loadDetails(dc);
+    	String defaultHypervisorInZone = dc.getDetail("defaultSystemVMHypervisorType");
+    	if (defaultHypervisorInZone != null) {
+    		defaultHyper = HypervisorType.getType(defaultHypervisorInZone);
+    	}
+    	
+    	List<VMTemplateVO> systemTemplates = _templateDao.listAllSystemVMTemplates();
+    	boolean isValid = false;
+    	for (VMTemplateVO template : systemTemplates) {
+    		if (template.getHypervisorType() == defaultHyper) {
+    			isValid = true;
+    			break;
+    		}
+    	}
+    	
+    	if (isValid) {
+    		List<ClusterVO> clusters = _clusterDao.listByDcHyType(zoneId, defaultHyper.toString());
+    		if (clusters.size() <= 0) {
+    			isValid = false;
+    		}
+    	}
+    	
+    	if (isValid) {
+    		return defaultHyper;
+    	} else {
+    		return HypervisorType.None;
+    	}
+    }
+    
+    @Override
+    public HypervisorType getAvailableHypervisor(long zoneId) {
+    	  HypervisorType defaultHype = getDefaultHypervisor(zoneId);
+          if (defaultHype == HypervisorType.None) {
+          	List<HypervisorType> supportedHypes = getSupportedHypervisorTypes(zoneId, false, null);
+          	if (supportedHypes.size() > 0) {
+          		defaultHype = supportedHypes.get(0);
+          	}
+          }
+          
+          if (defaultHype == HypervisorType.None) {
+          	defaultHype = HypervisorType.Any;
+          }
+          return defaultHype;
     }
 
 	@Override

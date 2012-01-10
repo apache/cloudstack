@@ -133,4 +133,8 @@ public interface ResourceManager extends ResourceService{
     List<PodCluster> listByDataCenter(long dcId);
 
 	List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId);
+
+	HypervisorType getDefaultHypervisor(long zoneId);
+
+	HypervisorType getAvailableHypervisor(long zoneId);
 }

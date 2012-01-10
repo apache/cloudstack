@@ -527,9 +527,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("The number of launched console proxy on zone " + dataCenterId + " has reached to limit");
             return null;
         }
-        HypervisorType currentHyp = currentHypervisorType(dataCenterId);
+        HypervisorType defaultHype = _resourceMgr.getAvailableHypervisor(dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId, currentHyp);
+        Map<String, Object> context = createProxyInstance(dataCenterId, defaultHype);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {

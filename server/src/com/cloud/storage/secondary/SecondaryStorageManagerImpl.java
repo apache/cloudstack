@@ -540,7 +540,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return new HashMap<String, Object>();
         }
 
-        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
+        HypervisorType hypeType = _resourceMgr.getAvailableHypervisor(dataCenterId);
+        
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId, hypeType);
         if (template == null) {
             s_logger.debug("Can't find a template to start");
             throw new CloudRuntimeException("Insufficient capacity exception");

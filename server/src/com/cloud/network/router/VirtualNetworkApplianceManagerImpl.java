@@ -1317,6 +1317,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 //Router is the network element, we don't know the hypervisor type yet.
                 //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
                 List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
+                HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+                if (defaults != HypervisorType.None) {
+                	supportedHypervisors.add(defaults);
+                }
                 
                 if (dest.getCluster() != null) {
                     if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
