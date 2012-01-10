@@ -74,144 +74,11 @@ public class HypervisorHostHelper {
 	}
 	
 	public static String getPublicNetworkNamePrefix(String vlanId) {
-		if (UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
-			return "cloud.public.untagged";
-		} else {
-			return "cloud.public." + vlanId;
-		}
-	}
-	
-	public static synchronized Pair<ManagedObjectReference, String> preparePublicNetwork(String vSwitchName,
-			HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts) throws Exception {
-		
-		HostVirtualSwitch vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
-		if (vSwitch == null) {
-			String msg = "Unable to find vSwitch configured for public network";
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
-
-		boolean createGCTag = false;
-		String networkName;
-		Integer vid = null;
-		if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
-			createGCTag = true;
-			vid = Integer.parseInt(vlanId);
-		}
-		
-		networkName = composeCloudNetworkName("cloud.public", vlanId, networkRateMbps, vSwitchName);
-		
-		HostNetworkTrafficShapingPolicy shapingPolicy = null;
-		if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
-			shapingPolicy = new HostNetworkTrafficShapingPolicy();
-			shapingPolicy.setEnabled(true);
-			shapingPolicy.setAverageBandwidth((long)networkRateMbps.intValue()*1024L*1024L);
-		
-			// 
-			// TODO : people may have different opinion on how to set the following
-			//
-			
-			// give 50% premium to peek
-			shapingPolicy.setPeakBandwidth((long)(shapingPolicy.getAverageBandwidth()*1.5));
-
-			// allow 5 seconds of burst transfer
-			shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
-		}
-		
-		boolean bWaitPortGroupReady = false;
-		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
-			bWaitPortGroupReady = true;
-		} else {
-			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
-			if(!isSpecMatch(spec, vid, shapingPolicy)) {
-				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
-				bWaitPortGroupReady = true;
-			}
-		}
-		
-		ManagedObjectReference morNetwork;
-		if(bWaitPortGroupReady) 
-			morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
-		else
-			morNetwork = hostMo.getNetworkMor(networkName);
-		if (morNetwork == null) {
-			String msg = "Failed to create public network on vSwitch " + vSwitchName;
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
-		
-		if(createGCTag) {
-			NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
-			networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
-		}
-		
-		if(syncPeerHosts) {
-			ManagedObjectReference morParent = hostMo.getParentMor();
-			if(morParent != null && morParent.getType().equals("ClusterComputeResource")) {
-
-				// to be conservative, lock cluster
-				GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.get_value());
-				try {
-					if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
-						try {
-							ManagedObjectReference[] hosts = (ManagedObjectReference[])hostMo.getContext().getServiceUtil().getDynamicProperty(morParent, "host");
-							if(hosts != null) {
-								for(ManagedObjectReference otherHost: hosts) {
-									if(!otherHost.get_value().equals(hostMo.getMor().get_value())) {
-										HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
-										try {
-											if(s_logger.isDebugEnabled())
-												s_logger.debug("prepare public network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
-											preparePublicNetwork(vSwitchName, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false);
-										} catch(Exception e) {
-											s_logger.warn("Unable to prepare public network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
-										}
-									}
-								}
-							}
-						} finally {
-							lock.unlock();
-						}
-					} else {
-						s_logger.warn("Unable to lock cluster to prepare public network, vlan: " + vlanId);
-					}
-				} finally {
-					lock.releaseRef();
-				}
-			}
-		}
-
-		s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
-		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
-	}
-	
-	public static Pair<ManagedObjectReference, String> preparePrivateNetwork(String vSwitchName, 
-		HostMO hostMo, Integer vlanId, long timeOutMs) throws Exception {
-		
-		HostVirtualSwitch vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
-		if (vSwitch == null) {
-			String msg = "Unable to find vSwitch configured for private network";
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
-		
-		String networkName;
-		networkName = composeCloudNetworkName("cloud.private", vlanId == null ? null : String.valueOf(vlanId), null, vSwitchName);
-				
-		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vlanId, null);
-		}
-
-		ManagedObjectReference morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
-		if (morNetwork == null) {
-			String msg = "Failed to create private network";
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
-
-		s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
-		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
+	    if (UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
+	        return "cloud.public.untagged";
+	    } else {
+	        return "cloud.public." + vlanId;
+	    }
 	}
 	
 	public static String composeCloudNetworkName(String prefix, String vlanId, Integer networkRateMbps, String vSwitchName) {
@@ -231,113 +98,113 @@ public class HypervisorHostHelper {
 		return sb.toString();
 	}
 	
-	public static Pair<ManagedObjectReference, String> prepareGuestNetwork(String vSwitchName,
-			HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, 
-			long timeOutMs, boolean syncPeerHosts) throws Exception {
+    public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix,
+            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, 
+            long timeOutMs, boolean syncPeerHosts) throws Exception {
 
-		HostVirtualSwitch vSwitch;
-		vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
+        HostVirtualSwitch vSwitch;
+        vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
 
-		if (vSwitch == null) {
-			String msg = "Unable to find the default virtual switch";
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
+        if (vSwitch == null) {
+            String msg = "Unable to find vSwitch" + vSwitchName;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
 
-		boolean createGCTag = false;
-		String networkName;
-		Integer vid = null;
-		
-		if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
-			createGCTag = true;
-			vid = Integer.parseInt(vlanId);
-		}
-		
-		networkName = composeCloudNetworkName("cloud.guest", vlanId, networkRateMbps, vSwitchName);
+        boolean createGCTag = false;
+        String networkName;
+        Integer vid = null;
+        
+        if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
+            createGCTag = true;
+            vid = Integer.parseInt(vlanId);
+        }
+        
+        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, vSwitchName);
 
-		HostNetworkTrafficShapingPolicy shapingPolicy = null;
-		if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
-			shapingPolicy = new HostNetworkTrafficShapingPolicy();
-			shapingPolicy.setEnabled(true);
-			shapingPolicy.setAverageBandwidth((long)networkRateMbps.intValue()*1024L*1024L);
-		
-			// 
-			// TODO : people may have different opinion on how to set the following
-			//
-			
-			// give 50% premium to peek
-			shapingPolicy.setPeakBandwidth((long)(shapingPolicy.getAverageBandwidth()*1.5));
+        HostNetworkTrafficShapingPolicy shapingPolicy = null;
+        if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
+            shapingPolicy = new HostNetworkTrafficShapingPolicy();
+            shapingPolicy.setEnabled(true);
+            shapingPolicy.setAverageBandwidth((long)networkRateMbps.intValue()*1024L*1024L);
+        
+            // 
+            // TODO : people may have different opinion on how to set the following
+            //
+            
+            // give 50% premium to peek
+            shapingPolicy.setPeakBandwidth((long)(shapingPolicy.getAverageBandwidth()*1.5));
 
-			// allow 5 seconds of burst transfer
-			shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
-		}
+            // allow 5 seconds of burst transfer
+            shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
+        }
 
-		boolean bWaitPortGroupReady = false;
-		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
-			bWaitPortGroupReady = true;
-		} else {
-			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
-			if(!isSpecMatch(spec, vid, shapingPolicy)) {
-				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
-				bWaitPortGroupReady = true;
-			}
-		}
+        boolean bWaitPortGroupReady = false;
+        if (!hostMo.hasPortGroup(vSwitch, networkName)) {
+            hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+            bWaitPortGroupReady = true;
+        } else {
+            HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
+            if(!isSpecMatch(spec, vid, shapingPolicy)) {
+                hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+                bWaitPortGroupReady = true;
+            }
+        }
 
-		ManagedObjectReference morNetwork;
-		if(bWaitPortGroupReady) 
-			morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
-		else
-			morNetwork = hostMo.getNetworkMor(networkName);
-		if (morNetwork == null) {
-			String msg = "Failed to create guest network " + networkName;
-			s_logger.error(msg);
-			throw new Exception(msg);
-		}
-		
-		if(createGCTag) {
-			NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
-			networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
-		}
-		
-		if(syncPeerHosts) {
-			ManagedObjectReference morParent = hostMo.getParentMor();
-			if(morParent != null && morParent.getType().equals("ClusterComputeResource")) {
-				// to be conservative, lock cluster
-				GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.get_value());
-				try {
-					if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
-						try {
-							ManagedObjectReference[] hosts = (ManagedObjectReference[])hostMo.getContext().getServiceUtil().getDynamicProperty(morParent, "host");
-							if(hosts != null) {
-								for(ManagedObjectReference otherHost: hosts) {
-									if(!otherHost.get_value().equals(hostMo.getMor().get_value())) {
-										HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
-										try {
-											if(s_logger.isDebugEnabled())
-												s_logger.debug("Prepare guest network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
-											prepareGuestNetwork(vSwitchName, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false);
-										} catch(Exception e) {
-											s_logger.warn("Unable to prepare guest network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
-										}
-									}
-								}
-							}
-						} finally {
-							lock.unlock();
-						}
-					} else {
-						s_logger.warn("Unable to lock cluster to prepare guest network, vlan: " + vlanId);
-					}
-				} finally {
-					lock.releaseRef();
-				}
-			}
-		}
+        ManagedObjectReference morNetwork;
+        if(bWaitPortGroupReady) 
+            morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+        else
+            morNetwork = hostMo.getNetworkMor(networkName);
+        if (morNetwork == null) {
+            String msg = "Failed to create guest network " + networkName;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+        
+        if(createGCTag) {
+            NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
+            networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
+        }
+        
+        if(syncPeerHosts) {
+            ManagedObjectReference morParent = hostMo.getParentMor();
+            if(morParent != null && morParent.getType().equals("ClusterComputeResource")) {
+                // to be conservative, lock cluster
+                GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.get_value());
+                try {
+                    if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
+                        try {
+                            ManagedObjectReference[] hosts = (ManagedObjectReference[])hostMo.getContext().getServiceUtil().getDynamicProperty(morParent, "host");
+                            if(hosts != null) {
+                                for(ManagedObjectReference otherHost: hosts) {
+                                    if(!otherHost.get_value().equals(hostMo.getMor().get_value())) {
+                                        HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
+                                        try {
+                                            if(s_logger.isDebugEnabled())
+                                                s_logger.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
+                                            prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false);
+                                        } catch(Exception e) {
+                                            s_logger.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
+                                        }
+                                    }
+                                }
+                            }
+                        } finally {
+                            lock.unlock();
+                        }
+                    } else {
+                        s_logger.warn("Unable to lock cluster to prepare guest network, vlan: " + vlanId);
+                    }
+                } finally {
+                    lock.releaseRef();
+                }
+            }
+        }
 
-		s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
-		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
-	}
+        s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
+        return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
+    }
 	
 	private static boolean isSpecMatch(HostPortGroupSpec spec, Integer vlanId, HostNetworkTrafficShapingPolicy shapingPolicy) {
 		// check VLAN configuration

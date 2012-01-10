@@ -791,7 +791,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
         // TODO : probably need to set traffic shaping
-        Pair<ManagedObjectReference, String> networkInfo = HypervisorHostHelper.preparePublicNetwork(this._publicNetworkVSwitchName, 
+        Pair<ManagedObjectReference, String> networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
         	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -1614,14 +1614,44 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo) throws Exception {
+        
+        String switchName =  getTargetSwitch(nicTo);
+        String namePrefix = getNetworkNamePrefix(nicTo);
+        
+        s_logger.info("Prepare network on vSwitch: " + switchName + " with name prefix: " + namePrefix);
+        return HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, getVlanInfo(nicTo), 
+                nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, 
+                !namePrefix.startsWith("cloud.private"));
+    }
+    
+    private String getTargetSwitch(NicTO nicTo) throws Exception {
+        if(nicTo.getName() != null && !nicTo.getName().isEmpty())
+            return nicTo.getName();
+        
         if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return prepareGuestNetwork(hostMo, getVlanInfo(nicTo), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps());
+            return this._guestNetworkVSwitchName;
         } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
-            return preparePrivateNetwork(hostMo);
+            return this._privateNetworkVSwitchName;
         } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return preparePublicNetwork(hostMo, getVlanInfo(nicTo), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps());
+            return this._publicNetworkVSwitchName;
         } else if (nicTo.getType() == Networks.TrafficType.Storage) {
+            return this._privateNetworkVSwitchName;
+        } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
+        } else {
+            throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
+        }
+    }
+    
+    private String getNetworkNamePrefix(NicTO nicTo) throws Exception {
+        if (nicTo.getType() == Networks.TrafficType.Guest) {
+            return "cloud.guest";
+        } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
+            return "cloud.private";
+        } else if (nicTo.getType() == Networks.TrafficType.Public) {
+            return "cloud.public";
+        } else if (nicTo.getType() == Networks.TrafficType.Storage) {
+            return "cloud.storage";
         } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
         } else {
@@ -1724,7 +1754,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            prepareNetworkForVmTargetHost(new HostMO(hyperHost.getContext(), morTargetPhysicalHost), vmMo);
             if (!vmMo.relocate(morTargetPhysicalHost)) {
                 String msg = "VM " + vmName + " is on other host and we failed to relocate it here";
                 s_logger.error(msg);
@@ -2140,7 +2169,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unable to find a target capable physical host");
             }
 
-            prepareNetworkForVmTargetHost(new HostMO(hyperHost.getContext(), morTargetPhysicalHost), vmMo);
             if (!vmMo.migrate(destHyperHost.getHyperHostOwnerResourcePool(), morTargetPhysicalHost)) {
                 throw new Exception("Migration failed");
             }
@@ -3463,74 +3491,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return VirtualMachineGuestOsIdentifier.otherGuest64;
         }
         return VirtualMachineGuestOsIdentifier.otherGuest;
-    }
-
-    private synchronized Pair<ManagedObjectReference, String> prepareGuestNetwork(HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps)
-    	throws Exception {
-
-        return HypervisorHostHelper.prepareGuestNetwork(_guestNetworkVSwitchName, hostMo, vlanId, networkRateMbps, networkRateMulticastMbps,
-                _ops_timeout, true);
-    }
-
-    private synchronized Pair<ManagedObjectReference, String> preparePrivateNetwork(HostMO hostMo) throws Exception {
-        String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
-        assert(managementPortGroupName != null);
-        HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
-        Integer vlanId = null;
-        if(spec.getVlanId() != 0) {
-            vlanId = spec.getVlanId();
-        }
-
-        return HypervisorHostHelper.preparePrivateNetwork(_privateNetworkVSwitchName, hostMo, vlanId, _ops_timeout);
-    }
-
-    private synchronized Pair<ManagedObjectReference, String> preparePublicNetwork(HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps) throws Exception {
-
-        return HypervisorHostHelper.preparePublicNetwork(_publicNetworkVSwitchName, hostMo, vlanId, networkRateMbps, networkRateMulticastMbps, _ops_timeout, true);
-    }
-
-    private void prepareNetworkForVmTargetHost(HostMO hostMo, VirtualMachineMO vmMo) throws Exception {
-        assert (vmMo != null);
-        assert (hostMo != null);
-
-        String[] networks = vmMo.getNetworks();
-        for (String networkName : networks) {
-            HostPortGroupSpec portGroupSpec = hostMo.getHostPortGroupSpec(networkName);
-            HostNetworkTrafficShapingPolicy shapingPolicy = null;
-            if (portGroupSpec != null) {
-                shapingPolicy = portGroupSpec.getPolicy().getShapingPolicy();
-            }
-
-            if (networkName.startsWith("cloud.private")) {
-                preparePrivateNetwork(hostMo);
-            } else if (networkName.startsWith("cloud.public")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length == 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.getEnabled() != null && shapingPolicy.getEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-
-                    preparePublicNetwork(hostMo, tokens[2], networkRateMbps, null);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else if (networkName.startsWith("cloud.guest")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length >= 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.getEnabled() != null && shapingPolicy.getEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-
-                    prepareGuestNetwork(hostMo, tokens[2], networkRateMbps, null);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else {
-                s_logger.info("Skip non-cloud network " + networkName + " when preparing target host");
-            }
-        }
     }
 
     private HashMap<String, State> getVmStates() throws Exception {

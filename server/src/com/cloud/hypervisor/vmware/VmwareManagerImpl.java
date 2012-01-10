@@ -320,15 +320,15 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
-                String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
+                String managementPortGroupName = getManagementPortGroupByHost(hostMo);
                 assert(managementPortGroupName != null);
                 HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
-                Integer vlanId = null;
+                String vlanId = null;
                 if(spec.getVlanId() != 0) {
-                    vlanId = spec.getVlanId();
+                    vlanId = String.valueOf(spec.getVlanId());
                 }
 
-                HypervisorHostHelper.preparePrivateNetwork(_privateNetworkVSwitchName, hostMo, vlanId, 180000);
+                HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                 returnedHostList.add(hosts[0]);
                 return returnedHostList;
             } else if(mor.getType().equals("ClusterComputeResource")) {
@@ -352,16 +352,16 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 		}
                     }
 
-                    String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
+                    String managementPortGroupName = getManagementPortGroupByHost(hostMo);
                     assert(managementPortGroupName != null);
                     HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
-                    Integer vlanId = null;
+                    String vlanId = null;
                     if(spec.getVlanId() != 0) {
-                        vlanId = spec.getVlanId();
+                        vlanId = String.valueOf(spec.getVlanId());
                     }
 
                     // prepare at least one network on the vswitch to enable OVF importing
-                    HypervisorHostHelper.preparePrivateNetwork(_privateNetworkVSwitchName, hostMo, vlanId, 180000);
+                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                     returnedHostList.add(morHost);
                 }
                 return returnedHostList;
@@ -376,16 +376,16 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             		}
                 }
 
-                String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
+                String managementPortGroupName = getManagementPortGroupByHost(hostMo);
                 assert(managementPortGroupName != null);
                 HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
-                Integer vlanId = null;
+                String vlanId = null;
                 if(spec.getVlanId() != 0) {
-                    vlanId = spec.getVlanId();
+                    vlanId = String.valueOf(spec.getVlanId());
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
-                HypervisorHostHelper.preparePrivateNetwork(_privateNetworkVSwitchName, hostMo, vlanId, 180000);
+                HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {

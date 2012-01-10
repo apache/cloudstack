@@ -60,7 +60,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         vmWareAllFieldsSearch = createSearchBuilder(String.class);
         vmWareAllFieldsSearch.and("physicalNetworkId", vmWareAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         vmWareAllFieldsSearch.and("trafficType", vmWareAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        vmWareAllFieldsSearch.selectField(vmWareAllFieldsSearch.entity().getKvmNetworkLabel());
+        vmWareAllFieldsSearch.selectField(vmWareAllFieldsSearch.entity().getVmwareNetworkLabel());
         vmWareAllFieldsSearch.done();
         
         simulatorAllFieldsSearch = createSearchBuilder(String.class);
