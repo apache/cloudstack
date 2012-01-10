@@ -67,8 +67,9 @@ def copy_vhd_to_secondarystorage(session, args):
 def copy_vhd_from_secondarystorage(session, args):
     mountpoint = args['mountpoint']
     sruuid = args['sruuid']
+    namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/opt/xensource/bin/copy_vhd_from_secondarystorage.sh", mountpoint, sruuid]
+        cmd = ["bash", "/opt/xensource/bin/copy_vhd_from_secondarystorage.sh", mountpoint, sruuid, namelabel]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
