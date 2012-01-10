@@ -175,23 +175,18 @@ def isfile(path, isISCSI):
 def copyfile(fromFile, toFile, isISCSI):
     util.SMlog("Starting to copy " + fromFile + " to " + toFile)
     errMsg = ''
-    if isISCSI:
+    try:
+        cmd = ['dd', 'if=' + fromFile, 'of=' + toFile, 'bs=4M']
+        txt = util.pread2(cmd)
+    except:
         try:
-            cmd = ['dd', 'if=' + fromFile, 'of=' + toFile, 'bs=1M']
-            txt = util.pread2(cmd)
+	    os.system("rm -f " + toFile)
         except:
-            txt = ''
-            errMsg = "Error while copying " + fromFile + " to " + toFile + " in ISCSI mode"
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
 
-    else:
-        try:
-            shutil.copy2(fromFile, toFile)
-        except OSError, (errno, strerror):
-            errMsg = "Error while copying " + fromFile + " to " + toFile + " with errno: " + str(errno) + " and strerr: " + strerror
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
+        txt = ''
+        errMsg = "Error while copying " + fromFile + " to " + toFile + " in secondary storage"
+        util.SMlog(errMsg)
+        raise xs_errors.XenError(errMsg)
 
     util.SMlog("Successfully copied " + fromFile + " to " + toFile)
     return errMsg
@@ -469,6 +464,7 @@ def backupSnapshot(session, args):
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     snapshotUuid              = args['snapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
+    backupUuid                = args['backupUuid']
     isISCSI                   = getIsTrueString(args['isISCSI']) 
 
     primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
@@ -488,8 +484,13 @@ def backupSnapshot(session, args):
 
     # Check existence of snapshot on primary storage 
     isfile(baseCopyPath, isISCSI)
+    if prevBackupUuid:
+        # Check existence of prevBackupFile
+        prevBackupVHD = getBackupVHD(prevBackupUuid)
+        prevBackupFile = os.path.join(backupsDir, prevBackupVHD)
+        isfile(prevBackupFile, False)
+
     # copy baseCopyPath to backupsDir with new uuid
-    backupUuid = util.gen_uuid()
     backupVHD = getBackupVHD(backupUuid)  
     backupFile = os.path.join(backupsDir, backupVHD)
     util.SMlog("Back up " + baseCopyUuid + " to Secondary Storage as " + backupUuid)
@@ -501,8 +502,6 @@ def backupSnapshot(session, args):
     # So set the parent of the current baseCopyVHD to prevBackupVHD 
     if prevBackupUuid:
         # If there was a previous snapshot
-        prevBackupVHD = getBackupVHD(prevBackupUuid)
-        prevBackupFile = os.path.join(backupsDir, prevBackupVHD)
         setParent(prevBackupFile, backupFile)
 
     txt = "1#" + backupUuid
