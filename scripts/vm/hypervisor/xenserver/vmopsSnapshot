@@ -180,7 +180,7 @@ def copyfile(fromFile, toFile, isISCSI):
         txt = util.pread2(cmd)
     except:
         try:
-	    os.system("rm -f " + toFile)
+            os.system("rm -f " + toFile)
         except:
 
         txt = ''

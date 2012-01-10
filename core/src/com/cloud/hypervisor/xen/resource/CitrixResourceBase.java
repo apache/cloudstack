@@ -3051,6 +3051,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         + secondaryStorageMountPath + " due to " + tmp[1];
             }
         }
+        String source = backupUuid + ".vhd";
+        killCopyProcess(conn, source);
         s_logger.warn(errMsg);
         return null;
 
