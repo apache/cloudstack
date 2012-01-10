@@ -2,11 +2,23 @@
 
 source /root/func.sh
 
-lock="biglock"
-locked=$(getLockFile $lock)
-if [ "$locked" != "1" ]
+nolock=0
+if [ $# -eq 1 ]
 then
-    exit 1
+    if [ $1 == "--no-lock" ]
+    then
+        nolock=1
+    fi
+fi
+
+if [ $nolock -eq 0 ]
+then
+    lock="biglock"
+    locked=$(getLockFile $lock)
+    if [ "$locked" != "1" ]
+    then
+        exit 1
+    fi
 fi
 
 bumped="Bumped: NO"
@@ -21,4 +33,7 @@ then
     echo "$stat&$bumped"
 fi
 
-unlock_exit $? $lock $locked
+if [ $nolock -eq 0 ]
+then
+    unlock_exit $? $lock $locked
+fi

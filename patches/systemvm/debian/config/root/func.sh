@@ -24,7 +24,8 @@ getLockFile() {
         return
     fi
 
-    touch $__LOCKFILE
+    psline=`ps u $$`
+    echo $psline > $__LOCKFILE
 
     for i in `seq 1 $(($__TIMEOUT * 10))`
     do
@@ -43,8 +44,11 @@ getLockFile() {
     if [ $__locked -ne 1 ]
     then
 	logger -t cloud "fail to acquire the lock $1 for process $0 pid $$ after $__TIMEOUT seconds time out!"
+        cmd=`cat $currlock`
+	logger -t cloud "waiting for command: $cmd"
         psline=`ps u $$`
         logger -t cloud "Failed job detail: $psline"
+        rm $__LOCKFILE
     fi
     echo $__locked
 }
