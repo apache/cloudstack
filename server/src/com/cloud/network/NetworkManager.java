@@ -271,4 +271,6 @@ public interface NetworkManager extends NetworkService {
     public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
     
     public boolean checkIpForService(IPAddressVO ip, Service service);
+
+    void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr);
 }

@@ -704,6 +704,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
             checkPodCidrSubnets(zoneId, podId, cidr);
             checkCidrVlanOverlap(zoneId, cidr);
+            _networkMgr.checkVirtualNetworkCidrOverlap(zoneId, cidr);
         }
 
         Grouping.AllocationState allocationState = null;
@@ -2703,7 +2704,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         HashMap<Long, List<Object>> currentPodCidrSubnets = _podDao.getCurrentPodCidrSubnets(dcId, skipPod);
         List<Object> newCidrPair = new ArrayList<Object>();
         newCidrPair.add(0, getCidrAddress(cidr));
-        newCidrPair.add(1, getCidrSize(cidr));
+        newCidrPair.add(1, (long)getCidrSize(cidr));
         currentPodCidrSubnets.put(new Long(-1), newCidrPair);
         
         String zoneName = getZoneName(dcId);
