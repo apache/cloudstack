@@ -2218,20 +2218,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private String copy_vhd_to_secondarystorage(Connection conn, String mountpoint, String vdiuuid, String sruuid, int wait) {
         String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_to_secondarystorage",
                 wait, "mountpoint", mountpoint, "vdiuuid", vdiuuid, "sruuid", sruuid);
-
+        String errMsg = null;
         if (results == null || results.isEmpty()) {
-            String msg = "copy_vhd_to_secondarystorage return null";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        if (status.equals("0")) {
-            return tmp[1];
+            errMsg = "copy_vhd_to_secondarystorage return null";
         } else {
-            s_logger.warn(tmp[1]);
-            throw new CloudRuntimeException(tmp[1]);
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            if (status.equals("0")) {
+                return tmp[1];
+            } else {
+                errMsg = tmp[1];
+            }
         }
+        String source = vdiuuid + ".vhd";
+        killCopyProcess(conn, source);
+        s_logger.warn(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
 
     String upgradeSnapshot(Connection conn, String templatePath, String snapshotPath) {
