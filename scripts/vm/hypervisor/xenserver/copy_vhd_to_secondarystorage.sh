@@ -67,6 +67,7 @@ vhdfile=$localmp/${vdiuuid}.vhd
 if [ $type == "nfs" -o $type == "ext" ]; then
   dd if=/var/run/sr-mount/$sruuid/${vdiuuid}.vhd of=$vhdfile bs=2M
   if [ $? -ne 0 ]; then
+    rm -f $vhdfile
     echo "8#failed to copy /var/run/sr-mount/$sruuid/${vdiuuid}.vhd to secondarystorage"
     cleanup
     exit 0
@@ -88,10 +89,17 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
   size=$((size>>21))
   size=$((size+1))
   dd if=/dev/VG_XenStorage-$sruuid/VHD-$vdiuuid of=$vhdfile bs=2M count=$size
+  if [ $? -ne 0 ]; then
+    rm -f $vhdfile
+    echo "8#failed to copy /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid to secondarystorage"
+    cleanup
+    exit 0
+  fi
 #in byte unit
   size=$((size<<21))
   vhd-util modify -s $size -n $vhdfile
   if [ $? -ne 0 ]; then
+    rm -f $vhdfile
     echo "11#failed to change $vhdfile physical size"
     cleanup
     exit 0
