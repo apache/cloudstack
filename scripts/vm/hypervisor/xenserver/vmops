@@ -125,6 +125,16 @@ def pingdomr(session, args):
     return txt
 
 @echo
+def kill_copy_process(session, args):
+    namelabel = args['namelabel']
+    try:
+        cmd = ["bash", "/opt/xensource/bin/kill_copy_process.sh", namelabel]
+        txt = util.pread2(cmd)
+    except:
+        txt = 'false'
+    return txt
+
+@echo
 def pingxenserver(session, args):
     txt = 'success'
     return txt
@@ -1428,4 +1438,5 @@ if __name__ == "__main__":
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
                             "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
-                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion })
+                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
+                            "kill_copy_process":kill_copy_process})

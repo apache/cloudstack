@@ -4,7 +4,7 @@
 #set -x
  
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [uuid of the source sr] \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [uuid of the source sr] [name label]  \n" $(basename $0) 
 }
 
 cleanup()
@@ -38,6 +38,14 @@ type=$(xe sr-param-get uuid=$sruuid param-name=type)
 if [ $? -ne 0 ]; then
   echo "4#sr $sruuid doesn't exist"
   exit 0
+fi
+
+if [ -z $3 ]; then
+  usage
+  echo "3#no namelabel"
+  exit 0
+else
+  namelabel=$3
 fi
 
 localmp=/var/run/cloud_mount/$(uuidgen -r)
@@ -107,31 +115,20 @@ copyvhd()
   fi
 }
 
+size=$($VHDUTIL query -v -n $vhdfile)
+uuid=$(xe vdi-create sr-uuid=$sruuid virtual-size=${size}MiB type=user name-label=$namelabel)
+if [ $? -ne 0 ]; then
+  echo "9#can not create vdi in sr $sruuid"
+  cleanup
+  exit 0
+fi
+
+
 if [ $type == "nfs" -o $type == "ext" ]; then
-  uuid=$(uuidgen -r)
-  desvhd=/var/run/sr-mount/$sruuid/$uuid
+  desvhd=/var/run/sr-mount/$sruuid/$uuid.vhd
   copyvhd $desvhd $vhdfile 0 $type
-  $VHDUTIL set -n $desvhd -f "hidden" -v "0" > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "21#failed to set hidden to 0  $desvhd"
-    cleanup
-    exit 0
-  fi
-  mv /var/run/sr-mount/$sruuid/$uuid /var/run/sr-mount/$sruuid/${uuid}.vhd
-  xe sr-scan uuid=$sruuid
-  if [ $? -ne 0 ]; then
-    echo "14#failed to scan sr $sruuid"
-    cleanup
-    exit 0
-  fi
+
 elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
-  size=$($VHDUTIL query -v -n $vhdfile)
-  uuid=$(xe vdi-create sr-uuid=$sruuid virtual-size=${size}MiB type=user name-label="cloud")
-  if [ $? -ne 0 ]; then
-    echo "9#can not create vdi in sr $sruuid"
-    cleanup
-    exit 0
-  fi
   lvsize=$(xe vdi-param-get uuid=$uuid param-name=physical-utilisation)
   if [ $? -ne 0 ]; then
     echo "12#failed to get physical size of vdi $uuid"
@@ -146,20 +143,21 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
     exit 0
   fi
   copyvhd $desvhd $vhdfile $lvsize $type
-  $VHDUTIL set -n $desvhd -f "hidden" -v "0" > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "22#failed to set hidden to 0  $desvhd"
-    cleanup
-    exit 0
-  fi
-  xe sr-scan uuid=$sruuid
-  if [ $? -ne 0 ]; then
-    echo "14#failed to scan sr $sruuid"
-    cleanup
-    exit 0
-  fi
 else 
   echo "15#doesn't support sr type $type"
+  cleanup
+  exit 0
+fi
+
+$VHDUTIL set -n $desvhd -f "hidden" -v "0" > /dev/null
+if [ $? -ne 0 ]; then
+  echo "21#failed to set hidden to 0  $desvhd"
+  cleanup
+  exit 0
+fi
+xe sr-scan uuid=$sruuid
+if [ $? -ne 0 ]; then
+  echo "14#failed to scan sr $sruuid"
   cleanup
   exit 0
 fi

@@ -2271,24 +2271,59 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException(results);
         }
     }
+    
+    boolean killCopyProcess(Connection conn, String nameLabel) {
+        String results = callHostPluginAsync(conn, "vmops", "kill_copy_process",
+                60, "namelabel", nameLabel);
+        String errMsg = null;
+        if (results == null || results.equals("false")) {
+            errMsg = "kill_copy_process failed";
+            s_logger.warn(errMsg);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    void destroyVDIbyNameLabel(Connection conn, String nameLabel) {
+        try {
+            Set<VDI> vdis = VDI.getByNameLabel(conn, nameLabel);
+            if ( vdis.size() != 1 ) {
+                s_logger.warn("destoryVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
+                return;
+            }
+            for (VDI vdi : vdis) {
+                try {
+                    vdi.destroy(conn);
+                } catch (Exception e) {
+                }
+            }
+        } catch (Exception e){
+        }
+    }
 
     String copy_vhd_from_secondarystorage(Connection conn, String mountpoint, String sruuid, int wait) {
+        String nameLabel = "cloud-" + UUID.randomUUID().toString();
         String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage",
-                wait, "mountpoint", mountpoint, "sruuid", sruuid);
-
+                wait, "mountpoint", mountpoint, "sruuid", sruuid, "namelabel", nameLabel);
+        String errMsg = null;
         if (results == null || results.isEmpty()) {
-            String msg = "copy_vhd_from_secondarystorage return null";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        if (status.equals("0")) {
-            return tmp[1];
+            errMsg = "copy_vhd_from_secondarystorage return null";
         } else {
-            s_logger.warn(tmp[1]);
-            throw new CloudRuntimeException(tmp[1]);
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            if (status.equals("0")) {
+                return tmp[1];
+            } else {
+                errMsg = tmp[1];
+            }
         }
+        String source = mountpoint.substring(mountpoint.lastIndexOf('/') + 1);
+        if( killCopyProcess(conn, source) ) {
+            destroyVDIbyNameLabel(conn, nameLabel);
+        }
+        s_logger.warn(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
@@ -3102,6 +3137,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } finally {
             if (task != null) {
                 try {
+                    task.cancel(conn);
                     task.destroy(conn);
                 } catch (Exception e1) {
                     s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
