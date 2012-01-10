@@ -356,7 +356,7 @@
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Add user',
+        label: 'Add account',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),

@@ -80,7 +80,7 @@
       },
 
       users: function() {
-        return $('<div>').addClass('management').data('tab-title', 'Users');
+        return $('<div>').addClass('management').data('tab-title', 'Accounts');
       },
 
       invitations: function() {
@@ -329,7 +329,7 @@
                               .append(
                                 // Users tab
                                 $('<li>').addClass('first').append(
-                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html('Users')
+                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html('Accounts')
                                 )
                               );
                         
