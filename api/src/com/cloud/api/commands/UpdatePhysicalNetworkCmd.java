@@ -118,5 +118,4 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE;
     }
-
 }

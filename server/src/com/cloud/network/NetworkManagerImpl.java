@@ -4226,7 +4226,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_CREATE, eventDescription = "Creating Physical Network", create = true)
     public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags, String name) {
-        // Check if zone exists
+    	
+    	// Check if zone exists
         if (zoneId == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
@@ -4235,8 +4236,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
+        
+        NetworkType zoneType = zone.getNetworkType();
 
-        if(zone.getNetworkType() == NetworkType.Basic){
+        if(zoneType == NetworkType.Basic){
             if(!_physicalNetworkDao.listByZone(zoneId).isEmpty()){
                 throw new CloudRuntimeException("Cannot add the physical network to basic zone id: "+zoneId+", there is a physical network already existing in this basic Zone");
             }
@@ -4252,11 +4255,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {
-
             //Verify zone type
-            if (zone.getNetworkType() == NetworkType.Basic
-                    || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
-                throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: "+ zone.isSecurityGroupEnabled());
+            if (zoneType == NetworkType.Basic
+                    || (zoneType == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
+                throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zoneType + " network, Security Group enabled: "+ zone.isSecurityGroupEnabled());
             }
 
             String[] tokens = vnetRange.split("-");
@@ -4284,10 +4286,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve broadcastDomainRange '" + broadcastDomainRangeStr + "' to a supported value {Pod or Zone}");
             }
+            
+            //in Acton release you can specify only Zone broadcastdomain type in Advance zone, and Pod in Basic
+            if (zoneType == NetworkType.Basic && broadcastDomainRange != null && broadcastDomainRange != BroadcastDomainRange.POD) {
+            	throw new InvalidParameterValueException("Basic zone can have broadcast domain type of value " + BroadcastDomainRange.POD + " only");
+            } else if (zoneType == NetworkType.Advanced && broadcastDomainRange != null && broadcastDomainRange != BroadcastDomainRange.ZONE) {
+            	throw new InvalidParameterValueException("Advance zone can have broadcast domain type of value " + BroadcastDomainRange.ZONE + " only");
+            }
         }
 
         if(broadcastDomainRange == null){
-            if(zone.getNetworkType() == NetworkType.Basic){
+            if(zoneType == NetworkType.Basic){
                 broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD;
             }else{
                 broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.ZONE;
@@ -4308,6 +4317,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (vnetRange != null) {
                 _dcDao.addVnet(zone.getId(), pNetwork.getId(), vnetStart, vnetEnd);
             }
+            
+            //add VirtualRouter as the default network service provider 
+            addDefaultVirtualRouterToPhysicalNetwork(pNetwork.getId());
+            
+            //add security group provider to the physical network
+            addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());     
 
             txn.commit();
             return pNetwork;

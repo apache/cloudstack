@@ -1486,19 +1486,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 //Zone will be disabled since 3.0. Admin shoul enable it after physical network and providers setup.
                 zone.setAllocationState(Grouping.AllocationState.Disabled);
             }
-            zone = _zoneDao.persist(zone);
-
-            // Create default Physical Network
-            long physicalNetworkId = createDefaultPhysicalNetwork(zone, domainId);
+            zone = _zoneDao.persist(zone);       
             
-            //add VirtualRouter as the default network service provider 
-            _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
-            
-            //add security group provider to the physical network
-            _networkMgr.addDefaultSecurityGroupProviderToPhysicalNetwork(physicalNetworkId);            
-            
-            // Create deafult networks
-            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);
+            // Create default system networks
+            createDefaultSystemNetworks(zone.getId());
 
             _swiftMgr.propagateSwiftTmplteOnZone(zone.getId());
             txn.commit();
@@ -1512,31 +1503,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private long createDefaultPhysicalNetwork(DataCenter zone, Long domainId){
-        //create entry
-        String broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD.toString();
-        if(zone.getNetworkType() == NetworkType.Basic){
-            broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD.toString();
-        }else{
-            broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.ZONE.toString();
-        }
-        
-        String pNtwkName = zone.getName() + "-pNtwk";
-        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zone.getId(), null, null, null, broadcastDomainRange, domainId, null, pNtwkName);
-        
-        //String defaultXenLabel = "cloud-private";
-        
-        //add default Traffic types to the physical network
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), null, null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), null, null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), null, null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), null, null, null, null, null);
-
-        return defaultNetwork.getId();
-    }
         
     @Override
-    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException {
+    public void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);
         String networkDomain = null;
         // Create public, management, control and storage networks as a part of
@@ -1551,7 +1520,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
 
                 BroadcastDomainType broadcastDomainType = null;
-                boolean isNetworkDefault = false;
                 if (offering.getTrafficType() == TrafficType.Management) {
                     broadcastDomainType = BroadcastDomainType.Native;
                 } else if (offering.getTrafficType() == TrafficType.Control) {

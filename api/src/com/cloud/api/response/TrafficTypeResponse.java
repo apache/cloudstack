@@ -22,7 +22,6 @@ import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@SuppressWarnings("unused")
 public class TrafficTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="id of the network provider")
