@@ -19,9 +19,14 @@ package com.cloud.storage.template;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,6 +44,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
@@ -196,6 +202,10 @@ public class DownloadManagerImpl implements DownloadManager {
         public long getTemplatePhysicalSize() {
             return templatePhysicalSize;
         }
+        
+        public void setCheckSum(String checksum) {
+        	this.checksum = checksum;
+        }
     }
 
     public static final Logger s_logger = Logger.getLogger(DownloadManagerImpl.class);
@@ -260,6 +270,37 @@ public class DownloadManagerImpl implements DownloadManager {
             break;
         default:
             break;
+        }
+    }
+    
+    private String computeCheckSum(File f) {
+    	byte[] buffer = new byte[8192];
+        int read = 0;
+        MessageDigest digest;
+        String checksum = null;        
+        InputStream is = null;
+        try {
+            digest = MessageDigest.getInstance("MD5");           
+            is = new FileInputStream(f);     
+            while( (read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }       
+            byte[] md5sum = digest.digest();
+            BigInteger bigInt = new BigInteger(1, md5sum);
+            checksum = bigInt.toString(16);
+            return checksum;
+        }catch(IOException e) {
+        	return null;
+        }catch (NoSuchAlgorithmException e) {         
+        	return null;
+        }
+        finally {
+            try {
+            	if(is != null)
+            		is.close();
+            } catch (IOException e) {
+            	return null;
+            }                        
         }
     }
 
@@ -355,7 +396,10 @@ public class DownloadManagerImpl implements DownloadManager {
                 break;
             }
         }
-
+        
+        String checkSum = computeCheckSum(downloadedTemplate);
+        dnld.setCheckSum(checkSum);
+        
         if (!loc.save()) {
             s_logger.warn("Cleaning up because we're unable to save the formats");
             loc.purge();
@@ -450,6 +494,14 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         return 0;
     }
+    
+    public String getDownloadCheckSum(String jobId) {
+    	DownloadJob dj = jobs.get(jobId);
+        if (dj != null) {
+            return dj.getChecksum();
+        }
+        return null;
+    }
 
     public long getDownloadTemplatePhysicalSize(String jobId) {
         DownloadJob dj = jobs.get(jobId);
@@ -536,7 +588,7 @@ public class DownloadManagerImpl implements DownloadManager {
             return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
         return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
-                getDownloadTemplateSize(jobId), getDownloadTemplateSize(jobId));
+                getDownloadTemplateSize(jobId), getDownloadTemplateSize(jobId), getDownloadCheckSum(jobId));
     }
 
     private void sleep() {
@@ -578,14 +630,14 @@ public class DownloadManagerImpl implements DownloadManager {
         case PURGE:
             td.stopDownload();
             answer = new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
-                    getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId));
+                    getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
             jobs.remove(jobId);
             return answer;
         default:
             break; // TODO
         }
         return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
-                getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId));
+                getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
     }
 
     private String getInstallPath(String jobId) {

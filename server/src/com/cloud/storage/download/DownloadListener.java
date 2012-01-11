@@ -46,6 +46,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -106,6 +107,7 @@ public class DownloadListener implements Listener {
 	private boolean downloadActive = true;
 
 	private VMTemplateHostDao vmTemplateHostDao;
+	private VMTemplateDao _vmTemplateDao;
 
 	private final DownloadMonitorImpl downloadMonitor;
 	
@@ -123,7 +125,7 @@ public class DownloadListener implements Listener {
 	private final Map<String,  DownloadState> stateMap = new HashMap<String, DownloadState>();
 	private Long templateHostId;
 	
-	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd) {
+	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
 		this.template = template;
@@ -136,6 +138,7 @@ public class DownloadListener implements Listener {
 		this.timer = _timer;
 		this.timeoutTask = new TimeoutTask(this);
 		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+		this._vmTemplateDao = templateDao;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
 	
@@ -261,6 +264,12 @@ public class DownloadListener implements Listener {
 		updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
 		
 		vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
+		
+		if (answer.getCheckSum() != null) {
+			VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
+			templateDaoBuilder.setChecksum(answer.getCheckSum());
+			_vmTemplateDao.update(template.getId(), templateDaoBuilder);
+		}
  	}
 
 	@Override

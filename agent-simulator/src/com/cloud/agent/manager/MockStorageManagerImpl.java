@@ -325,7 +325,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
         volume.setStatus(Status.DOWNLOAD_IN_PROGRESS);
         volume = _mockVolumeDao.persist(volume);
        
-        return new DownloadAnswer(String.valueOf(volume.getId()), 0, "Downloading", Status.DOWNLOAD_IN_PROGRESS, cmd.getName(), cmd.getName(), volume.getSize(), volume.getSize());
+        return new DownloadAnswer(String.valueOf(volume.getId()), 0, "Downloading", Status.DOWNLOAD_IN_PROGRESS, cmd.getName(), cmd.getName(), volume.getSize(), volume.getSize(), null);
     }
 
     @Override

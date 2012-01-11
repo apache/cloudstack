@@ -33,6 +33,11 @@ public class DownloadAnswer extends Answer  {
 	private String installPath;
 	private long templateSize = 0L;
 	private long templatePhySicalSize = 0L;
+	private String checkSum;
+	
+	public String getCheckSum() {
+		return checkSum;
+	}
 	
 	public int getDownloadPct() {
 		return downloadPct;
@@ -72,7 +77,7 @@ public class DownloadAnswer extends Answer  {
     }
 	
 	public DownloadAnswer(String jobId, int downloadPct, String errorString,
-			Status downloadStatus, String fileSystemPath, String installPath, long templateSize, long templatePhySicalSize ) {
+			Status downloadStatus, String fileSystemPath, String installPath, long templateSize, long templatePhySicalSize, String checkSum) {
 		super();
 		this.jobId = jobId;
 		this.downloadPct = downloadPct;
@@ -83,6 +88,7 @@ public class DownloadAnswer extends Answer  {
 		this.installPath = fixPath(installPath);
 		this.templateSize = templateSize;
 		this.templatePhySicalSize = templatePhySicalSize;
+		this.checkSum = checkSum;
 	}
 	
    public DownloadAnswer(String jobId, int downloadPct, Command command,
