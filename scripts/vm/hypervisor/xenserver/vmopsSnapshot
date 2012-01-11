@@ -182,7 +182,7 @@ def copyfile(fromFile, toFile, isISCSI):
         try:
             os.system("rm -f " + toFile)
         except:
-
+            txt = ''
         txt = ''
         errMsg = "Error while copying " + fromFile + " to " + toFile + " in secondary storage"
         util.SMlog(errMsg)
