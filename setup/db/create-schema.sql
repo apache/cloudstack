@@ -124,6 +124,8 @@ DROP TABLE IF EXISTS `cloud`.`physical_network_isolation_methods`;
 DROP TABLE IF EXISTS `cloud`.`physical_network_traffic_types`;
 DROP TABLE IF EXISTS `cloud`.`physical_network_service_providers`;
 DROP TABLE IF EXISTS `cloud`.`virtual_router_elements`;
+DROP TABLE IF EXISTS `cloud`.`dc_storage_network_ip_range`;
+DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
