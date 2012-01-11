@@ -4,7 +4,7 @@
 #set -x
  
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] [template local dir] \n" $(basename $0) 
 }
 options='tcp,soft,timeo=133,retrans=1'
 cleanup()
@@ -40,6 +40,15 @@ else
   templateurl=$2
 fi
 
+if [ -z $3 ]; then
+  usage
+  echo "3#no template local dir"
+  exit 0
+else
+  tmpltLocalDir=$3
+fi
+
+
 snapshotdir=/var/run/cloud_mount/$(uuidgen -r)
 mkdir -p $snapshotdir
 if [ $? -ne 0 ]; then
@@ -54,7 +63,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-templatedir=/var/run/cloud_mount/$(uuidgen -r)
+templatedir=/var/run/cloud_mount/$tmpltLocalDir
 mkdir -p $templatedir
 if [ $? -ne 0 ]; then
   templatedir=""

@@ -2215,22 +2215,26 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
     
     String createTemplateFromSnapshot(Connection conn, String templatePath, String snapshotPath, int wait) {
+        String tmpltLocalDir = UUID.randomUUID().toString();
         String results = callHostPluginAsync(conn, "vmopspremium", "create_privatetemplate_from_snapshot",
-                wait, "templatePath", templatePath, "snapshotPath", snapshotPath);
+                wait, "templatePath", templatePath, "snapshotPath", snapshotPath, "tmpltLocalDir", tmpltLocalDir);
         
+        String errMsg = null;
         if (results == null || results.isEmpty()) {
-            String msg = "create_privatetemplate_from_snapshot return null";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        if (status.equals("0")) {
-            return results;
+            errMsg = "create_privatetemplate_from_snapshot return null";
         } else {
-            s_logger.warn(results);
-            throw new CloudRuntimeException(results);
+            String[] tmp = results.split("#");
+            String status = tmp[0];
+            if (status.equals("0")) {
+                return results;
+            } else {
+                errMsg = "create_privatetemplate_from_snapshot failed due to " + tmp[1];
+            }
         }
+        String source = "cloud_mount/" + tmpltLocalDir;
+        killCopyProcess(conn, source);
+        s_logger.warn(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
     
     boolean killCopyProcess(Connection conn, String nameLabel) {
@@ -3091,7 +3095,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } finally {
             if (task != null) {
                 try {
-                    task.cancel(conn);
                     task.destroy(conn);
                 } catch (Exception e1) {
                     s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
@@ -5734,11 +5737,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String details = null;
         SR tmpltSR = null;
         boolean result = false;
+        String secondaryStorageMountPath = null;
+        String installPath = null;
         try {
-            
             URI uri = new URI(secondaryStoragePoolURL);
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-            String installPath = "template/tmpl/" + accountId + "/" + templateId;
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            installPath = "template/tmpl/" + accountId + "/" + templateId;
             if( !createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
                 details = " Filed to create folder " + installPath + " in secondary storage";
                 s_logger.warn(details);
@@ -5769,16 +5773,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             }
             installPath = installPath + "/" + tmpltFilename;
-            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
-        } catch (XenAPIException e) {
-            details = "Creating template from volume " + volumeUUID + " failed due to " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (Exception e) {
-            details = "Creating template from volume " + volumeUUID + " failed due to " + e.getMessage();
-            s_logger.error(details, e);
-        } finally {
-            // Remove the secondary storage SR
             removeSR(conn, tmpltSR);
+            tmpltSR = null;
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
+        } catch (Exception e) {
+            if (tmpltSR != null) {
+                removeSR(conn, tmpltSR);
+            }
+            if ( secondaryStorageMountPath != null) {
+                deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath);
+            }
+            details = "Creating template from volume " + volumeUUID + " failed due to " + e.toString();
+            s_logger.error(details, e);
         }
         return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
@@ -5824,10 +5830,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // By default, assume failure
         String details = null;
         boolean result = false;
+        String secondaryStorageMountPath = null;
+        String installPath = null;
         try {
             URI uri = new URI(secondaryStoragePoolURL);
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-            String installPath = "template/tmpl/" + accountId + "/" + newTemplateId;
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            installPath = "template/tmpl/" + accountId + "/" + newTemplateId;
             if( !createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
                 details = " Filed to create folder " + installPath + " in secondary storage";
                 s_logger.warn(details);
@@ -5851,6 +5859,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             installPath = installPath + "/" + tmpltFilename;
             return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUuid, ImageFormat.VHD);
         } catch (Exception e) {
+            if (secondaryStorageMountPath != null) {
+                deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath);
+            }
             details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.toString();
             s_logger.error(details, e);
         }
