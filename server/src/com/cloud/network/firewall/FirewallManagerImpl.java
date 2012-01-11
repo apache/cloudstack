@@ -171,6 +171,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         	domainId = ipAddress.getAllocatedInDomainId();
         }
         
+        _networkMgr.checkIpForService(ipAddress, Service.Firewall);
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
         

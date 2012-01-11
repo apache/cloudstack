@@ -636,7 +636,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     /* Get a list of IPs, classify them by service */
     @Override
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked) {
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -665,10 +665,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 // check if any active rules are applied on the public IP
-                Set<Purpose> purposes = getPublicIpPurposeInRules(ip, false);
+                Set<Purpose> purposes = getPublicIpPurposeInRules(ip, false, includingFirewall);
                 if (purposes == null || purposes.isEmpty()) {
                     // since no active rules are there check if any rules are applied on the public IP but are in revoking state 
-                    purposes = getPublicIpPurposeInRules(ip, true);
+                    purposes = getPublicIpPurposeInRules(ip, true, includingFirewall);
                     if (purposes == null || purposes.isEmpty()) {
                         // IP is not being used for any purpose so skip IPAssoc to network service provider
                         continue;
@@ -697,6 +697,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (purposes.contains(Purpose.Vpn)) {
                     services.add(Service.Vpn);
                 }
+                if (purposes.contains(Purpose.Firewall)) {
+                    services.add(Service.Firewall);
+                }
                 if (services.isEmpty()) {
                     continue;
                 }
@@ -710,18 +713,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // If it's non-conserve mode, then the new ip should not be used by any other services
         List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(ip);
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false);
-        Set<Service> currentServices = ipToServices.get(ip);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
+        Set<Service> services = ipToServices.get(ip);
         // Not used currently, safe
-        if (currentServices == null || currentServices.isEmpty()) {
+        if (services == null || services.isEmpty()) {
             return true;
         }
         // Since it's non-conserve mode, only one service should used for IP
-        if (currentServices.size() != 1) {
+        if (services.size() != 1) {
             throw new CloudRuntimeException("There are multiply services used ip " + ip.getAddress() + ".");
         }
-        if (service != null && (Service)currentServices.toArray()[0] != service) {
-            throw new CloudRuntimeException("The IP " + ip.getAddress() + " is already used as " + ((Service)currentServices.toArray()[0]).getName() + " rather than " + service.getName());
+        if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
+            throw new CloudRuntimeException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
         }
         return true;
     }
@@ -738,7 +741,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     public boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
         Map<Service, Set<Provider>> serviceToProviders = getNetworkOfferingServiceProvidersMap(offeringId);
         for (PublicIp ip : ipToServices.keySet()) {
             Set<Service> services = ipToServices.get(ip);
@@ -762,16 +765,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return true;
     }
     
-    public boolean canIpUsedForConserveService(PublicIp publicIp, Service service) {
-        Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(publicIp.getAssociatedWithNetworkId());
+    public boolean canIpUsedForService(PublicIp publicIp, Service service) {
         List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(publicIp);
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
         Set<Service> services = ipToServices.get(publicIp);
         if (services == null || services.isEmpty()) {
             return true;
         }
         //We only support one provider for one service now
+        Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(publicIp.getAssociatedWithNetworkId());
         Set<Provider> oldProviders = serviceToProviders.get((Service)services.toArray()[0]);
         Provider oldProvider = (Provider)oldProviders.toArray()[0];
         //Since IP already has service to bind with, the oldProvider can't be null
@@ -837,7 +840,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
         
-        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, rulesRevoked);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, rulesRevoked, false);
         Map<Provider, ArrayList<PublicIp>> providerToIpList = getProviderToIpList(network, ipToServices);
         
         for (Provider provider : providerToIpList.keySet()) {
@@ -882,31 +885,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    Set<Purpose> getPublicIpPurposeInRules(PublicIp ip, boolean includeRevoked) {
+    Set<Purpose> getPublicIpPurposeInRules(PublicIp ip, boolean includeRevoked, boolean includingFirewall) {
         Set<Purpose> result = new HashSet<Purpose>();
+        List<FirewallRuleVO> rules = null;
         if (includeRevoked) {
-            List<FirewallRuleVO> rules = _firewallDao.listByIp(ip.getId());
-            if (rules == null || rules.isEmpty()) {
-                return null;
-            }
-            
-            for (FirewallRuleVO rule : rules) {
-                // Firewall should attach to others, firewall rule alone make no sense
-                if (rule.getPurpose() != Purpose.Firewall) {
-                    result.add(rule.getPurpose());
-                }
-            }
+            rules = _firewallDao.listByIp(ip.getId());
         } else {
-            List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ip.getId());
-            if (rules == null || rules.isEmpty()) {
-                return null;
-            }
-            
-            for (FirewallRuleVO rule : rules) {
-                // Firewall is attached to others, firewall rule alone make no sense
-                if (rule.getPurpose() != Purpose.Firewall) {
-                    result.add(rule.getPurpose());
-                }
+            rules = _firewallDao.listByIpAndNotRevoked(ip.getId());
+        }
+        
+        if (rules == null || rules.isEmpty()) {
+            return null;
+        }
+
+        for (FirewallRuleVO rule : rules) {
+            if (rule.getPurpose() != Purpose.Firewall || includingFirewall) {
+                result.add(rule.getPurpose());
             }
         }
 
@@ -4176,7 +4170,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         if (oldNetworkOffering.isConserveMode() && !newNetworkOffering.isConserveMode()) {
-            return canIpsUsedForNonConserve(publicIps);
+            if (!canIpsUsedForNonConserve(publicIps)) {
+                return false;
+            }
         }
         
         return canIpsUseOffering(publicIps, newNetworkOfferingId);
@@ -5714,7 +5710,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	
     	return result;
     }
-
+    
     @Override
     public boolean checkIpForService(IPAddressVO userIp, Service service) {
         Long networkId = userIp.getAssociatedWithNetworkId();
@@ -5724,10 +5720,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
         PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+        if (!canIpUsedForService(publicIp, service)) {
+            return false;
+        }
         if (!offering.isConserveMode()) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
-        return canIpUsedForConserveService(publicIp, service);
+        return true;
     }
     
 	@Override

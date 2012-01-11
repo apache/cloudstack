@@ -1796,7 +1796,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             
             //Get public Ips that should be handled by router
             Network network = _networkDao.findById(networkId);
-            Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false);
+            Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
             Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
             // Only cover virtual router for now, if ELB use it this need to be modified
             ArrayList<PublicIp> publicIps = providerToIpList.get(Provider.VirtualRouter);

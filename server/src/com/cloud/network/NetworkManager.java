@@ -266,7 +266,7 @@ public interface NetworkManager extends NetworkService {
 	
 	boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services);
 	
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked);
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall);
     
     public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
     
