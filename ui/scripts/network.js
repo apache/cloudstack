@@ -218,7 +218,7 @@
 							}
 						}											
             $.ajax({
-              url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listNetworks&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: {
                 type: 'isolated',
                 supportedServices: 'SourceNat'
@@ -768,7 +768,7 @@
 							}
 						}												
             $.ajax({
-              url: createURL("listPublicIpAddresses&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listPublicIpAddresses&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: data,
               dataType: "json",
               async: true,
