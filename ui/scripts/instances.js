@@ -712,6 +712,7 @@
           if(args.filterBy.kind != null) {
             switch(args.filterBy.kind) {
             case "all":
+						  array1.push("&listAll=true");
               break;            
             case "mine":
               array1.push("&domainid=" + g_domainid + "&account=" + g_account);
