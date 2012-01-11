@@ -1979,7 +1979,7 @@
 						}
 					
             $.ajax({
-              url: createURL("listSecurityGroups&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listSecurityGroups&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
