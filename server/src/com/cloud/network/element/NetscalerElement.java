@@ -39,6 +39,8 @@ import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -53,6 +55,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -72,8 +75,10 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.resource.NetscalerResource;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
@@ -88,7 +93,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
 @Local(value=NetworkElement.class)
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer {
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider, FirewallServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
@@ -106,8 +111,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Inject HostDetailsDao _detailsDao;
 
     private boolean canHandle(Network config) {
-        if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
+    	DataCenter zone = _dcDao.findById(config.getDataCenterId());
+    	boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
+    	boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
+    	
+        if (!(handleInAdvanceZone || handleInBasicZone)) {
+            s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType() + " in zone of type " + zone.getNetworkType());
             return false;
         }
         
@@ -216,7 +225,14 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
          staticNatCapabilities.put(Capability.ElasticIp, "true");
          capabilities.put(Service.StaticNat, staticNatCapabilities);
          
-         capabilities.put(Service.Firewall, staticNatCapabilities);
+         
+         //TODO - Murali, please put correct capabilities here
+         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
+         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
+         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+         firewallCapabilities.put(Capability.MultipleIps, "true");
+         
+         capabilities.put(Service.Firewall, firewallCapabilities);
                   
          return capabilities;
     }
@@ -435,19 +451,17 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-//        List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.Netscaler.getName());
-//
-//        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state) state
-//        if (lbDevices != null && !lbDevices.isEmpty()) {
-//            for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
-//                if (lbDevice.getState() == LBDeviceState.Enabled) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-    	//uncomment later
-    	return true;
+        List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.Netscaler.getName());
+
+        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state) state
+        if (lbDevices != null && !lbDevices.isEmpty()) {
+            for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
+                if (lbDevice.getState() == LBDeviceState.Enabled) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -487,4 +501,20 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     public IpDeployer getIpDeployer(Network network) {
         return this;
     }
+
+	@Override
+	public boolean applyFWRules(Network network,
+			List<? extends FirewallRule> rules)
+			throws ResourceUnavailableException {
+		// TODO - Murali, your code should go here
+		return true;
+	}
+
+	@Override
+	public boolean applyStaticNats(Network config,
+			List<? extends StaticNat> rules)
+			throws ResourceUnavailableException {
+		// TODO - Murali, your code should go here
+		return true;
+	}
 }

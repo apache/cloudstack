@@ -4044,10 +4044,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // static NAT rules can not programmed unless IP is associated with network service provider, so run IP association for
         // the network so as to ensure IP is associated before applying rules (in add state)
         applyIpAssociations(network, false, continueOnError, publicIps);
+        
+        //get provider
+        String staticNatProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.StaticNat);
 
         for (NetworkElement ne : _networkElements) {
             try {
-                if (!(ne instanceof StaticNatServiceProvider)) {
+                if (!(ne instanceof StaticNatServiceProvider && ne.getName().equalsIgnoreCase(staticNatProvider))) {
                     continue;
                 }
 

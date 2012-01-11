@@ -133,9 +133,9 @@
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
-        	<adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-        	<adapter name="NetscalerElement" class="com.cloud.network.element.NetscalerElement"/>
-        	<adapter name="F5ExternalLoadBalancerElement" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
+        	<adapter name="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
+        	<adapter name="Netscaler" class="com.cloud.network.element.NetscalerElement"/>
+        	<adapter name="F5BigIp" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcp" class="com.cloud.network.element.ExternalDhcpElement"/>

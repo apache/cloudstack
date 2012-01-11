@@ -42,6 +42,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
@@ -134,10 +135,16 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public long getEntityOwnerId() {      
-        //owner of the network should be the same as the owner of the ip
-        Network network = _networkService.getNetwork(getNetworkId());
-        return network.getAccountId();
+    public long getEntityOwnerId() {
+    	Account caller = UserContext.current().getCaller();
+    	if (accountName != null && domainId != null) {
+    		Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
+    		return account.getId();
+    	} else {
+    		Network network = _networkService.getNetwork(getNetworkId());
+            return network.getAccountId();
+    	}
+
     }
 
     @Override
