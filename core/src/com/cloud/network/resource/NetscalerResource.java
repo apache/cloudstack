@@ -188,10 +188,10 @@ public class NetscalerResource implements ServerResource {
 
             //if the the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
-            	_publicIP = (String) params.get("publicip");
-            	_publicIPGateway = (String) params.get("publicipgateway");
-            	_publicIPNetmask = (String) params.get("publicipnetmask");
-            	_publicIPVlan = (String) params.get("publicipvlan");
+                _publicIP = (String) params.get("publicip");
+                _publicIPGateway = (String) params.get("publicipgateway");
+                _publicIPNetmask = (String) params.get("publicipnetmask");
+                _publicIPVlan = (String) params.get("publicipvlan");
                 addGuestVlanAndSubnet(Long.parseLong(_publicIPVlan), _publicIP, _publicIPNetmask, false);
             }
 
@@ -534,8 +534,8 @@ public class NetscalerResource implements ServerResource {
                                 filter[0] = new filtervalue("servicename", serviceName);
                                 lbvserver_service_binding[] result = (lbvserver_service_binding[]) lbvserver_service_binding.get_filtered(_netscalerService, vserver.get_name(), filter);
                                 if (result != null && result.length > 0) {
-                                	deleteService = false;
-                                	break;
+                                    deleteService = false;
+                                    break;
                                 }
                             }
                             
@@ -611,7 +611,7 @@ public class NetscalerResource implements ServerResource {
 
             String publicIf = _publicInterface;
             String privateIf = _privateInterface;
-            
+
             // enable to interfaces which are in use
             if (publicIf.equals("10/1") || privateIf.equals("10/1")) {
                 ns_obj.set_if_10_1(new Boolean(true));
@@ -685,6 +685,7 @@ public class NetscalerResource implements ServerResource {
                         break;
                     }
                 } catch (Exception e) {
+                    Thread.sleep(10000);
                     continue;
                 }
             }
@@ -699,31 +700,29 @@ public class NetscalerResource implements ServerResource {
 
             // physical interfaces on the SDX range from 10/1 to 10/8 of which two different port or same port can be used for public and private interfaces
             // However the VPX instances created will have interface range start from 10/1 but will only have as many interfaces enabled while creating the VPX instance
-  
-           	int publicIfnum = Integer.parseInt(_publicInterface.substring(_publicInterface.lastIndexOf("/") + 1));
-           	int privateIfnum = Integer.parseInt(_privateInterface.substring(_privateInterface.lastIndexOf("/") + 1));
+
+            int publicIfnum = Integer.parseInt(_publicInterface.substring(_publicInterface.lastIndexOf("/") + 1));
+            int privateIfnum = Integer.parseInt(_privateInterface.substring(_privateInterface.lastIndexOf("/") + 1));
 
             // FIXME: check for better way of doing this from API, instead of making assumption on interface name
             if (publicIfnum == privateIfnum) {
-            	publicIf = "10/1";
-            	privateIf = "10/1"; 	
+                publicIf = "10/1";
+                privateIf = "10/1";
             } else if (publicIfnum > privateIfnum) {
                 privateIf = "10/1";
-            	publicIf = "10/2";
+                publicIf = "10/2";
             } else {
                 publicIf = "10/1";
-            	privateIf = "10/2"; 		
+                privateIf = "10/2";
             }
 
             return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource(),
-            		publicIf, privateIf, username, password);
+                    publicIf, privateIf, _username, _password);
         } catch (Exception e) {
-
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
-            } 
-
-            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance", null, null, null, null, null, null, null);
+            }
+            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null, null);
         }
     }
 
@@ -831,7 +830,7 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 if (apiCallResult.errorcode != 0) {
-                	String vlanInterface = guestVlan ? _privateInterface : _publicInterface;
+                    String vlanInterface = guestVlan ? _privateInterface : _publicInterface;
                     throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + vlanInterface + " due to " + apiCallResult.message);
                 }
             }
@@ -1059,7 +1058,7 @@ public class NetscalerResource implements ServerResource {
                     if ("holdtime".equalsIgnoreCase(param.first())) {
                         timeout = Long.parseLong(param.second()); 
                     } else if ("name".equalsIgnoreCase(param.first())) {
-                    	cookieName = param.second();
+                        cookieName = param.second();
                     }
                 }
 
