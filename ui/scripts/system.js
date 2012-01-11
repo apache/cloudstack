@@ -2773,11 +2773,10 @@
 																									}
 																									else {
 																										$("body").stopTime(timerKey);
-																										if (result.jobstatus == 1) {
-																										  //debugger;
+																										if (result.jobstatus == 1) {																										  
 																											trafficTypeCount++;
 																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
-																											  afterCreateZonePhysicalNetworkTrafficTypes(newZoneObj, newPhysicalnetwork);
+																											  afterCreateZonePhysicalNetworkTrafficTypes(args, newZoneObj, newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
 																											alert("addTrafficType&trafficType=Public failed. Error: " + fromdb(result.jobresult.errortext));
@@ -2810,11 +2809,10 @@
 																									}
 																									else {
 																										$("body").stopTime(timerKey);
-																										if (result.jobstatus == 1) {
-																										  //debugger;
+																										if (result.jobstatus == 1) {																										 
 																											trafficTypeCount++;
 																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
-																											  afterCreateZonePhysicalNetworkTrafficTypes(newZoneObj, newPhysicalnetwork);
+																											  afterCreateZonePhysicalNetworkTrafficTypes(args, newZoneObj, newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
 																											alert("addTrafficType&trafficType=Management failed. Error: " + fromdb(result.jobresult.errortext));
@@ -2847,11 +2845,10 @@
 																									}
 																									else {
 																										$("body").stopTime(timerKey);
-																										if (result.jobstatus == 1) {
-																										  //debugger;
+																										if (result.jobstatus == 1) {																										  
 																											trafficTypeCount++;
 																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
-																											  afterCreateZonePhysicalNetworkTrafficTypes(newZoneObj, newPhysicalnetwork);
+																											  afterCreateZonePhysicalNetworkTrafficTypes(args, newZoneObj, newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
 																											alert("addTrafficType&trafficType=Guest failed. Error: " + fromdb(result.jobresult.errortext));
@@ -6772,7 +6769,7 @@
     });
   }
 
-	var afterCreateZonePhysicalNetworkTrafficTypes = function(newZoneObj, newPhysicalnetwork) {	  
+	var afterCreateZonePhysicalNetworkTrafficTypes = function(args, newZoneObj, newPhysicalnetwork) {	  
 		$.ajax({
 			url: createURL("updatePhysicalNetwork&state=Enabled&id=" + newPhysicalnetwork.id),
 			dataType: "json",
