@@ -2734,7 +2734,163 @@
                           }); //spinning wheel appears from this moment
                           
                           //NaaS (begin)
-                          var physicalNetworkId;
+                          var newPhysicalnetwork;													
+													$.ajax({
+													  url: createURL("createPhysicalNetwork&zoneid=" + newZoneObj.id + "&name=firstPhysicalNetwork"),
+														dataType: "json",														
+														success: function(json) {														 
+															var jobId = json.createphysicalnetworkresponse.jobid;
+															var timerKey = "createPhysicalNetworkJob_" + jobId;
+															$("body").everyTime(2000, timerKey, function(){															  
+																$.ajax({
+																  url: createURL("queryAsyncJobResult&jobid=" + jobId),
+																	dataType: "json",
+																	success: function(json) {
+																	  var result = json.queryasyncjobresultresponse;																		
+																		if (result.jobstatus == 0) {
+																			return; //Job has not completed
+																		}
+																		else {
+																			$("body").stopTime(timerKey);
+																			if (result.jobstatus == 1) {																				
+																				newPhysicalnetwork = result.jobresult.physicalnetwork;
+																				
+																				var trafficTypeCount = 0;
+																				//???
+																				$.ajax({
+																				  url: createURL("addTrafficType&trafficType=Public&physicalnetworkid=" + newPhysicalnetwork.id),
+																					dataType: "json",
+																					success: function(json) {
+																					  //debugger;
+																						var jobId = json.addtraffictyperesponse.jobid;
+																						var timerKey = "addTrafficTypeJob_" + jobId;
+                                            $("body").everyTime(2000, timerKey, function() {
+																						  //debugger;
+																							$.ajax({
+																							  url: createURL("queryAsyncJobResult&jobid=" + jobId),
+																								dataType: "json", 
+																								success: function(json) {
+																								  var result = json.queryasyncjobresultresponse;
+																									if (result.jobstatus == 0) {
+																										return; //Job has not completed
+																									}
+																									else {
+																										$("body").stopTime(timerKey);
+																										if (result.jobstatus == 1) {
+																										  //debugger;
+																											trafficTypeCount++;
+																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
+																										}
+																										else if (result.jobstatus == 2) {
+																											alert("addTrafficType&trafficType=Public failed. Error: " + fromdb(result.jobresult.errortext));
+																										}
+																									}	
+																								},																								
+																								error: function(XMLHttpResponse) {
+																									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																									alert("addTrafficType&trafficType=Public failed. Error: " + errorMsg);
+																								}
+																							});																							
+																						});	
+																					}
+																				});			
+
+                                        $.ajax({
+																				  url: createURL("addTrafficType&trafficType=Management&physicalnetworkid=" + newPhysicalnetwork.id),
+																					dataType: "json",
+																					success: function(json) {
+																					  //debugger;
+																						var jobId = json.addtraffictyperesponse.jobid;
+																						var timerKey = "addTrafficTypeJob_" + jobId;
+                                            $("body").everyTime(2000, timerKey, function() {
+																						  //debugger;
+																							$.ajax({
+																							  url: createURL("queryAsyncJobResult&jobid=" + jobId),
+																								dataType: "json", 
+																								success: function(json) {
+																								  var result = json.queryasyncjobresultresponse;
+																									if (result.jobstatus == 0) {
+																										return; //Job has not completed
+																									}
+																									else {
+																										$("body").stopTime(timerKey);
+																										if (result.jobstatus == 1) {
+																										  //debugger;
+																											trafficTypeCount++;
+																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
+																										}
+																										else if (result.jobstatus == 2) {
+																											alert("addTrafficType&trafficType=Management failed. Error: " + fromdb(result.jobresult.errortext));
+																										}
+																									}	
+																								},																								
+																								error: function(XMLHttpResponse) {
+																									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																									alert("addTrafficType&trafficType=Management failed. Error: " + errorMsg);
+																								}
+																							});																							
+																						});	
+																					}
+																				});							
+
+                                        $.ajax({
+																				  url: createURL("addTrafficType&trafficType=Guest&physicalnetworkid=" + newPhysicalnetwork.id),
+																					dataType: "json",
+																					success: function(json) {
+																					  //debugger;
+																						var jobId = json.addtraffictyperesponse.jobid;
+																						var timerKey = "addTrafficTypeJob_" + jobId;
+                                            $("body").everyTime(2000, timerKey, function() {
+																						  //debugger;
+																							$.ajax({
+																							  url: createURL("queryAsyncJobResult&jobid=" + jobId),
+																								dataType: "json", 
+																								success: function(json) {
+																								  var result = json.queryasyncjobresultresponse;
+																									if (result.jobstatus == 0) {
+																										return; //Job has not completed
+																									}
+																									else {
+																										$("body").stopTime(timerKey);
+																										if (result.jobstatus == 1) {
+																										  //debugger;
+																											trafficTypeCount++;
+																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
+																										}
+																										else if (result.jobstatus == 2) {
+																											alert("addTrafficType&trafficType=Guest failed. Error: " + fromdb(result.jobresult.errortext));
+																										}
+																									}	
+																								},																								
+																								error: function(XMLHttpResponse) {
+																									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																									alert("addTrafficType&trafficType=Guest failed. Error: " + errorMsg);
+																								}
+																							});																							
+																						});	
+																					}
+																				});																											
+																				//???																				
+																			}
+																			else if (result.jobstatus == 2) {																			  
+																				alert("createPhysicalNetwork failed. Error: " + fromdb(result.jobresult.errortext));
+																			}
+																		}		
+																	},																																		
+																	error: function(XMLHttpResponse) {
+																		var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																		alert("createPhysicalNetwork failed. Error: " + errorMsg);
+																	}																			
+																});															
+															});															
+														}
+													});
+													
+													
+													/*
                           $.ajax({
                             url: createURL("listPhysicalNetworks&zoneId=" + newZoneObj.id),
                             dataType: "json",
@@ -2749,305 +2905,8 @@
                             alert("error: listPhysicalNetworks API doesn't return Physical Network ID");
                             return;
                           }
-
-                          $.ajax({
-                            url: createURL("updatePhysicalNetwork&state=Enabled&id=" + physicalNetworkId),
-                            dataType: "json",
-                            success: function(json) {
-                              var jobId = json.updatephysicalnetworkresponse.jobid;
-                              var timerKey = "updatePhysicalNetworkJob_"+jobId;
-                              $("body").everyTime(2000, timerKey, function() {
-                                $.ajax({
-                                  url: createURL("queryAsyncJobResult&jobId="+jobId),
-                                  dataType: "json",
-                                  success: function(json) {
-                                    var result = json.queryasyncjobresultresponse;
-                                    if (result.jobstatus == 0) {
-                                      return; //Job has not completed
-                                    }
-                                    else {
-                                      $("body").stopTime(timerKey);
-                                      if (result.jobstatus == 1) {
-                                        //alert("updatePhysicalNetwork succeeded.");
-
-                                        // get network service provider ID of Virtual Router
-                                        var virtualRouterProviderId;
-                                        $.ajax({
-                                          url: createURL("listNetworkServiceProviders&name=VirtualRouter&physicalNetworkId=" + physicalNetworkId),
-                                          dataType: "json",
-                                          async: false,
-                                          success: function(json) {
-                                            var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                                            if(items != null && items.length > 0) {
-                                              virtualRouterProviderId = items[0].id;
-                                            }
-                                          }
-                                        });
-                                        if(virtualRouterProviderId == null) {
-                                          alert("error: listNetworkServiceProviders API doesn't return VirtualRouter provider ID");
-                                          return;
-                                        }
-
-                                        var virtualRouterElementId;
-                                        $.ajax({
-                                          url: createURL("listVirtualRouterElements&nspid=" + virtualRouterProviderId),
-                                          dataType: "json",
-                                          async: false,
-                                          success: function(json) {
-                                            var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
-                                            if(items != null && items.length > 0) {
-                                              virtualRouterElementId = items[0].id;
-                                            }
-                                          }
-                                        });
-                                        if(virtualRouterElementId == null) {
-                                          alert("error: listVirtualRouterElements API doesn't return Virtual Router Element Id");
-                                          return;
-                                        }
-
-                                        $.ajax({
-                                          url: createURL("configureVirtualRouterElement&enabled=true&id=" + virtualRouterElementId),
-                                          dataType: "json",
-                                          async: false,
-                                          success: function(json) {
-                                            var jobId = json.configurevirtualrouterelementresponse.jobid;
-                                            var timerKey = "configureVirtualRouterElementJob_"+jobId;
-                                            $("body").everyTime(2000, timerKey, function() {
-                                              $.ajax({
-                                                url: createURL("queryAsyncJobResult&jobId="+jobId),
-                                                dataType: "json",
-                                                success: function(json) {
-                                                  var result = json.queryasyncjobresultresponse;
-                                                  if (result.jobstatus == 0) {
-                                                    return; //Job has not completed
-                                                  }
-                                                  else {
-                                                    $("body").stopTime(timerKey);
-                                                    if (result.jobstatus == 1) {
-                                                      //alert("configureVirtualRouterElement succeeded.");
-
-                                                      $.ajax({
-                                                        url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + virtualRouterProviderId),
-                                                        dataType: "json",
-                                                        async: false,
-                                                        success: function(json) {
-                                                          var jobId = json.updatenetworkserviceproviderresponse.jobid;
-                                                          var timerKey = "updateNetworkServiceProviderJob_"+jobId;
-                                                          $("body").everyTime(2000, timerKey, function() {
-                                                            $.ajax({
-                                                              url: createURL("queryAsyncJobResult&jobId="+jobId),
-                                                              dataType: "json",
-                                                              success: function(json) {
-                                                                var result = json.queryasyncjobresultresponse;
-                                                                if (result.jobstatus == 0) {
-                                                                  return; //Job has not completed
-                                                                }
-                                                                else {
-                                                                  $("body").stopTime(timerKey);
-                                                                  if (result.jobstatus == 1) {
-                                                                    //alert("Virtual Router Provider is enabled");
-                                                                    
-																																		if(newZoneObj.networktype == "Basic") {  
-																																			if(args.data["security-groups-enabled"] == "on") { //need to Enable security group provider first
-																																				// get network service provider ID of Security Group
-																																				var securityGroupProviderId;
-																																				$.ajax({
-																																					url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + physicalNetworkId),
-																																					dataType: "json",
-																																					async: false,
-																																					success: function(json) {																																				
-																																						var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-																																						if(items != null && items.length > 0) {
-																																							securityGroupProviderId = items[0].id;
-																																						}
-																																					}
-																																				});
-																																				if(securityGroupProviderId == null) {
-																																					alert("error: listNetworkServiceProviders API doesn't return security group provider ID");
-																																					return;
-																																				}                                      
-																																					
-																																				$.ajax({
-																																					url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
-																																					dataType: "json",
-																																					async: false,
-																																					success: function(json) {
-																																						var jobId = json.updatenetworkserviceproviderresponse.jobid;
-																																						var timerKey = "updateNetworkServiceProviderJob_"+jobId;
-																																						$("body").everyTime(2000, timerKey, function() {
-																																							$.ajax({
-																																								url: createURL("queryAsyncJobResult&jobId="+jobId),
-																																								dataType: "json",
-																																								success: function(json) {
-																																									var result = json.queryasyncjobresultresponse;
-																																									if (result.jobstatus == 0) {
-																																										return; //Job has not completed
-																																									}
-																																									else {																																										
-																																										$("body").stopTime(timerKey);
-																																										if (result.jobstatus == 1) {
-																																											//alert("Security group provider is enabled");
-
-																																											//create network (for basic zone only)
-																																											var array2 = [];
-																																											array2.push("&zoneid=" + newZoneObj.id);
-																																											array2.push("&name=guestNetworkForBasicZone");
-																																											array2.push("&displaytext=guestNetworkForBasicZone");
-																																											array2.push("&networkofferingid=" + args.data.networkOfferingId);
-																																											$.ajax({
-																																												url: createURL("createNetwork" + array2.join("")),
-																																												dataType: "json",
-																																												async: false,
-																																												success: function(json) {										  
-																																													//create pod                                                                     
-																																													var array3 = [];
-																																													array3.push("&zoneId=" + newZoneObj.id);
-																																													array3.push("&name=" + todb(args.data.podName));
-																																													array3.push("&gateway=" + todb(args.data.podGateway));
-																																													array3.push("&netmask=" + todb(args.data.podNetmask));
-																																													array3.push("&startIp=" + todb(args.data.podStartIp));
-
-																																													var endip = args.data.podEndIp;      //optional
-																																													if (endip != null && endip.length > 0)
-																																														array3.push("&endIp=" + todb(endip));
-
-																																													$.ajax({
-																																														url: createURL("createPod" + array3.join("")),
-																																														dataType: "json",
-																																														async: false,
-																																														success: function(json) {
-																																														
-																																														},
-																																														error: function(XMLHttpResponse) {
-																																															var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																															alert("createPod failed. Error: " + errorMsg);
-																																														}
-																																													}); 	
-																																												}
-																																											});
-																																										}
-																																										else if (result.jobstatus == 2) {
-																																											alert("failed to enable security group provider. Error: " + fromdb(result.jobresult.errortext));
-																																										}
-																																									}
-																																								},
-																																								error: function(XMLHttpResponse) {
-																																									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																									alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
-																																								}
-																																							});
-																																						});
-																																					}
-																																				});
-																																			}					
-																																			else { 
-																																				//create network (for basic zone only)
-																																				var array2 = [];
-																																				array2.push("&zoneid=" + newZoneObj.id);
-																																				array2.push("&name=guestNetworkForBasicZone");
-																																				array2.push("&displaytext=guestNetworkForBasicZone");
-																																				array2.push("&networkofferingid=" + args.data.networkOfferingId);
-																																				$.ajax({
-																																					url: createURL("createNetwork" + array2.join("")),
-																																					dataType: "json",
-																																					async: false,
-																																					success: function(json) {				
-																																						//create pod                                                                     
-																																						var array3 = [];
-																																						array3.push("&zoneId=" + newZoneObj.id);
-																																						array3.push("&name=" + todb(args.data.podName));
-																																						array3.push("&gateway=" + todb(args.data.podGateway));
-																																						array3.push("&netmask=" + todb(args.data.podNetmask));
-																																						array3.push("&startIp=" + todb(args.data.podStartIp));
-
-																																						var endip = args.data.podEndIp;      //optional
-																																						if (endip != null && endip.length > 0)
-																																							array3.push("&endIp=" + todb(endip));
-
-																																						$.ajax({
-																																							url: createURL("createPod" + array3.join("")),
-																																							dataType: "json",
-																																							async: false,
-																																							success: function(json) {
-																																							
-																																							},
-																																							error: function(XMLHttpResponse) {
-																																								var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																								alert("createPod failed. Error: " + errorMsg);
-																																							}
-																																						}); 				
-																																					}
-																																				});		
-																																			}	
-																																		}
-																																		else {  //Advanced zone
-																																			//create pod                                                                     
-																																			var array3 = [];
-																																			array3.push("&zoneId=" + newZoneObj.id);
-																																			array3.push("&name=" + todb(args.data.podName));
-																																			array3.push("&gateway=" + todb(args.data.podGateway));
-																																			array3.push("&netmask=" + todb(args.data.podNetmask));
-																																			array3.push("&startIp=" + todb(args.data.podStartIp));
-
-																																			var endip = args.data.podEndIp;      //optional
-																																			if (endip != null && endip.length > 0)
-																																				array3.push("&endIp=" + todb(endip));
-
-																																			$.ajax({
-																																				url: createURL("createPod" + array3.join("")),
-																																				dataType: "json",
-																																				async: false,
-																																				success: function(json) {
-																																				
-																																				},
-																																				error: function(XMLHttpResponse) {
-																																					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																					alert("createPod failed. Error: " + errorMsg);
-																																				}
-																																			}); 
-																																		}																																		  
-                                                                  }
-                                                                  else if (result.jobstatus == 2) {
-                                                                    alert("failed to enable Virtual Router Provider. Error: " + fromdb(result.jobresult.errortext));
-                                                                  }
-                                                                }
-                                                              },
-                                                              error: function(XMLHttpResponse) {
-                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
-                                                              }
-                                                            });
-                                                          });
-                                                        }
-                                                      });
-                                                    }
-                                                    else if (result.jobstatus == 2) {
-                                                      alert("configureVirtualRouterElement failed. Error: " + fromdb(result.jobresult.errortext));
-                                                    }
-                                                  }
-                                                },
-                                                error: function(XMLHttpResponse) {
-                                                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                  alert("configureVirtualRouterElement failed. Error: " + errorMsg);
-                                                }
-                                              });
-                                            });
-                                          }
-                                        });
-                                      }
-                                      else if (result.jobstatus == 2) {
-                                        alert("updatePhysicalNetwork failed. Error: " + fromdb(result.jobresult.errortext));
-                                      }
-                                    }
-                                  },
-                                  error: function(XMLHttpResponse) {
-                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                    alert("updatePhysicalNetwork failed. Error: " + errorMsg);
-                                  }
-                                });
-                              });
-                            }
-                          });
+                          */													
+													
                           //NaaS (end)
                         },
                         error: function(XMLHttpResponse) {
@@ -6940,6 +6799,309 @@
     });
   }
 
+	var afterCreateZonePhysicalNetworkTrafficTypes = function(newPhysicalnetwork) {
+	  //???????
+		$.ajax({
+			url: createURL("updatePhysicalNetwork&state=Enabled&id=" + newPhysicalnetwork.id),
+			dataType: "json",
+			success: function(json) {
+				var jobId = json.updatephysicalnetworkresponse.jobid;
+				var timerKey = "updatePhysicalNetworkJob_"+jobId;
+				$("body").everyTime(2000, timerKey, function() {
+					$.ajax({
+						url: createURL("queryAsyncJobResult&jobId="+jobId),
+						dataType: "json",
+						success: function(json) {
+							var result = json.queryasyncjobresultresponse;
+							if (result.jobstatus == 0) {
+								return; //Job has not completed
+							}
+							else {
+								$("body").stopTime(timerKey);
+								if (result.jobstatus == 1) {
+									//alert("updatePhysicalNetwork succeeded.");
+
+									// get network service provider ID of Virtual Router
+									var virtualRouterProviderId;
+									$.ajax({
+										url: createURL("listNetworkServiceProviders&name=VirtualRouter&physicalNetworkId=" + newPhysicalnetwork.id),
+										dataType: "json",
+										async: false,
+										success: function(json) {
+											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+											if(items != null && items.length > 0) {
+												virtualRouterProviderId = items[0].id;
+											}
+										}
+									});
+									if(virtualRouterProviderId == null) {
+										alert("error: listNetworkServiceProviders API doesn't return VirtualRouter provider ID");
+										return;
+									}
+
+									var virtualRouterElementId;
+									$.ajax({
+										url: createURL("listVirtualRouterElements&nspid=" + virtualRouterProviderId),
+										dataType: "json",
+										async: false,
+										success: function(json) {
+											var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
+											if(items != null && items.length > 0) {
+												virtualRouterElementId = items[0].id;
+											}
+										}
+									});
+									if(virtualRouterElementId == null) {
+										alert("error: listVirtualRouterElements API doesn't return Virtual Router Element Id");
+										return;
+									}
+
+									$.ajax({
+										url: createURL("configureVirtualRouterElement&enabled=true&id=" + virtualRouterElementId),
+										dataType: "json",
+										async: false,
+										success: function(json) {
+											var jobId = json.configurevirtualrouterelementresponse.jobid;
+											var timerKey = "configureVirtualRouterElementJob_"+jobId;
+											$("body").everyTime(2000, timerKey, function() {
+												$.ajax({
+													url: createURL("queryAsyncJobResult&jobId="+jobId),
+													dataType: "json",
+													success: function(json) {
+														var result = json.queryasyncjobresultresponse;
+														if (result.jobstatus == 0) {
+															return; //Job has not completed
+														}
+														else {
+															$("body").stopTime(timerKey);
+															if (result.jobstatus == 1) {
+																//alert("configureVirtualRouterElement succeeded.");
+
+																$.ajax({
+																	url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + virtualRouterProviderId),
+																	dataType: "json",
+																	async: false,
+																	success: function(json) {
+																		var jobId = json.updatenetworkserviceproviderresponse.jobid;
+																		var timerKey = "updateNetworkServiceProviderJob_"+jobId;
+																		$("body").everyTime(2000, timerKey, function() {
+																			$.ajax({
+																				url: createURL("queryAsyncJobResult&jobId="+jobId),
+																				dataType: "json",
+																				success: function(json) {
+																					var result = json.queryasyncjobresultresponse;
+																					if (result.jobstatus == 0) {
+																						return; //Job has not completed
+																					}
+																					else {
+																						$("body").stopTime(timerKey);
+																						if (result.jobstatus == 1) {
+																							//alert("Virtual Router Provider is enabled");
+																							
+																							if(newZoneObj.networktype == "Basic") {  
+																								if(args.data["security-groups-enabled"] == "on") { //need to Enable security group provider first
+																									// get network service provider ID of Security Group
+																									var securityGroupProviderId;
+																									$.ajax({
+																										url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + newPhysicalnetwork.id),
+																										dataType: "json",
+																										async: false,
+																										success: function(json) {																																				
+																											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+																											if(items != null && items.length > 0) {
+																												securityGroupProviderId = items[0].id;
+																											}
+																										}
+																									});
+																									if(securityGroupProviderId == null) {
+																										alert("error: listNetworkServiceProviders API doesn't return security group provider ID");
+																										return;
+																									}                                      
+																										
+																									$.ajax({
+																										url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
+																										dataType: "json",
+																										async: false,
+																										success: function(json) {
+																											var jobId = json.updatenetworkserviceproviderresponse.jobid;
+																											var timerKey = "updateNetworkServiceProviderJob_"+jobId;
+																											$("body").everyTime(2000, timerKey, function() {
+																												$.ajax({
+																													url: createURL("queryAsyncJobResult&jobId="+jobId),
+																													dataType: "json",
+																													success: function(json) {
+																														var result = json.queryasyncjobresultresponse;
+																														if (result.jobstatus == 0) {
+																															return; //Job has not completed
+																														}
+																														else {																																										
+																															$("body").stopTime(timerKey);
+																															if (result.jobstatus == 1) {
+																																//alert("Security group provider is enabled");
+
+																																//create network (for basic zone only)
+																																var array2 = [];
+																																array2.push("&zoneid=" + newZoneObj.id);
+																																array2.push("&name=guestNetworkForBasicZone");
+																																array2.push("&displaytext=guestNetworkForBasicZone");
+																																array2.push("&networkofferingid=" + args.data.networkOfferingId);
+																																$.ajax({
+																																	url: createURL("createNetwork" + array2.join("")),
+																																	dataType: "json",
+																																	async: false,
+																																	success: function(json) {										  
+																																		//create pod                                                                     
+																																		var array3 = [];
+																																		array3.push("&zoneId=" + newZoneObj.id);
+																																		array3.push("&name=" + todb(args.data.podName));
+																																		array3.push("&gateway=" + todb(args.data.podGateway));
+																																		array3.push("&netmask=" + todb(args.data.podNetmask));
+																																		array3.push("&startIp=" + todb(args.data.podStartIp));
+
+																																		var endip = args.data.podEndIp;      //optional
+																																		if (endip != null && endip.length > 0)
+																																			array3.push("&endIp=" + todb(endip));
+
+																																		$.ajax({
+																																			url: createURL("createPod" + array3.join("")),
+																																			dataType: "json",
+																																			async: false,
+																																			success: function(json) {
+																																			
+																																			},
+																																			error: function(XMLHttpResponse) {
+																																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																																				alert("createPod failed. Error: " + errorMsg);
+																																			}
+																																		}); 	
+																																	}
+																																});
+																															}
+																															else if (result.jobstatus == 2) {
+																																alert("failed to enable security group provider. Error: " + fromdb(result.jobresult.errortext));
+																															}
+																														}
+																													},
+																													error: function(XMLHttpResponse) {
+																														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																														alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+																													}
+																												});
+																											});
+																										}
+																									});
+																								}					
+																								else { 
+																									//create network (for basic zone only)
+																									var array2 = [];
+																									array2.push("&zoneid=" + newZoneObj.id);
+																									array2.push("&name=guestNetworkForBasicZone");
+																									array2.push("&displaytext=guestNetworkForBasicZone");
+																									array2.push("&networkofferingid=" + args.data.networkOfferingId);
+																									$.ajax({
+																										url: createURL("createNetwork" + array2.join("")),
+																										dataType: "json",
+																										async: false,
+																										success: function(json) {				
+																											//create pod                                                                     
+																											var array3 = [];
+																											array3.push("&zoneId=" + newZoneObj.id);
+																											array3.push("&name=" + todb(args.data.podName));
+																											array3.push("&gateway=" + todb(args.data.podGateway));
+																											array3.push("&netmask=" + todb(args.data.podNetmask));
+																											array3.push("&startIp=" + todb(args.data.podStartIp));
+
+																											var endip = args.data.podEndIp;      //optional
+																											if (endip != null && endip.length > 0)
+																												array3.push("&endIp=" + todb(endip));
+
+																											$.ajax({
+																												url: createURL("createPod" + array3.join("")),
+																												dataType: "json",
+																												async: false,
+																												success: function(json) {
+																												
+																												},
+																												error: function(XMLHttpResponse) {
+																													var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																													alert("createPod failed. Error: " + errorMsg);
+																												}
+																											}); 				
+																										}
+																									});		
+																								}	
+																							}
+																							else {  //Advanced zone
+																								//create pod                                                                     
+																								var array3 = [];
+																								array3.push("&zoneId=" + newZoneObj.id);
+																								array3.push("&name=" + todb(args.data.podName));
+																								array3.push("&gateway=" + todb(args.data.podGateway));
+																								array3.push("&netmask=" + todb(args.data.podNetmask));
+																								array3.push("&startIp=" + todb(args.data.podStartIp));
+
+																								var endip = args.data.podEndIp;      //optional
+																								if (endip != null && endip.length > 0)
+																									array3.push("&endIp=" + todb(endip));
+
+																								$.ajax({
+																									url: createURL("createPod" + array3.join("")),
+																									dataType: "json",
+																									async: false,
+																									success: function(json) {
+																									
+																									},
+																									error: function(XMLHttpResponse) {
+																										var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																										alert("createPod failed. Error: " + errorMsg);
+																									}
+																								}); 
+																							}																																		  
+																						}
+																						else if (result.jobstatus == 2) {
+																							alert("failed to enable Virtual Router Provider. Error: " + fromdb(result.jobresult.errortext));
+																						}
+																					}
+																				},
+																				error: function(XMLHttpResponse) {
+																					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																					alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+																				}
+																			});
+																		});
+																	}
+																});
+															}
+															else if (result.jobstatus == 2) {
+																alert("configureVirtualRouterElement failed. Error: " + fromdb(result.jobresult.errortext));
+															}
+														}
+													},
+													error: function(XMLHttpResponse) {
+														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+														alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+													}
+												});
+											});
+										}
+									});
+								}
+								else if (result.jobstatus == 2) {
+									alert("updatePhysicalNetwork failed. Error: " + fromdb(result.jobresult.errortext));
+								}
+							}
+						},
+						error: function(XMLHttpResponse) {
+							var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+							alert("updatePhysicalNetwork failed. Error: " + errorMsg);
+						}
+					});
+				});
+			}
+		});
+		//???????
+	}
+	
   //action filters (begin)
   var zoneActionfilter = function(args) {
     var jsonObj = args.context.item;
