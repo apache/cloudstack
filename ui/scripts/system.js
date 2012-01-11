@@ -5495,8 +5495,7 @@
           section: 'primary-storage',
           fields: {
             name: { label: 'Name' },            
-            podname: { label: 'Pod' },
-						clustername: { label: 'Cluster' },
+            ipaddress: { label: 'Server' },
 						path: { label: 'Path' }
           },
 
