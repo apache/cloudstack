@@ -1534,7 +1534,18 @@
                       },
 
                       stop: {
-                        label: 'Stop router',
+                        label: 'Stop router',												
+												createForm: {
+													title: 'Stop router',
+													desc: 'Please confirm that you want to stop this router',
+													fields: {                 
+														forced: {
+															label: 'Force stop',
+															isBoolean: true,                   
+															isChecked: false
+														}                  
+													}
+												},	
                         messages: {
                           confirm: function(args) {
                             return 'Are you sure you want to stop router?';
@@ -1544,8 +1555,10 @@
                           }
                         },
                         action: function(args) {
+												  var array1 = [];
+													array1.push("&forced=" + (args.data.forced == "on"));		
                           $.ajax({
-                            url: createURL('stopRouter&id=' + args.context.routers[0].id),
+                            url: createURL('stopRouter&id=' + args.context.routers[0].id + array1.join("")),
                             dataType: 'json',
                             async: true,
                             success: function(json) {
