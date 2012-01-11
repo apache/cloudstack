@@ -38,7 +38,7 @@
 						}
 						
             $.ajax({
-              url: createURL("listEvents&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listEvents&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -90,7 +90,7 @@
 							}
 						}
             $.ajax({
-              url: createURL("listAlerts&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listAlerts&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
