@@ -665,10 +665,11 @@ public class ClusterManagerImpl implements ClusterManager {
                         profiler.stop();
                         
                         if(profiler.getDuration() >= _heartbeatInterval) {
-                            s_logger.warn("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + 
-                                ", profilerHeartbeatUpdate: " + profilerHeartbeatUpdate.toString() +
-                                ", profilerPeerScan: " + profilerPeerScan.toString() +
-                                ", profilerAgentLB: " + profilerAgentLB.toString());
+                            if(s_logger.isDebugEnabled())
+                                s_logger.debug("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + 
+                                    ", profilerHeartbeatUpdate: " + profilerHeartbeatUpdate.toString() +
+                                    ", profilerPeerScan: " + profilerPeerScan.toString() +
+                                    ", profilerAgentLB: " + profilerAgentLB.toString());
                         }
                     }
                     
@@ -884,8 +885,16 @@ public class ClusterManagerImpl implements ClusterManager {
     private void peerScan() throws ActiveFencingException {
         Date cutTime = DateUtil.currentGMTTime();
 
+        Profiler profiler = new Profiler();
+        profiler.start();
+        
+        Profiler profilerQueryActiveList = new Profiler();
+        profilerQueryActiveList.start();
         List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold));
+        profilerQueryActiveList.stop();
 
+        Profiler profilerSyncClusterInfo = new Profiler();
+        profilerSyncClusterInfo.start();
         List<ManagementServerHostVO> removedNodeList = new ArrayList<ManagementServerHostVO>();
         List<ManagementServerHostVO> invalidatedNodeList = new ArrayList<ManagementServerHostVO>();
 
@@ -928,7 +937,10 @@ public class ClusterManagerImpl implements ClusterManager {
                 }
             }
         }
-
+        profilerSyncClusterInfo.stop();
+        
+        Profiler profilerInvalidatedNodeList = new Profiler();
+        profilerInvalidatedNodeList.start();
         // process invalidated node list
         if(invalidatedNodeList.size() > 0) {
             for(ManagementServerHostVO mshost : invalidatedNodeList) {
@@ -942,7 +954,10 @@ public class ClusterManagerImpl implements ClusterManager {
 
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, invalidatedNodeList));
         }
+        profilerInvalidatedNodeList.stop();
 
+        Profiler profilerRemovedList = new Profiler();
+        profilerRemovedList.start();
         // process removed node list
         Iterator<ManagementServerHostVO> it = removedNodeList.iterator();
         while(it.hasNext()) {
@@ -964,6 +979,7 @@ public class ClusterManagerImpl implements ClusterManager {
         if(removedNodeList.size() > 0) {
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, removedNodeList));
         }
+        profilerRemovedList.stop();
 
         List<ManagementServerHostVO> newNodeList = new ArrayList<ManagementServerHostVO>();
         for(ManagementServerHostVO mshost : currentList) {
@@ -985,6 +1001,17 @@ public class ClusterManagerImpl implements ClusterManager {
 
         if(newNodeList.size() > 0) {
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeAdded, newNodeList));
+        }
+        
+        profiler.stop();
+        
+        if(profiler.getDuration() >= this._heartbeatInterval) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Peer scan takes too long to finish. profiler: " + profiler.toString()
+                  + ", profilerQueryActiveList: " + profilerQueryActiveList.toString()
+                  + ", profilerSyncClusterInfo: " + profilerSyncClusterInfo.toString()
+                  + ", profilerInvalidatedNodeList: " + profilerInvalidatedNodeList.toString()
+                  + ", profilerRemovedList: " + profilerRemovedList.toString());
         }
     }
 
