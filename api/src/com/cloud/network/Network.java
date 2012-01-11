@@ -52,10 +52,10 @@ public interface Network extends ControlledEntity {
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
-        public static final Service StaticNat = new Service("StaticNat");
+        public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
 
@@ -163,6 +163,8 @@ public interface Network extends ControlledEntity {
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
+        public static final Capability ElasticIp = new Capability("ElasticIp");
+        public static final Capability ElasticLb = new Capability("ElasticLb");
 
         private String name;
 

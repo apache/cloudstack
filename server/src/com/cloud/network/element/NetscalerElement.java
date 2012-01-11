@@ -53,7 +53,6 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -89,9 +88,9 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
 @Local(value=NetworkElement.class)
-public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer {
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer {
 
-    private static final Logger s_logger = Logger.getLogger(NetscalerExternalLoadBalancerElement.class);
+    private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
     @Inject NetworkManager _networkManager;
     @Inject ConfigurationManager _configMgr;
@@ -209,8 +208,16 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
          String stickyMethodList = gson.toJson(methodList);
          lbCapabilities.put(Capability.SupportedStickinessMethods,stickyMethodList);
          
+         lbCapabilities.put(Capability.ElasticLb, "true");
+         
          capabilities.put(Service.Lb, lbCapabilities);
          
+         Map<Capability, String> staticNatCapabilities = new HashMap<Capability, String>();
+         staticNatCapabilities.put(Capability.ElasticIp, "true");
+         capabilities.put(Service.StaticNat, staticNatCapabilities);
+         
+         capabilities.put(Service.Firewall, staticNatCapabilities);
+                  
          return capabilities;
     }
 
@@ -428,17 +435,19 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.Netscaler.getName());
-
-        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state) state
-        if (lbDevices != null && !lbDevices.isEmpty()) {
-            for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
-                if (lbDevice.getState() == LBDeviceState.Enabled) {
-                    return true;
-                }
-            }
-        }
-        return false;
+//        List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.Netscaler.getName());
+//
+//        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state) state
+//        if (lbDevices != null && !lbDevices.isEmpty()) {
+//            for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
+//                if (lbDevice.getState() == LBDeviceState.Enabled) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+    	//uncomment later
+    	return true;
     }
 
     @Override

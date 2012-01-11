@@ -105,7 +105,6 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     @Column(name="sort_key")
     int sortKey;
 
-
     @Column(name="uuid")
     String uuid;
     
@@ -114,7 +113,13 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 
     @Column(name="conserve_mode")
     boolean conserveMode;
-
+    
+    @Column(name="elastic_ip_service")
+    boolean elasticIp;
+    
+    @Column(name="elastic_lb_service")
+    boolean elasticLb;
+    
     @Override
     public String getDisplayText() {
         return displayText;
@@ -271,16 +276,20 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.guestType = guestType;
         this.conserveMode = conserveMode;
         this.dedicatedLB = true;
-        this.sharedSourceNat =false;
-        this.redundantRouter= false;
+        this.sharedSourceNat = false;
+        this.redundantRouter = false;
+        this.elasticIp = false;
+        this.elasticLb = false;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType, conserveMode);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
+        this.elasticIp = elasticIp;
+        this.elasticLb = elasticLb;
     }
     
     public NetworkOfferingVO() {
@@ -328,8 +337,13 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         return conserveMode;
     }
 
-    public void setConserveMode(boolean conserveMode) {
-        this.conserveMode = conserveMode;
-    }
-    
+    @Override
+	public boolean getElasticIp() {
+		return elasticIp;
+	}
+
+    @Override
+	public boolean getElasticLb() {
+		return elasticLb;
+	}
 }

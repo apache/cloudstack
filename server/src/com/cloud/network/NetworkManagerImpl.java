@@ -366,6 +366,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         sc.setParameters("dc", dcId);
+        
+        DataCenter zone = _configMgr.getZone(dcId);
 
         // for direct network take ip addresses only from the vlans belonging to the network
         if (vlanUse == VlanType.DirectAttached) {
@@ -407,7 +409,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
-        if (vlanUse != VlanType.DirectAttached) {
+        if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
             addr.setAssociatedWithNetworkId(networkId);
         }
 
@@ -951,13 +953,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
-        //For basic zone, if there isn't a public network outside of the guest network, specify the vlan type to be direct attached
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            if (network.getTrafficType() == TrafficType.Guest){
-                vlanType = VlanType.DirectAttached;
-                assign = true;
-            }
-        }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
@@ -990,13 +985,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
 
             boolean sharedSourceNat = false;
-            Map<Network.Capability, String> sourceNatCapabilities = getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
-            if (sourceNatCapabilities != null) {
-                String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
-                if (supportedSourceNatTypes.contains("zone")) {
-                    sharedSourceNat = true;
+            
+            try {
+            	Map<Network.Capability, String> sourceNatCapabilities = getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
+            	if (sourceNatCapabilities != null) {
+                    String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+                    if (supportedSourceNatTypes.contains("zone")) {
+                        sharedSourceNat = true;
+                    }
                 }
-            }
+            } catch (UnsupportedServiceException ex) {
+            	//service is not supported, skip
+            } 
 
             if (!sharedSourceNat) {
                 // First IP address should be source nat when it's being associated with Guest Virtual network
@@ -5612,7 +5612,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             //check that provider is supported
             if (checkPhysicalNetwork) {
                 if (!_pNSPDao.isServiceProviderEnabled(physicalNetworkId, provider, service)) {
-                    throw new UnsupportedServiceException("Provider " + provider + " doesn't support service " + service + " in physical network id=" + physicalNetworkId);
+                    throw new UnsupportedServiceException("Provider " + provider + " is either not enabled or doesn't support service " + service + " in physical network id=" + physicalNetworkId);
                 }
             }
 

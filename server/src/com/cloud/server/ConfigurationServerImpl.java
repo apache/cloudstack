@@ -864,6 +864,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.StaticNat, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
+        
+        Map<Network.Service, Network.Provider> netscalerServiceProviders = new HashMap<Network.Service, Network.Provider>();
+        netscalerServiceProviders.put(Service.Dhcp, Provider.VirtualRouter);
+        netscalerServiceProviders.put(Service.Dns, Provider.VirtualRouter);
+        netscalerServiceProviders.put(Service.UserData, Provider.VirtualRouter);
+        netscalerServiceProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
+        netscalerServiceProviders.put(Service.Firewall, Provider.Netscaler);
+        netscalerServiceProviders.put(Service.StaticNat, Provider.Netscaler);
+        netscalerServiceProviders.put(Service.Lb, Provider.Netscaler);
 
         
         //The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only first network offering has to be enabled, in Advance zone - the second one
@@ -939,8 +948,24 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
+        //Offering #5
+        NetworkOfferingVO defaultNetscalerNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.DefaultSharedEIPandELBNetworkOffering, 
+                "Offering for Shared networks with Elastic IP and Elastic LB capabilities", 
+                TrafficType.Guest, 
+                false, true, null, null, true, Availability.Optional, 
+                null, Network.GuestType.Shared, true, false, false, false, true, true);
+        		        
+        defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
+        defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
+        
+        for (Service service : netscalerServiceProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultNetscalerNetworkOffering.getId(), service, netscalerServiceProviders.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
+        
         txn.commit();
-       
     }
     
     private void createDefaultNetworks() {

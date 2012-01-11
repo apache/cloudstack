@@ -99,7 +99,7 @@ import com.cloud.network.element.F5ExternalLoadBalancerElement;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.network.element.JuniperSRXExternalFirewallElement;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.network.element.NetscalerExternalLoadBalancerElement;
+import com.cloud.network.element.NetscalerElement;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
@@ -419,7 +419,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("NetscalerExternalLoadBalancerElementService", NetscalerLoadBalancerElementService.class, NetscalerExternalLoadBalancerElement.class);
+        addService("NetscalerExternalLoadBalancerElementService", NetscalerLoadBalancerElementService.class, NetscalerElement.class);
         addService("F5LoadBalancerElementService", F5ExternalLoadBalancerElementService.class, F5ExternalLoadBalancerElement.class);
         addService("JuniperSRXFirewallElementService", JuniperSRXFirewallElementService.class, JuniperSRXExternalFirewallElement.class);
     }

@@ -287,6 +287,8 @@ CREATE TABLE `cloud`.`network_offerings` (
   `redundant_router_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the redundant router service',
   `state` char(32) COMMENT 'state of the network offering that has Disabled value by default',
   `guest_type` char(32) COMMENT 'type of guest network that can be shared or isolated',
+  `elastic_ip_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic ip service',
+  `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic lb service',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`),

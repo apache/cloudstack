@@ -45,6 +45,7 @@ public interface NetworkOffering {
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
     public final static String DefaultIsolatedNetworkOffering= "DefaultIsolatedNetworkOffering";
+    public final static String DefaultSharedEIPandELBNetworkOffering = "DefaultSharedNetscalerEIPandELBNetworkOffering";
 
     long getId();
 
@@ -97,4 +98,8 @@ public interface NetworkOffering {
     boolean getRedundantRouter();
     
     boolean isConserveMode();
+
+	boolean getElasticIp();
+
+	boolean getElasticLb();
 }
