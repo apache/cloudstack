@@ -2025,7 +2025,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (network.getGuestType() != GuestType.Isolated) {
                 continue;
             }
-            networkToCidr.put(network.getId(), network.getCidr());
+            if (network.getCidr() != null) {
+                networkToCidr.put(network.getId(), network.getCidr());
+            }
         }
         if (networkToCidr == null || networkToCidr.isEmpty()) {
             return;
@@ -2041,7 +2043,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             long cidrSizeToUse = currCidrSize < ntwkCidrSize ? currCidrSize : ntwkCidrSize;
             
-            String ntwkCidrSubnet = NetUtils.getCidrSubNet(getCidrAddress(ntwkCidr), cidrSizeToUse);
+            String ntwkCidrSubnet = NetUtils.getCidrSubNet(ntwkCidrAddress, cidrSizeToUse);
             String cidrSubnet = NetUtils.getCidrSubNet(currCidrAddress, cidrSizeToUse);
             
             if (cidrSubnet.equals(ntwkCidrSubnet)) {
