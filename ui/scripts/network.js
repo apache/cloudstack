@@ -302,10 +302,31 @@
               },
 
 							'restart': {
-								label: 'Restart network',
-								action: function(args) {
+								label: 'Restart network',								
+								createForm: {
+									title: 'Restart network',
+									desc: 'Please confirm that you want to restart network',
+									fields: {                 
+										cleanup: {
+											label: 'Clean up',
+											isBoolean: true,                   
+											isChecked: false
+										}                  
+									}
+								},										
+								messages: {
+									confirm: function(args) {
+										return 'Please confirm that you want to restart network';
+									},
+									notification: function(args) {
+										return 'Restarting network';
+									}
+								},								
+								action: function(args) {								
+								  var array1 = [];
+						      array1.push("&cleanup=" + (args.data.cleanup == "on"));		
 									$.ajax({
-										url: createURL("restartNetwork&cleanup=true&id=" + args.context.networks[0].id),
+										url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
 										dataType: "json",
 										async: true,
 										success: function(json) {
@@ -321,15 +342,7 @@
 											);
 										}
 									});
-								},
-								messages: {
-									confirm: function(args) {
-										return 'Please confirm that you want to restart network';
-									},
-									notification: function(args) {
-										return 'Restarting network';
-									}
-								},
+								},								
 								notification: {
 									poll: pollAsyncJobResult
 								}
