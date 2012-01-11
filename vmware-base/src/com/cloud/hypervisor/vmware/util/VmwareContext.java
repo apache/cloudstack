@@ -335,15 +335,14 @@ public class VmwareContext {
 		try {
 			bos = new BufferedOutputStream(conn.getOutputStream());  
 			is = new BufferedInputStream(new FileInputStream(localFileName));  
-			int bytesAvailable = is.available();  
-			int bufferSize = Math.min(bytesAvailable, _CHUNKSIZE);  
+			int bufferSize = _CHUNKSIZE;  
 			byte[] buffer = new byte[bufferSize];  
 			while (true) {  
 				int bytesRead = is.read(buffer, 0, bufferSize);  
 				if (bytesRead == -1) {  
 					break;  
-				}  
-				bos.write(buffer, 0, bufferSize);
+				}
+				bos.write(buffer, 0, bytesRead);
 				totalBytesUpdated += bytesRead;
 				bos.flush();
 				if(progressUpdater != null)
