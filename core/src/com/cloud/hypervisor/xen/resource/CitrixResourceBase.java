@@ -5122,9 +5122,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Map<String, String> deviceConfig = new HashMap<String, String>();
             String path = uri.getPath();
             path = path.replace("//", "/");
-            deviceConfig.put("location", uri.getHost() + ":" + uri.getPath());
+            deviceConfig.put("location", uri.getHost() + ":" + path);
             Host host = Host.getByUuid(conn, _host.uuid);
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), uri.getHost() + uri.getPath(), "iso", "iso", "iso", shared, new HashMap<String, String>());
+            SR sr = SR.create(conn, host, deviceConfig, new Long(0), uri.getHost() + path, "iso", "iso", "iso", shared, new HashMap<String, String>());
             sr.setNameLabel(conn, vmName + "-ISO");
             sr.setNameDescription(conn, deviceConfig.get("location"));
             
