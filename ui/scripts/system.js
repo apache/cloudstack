@@ -2779,7 +2779,7 @@
 																										if (result.jobstatus == 1) {
 																										  //debugger;
 																											trafficTypeCount++;
-																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
 																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
@@ -2818,7 +2818,7 @@
 																										if (result.jobstatus == 1) {
 																										  //debugger;
 																											trafficTypeCount++;
-																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
 																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
@@ -2857,7 +2857,7 @@
 																										if (result.jobstatus == 1) {
 																										  //debugger;
 																											trafficTypeCount++;
-																											if(trafficeTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
+																											if(trafficTypeCount == 3) //3 traffic types(Public, Management, Guest) have been added to this physical network
 																											  afterCreateZonePhysicalNetworkTrafficTypes(newPhysicalnetwork);
 																										}
 																										else if (result.jobstatus == 2) {
