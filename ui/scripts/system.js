@@ -1581,7 +1581,37 @@
                           poll: pollAsyncJobResult
                         }
                       },      
-
+											
+											'destroy': {
+												label: 'Destroy router',
+												messages: {
+													confirm: function(args) {
+														return 'Are you sure you want to destroy router?';
+													},
+													notification: function(args) {
+														return 'Destroy router';
+													}
+												},
+												action: function(args) {
+													$.ajax({
+														url: createURL("destroyRouter&id=" + args.context.routers[0].id),
+														dataType: "json",
+														async: true,
+														success: function(json) {
+															var jid = json.destroyrouterresponse.jobid;
+															args.response.success({
+																_custom: {
+																	jobId: jid												
+																}
+															});
+														}
+													});
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}
+											},
+																						
                       changeService: {
                         label: 'Change service offering',
                         messages: {
@@ -7320,6 +7350,7 @@
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
+			allowedActions.push("destroy");
       allowedActions.push("changeService");
     }
     return allowedActions;
