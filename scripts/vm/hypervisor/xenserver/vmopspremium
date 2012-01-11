@@ -33,8 +33,9 @@ def forceShutdownVM(session, args):
 def create_privatetemplate_from_snapshot(session, args):
     templatePath = args['templatePath']
     snapshotPath = args['snapshotPath']
+    tmpltLocalDir = args['tmpltLocalDir']
     try:
-        cmd = ["bash", "/opt/xensource/bin/create_privatetemplate_from_snapshot.sh",snapshotPath, templatePath]
+        cmd = ["bash", "/opt/xensource/bin/create_privatetemplate_from_snapshot.sh",snapshotPath, templatePath, tmpltLocalDir]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
