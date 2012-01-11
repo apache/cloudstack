@@ -721,10 +721,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         // Since it's non-conserve mode, only one service should used for IP
         if (services.size() != 1) {
-            throw new CloudRuntimeException("There are multiply services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterException("There are multiply services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
-            throw new CloudRuntimeException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
+            throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
         }
         return true;
     }
@@ -758,7 +758,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 //We don't support multiply providers for one service now
                 if (!provider.equals(curProvider)) {
-                    throw new CloudRuntimeException("There would be multiply providers for IP " + ip.getAddress() + " with the new network offering!");
+                    throw new InvalidParameterException("There would be multiply providers for IP " + ip.getAddress() + " with the new network offering!");
                 }
             }
         }
@@ -780,11 +780,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Since IP already has service to bind with, the oldProvider can't be null
         Set<Provider> newProviders = serviceToProviders.get(service);
         if (newProviders == null || newProviders.isEmpty()) {
-            throw new CloudRuntimeException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
+            throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
         if (!oldProvider.equals(newProvider)) {
-            throw new CloudRuntimeException("There would be multiply providers for IP " + publicIp.getAddress() + "!");
+            throw new InvalidParameterException("There would be multiply providers for IP " + publicIp.getAddress() + "!");
         }
         return true;
     }
