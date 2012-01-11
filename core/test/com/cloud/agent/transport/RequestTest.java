@@ -124,7 +124,7 @@ public class RequestTest extends TestCase {
     public void testDownload() {
         s_logger.info("Testing Download answer");
         VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
-                HypervisorType.KVM);
+                HypervisorType.KVM, null);
         DownloadCommand cmd = new DownloadCommand("secUrl", template, 30000000l);
         Request req = new Request(1, 1, cmd, true);
 

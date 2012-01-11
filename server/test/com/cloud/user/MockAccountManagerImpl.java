@@ -18,8 +18,11 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 
 @Local(value = { AccountManager.class, AccountService.class })
@@ -296,5 +299,26 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public ListProjectResourcesCriteria buildACLSearchParameters(Account caller, Long domainId, boolean isRecursive, String accountName, Long projectId, List<Long> permittedAccounts, boolean listAll,
+            Long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

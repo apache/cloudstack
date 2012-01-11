@@ -1,5 +1,6 @@
 package com.cloud.network;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,6 +12,7 @@ import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -734,5 +736,47 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Service> listNetworkOfferingServices(long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean checkIpForService(IPAddressVO ip, Service service) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }
