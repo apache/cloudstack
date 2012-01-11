@@ -473,7 +473,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     private boolean isNetscalerDevice(String deviceName) {
