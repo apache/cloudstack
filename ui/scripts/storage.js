@@ -169,7 +169,7 @@
 							}
 						}
 											
-            var apiCmd = "listVolumes&page=" + args.page + "&pagesize=" + pageSize+ array1.join("");
+            var apiCmd = "listVolumes&listAll=true&page=" + args.page + "&pagesize=" + pageSize+ array1.join("");
             if(args.context != null) {
               if("instances" in args.context) {
                 apiCmd += "&virtualMachineId=" + args.context.instances[0].id;
@@ -908,7 +908,7 @@
 							}
 						}
 											
-            var apiCmd = "listSnapshots&page=" + args.page + "&pagesize=" + pageSize + array1.join("");
+            var apiCmd = "listSnapshots&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("");
             if(args.context != null) {
               if("volumes" in args.context) {
                 apiCmd += "&volumeid=" + args.context.volumes[0].id;
