@@ -714,11 +714,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		/*get pifs from bridge*/
 		String pubPif = null;
 		String privPif = null;
+		String vlan = null;
 		if (_publicBridgeName != null) {
-			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");			
+			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");		
+			vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pubPif);
+			if (  vlan != null && !vlan.isEmpty() ) {
+				pubPif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pubPif + " | awk {'print $2'}");
+			}
 		}
 		if (_guestBridgeName != null) {
 			privPif = Script.runSimpleBashScript("brctl show | grep " + _guestBridgeName + " | awk '{print $4}'");	
+			vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + privPif);
+			if (  vlan != null && !vlan.isEmpty() ) {
+				privPif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + privPif + " | awk {'print $2'}");
+			}
 		}
 		return new Pair<String, String>(privPif, pubPif);
 	}
