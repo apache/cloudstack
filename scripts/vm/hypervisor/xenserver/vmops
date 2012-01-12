@@ -393,6 +393,10 @@ def egress_chain_name(vm_name):
       
 @echo
 def can_bridge_firewall(session, args):
+    try:
+        util.pread2(['ebtables', '-V'])
+    except:
+        return 'false'
     host_uuid = args.get('host_uuid')
     try:
         util.pread2(['iptables', '-N', 'BRIDGE-FIREWALL'])
