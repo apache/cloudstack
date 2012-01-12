@@ -1,6 +1,6 @@
 /**
- * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -498,15 +498,22 @@ public class JuniperSrxResource implements ServerResource {
      * The usage data will be handled on it's own socket, so usage 
      * commands will use the following methods...
      */
+    private boolean usageLogin() throws ExecutionException {
+        String xml = SrxXml.LOGIN.getXml();
+        xml = replaceXmlValue(xml, "username", _username);
+        xml = replaceXmlValue(xml, "password", _password);
+        return sendUsageRequestAndCheckResponse(SrxCommand.LOGIN, xml);
+    }
+
     
-    private boolean openUsageSocket() {
+    private boolean openUsageSocket() throws ExecutionException {
     	try {
     		Socket s = new Socket(_ip, 3221);
     		s.setKeepAlive(true);
     		s.setSoTimeout(_timeoutInSeconds * 1000);
     		_UsagetoSrx = new PrintWriter(s.getOutputStream(), true);
     		_UsagefromSrx = new BufferedReader(new InputStreamReader(s.getInputStream()));
-    		return true;
+    		return usageLogin();
     	} catch (IOException e) {
     		s_logger.error(e);
     		return false;
@@ -530,10 +537,6 @@ public class JuniperSrxResource implements ServerResource {
         }
     }
     
-    private String sendUsageRequest(String xmlRequest) throws ExecutionException {
-    	return sendRequestPrim(_UsagetoSrx, _UsagefromSrx, xmlRequest);
-    }
-
     /*
      * Commit/rollback
      */
@@ -2960,6 +2963,10 @@ public class JuniperSrxResource implements ServerResource {
     private String sendRequest(String xmlRequest) throws ExecutionException {
     	return sendRequestPrim(_toSrx, _fromSrx, xmlRequest);
     }
+    
+    private String sendUsageRequest(String xmlRequest) throws ExecutionException {
+    	return sendRequestPrim(_UsagetoSrx, _UsagefromSrx, xmlRequest);
+    }
 
     private boolean checkResponse(String xmlResponse, boolean errorKeyAndValue, String key, String value) {
         if (!xmlResponse.contains("authentication-response")) {
@@ -3035,6 +3042,50 @@ public class JuniperSrxResource implements ServerResource {
         String xmlResponse = sendRequest(xmlRequest);
         return checkResponse(xmlResponse, errorKeyAndValue, key, value);
     }
+    
+    private boolean sendUsageRequestAndCheckResponse(SrxCommand command, String xmlRequest, String... keyAndValue) throws ExecutionException {                                                            
+        boolean errorKeyAndValue = false;                                                                                                                                                                 
+        String key;                                                                                                                                                                                       
+        String value;                                                                                                                                                                                     
+                                                                                                                                                                                                          
+        switch (command) {                                                                                                                                                                                
+                                                                                                                                                                                                          
+        case LOGIN:                                                                                                                                                                                       
+            key = "status";                                                                                                                                                                               
+            value = "success";                                                                                                                                                                            
+            break;                                                                                                                                                                                        
+                                                                                                                                                                                                          
+        case OPEN_CONFIGURATION:                                                                                                                                                                          
+        case CLOSE_CONFIGURATION:                                                                                                                                                                         
+            errorKeyAndValue = true;                                                                                                                                                                      
+            key = "error";                                                                                                                                                                                
+            value = null;                                                                                                                                                                                 
+            break;                                                                                                                                                                                        
+                                                                                                                                                                                                          
+        case COMMIT:                                                                                                                                                                                      
+            key = "commit-success";                                                                                                                                                                       
+            value = null;                                                                                                                                                                                 
+            break;                                                                                                                                                                                        
+                                                                                                                                                                                                          
+        case CHECK_IF_EXISTS:                                                                                                                                                                             
+        case CHECK_IF_IN_USE:                                                                                                                                                                             
+            assert (keyAndValue != null && keyAndValue.length == 2) : "If the SrxCommand is " + command + ", both a key and value must be specified.";                                                    
+                                                                                                                                                                                                          
+            key = keyAndValue[0];                                                                                                                                                                         
+            value = keyAndValue[1];                                                                                                                                                                       
+            break;                                                                                                                                                                                        
+                                                                                                                                                                                                          
+        default:                                                                                                                                                                                          
+            key = "load-success";                                                                                                                                                                         
+            value = null;                                                                                                                                                                                 
+            break;                                                                                                                                                                                        
+                                                                                                                                                                                                          
+        }                                                                                                                                                                                                 
+                                                                                                                                                                                                          
+        String xmlResponse = sendUsageRequest(xmlRequest);                                                                                                                                                
+        return checkResponse(xmlResponse, errorKeyAndValue, key, value);                                                                                                                                  
+    }                                                                                                                                                                                                     
+
 
     /*
      * XML utils
