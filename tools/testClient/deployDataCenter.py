@@ -195,7 +195,6 @@ class deployDataCenters():
         for zone in zones:
             '''create a zone'''
             createzone = createZone.createZoneCmd()
-            createzone.guestcidraddress = zone.guestcidraddress
             createzone.dns1 = zone.dns1
             createzone.dns2 = zone.dns2
             createzone.internaldns1 = zone.internaldns1
