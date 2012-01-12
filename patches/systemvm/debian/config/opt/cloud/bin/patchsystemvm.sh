@@ -1,32 +1,29 @@
 #/bin/bash
+# Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+#     
+# This software is licensed under the GNU General Public License v3 or later.
+# 
+# It is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
 
 
 
-  #
-  # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
-  # 
-  # This software is licensed under the GNU General Public License v3 or later.
-  # 
-  # It is free software: you can redistribute it and/or modify
-  # it under the terms of the GNU General Public License as published by
-  # the Free Software Foundation, either version 3 of the License, or any later version.
-  # This program is distributed in the hope that it will be useful,
-  # but WITHOUT ANY WARRANTY; without even the implied warranty of
-  # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  # GNU General Public License for more details.
-  # 
-  # You should have received a copy of the GNU General Public License
-  # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  #
  
 
 # $Id: patchsystemvm.sh 10800 2010-07-16 13:48:39Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x/java/scripts/vm/hypervisor/xenserver/prepsystemvm.sh $
 
 #set -x
 logfile="/var/log/patchsystemvm.log"
-#
 # To use existing console proxy .zip-based package file
-#
 patch_console_proxy() {
    local patchfile=$1
    rm /usr/local/cloud/systemvm -rf

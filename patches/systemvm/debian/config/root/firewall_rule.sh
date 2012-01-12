@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-#
-# Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
-# 
+# Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+#     
 # This software is licensed under the GNU General Public License v3 or later.
 # 
 # It is free software: you can redistribute it and/or modify
@@ -14,10 +13,8 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+# 
 # firewall_rule.sh -- allow some ports / protocols to vm instances
-#
-#
 # @VERSION@
 
 source /root/func.sh
