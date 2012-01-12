@@ -414,7 +414,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         _accountMgr.checkAccess(caller, null, rule);
 
-        return revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply);
+        if(!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)){
+        	throw new CloudRuntimeException("Failed to delete port forwarding rule");
+        }
+        return true;
     }
 
     private boolean revokePortForwardingRuleInternal(long ruleId, Account caller, long userId, boolean apply) {
@@ -446,7 +449,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         _accountMgr.checkAccess(caller, null, rule);
 
-        return revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply);
+        if(!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)){
+        	throw new CloudRuntimeException("Failed to revoke forwarding rule");
+        }
+        return true;
     }
 
     private boolean revokeStaticNatRuleInternal(long ruleId, Account caller, long userId, boolean apply) {
@@ -781,13 +787,19 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "applying port forwarding rule", async = true)
     public boolean applyPortForwardingRules(long ipId, Account caller) throws ResourceUnavailableException {
-        return applyPortForwardingRules(ipId, false, caller);
+        if(!applyPortForwardingRules(ipId, false, caller)){
+        	throw new CloudRuntimeException("Failed to apply port forwarding rule");
+        }
+        return true;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "applying static nat rule", async = true)
     public boolean applyStaticNatRules(long ipId, Account caller) throws ResourceUnavailableException {
-        return applyStaticNatRules(ipId, false, caller);
+        if(!applyStaticNatRules(ipId, false, caller)){
+        	throw new CloudRuntimeException("Failed to apply static nat rule");
+        }
+        return true;
     }
 
     @Override
