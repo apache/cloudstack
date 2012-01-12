@@ -1,3 +1,18 @@
+# Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+#     
+# This software is licensed under the GNU General Public License v3 or later.
+# 
+# It is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones)
     VALUES (1, 'routing', 'DomR Template', 0, now(), 'ext3', 0, 64, 1, 'http://download.cloud.com/templates/builtin/a88232bf-6a18-38e7-aeee-c1702725079f.qcow2.bz2', 'e39c55e93ae96bd43bfd588ca6ee3269', 'DomR Template', 0, 'QCOW2', 21, 0, 1);
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones)
