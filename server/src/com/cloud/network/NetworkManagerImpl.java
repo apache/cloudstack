@@ -4321,9 +4321,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             //add security group provider to the physical network
             addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
-            
-            //add control traffic type
-            addTrafficTypeToPhysicalNetwork(pNetwork.getId(), TrafficType.Control.toString(), null, null, null, null, null);
 
             txn.commit();
             return pNetwork;
