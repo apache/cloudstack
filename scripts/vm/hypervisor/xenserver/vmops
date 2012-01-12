@@ -445,14 +445,6 @@ def default_ebtables_rules():
     except:
         util.SMlog('Chain DEFAULT_EBTABLES already exists')
 
-    #deny traffic from vms into hypervisor. Note: does not protect from vms in other pods
-    try:
-        util.pread2(['ebtables', '-D',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
-    except:
-        pass
-
-    util.pread2(['ebtables', '-A',  'INPUT', '-s', '6:0:0:0:0:0/ff:0:0:0:0:0', '-j', 'DROP'])
-    
 
 @echo
 def allow_egress_traffic(session):
