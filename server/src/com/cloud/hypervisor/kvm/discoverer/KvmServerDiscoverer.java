@@ -242,6 +242,13 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			    cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
 			    _clusterDao.update(clusterId, cluster);
 			}
+			
+			//save user name and password
+			_hostDao.loadDetails(connectedHost);
+			Map<String, String> hostDetails = connectedHost.getDetails();
+			hostDetails.put("password", password);
+			hostDetails.put("username", username);
+			_hostDao.saveDetails(connectedHost);
 			return resources;
 		} catch (DiscoveredWithErrorException e){ 
 			throw e;

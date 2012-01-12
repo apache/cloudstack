@@ -17,6 +17,7 @@
  */
 package com.cloud.resource;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -138,6 +139,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.sshException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -1040,8 +1043,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         HostVO host = _hostDao.findById(hostId);
         MaintainAnswer answer = (MaintainAnswer) _agentMgr.easySend(hostId, new MaintainCommand());
         if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to put host in maintainance mode: " + hostId);
-            return false;
+            s_logger.warn("Unable to send MaintainCommand to host: " + hostId);
         }
         
         try {
@@ -1805,6 +1807,29 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		try {
 			resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
 			_agentMgr.pullAgentOutMaintenance(hostId);
+			
+			//for kvm, need to log into kvm host, restart cloud-agent
+			if (host.getHypervisorType() == HypervisorType.KVM) {
+				_hostDao.loadDetails(host);
+				String password = host.getDetail("password");
+				String username = host.getDetail("username");
+				if (password == null || username == null) {
+					s_logger.debug("Can't find password/username");
+					return false;
+				}
+				com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
+				if (connection == null) {
+					s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
+					return false;
+				}
+				
+				try {
+					SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloud-agent restart");
+				} catch (sshException e) {
+					return false;
+				}
+			}
+			
 			return true;
 		} catch (NoTransitionException e) {
 			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);

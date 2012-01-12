@@ -43,6 +43,8 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ShutdownCommand;
@@ -476,6 +478,11 @@ public class Agent implements HandlerFactory, IAgentControl {
                         cancelTasks();
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
+                    } else if (cmd instanceof MaintainCommand) {
+                    	  s_logger.debug("Received maintainCommand" );
+                          cancelTasks();
+                          _reconnectAllowed = false;
+                          answer = new MaintainAnswer((MaintainCommand)cmd);
                     } else if (cmd instanceof AgentControlCommand) {
                         answer = null;
                         synchronized (_controlListeners) {
