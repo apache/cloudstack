@@ -552,7 +552,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
             //FIXME: take a global database lock here for safety. 
-            Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
+            Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then rm -f ~/.ssh/id_rsa ; fi; ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -q");
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
             try {
