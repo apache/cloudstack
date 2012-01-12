@@ -54,6 +54,7 @@ class DBDeployer(object):
     encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
+    tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
 
     def preRun(self):
         def backUpDbDotProperties():
@@ -75,6 +76,8 @@ class DBDeployer(object):
                 os.remove(copyPath)
         
         cleanOrRecoverDbDotProperties()
+        if os.path.exists(self.tmpMysqlFile):
+            os.remove(self.tmpMysqlFile)
                 
         
     def info(self, msg, result=None):
@@ -122,45 +125,19 @@ class DBDeployer(object):
         
         try:
             conn = MySQLdb.connect(**kwargs)
+            conn.close()
         except:
             self.errorAndExit("Connect to mysqld failed, please make sure mysqld is running.\nYou may start it by: service mysqld start")
-        
-        currentStmt = ''
+
         try:
-            cur = conn.cursor()
-            import re
-            exp = re.compile("DELIMITER (.*)$",re.M)
-            pairs = [";"]+[x.strip() for x in exp.split(text)]
-            delims = []
-            chunks = []
-            while pairs:
-                delims.append( pairs[0] )
-                chunks.append( pairs[1] )
-                pairs = pairs[2:]
-            
-            for delim,chunk in zip(delims,chunks):
-                for stmt in chunk.split(delim):
-                    stmt = stmt.strip()
-                    if not stmt: continue
-                    if self.isDebug: self.debug(stmt)
-                    currentStmt = stmt
-                    cur.execute(stmt)
-                    
-            cur.close()
-            conn.commit()
-            conn.close()
+            mysqlCmds = ['mysql', '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
+            if kwargs.has_key['paswd']:
+                mysqlCmds.append('--password=%s'%kwargs['passwd'])
+            file(self.tmpMysqlFile, 'w').write(text)
+            mysqlCmds.append('<')
+            mysqlCmds.append(self.tmpMysqlFile)
+            runCmd(mysqlCmds)
         except Exception, e:
-            lineNum = 'unknown'
-            try:
-                if os.path.isfile(table):
-                    lines = file(table).readlines()
-                    for l in lines:
-                        if currentStmt in l:
-                            lineNum = int(lines.index(l) + 1)
-                            break
-            except:
-                lineNum = 'unknown'
-            
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
 table:
@@ -169,13 +146,10 @@ table:
 Error:
 %s
 
-Sql text(Line number: %s):
-%s
-
 Sql parameters:
 %s
 ----------------------------------------------------------------------
-            '''%(table, e.__str__(), lineNum, currentStmt, kwargs)
+            '''%(table, e.__str__(), kwargs)
             self.errorAndExit(err)
         
     def errorAndExit(self, msg):
