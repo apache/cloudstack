@@ -9,7 +9,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
@@ -65,7 +64,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }

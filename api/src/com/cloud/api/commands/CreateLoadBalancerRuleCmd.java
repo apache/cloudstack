@@ -31,6 +31,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,6 +40,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -66,7 +69,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     private Integer privatePort;
 
     @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, description="public ip address id from where the network traffic will be load balanced from")
     private Long publicIpId;
     
     @IdentityMapper(entityTableName="data_center")
@@ -88,6 +91,10 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
+    
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The guest network this rule will be created for")
+    private Long networkId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -114,12 +121,52 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
     
     public Long getSourceIpAddressId() {
-        IpAddress ipAddr = _networkService.getIp(publicIpId);
-        if (ipAddr == null || !ipAddr.readyToUse()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+    	if (publicIpId != null) {
+    		IpAddress ipAddr = _networkService.getIp(publicIpId);
+	        if (ipAddr == null || !ipAddr.readyToUse()) {
+	            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+	        }
+    	} else if (getEntityId() != null) {
+    		LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
+    		return rule.getSourceIpAddressId();
+    	}
+    	
+    	return publicIpId;
+    }
+    
+    public Long getNetworkId() {
+        if (networkId != null) {
+            return networkId;
+        } 
+        Long zoneId = getZoneId();
+        
+        if (zoneId == null) {
+        	throw new InvalidParameterValueException("Either networkId or zoneId has to be specified");
         }
         
-        return publicIpId;
+        DataCenter zone = _configService.getZone(zoneId);
+        if (zone.getNetworkType() == NetworkType.Advanced) {
+            List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
+            if (networks.size() == 0) {
+                String domain = _domainService.getDomain(getDomainId()).getName();
+                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
+            }
+            
+            if (networks.size() < 1) {
+            	throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+            } else if (networks.size() > 1) {
+            	throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+            }
+            
+            return networks.get(0).getId();
+        } else {
+            Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
+            if (defaultGuestNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+            } else {
+                return defaultGuestNetwork.getId();
+            }
+        }
     }
 
     public Integer getPublicPort() {
@@ -164,7 +211,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyFirewallRules(publicIpId, callerContext.getCaller());
+                success = success && _firewallService.applyFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
             }
 
             // State might be different after the rule is applied, so get new object here
@@ -175,7 +222,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
                 setResponseObject(lbResponse);
             }
             lbResponse.setResponseName(getCommandName());
-        } finally {
+        } catch (Exception ex) {
+        	s_logger.warn("Failed to create LB rule due to exception ", ex);
+        }finally {
             if (!success || rule == null) {
                 
                 if (getOpenFirewall()) {
@@ -222,21 +271,18 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     public long getAccountId() {  
         if (publicIpId != null)
             return _networkService.getIp(getSourceIpAddressId()).getAccountId();
-        Account account = UserContext.current().getCaller();
-        if ((account == null) ) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
+        
+        Account account = null;
+        if ((domainId != null) && (accountName != null)) {
+            account = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+            if (account != null) {
+                return account.getId();
+            } else {
+                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
             }
+        } else {
+            throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or ipAddressId");
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     public long getDomainId() {

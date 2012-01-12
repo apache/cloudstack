@@ -39,6 +39,7 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -46,15 +47,19 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.LBStickinessPolicyVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -78,6 +83,7 @@ import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -150,6 +156,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     FirewallRulesDao _firewallDao;
     @Inject
     DomainService _domainMgr;
+    @Inject
+    ConfigurationManager _configMgr;
 
     private String getLBStickinessCapability(long networkid) {
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = _networkMgr.getNetworkCapabilities(networkid);
@@ -493,7 +501,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         _accountMgr.checkAccess(caller, null, true, rule);
 
-
         boolean result = deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId());
         if(!result){
     		throw new CloudRuntimeException("Unable to remove load balancer rule " + loadBalancerId);
@@ -558,6 +565,28 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         
         _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
+        
+        if (success) {
+        	Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
+        	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        	if (off.getElasticLb()) {
+                //release elastic Ip
+        		//1) Check if there are any firewall rules left for the IP address
+        		long rulesCount = _firewallDao.countRulesByIpId(lb.getSourceIpAddressId());
+        		if (rulesCount > 0) {
+        			s_logger.warn("Unable to release elastic ip address id=" + lb.getSourceIpAddressId() + " as it has " + rulesCount + " firewall rules");
+        			success = false;
+        		} else {
+        			if (!_networkMgr.releasePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current().getCallerUserId(), caller)) {
+            			s_logger.warn("Unable to release elastic ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+        				success = false;
+        			} else {
+            			s_logger.warn("Successfully released elastic ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+        			}
+        		}
+        	}
+        }
+        
         if (success) {
             s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         }
@@ -565,10 +594,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return success;
     }
 
-    @Override @DB
+    @Override 
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb,  boolean openFirewall) throws NetworkRuleConflictException, InsufficientAddressCapacityException {
-        UserContext caller = UserContext.current();
+        Account lbOwner = _accountMgr.getAccount(lb.getEntityOwnerId());
     
         int defPortStart = lb.getDefaultPortStart();
         int defPortEnd = lb.getDefaultPortEnd();
@@ -584,43 +613,76 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         
         Long ipAddrId = lb.getSourceIpAddressId();
-
-        IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
+        IPAddressVO ipAddressVo = null;
+        if (ipAddrId != null) {
+             ipAddressVo = _ipAddressDao.findById(ipAddrId);
+            
+            // Validate ip address
+            if (ipAddressVo == null) {
+                throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + " doesn't exist in the system");
+            } else if (ipAddressVo.isOneToOneNat()) {
+                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddressVo.getAddress());
+            } 
+            
+            _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
+        }
         
-        // Validate ip address
-        if (ipAddress == null) {
-            throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + " doesn't exist in the system");
-        } else if (ipAddress.isOneToOneNat()) {
-            throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddress.getAddress());
-        } 
-        
-        _networkMgr.checkIpForService(ipAddress, Service.Lb);
-        
-        LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
+        LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
         if (result == null){
+        	Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
+        	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        	if (off.getElasticLb()) {
+        		if (ipAddressVo != null) {
+	        		throw new InvalidParameterValueException("Can't specify ipAddressId when create LB in the network with LB capability " + Capability.ElasticLb.getName());
+	        	}
+	        	 
+	        	IpAddress ip = null;
+	        	try {
+	        		s_logger.debug("Allocating elastic IP address for load balancer rule...");
+	        		//allocate ip
+	        		ip = _networkMgr.allocateIP(lb.getNetworkId(), lbOwner);
+	        		//apply ip associations
+	        		ip = _networkMgr.associateIP(ip.getId());
+	        	} catch (ResourceAllocationException ex) {
+	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+	        	} catch (ConcurrentOperationException ex) {
+	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+	        	} catch (ResourceUnavailableException ex) {
+	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+	        	}
+	        	
+	        	if (ip == null) {
+	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip");
+	        	}
+	        	
+	        	lb.setSourceIpAddressId(ip.getId());
+        	}
+        	
             result = createLoadBalancer(lb, openFirewall);
-        } 
-    	if(result == null){
+        }
+        
+    	if (result == null){
     		throw new CloudRuntimeException("Failed to create load balancer rule: "+lb.getName());
     	}
+    	
         return result;
     }
     
     @DB
     public LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException {
-        long ipId = lb.getSourceIpAddressId();
         UserContext caller = UserContext.current();
         int srcPortStart = lb.getSourcePortStart();
         int defPortStart = lb.getDefaultPortStart();
         int srcPortEnd = lb.getSourcePortEnd();
+        long sourceIpId = lb.getSourceIpAddressId();
         
-        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
+        IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
         Long networkId = ipAddr.getSourceNetworkId();
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + sourceIpId);
         } else if (ipAddr.isOneToOneNat()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule; ip id=" + ipId + " has static nat enabled");
+            throw new InvalidParameterValueException("Unable to create load balancer rule; ip id=" + sourceIpId + " has static nat enabled");
         }                 
         
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), Purpose.LoadBalancing, FirewallRuleType.User);
@@ -628,7 +690,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
          networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
+            throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + sourceIpId + " is not associated with any network");
 
         }
         NetworkVO network = _networkDao.findById(networkId);
@@ -650,7 +712,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         newRule = _lbDao.persist(newRule);
         
         if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null, newRule.getId());
+            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null, newRule.getId());
         }
 
         boolean success = true;
@@ -660,7 +722,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + ipId + ", public port " + srcPortStart + ", private port " + defPortStart + " is added successfully.");
+            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port " + srcPortStart + ", private port " + defPortStart + " is added successfully.");
             UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
@@ -727,10 +789,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 txn.start();
                 if (lb.getState() == FirewallRule.State.Revoke) {
                     _lbDao.remove(lb.getId());
-                    s_logger.warn("LB " + lb.getId() + " is successfully removed");
+                    s_logger.debug("LB " + lb.getId() + " is successfully removed");
                 } else if (lb.getState() == FirewallRule.State.Add) {
                     lb.setState(FirewallRule.State.Active);
-                    s_logger.warn("LB rule " + lb.getId() + " state is set to Active");
+                    s_logger.debug("LB rule " + lb.getId() + " state is set to Active");
                     _lbDao.persist(lb);
                 }
 

@@ -144,7 +144,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     		Network network = _networkService.getNetwork(getNetworkId());
             return network.getAccountId();
     	}
-
     }
 
     @Override
@@ -193,7 +192,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         UserContext.current().setEventDetails("Ip Id: " + getEntityId());
-        IpAddress result = _networkService.associateIP(this);
+        IpAddress result = _networkService.associateIP(getEntityId());
         if (result != null) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
             ipResponse.setResponseName(getCommandName());

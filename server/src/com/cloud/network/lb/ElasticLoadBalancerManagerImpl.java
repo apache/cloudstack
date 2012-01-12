@@ -75,6 +75,8 @@ import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -589,22 +591,11 @@ public class ElasticLoadBalancerManagerImpl implements
     }
     
     @DB
-    public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
-    	if (lb.getZoneId() == null) {
-    		throw new InvalidParameterValueException("zoneId is required parameter when LB service provider is " + Network.Provider.ElasticLoadBalancerVm.getName());
-    	}
-    	
-        //TODO: this only works in the guest network in Basic zone. Handle the public network case also.
-    	List<NetworkVO> networks = _networkDao.listByZoneAndTrafficType(lb.getZoneId(), TrafficType.Guest);
-    	if (networks.isEmpty()) { 
-    		s_logger.warn("Unable to find network with traffic type " + TrafficType.Guest + " in zone id=" + lb.getZoneId());
-    		return null;
-    	}
-    	
-        Network frontEndNetwork = networks.get(0);
+    public PublicIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
+        Network frontEndNetwork = _networkMgr.getNetwork(guestNetworkId);
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        PublicIp ip = _networkMgr.assignPublicIpAddress(lb.getZoneId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null);
+        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
@@ -622,26 +613,18 @@ public class ElasticLoadBalancerManagerImpl implements
        _networkMgr.releasePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
-    
-    protected NetworkVO getNetworkToDeployLb(Long ipId) {
-        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
-        Long networkId= ipAddr.getSourceNetworkId();
-        NetworkVO network=_networkDao.findById(networkId);
-
-
-        if (network.getGuestType() != Network.GuestType.Shared) {
-            s_logger.info("ELB: not handling traffic for network of type " + network.getGuestType());
-            return null;
-        }
-        return network;
-    }
 
     @Override
     @DB
-    public LoadBalancer handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException, NetworkRuleConflictException  {
-        Long ipId = lb.getSourceIpAddressId();
-        if (ipId != null && getNetworkToDeployLb(ipId) == null) {
-                return null;
+    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account account, long networkId) throws InsufficientAddressCapacityException, NetworkRuleConflictException  {
+        //this part of code is executed when the LB provider is Elastic Load Balancer vm
+    	if (!_networkMgr.isProviderSupportServiceInNetwork(lb.getNetworkId(), Service.Lb, Provider.ElasticLoadBalancerVm)) {
+    		return null;
+    	}
+    	
+    	Long ipId = lb.getSourceIpAddressId();
+        if (ipId != null) {
+            return null;
         }
         boolean newIp = false;
         account = _accountDao.acquireInLockTable(account.getId());
@@ -661,7 +644,7 @@ public class ElasticLoadBalancerManagerImpl implements
                         } 
                     } else {
                         s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
-                        PublicIp ip = allocIp(lb, account);
+                        PublicIp ip = allocDirectIp(account, networkId);
                         ipId = ip.getId();
                         newIp = true;
                     }
@@ -674,9 +657,8 @@ public class ElasticLoadBalancerManagerImpl implements
                 throw new NetworkRuleConflictException("ELB: Found existing load balancers matching requested new LB");
             }
 
-            NetworkVO network = getNetworkToDeployLb(ipId);
+            Network network = _networkMgr.getNetwork(networkId);
             IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
-            long networkId = network.getId();
             
             LoadBalancer result = null;
             try {

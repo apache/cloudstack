@@ -953,7 +953,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultSharedEIPandELBNetworkOffering, 
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities", 
                 TrafficType.Guest, 
-                false, true, null, null, true, Availability.Optional, 
+                true, true, null, null, true, Availability.Optional, 
                 null, Network.GuestType.Shared, true, false, false, false, true, true);
         		        
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);

@@ -36,7 +36,7 @@ public interface ElasticLoadBalancerManager {
             List<? extends FirewallRule> rules) 
             throws ResourceUnavailableException;
 
-    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller) throws InsufficientAddressCapacityException, NetworkRuleConflictException;
+    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller, long networkId) throws InsufficientAddressCapacityException, NetworkRuleConflictException;
     
     public void handleDeleteLoadBalancerRule(LoadBalancer lb, long callerUserId, Account caller);
 }

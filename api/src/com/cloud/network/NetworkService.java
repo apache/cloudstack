@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
@@ -48,13 +47,13 @@ public interface NetworkService {
     /**
      * Associates a public IP address for a router.
      * 
-     * @param cmd
+     * @param ipId
      *            - the command specifying ipAddress
      * @return ip address object
      * @throws ResourceAllocationException
      *             , InsufficientCapacityException
      */
-    IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     boolean disassociateIpAddress(long ipAddressId);
 

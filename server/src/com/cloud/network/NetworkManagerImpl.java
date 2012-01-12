@@ -55,7 +55,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
@@ -1031,22 +1030,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
-    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress associateIP(long ipId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
 
-        IpAddress ipToAssoc = getIp(cmd.getEntityId());
+        IpAddress ipToAssoc = getIp(ipId);
         if (ipToAssoc != null) {
             _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
-            s_logger.debug("Unable to find ip address by id: " + cmd.getEntityId());
+            s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
         }
 
         Network network = _networksDao.findById(ipToAssoc.getAssociatedWithNetworkId());
 
-        IPAddressVO ip = _ipAddressDao.findById(cmd.getEntityId());
+        IPAddressVO ip = _ipAddressDao.findById(ipId);
         boolean success = false;
         try {
             success = applyIpAssociations(network, false);
@@ -2946,17 +2945,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         applyIpAssociations(network, false, continueOnError, publicIps);
 
         for (NetworkElement ne : _networkElements) {
+        	Provider provider = Network.Provider.getProvider(ne.getName());
+        	if (provider == null) {
+        		if (ne.getName().equalsIgnoreCase("Ovs") || ne.getName().equalsIgnoreCase("BareMetal")) {
+        			continue;
+        		}
+        		throw new CloudRuntimeException("Unable to identify the provider by name " + ne.getName());
+        	}
             try {
                 boolean handled;
                 switch (purpose) {
                 case LoadBalancing:
-                    if (!(ne instanceof LoadBalancingServiceProvider)) {
+                	boolean isLbProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
+                    if (!(ne instanceof LoadBalancingServiceProvider && isLbProvider)) {
                         continue;
                     }
                     handled = ((LoadBalancingServiceProvider)ne).applyLBRules(network, (List<LoadBalancingRule>)rules);
                     break;
                 case PortForwarding:
-                    if (!(ne instanceof PortForwardingServiceProvider)) {
+                	boolean isPfProvider = isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, provider);
+                    if (!(ne instanceof PortForwardingServiceProvider && isPfProvider)) {
                         continue;
                     }
                     handled = ((PortForwardingServiceProvider)ne).applyPFRules(network, (List<PortForwardingRule>)rules);
@@ -2964,8 +2972,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 case StaticNat:
                     /* It's firewall rule for static nat, not static nat rule */
                     /* Fall through */
-                case Firewall: 
-                    if (!(ne instanceof FirewallServiceProvider)) {
+                case Firewall:
+                	boolean isFirewallProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                    if (!(ne instanceof FirewallServiceProvider && isFirewallProvider)) {
                         continue;
                     }
                     handled = ((FirewallServiceProvider)ne).applyFWRules(network, rules);
