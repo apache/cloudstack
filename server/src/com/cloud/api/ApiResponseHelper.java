@@ -2618,10 +2618,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             if (Service.Lb == service) {
                 List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
+                
                 CapabilityResponse lbIsoaltion = new CapabilityResponse();
                 lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
                 lbIsoaltion.setValue(offering.getDedicatedLB()?"dedicated":"shared");
                 lbCapResponse.add(lbIsoaltion);
+                
+                CapabilityResponse eLb = new CapabilityResponse();
+                eLb.setName(Capability.ElasticLb.getName());
+                eLb.setValue(offering.getElasticLb()?"true":"false");
+                lbCapResponse.add(eLb);
+                
                 svcRsp.setCapabilities(lbCapResponse);
             } else if (Service.SourceNat == service) {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
@@ -2636,7 +2643,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capabilities.add(redundantRouter);
                 
                 svcRsp.setCapabilities(capabilities);
-            } 
+            } else if (service == Service.StaticNat) {
+                List<CapabilityResponse> staticNatCapResponse = new ArrayList<CapabilityResponse>();
+                
+                CapabilityResponse eIp = new CapabilityResponse();
+                eIp.setName(Capability.ElasticIp.getName());
+                eIp.setValue(offering.getElasticLb()?"true":"false");
+                staticNatCapResponse.add(eIp);
+
+                svcRsp.setCapabilities(staticNatCapResponse);
+            }
 
             serviceResponses.add(svcRsp);
         }

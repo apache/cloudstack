@@ -743,7 +743,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 _lbDao.remove(newRule.getId());
                 
                 txn.commit();
-                
             }
         }
     }
