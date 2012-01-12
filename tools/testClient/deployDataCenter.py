@@ -4,13 +4,15 @@ import cloudstackException
 import cloudstackTestClient
 import sys
 import logging
-from cloudstackAPI import * 
+from cloudstackAPI import *
 from optparse import OptionParser
 
+
 class deployDataCenters():
+
     def __init__(self, cfgFile):
         self.configFile = cfgFile
-    
+
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
             return
@@ -30,11 +32,11 @@ class deployDataCenters():
             hostcmd.zoneid = zoneId
             hostcmd.hypervisor = hypervisor
             self.apiClient.addHost(hostcmd)
-            
+
     def createClusters(self, clusters, zoneId, podId):
         if clusters is None:
             return
-        
+
         for cluster in clusters:
             clustercmd = addCluster.addClusterCmd()
             clustercmd.clustername = cluster.clustername
@@ -47,9 +49,11 @@ class deployDataCenters():
             clustercmd.zoneid = zoneId
             clusterresponse = self.apiClient.addCluster(clustercmd)
             clusterId = clusterresponse[0].id
-            
-            self.addHosts(cluster.hosts, zoneId, podId, clusterId, cluster.hypervisor)
-            self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId, clusterId)
+
+            self.addHosts(cluster.hosts, zoneId, podId, clusterId,\
+                          cluster.hypervisor)
+            self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,\
+                                       clusterId)
 
     def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
         if primaryStorages is None:
@@ -64,7 +68,7 @@ class deployDataCenters():
             primarycmd.zoneid = zoneId
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
-            
+
     def createpods(self, pods, zone, zoneId):
         if pods is None:
             return
@@ -78,14 +82,15 @@ class deployDataCenters():
             createpod.zoneid = zoneId
             createpodResponse = self.apiClient.createPod(createpod)
             podId = createpodResponse.id
-            
+
             if pod.guestIpRanges is not None:
-                self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId, podId)
-                
+                self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,\
+                                        podId)
+
             self.createClusters(pod.clusters, zoneId, podId)
-            
-            
-    def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None, networkId=None):
+
+    def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None,\
+                           networkId=None):
         if ipranges is None:
             return
         for iprange in ipranges:
@@ -104,9 +109,9 @@ class deployDataCenters():
                 vlanipcmd.forvirtualnetwork = "false"
             else:
                 vlanipcmd.forvirtualnetwork = "true"
-            
+
             self.apiClient.createVlanIpRange(vlanipcmd)
-    
+
     def createSecondaryStorages(self, secondaryStorages, zoneId):
         if secondaryStorages is None:
             return
@@ -115,7 +120,7 @@ class deployDataCenters():
             secondarycmd.url = secondary.url
             secondarycmd.zoneid = zoneId
             self.apiClient.addSecondaryStorage(secondarycmd)
-            
+
     def createnetworks(self, networks, zoneId, mode):
         if networks is None:
             return
@@ -136,24 +141,17 @@ class deployDataCenters():
 
             networkcmdresponse = self.apiClient.createNetwork(networkcmd)
             networkId = networkcmdresponse.id
-            
-            self.createVlanIpRanges(mode, ipranges, zoneId, networkId=networkId)
 
-    def enablePhysicalNetwork(self, zoneid, vlan=None):
-        pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
-        pnets.zoneid = zoneid
-        pnets.state = 'Disabled'
-        pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
+            self.createVlanIpRanges(mode, ipranges, zoneId, networkId)
 
-        upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
-        upnet.state = 'Enabled'
-        upnet.id = pnetsresponse[0].id
-        ''' enable guest VLAN in Advanced mode '''
+    def createPhysicalNetwork(self, name, zoneid, vlan=None):
+        phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
+        phynet.zoneid = zoneid
+        phynet.name = name
+        phynet.state = "Enabled"
         if vlan:
-            upnet.vlan = vlan
-        upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
-
-        return pnetsresponse
+            phynet.vlan = vlan
+        return self.apiClient.createPhysicalNetwork(phynet)
 
     def configureProviders(self, phynetwrk, providers, networktype):
         pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
@@ -167,33 +165,47 @@ class deployDataCenters():
         vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
         vrprovid = vrprovresponse[0].id
 
-        #Configure VirtualRouter Element
-        vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
+        vrconfig = \
+        configureVirtualRouterElement.configureVirtualRouterElementCmd()
         vrconfig.enabled = 'true'
         vrconfig.id = vrprovid
-        vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+        vrconfigresponse = \
+        self.apiClient.configureVirtualRouterElement(vrconfig)
 
         #Enable VirtualRouter provider by default
         vrprovider = configGenerator.provider()
         vrprovider.name = 'VirtualRouter'
         providers.append(vrprovider)
 
-        #Enable additional providers in this physical network by name
         for prov in providers:
-            pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+            pnetprov = \
+            listNetworkServiceProviders.listNetworkServiceProvidersCmd()
             pnetprov.physicalnetworkid = phynetwrk[0].id
             pnetprov.name = prov.name
             pnetprov.state = 'Disabled'
             pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
 
-            upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+            upnetprov = \
+            updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
             upnetprov.id = pnetprovs[0].id
             upnetprov.state = 'Enabled'
-            upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
-            
+            upnetprovresponse = \
+            self.apiClient.updateNetworkServiceProvider(upnetprov)
+
+    def addTrafficTypes(self, physical_network_id, traffictypes=None, \
+                        network_labels=None):
+        [self.addTrafficType(physical_network_id, traffictype) for \
+         traffictype in traffictypes]
+
+    def addTrafficType(self, physical_network_id, traffictype, \
+                       network_label=None):
+        traffic_type = addTrafficType.addTrafficTypeCmd()
+        traffic_type.physicalnetworkid = physical_network_id
+        traffic_type.traffictype = traffictype
+        self.apiClient.addTrafficType(traffic_type)
+
     def createZones(self, zones):
         for zone in zones:
-            '''create a zone'''
             createzone = createZone.createZoneCmd()
             createzone.dns1 = zone.dns1
             createzone.dns2 = zone.dns2
@@ -202,37 +214,48 @@ class deployDataCenters():
             createzone.name = zone.name
             createzone.securitygroupenabled = zone.securitygroupenabled
             createzone.networktype = zone.networktype
-            
+
             zoneresponse = self.apiClient.createZone(createzone)
             zoneId = zoneresponse.id
 
-            '''enable physical networks and providers'''
-            phynetwrk = self.enablePhysicalNetwork(zoneId, zone.vlan)
-            self.configureProviders(phynetwrk, zone.providers, zone.networktype)
+            phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
+                                                   zoneId, zone.vlan)
+            if zone.networktype = "Advanced":
+                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
+                                                    "Management"])
+            elif zone.networktype = "Basic":
+                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
+                                                    "Management", "Storage"])
+
+            self.configureProviders(phynetwrk, zone.providers, \
+                                    zone.networktype)
 
             if zone.networktype == "Basic":
-                '''create the guest network from the sharednetworkoffering'''
-                listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
-                listnetworkoffering.name = "DefaultSharedNetworkOfferingWithSGService"
-                listnetworkofferingresponse = self.apiClient.listNetworkOfferings(listnetworkoffering)
+                listnetworkoffering = \
+                listNetworkOfferings.listNetworkOfferingsCmd()
+
+                listnetworkoffering.name = \
+                "DefaultSharedNetworkOfferingWithSGService"
+
+                listnetworkofferingresponse = \
+                self.apiClient.listNetworkOfferings(listnetworkoffering)
 
                 guestntwrk = configGenerator.network()
                 guestntwrk.displaytext = "guestNetworkForBasicZone"
                 guestntwrk.name = "guestNetworkForBasicZone"
                 guestntwrk.zoneid = zoneId
-                guestntwrk.networkofferingid = listnetworkofferingresponse[0].id
+                guestntwrk.networkofferingid = \
+                        listnetworkofferingresponse[0].id
                 self.createnetworks([guestntwrk], zoneId, zone.networktype)
-            
-            '''create pods'''
+
             self.createpods(zone.pods, zone, zoneId)
-            
+
             if zone.networktype == "Advanced":
-                '''create pubic network'''
-                self.createVlanIpRanges(zone.networktype, zone.ipranges, zoneId)
-           
-            '''create secondary storage'''
+                self.createVlanIpRanges(zone.networktype, zone.ipranges, \
+                                        zoneId)
+
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            
+
     def registerApiKey(self):
         listuser = listUsers.listUsersCmd()
         listuser.account = "admin"
@@ -243,23 +266,26 @@ class deployDataCenters():
         if apiKey is None:
             registerUser = registerUserKeys.registerUserKeysCmd()
             registerUser.id = userId
-            registerUserRes = self.testClient.getApiClient().registerUserKeys(registerUser)
+            registerUserRes = \
+            self.testClient.getApiClient().registerUserKeys(registerUser)
+
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
-            
+
         self.config.mgtSvr[0].port = 8080
         self.config.mgtSvr[0].apiKey = apiKey
         self.config.mgtSvr[0].securityKey = securityKey
         return apiKey, securityKey
-        
+
     def loadCfg(self):
         try:
-            self.config =  configGenerator.get_setup_config(self.configFile)
+            self.config = configGenerator.get_setup_config(self.configFile)
         except:
-            raise cloudstackException.InvalidParameterException("Failed to load cofig" + sys.exc_info())
+            raise cloudstackException.InvalidParameterException( \
+                            "Failed to load cofig" + sys.exc_info())
 
         mgt = self.config.mgtSvr[0]
-        
+
         loggers = self.config.logger
         testClientLogFile = None
         self.testCaseLogFile = None
@@ -272,7 +298,7 @@ class deployDataCenters():
                     self.testCaseLogFile = log.file
                 elif log.name == "TestResult":
                     self.testResultLogFile = log.file
-                
+
         testClientLogger = None
         if testClientLogFile is not None:
             testClientLogger = logging.getLogger("testClient")
@@ -280,45 +306,56 @@ class deployDataCenters():
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.DEBUG)
         self.testClientLogger = testClientLogger
-        
-        self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.apiKey, mgt.securityKey, logging=self.testClientLogger)
+
+        self.testClient =
+        cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, \
+                                                  mgt.apiKey, \
+                                                  mgt.securityKey, \
+                                            logging=self.testClientLogger)
         if mgt.apiKey is None:
             apiKey, securityKey = self.registerApiKey()
             self.testClient.close()
-            self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, apiKey, securityKey, logging=self.testClientLogger)
-        
+            self.testClient =
+            cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
+                                                      apiKey, securityKey, \
+                                             logging=self.testClientLogger)
+
         '''config database'''
         dbSvr = self.config.dbSvr
-        self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, dbSvr.passwd, dbSvr.db)
+        self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
+                                    dbSvr.passwd, dbSvr.db)
         self.apiClient = self.testClient.getApiClient()
-    
+
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:
             return None
-        
+
         for config in globalCfg:
             updateCfg = updateConfiguration.updateConfigurationCmd()
             updateCfg.name = config.name
             updateCfg.value = config.value
             self.apiClient.updateConfiguration(updateCfg)
-            
+
     def deploy(self):
         self.loadCfg()
         self.createZones(self.config.zones)
         self.updateConfiguration(self.config.globalConfig)
-        
-        
+
+
 if __name__ == "__main__":
-    
+
     parser = OptionParser()
-  
-    parser.add_option("-i", "--intput", action="store", default="./datacenterCfg", dest="input", help="the path where the json config file generated, by default is ./datacenterCfg")
-    
+
+    parser.add_option("-i", "--intput", action="store", \
+                      default="./datacenterCfg", dest="input", help="the path \
+                      where the json config file generated, by default is \
+                      ./datacenterCfg")
+
     (options, args) = parser.parse_args()
-    
-    deploy = deployDataCenters(options.input)    
-    deploy.deploy()   
-    
+
+    deploy = deployDataCenters(options.input)
+    deploy.deploy()
+
     '''
     create = createStoragePool.createStoragePoolCmd()
     create.clusterid = 1
@@ -326,7 +363,7 @@ if __name__ == "__main__":
     create.name = "fdffdf"
     create.url = "nfs://jfkdjf/fdkjfkd"
     create.zoneid = 2
-    
+
     deploy = deployDataCenters("./datacenterCfg")
     deploy.loadCfg()
     deploy.apiClient.createStoragePool(create)
