@@ -27,24 +27,26 @@ class CopyRightDetecter(object):
     def isCopyRightLine(self, txt):
         return False
 
+# if more than 1/2 words in one line are keyword, we treat it as copyright line
 class KeyWordCopyRightDetecter(CopyRightDetecter):
     keywords = ['Cloud.com', 'Copyright', '(C)', '2011', 'Citrix', 'Systems', 'Inc', 'All', 'rights', 'reserved', 'This', 'software', 'is', 'licensed', 'under', 'the', 'GNU', 'General', 'Public', 'License', 'v3', 'or', 'later', 'It', 'is', 'free', 'software:', 'you', 'can', 'redistribute', 'it', 'and/or', 'modify', 'it', 'under', 'the', 'terms', 'of', 'the', 'GNU', 'General', 'Public', 'License', 'as', 'published', 'by', 'the', 'Free', 'Software', 'Foundation', 'either', 'version', '3', 'of', 'the', 'License', 'or', 'any', 'later', 'version', 'This', 'program', 'is', 'distributed', 'in', 'the', 'hope', 'that', 'it', 'will', 'be', 'useful', 'but', 'WITHOUT', 'ANY', 'WARRANTY;', 'without', 'even', 'the', 'implied', 'warranty', 'of', 'MERCHANTABILITY', 'or', 'FITNESS', 'FOR', 'A', 'PARTICULAR', 'PURPOSE', 'See', 'the', 'GNU', 'General', 'Public', 'License', 'for', 'more', 'details', 'You', 'should', 'have', 'received', 'a', 'copy', 'of', 'the', 'GNU', 'General', 'Public', 'License', 'along', 'with', 'this', 'program', 'If', 'not', 'see', '<http://www.gnu.org/licenses/>']
     
     def isCopyRightLine(self, txt):
-        words = [ c.strip().strip('.').strip('\n').strip(',') for c in txt.split(" ") ]
+        words = [ c.strip().strip('.').strip('\n').strip(',').strip() for c in txt.split(" ") ]
         total = len(words)
         if total == 0: return False
         
         numKeyWord = 0
         for w in words:
+            if w == "": continue
             if w in self.keywords: numKeyWord+=1
             
-        if float(numKeyWord)/float(total) > float(1)/float(3): return True
+        if float(numKeyWord)/float(total) >= float(1)/float(2): return True
         return False
 
 copyRightDetectingFactory = {"KeyWord":KeyWordCopyRightDetecter.__name__}
 
-
+logfd = open("/tmp/addcopyright.log", 'w')
 class Logger(object):
     @staticmethod
     def info(msg):
@@ -54,9 +56,8 @@ class Logger(object):
     
     @staticmethod
     def debug(msg):
-        sys.stdout.write("DEBUG: %s"%msg)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
+        logfd.write("DEBUG: %s"%msg)
+        logfd.write("\n")
     
     @staticmethod
     def warn(msg):
@@ -124,7 +125,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         self.fileBody = file(self.targetFile).readlines()
     
     def isCommentLine(self, line):
-        if line.lstrip().startswith(self.COMMENT_NOTATION):
+        if line.strip().startswith(self.COMMENT_NOTATION):
             return True
         return False
     
@@ -132,7 +133,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         newBody = []
         removed = False
         for line in self.fileBody:
-            if self.isCommentLine(line) and self.decter.isCopyRightLine(line): removed = True; continue
+            if self.isCommentLine(line) and self.decter.isCopyRightLine(line):
+                removed = True
+                Logger.debug("remove old copyright: %s" % line)
+                continue
             newBody.append(line)
             
         self.fileBody = newBody
@@ -142,7 +146,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     def cleanBlankComment(self):
         newBody = []
         for l in self.fileBody:
-            if self.isCommentLine(l) and l.strip(self.COMMENT_NOTATION).strip().strip('\n') == "":
+            if self.isCommentLine(l) and l.strip().strip(self.COMMENT_NOTATION).strip().strip('\n') == "":
+                Logger.debug("Blank Comment: %s" % l)
                 continue
             newBody.append(l)
         self.fileBody = newBody
@@ -160,9 +165,22 @@ class SqlAdder(Adder):
     def __init__(self):
         super(SqlAdder, self).__init__()
         self.COMMENT_NOTATION = "#"
-            
 
-copyRightAdderFactory = {".sql":SqlAdder.__name__}           
+class InterpreterAdder(Adder):
+    def __init__(self):
+        super(InterpreterAdder, self).__init__()
+        self.COMMENT_NOTATION = "#"
+        
+    def pasteCopyRight(self):
+        if len(self.fileBody) > 0 and self.isCommentLine(self.fileBody[0]):
+            # Don't cover the first line of interpreter comment
+            self.fileBody = [self.fileBody[0]] + self.copyRightTxt + self.fileBody[1:]
+        else:
+            self.fileBody = self.copyRightTxt + self.fileBody
+        file(self.targetFile, 'w').write("".join(self.fileBody))
+        Logger.info("Added copyright header to %s"%self.targetFile)
+            
+copyRightAdderFactory = {".sql":SqlAdder.__name__, ".sh":InterpreterAdder.__name__, ".py":InterpreterAdder.__name__}           
 class CopyRightAdder(object):
     parser = None
     options = None
