@@ -20,15 +20,19 @@ package com.cloud.event;
 
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentLocator;
 
 public class EventUtils {
 	private static EventDao _eventDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(EventDao.class);
+	private static AccountDao _accountDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(AccountDao.class);
 
-    public static Long saveEvent(Long userId, Long accountId, String type, String description) {
+    public static Long saveEvent(Long userId, Long accountId, Long domainId, String type, String description) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
+        event.setDomainId(domainId);
         event.setType(type);
         event.setDescription(description);
         event = _eventDao.persist(event);
@@ -42,6 +46,7 @@ public class EventUtils {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
+        event.setDomainId(getDomainId(accountId));
         event.setType(type);
         event.setStartId(startEventId);
         event.setState(Event.State.Scheduled);
@@ -57,52 +62,20 @@ public class EventUtils {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
+        event.setDomainId(getDomainId(accountId));
         event.setType(type);
         event.setState(Event.State.Started);
         event.setDescription("Starting job for "+description);
         event.setStartId(startEventId);
         event = _eventDao.persist(event);
     	return event.getId();
-    }
-
-    public static Long saveStartedEvent(Long userId, Long accountId, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(Event.State.Started);
-        event.setDescription(description);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    public static Long saveEvent(Long userId, Long accountId, String level, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    public static Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event.setParameters(params);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
+    }    
 
     public static Long saveEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
+        event.setDomainId(getDomainId(accountId));
         event.setType(type);
         event.setDescription(description);
         event.setLevel(level);
@@ -111,28 +84,21 @@ public class EventUtils {
         return (event != null ? event.getId() : null);
     }
     
-    public static Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event.setParameters(params);
-        event.setStartId(startEventId);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
     public static Long saveCreatedEvent(Long userId, Long accountId, String level, String type, String description) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
+        event.setDomainId(getDomainId(accountId));
         event.setType(type);
         event.setLevel(level);
         event.setState(Event.State.Created);
         event.setDescription(description);
         event = _eventDao.persist(event);
         return event.getId();
+    }
+    
+    private static long getDomainId(long accountId){
+    	AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
+    	return account.getDomainId();
     }
 }

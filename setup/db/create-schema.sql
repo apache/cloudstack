@@ -890,6 +890,7 @@ CREATE TABLE  `cloud`.`event` (
   `description` varchar(1024) NOT NULL,
   `user_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,  
   `created` datetime NOT NULL,
   `level` varchar(16) NOT NULL,
   `start_id` bigint unsigned NOT NULL DEFAULT 0,

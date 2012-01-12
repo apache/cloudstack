@@ -28,8 +28,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -38,8 +36,6 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="event")
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
 public class EventVO implements Event, Identity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -65,17 +61,8 @@ public class EventVO implements Event, Identity {
 	@Column(name="account_id")
 	private long accountId;
 
-    @Column(name="domain_id", table="account", insertable=false, updatable=false)
+    @Column(name="domain_id")
     private long domainId;
-
-	@Column(name="account_name", table="account", insertable=false, updatable=false)
-	private String accountName;
-	
-	@Column(name="type", table="account", insertable=false, updatable=false)
-	private short accountType;
-
-	@Column(name="removed", table="account", insertable=false, updatable=false)
-	private Date removed;
 
 	@Column(name="level")
 	private String level = LEVEL_INFO;
@@ -152,11 +139,10 @@ public class EventVO implements Event, Identity {
         return domainId;
     }
 
-	@Override
-    public String getAccountName() {
-		return accountName;
+	public void setDomainId(long domainId) {
+		this.domainId = domainId;
 	}
-	
+
 	@Override
     public int getTotalSize() {
 		return totalSize;
@@ -195,11 +181,6 @@ public class EventVO implements Event, Identity {
 	
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
-	}
-
-	@Override
-	public Short getAccountType() {
-		return accountType;
 	}
 
 }

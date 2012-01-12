@@ -604,3 +604,6 @@ CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 update networks set guru_name='StorageNetworkGuru' where traffic_type='Storage';
+
+ALTER TABLE  `cloud`.`event` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
+UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from account acc where acc.id = e.account_id) where e.domain_id = 0;

@@ -40,10 +40,8 @@ public interface Event extends ControlledEntity{
     long getUserId();
     long getAccountId();
     long getDomainId();
-    String getAccountName();
     int getTotalSize();
     String getLevel();
     long getStartId();
     String getParameters();
-	Short getAccountType();
 }

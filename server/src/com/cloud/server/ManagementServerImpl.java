@@ -1410,10 +1410,13 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (listProjectResourcesCriteria != null) {
-       	 	if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-           	 	sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+        	if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+        		accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
        	 	} else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-           	 	sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+       	 		accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+       	 		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
        	 	}
         }
                 
@@ -1430,7 +1433,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchCriteria<EventVO> sc = sb.create();
         if (listProjectResourcesCriteria != null) {
-        	sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+        	sc.setJoinParameters("accountSearch","accountType", Account.ACCOUNT_TYPE_PROJECT);
         }
         
         if (!permittedAccounts.isEmpty()) {
