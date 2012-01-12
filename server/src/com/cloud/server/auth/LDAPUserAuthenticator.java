@@ -73,13 +73,17 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String useSSL = _configDao.getValue(LDAPParams.usessl.toString());
         String bindDN = _configDao.getValue(LDAPParams.dn.toString());
         String bindPasswd = _configDao.getValue(LDAPParams.passwd.toString());
-
+        
         try {
             // get all params
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, "ldap://" + url  + ":" + port);
-            if (new Boolean(useSSL) == Boolean.TRUE)env.put(Context.SECURITY_PROTOCOL, "ssl");
+            String protocol = "ldap://" ;
+            if (new Boolean(useSSL)){
+            	env.put(Context.SECURITY_PROTOCOL, "ssl");
+                protocol="ldaps://" ;
+            }
+            env.put(Context.PROVIDER_URL, protocol + url  + ":" + port);
             env.put(Context.SECURITY_PRINCIPAL, bindDN);
             env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
            // Create the initial context
