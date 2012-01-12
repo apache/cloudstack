@@ -95,9 +95,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         if(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
         	|| vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
         	
-            // for system VMs, use Vmxnet3 as default
         	if(nicDeviceType == null) {
-        		details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.Vmxnet3.toString());
+        		details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
         	} else {
         		try {
         			VirtualEthernetCardType.valueOf(nicDeviceType);

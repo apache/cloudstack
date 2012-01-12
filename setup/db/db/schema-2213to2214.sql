@@ -34,3 +34,4 @@ CREATE TABLE  `cloud`.`mshost_peer` (
   UNIQUE `i_mshost_peer__owner_peer_runid`(`owner_mshost`, `peer_mshost`, `peer_runid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT IGNORE INTO configuration (category, instance, component, name, value, description) VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.systemvm.nic.device.type', 'E1000', 'Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3');

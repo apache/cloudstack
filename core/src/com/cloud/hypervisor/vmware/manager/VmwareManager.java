@@ -10,7 +10,6 @@ import java.util.Map;
 
 //import com.cloud.cluster.CheckPointManager;
 import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.ManagedObjectReference;
@@ -25,6 +24,8 @@ public interface VmwareManager {
 	String composeWorkerName();
 	
     String getSystemVMIsoFileNameOnDatastore();
+    String getSystemVMDefaultNicAdapterType();
+    
 	void prepareSecondaryStorageStore(String strStorageUrl);
 	
 	void setupResourceStartupParams(Map<String, Object> params);

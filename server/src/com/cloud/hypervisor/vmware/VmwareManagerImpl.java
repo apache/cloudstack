@@ -54,6 +54,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
+import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.resource.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -113,6 +114,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _guestNetworkVSwitchName;
     String _serviceConsoleName;
     String _managemetPortGroupName;
+    String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
     int _maxHostsPerCluster;
@@ -218,6 +220,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         if(_managemetPortGroupName == null) {
         	_managemetPortGroupName = "Management Network";
         }
+        
+        _defaultSystemVmNicAdapterType = configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+        if(_defaultSystemVmNicAdapterType == null)
+            _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         
         _additionalPortRangeStart = NumbersUtil.parseInt(configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
         if(_additionalPortRangeStart > 65535) {
@@ -542,6 +548,11 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         String version = ComponentLocator.class.getPackage().getImplementationVersion();
         String fileName = "systemvm-" + version + ".iso";
         return fileName.replace(':', '-');
+    }
+    
+    @Override
+    public String getSystemVMDefaultNicAdapterType() {
+        return this._defaultSystemVmNicAdapterType;
     }
     
     private File getSystemVMPatchIsoFile() {
