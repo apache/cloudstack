@@ -122,16 +122,10 @@ class DBDeployer(object):
             
         kwargs['port'] = self.port
         kwargs['host'] = self.host
-        
-        try:
-            conn = MySQLdb.connect(**kwargs)
-            conn.close()
-        except:
-            self.errorAndExit("Connect to mysqld failed, please make sure mysqld is running.\nYou may start it by: service mysqld start")
 
         try:
             mysqlCmds = ['mysql', '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
-            if kwargs.has_key['paswd']:
+            if kwargs.has_key('passwd'):
                 mysqlCmds.append('--password=%s'%kwargs['passwd'])
             file(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
