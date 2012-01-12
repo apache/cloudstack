@@ -441,7 +441,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
              throw new ConfigurationException("Unable to find class " + "com.cloud.storage.JavaStorageLayer");
          }
 		 
-		 _storagePoolMgr = new KVMStoragePoolManager(_storage);
+
          
 		_virtRouterResource = new VirtualRoutingResource();
 		
@@ -659,6 +659,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		_monitor = new KVMHAMonitor(null, info[0], _heartBeatPath);
 		Thread ha = new Thread(_monitor);
 		ha.start();
+		
+		_storagePoolMgr = new KVMStoragePoolManager(_storage, _monitor);
          
          _sysvmISOPath = (String)params.get("systemvm.iso.path");
  		if (_sysvmISOPath == null) {

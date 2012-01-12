@@ -2,12 +2,16 @@ package com.cloud.agent.storage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cloud.agent.resource.computing.KVMHABase;
+import com.cloud.agent.resource.computing.KVMHABase.PoolType;
+import com.cloud.agent.resource.computing.KVMHAMonitor;
 import com.cloud.agent.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 
 public class KVMStoragePoolManager {
 	private StorageAdaptor _storageAdaptor;
+	private KVMHAMonitor _haMonitor;
 	private final Map<String, Object> _storagePools = new ConcurrentHashMap<String, Object>();
 	
 	private void addStoragePool(String uuid) {
@@ -17,8 +21,9 @@ public class KVMStoragePoolManager {
             }
         }
     }
-	public KVMStoragePoolManager(StorageLayer storagelayer) {
+	public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
 		this._storageAdaptor = new LibvirtStorageAdaptor(storagelayer);
+		this._haMonitor = monitor;
 	}
 	
 	public KVMStoragePool getStoragePool(String uuid) {
@@ -31,21 +36,20 @@ public class KVMStoragePoolManager {
 	
 	public KVMStoragePool createStoragePool(String name, String host, String path, StoragePoolType type) {
 		KVMStoragePool pool = this._storageAdaptor.createStoragePool(name, host, path, type);
-		if (type == StoragePoolType.NetworkFilesystem || type == StoragePoolType.SharedMountPoint) {
-			/*
-			  KVMHABase.NfsStoragePool pool = new KVMHABase.NfsStoragePool(spt.getUuid(),
-	                    spt.getHost(),
-	                    spt.getPath(),
-	                    _mountPoint + File.separator + spt.getUuid(),
+		if (type == StoragePoolType.NetworkFilesystem) {
+			  KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(pool.getUuid(),
+	                   	host,
+	                    path,
+	                    pool.getLocalPath(),
 	                    PoolType.PrimaryStorage);
-	            _monitor.addStoragePool(pool);
-	            */
+			  _haMonitor.addStoragePool(nfspool);
 		}
 		addStoragePool(pool.getUuid());
 		return pool;
 	}
 	
 	public boolean deleteStoragePool(String uuid) {
+		_haMonitor.removeStoragePool(uuid);
 		 this._storageAdaptor.deleteStoragePool(uuid);
 		 _storagePools.remove(uuid);
 		 return true;

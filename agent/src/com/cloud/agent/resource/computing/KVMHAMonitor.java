@@ -19,18 +19,15 @@
 package com.cloud.agent.resource.computing;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-
 import com.cloud.utils.script.Script;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable{
 	private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
-	private Map<String, NfsStoragePool> _storagePool = new HashMap<String, NfsStoragePool>();
+	private Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<String, NfsStoragePool>();
 	
 	private String _hostIP; /*private ip address*/
 
@@ -49,9 +46,9 @@ public class KVMHAMonitor extends KVMHABase implements Runnable{
 		}
 	}
 	
-	public void removeStoragePool(NfsStoragePool pool) {
+	public void removeStoragePool(String uuid) {
 		synchronized (_storagePool) {
-			this._storagePool.remove(pool._poolUUID);
+			this._storagePool.remove(uuid);
 		}
 	}
 	
@@ -76,14 +73,14 @@ public class KVMHAMonitor extends KVMHABase implements Runnable{
 					    cmd.add("-h", _hostIP);
 					    result = cmd.execute();
 					    if (result != null) {
-					        s_logger.debug("write heartbeat failed: " + result + ", retry: " + i);
+					        s_logger.warn("write heartbeat failed: " + result + ", retry: " + i);
 					    } else {
 					        break;
 					    }
 					}
 					
 					if (result != null) {
-						s_logger.debug("write heartbeat failed: " + result + "; reboot the host");
+						s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
 						Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
 						cmd.add("-i", primaryStoragePool._poolIp);
 						cmd.add("-p", primaryStoragePool._poolMountSourcePath);
