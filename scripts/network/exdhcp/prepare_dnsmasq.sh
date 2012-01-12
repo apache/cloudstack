@@ -1,30 +1,28 @@
 #!/bin/sh
+# Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+#     
+# This software is licensed under the GNU General Public License v3 or later.
+# 
+# It is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
 
 
 
-  #
-  # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
-  # 
-  # This software is licensed under the GNU General Public License v3 or later.
-  # 
-  # It is free software: you can redistribute it and/or modify
-  # it under the terms of the GNU General Public License as published by
-  # the Free Software Foundation, either version 3 of the License, or any later version.
-  # This program is distributed in the hope that it will be useful,
-  # but WITHOUT ANY WARRANTY; without even the implied warranty of
-  # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  # GNU General Public License for more details.
-  # 
-  # You should have received a copy of the GNU General Public License
-  # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  #
  
 
 
 # prepare dnsmasq on external dhcp server
 # Usage:
 # 	sh prepare_dnsmasq gateway dns self_ip
-#
 
 gateway=$1
 dns=$2
@@ -123,7 +121,6 @@ config_dnsmasq "
 # automatically added to simple names in a hosts-file."
 config_dnsmasq expand-hosts
 config_dnsmasq "
-# Set the domain for dnsmasq. this is optional, but if it is set, it
 # does the following things.
 # 1) Allows DHCP hosts to have fully qualified domain names, as long
 #     as the domain part matches this setting.
