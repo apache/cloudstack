@@ -59,11 +59,19 @@ stop() {
 	fi
 }
 
+handle_pid_file() {
+    if [ "$1" -ne 0 ] ; then
+        echo "The pid file locates at /var/run/cloud-management.pid and lock file at /var/lock/subsys/cloud-management.
+        Starting cloud-management will take care of them or you can manually clean up."
+    fi
+}
+
 # See how we were called.
 case "$1" in
     status)
 		status ${NAME}
 		RETVAL=$?
+        handle_pid_file $RETVAL
 		;;
     stop)
 		stop
