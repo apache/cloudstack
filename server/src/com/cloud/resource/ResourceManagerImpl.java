@@ -1875,6 +1875,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			s_logger.debug("Cannot find host " + hostId + ", assuming it has been deleted, skip umanage");
 			return true;
 		}
+		
+		if (host.getHypervisorType() == HypervisorType.KVM) {
+			 MaintainAnswer answer = (MaintainAnswer) _agentMgr.easySend(hostId, new MaintainCommand());
+		}
 
 		_agentMgr.disconnectWithoutInvestigation(hostId, Event.ShutdownRequested);
 		return true;
