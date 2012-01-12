@@ -283,7 +283,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             }  
             
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
-                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
+                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()) && duplicatedCidrs) {
                     throw new InvalidParameterValueException("New rule conflicts with existing rule id=" + rule.getId());
                 }
             }
