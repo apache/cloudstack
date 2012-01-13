@@ -1854,17 +1854,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         capacities = _capacityDao.search(capacitySC, null);
 
-        long provFactor = 1;
+        float provFactor = 1;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            provFactor = (long) _overProvisioningFactor;
+            provFactor = _overProvisioningFactor;
         }
         if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, storagePool.getCapacityBytes()
-                    * provFactor, capacityType);
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, (long)(storagePool.getCapacityBytes()
+                    * provFactor), capacityType);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
-            long currCapacity = provFactor * storagePool.getCapacityBytes();
+            long currCapacity = (long)(provFactor * storagePool.getCapacityBytes());
             boolean update = false;
             if (capacity.getTotalCapacity() != currCapacity) {
                 capacity.setTotalCapacity(currCapacity);
