@@ -43,7 +43,6 @@
         <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
             <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
             <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
-            <adapter name="GarbageCollecting" class="com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator"/>
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
             <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>

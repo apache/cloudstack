@@ -11,6 +11,9 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -40,6 +43,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	private final static Logger s_logger = Logger.getLogger(HyervisorTemplateAdapter.class);
 	@Inject DownloadMonitor _downloadMonitor;
 	@Inject SecondaryStorageVmManager _ssvmMgr;
+	@Inject AgentManager _agentMgr;
 	
 	private String validateUrl(String url) {
 		try {
@@ -176,7 +180,6 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
 			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
 				VMTemplateHostVO lock = _tmpltHostDao.acquireInLockTable(templateHostVO.getId());
-				
 				try {
 					if (lock == null) {
 						s_logger.debug("Failed to acquire lock when deleting templateHostVO with ID: " + templateHostVO.getId());
@@ -187,6 +190,19 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 					_usageEventDao.persist(usageEvent);					
                     templateHostVO.setDestroyed(true);
 					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
+                    String installPath = templateHostVO.getInstallPath();
+                    if (installPath != null) {
+                        Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
+
+                        if (answer == null || !answer.getResult()) {
+                            s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                        } else {
+                            _tmpltHostDao.remove(templateHostVO.getId());
+                            s_logger.debug("Deleted template at: " + installPath);
+                        }
+                    } else {
+                        _tmpltHostDao.remove(templateHostVO.getId());
+                    }
 					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
 					
 					if (templateZone != null) {
