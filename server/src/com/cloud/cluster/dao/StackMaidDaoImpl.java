@@ -175,5 +175,34 @@ public class StackMaidDaoImpl extends GenericDaoBase<CheckPointVO, Long> impleme
         }
         return l;
     }
+    
+    @Override
+    @DB
+	public List<CheckPointVO> listLeftoversByCutTime(Date cutTime, long msid) {
+    	
+    	List<CheckPointVO> l = new ArrayList<CheckPointVO>();
+    	String sql = "select * from stack_maid where created < ? and msid = ? order by msid asc, thread_id asc, seq desc";
+    	
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            String gmtCutTime = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
+            pstmt.setString(1, gmtCutTime);
+            pstmt.setLong(2, msid);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+            	l.add(toEntityBean(rs, false));
+            }
+        } catch (SQLException e) {
+        	s_logger.error("unexcpected exception " + e.getMessage(), e);
+        } catch (Throwable e) {
+        	s_logger.error("unexcpected exception " + e.getMessage(), e);
+        } finally {
+            txn.close();
+        }
+        return l;
+    }
 }
 

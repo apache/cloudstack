@@ -206,14 +206,16 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     }
     
     class CleanupTask implements Runnable {
-        
+        private Date _curDate;
         public CleanupTask() {
+        	_curDate = new Date();
         }
 
         @Override
         public void run() {
             try {
-                List<CheckPointVO> tasks = _maidDao.listCleanupTasks(_msId);
+            	List<CheckPointVO> tasks  = _maidDao.listLeftoversByCutTime(_curDate, _msId);
+            	tasks.addAll(_maidDao.listCleanupTasks(_msId));
                 
                 List<CheckPointVO> retries = new ArrayList<CheckPointVO>();
                 

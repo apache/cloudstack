@@ -75,6 +75,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.CheckPointManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
@@ -299,6 +300,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     protected ResourceManager _resourceMgr;
+    @Inject
+    protected CheckPointManager _checkPointMgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -2636,7 +2639,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	txn.start();
     	
     	boolean transitResult = false;
+    	long checkPointTaskId = -1;
     	try {
+    		List<Long> volIds = new ArrayList<Long>();
     		for (Volume volume : volumes) {
     			if (!_snapshotMgr.canOperateOnVolume((VolumeVO)volume)) {
     	    		throw new CloudRuntimeException("There are snapshots creating on this volume, can not move this volume");
@@ -2650,8 +2655,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     				s_logger.debug("Failed to set state into migrate: " + e.toString());
     				throw new CloudRuntimeException("Failed to set state into migrate: " + e.toString());
     			}
+    			volIds.add(volume.getId());
     		}
     		
+    		checkPointTaskId = _checkPointMgr.pushCheckPoint(new StorageMigrationCleanupMaid(StorageMigrationCleanupMaid.StorageMigrationState.MIGRATING, volIds));
     		transitResult = true;
     	} finally {
     		if (!transitResult) {
@@ -2708,6 +2715,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     					s_logger.debug("Failed to change volume state: " + e.toString());
     				}
     			}
+    			_checkPointMgr.popCheckPoint(checkPointTaskId);
     		} else {
     			//Need a transaction, make sure all the volumes get migrated to new storage pool
     			txn = Transaction.currentTxn();
@@ -2732,8 +2740,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 							throw new CloudRuntimeException("Failed to change volume state: " + e.toString());
 						}
     				}
-    				
     				transitResult = true;
+    				try {
+    					_checkPointMgr.popCheckPoint(checkPointTaskId);
+    				} catch (Exception e) {
+
+    				}
     			} finally {
     				if (!transitResult) {
     					txn.rollback();

@@ -45,4 +45,5 @@ public interface StackMaidDao extends GenericDao<CheckPointVO, Long> {
 	boolean takeover(long takeOverMsid, long selfId);
 	
 	List<CheckPointVO> listCleanupTasks(long selfId);
+	List<CheckPointVO> listLeftoversByCutTime(Date cutTime, long msid);
 }

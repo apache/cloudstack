@@ -2340,13 +2340,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 }
             }
-
-			// Attach each data volume to the VM, if there is a deferred attached disk
-			for (DiskDef disk : vm.getDevices().getDisks()) {
-				if (disk.isAttachDeferred()) {
-					attachOrDetachDevice(conn, true, vmName, disk.toString());
-				}
-			}
 			
 			state = State.Running;
 			return new StartAnswer(cmd);
@@ -2416,18 +2409,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				if (pool.getType() == StoragePoolType.CLVM) {
 					disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
 				} else {
-					disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
+					if (volume.getType() == Volume.Type.DATADISK) {
+						disk.defFileBasedDisk(physicalDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+					} else {
+						disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
+					}
 				}
 			}
 
-			//Centos doesn't support scsi hotplug. For other host OSes, we attach the disk after the vm is running, so that we can hotplug it.
-			if (volume.getType() == Volume.Type.DATADISK &&  diskBusType != DiskDef.diskBus.VIRTIO) {
-				disk.setAttachDeferred(true);
-			}
-
-			if (!disk.isAttachDeferred()) {
-				vm.getDevices().addDevice(disk);
-			}
+			vm.getDevices().addDevice(disk);
+			
 		}
 		
 		if (vmSpec.getType() != VirtualMachine.Type.User) {
