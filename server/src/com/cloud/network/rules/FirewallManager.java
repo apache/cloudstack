@@ -24,8 +24,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.user.Account;
 
 public interface FirewallManager extends FirewallService{
@@ -77,5 +77,4 @@ public interface FirewallManager extends FirewallService{
     boolean revokeFirewallRulesForVm(long vmId);
     
     boolean addSystemFirewallRules(IPAddressVO ip, Account acct);
-
 }

@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -49,6 +50,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -70,6 +72,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { RulesManager.class, RulesService.class })
@@ -101,6 +104,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     FirewallManager _firewallMgr;
     @Inject
     DomainManager _domainMgr;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    NicDao _nicDao;
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
@@ -1025,6 +1032,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
+            if (!handleElasticIpRelease(ipAddress)) {
+            	s_logger.warn("Failed to release elastic ip address " + ipAddress);
+            	return false;
+            }
             return true;
         } else {
             s_logger.warn("Failed to disable one to one nat for the ip address id" + ipId);
@@ -1106,4 +1117,68 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return true;
     }
+    
+    
+	@Override
+    public boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError) {
+    	boolean success = true;
+    	
+    	//enable static nat if eIp capability is supported
+    	List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
+    	for (Nic nic : nics) {
+    		Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
+    		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+    		if (offering.getElasticIp()) {
+    			try {
+    				//check if there is already static nat enabled
+    				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null) {
+    					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
+    					continue;
+    				}
+    				
+    	    		s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
+        			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
+        			if (ip == null) {
+        				s_logger.warn("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
+        				return false;
+        			}
+        			s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
+        			success = success && enableStaticNat(ip.getId(), vm.getId());
+        			if (!success) {
+        				s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
+        				handleElasticIpRelease(ip);
+        			} else {
+        				s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
+        			}
+    			} catch (Exception ex) {
+    				s_logger.warn("Failed to acquire elastic ip and enable static nat for vm " + vm + " on the network " + guestNetwork + " due to exception ", ex);
+    			} finally {
+    				if (!success && stopOnError) {
+    					return false;
+    				}
+    			}
+    		}
+    	}
+    	
+    	return success;
+    }
+	
+	protected boolean handleElasticIpRelease(IpAddress ip) {
+		boolean success = true;
+		Long networkId = ip.getAssociatedWithNetworkId();
+		if (networkId != null) {
+		    Network guestNetwork = _networkMgr.getNetwork(networkId);
+			NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+			if (offering.getElasticIp()) {
+				UserContext ctx = UserContext.current();
+				if (!_networkMgr.releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
+					s_logger.warn("Unable to release elastic ip address id=" + ip.getId());
+					success = false;
+				} else {
+					s_logger.warn("Successfully released elastic ip address id=" + ip.getId());
+				}
+			}
+		}
+		return success;
+	}
 }

@@ -71,4 +71,6 @@ public interface RulesManager extends RulesService {
     
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
+	boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError);
+
 }
