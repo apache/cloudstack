@@ -2608,10 +2608,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             updateVmStateForFailedVmCreation(vm.getId());
         }
         
-        if (!finalizeDeploy(vm, true)) {
-        	//FIXME alena - if fails, expunge the vm
-        }
-
         if (template.getEnablePassword()) {
             // this value is not being sent to the backend; need only for api display purposes
             vm.setPassword(password);
@@ -2668,7 +2664,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-        UserVmVO userVm = profile.getVirtualMachine();
+    	UserVmVO userVm = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -2677,7 +2673,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 userVm.setPrivateMacAddress(nic.getMacAddress());
             }
         }
-        _vmDao.update(userVm.getId(), userVm);
         return true;
     }
 
@@ -2749,8 +2744,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.info("Detected that ip changed in the answer, updated nic in the db with new ip " + returnedIp);
             }
         }
-
-        return true;
+        
+        //enable elastic ip for vm
+        boolean success = enableElasticIpAndStaticNatForVm(profile.getVirtualMachine(), true);
+        return success;
     }
 
     @Override
@@ -3607,7 +3604,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return vm;
     }
     
-    protected boolean finalizeDeploy(UserVm vm, boolean stopOnError) {
+    protected boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError) {
     	boolean success = true;
     	Account vmOwner = _accountMgr.getAccount(vm.getAccountId());
     	
@@ -3618,6 +3615,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
     		if (offering.getElasticIp()) {
     			try {
+    				//check if there is already static nat enabled
+    				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null) {
+    					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
+    					continue;
+    				}
+    				
     	    		s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
         			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), vmOwner, false, true);
         			if (ip == null) {
