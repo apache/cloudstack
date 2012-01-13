@@ -278,4 +278,8 @@ public interface NetworkManager extends NetworkService {
 			Capability cap, String capValue);
 
 	Provider getDefaultUniqueProviderForService(String serviceName);
+
+	IpAddress assignElasticIp(long networkId, Account owner,
+			boolean forElasticLb, boolean forElasticIp)
+			throws InsufficientAddressCapacityException;
 }

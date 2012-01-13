@@ -119,6 +119,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -1260,7 +1261,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.warn("Fail to remove vm id=" + vmId + " from load balancers as a part of expunge process");
         }
 
-        // If vm is assigned to static nat, disable static nat for the ip address
+        // If vm is assigned to static nat, disable static nat for the ip address and disassociate ip if elasticIP is enabled
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
         try {
             if (ip != null) {
@@ -1269,6 +1270,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } else {
                     s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
                     success = false;
+                }
+                
+                Long networkId = ip.getAssociatedWithNetworkId();
+                if (networkId != null) {
+                    Network guestNetwork = _networkMgr.getNetwork(networkId);
+            		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+            		if (offering.getElasticIp()) {
+            			UserContext ctx = UserContext.current();
+            			if (!_networkMgr.releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
+                			s_logger.warn("Unable to release elastic ip address id=" + ip.getId() + " as a part of vm id=" + vmId + " cleanup");
+            				success = false;
+            			} else {
+                			s_logger.warn("Successfully released elastic ip address id=" + ip.getId() + " as a part of vm id=" + vmId + " cleanup");
+            			}
+            		}
                 }
             }
         } catch (ResourceUnavailableException e) {
@@ -2591,9 +2607,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         } finally {
             updateVmStateForFailedVmCreation(vm.getId());
         }
+        
+        if (!finalizeDeploy(vm, true)) {
+        	//FIXME alena - if fails, expunge the vm
+        }
 
         if (template.getEnablePassword()) {
-            // this value is not being sent to the backend; need only for api dispaly purposes
+            // this value is not being sent to the backend; need only for api display purposes
             vm.setPassword(password);
         }
 
@@ -3585,5 +3605,42 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         s_logger.debug("Restore VM " + vmId + " with template " + root.getTemplateId() + " successfully");
         return vm;
+    }
+    
+    protected boolean finalizeDeploy(UserVm vm, boolean stopOnError) {
+    	boolean success = true;
+    	Account vmOwner = _accountMgr.getAccount(vm.getAccountId());
+    	
+    	//enable static nat if eIp capability is supported
+    	List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
+    	for (Nic nic : nics) {
+    		Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
+    		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+    		if (offering.getElasticIp()) {
+    			try {
+    	    		s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
+        			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), vmOwner, false, true);
+        			if (ip == null) {
+        				s_logger.warn("Failed to allocate elastic ip as a part of vm deployment for vm " + vm);
+        				return false;
+        			}
+        			s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
+        			success = success && _rulesMgr.enableStaticNat(ip.getId(), vm.getId());
+        			if (!success) {
+        				s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm);
+        			} else {
+        				s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
+        			}
+    			} catch (Exception ex) {
+    				s_logger.warn("Failed to finalize vm deployment for vm " + vm + " on the network " + guestNetwork + " due to exception ", ex);
+    			} finally {
+    				if (!success && stopOnError) {
+    					return false;
+    				}
+    			}
+    		}
+    	}
+    	
+    	return success;
     }
 }

@@ -5838,4 +5838,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			}
 		}
 	}
+
+	public IpAddress assignElasticIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException{
+		Network guestNetwork = getNetwork(networkId);
+    	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+    	IpAddress ip = null;
+		if ((off.getElasticLb() && forElasticLb) || (off.getElasticIp() && forElasticIp)) {
+	    	
+	    	try {
+	    		s_logger.debug("Allocating elastic IP address for load balancer rule...");
+	    		//allocate ip
+	    		ip = allocateIP(networkId, owner);
+	    		//apply ip associations
+	    		ip = associateIP(ip.getId());
+	    	} catch (ResourceAllocationException ex) {
+	    		throw new CloudRuntimeException("Failed to allocate elastic ip due to ", ex);
+	    	} catch (ConcurrentOperationException ex) {
+	    		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+	    	} catch (ResourceUnavailableException ex) {
+	    		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+	    	}
+	    	
+	    	if (ip == null) {
+	    		throw new CloudRuntimeException("Failed to allocate elastic ip");
+	    	}
+		} 
+		
+		return ip;
+	}
+	
 }

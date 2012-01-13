@@ -47,12 +47,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
@@ -627,37 +625,18 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
         }
         
+        Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
+    	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+    	if (ipAddressVo != null) {
+    		throw new InvalidParameterValueException("Can't specify ipAddressId when create LB in the network with LB capability " + Capability.ElasticLb.getName());
+    	}
+        
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
         if (result == null){
-        	Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
-        	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         	if (off.getElasticLb()) {
-        		if (ipAddressVo != null) {
-	        		throw new InvalidParameterValueException("Can't specify ipAddressId when create LB in the network with LB capability " + Capability.ElasticLb.getName());
-	        	}
-	        	 
-	        	IpAddress ip = null;
-	        	try {
-	        		s_logger.debug("Allocating elastic IP address for load balancer rule...");
-	        		//allocate ip
-	        		ip = _networkMgr.allocateIP(lb.getNetworkId(), lbOwner);
-	        		//apply ip associations
-	        		ip = _networkMgr.associateIP(ip.getId());
-	        	} catch (ResourceAllocationException ex) {
-	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
-	        	} catch (ConcurrentOperationException ex) {
-	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
-	        	} catch (ResourceUnavailableException ex) {
-	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
-	        	}
-	        	
-	        	if (ip == null) {
-	        		throw new CloudRuntimeException("Failed to allocate elastic lb ip");
-	        	}
-	        	
+        		IpAddress ip = _networkMgr.assignElasticIp(lb.getNetworkId(), lbOwner, true, false);
 	        	lb.setSourceIpAddressId(ip.getId());
         	}
-        	
             result = createLoadBalancer(lb, openFirewall);
         }
         
