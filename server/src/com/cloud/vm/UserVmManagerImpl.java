@@ -3622,7 +3622,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     				}
     				
     	    		s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
-        			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), vmOwner, false, true);
+        			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), false, true);
         			if (ip == null) {
         				s_logger.warn("Failed to allocate elastic ip as a part of vm deployment for vm " + vm);
         				return false;
