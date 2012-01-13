@@ -1935,8 +1935,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	UserVm vm = null;
         	if (vmId != null) {
         		vm = _userVmDao.findById(vmId);
+            	return _rulesMgr.enableElasticIpAndStaticNatForVm(vm, true);
         	}
-        	return _rulesMgr.enableElasticIpAndStaticNatForVm(vm, true);
+        	return true;
         } else {
         	s_logger.warn("Failed to release public ip address id=" + ipAddressId);
         	return false;
@@ -5877,6 +5878,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		} 
 		
 		return ip;
+	}
+	
+	@Override
+	public boolean handleElasticIpRelease(IpAddress ip) {
+		boolean success = true;
+		Long networkId = ip.getAssociatedWithNetworkId();
+		if (networkId != null) {
+		    Network guestNetwork = getNetwork(networkId);
+			NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+			if (offering.getElasticIp()) {
+				UserContext ctx = UserContext.current();
+				if (!releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
+					s_logger.warn("Unable to release elastic ip address id=" + ip.getId());
+					success = false;
+				} else {
+					s_logger.warn("Successfully released elastic ip address id=" + ip.getId());
+				}
+			}
+		}
+		return success;
 	}
 	
 }

@@ -282,4 +282,6 @@ public interface NetworkManager extends NetworkService {
 	IpAddress assignElasticIp(long networkId, Account owner,
 			boolean forElasticLb, boolean forElasticIp)
 			throws InsufficientAddressCapacityException;
+
+	boolean handleElasticIpRelease(IpAddress ip);
 }

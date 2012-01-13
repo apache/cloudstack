@@ -39,7 +39,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 

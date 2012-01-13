@@ -338,7 +338,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         // Check permissions
         checkIpAndUserVm(ipAddress, vm, caller);
 
-        // Verify that the ip is associated with the network and firewallService is supported for the network
+        // Verify that the ip is associated with the network and static nat service is supported for the network
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         if (networkId == null) {
             throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipId + " as ip is not associated with any network");
@@ -351,8 +351,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         Network network = _networkMgr.getNetwork(networkId);
-        if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
-            throw new InvalidParameterValueException("Unable to create static nat rule; Firewall service is not supported in network id=" + networkId);
+        if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+            throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not supported in network id=" + networkId);
         }
 
         // Verify ip address parameter
@@ -1032,7 +1032,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
-            if (!handleElasticIpRelease(ipAddress)) {
+            if (!_networkMgr.handleElasticIpRelease(ipAddress)) {
             	s_logger.warn("Failed to release elastic ip address " + ipAddress);
             	return false;
             }
@@ -1143,10 +1143,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         				return false;
         			}
         			s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
-        			success = success && enableStaticNat(ip.getId(), vm.getId());
+        			try {
+        				enableStaticNat(ip.getId(), vm.getId());
+        			} catch (Exception ex) {
+        				s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
+        				success = false;
+        			}
         			if (!success) {
         				s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
-        				handleElasticIpRelease(ip);
+        				_networkMgr.handleElasticIpRelease(ip);
         			} else {
         				s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
         			}
@@ -1163,22 +1168,4 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     	return success;
     }
 	
-	protected boolean handleElasticIpRelease(IpAddress ip) {
-		boolean success = true;
-		Long networkId = ip.getAssociatedWithNetworkId();
-		if (networkId != null) {
-		    Network guestNetwork = _networkMgr.getNetwork(networkId);
-			NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-			if (offering.getElasticIp()) {
-				UserContext ctx = UserContext.current();
-				if (!_networkMgr.releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
-					s_logger.warn("Unable to release elastic ip address id=" + ip.getId());
-					success = false;
-				} else {
-					s_logger.warn("Successfully released elastic ip address id=" + ip.getId());
-				}
-			}
-		}
-		return success;
-	}
 }

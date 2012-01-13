@@ -633,11 +633,21 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
         if (result == null){
+        	IpAddress ip = null;
         	if (off.getElasticLb()) {
-        		IpAddress ip = _networkMgr.assignElasticIp(lb.getNetworkId(), lbOwner, true, false);
+        		ip = _networkMgr.assignElasticIp(lb.getNetworkId(), lbOwner, true, false);
 	        	lb.setSourceIpAddressId(ip.getId());
         	}
-            result = createLoadBalancer(lb, openFirewall);
+        	try {
+                result = createLoadBalancer(lb, openFirewall);
+        	} catch (Exception ex) {
+        		s_logger.warn("Failed to create load balancer due to ", ex);
+        	} finally {
+        		if (result == null && ip != null) {
+        			s_logger.debug("Releasing elastic IP address " + ip + " as corresponding lb rule failed to create");
+        			_networkMgr.handleElasticIpRelease(ip);
+        		}
+        	}
         }
         
     	if (result == null){
