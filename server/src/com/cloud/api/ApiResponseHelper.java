@@ -3237,6 +3237,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lr.setQueryFilter(queryFilter);
         lr.setBindDN(bindDN);
         lr.setSearchBase(searchBase);
+        lr.setObjectName("ldapconfig");
         return lr;
     }
 
