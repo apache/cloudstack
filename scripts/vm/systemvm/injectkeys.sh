@@ -26,7 +26,7 @@
 #set -x
 
 TMP=${HOME}/tmp
-MOUNTPATH=/mnt/cloud/systemvm
+MOUNTPATH=${HOME}/systemvm_mnt
 TMPDIR=${TMP}/cloud/systemvm
 
 
@@ -39,6 +39,7 @@ inject_into_iso() {
   local newpubkey=$2
   local backup=${isofile}.bak
   local tmpiso=${TMP}/$1
+  mkdir -p $MOUNTPATH
   [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
   sudo mount -o loop $isofile $MOUNTPATH 
   [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && clean_up && return 1
