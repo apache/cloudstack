@@ -2329,7 +2329,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	protected void createVbd(Connect conn, VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException{
+		List<DiskDef> vols = new ArrayList<DiskDef>();
 		for (VolumeTO volume : vmSpec.getDisks()) {
+
 			String volPath = getVolumePath(conn, volume);
 
 			DiskDef.diskBus diskBusType = getGuestDiskModel(vmSpec.getOs());
@@ -2343,17 +2345,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 			} else {
 				int devId = (int)volume.getDeviceId();
-
+				
 				if (volume.getType() == Volume.Type.DATADISK) {
 					disk.defFileBasedDisk(volume.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 				} else {
 					disk.defFileBasedDisk(volume.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
 				}
+				vols.add(devId, disk);
+				continue;
 			}
-			
+
 			vm.getDevices().addDevice(disk);
 		}
 		
+		for (DiskDef disk : vols) {
+			vm.getDevices().addDevice(disk);
+		}
+
 		if (vmSpec.getType() != VirtualMachine.Type.User) {
 		    if (_sysvmISOPath != null) {
 		        DiskDef iso = new DiskDef();
