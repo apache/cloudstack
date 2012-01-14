@@ -111,11 +111,6 @@ public class MockStorageManagerImpl implements MockStorageManager {
     }
     @Override
     public PrimaryStorageDownloadAnswer primaryStorageDownload(PrimaryStorageDownloadCommand cmd) {
-        MockVolumeVO template = findVolumeFromSecondary(cmd.getUrl(),cmd.getSecondaryStorageUrl(), MockVolumeType.TEMPLATE);
-        if (template == null) {
-            return new PrimaryStorageDownloadAnswer("Can't find primary storage");
-        }
-        
         MockStoragePoolVO primaryStorage = _mockStoragePoolDao.findByUuid(cmd.getPoolUuid());
         if (primaryStorage == null) {
             return new PrimaryStorageDownloadAnswer("Can't find primary storage"); 
@@ -126,7 +121,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
         newVolume.setName(volumeName);
         newVolume.setPath(primaryStorage.getMountPoint() + volumeName);
         newVolume.setPoolId(primaryStorage.getId());
-        newVolume.setSize(template.getSize());
+        newVolume.setSize(1000000);
         newVolume.setType(MockVolumeType.VOLUME);
         _mockVolumeDao.persist(newVolume);
         
