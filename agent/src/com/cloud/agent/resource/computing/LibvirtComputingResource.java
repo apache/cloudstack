@@ -2375,6 +2375,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	protected void createVbd(Connect conn, VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException{
+		List<DiskDef> disks = new ArrayList<DiskDef>();
 		for (VolumeTO volume : vmSpec.getDisks()) {
 			KVMPhysicalDisk physicalDisk = null;
 			KVMStoragePool pool = null;
@@ -2415,10 +2416,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 						disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
 					}
 				}
+				
+				disks.add(devId, disk);
+				continue;
 			}
 
 			vm.getDevices().addDevice(disk);
 			
+		}
+		
+		for (DiskDef disk : disks) {
+			vm.getDevices().addDevice(disk);
 		}
 		
 		if (vmSpec.getType() != VirtualMachine.Type.User) {
