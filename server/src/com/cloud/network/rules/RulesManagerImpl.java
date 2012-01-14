@@ -358,13 +358,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         // Verify ip address parameter
         isIpReadyForStaticNat(vmId, ipAddress);
-
-        // If there is public ip address already associated with the vm, throw an exception
-        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
-
-        if (ip != null) {
-            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + vmId + " is already associated with ip id=" + ip.getId());
-        }
         
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
 
@@ -404,10 +397,16 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
                 throw new NetworkRuleConflictException("Failed to enable static nat for the ip address " + ipAddress + " as it already has LoadBalancing rules assigned");
             }
-        } 
+        } else if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
+            throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId + " as it's already assigned to antoher vm");
+        }
         
-        if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
-        	Long networkId = ipAddress.getAssociatedWithNetworkId();
+        
+        // If there is public ip address already associated with the vm, throw an exception
+        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vmId);
+        
+        if (oldIP != null) {
+            Long networkId = oldIP.getAssociatedWithNetworkId();
         	boolean reassignStaticNat = false;
     		if (networkId != null) {
     		    Network guestNetwork = _networkMgr.getNetwork(networkId);
@@ -415,17 +414,16 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     			if (offering.getElasticIp()) {
     				reassignStaticNat = true;
     			}
-			}
+    		}
     		if (!reassignStaticNat) {
-                throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId + " as it's already assigned to antoher vm");
+                throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId + " is already associated with ip id=" + oldIP.getId());
     		}
     		//unassign old static nat rule
-    		s_logger.debug("Disassociating static nat for ");
-    		if (!disableStaticNat(ipAddress.getId(), AllocatedBy.ipassoc)) {
-    			throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId);
+    		s_logger.debug("Disassociating static nat for ip " + oldIP);
+    		if (!disableStaticNat(oldIP.getId(), AllocatedBy.ipassoc)) {
+    			throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
     		}
-        }
-    		
+        }	
 	}
 
 
