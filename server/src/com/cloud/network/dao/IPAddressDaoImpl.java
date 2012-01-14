@@ -34,7 +34,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -43,7 +42,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 
 @Local(value = { IPAddressDao.class })
@@ -137,42 +135,6 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         return update(vo, sc) >= 1;
     }
 
-    /**
-     * @deprecated This method is now deprecated because vlan has been
-     *             added.  The actual method is now within NetworkManager.
-     */
-    @Deprecated
-    public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
-        sc.setParameters("vlanDbId", vlanDbId);
-        
-        Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
-
-        List<IPAddressVO> ips = this.lockRows(sc, filter, true);
-        if (ips.size() == 0) {
-            s_logger.info("Unable to get an ip address in " + vlanDbId);
-            return null;
-        }
-        
-        IPAddressVO ip = ips.get(0);
-
-        ip.setAllocatedToAccountId(accountId);
-        ip.setAllocatedTime(new Date());
-        ip.setAllocatedInDomainId(domainId);
-        ip.setSourceNat(sourceNat);
-        ip.setState(State.Allocated);
-
-        if (!update(ip.getId(), ip)) {
-            throw new CloudRuntimeException("How can I lock the row but can't update it: " + ip.getAddress());
-        }
-
-        txn.commit();
-        return ip;
-    }
-
     @Override
     public void unassignIpAddress(long ipAddressId) {
         IPAddressVO address = createForUpdate();
@@ -184,6 +146,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         address.setAssociatedWithVmId(null);
         address.setState(State.Free);
         address.setAssociatedWithNetworkId(null);
+        address.setAllocatedBy(null);
         update(ipAddressId, address);
     }
 

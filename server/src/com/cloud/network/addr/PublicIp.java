@@ -181,4 +181,9 @@ public class PublicIp implements PublicIpAddress {
 	public Long getAllocatedInDomainId() {
 		return _addr.getAllocatedInDomainId();
 	}
+	
+	@Override
+    public AllocatedBy getAllocatedBy() {
+        return _addr.getAllocatedBy();
+    }
 }

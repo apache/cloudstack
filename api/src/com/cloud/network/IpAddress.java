@@ -45,6 +45,11 @@ public interface IpAddress extends ControlledEntity{
         Free         // The IP address is ready to be allocated. 
     }
     
+    enum AllocatedBy {
+    	ipassoc,
+    	elasticip
+    }
+    
     long getDataCenterId();
 
     Ip getAddress();
@@ -77,4 +82,7 @@ public interface IpAddress extends ControlledEntity{
 	Long getAllocatedToAccountId();
 
 	Long getAllocatedInDomainId();
+
+	AllocatedBy getAllocatedBy();
+
 }

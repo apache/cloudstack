@@ -42,6 +42,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -162,7 +163,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null);
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, AllocatedBy.ipassoc);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);
             nic.setGateway(ip.getGateway());

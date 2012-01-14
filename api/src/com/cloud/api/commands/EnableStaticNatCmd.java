@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -81,7 +82,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     }
 
     @Override
-    public void execute(){ 
+    public void execute() throws ResourceUnavailableException{ 
         try {
             boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId);
             if (result) {

@@ -42,6 +42,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -173,7 +174,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            IpAddress ip = _networkService.allocateIP(getNetworkId(), _accountService.getAccount(getEntityOwnerId()));
+            IpAddress ip = _networkService.allocateIP(getNetworkId(), _accountService.getAccount(getEntityOwnerId()), AllocatedBy.ipassoc);
             if (ip != null) {
                 this.setEntityId(ip.getId());
             } else {

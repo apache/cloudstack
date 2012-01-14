@@ -36,6 +36,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
+import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -116,7 +117,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null);
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, AllocatedBy.ipassoc);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());

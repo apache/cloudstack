@@ -96,6 +96,10 @@ public class IPAddressVO implements IpAddress, Identity {
     @Column(name="physical_network_id")
     private Long physicalNetworkId;
     
+    @Column(name="allocated_by")
+	@Enumerated(value=EnumType.STRING)
+    private AllocatedBy allocatedBy;
+    
 	@Column(name="account_id")
 	@Transient
 	private Long accountId = null;
@@ -265,4 +269,13 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
+
+    @Override
+	public AllocatedBy getAllocatedBy() {
+		return allocatedBy;
+	}
+
+	public void setAllocatedBy(AllocatedBy allocatedBy) {
+		this.allocatedBy = allocatedBy;
+	}
 }

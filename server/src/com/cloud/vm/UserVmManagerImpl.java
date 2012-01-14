@@ -1264,7 +1264,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
         try {
             if (ip != null) {
-                if (_rulesMgr.disableStaticNat(ip.getId())) {
+                if (_rulesMgr.disableStaticNat(ip.getId(), null)) {
                     s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
                 } else {
                     s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");

@@ -30,6 +30,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -42,7 +43,7 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    IpAddress allocateIP(long networkId, Account ipOwner, AllocatedBy allocatedBy) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Associates a public IP address for a router.

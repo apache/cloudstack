@@ -24,6 +24,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -58,7 +59,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress allocateIP(long networkId, Account ipOwner, AllocatedBy allocatedBy) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -382,7 +383,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, AllocatedBy allocatedBy) throws InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
