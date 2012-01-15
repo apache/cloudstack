@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# Copyright (c) 2011 Citrix.  All rights reserved.
+# Copyright (c) 2012 Citrix.  All rights reserved.
 #
 """Test Information Services
 """
@@ -347,16 +347,16 @@ TEST_NETWORK_SERVICES = {
                                             "email" : "test@test.com",
                                             "firstname" : "Test",
                                             "lastname" : "User",
-                                            "username" : "testuser79",
+                                            "username" : "testuser1",
                                             "password" : "fr3sca",
                                             "zoneid" : 1,
                                             "networkofferingid" : 6,
                                         },
                             "server" :
                                     {
-                                        "template" : 256,
+                                        "template" : 206,
                                         "zoneid" : 1,
-                                        "serviceoffering" : 40,
+                                        "serviceoffering" : 1,
                                         "diskoffering" : 3,
                                         "displayname" : "testserver",
                                         "username" : "root",
@@ -365,10 +365,10 @@ TEST_NETWORK_SERVICES = {
                                         "hypervisor":'XenServer',
                                         "account":'admin',
                                         "domainid":1,
-                                        "ipaddressid":3,
+                                        "ipaddressid":10,
                                         "privateport":22,
                                         "publicport":22,
-                                        "ipaddress":'69.41.185.229',
+                                        "ipaddress":'192.168.100.250',
                                         "protocol":'TCP',
                                 },
                         "natrule" :
@@ -381,9 +381,177 @@ TEST_NETWORK_SERVICES = {
                                 {
                                     "name" : "SSH",
                                     "alg" : "roundrobin",
-                                    "privateport" : 22,
-                                    "publicport" : 22,
+                                    "privateport" : 80,
+                                    "publicport" : 80,
                                 }
 
 
+                        }
+
+TEST_SSVM_SERVICES = {
+                      "ssvm": {
+                               "id": 1,
+                               "zoneid": 1,
+                               "publicport": 22,
+                               "username":'root',
+                               "password" : 'fr3sca',
+                               },
+                      "cpvm": {
+                               "id": 2,
+                               "zoneid": 1,
+                               "publicport": 22,
+                               "username":'root',
+                               "password" : 'fr3sca',
+                               "mgmtserverIP": '192.168.100.154'
+                               },
+                      "host": {
+                               "username":'root',
+                               "password" : 'fr3sca',
+                               "publicport": 22,
+                               },
+                      }
+
+TEST_HOSTS_SERVICES = {
+                       "clusters":{
+                                   0 : {
+                                        "clustername": "Xen Cluster",
+                                        "clustertype":"CloudManaged",
+                                        "hypervisor": "XenServer",
+                                        "zoneid": 1,
+                                        "podid":1,
+                                    },
+                                   1 : {
+                                        # TODO
+                                        "clustername": "KVM Cluster",
+                                        "clustertype":"CloudManaged",
+                                        "hypervisor": "KVM",
+                                        "zoneid": 1,
+                                        "podid":1,
+                                        },
+                                   2 : {
+                                        "hypervisor": 'VMware',
+                                        "clustertype": 'ExternalManaged',
+                                        "zoneid": 1,
+                                        "podid": 1,
+                                        "username": 'administrator',
+                                        "password": 'fr3sca',
+                                        "url":'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
+                                        "clustername": '192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
+                                        },
+                                    },
+                       "hosts" :{
+                                 "xenserver" : {
+                                          "zoneid": 1,
+                                          "podid": 1,
+                                          "clusterid":16,
+                                          "hypervisor":'XenServer',
+                                          "clustertype": 'ExternalManaged',
+                                          "url": 'http://192.168.100.210',
+                                          "username" : "administrator",
+                                          "password" : "fr3sca",
+                                          },
+                                 "kvm" : {
+                                          "zoneid": 1,
+                                          "podid": 1,
+                                          "clusterid":16,
+                                          "hypervisor":'KVM',
+                                          "clustertype": 'ExternalManaged',
+                                          "url": 'http://192.168.100.203',
+                                          "username" : "administrator",
+                                          "password" : "fr3sca",
+                                          },
+                                 "vmware" : {
+                                          "zoneid": 1,
+                                          "podid": 1,
+                                          "clusterid":16,
+                                          "hypervisor":'VMware',
+                                          "clustertype": 'ExternalManaged',
+                                          "url": 'http://192.168.100.203',
+                                          "username" : "administrator",
+                                          "password" : "fr3sca",
+                                         },
+                                 }
+                       }
+TEST_PRIMARY_STORAGE_SERVICES = {
+
+                                 "nfs":{
+                                   0 : {
+                                        "url": "nfs://192.168.100.131/Primary",
+                                        #Format: File_System_Type/Location/Path
+                                        "name": "Primary XEN",
+                                        "podid" : 1,
+                                        "clusterid" : 1, #XEN Cluster
+                                        "zoneid" : 1,
+                                    },
+                                   1 : {
+                                        "url": "nfs://192.168.100.131/export",
+                                        "name": "Primary KVM",
+                                        "podid" : 2,
+                                        "clusterid" : 1,  #KVM Cluster
+                                        "zoneid" : 1,
+                                        },
+                                   2 : {
+                                        "url": "nfs://192.168.100.131/Primary",
+                                        "name": "Primary VMWare",
+                                        "podid" : 1,
+                                        "clusterid" : 33, #VMWare Cluster
+                                        "zoneid" : 1,
+                                        },
+                                    },
+                                 "iscsi":{
+                                   0 : {
+                                        "url": "iscsi://192.168.100.21/export",
+                                        "name": "Primary XEN",
+                                        "podid" : 2,
+                                        "clusterid" : 1, #XEN Cluster
+                                        "zoneid" : 1,
+                                        # TODO : lun no., iqn no.
+                                    },
+                                   1 : {
+                                        "url": "iscsi://192.168.100.21/export",
+                                        "name": "Primary KVM",
+                                        "podid" : 2,
+                                        "clusterid" : 1, #KVM Cluster
+                                        "zoneid" : 1,
+                                        # TODO : lun no., iqn no.
+                                        },
+                                    },
+                                 }
+
+TEST_SEC_STORAGE_SERVICES = {
+                             "storage": {
+                                         "zoneid":1,
+                                         "url": "nfs://192.168.100.131/SecondaryStorage"
+                                         #Format: File_System_Type/Location/Path
+                                         }
+                             }
+
+TEST_ROUTER_SERVICES = {
+                        "virtual_machine" :
+                                    {
+                                        "template" : 206,
+                                        "zoneid" : 1,
+                                        "serviceoffering" : 1,
+                                        "displayname" : "testserver",
+                                        "username" : "root",
+                                        "password" : "fr3sca",
+                                        "ssh_port" : 22,
+                                        "hypervisor":'XenServer',
+                                        "domainid":1,
+                                        "ipaddressid":10,
+                                        "privateport":22,
+                                        "publicport":22,
+                                        "ipaddress":'192.168.100.250',
+                                        "protocol":'TCP',
+                                },
+                        "account" : {
+                                            "email" : "test@test.com",
+                                            "firstname" : "Test",
+                                            "lastname" : "User",
+                                            "username" : "testuser1",
+                                            "password" : "fr3sca",
+                                            "zoneid" : 1,
+                                            "networkofferingid" : 6,
+                                        },
+                        "sleep_time": 300,
                         }

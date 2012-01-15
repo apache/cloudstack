@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# Copyright (c) 2011 Citrix.  All rights reserved.
+# Copyright (c) 2012 Citrix.  All rights reserved.
 #
 
 """Utilities functions
@@ -22,9 +22,8 @@ def random_gen(size=6, chars=string.ascii_uppercase + string.digits):
 
 def cleanup_resources(api_client, resources):
     """Delete resources"""
-    for k,v in resources.items():
-        for obj in v:
-            obj.delete(api_client)
+    for obj in resources:
+        obj.delete(api_client)
 
 def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
     """Return ssh handle else wait till sshd is running"""

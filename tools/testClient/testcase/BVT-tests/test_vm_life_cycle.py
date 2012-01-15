@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# Copyright (c) 2011 Citrix.  All rights reserved.
+# Copyright (c) 2012 Citrix.  All rights reserved.
 #
 
 """ BVT tests for Virtual Machine Life Cycle
@@ -524,19 +524,16 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.id = self.small_virtual_machine.id
         self.apiclient.destroyVirtualMachine(cmd)
 
+        # Wait for expunge.delay
+        cmd = listConfigurations.listConfigurationsCmd()
+        cmd.name = 'expunge.delay'
+        response = self.apiclient.listConfigurations(cmd)[0]
+
+        time.sleep(int(response.value))
+
         cmd = listVirtualMachines.listVirtualMachinesCmd()
         cmd.id = self.small_virtual_machine.id
-
-        timeout = 50
-        while True :
-            list_vm_response = self.apiclient.listVirtualMachines(cmd)
-            if not list_vm_response:
-                break;
-            else:
-                if timeout == 0:
-                    break
-            time.sleep(100)
-            timeout = timeout - 1
+        list_vm_response = self.apiclient.listVirtualMachines(cmd)
 
         self.assertEqual(
                             list_vm_response,

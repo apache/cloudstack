@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# Copyright (c) 2011 Citrix.  All rights reserved.
+# Copyright (c) 2012 Citrix.  All rights reserved.
 #
 """ BVT tests for Templates ISO
 """

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# Copyright (c) 2011 Citrix.  All rights reserved.
+# Copyright (c) 2012 Citrix.  All rights reserved.
 #
 
 """ Base class for all Cloudstack resources - Virtual machine, Volume, Snapshot etc
@@ -26,25 +26,7 @@ class Account:
         cmd.lastname = services["lastname"]
         cmd.password = services["password"]
         cmd.username = services["username"]
-
         account = apiclient.createAccount(cmd)
-        #create a network
-        cmd = createNetwork.createNetworkCmd()
-        cmd.name = cmd.displaytext = "Virtual Network"
-        cmd.networkofferingid = services["networkofferingid"]
-
-        cmd.account = account.account.name
-        cmd.domainid = account.account.domainid
-        cmd.zoneid = services["zoneid"]
-
-        account.network = apiclient.createNetwork(cmd)
-        #Allocate the Source NAT IP Address
-        account.public_ip = PublicIPAddress.create(
-                                            apiclient,
-                                            accountid = account.account.name,
-                                            zoneid = services["zoneid"],
-                                            domainid = account.account.domainid
-                                          )
 
         return Account(account.__dict__)
 
@@ -70,15 +52,19 @@ class VirtualMachine:
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
         cmd.serviceofferingid = services["serviceoffering"]
         cmd.zoneid = services["zoneid"]
+        cmd.hypervisor = services["hypervisor"]
+        cmd.account = accountid or services["account"]
+        cmd.domainid = services["domainid"]
+
         if networkids:
             cmd.networkids = networkids
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
 
-        cmd.hypervisor = services["hypervisor"]
-        cmd.account = accountid or services["accountid"]
-        cmd.domainid = services["domainid"]
-        cmd.templateid = templateid or services["template"]
+        if templateid:
+            cmd.templateid = templateid
+        elif "template" in services:
+            cmd.templateid = services["template"]
 
         if "diskoffering" in services:
             cmd.diskofferingid = services["diskoffering"]
@@ -210,9 +196,22 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.ostypeid = services["ostypeid"]
-        cmd.isfeatured = services["isfeatured"] or False
-        cmd.ispublic = services["ispublic"] or False
-        cmd.isextractable = services["isextractable"] or False
+
+        if "isfeatured" in services:
+            cmd.isfeatured = services["isfeatured"]
+        else:
+            cmd.isfeatured = False
+
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
+        else:
+            cmd.ispublic = False
+
+        if "isextractable" in services:
+            cmd.isextractable = services["isextractable"]
+        else:
+            cmd.isextractable = False
+
         cmd.volumeid = volume.id
         return Template(apiclient.createTemplate(cmd).__dict__)
 
@@ -278,18 +277,18 @@ class Iso:
         return
 
 
-class PublicIPAddress():
+class PublicIPAddress:
     """Manage Public IP Addresses"""
 
     def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid, zoneid = 1, domainid = 1):
+    def create(cls, apiclient, accountid, zoneid = None, domainid = None):
         cmd = associateIpAddress.associateIpAddressCmd()
         cmd.account = accountid
-        cmd.zoneid = zoneid
-        cmd.domainid = domainid
+        cmd.zoneid = zoneid or services["zoneid"]
+        cmd.domainid = domainid or services["domainid"]
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -406,7 +405,7 @@ class LoadBalancerRule:
     def create(cls, apiclient, services, ipaddressid, accountid=None):
         cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
         cmd.publicipid = ipaddressid or services["ipaddressid"]
-        cmd.account = accountid or services["accountid"]
+        cmd.account = accountid or services["account"]
         cmd.name = services["name"]
         cmd.algorithm = services["alg"]
         cmd.privateport = services["privateport"]
@@ -430,4 +429,102 @@ class LoadBalancerRule:
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.virtualmachineids = [vm.id for vm in vms]
         self.apiclient.removeFromLoadBalancerRule(cmd)
+        return
+
+class Cluster:
+    """Manage Cluster life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services):
+
+        cmd = addCluster.addClusterCmd()
+        cmd.clustertype = services["clustertype"]
+        cmd.hypervisor = services["hypervisor"]
+        cmd.zoneid = services["zoneid"]
+        cmd.podid = services["podid"]
+
+        if "username" in services:
+            cmd.username = services["username"]
+        if "password" in services:
+            cmd.password = services["password"]
+        if "url" in services:
+            cmd.url = services["url"]
+        if "clustername" in services:
+            cmd.clustername = services["clustername"]
+
+        return Cluster(apiclient.addCluster(cmd)[0].__dict__)
+
+    def delete(self, apiclient):
+        cmd = deleteCluster.deleteClusterCmd()
+        cmd.id =  self.id
+        apiclient.deleteCluster(cmd)
+        return
+
+class Host:
+    """Manage Host life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, cluster, services):
+
+        cmd = addHost.addHostCmd()
+        cmd.hypervisor = services["hypervisor"]
+        cmd.url = services["url"]
+        cmd.zoneid = services["zoneid"]
+        cmd.clusterid = cluster.id
+        cmd.podid = services["podid"]
+
+        if "clustertype" in services:
+            cmd.clustertype = services["clustertype"]
+        if "username" in services:
+            cmd.username = services["username"]
+        if "password" in services:
+            cmd.password = services["password"]
+
+        return Host(apiclient.addHost(cmd).__dict__)
+
+    def delete(self, apiclient):
+        # Host must be in maintenance mode before deletion
+        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
+        cmd.id = self.id
+        apiclient.prepareHostForMaintenance(cmd)
+        time.sleep(60)
+
+        cmd = deleteHost.deleteHostCmd()
+        cmd.id =  self.id
+        apiclient.deleteHost(cmd)
+        return
+
+class StoragePool:
+    """Manage Storage pools"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services):
+
+        cmd = createStoragePool.createStoragePoolCmd()
+        cmd.name = services["name"]
+        cmd.podid = services["podid"]
+        cmd.url = services["url"]
+        cmd.clusterid = services["clusterid"]
+        cmd.zoneid = services["zoneid"]
+
+        return StoragePool(apiclient.createStoragePool(cmd).__dict__)
+
+    def delete(self, apiclient):
+        # Storage pool must be in maintenance mode before deletion
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id =  self.id
+        apiclient.enableStorageMaintenance(cmd)
+        time.sleep(60)
+        cmd = deleteStoragePool.deleteStoragePoolCmd()
+        cmd.id =  self.id
+        apiclient.deleteStoragePool(cmd)
         return
