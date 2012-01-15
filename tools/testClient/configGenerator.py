@@ -45,7 +45,6 @@ class zone():
         '''Basic or Advanced'''
         self.networktype = None
         self.dns2 = None
-        self.guestcidraddress = None
         self.internaldns2 = None
         self.securitygroupenabled = None
         ''' Guest Vlan range - only advanced zone'''
@@ -53,9 +52,12 @@ class zone():
         '''default public network, in advanced mode'''
         self.ipranges = []
         self.networks = []
-        self.providers = []
         self.pods = []
         self.secondaryStorages = []
+        '''enable default virtual router provider'''
+        vrouter = provider()
+        vrouter.name = 'VirtualRouter'
+        self.providers = [vrouter]
         
 class provider():
     def __init__(self):
