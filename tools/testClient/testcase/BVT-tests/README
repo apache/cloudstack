@@ -30,3 +30,12 @@ The following files contain these BVT cases:
 3. test_snapshots.py - Snapshots related tests
 4. test_disk_offerings.py - Disk Offerings related tests
 5. test_service_offerings.py - Service Offerings related tests
+6. test_hosts.py - Hosts and Clusters related tests
+7. test_iso.py - ISO related tests
+8. test_network.py - Network related tests
+9. test_primary_storage.py - Primary storage related tests
+10. test_secondary_storage.py - Secondary storage related tests
+11. test_ssvm.py - SSVM & CPVM related tests
+12. test_templates.py - Templates related tests
+13. test_routers.py - Router related tests
+
