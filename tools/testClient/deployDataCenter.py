@@ -1,4 +1,4 @@
-'''Deploy datacenters according to a json configuration file'''
+"""Deploy datacenters according to a json configuration file"""
 import configGenerator
 import cloudstackException
 import cloudstackTestClient
@@ -153,11 +153,11 @@ class deployDataCenters():
             phynet.vlan = vlan
         return self.apiClient.createPhysicalNetwork(phynet)
 
-    def configureProviders(self, phynetwrk, providers, networktype):
+    def configureProviders(self, phynetwrk, zone):
         pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-        pnetprov.physicalnetworkid = phynetwrk[0].id
-        pnetprov.state = 'Enabled'
-        pnetprov.name = 'VirtualRouter'
+        pnetprov.physicalnetworkid = phynetwrk.id
+        pnetprov.state = "Enabled"
+        pnetprov.name = "VirtualRouter"
         vrprov = self.apiClient.listNetworkServiceProviders(pnetprov)
 
         vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
@@ -167,28 +167,28 @@ class deployDataCenters():
 
         vrconfig = \
         configureVirtualRouterElement.configureVirtualRouterElementCmd()
-        vrconfig.enabled = 'true'
+        vrconfig.enabled = "true"
         vrconfig.id = vrprovid
         vrconfigresponse = \
         self.apiClient.configureVirtualRouterElement(vrconfig)
 
-        #Enable VirtualRouter provider by default
-        vrprovider = configGenerator.provider()
-        vrprovider.name = 'VirtualRouter'
-        providers.append(vrprovider)
+        if zone.securitygroupenabled:
+            sgprovider = configGenerator.provider()
+            sgprovider.name = "SecurityGroupProvider"
+            zone.providers.append(sgprovider)
 
-        for prov in providers:
+        for prov in zone.providers:
             pnetprov = \
             listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-            pnetprov.physicalnetworkid = phynetwrk[0].id
+            pnetprov.physicalnetworkid = phynetwrk.id
             pnetprov.name = prov.name
-            pnetprov.state = 'Disabled'
+            pnetprov.state = "Disabled"
             pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
 
             upnetprov = \
             updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
             upnetprov.id = pnetprovs[0].id
-            upnetprov.state = 'Enabled'
+            upnetprov.state = "Enabled"
             upnetprovresponse = \
             self.apiClient.updateNetworkServiceProvider(upnetprov)
 
@@ -220,15 +220,14 @@ class deployDataCenters():
 
             phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
                                                    zoneId, zone.vlan)
-            if zone.networktype = "Advanced":
+            if zone.networktype == "Advanced":
                 self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
                                                     "Management"])
-            elif zone.networktype = "Basic":
+            elif zone.networktype == "Basic":
                 self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
                                                     "Management", "Storage"])
 
-            self.configureProviders(phynetwrk, zone.providers, \
-                                    zone.networktype)
+            self.configureProviders(phynetwrk, zone)
 
             if zone.networktype == "Basic":
                 listnetworkoffering = \
@@ -307,7 +306,7 @@ class deployDataCenters():
             testClientLogger.setLevel(logging.DEBUG)
         self.testClientLogger = testClientLogger
 
-        self.testClient =
+        self.testClient = \
         cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, \
                                                   mgt.apiKey, \
                                                   mgt.securityKey, \
@@ -315,12 +314,12 @@ class deployDataCenters():
         if mgt.apiKey is None:
             apiKey, securityKey = self.registerApiKey()
             self.testClient.close()
-            self.testClient =
+            self.testClient = \
             cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
                                                       apiKey, securityKey, \
                                              logging=self.testClientLogger)
 
-        '''config database'''
+        """config database"""
         dbSvr = self.config.dbSvr
         self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
                                     dbSvr.passwd, dbSvr.db)
@@ -356,7 +355,7 @@ if __name__ == "__main__":
     deploy = deployDataCenters(options.input)
     deploy.deploy()
 
-    '''
+    """
     create = createStoragePool.createStoragePoolCmd()
     create.clusterid = 1
     create.podid = 2
@@ -367,4 +366,4 @@ if __name__ == "__main__":
     deploy = deployDataCenters("./datacenterCfg")
     deploy.loadCfg()
     deploy.apiClient.createStoragePool(create)
-    '''
+    """
