@@ -46,8 +46,8 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
  
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
-    private Long zoneId = 1L;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="lists capacity by the Zone ID")
+    private Long zoneId;
 
     @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
