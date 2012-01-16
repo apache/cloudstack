@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -59,10 +59,10 @@ public class LDAPConfigCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.QUERY_FILTER, type=CommandType.STRING, required=true, description="You specify a query filter here, which narrows down the users, who can be part of this domain.")
     private String queryFilter;
 
-    @Parameter(name=ApiConstants.BIND_DN, type=CommandType.STRING, required=true, description="Specify the distinguished name of a user with the search permission on the directory.")
+    @Parameter(name=ApiConstants.BIND_DN, type=CommandType.STRING, description="Specify the distinguished name of a user with the search permission on the directory.")
     private String bindDN;
     
-    @Parameter(name=ApiConstants.BIND_PASSWORD, type=CommandType.STRING, required=true, description="Enter the password.")
+    @Parameter(name=ApiConstants.BIND_PASSWORD, type=CommandType.STRING, description="Enter the password.")
     private String bindPassword;
     
 

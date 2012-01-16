@@ -84,8 +84,15 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
                 protocol="ldaps://" ;
             }
             env.put(Context.PROVIDER_URL, protocol + url  + ":" + port);
-            env.put(Context.SECURITY_PRINCIPAL, bindDN);
-            env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
+
+            if (bindDN != null && bindPasswd != null){
+                env.put(Context.SECURITY_PRINCIPAL, bindDN);
+                env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
+            }
+            else {
+            	// Use anonymous authentication
+            	env.put(Context.SECURITY_AUTHENTICATION, "none");
+            }
            // Create the initial context
             DirContext ctx = new InitialDirContext(env);
             // use this context to search
@@ -115,8 +122,12 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             // check the password
             env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, "ldap://" + url  + ":" + port);
-            if (new Boolean(useSSL) == Boolean.TRUE)env.put(Context.SECURITY_PROTOCOL, "ssl");
+            protocol = "ldap://" ;
+            if (new Boolean(useSSL)){
+            	env.put(Context.SECURITY_PROTOCOL, "ssl");
+                protocol="ldaps://" ;
+            }
+            env.put(Context.PROVIDER_URL, protocol + url  + ":" + port);
             env.put(Context.SECURITY_PRINCIPAL, cn + "," + searchBase);
             env.put(Context.SECURITY_CREDENTIALS, password);
             // Create the initial context
@@ -129,6 +140,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             return false;
         }
         catch (Exception e){
+        	e.printStackTrace();
             s_logger.warn("Unknown error encountered " + e.getMessage());
             return false;
         }

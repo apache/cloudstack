@@ -1237,13 +1237,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             String bindDN = cmd.getBindDN();
             String bindPasswd = cmd.getBindPassword();
             
+            if (bindDN != null && bindPasswd == null ){
+            	throw new InvalidParameterValueException("If you specify a bind name then you need to provide bind password too.");
+            }
+            
+            //System.setProperty("javax.net.ssl.keyStore", "/cygdrive/c/citrix/info/cacerts.jks");
+            //System.setProperty("javax.net.ssl.keyStorePassword", "1111_aaaa");
+            
             // check if the info is correct
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, "ldap://" + hostname + ":" + port + "/");
-            if (useSSL) env.put(Context.SECURITY_PRINCIPAL, "ssl");
-            env.put(Context.SECURITY_PRINCIPAL, bindDN);
-            env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
+            String protocol = "ldap://" ;
+            if (new Boolean(useSSL)){
+            	env.put(Context.SECURITY_PROTOCOL, "ssl");
+                protocol="ldaps://" ;
+            }
+            env.put(Context.PROVIDER_URL, protocol + hostname  + ":" + port);
+            if (bindDN != null && bindPasswd != null){
+            	env.put(Context.SECURITY_PRINCIPAL, bindDN);
+            	env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
+            }
             // Create the initial context
             DirContext ctx = new InitialDirContext(env);
             ctx.close();
