@@ -587,6 +587,7 @@ public class JuniperSrxResource implements ServerResource {
      */
 
     private synchronized Answer execute(IpAssocCommand cmd) {
+    	refreshSrxConnection();
         return execute(cmd, _numRetries);
     }
 
@@ -714,6 +715,7 @@ public class JuniperSrxResource implements ServerResource {
      */
 
     private synchronized Answer execute(SetStaticNatRulesCommand cmd) {
+    	refreshSrxConnection();
         return execute(cmd, _numRetries);
     }       
 
@@ -807,6 +809,7 @@ public class JuniperSrxResource implements ServerResource {
      */
     
     private synchronized Answer execute(RemoteAccessVpnCfgCommand cmd) {
+    	refreshSrxConnection();
     	return execute(cmd, _numRetries);
     }
     
@@ -919,6 +922,7 @@ public class JuniperSrxResource implements ServerResource {
     }
     
     private synchronized Answer execute(VpnUsersCfgCommand cmd) {
+    	refreshSrxConnection();
     	return execute(cmd, _numRetries);
     }
     
@@ -978,6 +982,7 @@ public class JuniperSrxResource implements ServerResource {
      */
 
     private synchronized Answer execute (SetPortForwardingRulesCommand cmd) {
+    	refreshSrxConnection();
         return execute(cmd, _numRetries);
     }
 
