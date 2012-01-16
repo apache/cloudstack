@@ -1817,6 +1817,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (accountId == null) {
         	if (isAdmin(caller.getType()) && listAll && domainId == null) {
             	listForDomain = true;
+            	isRecursive = true;
             	if (domainId == null) {
             		domainId = caller.getDomainId();
             	}
