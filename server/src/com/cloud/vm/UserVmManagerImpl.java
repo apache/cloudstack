@@ -3357,11 +3357,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	 if (networkIdList != null && !networkIdList.isEmpty()) {
                  throw new InvalidParameterValueException("Can't move vm with network Ids; this is a basic zone VM");
              }
+         	//cleanup the old security groups
+             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
        	 	//cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
             _networkMgr.expungeNics(vmOldProfile);
-        	//cleanup the old security groups
-            _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
         	//security groups will be recreated for the new account, when the VM is started
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
