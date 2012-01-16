@@ -94,7 +94,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     
     public String getSimulatorLabel() {
     	//simulators will have no labels
-    	return ""; 
+    	return null; 
     }
 
     public void setVlan(String vlan) {
