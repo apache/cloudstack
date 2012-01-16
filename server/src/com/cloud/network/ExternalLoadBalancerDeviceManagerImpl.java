@@ -101,6 +101,7 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -265,7 +266,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         deviceName, capacity, dedicatedUse, inline);
 
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
-                
+
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
                 _hostDetailDao.persist(hostDetail);
 
@@ -288,7 +289,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         DetailVO lbHostDetails = _hostDetailDao.findDetail(hostId, ApiConstants.LOAD_BALANCER_DEVICE_ID);
         long lbDeviceId = Long.parseLong(lbHostDetails.getValue());
-        
+
         // check if any networks are using this load balancer device
         List<NetworkExternalLoadBalancerVO> networks = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
         if ((networks != null) && !networks.isEmpty()) {
@@ -296,13 +297,16 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         try {
-            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
-                DataCenterVO zone = _dcDao.findById(externalLoadBalancer.getDataCenterId());
-                return _dcDao.update(zone.getId(), zone);
-            } else {
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
+            // put the host in maintenance state in order for it to be deleted
+            externalLoadBalancer.setResourceState(ResourceState.Maintenance);
+            _hostDao.update(hostId, externalLoadBalancer);
+            _resourceMgr.deleteHost(hostId, false, false);
+
+            // delete the external load balancer entry 
+            _externalLoadBalancerDeviceDao.remove(lbDeviceId);
+
+            return true;
+        } catch (Exception e) {
             s_logger.debug(e);
             return false;
         }
