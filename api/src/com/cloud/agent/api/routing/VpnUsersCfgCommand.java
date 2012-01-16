@@ -19,12 +19,15 @@
 package com.cloud.agent.api.routing;
 import java.util.List;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.network.VpnUser;
 
 
 public class VpnUsersCfgCommand extends NetworkElementCommand {
 	public static class UsernamePassword{ 
 		private String username;
+	    @LogLevel(Log4jLevel.Off)
 		private String password;
 		boolean add = true;
 		
