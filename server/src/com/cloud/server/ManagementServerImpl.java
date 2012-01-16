@@ -204,6 +204,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -1181,12 +1182,13 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (isoFilter != null && isoFilter == TemplateFilter.all));
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, listAll, cmd.getId());
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
         	permittedAccounts.add(_accountMgr.getAccount(accountId));
@@ -1203,12 +1205,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long id = cmd.getId();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (templateFilter != null && templateFilter == TemplateFilter.all));
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, listAll, id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
         	permittedAccounts.add(_accountMgr.getAccount(accountId));
@@ -1383,8 +1385,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) {
     	Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Long id = cmd.getId();
@@ -1396,7 +1396,12 @@ public class ManagementServerImpl implements ManagementServer {
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<EventVO> sb = _eventDao.createSearchBuilder();
         
@@ -1516,11 +1521,13 @@ public class ManagementServerImpl implements ManagementServer {
         Long networkId = cmd.getNetworkId();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -1594,17 +1601,19 @@ public class ManagementServerImpl implements ManagementServer {
         Long ipId = cmd.getId();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
-
        
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
         }
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), ipId);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -2223,11 +2232,15 @@ public class ManagementServerImpl implements ManagementServer {
     public List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
     	
     	 Account caller = UserContext.current().getCaller();
-         Long domainId = cmd.getDomainId();
-         boolean isRecursive = cmd.isRecursive();
+
          List<Long> permittedAccounts = new ArrayList<Long>();
     	
-         ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), null, permittedAccounts, cmd.listAll(), null);
+         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+         Long domainId = domainIdRecursiveListProject.first();
+         Boolean isRecursive = domainIdRecursiveListProject.second();
+         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();         
+         
          Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
          SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
          sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
@@ -2755,11 +2768,14 @@ public class ManagementServerImpl implements ManagementServer {
         String keyword = cmd.getKeyword();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         Filter searchFilter = new Filter(InstanceGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         
         SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
@@ -2942,12 +2958,13 @@ public class ManagementServerImpl implements ManagementServer {
         String fingerPrint = cmd.getFingerprint();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), null);
-        SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 

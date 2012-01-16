@@ -104,6 +104,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -895,8 +896,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         String intervalTypeStr = cmd.getIntervalType();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         // Verify parameters
@@ -907,7 +906,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+       _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+       Long domainId = domainIdRecursiveListProject.first();
+       Boolean isRecursive = domainIdRecursiveListProject.second();
+       ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);

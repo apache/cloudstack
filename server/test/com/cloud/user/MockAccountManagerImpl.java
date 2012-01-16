@@ -20,6 +20,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -315,8 +316,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public ListProjectResourcesCriteria buildACLSearchParameters(Account caller, Long domainId, boolean isRecursive, String accountName, Long projectId, List<Long> permittedAccounts, boolean listAll,
-            Long id) {
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll) {
         // TODO Auto-generated method stub
         return null;
     }

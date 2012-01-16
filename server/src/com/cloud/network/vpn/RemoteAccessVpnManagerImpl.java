@@ -69,6 +69,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -477,11 +478,13 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Long id = cmd.getId();
         
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), id);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -513,8 +516,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         // do some parameter validation
         Account caller = UserContext.current().getCaller();
         Long ipAddressId = cmd.getPublicIpId();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
         if (ipAddressId != null) {
@@ -531,7 +532,12 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             _accountMgr.checkAccess(caller, null, publicIp);
         }
   
-        ListProjectResourcesCriteria listProjectResourcesCriteria =  _accountMgr.buildACLSearchParameters(caller, domainId, isRecursive, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, cmd.listAll(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
+        
         Filter filter = new Filter(RemoteAccessVpnVO.class, "serverAddressId", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
         SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);

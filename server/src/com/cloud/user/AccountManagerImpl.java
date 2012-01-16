@@ -105,6 +105,7 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -2063,8 +2064,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	}
     
     @Override
-    public ListProjectResourcesCriteria buildACLSearchParameters(Account caller, Long domainId, boolean isRecursive, String accountName, Long projectId, List<Long> permittedAccounts, boolean listAll, Long id) {
-    	ListProjectResourcesCriteria listProjectResourcesCriteria = null;
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll) {
+    	Long domainId = domainIdRecursiveListProject.first();
+    	
     	if (domainId != null) {
         	Domain domain = _domainDao.findById(domainId);
         	if (domain == null) {
@@ -2099,7 +2101,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         		if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
         		} else {
-        			listProjectResourcesCriteria = Project.ListProjectResourcesCriteria.ListProjectResourcesOnly;
+        			domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
         		}
         	} else {
                 Project project = _projectMgr.getProject(projectId);
@@ -2113,7 +2115,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         	}
         } else {
         	if (id == null) {
-    			listProjectResourcesCriteria = Project.ListProjectResourcesCriteria.SkipProjectResources;
+        		domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
         	}
 			if (permittedAccounts.isEmpty() && domainId == null) {
 	        	if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -2122,18 +2124,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	        		if (id == null) {
 		        		permittedAccounts.add(caller.getId());
 	        		} else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-	        			domainId = caller.getDomainId();
-	        			isRecursive = true;
+	        			domainIdRecursiveListProject.first(caller.getDomainId());
+	        			domainIdRecursiveListProject.second(true);
 	        		}
 	        	} else if (domainId == null){
 	        		if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
-	        			domainId = caller.getDomainId();
-	        			isRecursive = true;
+	        			domainIdRecursiveListProject.first(caller.getDomainId());
+	        			domainIdRecursiveListProject.second(true);
 	        		}
 	        	}
 	        }
-        }
-        
-        return listProjectResourcesCriteria;
+        }        
     }
 }
