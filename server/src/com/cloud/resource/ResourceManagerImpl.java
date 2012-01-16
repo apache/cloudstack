@@ -43,6 +43,7 @@ import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -119,13 +120,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected GuestOSCategoryDao             _guestOSCategoryDao;
     @Inject 
     protected StoragePoolDao                _storagePoolDao;
+    @Inject
+    CapacityDao                             _capacityDao;
 
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
 
-    protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
+    protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();	
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -667,7 +670,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return false;
             }
 
-            _clusterDao.remove(cmd.getId());
+            if (_clusterDao.remove(cmd.getId())){
+                _capacityDao.removeBy(null, null, null, cmd.getId());
+            }
 
             txn.commit();
             return true;
