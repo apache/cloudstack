@@ -73,6 +73,6 @@ public interface RulesManager extends RulesService {
 
 	boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError);
 	
-    boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId) throws ResourceUnavailableException;
+    boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 
 }
