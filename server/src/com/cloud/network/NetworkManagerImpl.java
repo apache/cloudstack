@@ -4513,6 +4513,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         //delete service providers
         _pNSPDao.deleteProviders(physicalNetworkId);
+        
+        //delete traffic types
+        _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+        
 
         boolean success = _physicalNetworkDao.remove(physicalNetworkId);
 

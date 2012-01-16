@@ -120,4 +120,11 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         sc.setParameters("trafficType", trafficType);
         return findOneBy(sc);
     }
+
+    @Override
+    public void deleteTrafficTypes(long physicalNetworkId) {
+        SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        remove(sc);        
+    }
 }

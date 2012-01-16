@@ -28,4 +28,5 @@ public interface PhysicalNetworkTrafficTypeDao extends GenericDao<PhysicalNetwor
     boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType);
     String getNetworkTag (long physicalNetworkId, TrafficType trafficType, HypervisorType hType);
     PhysicalNetworkTrafficTypeVO findBy(long physicalNetworkId, TrafficType trafficType);
+    void deleteTrafficTypes(long physicalNetworkId);
 }
