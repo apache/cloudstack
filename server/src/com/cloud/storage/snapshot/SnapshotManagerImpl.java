@@ -115,6 +115,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -391,6 +392,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
 
             if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
+            	uservm = _vmDao.findById(volume.getInstanceId());
+            	if (uservm != null && uservm.getType() != VirtualMachine.Type.User) {
+            		throw new CloudRuntimeException("Can't take a snapshot on system vm ");
+            	}
+            	
                 StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
                 ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
                 List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
