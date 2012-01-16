@@ -682,10 +682,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (!privateIps.isEmpty()) {
             if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
                 throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
-            }
-            
-            // Delete corresponding capacity record
-            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null);
+            }                        
         }
         
         // Delete link local ip addresses for the pod
@@ -703,7 +700,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 _vlanDao.remove(vlan.getId());
             }
         }
-
+        
+        // Delete corresponding capacity records
+        _capacityDao.removeBy(null, null, podId, null);
+        
         // Delete the pod
         if (!(_podDao.remove(podId))) {
             throw new CloudRuntimeException("Failed to delete pod " + podId);
