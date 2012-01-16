@@ -22,7 +22,6 @@ import java.util.List;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.user.Account;
 
 public interface RulesService {

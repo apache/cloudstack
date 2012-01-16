@@ -31,7 +31,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.AllocatedBy;
 
 @Implementation(description="Disables static rule for given ip address", responseObject=SuccessResponse.class)
 public class DisableStaticNatCmd extends BaseAsyncCmd {

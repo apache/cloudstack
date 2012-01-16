@@ -22,7 +22,6 @@ import java.util.List;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -74,6 +73,6 @@ public interface RulesManager extends RulesService {
 
 	boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError);
 	
-    boolean disableStaticNat(long ipAddressId, AllocatedBy allocatedBy) throws ResourceUnavailableException;
+    boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId) throws ResourceUnavailableException;
 
 }

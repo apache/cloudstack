@@ -41,7 +41,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -322,8 +321,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public boolean enableStaticNat(long ipId, long vmId) throws NetworkRuleConflictException, ResourceUnavailableException {
-
-        Account caller = UserContext.current().getCaller();
+        UserContext ctx = UserContext.current();
+    	Account caller = ctx.getCaller();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -357,7 +356,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         // Verify ip address parameter
-        isIpReadyForStaticNat(vmId, ipAddress);
+        isIpReadyForStaticNat(vmId, ipAddress, caller, ctx.getCallerUserId());
         
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
 
@@ -382,7 +381,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-	protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress) throws NetworkRuleConflictException, ResourceUnavailableException {
+	protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, Account caller, long callerUserId) throws NetworkRuleConflictException, ResourceUnavailableException {
 		if (ipAddress.isSourceNat()) {
             throw new InvalidParameterValueException("Can't enable static, ip address " + ipAddress + " is a sourceNat ip address");
         }
@@ -420,7 +419,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     		}
     		//unassign old static nat rule
     		s_logger.debug("Disassociating static nat for ip " + oldIP);
-    		if (!disableStaticNat(oldIP.getId(), AllocatedBy.ipassoc)) {
+    		if (!disableStaticNat(oldIP.getId(), caller, callerUserId)) {
     			throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
     		}
         }	
@@ -1019,13 +1018,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean disableStaticNat(long ipId) throws ResourceUnavailableException{
-    	Account caller = UserContext.current().getCaller();
+    	UserContext ctx = UserContext.current();
+    	Account caller = ctx.getCaller();
     	IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
         
         Long vmId = ipAddress.getAssociatedWithVmId();
 
-    	boolean success = disableStaticNat(ipId, AllocatedBy.ipassoc);
+    	boolean success = disableStaticNat(ipId, caller, ctx.getCallerUserId());
     	if (success && vmId != null) {
     		s_logger.debug("Allocating ip and enabling static nat for vm id=" + vmId + " as a part of disassociateIp command");
     		UserVm vm = _vmDao.findById(vmId);
@@ -1041,11 +1041,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean disableStaticNat(long ipId, AllocatedBy allocatedBy) throws ResourceUnavailableException {
+    public boolean disableStaticNat(long ipId, Account caller, long callerUserId) throws ResourceUnavailableException {
         boolean success = true;
-
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
@@ -1057,7 +1054,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         //Revoke all firewall rules for the ip
         try {
             s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of disabling static nat for public IP id=" + ipId);
-            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, ctx.getCallerUserId(), caller)) {
+            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, callerUserId, caller)) {
                 s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of disable statis nat");
                 success = false;
             }
@@ -1066,7 +1063,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             success = false;
         }
 
-        if (!revokeAllPFAndStaticNatRulesForIp(ipId, UserContext.current().getCallerUserId(), caller)) {
+        if (!revokeAllPFAndStaticNatRulesForIp(ipId, callerUserId, caller)) {
             s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
             success = false;
         }
@@ -1074,9 +1071,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (success) {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
-            if (allocatedBy != null) {
-            	ipAddress.setAllocatedBy(allocatedBy);
-            }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
 
             

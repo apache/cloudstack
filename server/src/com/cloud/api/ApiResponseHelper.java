@@ -713,6 +713,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setZoneId(zoneId);
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
+        ipResponse.setIsElastic(ipAddress.getElastic());
 
         // get account information
         populateOwner(ipResponse, ipAddress);

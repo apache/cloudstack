@@ -96,9 +96,8 @@ public class IPAddressVO implements IpAddress, Identity {
     @Column(name="physical_network_id")
     private Long physicalNetworkId;
     
-    @Column(name="allocated_by")
-	@Enumerated(value=EnumType.STRING)
-    private AllocatedBy allocatedBy;
+    @Column(name="is_elastic")
+    private boolean elastic;
     
 	@Column(name="account_id")
 	@Transient
@@ -269,13 +268,15 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
+    
+    
 
     @Override
-	public AllocatedBy getAllocatedBy() {
-		return allocatedBy;
+	public boolean getElastic() {
+		return elastic;
 	}
 
-	public void setAllocatedBy(AllocatedBy allocatedBy) {
-		this.allocatedBy = allocatedBy;
+	public void setElastic(boolean isElastic) {
+		this.elastic = isElastic;
 	}
 }

@@ -71,6 +71,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
     
+    @SerializedName(ApiConstants.IS_ELASTIC) @Param(description="true if this ip is elastic ip (was allocated as a part of deployVm or createLbRule)")
+    private Boolean isElastic;
+    
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
     
@@ -206,5 +209,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public long getphysicalNetworkId() {
         return physicalNetworkId.getValue();
-    }     
+    }
+
+	public void setIsElastic(Boolean isElastic) {
+		this.isElastic = isElastic;
+	}
 }

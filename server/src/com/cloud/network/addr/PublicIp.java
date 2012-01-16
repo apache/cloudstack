@@ -183,7 +183,7 @@ public class PublicIp implements PublicIpAddress {
 	}
 	
 	@Override
-    public AllocatedBy getAllocatedBy() {
-        return _addr.getAllocatedBy();
+    public boolean getElastic() {
+        return _addr.getElastic();
     }
 }

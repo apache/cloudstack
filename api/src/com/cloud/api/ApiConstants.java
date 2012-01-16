@@ -323,6 +323,7 @@ public class ApiConstants {
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
     public static final String LIST_ALL = "listall";
+    public static final String IS_ELASTIC = "iselastic";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

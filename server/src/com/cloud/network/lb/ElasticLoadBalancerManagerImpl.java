@@ -75,7 +75,6 @@ import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -597,7 +596,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, AllocatedBy.elasticip);
+        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
