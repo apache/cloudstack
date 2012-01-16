@@ -397,6 +397,8 @@ setup_apache2() {
   [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
   [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
   [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
   echo "Options -Indexes" > /var/www/html/.htaccess
 }
 
