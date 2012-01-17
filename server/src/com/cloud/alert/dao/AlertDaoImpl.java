@@ -31,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
     @Override
     public AlertVO getLastAlert(short type, long dataCenterId, Long podId, Long clusterId) {
-        Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(1), Long.valueOf(1));
+        Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
         SearchCriteria<AlertVO> sc = createSearchCriteria();
 
         sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
@@ -52,7 +52,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
     
     @Override
     public AlertVO getLastAlert(short type, long dataCenterId, Long podId) {
-        Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(1), Long.valueOf(1));
+        Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
         SearchCriteria<AlertVO> sc = createSearchCriteria();
 
         sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
