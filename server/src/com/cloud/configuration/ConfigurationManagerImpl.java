@@ -1569,7 +1569,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
 
         if (allocationState == null) {
-            allocationState = Grouping.AllocationState.Enabled.toString();
+            allocationState = Grouping.AllocationState.Disabled.toString();
         }
 
         if (!(type.equalsIgnoreCase(NetworkType.Basic.toString())) && !(type.equalsIgnoreCase(NetworkType.Advanced.toString()))) {
