@@ -91,6 +91,7 @@
      * Render circular pie chart, without labels
      */
     var pieChart = function($container, data) {
+      $container.css({ width: 70, height: 66 });
       $.plot($container, data, {
         width: 100,
         height: 100,
