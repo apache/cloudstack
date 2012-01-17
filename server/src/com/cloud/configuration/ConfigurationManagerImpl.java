@@ -397,7 +397,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
-        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+((value == null) ? "" : value));
+        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+ (((name.toLowerCase()).contains("password")) ? "*****" : 
+        									(((value == null) ? "" : value))));
         // check if config value exists
         if (_configDao.findByName(name) == null) {
             throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
