@@ -4233,6 +4233,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
+        if (Grouping.AllocationState.Enabled == zone.getAllocationState()) {
+            throw new PermissionDeniedException("Cannot create PhysicalNetwork since the Zone is currently enabled, zone Id: " + zoneId);
+        }
+        
         NetworkType zoneType = zone.getNetworkType();
 
         if(zoneType == NetworkType.Basic){
