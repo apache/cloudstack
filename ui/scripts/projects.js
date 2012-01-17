@@ -485,7 +485,8 @@
       $.ajax({
         url: createURL('listProjects', { ignoreProject: true }),
         data: {
-          accountId: user.userid
+          accountId: user.userid,
+          listAll: isAdmin()
         },
         dataType: 'json',
         async: true,
@@ -538,7 +539,7 @@
 							}
 						}
 					
-					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("");					
+					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=' + isAdmin();					
             $.ajax({
               url: createURL(apiCmd, { ignoreProject: true }),
               dataType: 'json',
