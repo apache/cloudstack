@@ -479,13 +479,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Destroying # of vms (accountId=" + accountId + "): " + vms.size());
+                s_logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
             }
 
             //no need to catch exception at this place as expunging vm should pass in order to perform further cleanup
             for (UserVmVO vm : vms) {
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
-                    s_logger.error("Unable to destroy vm: " + vm.getId());
+                    s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
             }

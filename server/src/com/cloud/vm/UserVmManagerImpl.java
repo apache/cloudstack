@@ -1200,6 +1200,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         ctx.setAccountId(vm.getAccountId());
 
         try {
+        	//expunge the vm
             if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
                 s_logger.info("Did not expunge " + vm);
                 return false;

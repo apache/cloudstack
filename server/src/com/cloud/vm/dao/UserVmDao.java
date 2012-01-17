@@ -18,11 +18,9 @@
 package com.cloud.vm.dao;
 
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 
-import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;

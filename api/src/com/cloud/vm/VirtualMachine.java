@@ -149,6 +149,11 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
             if (oldState == State.Stopped && newState == State.Error) {
                 return true;
             }
+            
+            if (oldState == State.Stopped && newState == State.Expunging) {
+            	return true;
+            }
+            
             return false;
         }
     }
