@@ -919,8 +919,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
-
-        _accountMgr.checkAccess(caller, null, ipOwner);
         
         long ownerId = ipOwner.getId();
         Network network = _networksDao.findById(networkId);
@@ -929,7 +927,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //check permissions
-        _accountMgr.checkAccess(caller, null, network);
+        _accountMgr.checkAccess(caller, null, true, ipOwner, network);
         
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         
@@ -1037,7 +1035,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         IpAddress ipToAssoc = getIp(cmd.getEntityId());
         if (ipToAssoc != null) {
-            _accountMgr.checkAccess(caller, null, ipToAssoc);
+            _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
             s_logger.debug("Unable to find ip address by id: " + cmd.getEntityId());
@@ -1910,7 +1908,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         //verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
-            _accountMgr.checkAccess(caller, null, ipVO);
+            _accountMgr.checkAccess(caller, null, true, ipVO);
         }
 
         Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
@@ -2486,7 +2484,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
 
-                _accountMgr.checkAccess(caller, null, owner);
+                _accountMgr.checkAccess(caller, null, true, owner);
                 permittedAccounts.add(owner.getId());
             }
         }
@@ -2709,7 +2707,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
         // Perform permission check
-        _accountMgr.checkAccess(caller, null, network);
+        _accountMgr.checkAccess(caller, null, true, network);
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
@@ -3071,7 +3069,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	throw new InvalidParameterValueException("Cleanup can't be true when restart network in Basic zone");
         }
 
-        _accountMgr.checkAccess(callerAccount, null, network);
+        _accountMgr.checkAccess(callerAccount, null, true, network);
 
         boolean success = restartNetwork(networkId, callerAccount, callerUser, cleanup);
 
@@ -3746,7 +3744,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	throw new InvalidParameterValueException("Can't allow networks which traffic type is not " + TrafficType.Guest);
         }  
 
-        _accountMgr.checkAccess(callerAccount, null, network); 
+        _accountMgr.checkAccess(callerAccount, null, true, network); 
 
         if (name != null) {
             network.setName(name);

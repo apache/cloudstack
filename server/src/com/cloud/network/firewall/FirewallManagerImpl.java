@@ -207,7 +207,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for firewall rules yet");
             }
-            _accountMgr.checkAccess(caller, null, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, true, ipAddressVO);
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -336,7 +336,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
          }
          
         // Validate ip address
-        _accountMgr.checkAccess(caller, null, ipAddress);
+        _accountMgr.checkAccess(caller, null, true, ipAddress);
 
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         if (networkId == null) {
@@ -421,7 +421,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, true, rules.toArray(new FirewallRuleVO[rules.size()]));
         }
 
         try {
@@ -449,7 +449,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         	throw new InvalidParameterValueException("Only root admin can delete the system wide firewall rule");
         }
 
-        _accountMgr.checkAccess(caller, null, rule);
+        _accountMgr.checkAccess(caller, null, true, rule);
         
         revokeRule(rule, caller, userId, false);
 
@@ -477,7 +477,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @DB
     public void revokeRule(FirewallRuleVO rule, Account caller, long userId, boolean needUsageEvent) {
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, rule);
+            _accountMgr.checkAccess(caller, null, true, rule);
         }
 
         Transaction txn = Transaction.currentTxn();

@@ -667,7 +667,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
             
-            _accountMgr.checkAccess(caller, null, vmInstance);
+            _accountMgr.checkAccess(caller, null, true, vmInstance);
 
             ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
@@ -1271,7 +1271,7 @@ public class ManagementServerImpl implements ManagementServer {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, owner);
+                    _accountMgr.checkAccess(caller, null, true, owner);
                 }
                 templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
             }
@@ -1283,7 +1283,7 @@ public class ManagementServerImpl implements ManagementServer {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, owner);
+                    _accountMgr.checkAccess(caller, null, true, owner);
                 }
                 templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
             }
@@ -1326,7 +1326,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // do a permission check
-        _accountMgr.checkAccess(account, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
 
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null);
         if (!updateNeeded) {
@@ -2503,7 +2503,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // check permissions
-        _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(user.getAccountId()));
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
@@ -2586,7 +2586,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //perform permission check
-        _accountMgr.checkAccess(account, null, volume);
+        _accountMgr.checkAccess(account, null, true, volume);
 
         if (_dcDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -2745,7 +2745,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
         }
 
-        _accountMgr.checkAccess(caller, null, group);
+        _accountMgr.checkAccess(caller, null, true, group);
 
         // Check if name is already in use by this account (exclude this group)
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
@@ -3030,7 +3030,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // make permission check
-        _accountMgr.checkAccess(caller, null, vm);
+        _accountMgr.checkAccess(caller, null, true, vm);
 
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");

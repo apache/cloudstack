@@ -379,7 +379,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return null;
         }
 
-        _accountMgr.checkAccess(context.getCaller(), null, router);
+        _accountMgr.checkAccess(context.getCaller(), null, true, router);
 
         boolean result = _itMgr.expunge(router, user, _accountMgr.getAccount(router.getAccountId()));
 
@@ -401,7 +401,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find router with id " + routerId);
         }
 
-        _accountMgr.checkAccess(caller, null, router);
+        _accountMgr.checkAccess(caller, null, true, router);
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
             s_logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
@@ -488,7 +488,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
 
-        _accountMgr.checkAccess(account, null, router);
+        _accountMgr.checkAccess(account, null, true, router);
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
 
@@ -576,7 +576,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find domain router with id " + routerId + ".");
         }
 
-        _accountMgr.checkAccess(caller, null, router);
+        _accountMgr.checkAccess(caller, null, true, router);
 
         // Can reboot domain router only in Running state
         if (router == null || router.getState() != State.Running) {
@@ -2421,7 +2421,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
-        _accountMgr.checkAccess(caller, null, router);
+        _accountMgr.checkAccess(caller, null, true, router);
 
         Account owner = _accountMgr.getAccount(router.getAccountId());
 

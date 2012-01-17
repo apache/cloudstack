@@ -400,7 +400,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         {
         case User :
         	try {
-            	_accountMgr.checkAccess(accountObj, null, vm);
+            	_accountMgr.checkAccess(accountObj, null, true, vm);
         	} catch (PermissionDeniedException ex) {
         		if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
         			if (s_logger.isDebugEnabled()) {

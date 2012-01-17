@@ -1618,7 +1618,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long ownerId = cmd.getEntityOwnerId();
         
         //permission check
-        _accountMgr.checkAccess(caller, null, _accountMgr.getActiveAccountById(ownerId));
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
         
         // Check that the resource limit for volumes won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
@@ -1695,7 +1695,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
             
             //check snapshot permissions
-            _accountMgr.checkAccess(caller, null, snapshotCheck);
+            _accountMgr.checkAccess(caller, null, true, snapshotCheck);
             
             // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
             if(snapshotCheck.getHypervisorType() == HypervisorType.VMware
@@ -2455,7 +2455,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         
         //permission check
-        _accountMgr.checkAccess(caller, null, volume);
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         // Check that the volume is not currently attached to any VM
         if (volume.getInstanceId() != null) {

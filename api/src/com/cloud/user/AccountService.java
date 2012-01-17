@@ -175,6 +175,6 @@ public interface AccountService {
 	
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
     
-    void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
 }

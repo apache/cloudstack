@@ -227,7 +227,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

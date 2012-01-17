@@ -307,7 +307,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	if(vmTemplate == null)
     		throw new InvalidParameterValueException("Unable to find template id=" + templateId);
     	
-    	_accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.ModifyEntry, vmTemplate);
+    	_accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.ModifyEntry, true, vmTemplate);
     	
     	prepareTemplateInAllStoragePools(vmTemplate, zoneId);
     	return vmTemplate;
@@ -357,7 +357,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
         
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
         
         List<HostVO> sservers = _storageMgr.getSecondaryStorageHosts(zoneId);
 
@@ -825,7 +825,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId );
         }
        
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
         
         boolean success = copy(userId, template, srcSecHost, sourceZone, dstZone);
         
@@ -1063,7 +1063,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Please specify a valid VM.");
         }
         
-        _accountMgr.checkAccess(caller, null, userVM);
+        _accountMgr.checkAccess(caller, null, true, userVM);
 
         Long isoId = userVM.getIsoId();
         if (isoId == null) {
@@ -1102,7 +1102,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	
     	//check permissions
-    	_accountMgr.checkAccess(caller, null, iso, vm);
+    	_accountMgr.checkAccess(caller, null, true, iso, vm);
     	
         State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -1151,7 +1151,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
         
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
     	
     	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
@@ -1190,7 +1190,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
         
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
          	
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
@@ -1254,7 +1254,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
 
         if (!template.isPublicTemplate()) {
-            _accountMgr.checkAccess(caller, null, template);
+            _accountMgr.checkAccess(caller, null, true, template);
         }
 
         List<String> accountNames = new ArrayList<String>();
@@ -1318,7 +1318,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
 
         // If the template is removed throw an error.
         if (template.getRemoved() != null) {

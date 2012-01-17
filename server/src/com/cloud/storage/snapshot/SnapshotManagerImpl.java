@@ -383,7 +383,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         boolean backedUp = false;
         UserVmVO uservm = null;
         // does the caller have the authority to act on this volume
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
         
         try {
     
@@ -741,7 +741,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
         
-        _accountMgr.checkAccess(caller, null, snapshotCheck);
+        _accountMgr.checkAccess(caller, null, true, snapshotCheck);
         
         if( !Status.BackedUp.equals(snapshotCheck.getStatus() ) ) {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is not in BackedUp Status");
@@ -902,7 +902,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volumeId != null) {
             VolumeVO volume = _volsDao.findById(volumeId);
             if (volume != null) {
-                _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+                _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
             }
         }
 
@@ -1054,7 +1054,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
         
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
         
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
@@ -1148,7 +1148,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
         return listPoliciesforVolume(cmd.getVolumeId());
     }
 
@@ -1293,7 +1293,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         
         // Verify permissions
-        _accountMgr.checkAccess(caller, null, volume);
+        _accountMgr.checkAccess(caller, null, true, volume);
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
         try{
@@ -1401,7 +1401,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
 
-            _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+            _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
         }
 
         boolean success = true;

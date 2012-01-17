@@ -3264,7 +3264,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Can't update system networks");
             }
 
-            _accountMgr.checkAccess(caller, null, network);
+            _accountMgr.checkAccess(caller, null, true, network);
 
             List<Long> offeringIds = _networkMgr.listNetworkOfferingsForUpgrade(networkId);
 

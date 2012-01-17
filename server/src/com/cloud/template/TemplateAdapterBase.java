@@ -213,7 +213,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	    //check if the caller can operate with the template owner
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
-        _accountMgr.checkAccess(caller, null, owner);
+        _accountMgr.checkAccess(caller, null, true, owner);
 	    
 		return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
@@ -225,7 +225,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	    //check if the caller can operate with the template owner
 	    Account caller = UserContext.current().getCaller();
 	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
-	    _accountMgr.checkAccess(caller, null, owner);
+	    _accountMgr.checkAccess(caller, null, true, owner);
 	   
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),

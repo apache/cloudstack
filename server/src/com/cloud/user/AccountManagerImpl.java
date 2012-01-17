@@ -298,8 +298,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) {
+    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
+        Long ownerId = null;
+        ControlledEntity prevEntity = null;
 
         for (ControlledEntity entity : entities) {
             long domainId = entity.getDomainId();
@@ -326,6 +328,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     break;
                 }
             }
+            
+            if (sameOwner) {
+            	if (ownerId == null) {
+                    ownerId = entity.getAccountId();
+                } else if (ownerId.longValue() != entity.getAccountId()) {
+                	throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
+                }
+            	prevEntity = entity;
+            }
 
             if (!granted) {
                 assert false : "How can all of the security checkers pass on checking this check: " + entity;
@@ -347,6 +358,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
         }
+        
+        //check that resources belong to the same account
+        
     }
 
     @Override
@@ -740,7 +754,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
 
-        checkAccess(UserContext.current().getCaller(), null, account);
+        checkAccess(UserContext.current().getCaller(), null, true, account);
 
         if (firstName != null) {
             user.setFirstname(firstName);
@@ -828,7 +842,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
         }
         
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
 
         boolean success = doSetUserStatus(userId, State.disabled);
         if (success) {
@@ -862,7 +876,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
         }
 
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -904,7 +918,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
         }
         
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
@@ -963,7 +977,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("The specified account does not exist in the system");
         }
         
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
         
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
@@ -1005,7 +1019,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Check if user performing the action is allowed to modify this account
         Account caller = UserContext.current().getCaller();
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -1031,7 +1045,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Unable to find active account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
         
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
  
         // don't allow modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
@@ -1061,7 +1075,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Unable to find account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
         
-        checkAccess(caller, null, account);
+        checkAccess(caller, null, true, account);
         
         if (disableAccount(account.getId())) {
             return _accountDao.findById(account.getId());
@@ -1172,7 +1186,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
         
-        checkAccess(UserContext.current().getCaller(), null, account);
+        checkAccess(UserContext.current().getCaller(), null, true, account);
         return _userDao.remove(id);
     }
 
@@ -1795,7 +1809,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 throw new InvalidParameterValueException("Unable to find account by id " + accountId);
             }
 
-            checkAccess(caller, null, account);
+            checkAccess(caller, null, true, account);
         }
         
         if (domainId != null) {
@@ -1811,7 +1825,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
                     throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
                 }
-                checkAccess(caller, null, account);
+                checkAccess(caller, null, true, account);
             }
         }
         

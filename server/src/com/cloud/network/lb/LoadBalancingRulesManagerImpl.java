@@ -188,7 +188,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterValueException("Failed: LB rule id: " + cmd.getLbRuleId() + " not present ");       
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), null, loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
         if (loadBalancer.getState() == FirewallRule.State.Revoke) {
             throw new InvalidParameterValueException("Failed:  LB rule id:"  + cmd.getLbRuleId() + " is in deleting state: ");              
         }
@@ -298,7 +298,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterException("Invalid Load balancer :"+stickinessPolicy.getLoadBalancerId()+" for Stickiness policy id: " + stickinessPolicyId);
         }
         long loadBalancerId = loadBalancer.getId();
-        _accountMgr.checkAccess(caller.getCaller(), null, loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
         try {
             if (loadBalancer.getState() == FirewallRule.State.Active) {
                 loadBalancer.setState(FirewallRule.State.Add);
@@ -416,7 +416,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), null, loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
 
         boolean success = false;
         try {
@@ -491,7 +491,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterValueException("Unable to find load balancer rule " + loadBalancerId);
         }
 
-        _accountMgr.checkAccess(caller, null, rule);
+        _accountMgr.checkAccess(caller, null, true, rule);
 
 
         boolean result = deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId());
@@ -633,7 +633,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         NetworkVO network = _networkDao.findById(networkId);
 
-        _accountMgr.checkAccess(caller.getCaller(), null, ipAddr);
+        _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
 
         // verify that lb service is supported by the network
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
@@ -861,7 +861,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         
         //check permissions
-        _accountMgr.checkAccess(caller, null, lb);
+        _accountMgr.checkAccess(caller, null, true, lb);
 
         if (name != null) {
             lb.setName(name);
@@ -911,7 +911,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             return null;
         }
 
-        _accountMgr.checkAccess(caller, null, loadBalancer);
+        _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
         List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
@@ -966,7 +966,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             return null;
         }
         
-        _accountMgr.checkAccess(caller, null, loadBalancer);
+        _accountMgr.checkAccess(caller, null, true, loadBalancer);
         
         List<LBStickinessPolicyVO> sDbpolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(cmd.getLbRuleId());
         

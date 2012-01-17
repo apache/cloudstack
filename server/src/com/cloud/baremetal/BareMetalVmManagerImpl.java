@@ -227,7 +227,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
 		}
 
-		_accountMgr.checkAccess(caller, null, owner);
+		_accountMgr.checkAccess(caller, null, true, owner);
 		long accountId = owner.getId();
 
 		DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
@@ -297,7 +297,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			sshPublicKey = pair.getPublicKey();
 		}
 
-		_accountMgr.checkAccess(caller, null, template);
+		_accountMgr.checkAccess(caller, null, true, template);
 
 		DataCenterDeployment plan = new DataCenterDeployment(dc.getId());
 

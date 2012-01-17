@@ -584,7 +584,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         // Verify permissions
-        _accountMgr.checkAccess(caller, null, securityGroup);
+        _accountMgr.checkAccess(caller, null, true, securityGroup);
         Long domainId = owner.getDomainId();
 
         if (protocol == null) {
@@ -769,7 +769,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         	
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
-        _accountMgr.checkAccess(caller, null, securityGroup);
+        _accountMgr.checkAccess(caller, null, true, securityGroup);
 
         SecurityGroupVO groupHandle = null;
         final Transaction txn = Transaction.currentTxn();
@@ -1044,7 +1044,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, group);
+        _accountMgr.checkAccess(caller, null, true, group);
 
         final Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1088,7 +1088,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             if (userVM == null) {
                 throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
             }
-            _accountMgr.checkAccess(caller, null, userVM);
+            _accountMgr.checkAccess(caller, null, true, userVM);
             return listSecurityGroupRulesByVM(instanceId.longValue());
         }
 
