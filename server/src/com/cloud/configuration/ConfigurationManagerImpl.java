@@ -436,7 +436,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
-        UserContext.current().setEventDetails(" Name: " + name + " New Value: " + ((value == null) ? "" : value));
+        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+ (((name.toLowerCase()).contains("password")) ? "*****" : 
+        									(((value == null) ? "" : value))));
         // check if config value exists
         ConfigurationVO config = _configDao.findByName(name);
         if (config == null) {
