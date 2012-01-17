@@ -273,4 +273,7 @@ public interface NetworkManager extends NetworkService {
     public boolean checkIpForService(IPAddressVO ip, Service service);
 
     void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr);
+
+	void checkCapabilityForProvider(Set<Provider> providers, Service service,
+			Capability cap, String capValue);
 }

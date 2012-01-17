@@ -5754,4 +5754,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		
 		return results;
 	}
+	
+	@Override
+	public void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue) {
+		for (Provider provider : providers) {
+			NetworkElement element = getElementImplementingProvider(provider.getName());
+			if(element != null){
+				Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+				if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+					throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + provider.getName());
+				}       
+				Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
+				if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
+					throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilites for element=" + element.getName() + " implementing Provider=" + provider.getName());
+				}
+
+				String value =  serviceCapabilities.get(cap);
+				if (value == null || value.isEmpty()) {
+					throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" + element.getName() + " implementing Provider=" + provider.getName());
+				}
+
+				capValue = capValue.toLowerCase();
+				
+				if (!value.contains(capValue)) {
+					throw new UnsupportedServiceException("Service " + service.getName() + " doesn't support value " + capValue + " for capability " + cap.getName() +  " for element=" + element.getName() + " implementing Provider=" + provider.getName());
+				}
+			} else {
+				throw new UnsupportedServiceException("Unable to find network element for provider " + provider.getName());
+			}
+		}
+	}
 }

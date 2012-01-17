@@ -63,7 +63,6 @@ import com.cloud.api.commands.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
-import com.cloud.capacity.Capacity;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -113,7 +112,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -3114,7 +3112,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
             
-            if (isolationCapability != null) {
+            if (isolationCapability != null) {           	
+            	 _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.SupportedLBIsolation, isolationCapability);            	
             	dedicatedLb = isolationCapability.contains("dedicated");
             } else {
             	dedicatedLb = true;
@@ -3127,6 +3126,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) { 
             String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
             if (sourceNatType != null) {
+            	_networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, sourceNatType);            	
             	sharedSourceNat = sourceNatType.contains("perzone");
             } else {
             	sharedSourceNat = false;
@@ -3134,6 +3134,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             
             String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
             if (param != null) {
+            	_networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);            	
                 redundantRouter = param.contains("true");
             } else {
             	redundantRouter = false;
