@@ -640,18 +640,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
-            boolean gotSNAT = false;
+            Set<Long> networkSNAT = new HashSet<Long>();
             for (PublicIp ip : publicIps) {
                 Set<Service> services = ipToServices.get(ip);
                 if (services == null) {
                     services = new HashSet<Service>();
                 }
                 if (ip.isSourceNat()) {
-                    if (!gotSNAT) {
+                    if (!networkSNAT.contains(ip.getAssociatedWithNetworkId())) {
                         services.add(Service.SourceNat);
-                        gotSNAT = true;
+                        networkSNAT.add(ip.getAssociatedWithNetworkId());
                     } else {
-                        throw new CloudRuntimeException("Multiply generic source NAT IPs provided!");
+                        throw new CloudRuntimeException("Multiply generic source NAT IPs provided for network " + ip.getAssociatedWithNetworkId());
                     }
                 }
                 if (ip.isOneToOneNat()) {
