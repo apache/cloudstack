@@ -1022,22 +1022,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     	Account caller = ctx.getCaller();
     	IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
-        
-        Long vmId = ipAddress.getAssociatedWithVmId();
+                
+        if (ipAddress.getElastic()) {
+        	throw new InvalidParameterValueException("Can't release elastic IP address " + ipAddress);
+        }
 
-    	boolean success = disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
-    	if (success && vmId != null) {
-    		s_logger.debug("Allocating ip and enabling static nat for vm id=" + vmId + " as a part of disassociateIp command");
-    		UserVm vm = _vmDao.findById(vmId);
-    		success = enableElasticIpAndStaticNatForVm(vm, true);
-    		if (!success) {
-        		s_logger.warn("Failed to allocate ip and enable static nat for vm id=" + vmId + " as a part of disassociateIp command");
-    		} else {
-    			s_logger.debug("Successfully allocated ip and enabled static nat for vm id=" + vmId + " as a part of disassociateIp command");
-    		}
-    	}
+    	return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     	
-    	return success;
     }
 
     @Override @DB

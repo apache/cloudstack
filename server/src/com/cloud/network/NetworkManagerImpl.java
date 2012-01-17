@@ -170,7 +170,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -1929,15 +1928,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {
             throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
         }
+        
+        //don't allow releasing elastic ip address
+        if (ipVO.getElastic()) {
+        	throw new InvalidParameterValueException("Can't release elastic IP address " + ipVO);
+        }
 
         boolean success = releasePublicIpAddress(ipAddressId, userId, caller);
         if (success) {
-        	Long vmId = ipVO.getAssociatedWithVmId();
-        	UserVm vm = null;
-        	if (vmId != null) {
-        		vm = _userVmDao.findById(vmId);
-            	return _rulesMgr.enableElasticIpAndStaticNatForVm(vm, true);
-        	}
         	return true;
         } else {
         	s_logger.warn("Failed to release public ip address id=" + ipAddressId);
