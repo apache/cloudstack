@@ -1119,18 +1119,26 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
-    public Host updateHost(UpdateHostCmd cmd) {
+    public Host updateHost(UpdateHostCmd cmd) throws NoTransitionException {
         Long hostId = cmd.getId();
         Long guestOSCategoryId = cmd.getOsCategoryId();
 
+        // Verify that the host exists
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+        }
+        
+		if (cmd.getAllocationState() != null) {
+			ResourceState.Event resourceEvent = ResourceState.Event.toEvent(cmd.getAllocationState());
+			if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
+				throw new CloudRuntimeException("Invalid allocation state:" + cmd.getAllocationState() + ", only Enable/Disable are allowed");
+			}
+			
+			resourceStateTransitTo(host, resourceEvent, _nodeId);
+		}
+        
         if (guestOSCategoryId != null) {
-
-            // Verify that the host exists
-            HostVO host = _hostDao.findById(hostId);
-            if (host == null) {
-                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
-            }
-
             // Verify that the guest OS Category exists
             if (guestOSCategoryId > 0) {
                 if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
@@ -1150,40 +1158,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
             _hostDetailsDao.persist(hostId, hostDetails);
         }
-
-        /*
-        String allocationState = cmd.getAllocationState();
-        if (allocationState != null) {
-            // Verify that the host exists
-            HostVO host = _hostDao.findById(hostId);
-            if (host == null) {
-                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
-            }
-
-            try {
-                HostAllocationState newAllocationState = Host.HostAllocationState.valueOf(allocationState);
-                if (newAllocationState == null) {
-                    s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
-                    throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
-                } else {
-                    host.setHostAllocationState(newAllocationState);
-                }
-            } catch (IllegalArgumentException ex) {
-                s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
-                throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
-            }
-
-            _hostDao.update(hostId, host);
-        }
-        */
         
         List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
-            // Verify that the host exists
-            HostVO host = _hostDao.findById(hostId);
-            if (host == null) {
-                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
-            }
             if(s_logger.isDebugEnabled()){
                 s_logger.debug("Updating Host Tags to :"+hostTags);
             }

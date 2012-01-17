@@ -36,6 +36,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.storage.Swift;
+import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ResourceService {
     /**
@@ -44,8 +45,9 @@ public interface ResourceService {
      * @param cmd
      *            - the command specifying hostId
      * @return hostObject
+     * @throws NoTransitionException 
      */
-    Host updateHost(UpdateHostCmd cmd);
+    Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 

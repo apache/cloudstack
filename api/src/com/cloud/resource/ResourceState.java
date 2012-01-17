@@ -3,6 +3,7 @@ package com.cloud.resource;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine;
 
 public enum ResourceState {
@@ -39,6 +40,16 @@ public enum ResourceState {
         
         public String getDescription() {
             return this.comment;
+        }
+        
+        public static Event toEvent(String e) {
+        	if (Enable.toString().equals(e)) {
+        		return Enable;
+        	} else if (Disable.toString().equals(e)) {
+        		return Disable;
+        	}
+        	
+        	return null;
         }
     }
     

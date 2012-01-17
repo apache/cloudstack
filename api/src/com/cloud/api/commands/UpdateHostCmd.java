@@ -32,6 +32,7 @@ import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.utils.fsm.NoTransitionException;
 
 @Implementation(description="Updates a host.", responseObject=HostResponse.class)
 public class UpdateHostCmd extends BaseCmd {
@@ -50,7 +51,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="the id of Os category to update the host with")
     private Long osCategoryId;
 
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Change resource state of host, valid values are [Enable, Disable]. Operation may failed if host in states not allowing Enable/Disable")
     private String allocationState;
 
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
@@ -103,13 +104,15 @@ public class UpdateHostCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Host result = _resourceService.updateHost(this);
-        if (result != null) {
+        Host result;
+        try {
+	        result = _resourceService.updateHost(this);
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host");
-        }   
+        } catch (Exception e) {
+        	s_logger.debug("Failed to update host:" + getId(), e);
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
+        }
     }
 }
