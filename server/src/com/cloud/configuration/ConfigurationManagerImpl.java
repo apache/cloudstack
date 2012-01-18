@@ -702,7 +702,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
         if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
             checkPodCidrSubnets(zoneId, podId, cidr);
-            checkCidrVlanOverlap(zoneId, cidr);
+            /* Commenting out due to Bug 11593 - CIDR conflicts with zone when extending pod but not when creating it
+             * 
+             * checkCidrVlanOverlap(zoneId, cidr);
+             */
         }
 
         Grouping.AllocationState allocationState = null;
