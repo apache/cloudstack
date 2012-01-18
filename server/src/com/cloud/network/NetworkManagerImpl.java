@@ -3111,6 +3111,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         
         if (cleanup) {
+            if (network.getGuestType() != GuestType.Isolated) {
+                s_logger.warn("Only support clean up network for isolated network!");
+                return false;
+            }
             //shutdown the network
             s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
 
