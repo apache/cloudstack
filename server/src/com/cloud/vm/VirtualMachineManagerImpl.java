@@ -1832,7 +1832,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         	if(serverState == State.Starting) {
         		if(vm.getHostId() != null && vm.getHostId() != hostId) {
         			s_logger.info("CloudStack is starting VM on host " + vm.getHostId() + ", but status report comes from a different host " + hostId + ", skip status sync for vm: " + vm.getInstanceName());
-        			return null;
+                     if (vm.getHypervisorType() == HypervisorType.XenServer){ // for xenserver (bug 12875) a starting VM can be discovered as running if a disconnected host connects back
+                        try {
+                            stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                        } catch (NoTransitionException e) {
+                             s_logger.warn(e.getMessage());
+                        }
+                     }
+                     return null;
         		}
         	}
         	
