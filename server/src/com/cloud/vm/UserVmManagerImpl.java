@@ -1405,12 +1405,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
             }
-            
+
+/*            
             // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
             if(snapshot.getHypervisorType() == HypervisorType.VMware && snapshotVolume.getVolumeType() == Type.DATADISK){            	
             	throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from Data Disk");            	
             }
-
+*/
             domainId = snapshot.getDomainId();
             accountId = snapshot.getAccountId();
             hyperType = snapshot.getHypervisorType();
