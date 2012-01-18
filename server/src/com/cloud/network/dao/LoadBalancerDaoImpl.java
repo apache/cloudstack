@@ -28,10 +28,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value={LoadBalancerDao.class})
@@ -48,6 +50,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     private final SearchBuilder<LoadBalancerVO> ListByIp;
     private final SearchBuilder<LoadBalancerVO> IpAndPublicPortSearch;
     private final SearchBuilder<LoadBalancerVO> AccountAndNameSearch;
+    protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
     
     protected final FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
 
@@ -66,6 +69,11 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         AccountAndNameSearch.and("accountId", AccountAndNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountAndNameSearch.and("name", AccountAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         AccountAndNameSearch.done();
+        
+        TransitionStateSearch = createSearchBuilder();
+        TransitionStateSearch.and("networkId", TransitionStateSearch.entity().getNetworkId(), Op.EQ);
+        TransitionStateSearch.and("state", TransitionStateSearch.entity().getState(), Op.IN);
+        TransitionStateSearch.done();
     }
 
     @Override
@@ -119,4 +127,11 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         return findOneBy(sc);
     }
     
+    @Override
+    public List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId) {
+    	 SearchCriteria<LoadBalancerVO> sc = TransitionStateSearch.create();
+         sc.setParameters("networkId", networkId);
+         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
+         return listBy(sc);
+    }
 }

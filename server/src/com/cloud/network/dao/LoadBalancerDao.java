@@ -29,4 +29,5 @@ public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
     LoadBalancerVO findByIpAddressAndPublicPort(long ipAddressId, String publicPort);
     LoadBalancerVO findByAccountAndName(Long accountId, String name);
     List<LoadBalancerVO> listByNetworkId(long networkId);
+    List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId);
 }

@@ -688,8 +688,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
     @Override
     public boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException {
-        List<LoadBalancerVO> lbs = new ArrayList<LoadBalancerVO>(1);
-        lbs.add(_lbDao.findById(lbRuleId));
+    	LoadBalancerVO lb = _lbDao.findById(lbRuleId);
+    	//get all rules in transition state
+        List<LoadBalancerVO> lbs = _lbDao.listInTransitionStateByNetworkId(lb.getNetworkId());
         return applyLoadBalancerRules(lbs, true);
     }
 
