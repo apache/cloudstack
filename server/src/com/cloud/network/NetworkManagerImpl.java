@@ -2547,16 +2547,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (isSystem == null || !isSystem) {
             //Get domain level networks
-            if (domainId != null && !listAll) {
+            if (domainId != null) {
                 networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, domainId));
-            } else if (permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path, isRecursive));
-            }
-
-            //get account specific networks
-            if (!permittedAccounts.isEmpty()){
+            } 
+            
+            if (!permittedAccounts.isEmpty()) {
                 networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, permittedAccounts));
-            }
+            } else if (domainId == null){
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path, isRecursive));
+            } 
+            
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired), searchFilter);
         }
