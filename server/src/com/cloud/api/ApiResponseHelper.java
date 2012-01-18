@@ -2608,9 +2608,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
             for (Provider provider : serviceProviderMap.get(service)) {
-                ProviderResponse providerRsp = new ProviderResponse();
-                providerRsp.setName(provider.getName());
-                providers.add(providerRsp);
+                if (provider != null) {
+                	ProviderResponse providerRsp = new ProviderResponse();
+                	providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
             }
             svcRsp.setProviders(providers);
 

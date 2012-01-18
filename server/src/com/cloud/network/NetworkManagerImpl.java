@@ -4640,6 +4640,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return new ArrayList<Provider>(supportedProviders);
     }
+    
+    @Override
+    public Provider getDefaultUniqueProviderForService(String serviceName) {
+    	List<? extends Provider> providers = listSupportedNetworkServiceProviders(serviceName);
+    	if (providers.isEmpty()) {
+    		throw new CloudRuntimeException("No providers supporting service " + serviceName + " found in cloudStack");
+    	}
+    	if (providers.size() > 1) {
+    		throw new CloudRuntimeException("More than 1 provider supporting service " + serviceName + " found in cloudStack");
+    	}
+    	
+    	return providers.get(0);
+    }
 
     @Override
     @DB
@@ -5568,6 +5581,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             String service = serviceMap.getService();
             String provider = serviceMap.getProvider();
+            
+            if (provider == null) {
+            	provider = getDefaultUniqueProviderForService(service).getName();
+            }
 
             //check that provider is supported
             if (checkPhysicalNetwork) {

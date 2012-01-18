@@ -77,7 +77,9 @@ public class NetworkOfferingServiceMapVO {
     public NetworkOfferingServiceMapVO(long networkOfferingId, Service service, Provider provider) {
         this.networkOfferingId = networkOfferingId;
         this.service = service.getName();
-        this.provider = provider.getName();
+        if (provider != null) {
+            this.provider = provider.getName();
+        }
     }
     
     public String toString() {

@@ -120,9 +120,6 @@ public interface Network extends ControlledEntity {
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider None = new Provider("None", false);
-        
-        //the default provider
-        public static final Provider defaultProvider = VirtualRouter;
 
         private String name;
         private boolean isExternal;

@@ -2950,7 +2950,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // configure service provider map
         Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
-        defaultProviders.add(Network.Provider.defaultProvider);
         
         //populate the services first
         for (String serviceName : cmd.getSupportedServices()) {
@@ -2993,8 +2992,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
-                        Network.Provider provider;
-                        provider = Network.Provider.getProvider(prvNameStr);
+                        Network.Provider provider = Network.Provider.getProvider(prvNameStr);
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
@@ -3155,11 +3153,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // populate services and providers
         if (serviceProviderMap != null) {
             for (Network.Service service : serviceProviderMap.keySet()) {
-                for (Network.Provider provider : serviceProviderMap.get(service)) {
-                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+            	Set<Provider> providers = serviceProviderMap.get(service);
+            	if (providers != null && !providers.isEmpty()) {
+            		for (Network.Provider provider : providers) {
+                        NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+                        _ntwkOffServiceMapDao.persist(offService);
+                        s_logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
+                    }
+            	} else {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, null);
                     _ntwkOffServiceMapDao.persist(offService);
-                    s_logger.trace("Added service for the network offering: " + offService);
-                }
+                    s_logger.trace("Added service for the network offering: " + offService + " with null provider");
+            	}
             }
         }
 

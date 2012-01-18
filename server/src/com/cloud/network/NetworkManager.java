@@ -276,4 +276,6 @@ public interface NetworkManager extends NetworkService {
 
 	void checkCapabilityForProvider(Set<Provider> providers, Service service,
 			Capability cap, String capValue);
+
+	Provider getDefaultUniqueProviderForService(String serviceName);
 }
