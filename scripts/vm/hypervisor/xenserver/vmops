@@ -1052,34 +1052,44 @@ def cleanup_rules(session, args):
   instance = args.get('instance')
   if not instance:
     instance = 'VM'
- 
+  resident_vms = []
   try:
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/' | sed 's/-eg//' |sort|uniq" % instance
+    hostname = util.pread2(['/bin/bash', '-c', 'hostname']).split('\n')
+    if len(hostname) < 1:
+       raise Exception('Could not find hostname of this host')
+    thishost = session.xenapi.host.get_by_name_label(hostname[0])
+    if len(thishost) < 1:
+       raise Exception("Could not find host record from hostname %s of this host"%hostname[0])
+    hostrec = session.xenapi.host.get_record(thishost[0])
+    vms = hostrec.get('resident_VMs')
+    resident_vms = [session.xenapi.VM.get_name_label(x) for x in vms]
+    util.SMlog('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
+ 
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'| sed 's/-eg//' | sort|uniq" % instance
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
+    vmchains = [ch  for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
+    util.SMlog('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
     cleaned = 0
     cleanup = []
-    for chain in chains:
-        if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
-            vm = session.xenapi.VM.get_by_name_label(chain)
+    for chain in vmchains:
+        vm = session.xenapi.VM.get_by_name_label(chain)
+        if len(vm) != 1:
+            vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
             if len(vm) != 1:
-                vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
-                if len(vm) != 1:
-                    util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                    cleanup.append(chain)
-                    continue
-            vm_rec = session.xenapi.VM.get_record(vm[0])
-            state = vm_rec.get('power_state')
-            if state != 'Running' and state != 'Paused':
-                util.SMlog("vm " + vm_name + " is not running, cleaning up")
-                cleanup.append(vm_name)
+                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
+                cleanup.append(chain)
+                continue
+        if chain not in resident_vms:
+            util.SMlog("vm " + chain + " is not running, cleaning up")
+            cleanup.append(chain)
                 
     for vm_name in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vm_name})
                     
     util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
     return str(len(cleanup))                
-  except:
-    util.SMlog("Failed to cleanup rules !")
+  except Exception, ex:
+    util.SMlog("Failed to cleanup rules, reason= " + str(ex))
     return '-1';
 
 @echo
