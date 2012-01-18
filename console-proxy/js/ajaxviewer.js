@@ -233,6 +233,103 @@ JsX11KeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+//JsCookedKeyboardMapper
+// For Xen/KVM hypervisors, it accepts "cooked" keyborad events
+//
+function JsCookedKeyboardMapper() {
+	KeyboardMapper.apply(this, arguments);
+	
+	this.jsX11KeysymMap = [];
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F2] 				= AjaxViewer.X11_KEY_F2;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F3] 				= AjaxViewer.X11_KEY_F3;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F4] 				= AjaxViewer.X11_KEY_F4;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F5] 				= AjaxViewer.X11_KEY_F5;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F6] 				= AjaxViewer.X11_KEY_F6;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F7] 				= AjaxViewer.X11_KEY_F7;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F8] 				= AjaxViewer.X11_KEY_F8;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F9] 				= AjaxViewer.X11_KEY_F9;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F10] 				= AjaxViewer.X11_KEY_F10;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F11] 				= AjaxViewer.X11_KEY_F11;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_F12] 				= AjaxViewer.X11_KEY_F12;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
+	this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
+}
+
+JsCookedKeyboardMapper.prototype = new KeyboardMapper();
+JsCookedKeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers) {
+	if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
+		
+		// special handling for Alt + Ctrl + Ins, convert it into Alt-Ctrl-Del
+		if(code == AjaxViewer.JS_KEY_INSERT) {
+			if((modifiers & AjaxViewer.ALT_KEY_MASK) != 0 && (modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
+				this.mappedInput.push({type : eventType, code: 0xffff, modifiers: modifiers});
+				return;
+			}
+		}
+		
+		var X11Keysym = code;
+		if(this.jsX11KeysymMap[code] != undefined) {
+			X11Keysym = this.jsX11KeysymMap[code];
+			if(typeof this.jsX11KeysymMap[code] == "boolean") {
+				return;
+			} else if($.isArray(X11Keysym)) {
+				for(var i = 0; i < X11Keysym.length; i++) {
+					if(X11Keysym[i].type == eventType) {
+						this.mappedInput.push(X11Keysym[i]);
+					}
+				}
+			} else {
+				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+			}
+		} 
+
+		// special handling for ALT/CTRL key
+		if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+			this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
+		
+	} else if(eventType == AjaxViewer.KEY_PRESS) {
+		var X11Keysym = code;
+		
+		// special handling for * and + key on number pad
+		if(code == AjaxViewer.JS_NUMPAD_MULTIPLY) {
+			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 42, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 42, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+			return;
+		}
+		
+		if(code == AjaxViewer.JS_NUMPAD_PLUS) {
+			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: 43, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: 43, modifiers: modifiers});
+			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
+			return;
+		}
+			
+		this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
+		this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // class AjaxViewer
 //
 function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWidth, tileHeight) {
@@ -373,6 +470,7 @@ AjaxViewer.JS_KEY_BACK_SLASH = 220;			// \
 AjaxViewer.JS_KEY_CLOSE_BRACKET = 221;		// ]
 AjaxViewer.JS_KEY_SINGLE_QUOTE = 222;		// '
 AjaxViewer.JS_NUMPAD_PLUS = 43;
+AjaxViewer.JS_NUMPAD_MULTIPLY = 42;
 AjaxViewer.JS_KEY_NUM8 = 56;
 
 // keycode from Japanese keyboard
@@ -561,7 +659,8 @@ AjaxViewer.prototype = {
 	
 	setupKeyboardTranslationTable : function() {
 		this.keyboardMappers = [];
-		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new JsX11KeyboardMapper();
+		// this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new JsX11KeyboardMapper();
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new JsCookedKeyboardMapper();
 
 		// setup Japanese keyboard translation table
 		var mapper = new JsX11KeyboardMapper();
