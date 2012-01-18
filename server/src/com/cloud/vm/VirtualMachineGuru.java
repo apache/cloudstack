@@ -20,6 +20,7 @@ package com.cloud.vm;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 
 /**
@@ -55,8 +56,9 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param profile virtual machine profile.
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
+     * @throws InsufficientAddressCapacityException 
      */
-    boolean finalizeStart(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context);
+    boolean finalizeStart(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context) throws InsufficientAddressCapacityException;
     
     boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<T> profile);
     

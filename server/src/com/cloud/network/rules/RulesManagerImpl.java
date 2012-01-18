@@ -36,6 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -1158,7 +1159,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     
 	@Override
-    public boolean enableElasticIpAndStaticNatForVm(UserVm vm, boolean stopOnError) {
+    public void enableElasticIpAndStaticNatForVm(UserVm vm) throws InsufficientAddressCapacityException{
     	boolean success = true;
     	
     	//enable static nat if eIp capability is supported
@@ -1167,43 +1168,39 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     		Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
     		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
     		if (offering.getElasticIp()) {
-    			try {
-    				//check if there is already static nat enabled
-    				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null) {
-    					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
-    					continue;
-    				}
-    				
-    	    		s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
-        			IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
-        			if (ip == null) {
-        				s_logger.warn("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
-        				return false;
-        			}
-        			s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
-        			try {
-        				enableStaticNat(ip.getId(), vm.getId());
-        			} catch (Exception ex) {
-        				s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
-        				success = false;
-        			}
-        			if (!success) {
-        				s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
-        				_networkMgr.handleElasticIpRelease(ip);
-        			} else {
-        				s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
-        			}
-    			} catch (Exception ex) {
-    				s_logger.warn("Failed to acquire elastic ip and enable static nat for vm " + vm + " on the network " + guestNetwork + " due to exception ", ex);
-    			} finally {
-    				if (!success && stopOnError) {
-    					return false;
-    				}
-    			}
+    			
+				//check if there is already static nat enabled
+				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null) {
+					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
+					continue;
+				}
+				
+				s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
+				IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
+				if (ip == null) {
+					throw new CloudRuntimeException("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
+				}
+				
+				s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
+				
+				try {
+					enableStaticNat(ip.getId(), vm.getId());
+				} catch (NetworkRuleConflictException ex) {
+					s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
+					success = false;
+				} catch (ResourceUnavailableException ex) {
+					s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
+					success = false;
+				}
+				
+				if (!success) {
+					s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
+					_networkMgr.handleElasticIpRelease(ip);
+				} else {
+					s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
+				}
     		}
     	}
-    	
-    	return success;
     }
 	
 }

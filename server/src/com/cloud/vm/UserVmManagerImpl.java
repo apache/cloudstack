@@ -102,6 +102,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
@@ -2666,7 +2667,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) throws InsufficientAddressCapacityException{
         UserVmVO vm = profile.getVirtualMachine();
 
         Answer[] answersToCmds = cmds.getAnswers();
@@ -2730,7 +2731,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         //enable elastic ip for vm
-        return _rulesMgr.enableElasticIpAndStaticNatForVm(profile.getVirtualMachine(), true);
+         _rulesMgr.enableElasticIpAndStaticNatForVm(profile.getVirtualMachine());
+         
+         return true;
     }
 
     @Override
