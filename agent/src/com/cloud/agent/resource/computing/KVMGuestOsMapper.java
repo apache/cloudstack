@@ -85,6 +85,8 @@ public class KVMGuestOsMapper {
 		s_mapper.put("Debian GNU/Linux 5.0 (64-bit)", "Debian GNU/Linux 5");
 		s_mapper.put("Debian GNU/Linux 4.0 (32-bit)", "Debian GNU/Linux 4");
 		s_mapper.put("Debian GNU/Linux 4.0 (64-bit)", "Debian GNU/Linux 4");
+		s_mapper.put("Debian GNU/Linux 6.0 (64-bit)", "Debian GNU/Linux 6");
+		s_mapper.put("Debian GNU/Linux 6.0 (32-bit)", "Debian GNU/Linux 6");
 		s_mapper.put("Other 2.6x Linux (32-bit)", "Other 2.6x Linux");
 		s_mapper.put("Other 2.6x Linux (64-bit)", "Other 2.6x Linux");
 		s_mapper.put("Other Linux (32-bit)", "Other Linux");
