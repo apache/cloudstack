@@ -741,6 +741,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         args += " -c ";
         args += "eth" + publicNicInfo.first();
+        
+        args += " -g ";
+        args += vlanGateway;
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Run command on domain router " + privateIpAddress + ", /root/ipassoc.sh " + args);
