@@ -183,6 +183,72 @@ public class LibvirtVMDef {
 		}
 	}
 	
+	public static class ClockDef {
+		public enum ClockOffset {
+			UTC("utc"),
+			LOCALTIME("localtime"),
+			TIMEZONE("timezone"),
+			VARIABLE("variable");
+			
+			private String _offset;
+			private ClockOffset(String offset) {
+				_offset = offset;
+			}
+			@Override
+			public String toString() {
+				return _offset;
+			}
+		}
+		private ClockOffset _offset;
+		private String _timerName;
+		private String _tickPolicy;
+		private String _track;
+		
+		public ClockDef() {
+			_offset = ClockOffset.UTC;
+		}
+		
+		public void setClockOffset(ClockOffset offset) {
+			_offset = offset;
+		}
+		
+		public void setTimer(String timerName, String tickPolicy, String track) {
+			_timerName = timerName;
+			_tickPolicy = tickPolicy;
+			_track = track;
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder clockBuilder = new StringBuilder();
+			clockBuilder.append("<clock offset='");
+			clockBuilder.append(_offset.toString());
+			clockBuilder.append("'>\n");
+			if (_timerName != null) {
+				clockBuilder.append("<timer name='");
+				clockBuilder.append(_timerName);
+				clockBuilder.append("' ");
+				
+				if (_tickPolicy != null) {
+					clockBuilder.append("tickpolicy='");
+					clockBuilder.append(_tickPolicy);
+					clockBuilder.append("' ");
+				}
+				
+				if (_track != null) {
+					clockBuilder.append("track='");
+					clockBuilder.append(_track);
+					clockBuilder.append("' ");
+				}
+				
+				clockBuilder.append(">\n");
+				clockBuilder.append("</timer>\n");
+			}
+			clockBuilder.append("</clock>\n");
+			return clockBuilder.toString();
+		}
+	}
+	
 	public static class DevicesDef {
 		private String _emulator;
 		private final Map<String, List<?>> devices = new HashMap<String, List<?>>();
