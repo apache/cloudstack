@@ -59,10 +59,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
-import org.libvirt.StoragePool;
-import org.libvirt.StoragePoolInfo;
-import org.libvirt.StorageVol;
-import org.libvirt.StorageVolInfo;
+
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -155,7 +152,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
-import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.agent.resource.computing.LibvirtVMDef.ConsoleDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.DevicesDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.DiskDef;
@@ -168,12 +164,12 @@ import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.agent.resource.computing.LibvirtVMDef.SerialDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.TermPolicy;
+import com.cloud.agent.resource.computing.LibvirtVMDef.ClockDef;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.agent.storage.KVMPhysicalDisk;
 import com.cloud.agent.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.agent.storage.KVMStoragePool;
 import com.cloud.agent.storage.KVMStoragePoolManager;
-import com.cloud.agent.storage.LibvirtStorageAdaptor;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -207,7 +203,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
-import com.xensource.xenapi.Connection;
+
 
 
 /**
@@ -2272,6 +2268,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		term.setPowerOffPolicy("destroy");
 		term.setRebootPolicy("restart");
 		vm.addComp(term);
+		
+		ClockDef clock = new ClockDef();
+		if (vmTO.getOs().startsWith("Windows")) {
+			clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
+			clock.setTimer("rtc", "catchup", null);
+		}
+		
+		vm.addComp(clock);
 
 		DevicesDef devices = new DevicesDef();
 		devices.setEmulatorPath(_hypervisorPath);
