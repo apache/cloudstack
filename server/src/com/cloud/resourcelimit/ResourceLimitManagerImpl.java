@@ -52,6 +52,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount.Role;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -112,6 +114,9 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     private EntityManager _entityMgr;
     @Inject
     private ProjectDao _projectDao;
+    @Inject
+    private ProjectAccountDao _projectAccountDao;
+    
     
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -690,6 +695,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             newCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
             newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
+        } else if (type == Resource.ResourceType.project) {
+        	newCount = _projectAccountDao.countByAccountIdAndRole(accountId, Role.Admin);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }

@@ -19,6 +19,7 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -34,4 +35,6 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long>{
     List<Long> listPermittedAccountIds(long accountId);
     
     List<Long> listAdministratedProjects(long adminAccountId);
+    
+    Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role);
 }

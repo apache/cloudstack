@@ -30,6 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
@@ -47,7 +48,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project, should be specified with domainId")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project")
     private String accountName;
     
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="display text of the project")
@@ -91,7 +92,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
+    public void execute() throws ResourceAllocationException{
         UserContext.current().setEventDetails("Project id: "+ getId());
         Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
         if (project != null) {

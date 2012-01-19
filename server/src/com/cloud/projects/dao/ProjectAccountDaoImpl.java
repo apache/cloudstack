@@ -27,6 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value={ProjectAccountDao.class})
@@ -34,6 +35,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     protected final SearchBuilder<ProjectAccountVO> AllFieldsSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountSearch;
+    final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
     
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -53,6 +55,12 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         ProjectAccountSearch.selectField(ProjectAccountSearch.entity().getProjectAccountId());
         ProjectAccountSearch.and("accountId", ProjectAccountSearch.entity().getAccountId(), Op.EQ);
         ProjectAccountSearch.done();
+        
+        CountByRoleSearch = createSearchBuilder(Long.class);
+        CountByRoleSearch.select(null, Func.COUNT, CountByRoleSearch.entity().getId());
+        CountByRoleSearch.and("accountId", CountByRoleSearch.entity().getAccountId(), Op.EQ);
+        CountByRoleSearch.and("role", CountByRoleSearch.entity().getAccountRole(), Op.EQ);
+        CountByRoleSearch.done();
     }
     
     @Override
@@ -121,5 +129,13 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         sc.setParameters("role", ProjectAccount.Role.Admin);
         sc.setParameters("accountId", adminAccountId);
         return customSearch(sc, null);
+    }
+    
+    @Override
+    public Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role) {
+    	SearchCriteria<Long> sc = CountByRoleSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("role", role);
+        return customSearch(sc, null).get(0);
     }
 }

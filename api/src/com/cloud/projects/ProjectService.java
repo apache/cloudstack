@@ -50,7 +50,7 @@ public interface ProjectService {
     
     Project findByNameAndDomainId(String name, long domainId);
     
-    Project updateProject(long id, String displayText, String newOwnerName);
+    Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
     
     boolean addAccountToProject(long projectId, String accountName, String email);
 
