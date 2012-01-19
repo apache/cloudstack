@@ -39,8 +39,11 @@ import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.host.Host;
@@ -322,7 +325,7 @@ public class NetscalerResource implements ServerResource {
     @Override
     public Answer executeRequest(Command cmd) {
         return executeRequest(cmd, _numRetries);
-    }    
+    }
 
     private Answer executeRequest(Command cmd, int numRetries) {
         if (cmd instanceof ReadyCommand) {
@@ -339,6 +342,8 @@ public class NetscalerResource implements ServerResource {
             return execute((CreateLoadBalancerApplianceCommand) cmd, numRetries);
         } else if (cmd instanceof DestroyLoadBalancerApplianceCommand) {
             return execute((DestroyLoadBalancerApplianceCommand) cmd, numRetries);
+        } else if (cmd instanceof SetStaticNatRulesCommand) {
+            return execute((SetStaticNatRulesCommand) cmd, numRetries);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -761,6 +766,73 @@ public class NetscalerResource implements ServerResource {
             }
             return new DestroyLoadBalancerApplianceAnswer(cmd, false, "Failed to delete VPX instance " + vpxName + " on Netscaler SDX " + _ip);
         }
+    }
+
+    private synchronized Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {
+
+        if (_isSdx) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        boolean endResult = true;
+
+        try {
+            for (StaticNatRuleTO rule : cmd.getRules()) {
+                String srcIp = rule.getSrcIp();
+                String dstIP = rule.getDstIp();
+                String iNatRuleName = generateInatRuleName(srcIp, dstIP);
+                inat iNatRule = null;
+
+                if (!rule.revoked()) {
+                    try {
+                        iNatRule = inat.get(_netscalerService, iNatRuleName);
+                    } catch (nitro_exception e) {
+                        if (e.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
+                            throw e;
+                        }
+                    }
+
+                    if (iNatRule == null) {
+                        iNatRule = new inat();
+                        iNatRule.set_name(iNatRuleName);
+                        iNatRule.set_publicip(srcIp);
+                        iNatRule.set_privateip(dstIP);
+                        iNatRule.set_usnip("ON");
+                        iNatRule.set_usip("OFF");
+                        try {
+                            apiCallResult = inat.add(_netscalerService, iNatRule);
+                        } catch (nitro_exception e) {
+                            if (e.getErrorCode() != NitroError.NS_RESOURCE_EXISTS) {
+                                throw e;
+                            }
+                        }
+                        s_logger.debug("Created Inat rule on the Netscaler device " + _ip + " to enable static NAT from " +  srcIp + " to " + dstIP);
+                    }
+                } else {
+                    try {
+                        inat.delete(_netscalerService, iNatRuleName);
+                    } catch (nitro_exception e) {
+                        if (e.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
+                            throw e;
+                        }
+                    }
+                    s_logger.debug("Deleted Inat rule on the Netscaler device " + _ip + " to remove static NAT from " +  srcIp + " to " + dstIP);
+                }
+
+                results[i++] = "Static nat rule from " + srcIp + " to " + dstIP + " successfully " + (rule.revoked() ? " revoked.":" created.");
+            }
+        }  catch (Exception e) {
+            if (shouldRetry(numRetries)) {
+                return retry(cmd, numRetries);
+            }
+            results[i++] = "Configuring static nat rule failed due to " + e.getMessage();
+            endResult = false;
+            return new SetStaticNatRulesAnswer(cmd, results, endResult);
+        }
+
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
     private synchronized Answer execute(ExternalNetworkResourceUsageCommand cmd, int numRetries) {
@@ -1188,6 +1260,10 @@ public class NetscalerResource implements ServerResource {
             s_logger.error("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
         }
         return false;
+    }
+
+    private String generateInatRuleName(String srcIp, String dstIP) {
+        return genObjectName("Cloud-Inat", srcIp);
     }
 
     private String generateNSVirtualServerName(String srcIp, long srcPort, String protocol) {

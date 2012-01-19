@@ -31,6 +31,15 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
@@ -40,6 +49,7 @@ import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -55,6 +65,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
@@ -74,9 +85,11 @@ import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetscalerResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -110,24 +123,29 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Inject NetworkDao _networkDao;
     @Inject HostDetailsDao _detailsDao;
 
-    private boolean canHandle(Network config) {
-    	DataCenter zone = _dcDao.findById(config.getDataCenterId());
-    	boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
-    	boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
-    	
+    private boolean canHandle(Network config, Service service) {
+        DataCenter zone = _dcDao.findById(config.getDataCenterId());
+        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
+        boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
+        
         if (!(handleInAdvanceZone || handleInBasicZone)) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType() + " in zone of type " + zone.getNetworkType());
             return false;
         }
         
         return  (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
-                _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.Netscaler));
+                _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
+    }
+
+    private boolean isBasicZoneNetwok(Network config) {
+        DataCenter zone = _dcDao.findById(config.getDataCenterId());
+        return (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
     }
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientNetworkCapacityException {
         
-        if (!canHandle(guestConfig)) {
+        if (!canHandle(guestConfig, Service.Lb)) {
             return false;
         }
 
@@ -145,13 +163,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {	
+    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {    
         return true;
     }
 
     @Override
     public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
-        if (!canHandle(guestConfig)) {
+        if (!canHandle(guestConfig, Service.Lb)) {
             return false;
         }
 
@@ -170,18 +188,22 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean applyLBRules(Network config, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        if (!canHandle(config)) {
+        if (!canHandle(config, Service.Lb)) {
             return false;
         }
-    	
-    	return applyLoadBalancerRules(config, rules);
+
+        if (isBasicZoneNetwok(config)) {
+            return applyElasticLoadBalancerRules(config, rules);
+        } else {
+            return applyLoadBalancerRules(config, rules);
+        }
     }
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
-    	 Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-    	 
-    	 // Set capabilities for LB service
+         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+         
+         // Set capabilities for LB service
          Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
          
          // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
@@ -493,7 +515,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
-		// return true, as IP will be associated as part of LB rule configuration
+        // return true, as IP will be associated as part of LB rule configuration
         return false;
     }
 
@@ -502,19 +524,123 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return this;
     }
 
-	@Override
-	public boolean applyFWRules(Network network,
-			List<? extends FirewallRule> rules)
-			throws ResourceUnavailableException {
-		// TODO - Murali, your code should go here
-		return true;
-	}
+    @Override
+    public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return true;
+    }
 
-	@Override
-	public boolean applyStaticNats(Network config,
-			List<? extends StaticNat> rules)
-			throws ResourceUnavailableException {
-		// TODO - Murali, your code should go here
-		return true;
-	}
+    public boolean applyElasticLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+
+        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
+        for (FirewallRule rule : rules) {
+            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
+                loadBalancingRules.add((LoadBalancingRule) rule);
+            }
+        }
+
+        if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
+            return true;
+        }
+
+        String errMsg = null;
+        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network); 
+        if (lbDeviceVO == null) {
+            try {
+                lbDeviceVO = allocateLoadBalancerForNetwork(network);
+            } catch (Exception e) {
+                errMsg = "Could not allocate a NetSclaer load balancer for configuring elastic load balancer rules due to " + e.getMessage();
+                s_logger.error(errMsg);
+                throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+            }
+        }
+
+        if (!isNetscalerDevice(lbDeviceVO.getDeviceName())) {
+            errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element can not be handle elastic load balancer rules.";
+            s_logger.error(errMsg);
+            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+        }
+
+        List<LoadBalancerTO> loadBalancersToApply = new ArrayList<LoadBalancerTO>();
+        for (int i = 0; i < loadBalancingRules.size(); i++) {
+            LoadBalancingRule rule = loadBalancingRules.get(i);
+            boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
+            String protocol = rule.getProtocol();
+            String algorithm = rule.getAlgorithm();
+            String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            int srcPort = rule.getSourcePortStart();
+            List<LbDestination> destinations = rule.getDestinations();
+
+            if (destinations != null && !destinations.isEmpty()) {
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                loadBalancersToApply.add(loadBalancer);
+            }
+        }
+
+        if (loadBalancersToApply.size() > 0) {
+            int numLoadBalancersForCommand = loadBalancersToApply.size(); 
+            LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
+            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+
+            HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+            Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                String details = (answer != null) ? answer.getDetails() : "details unavailable";
+                String msg = "Unable to apply elastic load balancer rules to the external load balancer appliance in zone " + network.getDataCenterId() + " due to: " + details + ".";
+                s_logger.error(msg);
+                throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+
+        if (!canHandle(config, Service.StaticNat)) {
+            return false;
+        }
+
+        String errMsg;
+        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
+        if (lbDevice == null) {
+            try {
+                lbDevice = allocateLoadBalancerForNetwork(config);
+            } catch (Exception e) {
+                errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
+                s_logger.error(errMsg);
+                throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+            }
+        }
+
+        if (!isNetscalerDevice(lbDevice.getDeviceName())) {
+            errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
+            s_logger.error(errMsg);
+            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+        }
+
+        SetStaticNatRulesAnswer answer = null;
+        try {
+            List<StaticNatRuleTO> rulesTO = null;
+            if (rules != null) {
+                rulesTO = new ArrayList<StaticNatRuleTO>();
+                for (StaticNat rule : rules) {
+                    IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                    StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                    rulesTO.add(ruleTO);
+                }
+            }
+
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+            answer = (SetStaticNatRulesAnswer )_agentMgr.send(lbDevice.getHostId(), cmd);
+            if (answer == null) {
+                return false;
+            } else {
+                return answer.getResult();
+            }
+        } catch (Exception e) {
+            s_logger.error("Failed to configure StaticNat rule due to " + e.getMessage());
+            return false;
+        }
+    }
 }
