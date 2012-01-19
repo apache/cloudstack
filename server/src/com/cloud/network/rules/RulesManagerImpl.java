@@ -1184,7 +1184,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 				s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
 				
 				try {
-					enableStaticNat(ip.getId(), vm.getId());
+					success = enableStaticNat(ip.getId(), vm.getId());
 				} catch (NetworkRuleConflictException ex) {
 					s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
 					success = false;
@@ -1196,6 +1196,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 				if (!success) {
 					s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
 					_networkMgr.handleElasticIpRelease(ip);
+					throw new CloudRuntimeException("Failed to enable static nat on elastic ip for the vm " + vm);
 				} else {
 					s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
 				}

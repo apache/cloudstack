@@ -931,7 +931,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //check permissions
-        _accountMgr.checkAccess(caller, null, true, ipOwner, network);
+        _accountMgr.checkAccess(caller, null, false, ipOwner, network);
         
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         
