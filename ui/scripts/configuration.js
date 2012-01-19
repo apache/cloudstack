@@ -1043,21 +1043,24 @@
                       serviceProviderMap[serviceData[1]] = formData[
                         'service.' + serviceData[1] + '.provider'
                       ];
-                    } else if (serviceData[0] == 'service' &&
-                               serviceData[2].indexOf('Capability') != -1 &&
-                               value == 'on') { // Services field
-
+                    } 
+										else if (serviceData[0] == 'service' &&                            
+														 serviceData[2].indexOf('Capability') != -1 &&
+                             value == 'on') { // Services field
                       serviceCapabilityMap[serviceData[1]] = serviceData[2];
                     }
-                  } else if ((key == 'lbIsolation') && ("Lb" in serviceProviderMap)) {
-                    inputData['servicecapabilitylist[0].service'] = 'lb';
-                    inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedLbIsolation';
-                    inputData['servicecapabilitylist[0].capabilityvalue'] = value;
-                  } else if ((key == 'sourceNatType') && ("SourceNat" in serviceProviderMap)) {
-                    inputData['servicecapabilitylist[0].service'] = 'sourcenat';
-                    inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedSourceNatTypes';
-                    inputData['servicecapabilitylist[0].capabilityvalue'] = value;
-                  } else if (value != '') { // Normal data
+										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
+											inputData['servicecapabilitylist[0].service'] = 'lb';
+											inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedLbIsolation';
+											inputData['servicecapabilitylist[0].capabilityvalue'] = value;
+										} 
+										else if ((key == 'service.SourceNat.sourceNatTypeDropdown') && ("SourceNat" in serviceProviderMap)) {											
+											inputData['servicecapabilitylist[0].service'] = 'sourcenat';
+											inputData['servicecapabilitylist[0].capabilitytype'] = 'SupportedSourceNatTypes';
+											inputData['servicecapabilitylist[0].capabilityvalue'] = value;
+										} 	
+                  } 									
+									else if (value != '') { // Normal data
                     inputData[key] = value;
                   }
                 });
@@ -1088,9 +1091,9 @@
                 });
 
                 var serviceCapabilityIndex = 0;
-                $.each(serviceCapabilityMap, function(key, value) {
+                $.each(serviceCapabilityMap, function(key, value) {								 
                   var capabilityType = null;
-                  if(value == "redundantRouterCapability")
+                  if(value == "redundantRouterCapabilityCheckbox")
                     capabilityType = "RedundantRouter";
                   if(capabilityType != null) {
                     inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = key;
@@ -1248,14 +1251,14 @@
                     }
                   },
 
-                  "service.SourceNat.redundantRouterCapability" : {
+                  "service.SourceNat.redundantRouterCapabilityCheckbox" : {
                     label: "Redundant router capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
                     isBoolean: true,
                   },
 
-                  sourceNatType: {
+                  "service.SourceNat.sourceNatTypeDropdown": {
                     label: 'Supported Source NAT type',
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
@@ -1269,7 +1272,7 @@
                     }
                   },
 
-                  lbIsolation: {
+                  "service.Lb.lbIsolationDropdown": {
                     label: 'LB isolation',
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
