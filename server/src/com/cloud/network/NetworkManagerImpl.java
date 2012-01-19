@@ -3904,9 +3904,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean isDomRGuestOrPublicNetwork = false;
         if (vm != null) {
         	Nic nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
-            if (vm.getType() == Type.User && nic.isDefaultNic()) {
+            if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true; 
-            } else if (vm.getType() == Type.DomainRouter && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
+            } else if (vm.getType() == Type.DomainRouter && ntwkOff != null && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
                 isDomRGuestOrPublicNetwork = true;
             }    
         }
