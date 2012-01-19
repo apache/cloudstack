@@ -193,6 +193,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -287,6 +288,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject AgentManager _agentMgr;
     @Inject HostDao _hostDao;
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
+    @Inject StorageNetworkManager _stnwMgr;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -5198,10 +5200,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //For Storage, Control, Management, Public check if the zone has any other physical network with this traffictype already present
         //If yes, we cant add these traffics to one more physical network in the zone.
 
-        if(TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType)){
+        if(TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType) || TrafficType.Storage.equals(trafficType)){
             if(!_physicalNetworkDao.listByZoneAndTrafficType(network.getDataCenterId(), trafficType).isEmpty()){
                 throw new CloudRuntimeException("Fail to add the traffic type to physical network because Zone already has a physical network with this traffic type: "+trafficType);
             }
+        }
+        
+        if (TrafficType.Storage.equals(trafficType)) {
+        	List<SecondaryStorageVmVO> ssvms = _stnwMgr.getSSVMWithNoStorageNetwork(network.getDataCenterId());
+        	if (!ssvms.isEmpty()) {
+        		StringBuilder sb = new StringBuilder("Cannot add " + trafficType + " traffic type as there are below secondary storage vm still running. Please stop them all and add Storage traffic type again, then destory them all to allow CloudStack recreate them with storage network(If you have added storage network ip range)");
+        		sb.append("SSVMs:");
+        		for (SecondaryStorageVmVO ssvm : ssvms) {
+        			sb.append(ssvm.getInstanceName()).append(":").append(ssvm.getState());
+        		}
+        		throw new CloudRuntimeException(sb.toString());
+        	}
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -5284,7 +5298,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if(!_networksDao.listByPhysicalNetworkTrafficType(trafficType.getPhysicalNetworkId(), trafficType.getTrafficType()).isEmpty()){
                 throw new CloudRuntimeException("The Traffic Type is not deletable because there are existing networks with this traffic type:"+trafficType.getTrafficType());
             }
-        }        
+        } else if (TrafficType.Storage.equals(trafficType.getTrafficType())) {
+        	PhysicalNetworkVO pn = _physicalNetworkDao.findById(trafficType.getPhysicalNetworkId());
+        	if (_stnwMgr.isAnyStorageIpInUseInZone(pn.getDataCenterId())) {
+        		 throw new CloudRuntimeException("The Traffic Type is not deletable because there are still some storage network ip addresses in use:"+trafficType.getTrafficType());
+        	}
+        }
         return _pNTrafficTypeDao.remove(id);
     }
 

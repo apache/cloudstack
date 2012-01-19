@@ -35,6 +35,10 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl implements StorageNetworkManager, StorageNetworkService {
@@ -49,6 +53,8 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
     NetworkDao _networkDao;
 	@Inject
 	HostPodDao _podDao;
+	@Inject
+	SecondaryStorageVmDao _ssvmDao;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -338,5 +344,22 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 	@Override
     public boolean isStorageIpRangeAvailable() {
 		return _sNwIpRangeDao.countRanges() > 0;
+    }
+
+	@Override
+    public List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId) {
+	    List<SecondaryStorageVmVO> ssvms = _ssvmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping);
+	    return ssvms;
+    }
+
+	@Override
+    public boolean isAnyStorageIpInUseInZone(long zoneId) {
+		List<StorageNetworkIpRangeVO> ranges = _sNwIpRangeDao.listByDataCenterId(zoneId);
+		for (StorageNetworkIpRangeVO r : ranges) {
+			if (_sNwIpDao.countInUseIpByRangeId(r.getId()) > 0) {
+				return true;
+			}
+		}
+	    return false;
     }
 }
