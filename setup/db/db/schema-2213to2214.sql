@@ -41,3 +41,11 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'UserVm
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'UserVmManager', 'create.private.template.from.volume.wait', '10800', 'In second, timeout for CreatePrivateTemplateFromVolumeCommand');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'create.volume.from.snapshot.wait', '10800', 'In second, timeout for create template from snapshot');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'TemplateManager', 'primary.storage.download.wait', '10800', 'In second, timeout for download template to primary storage');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.execution.timezone', null, 'The timezone to use for usage job execution time');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.stats.job.aggregation.range', '1440', 'The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.stats.job.exec.time', '00:15', 'The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'enable.usage.server', 'true', 'Flag for enabling usage');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'direct.network.stats.interval', '86400', 'Interval (in seconds) to collect stats from Traffic Monitor');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.aggregation.timezone', 'GMT', 'The timezone to use for usage stats aggregation');
