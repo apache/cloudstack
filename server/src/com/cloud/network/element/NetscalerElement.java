@@ -106,7 +106,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
 @Local(value=NetworkElement.class)
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider, FirewallServiceProvider {
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
@@ -522,11 +522,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     public IpDeployer getIpDeployer(Network network) {
         return this;
-    }
-
-    @Override
-    public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return true;
     }
 
     public boolean applyElasticLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
