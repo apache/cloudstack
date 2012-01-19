@@ -19,7 +19,6 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +51,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -519,9 +517,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     return dest;
                 }
 
-                if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
-                    Collections.shuffle(suitableHosts);
-                }
                 Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
                 Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                 List<Volume> readyAndReusedVolumes = result.second();
