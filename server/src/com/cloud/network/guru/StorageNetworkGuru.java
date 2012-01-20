@@ -103,18 +103,6 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean releaseIp4Address(Network network, String reservationId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 		if (!_sNwMgr.isStorageIpRangeAvailable()) {

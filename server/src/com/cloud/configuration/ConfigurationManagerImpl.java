@@ -2035,7 +2035,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (forVirtualNetwork) {
                     //default physical network with public traffic in the zone
                     physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
-                }else{
+                } else {
                     if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
                         //default physical network with guest traffic in the zone
                         physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
@@ -2083,6 +2083,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
                 throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
             }
+        }
+        
+        if (network == null) {
+        	network = _networkMgr.getNetwork(networkId);
+        }
+        
+        //Can add vlan range only to the network which allows it
+        if (!network.getSpecifyIpRanges()) {
+        	throw new InvalidParameterValueException("Network " + network + " doesn't support adding multiple ip ranges");
         }
 
         // if end ip is not specified, default it to startIp
@@ -2195,7 +2204,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId,
-            Account account, Long networkId, Long physicalNetworkId) {
+            Account account, long networkId, Long physicalNetworkId) {
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
@@ -2898,6 +2907,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         TrafficType trafficType = null;
         Availability availability = null;
         Network.GuestType guestType = null;
+        boolean specifyIpRanges = cmd.getSpecifyIpRanges();
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3048,7 +3058,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
         
         return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
-                false, serviceOfferingId, conserveMode, serviceCapabilityMap);
+                false, serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3131,7 +3141,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, 
-            Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
+            Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3195,7 +3205,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges);
         
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
@@ -3251,6 +3261,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long networkId = cmd.getNetworkId();
         String guestIpType = cmd.getGuestIpType();
         List<String> supportedServicesStr = cmd.getSupportedServices();
+        Object specifyIpRanges = cmd.getSpecifyIpRanges();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3299,6 +3310,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (state != null) {
             sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+        
+        if (specifyIpRanges != null) {
+        	sc.addAnd("specifyIpRanges", SearchCriteria.Op.EQ, specifyIpRanges);
         }
 
         if (zone != null) {

@@ -221,14 +221,4 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
     }
-
-    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override public boolean releaseIp4Address(Network network, String reservationId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }

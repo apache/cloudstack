@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity.ACLType;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
@@ -33,6 +34,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
@@ -287,4 +289,10 @@ public interface NetworkManager extends NetworkService {
 	boolean handleElasticIpRelease(IpAddress ip);
 
 	void checkNetworkPermissions(Account owner, Network network);
+
+	void allocateDirectIp(NicProfile nic, DataCenter dc,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			Network network, String requestedIp)
+			throws InsufficientVirtualNetworkCapcityException,
+			InsufficientAddressCapacityException;
 }

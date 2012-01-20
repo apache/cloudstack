@@ -2585,6 +2585,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setConserveMode(offering.isConserveMode());
+        response.setSpecifyIpRanges(offering.getSpecifyIpRanges());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         if (offering.getServiceOfferingId() != null) {
@@ -2771,6 +2772,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDomainId(dedicatedDomainId);
             response.setDomainName(domain.getName());
         }
+        
+        response.setSpecifyIpRanges(network.getSpecifyIpRanges());
 
         response.setObjectName("network");
         return response;

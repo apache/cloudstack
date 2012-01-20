@@ -39,7 +39,6 @@ import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -51,6 +50,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -89,9 +89,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
-        } else {
-            /* In order to revert userSpecified network setup */
-            config.setState(State.Allocated);
         }
 
         return config;
@@ -223,7 +220,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         return profile;
     }
 
-    @Override
+    @Override @DB
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
         super.deallocate(config, nic, vm);
 

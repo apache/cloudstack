@@ -36,18 +36,17 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -175,15 +174,5 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean trash(Network config, NetworkOffering offering, Account owner) {
         return true;
-    }
-
-    @Override public boolean releaseIp4Address(Network network, String reservationId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return null;
     }
 }

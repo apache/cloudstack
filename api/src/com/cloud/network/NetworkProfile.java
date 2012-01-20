@@ -50,6 +50,7 @@ public class NetworkProfile implements Network {
     private ACLType aclType;
     private boolean specifiedCidr;
     private boolean restartRequired;
+    private boolean specifyIpRanges;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -74,6 +75,7 @@ public class NetworkProfile implements Network {
         this.aclType = network.getAclType();
         this.specifiedCidr = network.isSpecifiedCidr();
         this.restartRequired = network.isRestartRequired();
+        this.specifyIpRanges = network.getSpecifyIpRanges();
     }
 
     public String getDns1() {
@@ -212,6 +214,12 @@ public class NetworkProfile implements Network {
 
 	@Override
 	public boolean isRestartRequired() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean getSpecifyIpRanges() {
 		// TODO Auto-generated method stub
 		return false;
 	}

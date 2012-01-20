@@ -102,4 +102,6 @@ public interface NetworkOffering {
 	boolean getElasticIp();
 
 	boolean getElasticLb();
+
+	boolean getSpecifyIpRanges();
 }

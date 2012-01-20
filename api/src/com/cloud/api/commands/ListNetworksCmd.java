@@ -28,6 +28,7 @@ import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -70,6 +71,9 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     
     @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list network offerings by restartRequired option")
     private Boolean restartRequired;
+    
+    @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
+    private Boolean specifyIpRanges;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,6 +114,10 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     public Boolean getRestartRequired() {
 		return restartRequired;
 	}
+    
+    public Boolean getSpecifyIpRanges() {
+    	return specifyIpRanges;
+    }
 
 	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

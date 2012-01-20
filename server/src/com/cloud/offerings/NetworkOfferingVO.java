@@ -102,6 +102,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     @Column(name="shared_source_nat_service")
     boolean sharedSourceNat;
     
+    @Column(name="specify_ip_ranges")
+    boolean specifyIpRanges = false;
+    
     @Column(name="sort_key")
     int sortKey;
 
@@ -260,7 +263,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode) {
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -280,11 +283,12 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.redundantRouter = false;
         this.elasticIp = false;
         this.elasticLb = false;
+        this.specifyIpRanges = specifyIpRanges;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb) {
-        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType, conserveMode);
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType, conserveMode, specifyIpRanges);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -299,9 +303,10 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
      * Network Offering for all system vms.
      * @param name
      * @param trafficType
+     * @param specifyIpRanges TODO
      */
-    public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true);
+    public NetworkOfferingVO(String name, TrafficType trafficType, boolean specifyIpRanges) {
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges);
         this.state = State.Enabled;
     }
     
@@ -346,4 +351,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
 	public boolean getElasticLb() {
 		return elasticLb;
 	}
+    
+    @Override
+    public boolean getSpecifyIpRanges() {
+    	return specifyIpRanges;
+    } 
 }

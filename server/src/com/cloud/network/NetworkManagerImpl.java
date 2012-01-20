@@ -95,6 +95,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -111,6 +112,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.addr.PublicIp;
@@ -1136,16 +1138,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
 
@@ -1188,25 +1190,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1405,7 +1407,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 txn.start();
 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, predefined.getNetworkDomain(),
-                        offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType);
+                        offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges());
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null && aclType == ACLType.Domain) {
@@ -2127,8 +2129,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         			throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + Network.GuestType.Isolated);
         		}
         	} else if (networkOffering.getGuestType() == GuestType.Shared) {
-    			if (aclType != ACLType.Domain) {
-    				throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " for network of type " + Network.GuestType.Shared);
+    			if (!(aclType == ACLType.Domain || aclType == ACLType.Account)) {
+    				throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " or " + ACLType.Account + " for network of type " + Network.GuestType.Shared);
         		}
         	}  
         } else {
@@ -2137,7 +2139,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	} else if (networkOffering.getGuestType() == GuestType.Shared) {
         		aclType = ACLType.Domain;
         	}  
-        } 
+        }
+        
+        //Only Admin can create Shared networks
+        if (networkOffering.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getType())) {
+        	throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
+        }
 
         // Check if the network is domain specific
         if (aclType == ACLType.Domain) {
@@ -2236,6 +2243,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (cidr != null) {
             checkVirtualNetworkCidrOverlap(zoneId, cidr);
         }
+        //Vlan is created in 2 cases - works in Advance zone only:
+        //1) GuestType is Shared
+        //2) GuestType is Isolated, but SourceNat service is disabled
+        boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced 	
+        		&& ((networkOffering.getGuestType() == Network.GuestType.Shared) 
+        				|| (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
+        
+       //Can add vlan range only to the network which allows it
+        if (createVlan && !networkOffering.getSpecifyIpRanges()) {
+        	throw new InvalidParameterValueException("Network offering " + networkOffering + " doesn't support adding multiple ip ranges");
+        }
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -2256,13 +2274,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         Network network = createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, false, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess);
-        //Vlan is created in 2 cases - works in Advance zone only:
-        //1) GuestType is Shared
-        //2) GuestType is Isolated, but SourceNat service is disabled
-        boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced 	
-        		&& ((network.getGuestType() == Network.GuestType.Shared) 
-        				|| (network.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
-
+        
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, null, network.getId(), physicalNetworkId);
@@ -2343,8 +2355,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // VlanId can be specified only when network offering supports it
-        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
-            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
+        boolean vlanSpecified = (vlanId != null);  
+        if (vlanSpecified != networkOffering.getSpecifyVlan()) {
+        	if (vlanSpecified) {
+                throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
+        	} else {
+                throw new InvalidParameterValueException("Vlan has to be specified; corresponding offering says specifyVlan=true");
+        	}
         }
 
         // Don't allow to create network with vlan that already exists in the system
@@ -2474,6 +2491,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean restartRequired= cmd.getRestartRequired();
         boolean listAll = cmd.listAll();
         boolean isRecursive = cmd.isRecursive();
+        Boolean specifyIpRanges = cmd.getSpecifyIpRanges();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2563,17 +2581,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (isSystem == null || !isSystem) {
             //Get domain level networks
             if (domainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, domainId));
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, domainId));
             } 
             
             if (!permittedAccounts.isEmpty()) {
-                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, permittedAccounts));
+                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, permittedAccounts));
             } else if (domainId == null){
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path, isRecursive));
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, path, isRecursive));
             } 
-            
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -2602,7 +2619,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -2645,6 +2662,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (restartRequired != null) {
             sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
+        }
+        
+        if (specifyIpRanges != null) {
+            sc.addAnd("specifyIpRanges", SearchCriteria.Op.EQ, specifyIpRanges);
         }
 
         return sc;
@@ -4190,6 +4211,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Traffic types should be the same 
         if (oldNetworkOffering.getTrafficType() != newNetworkOffering.getTrafficType()) {
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different traffic types, can't upgrade");
+            return false;
+        }
+        
+        //specify vlan should be the same 
+        if (oldNetworkOffering.getSpecifyVlan() != newNetworkOffering.getSpecifyVlan()) {
+        	s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different values for specifyVlan, can't upgrade");
+            return false;
+        }
+        
+        //specify ipRanges should be the same 
+        if (oldNetworkOffering.getSpecifyIpRanges() != newNetworkOffering.getSpecifyIpRanges()) {
+        	s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different values for specifyIpRangess, can't upgrade");
             return false;
         }
         
@@ -5908,7 +5941,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		if (network.getGuestType() != Network.GuestType.Shared) {
 		    List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
 		    if (networkMap == null || networkMap.isEmpty()) {
-		        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
+		        throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
 		    }
 		} else {
 		    if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
@@ -5916,5 +5949,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		    }
 		}
 	}
+
+	public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
+    InsufficientAddressCapacityException {
+		if (nic.getIp4Address() == null) {
+		    PublicIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIp, false);
+		    nic.setIp4Address(ip.getAddress().toString());
+		    nic.setGateway(ip.getGateway());
+		    nic.setNetmask(ip.getNetmask());
+		    nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+		    nic.setBroadcastType(BroadcastDomainType.Vlan);
+		    nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+		    nic.setFormat(AddressFormat.Ip4);
+		    nic.setReservationId(String.valueOf(ip.getVlanTag()));
+		    nic.setMacAddress(ip.getMacAddress());
+		}
+		
+		nic.setDns1(dc.getDns1());
+		nic.setDns2(dc.getDns2());
+    }
 	
 }

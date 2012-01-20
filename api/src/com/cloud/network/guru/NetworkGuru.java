@@ -32,7 +32,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
-import com.cloud.utils.net.Ip4Address;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -137,25 +136,6 @@ public interface NetworkGuru extends Adapter {
      *         to be assigned.
      */
     NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
-
-
-    /**
-     * NetworkGuru is asked to acquire an IPv4 address.
-     * @param network guest network that this IPv4 address is acquired in.
-     * @param requestedIp ip address that is being requested.
-     * @param reservationId id used to refer to this reservation.
-     * @return Ip4Address ipv4 address
-     */
-    Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException;
-    
-    /**
-     * Release the IPv4 address acquired.
-     * 
-     * @param network guest network that it was acquired in.
-     * @param reservationId reservation id that it was acquired in.
-     * @return true if release was successful; false if not.
-     */
-    boolean releaseIp4Address(Network network, String reservationId);
     
     /**
      * Once a guest network is implemented, then the virtual machine must

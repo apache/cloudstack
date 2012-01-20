@@ -289,4 +289,6 @@ public interface Network extends ControlledEntity {
 	boolean isSpecifiedCidr();
 
 	boolean isRestartRequired();
+
+	boolean getSpecifyIpRanges();
 }

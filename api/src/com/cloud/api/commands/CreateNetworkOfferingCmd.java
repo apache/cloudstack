@@ -89,6 +89,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
     private Map serviceCapabilitystList;
+    
+    @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to false if not specified")
+    private Boolean specifyIpRanges;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -137,6 +140,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 	public String getGuestIpType() {
         return guestIptype;
     }
+	
+	public Boolean getSpecifyIpRanges() {
+		return specifyIpRanges == null ? false : specifyIpRanges;
+	}
 
     public Boolean getConserveMode() {
         if (conserveMode == null) {

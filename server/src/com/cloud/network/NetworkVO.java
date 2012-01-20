@@ -148,6 +148,9 @@ public class NetworkVO implements Network, Identity {
     @Column(name="restart_required")
     boolean restartRequired = false;
     
+    @Column(name="specify_ip_ranges")
+    boolean specifyIpRanges = false;
+    
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -175,12 +178,11 @@ public class NetworkVO implements Network, Identity {
             this.state = state;
         }
         this.id = -1;
-        this.guestType = guestType;
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType) {
-        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, networkDomain,guestType, dcId, physicalNetworkId, aclType);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -207,11 +209,12 @@ public class NetworkVO implements Network, Identity {
      * @param networkDomain
      * @param guestType TODO
      * @param aclType TODO
+     * @param specifyIpRanges TODO
      * @param isShared TODO
      * @param isShared
      * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType) {
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -224,6 +227,7 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
         this.specifiedCidr = false;
+        this.specifyIpRanges = specifyIpRanges;
     }
 
     @Override
@@ -485,4 +489,9 @@ public class NetworkVO implements Network, Identity {
 	public boolean isRestartRequired() {
 		return restartRequired;
 	}
+	
+    @Override
+    public boolean getSpecifyIpRanges() {
+    	return specifyIpRanges;
+    }
 }

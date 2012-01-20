@@ -54,6 +54,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.CONSERVE_MODE) @Param(description="true if network offering is ip conserve mode enabled")
     private Boolean conserveMode;
+
+    @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network offering supports specifying ip ranges, false otherwise")
+    private Boolean specifyIpRanges;
     
     @SerializedName(ApiConstants.AVAILABILITY) @Param(description="availability of the network offering")
     private String availability;
@@ -72,6 +75,7 @@ public class NetworkOfferingResponse extends BaseResponse{
    
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
+    
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -132,4 +136,12 @@ public class NetworkOfferingResponse extends BaseResponse{
     public void setServiceOfferingId(Long serviceOfferingId) {
         this.serviceOfferingId.setValue(serviceOfferingId);
     }
+
+	public void setServiceOfferingId(IdentityProxy serviceOfferingId) {
+		this.serviceOfferingId = serviceOfferingId;
+	}
+
+	public void setSpecifyIpRanges(Boolean specifyIpRanges) {
+		this.specifyIpRanges = specifyIpRanges;
+	}
 }

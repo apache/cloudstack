@@ -28,6 +28,7 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
@@ -85,6 +86,9 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     
 
     
+    @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only network offerings which support specifying ip ranges")
+    private Boolean specifyIpRanges;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -140,6 +144,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     public Boolean getSourceNatSupported() {
 		return sourceNatSupported;
 	}
+    
+    public Boolean getSpecifyIpRanges() {
+    	return specifyIpRanges;
+    }
 
 	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
