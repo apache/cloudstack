@@ -148,10 +148,17 @@ class deployDataCenters():
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
         phynet.name = name
-        phynet.state = "Enabled"
         if vlan:
             phynet.vlan = vlan
         return self.apiClient.createPhysicalNetwork(phynet)
+
+    def updatePhysicalNetwork(self, networkid, state="Enabled", vlan=None):
+        upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+        upnet.id = networkid
+        upnet.state = state
+        if vlan:
+            upnet.vlan = vlan
+        return self.apiClient.updatePhysicalNetwork(upnet)
 
     def configureProviders(self, phynetwrk, zone):
         pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
@@ -220,6 +227,7 @@ class deployDataCenters():
 
             phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
                                                    zoneId, zone.vlan)
+
             if zone.networktype == "Advanced":
                 self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
                                                     "Management"])
@@ -228,6 +236,7 @@ class deployDataCenters():
                                                     "Management", "Storage"])
 
             self.configureProviders(phynetwrk, zone)
+            self.updatePhysicalNetwork(phynetwrk.id, "Enabled")
 
             if zone.networktype == "Basic":
                 listnetworkoffering = \
