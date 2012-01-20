@@ -56,7 +56,7 @@ var pollAsyncJobResult = function(args) {
             });
           }
           else {
-            args.complete();
+            args.complete({ data: json.queryasyncjobresultresponse.jobresult });
           }
         }
         else if (result.jobstatus == 2) { // Failed          

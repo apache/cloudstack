@@ -36,30 +36,36 @@
             .appendTo($form);
 
       // Render fields and events
-      $.each(args.form.fields, function(key, field) {
+      var fields = $.map(args.form.fields, function(value, key) {
+        return key;
+      })
+      $(fields).each(function() {
+        var key = this;
+        var field = args.form.fields[key];
+        
         var $formItem = $('<div>')
-              .addClass('form-item')
-              .attr({ rel: key });
+          .addClass('form-item')
+          .attr({ rel: key });
 
-        if (this.hidden || this.isHidden) $formItem.hide();
+        if (field.hidden || field.isHidden) $formItem.hide();
 
         $formItem.appendTo($form);
 
         // Label field
         var $name = $('<div>').addClass('name')
-              .appendTo($formItem)
-              .append(
-                $('<label>').html(this.label + ':')
-              );
+          .appendTo($formItem)
+          .append(
+            $('<label>').html(field.label + ':')
+          );
 
         // Input area
         var $value = $('<div>').addClass('value')
-              .appendTo($formItem);
+          .appendTo($formItem);
         var $input, $dependsOn, selectFn, selectArgs;
-        var dependsOn = this.dependsOn;
+        var dependsOn = field.dependsOn;
 
         // Depends on fields
-        if (this.dependsOn) {
+        if (field.dependsOn) {
           $formItem.attr('depends-on', dependsOn);
           $dependsOn = $form.find('input, select').filter(function() {
             return $(this).attr('name') === dependsOn;
@@ -105,7 +111,7 @@
         }
 
         // Determine field type of input
-        if (this.select) {
+        if (field.select) {
           selectArgs = {
             context: args.context,
             response: {
@@ -120,17 +126,21 @@
                     description = this.description;
 
                   var $option = $('<option>')
-                        .appendTo($input)
-                        .val(id)
-                        .html(description);
+                    .appendTo($input)
+                    .val(id)
+                    .html(description);
                 });
+
+                if (field.defaultValue) {
+                  $input.val(field.defaultValue);
+                }
 
                 $input.trigger('change');
               }
             }
           };
 
-          selectFn = this.select;
+          selectFn = field.select;
           $input = $('<select>')
             .attr({ name: key })
             .data('dialog-select-fn', function() {
@@ -170,12 +180,12 @@
           } else {
             selectFn(selectArgs);
           }
-        } else if (this.isBoolean) {
-          if (this.multiArray) {
+        } else if (field.isBoolean) {
+          if (field.multiArray) {
             $input = $('<div>')
               .addClass('multi-array').addClass(key).appendTo($value);
 
-            $.each(this.multiArray, function(itemKey, itemValue) {
+            $.each(field.multiArray, function(itemKey, itemValue) {
               $input.append(
                 $('<div>').addClass('item')
                   .append(
@@ -191,16 +201,16 @@
 
           } else {
             $input = $('<input>').attr({ name: key, type: 'checkbox' }).appendTo($value);
-            if (this.isChecked) {
+            if (field.isChecked) {
               $input.attr('checked', 'checked');
             }
           }
-        } else if (this.dynamic) {
+        } else if (field.dynamic) {
           // Generate a 'sub-create-form' -- append resulting fields
           $input = $('<div>').addClass('dynamic-input').appendTo($value);
           $form.hide();
 
-          this.dynamic({
+          field.dynamic({
             response: {
               success: function(args) {
                 var form = cloudStack.dialog.createForm({
@@ -221,18 +231,18 @@
           });
         } else {
           // Text field
-          if (this.range) {
+          if (field.range) {
             $input = $.merge(
               // Range start
               $('<input>').attr({
                 type: 'text',
-                name: this.range[0]
+                name: field.range[0]
               }),
 
               // Range end
               $('<input>').attr({
                 type: 'text',
-                name: this.range[1]
+                name: field.range[1]
               })
             ).appendTo(
               $('<div>').addClass('range-edit').appendTo($value)
@@ -242,16 +252,16 @@
           } else {
             $input = $('<input>').attr({
               name: key,
-              type: this.password || this.isPassword ? 'password' : 'text'
+              type: field.password || field.isPassword ? 'password' : 'text'
             }).appendTo($value);
 
-            if (this.defaultValue) {
-              $input.val(this.defaultValue);
+            if (field.defaultValue) {
+              $input.val(field.defaultValue);
             }
           }
         }
 
-        $input.data('validation-rules', this.validation);
+        $input.data('validation-rules', field.validation);
         $('<label>').addClass('error').appendTo($value).html('*required');
       });
 

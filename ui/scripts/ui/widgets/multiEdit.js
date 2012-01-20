@@ -70,6 +70,27 @@
                   _medit.details(itemData[0], $browser, { context: options.context });
                 }
               });
+          } else if (field.custom) {
+            $td.data('multi-custom-data', data[fieldName]);
+            $('<div>').addClass('button add-vm custom-action')
+              .html(data && data[fieldName] && data[fieldName]['_buttonLabel'] ?
+                    data[fieldName]['_buttonLabel'] : field.custom.buttonLabel)
+              .click(function() {
+                var $button = $(this);
+                field.custom.action({
+                  context: {},
+                  data: $td.data('multi-custom-data'),
+                  response: {
+                    success: function(args) {
+                      if (args.data['_buttonLabel']) {
+                        $button.html(args.data['_buttonLabel']);
+                      }
+                      $td.data('multi-custom-data', args.data)
+                    }
+                  }
+                })
+              })
+              .appendTo($td);
           }
         };
 
@@ -413,6 +434,20 @@
             .attr('disabled', field.isDisabled ? 'disabled' : false)
             .appendTo($td);
         }
+      } else if (field.custom) {
+        $('<div>').addClass('button add-vm custom-action')
+          .html(field.custom.buttonLabel)
+          .click(function() {
+            field.custom.action({
+              context: context,
+              data: $td.data('multi-custom-data'),
+              response: {
+                success: function(args) {
+                  $td.data('multi-custom-data', args.data);
+                }
+              }
+            })
+          }).appendTo($td);
       } else if (field.addButton) {
         $addVM = $('<div>').addClass('button add-vm').html(
           args.add.label
@@ -481,6 +516,19 @@
           if (value != '') {
             data[key] = value;
           }
+        });
+
+        // Append custom data
+        var $customFields = $multi.find('tbody td').filter(function() {
+          return $(this).data('multi-custom-data');
+        });
+
+        $customFields.each(function() {
+          var $field = $(this);
+          var fieldID = $field.attr('rel');
+          var fieldData = $field.data('multi-custom-data');
+
+          data[fieldID] = fieldData;
         });
 
         // Loading appearance

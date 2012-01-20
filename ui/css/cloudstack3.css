@@ -5646,6 +5646,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
+  width: 74px;
+  text-align: center;
   padding: 6px 9px 4px 0px;
   background: url(../images/bg-gradients.png) repeat-x 0px -220px;
   /*+placement:shift 4px 0px;*/
@@ -5661,6 +5663,28 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-box-shadow: inset 0px 1px 1px #000000;
   -o-box-shadow: inset 0px 1px 1px #000000;
   box-shadow: inset 0px 1px 1px #000000;
+}
+
+.multi-edit .button.custom-action {
+  background: url(../images/bg-gradients.png) 0px -271px;
+  border: 1px solid #B7B7B7;
+  color: #485867;
+  font-size: 11px;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+}
+
+.multi-edit .button.custom-action:hover {
+  background: #808080 url(../images/bg-gradients.png);
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
 }
 
 .multi-edit-add-list .ui-button.ok,
@@ -5789,6 +5813,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item tr td.add-vm,
 .multi-edit tr th.add-vm {
   cursor: pointer;
+}
+
+.multi-edit .data .data-body .data-item tr td .custom-action {
+  margin: -6px 0 0 -1px;
 }
 
 .multi-edit .data .data-body .data-item tr td.add-vm:hover {

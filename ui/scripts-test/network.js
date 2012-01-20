@@ -21,7 +21,7 @@
             vlan: { label: 'VLAN' }
           },
           dataProvider: testData.dataProvider.listView('networks'),
-          
+
           detailView: {
             name: 'Network details',
             viewAll: { path: 'network.ipAddresses', label: 'IP Addresses' },
@@ -513,6 +513,124 @@
                           });
                         }
                       },
+                      'sticky': {
+                        label: 'Sticky Policy',
+                        custom: {
+                          buttonLabel: 'Configure',
+                          action: function(args) {
+                            var success = args.response.success;
+                            var fields = {
+                              method: {
+                                label: 'Stickiness method',
+                                select: function(args) {
+                                  var $select = args.$select;
+                                  var $form = $select.closest('form');
+                                  
+                                  args.response.success({
+                                    data: [
+                                      {
+                                        id: 'none',
+                                        description: 'None'
+                                      },
+                                      {
+                                        id: 'lb',
+                                        description: 'LB-based'
+                                      },
+                                      {
+                                        id: 'cookie',
+                                        description: 'Cookie-based'
+                                      },
+                                      {
+                                        id: 'source',
+                                        description: 'Source-based'
+                                      }
+                                    ]
+                                  }, 500);
+
+                                  $select.change(function() {
+                                    var value = $select.val();
+                                    var showFields = [];
+
+                                    switch (value) {
+                                    case 'none':
+                                      showFields = [];
+                                      break;
+                                    case 'lb':
+                                      showFields = ['name', 'mode', 'nocache', 'indirect', 'postonly', 'domain'];
+                                      break;
+                                    case 'cookie':
+                                      showFields = ['name', 'length', 'holdtime', 'request-learn', 'prefix', 'mode'];
+                                      break;
+                                    case 'source':
+                                      showFields = ['tablesize', 'expire'];
+                                      break;
+                                    }
+
+                                    $select.closest('.form-item').siblings('.form-item').each(function() {
+                                      var $field = $(this);
+                                      var id = $field.attr('rel');
+
+                                      if ($.inArray(id, showFields) > -1) {
+                                        $field.css('display', 'inline-block');
+                                      } else {
+                                        $field.hide();
+                                      }
+                                    });
+
+                                    $select.closest(':ui-dialog').dialog('option', 'position', 'center');
+                                  });
+                                }
+                              },
+                              name: { label: 'Name', validation: { required: true }, isHidden: true },
+                              mode: { label: 'Mode', isHidden: true },
+                              length: { label: 'Length', validation: { required: true }, isHidden: true },
+                              holdtime: { label: 'Hold Time', validation: { required: true }, isHidden: true },
+                              tablesize: { label: 'Table size', isHidden: true },
+                              expire: { label: 'Expire', isHidden: true },
+                              requestlearn: { label: 'Request-Learn', isBoolean: true, isHidden: true },
+                              prefix: { label: 'Prefix', isBoolean: true, isHidden: true },
+                              nocache: { label: 'No cache', isBoolean: true, isHidden: true },
+                              indirect: { label: 'Indirect', isBoolean: true, isHidden: true },
+                              postonly: { label: 'Is post-only', isBoolean: true, isHidden: true },
+                              domain: { label: 'Domain', isBoolean: true, isHidden: true }
+                            };
+
+                            if (args.data) {
+                              var populatedFields = $.map(fields, function(field, id) {
+                                return id;
+                              });
+                              
+                              $(populatedFields).each(function() {
+                                var id = this;
+                                var field = fields[id];
+                                var dataItem = args.data[id];
+
+                                if (field.isBoolean) {
+                                  field.isChecked = dataItem ? true : false;
+                                } else {
+                                  field.defaultValue = dataItem;
+                                }
+                              });
+                            }
+
+                            cloudStack.dialog.createForm({
+                              form: {
+                                title: 'Configure Sticky Policy',
+                                desc: 'Please complete the following fields',
+                                fields: fields
+                              },
+                              after: function(args) {
+                                var data = cloudStack.serializeForm(args.$form);
+                                success({
+                                  data: $.extend(data, {
+                                    _buttonLabel: data.method.toUpperCase()
+                                  })
+                                });
+                              }
+                            });
+                          }
+                        }
+                      },
                       'add-vm': {
                         label: 'Add VMs',
                         addButton: true
@@ -569,7 +687,17 @@
                                 testData.data.instances[1],
                                 testData.data.instances[2],
                                 testData.data.instances[3]
-                              ]
+                              ],
+                              sticky: {
+                                _buttonLabel: 'lb'.toUpperCase(),
+                                method: 'lb',
+                                name: 'StickyTest',
+                                mode: '123',
+                                nocache: true,
+                                indirect: false,
+                                postonly: true,
+                                domain: false
+                              }
                             }
                           ]
                         });
@@ -864,9 +992,9 @@
                     'icmptype': { edit: true, label: 'ICMP Type', isHidden: true },
                     'icmpcode': { edit: true, label: 'ICMP Code', isHidden: true },
                     'cidr': { edit: true, label: 'CIDR', isHidden: true },
-                    'accountname': { 
-                      edit: true, 
-                      label: 'Account, Security Group', 
+                    'accountname': {
+                      edit: true,
+                      label: 'Account, Security Group',
                       isHidden: true,
                       range: ['accountname', 'securitygroupname']
                     },

@@ -1507,6 +1507,124 @@
                           });
                         }
                       },
+                      'sticky': {
+                        label: 'Sticky Policy',
+                        custom: {
+                          buttonLabel: 'Configure',
+                          action: function(args) {
+                            var success = args.response.success;
+                            var fields = {
+                              methodname: {
+                                label: 'Stickiness method',
+                                select: function(args) {
+                                  var $select = args.$select;
+                                  var $form = $select.closest('form');
+                                  
+                                  args.response.success({
+                                    data: [
+                                      {
+                                        id: 'none',
+                                        description: 'None'
+                                      },
+                                      {
+                                        id: 'LbCookie',
+                                        description: 'LB-based'
+                                      },
+                                      {
+                                        id: 'AppCookie',
+                                        description: 'Cookie-based'
+                                      },
+                                      {
+                                        id: 'SourceBased',
+                                        description: 'Source-based'
+                                      }
+                                    ]
+                                  }, 500);
+
+                                  $select.change(function() {
+                                    var value = $select.val();
+                                    var showFields = [];
+
+                                    switch (value) {
+                                    case 'none':
+                                      showFields = [];
+                                      break;
+                                    case 'LbCookie':
+                                      showFields = ['name', 'mode', 'nocache', 'indirect', 'postonly', 'domain'];
+                                      break;
+                                    case 'AppCookie':
+                                      showFields = ['name', 'length', 'holdtime', 'request-learn', 'prefix', 'mode'];
+                                      break;
+                                    case 'SourceBased':
+                                      showFields = ['tablesize', 'expire'];
+                                      break;
+                                    }
+
+                                    $select.closest('.form-item').siblings('.form-item').each(function() {
+                                      var $field = $(this);
+                                      var id = $field.attr('rel');
+
+                                      if ($.inArray(id, showFields) > -1) {
+                                        $field.css('display', 'inline-block');
+                                      } else {
+                                        $field.hide();
+                                      }
+                                    });
+
+                                    $select.closest(':ui-dialog').dialog('option', 'position', 'center');
+                                  });
+                                }
+                              },
+                              name: { label: 'Name', validation: { required: true }, isHidden: true },
+                              mode: { label: 'Mode', isHidden: true },
+                              length: { label: 'Length', validation: { required: true }, isHidden: true },
+                              holdtime: { label: 'Hold Time', validation: { required: true }, isHidden: true },
+                              tablesize: { label: 'Table size', isHidden: true },
+                              expire: { label: 'Expire', isHidden: true },
+                              requestlearn: { label: 'Request-Learn', isBoolean: true, isHidden: true },
+                              prefix: { label: 'Prefix', isBoolean: true, isHidden: true },
+                              nocache: { label: 'No cache', isBoolean: true, isHidden: true },
+                              indirect: { label: 'Indirect', isBoolean: true, isHidden: true },
+                              postonly: { label: 'Is post-only', isBoolean: true, isHidden: true },
+                              domain: { label: 'Domain', isBoolean: true, isHidden: true }
+                            };
+
+                            if (args.data) {
+                              var populatedFields = $.map(fields, function(field, id) {
+                                return id;
+                              });
+                              
+                              $(populatedFields).each(function() {
+                                var id = this;
+                                var field = fields[id];
+                                var dataItem = args.data[id];
+
+                                if (field.isBoolean) {
+                                  field.isChecked = dataItem ? true : false;
+                                } else {
+                                  field.defaultValue = dataItem;
+                                }
+                              });
+                            }
+
+                            cloudStack.dialog.createForm({
+                              form: {
+                                title: 'Configure Sticky Policy',
+                                desc: 'Please complete the following fields',
+                                fields: fields
+                              },
+                              after: function(args) {
+                                var data = cloudStack.serializeForm(args.$form);
+                                success({
+                                  data: $.extend(data, {
+                                    _buttonLabel: data.methodname.toUpperCase()
+                                  })
+                                });
+                              }
+                            });
+                          }
+                        }
+                      },
                       'add-vm': {
                         label: 'Add VMs',
                         addButton: true
@@ -1516,13 +1634,20 @@
                       label: 'Add VMs',
                       action: function(args) {
                         var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+                        var data = {
+                          algorithm: args.data.algorithm,
+                          name: args.data.name,
+                          privateport: args.data.privateport,
+                          publicport: args.data.publicport
+                        };
+                        var stickyData = $.extend(true, {}, args.data.sticky);
 
                         $.ajax({
                           url: createURL('createLoadBalancerRule'),
-
-                          data: $.extend(args.data, {
+                          data: $.extend(data, {
                             openfirewall: openFirewall,
-                            publicipid: args.context.ipAddresses[0].id
+                            publicipid: args.context.ipAddresses[0].id,
+                            networkid: args.context.networks[0].id
                           }),
                           dataType: 'json',
                           async: true,
@@ -1547,7 +1672,73 @@
                                   },
                                   notification: {
                                     label: 'Add load balancer rule',
-                                    poll: pollAsyncJobResult
+                                    poll: function(args) {
+                                      var complete = args.complete;
+                                      var error = args.error;
+                                      
+                                      pollAsyncJobResult({
+                                        _custom: args._custom,
+                                        complete: function(args) {
+                                          // Create stickiness policy
+                                          if (stickyData && stickyData.methodname != 'none') {
+                                            var stickyURLData = '';
+                                            var stickyParams;
+
+                                            switch (stickyData.methodname) {
+                                              case 'LbCookie':
+                                              stickyParams = ['name', 'mode', 'nocache', 'indirect', 'postonly', 'domain'];
+                                              break;
+                                              case 'AppCookie':
+                                              stickyParams = ['name', 'length', 'holdtime', 'request-learn', 'prefix', 'mode'];
+                                              break;
+                                              case 'SourceBased':
+                                              stickyParams = ['tablesize', 'expire'];
+                                              break;
+                                            }
+
+                                            $(stickyParams).each(function(index) {
+                                              var param = '&param[' + index + ']';
+                                              var name = this;
+                                              var value = stickyData[name];
+
+                                              if (!value) return true;
+                                              if (value == 'on') value = true;
+                                              
+                                              stickyURLData += param + '.name=' + name + param + '.value=' + value;
+                                            });
+
+                                            $.ajax({
+                                              url: createURL('createLBStickinessPolicy' + stickyURLData),
+                                              data: {
+                                                lbruleid: args.data.loadbalancer.id,
+                                                name: stickyData.name,
+                                                methodname: stickyData.methodname
+                                              },
+                                              success: function(json) {
+                                                var addStickyCheck = setInterval(function() {
+                                                  pollAsyncJobResult({
+                                                    _custom: {
+                                                      jobId: json.createLBStickinessPolicy.jobid,
+                                                    },
+                                                    complete: function(args) {
+                                                      clearInterval(addStickyCheck);
+                                                      complete();
+                                                    },
+                                                    error: function(args) {
+                                                      clearInterval(addStickyCheck);
+                                                    }
+                                                  });                                                  
+                                                }, 1000);
+                                              },
+                                              error: error
+                                            });
+                                          } else {
+                                            complete();
+                                          }
+                                        },
+                                        error: error
+                                      });
+                                    }
                                   }
                                 });
                               },
