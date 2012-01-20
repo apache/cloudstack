@@ -20,6 +20,8 @@ package com.cloud.storage;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +48,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
@@ -1049,7 +1052,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public boolean start() {
         if (_storageCleanupEnabled) {
-            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), _storageCleanupInterval, _storageCleanupInterval, TimeUnit.SECONDS);
+            Random generator = new Random();
+            int initialDelay = generator.nextInt(_storageCleanupInterval);
+            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), initialDelay, _storageCleanupInterval, TimeUnit.SECONDS);
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
@@ -1982,46 +1987,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	                        }
 	                    }
                 	}
-
-                    // Cleanup secondary storage hosts
-                    List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
-                    for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-                        try {
-                            long hostId = secondaryStorageHost.getId();
-                            List<VMTemplateHostVO> destroyedTemplateHostVOs = _vmTemplateHostDao.listDestroyed(hostId);
-                            s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateHostVOs.size() + " templates to cleanup on secondary storage host: "
-                                    + secondaryStorageHost.getName());
-                            for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
-                                if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateHostVO)) {
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO);
-                                    }
-                                    continue;
-                                }
-
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Deleting template host: " + destroyedTemplateHostVO);
-                                }
-
-                                String installPath = destroyedTemplateHostVO.getInstallPath();
-
-                                if (installPath != null) {
-                                    Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(),destroyedTemplateHostVO.getInstallPath()));
-
-                                    if (answer == null || !answer.getResult()) {
-                                        s_logger.debug("Failed to delete " + destroyedTemplateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
-                                    } else {
-                                        _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
-                                        s_logger.debug("Deleted template at: " + destroyedTemplateHostVO.getInstallPath());
-                                    }
-                                } else {
-                                    _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
-                                }
-                            }
-                        } catch (Exception e) {
-                            s_logger.warn("problem cleaning up secondary storage " + secondaryStorageHost, e);
-                        }
-                    }
+                	
+                	cleanupSecondaryStorage(recurring);
 
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
                     for (VolumeVO vol : vols) {
@@ -2037,6 +2004,142 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         } finally {
             scanLock.releaseRef();
+        }
+    }
+    
+    @DB
+    List<Long> findAllVolumeIdInSnapshotTable(Long hostId) {
+        String sql = "SELECT volume_id from snapshots WHERE sechost_id=? GROUP BY volume_id";
+        List<Long> list = new ArrayList<Long>();
+        try {
+            Transaction txn = Transaction.currentTxn();
+            ResultSet rs = null;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, hostId);
+            rs = pstmt.executeQuery();   
+            while (rs.next()) {
+                list.add(rs.getLong(1));
+            }
+            return list;
+        } catch (Exception e) {
+            s_logger.debug("failed to get all volumes who has snapshots in secondary storage " + hostId + " due to " + e.getMessage());
+            return null;
+        }
+
+    }
+    
+    
+   List<String> findAllSnapshotForVolume(Long volumeId) {
+        String sql = "SELECT backup_snap_id FROM snapshots WHERE volume_id=? and backup_snap_id is not NULL";       
+        try {
+            Transaction txn = Transaction.currentTxn();
+            ResultSet rs = null;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, volumeId);       
+            rs = pstmt.executeQuery();
+            List<String> list = new ArrayList<String>();
+            while (rs.next()) {
+                list.add(rs.getString(1));
+            }
+            return list;
+        } catch (Exception e) {
+            s_logger.debug("failed to get all snapshots for a volume " + volumeId + " due to " + e.getMessage());
+            return null;
+        }
+    }
+    
+    @Override
+    @DB
+    public void cleanupSecondaryStorage(boolean recurring) {
+        try {
+            // Cleanup templates in secondary storage hosts
+            List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+            for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+                try {
+                    long hostId = secondaryStorageHost.getId();
+                    List<VMTemplateHostVO> destroyedTemplateHostVOs = _vmTemplateHostDao.listDestroyed(hostId);
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateHostVOs.size() + " templates to cleanup on secondary storage host: "
+                            + secondaryStorageHost.getName());
+                    for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
+                        if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateHostVO)) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO);
+                            }
+                            continue;
+                        }
+
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Deleting template host: " + destroyedTemplateHostVO);
+                        }
+
+                        String installPath = destroyedTemplateHostVO.getInstallPath();
+
+                        if (installPath != null) {
+                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), destroyedTemplateHostVO.getInstallPath()));
+
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.debug("Failed to delete " + destroyedTemplateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            } else {
+                                _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
+                                s_logger.debug("Deleted template at: " + destroyedTemplateHostVO.getInstallPath());
+                            }
+                        } else {
+                            _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.warn("problem cleaning up templates in secondary storage " + secondaryStorageHost, e);
+                }
+            }
+
+            // Cleanup snapshot in secondary storage hosts
+            for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+                try {
+                    long hostId = secondaryStorageHost.getId();
+                    List<Long> vIDs = findAllVolumeIdInSnapshotTable(hostId);
+                    if (vIDs == null) {
+                        continue;
+                    }
+                    for (Long volumeId : vIDs) {
+                        boolean lock = false;
+                        try {
+                            VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
+                            if (volume.getRemoved() == null) {
+                                volume = _volsDao.acquireInLockTable(volumeId, 10);
+                                if (volume == null) {
+                                    continue;
+                                }
+                                lock = true;
+                            }
+                            List<String> snapshots = findAllSnapshotForVolume(volumeId);
+                            if (snapshots == null) {
+                                continue;
+                            }
+                            CleanupSnapshotBackupCommand cmd = new CleanupSnapshotBackupCommand(secondaryStorageHost.getStorageUrl(), secondaryStorageHost.getDataCenterId(), volume.getAccountId(),
+                                    volumeId, snapshots);
+
+                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, cmd);
+                            if ((answer == null) || !answer.getResult()) {
+                                String details = "Failed to cleanup snapshots for volume " + volumeId + " due to " + (answer == null ? "null" : answer.getDetails());
+                                s_logger.warn(details);
+                            }
+                        } catch (Exception e1) {
+                            s_logger.warn("problem cleaning up snapshots in secondary storage " + secondaryStorageHost, e1);
+                        } finally {
+                            if (lock) {
+                                _volsDao.releaseFromLockTable(volumeId);
+                            }
+                        }
+                    }
+                } catch (Exception e2) {
+                    s_logger.warn("problem cleaning up snapshots in secondary storage " + secondaryStorageHost, e2);
+                }
+            }
+
+        } catch (Exception e3) {
+            s_logger.warn("problem cleaning up secondary storage ", e3);
         }
     }
 
@@ -2927,6 +3030,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         }
     }
+    
 
     @Override
     public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {

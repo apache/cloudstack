@@ -206,4 +206,6 @@ public interface StorageManager extends Manager {
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
     VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly);
+
+    void cleanupSecondaryStorage(boolean recurring);
 }
