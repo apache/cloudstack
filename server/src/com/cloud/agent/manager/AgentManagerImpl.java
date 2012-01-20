@@ -853,7 +853,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         removeAgent(attache, nextStatus);
-        disconnectAgent(host, event, _nodeId);
+        if (host != null) {
+        	disconnectAgent(host, event, _nodeId);
+        }
 
         return true;
     }
