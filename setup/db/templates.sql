@@ -209,8 +209,6 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (200, 1, '
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (201, 1, 'Other CentOS (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (202, 5, 'Other SUSE Linux(32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (203, 5, 'Other SUSE Linux(64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (204, 4, 'Red Hat Enterprise Linux 6(32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (205, 4, 'Red Hat Enterprise Linux 6(64-bit)');
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.5 (32-bit)', 1);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.6 (32-bit)', 2);
