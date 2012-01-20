@@ -111,7 +111,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -2241,17 +2240,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
-                // Perform account permission check
-                if (network.getGuestType() != Network.GuestType.Shared) {
-                    List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
-                    if (networkMap == null || networkMap.isEmpty()) {
-                        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
-                    }
-                } else {
-                    if (!_networkMgr.isNetworkAvailableInDomain(networkId, owner.getDomainId())) {
-                        throw new PermissionDeniedException("Shared network id=" + networkId + " is not available in domain id=" + owner.getDomainId());
-                    }
-                }
+                _networkMgr.checkNetworkPermissions(owner, network);
 
                 //don't allow to use system networks 
                 NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -3444,17 +3433,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	                        throw new InvalidParameterValueException("Unable to find network by id " + networkId);
 	                    }
 	
-	                    // Perform account permission check
-	                    if (network.getGuestType() != Network.GuestType.Shared) {
-	                        List<NetworkVO> networkMap = _networkDao.listBy(newAccount.getId(), network.getId());
-	                        if (networkMap == null || networkMap.isEmpty()) {
-	                            throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
-	                        }
-	                    } else {
-	                        if (!_networkMgr.isNetworkAvailableInDomain(networkId, newAccount.getDomainId())) {
-	                            throw new PermissionDeniedException("Shared network id=" + networkId + " is not available in domain id=" + newAccount.getDomainId());
-	                        }
-	                    }
+	                    _networkMgr.checkNetworkPermissions(newAccount, network);
 	
 	                    //don't allow to use system networks 
 	                    NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());

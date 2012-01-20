@@ -285,4 +285,6 @@ public interface NetworkManager extends NetworkService {
 			throws InsufficientAddressCapacityException;
 
 	boolean handleElasticIpRelease(IpAddress ip);
+
+	void checkNetworkPermissions(Account owner, Network network);
 }

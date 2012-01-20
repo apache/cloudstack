@@ -932,6 +932,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner, network);
+        _accountMgr.checkAccess(ipOwner, null, false, network);
         
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         
@@ -5898,6 +5899,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			}
 		}
 		return success;
+	}
+	
+	@Override
+	public void checkNetworkPermissions(Account owner, Network network) {
+		// Perform account permission check
+		if (network.getGuestType() != Network.GuestType.Shared) {
+		    List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
+		    if (networkMap == null || networkMap.isEmpty()) {
+		        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
+		    }
+		} else {
+		    if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
+		        throw new PermissionDeniedException("Shared network id=" + network.getId() + " is not available in domain id=" + owner.getDomainId());
+		    }
+		}
 	}
 	
 }

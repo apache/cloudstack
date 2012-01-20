@@ -25,6 +25,8 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectManager;
@@ -46,6 +48,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject LaunchPermissionDao _launchPermissionDao;
     @Inject ProjectManager _projectMgr;
     @Inject ProjectAccountDao _projecAccountDao;
+    @Inject NetworkManager _networkMgr;
     
     protected DomainChecker() {
         super();
@@ -106,6 +109,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
             
             return true;
+        } else if (entity instanceof Network) {
+        	_networkMgr.checkNetworkPermissions(caller, (Network)entity);
         } else {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 Account account = _accountDao.findById(entity.getAccountId());
