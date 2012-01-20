@@ -18,7 +18,7 @@
 package com.cloud.agent.api;
 
 public class ReadyCommand extends Command {
-	
+	private String _details;
 	public ReadyCommand() {
 		super();
 	}
@@ -28,6 +28,14 @@ public class ReadyCommand extends Command {
 	public ReadyCommand(Long dcId) {
 		super();
 		this.dcId = dcId;
+	}
+	
+	public void setDetails(String details) {
+		_details = details;
+	}
+	
+	public String getDetails() {
+		return _details;
 	}
 	
 	public Long getDataCenterId() {

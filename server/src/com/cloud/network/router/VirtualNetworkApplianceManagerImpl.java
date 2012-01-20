@@ -639,7 +639,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ConfigurationException("Unable to get " + UserStatisticsDao.class.getName());
         }
 
-        _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
+        _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));

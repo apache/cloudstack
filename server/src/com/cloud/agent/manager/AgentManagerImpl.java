@@ -605,19 +605,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+                            handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
+                            handleDisconnectWithInvestigation(attache, Event.ShutdownRequested);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                    	handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
+                    	handleDisconnectWithInvestigation(attache, Event.ShutdownRequested);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+                        handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -631,7 +631,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-        	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+        	handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
         }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
@@ -1067,48 +1067,91 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
     
     //TODO: handle mycloud specific
-    private AgentAttache handleConnectedAgent(final Link link, final StartupCommand[] startup) throws ConnectionException {
-        AgentAttache attache = null;
-        HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
-        if (host != null) {
-            attache = createAttacheForConnect(host, link);
+    private AgentAttache handleConnectedAgent(final Link link, final StartupCommand[] startup, Request request) {
+    	AgentAttache attache = null;
+    	StartupAnswer[] answers = new StartupAnswer[startup.length];
+    	try {
+    		HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
+    		if (host != null) {
+    			attache = createAttacheForConnect(host, link);
+    		}
+    		Command cmd;
+    		for (int i = 0; i < startup.length; i++) {
+    			cmd = startup[i];
+    			if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
+    				answers[i] = new StartupAnswer(startup[i], attache.getId(), getPingInterval());
+    				break;
+    			}
+    		}
+    	}catch (ConnectionException e) {
+    		Command cmd;
+        	for (int i = 0; i < startup.length; i++) {
+        		cmd = startup[i];
+        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
+        		answers[i] = new StartupAnswer(startup[i], e.toString());
+        		break;
+        		}
+        	}
+    	} catch (IllegalArgumentException e) {
+    		Command cmd;
+        	for (int i = 0; i < startup.length; i++) {
+        		cmd = startup[i];
+        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
+        		answers[i] = new StartupAnswer(startup[i], e.toString());
+        		break;
+        		}
+        	}
+    	} catch (CloudRuntimeException e) {
+    		Command cmd;
+        	for (int i = 0; i < startup.length; i++) {
+        		cmd = startup[i];
+        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
+        		answers[i] = new StartupAnswer(startup[i], e.toString());
+        		break;
+        		}
+        	}
+    	}
+    	
+    	Response response = null;
+        if (attache != null) {
+        	response = new Response(request, answers[0], _nodeId, attache.getId());
+        } else {
+        	response = new Response(request, answers[0], _nodeId, -1); 
         }
         
-        attache = notifyMonitorsOfConnection(attache, startup, false);
+        try {
+        	link.send(response.toBytes());
+        } catch (ClosedChannelException e) {
+        	s_logger.debug("Failed to send startupanswer: " + e.toString());
+        	return null;
+        }        
+        if (attache == null) {
+        	return null;
+        }
         
-        return attache;
+        try {
+        	attache = notifyMonitorsOfConnection(attache, startup, false);
+        	return attache;
+        } catch (ConnectionException e) {
+        	ReadyCommand ready = new ReadyCommand(null);
+        	ready.setDetails(e.toString());
+        	try {
+        		easySend(attache.getId(), ready);
+        	} catch (Exception e1) {
+        		s_logger.debug("Failed to send readycommand, due to " + e.toString());
+        	}
+        	return null;
+        } catch (CloudRuntimeException e) {
+        	ReadyCommand ready = new ReadyCommand(null);
+        	ready.setDetails(e.toString());
+        	try {
+        		easySend(attache.getId(), ready);
+        	} catch (Exception e1) {
+        		s_logger.debug("Failed to send readycommand, due to " + e.toString());
+        	}
+        	return null;
+        }
     }
-       
-    // protected void upgradeAgent(final Link link, final byte[] request, final
-    // String reason) {
-    //
-    // if (reason == UnsupportedVersionException.IncompatibleVersion) {
-    // final UpgradeResponse response = new UpgradeResponse(request,
-    // _upgradeMgr.getAgentUrl());
-    // try {
-    // s_logger.info("Asking for the agent to update due to incompatible version: "
-    // + response.toString());
-    // link.send(response.toBytes());
-    // } catch (final ClosedChannelException e) {
-    // s_logger.warn("Unable to send response due to connection closed: " +
-    // response.toString());
-    // }
-    // return;
-    // }
-    //
-    // assert (reason == UnsupportedVersionException.UnknownVersion) :
-    // "Unknown reason: " + reason;
-    // final UpgradeResponse response = new UpgradeResponse(request,
-    // _upgradeMgr.getAgentUrl());
-    // try {
-    // s_logger.info("Asking for the agent to update due to unknown version: " +
-    // response.toString());
-    // link.send(response.toBytes());
-    // } catch (final ClosedChannelException e) {
-    // s_logger.warn("Unable to send response due to connection closed: " +
-    // response.toString());
-    // }
-    // }
 
     protected class SimulateStartTask implements Runnable {
         ServerResource resource;
@@ -1155,60 +1198,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
             Response response = null;
             if (attache == null) {
-                request.logD("Processing the first command ");
-                if (!(cmd instanceof StartupCommand)) {
-                    s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request);
-                    return;
-                }
-                StartupCommand startup = (StartupCommand) cmd;
-                // if ((_upgradeMgr.registerForUpgrade(-1, startup.getVersion())
-                // == UpgradeManager.State.RequiresUpdate) &&
-                // (_upgradeMgr.getAgentUrl() != null)) {
-                // final UpgradeCommand upgrade = new
-                // UpgradeCommand(_upgradeMgr.getAgentUrl());
-                // final Request req = new Request(1, -1, -1, new Command[] {
-                // upgrade }, true, true);
-                // s_logger.info("Agent requires upgrade: " + req.toString());
-                // try {
-                // link.send(req.toBytes());
-                // } catch (ClosedChannelException e) {
-                // s_logger.warn("Unable to tell agent it should update.");
-                // }
-                // return;
-                // }
-                try {
-                    StartupCommand[] startups = new StartupCommand[cmds.length];
-                    for (int i = 0; i < cmds.length; i++) {
-                        startups[i] = (StartupCommand) cmds[i];
-                    }
-                    attache = handleConnectedAgent(link, startups);
-                } catch (final IllegalArgumentException e) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request, e);
-                    response = new Response(request, new StartupAnswer((StartupCommand) cmd, e.getMessage()), _nodeId, -1);
-                } catch (ConnectionException e) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request, e);
-                    response = new Response(request, new StartupAnswer((StartupCommand) cmd, e.getMessage()), _nodeId, -1);
-                } catch (final CloudRuntimeException e) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request, e);
-                }
-                if (attache == null) {
-                    if (response == null) {
-                        s_logger.warn("Unable to create attache for agent: " + request);
-                        response = new Response(request, new StartupAnswer((StartupCommand) request.getCommand(), "Unable to register this agent"), _nodeId, -1);
-                    }
-                    try {
-                        link.send(response.toBytes(), true);
-                    } catch (final ClosedChannelException e) {
-                        s_logger.warn("Response was not sent: " + response);
-                    }
-                    return;
-                }
+            	request.logD("Processing the first command ");
+            	if (!(cmd instanceof StartupCommand)) {
+            		s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request);
+            		return;
+            	}
+
+            	StartupCommand[] startups = new StartupCommand[cmds.length];
+            	for (int i = 0; i < cmds.length; i++) {
+            		startups[i] = (StartupCommand) cmds[i];
+            	}
+            	attache = handleConnectedAgent(link, startups, request);
+            	if (attache == null) {
+            		s_logger.warn("Unable to create attache for agent: " + request);
+            	}
+            	return;
             }
 
             final long hostId = attache.getId();

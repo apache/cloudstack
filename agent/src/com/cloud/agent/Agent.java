@@ -118,6 +118,8 @@ public class Agent implements HandlerFactory, IAgentControl {
     AtomicInteger               _inProgress           = new AtomicInteger();
 
     StartupTask                 _startup              = null;
+    long  _startupWaitDefault = 180000;
+    long  _startupWait = _startupWaitDefault;
     boolean                     _reconnectAllowed     = true;
     //For time sentitive task, e.g. PingTask
     private ThreadPoolExecutor     _ugentTaskPool;
@@ -283,7 +285,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 s_logger.debug("Adding a watch list");
             }
             final WatchTask task = new WatchTask(link, request, this);
-            _timer.schedule(task, delay, period);
+            _timer.schedule(task, 0, period);
             _watchList.add(task);
         }
     }
@@ -316,7 +318,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         synchronized (this) {
             _startup = new StartupTask(link);
-            _timer.schedule(_startup, 180000);
+            _timer.schedule(_startup, _startupWait);
         }
         try {
             link.send(request.toBytes());
@@ -780,6 +782,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             // TimerTask.cancel may fail depends on the calling context
             if (!cancelled) {
                 cancelled = true;
+                _startupWait = _startupWaitDefault;
                 s_logger.debug("Startup task cancelled");
                 return super.cancel();
             }
@@ -794,6 +797,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 }
                 cancelled = true;
                 _startup = null;
+                _startupWait = _startupWaitDefault *2;
                 reconnect(_link);
             }
         }
