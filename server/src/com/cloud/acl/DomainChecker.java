@@ -109,7 +109,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
             
             return true;
-        } else if (entity instanceof Network) {
+        } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseNetwork) {
         	_networkMgr.checkNetworkPermissions(caller, (Network)entity);
         } else {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {

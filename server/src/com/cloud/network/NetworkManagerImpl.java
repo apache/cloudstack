@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -931,8 +932,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //check permissions
-        _accountMgr.checkAccess(caller, null, false, ipOwner, network);
-        _accountMgr.checkAccess(ipOwner, null, false, network);
+        _accountMgr.checkAccess(caller, null, false, ipOwner);
+        _accountMgr.checkAccess(ipOwner, AccessType.UseNetwork, false, network);
         
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         

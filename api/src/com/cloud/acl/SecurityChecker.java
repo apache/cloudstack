@@ -39,7 +39,8 @@ public interface SecurityChecker extends Adapter {
     public enum AccessType {
         ListEntry,
         ModifyEntry,
-        ModifyProject
+        ModifyProject,
+        UseNetwork
     }
     /**
      * Checks if the account owns the object.

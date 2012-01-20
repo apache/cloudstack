@@ -627,7 +627,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
     	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-    	if (ipAddressVo != null) {
+    	if (ipAddressVo != null && off.getElasticLb()) {
     		throw new InvalidParameterValueException("Can't specify ipAddressId when create LB in the network with LB capability " + Capability.ElasticLb.getName());
     	}
         

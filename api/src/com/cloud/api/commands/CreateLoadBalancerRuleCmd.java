@@ -141,32 +141,41 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         Long zoneId = getZoneId();
         
         if (zoneId == null) {
-        	throw new InvalidParameterValueException("Either networkId or zoneId has to be specified");
+        	Long ipId = getSourceIpAddressId();
+        	if (ipId == null) {
+            	throw new InvalidParameterValueException("Either networkId or zoneId or publicIpId has to be specified");
+        	}
         }
         
-        DataCenter zone = _configService.getZone(zoneId);
-        if (zone.getNetworkType() == NetworkType.Advanced) {
-            List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
-            if (networks.size() == 0) {
-                String domain = _domainService.getDomain(getDomainId()).getName();
-                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
-            }
-            
-            if (networks.size() < 1) {
-            	throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
-            } else if (networks.size() > 1) {
-            	throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
-            }
-            
-            return networks.get(0).getId();
-        } else {
-            Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
-            if (defaultGuestNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+        if (zoneId != null) {
+        	DataCenter zone = _configService.getZone(zoneId);
+        	if (zone.getNetworkType() == NetworkType.Advanced) {
+                List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
+                if (networks.size() == 0) {
+                    String domain = _domainService.getDomain(getDomainId()).getName();
+                    throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
+                }
+                
+                if (networks.size() < 1) {
+                	throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+                } else if (networks.size() > 1) {
+                	throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+                }
+                
+                return networks.get(0).getId();
             } else {
-                return defaultGuestNetwork.getId();
+                Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
+                if (defaultGuestNetwork == null) {
+                    throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+                } else {
+                    return defaultGuestNetwork.getId();
+                }
             }
+        } else {
+        	IpAddress ipAddr = _networkService.getIp(publicIpId);
+        	return ipAddr.getAssociatedWithNetworkId();
         }
+        
     }
 
     public Integer getPublicPort() {
