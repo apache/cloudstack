@@ -690,6 +690,36 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     @DB
+    public VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool) {
+        template = _tmpltDao.findById(template.getId(), true);
+
+        long poolId = pool.getId();
+        long templateId = template.getId();
+        long dcId = pool.getDataCenterId();
+        VMTemplateStoragePoolVO templateStoragePoolRef = null;
+        VMTemplateHostVO templateHostRef = null;
+        long templateStoragePoolRefId;
+        String origUrl = null;
+
+        templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
+
+        if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+            String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
+            if (result != null) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
+            templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
+            if (templateHostRef == null || templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
+        }
+        return templateHostRef;
+    }
+
+    @Override
+    @DB
     public boolean resetTemplateDownloadStateOnPool(long templateStoragePoolRefId) {
     	// have to use the same lock that prepareTemplateForCreate use to maintain state consistency
     	VMTemplateStoragePoolVO templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, 1200);

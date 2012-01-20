@@ -17,7 +17,6 @@
  */
 package com.cloud.template;
 
-import java.net.URI;
 import java.util.List;
 
 import com.cloud.dc.DataCenterVO;
@@ -25,8 +24,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -93,5 +90,7 @@ public interface TemplateManager extends TemplateService{
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
 
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
+
+    VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
 
 }

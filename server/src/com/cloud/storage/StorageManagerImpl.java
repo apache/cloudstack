@@ -762,6 +762,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     }
                     cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                 } else {
+                    if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO == template.getFormat()) {
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            throw new CloudRuntimeException("Did not find ISO in secondry storage in zone " + pool.getDataCenterId());
+                        }
+                    }
                     cmd = new CreateCommand(dskCh, new StorageFilerTO(pool));
                 }
 
@@ -3065,6 +3071,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     }
                     cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
                 } else {
+                    if (template != null && Storage.ImageFormat.ISO == template.getFormat()) {
+                        VMTemplateHostVO tmpltHostOn = _tmpltMgr.prepareISOForCreate(template, pool);
+                        if (tmpltHostOn == null) {
+                            throw new CloudRuntimeException("Did not find ISO in secondry storage in zone " + pool.getDataCenterId());
+                        }
+                    }
                     cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool));
                 }
                 long[] hostIdsToTryFirst = { dest.getHost().getId() };
