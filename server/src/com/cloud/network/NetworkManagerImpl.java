@@ -725,7 +725,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         // Since it's non-conserve mode, only one service should used for IP
         if (services.size() != 1) {
-            throw new InvalidParameterException("There are multiply services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
             throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
@@ -760,9 +760,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     provider = curProvider;
                     continue;
                 }
-                //We don't support multiply providers for one service now
+                //We don't support multiple providers for one service now
                 if (!provider.equals(curProvider)) {
-                    throw new InvalidParameterException("There would be multiply providers for IP " + ip.getAddress() + " with the new network offering!");
+                    throw new InvalidParameterException("There would be multiple providers for IP " + ip.getAddress() + " with the new network offering!");
                 }
             }
         }
@@ -788,7 +788,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
         if (!oldProvider.equals(newProvider)) {
-            throw new InvalidParameterException("There would be multiply providers for IP " + publicIp.getAddress() + "!");
+            throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
         }
         return true;
     }
@@ -801,7 +801,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (PublicIp ip : ipToServices.keySet()) {
                 Set<Service> services = ipToServices.get(ip);
                 if (services != null && services.size() > 1) {
-                    throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiply services!");
+                    throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiple services!");
                 }
             }
         }
