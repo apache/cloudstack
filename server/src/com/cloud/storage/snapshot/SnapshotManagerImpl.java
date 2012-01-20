@@ -1107,7 +1107,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
-            throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the domain/account level snapshot limit");
+        	String message = "domain/account";
+        	if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        		message = "domain/project";
+        	}
+        	
+            throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
         }
 
         SnapshotPolicyVO policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
