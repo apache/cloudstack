@@ -483,8 +483,13 @@ public class Agent implements HandlerFactory, IAgentControl {
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof MaintainCommand) {
                     	s_logger.debug("Received maintainCommand" );
-                    	cancelTasks();
-                    	_reconnectAllowed = false;
+                    	MaintainCommand maintainCmd = (MaintainCommand)cmd;
+                    	if (maintainCmd.getMaintain()) {
+                    		cancelTasks();
+                    		_reconnectAllowed = false;
+                    	} else {
+                    		_reconnectAllowed = true;
+                    	}
                     	answer = new MaintainAnswer((MaintainCommand)cmd);
                     } else if (cmd instanceof ReadyCommand) {
                     	ReadyCommand ready = (ReadyCommand)cmd;
