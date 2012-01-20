@@ -41,6 +41,7 @@ import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -217,4 +218,6 @@ public interface NetworkManager extends NetworkService {
     String getIpInNetwork(long vmId, long networkId);
 
     String getIpInNetworkIncludingRemoved(long vmId, long networkId);
+
+	boolean updateVmData(UserVm vm);
 }

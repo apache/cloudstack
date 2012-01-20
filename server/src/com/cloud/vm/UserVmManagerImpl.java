@@ -1818,9 +1818,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
         }
 
+        boolean updateUserdata = false;
         if (userData != null) {
             validateUserData(userData);
             // update userData on domain router.
+            updateUserdata = true;
         } else {
             userData = vmInstance.getUserData();
         }
@@ -1852,6 +1854,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData);
 
+        if (updateUserdata) {
+        	_networkMgr.updateVmData(vmInstance);
+        }
         return _vmDao.findById(id);
     }
 

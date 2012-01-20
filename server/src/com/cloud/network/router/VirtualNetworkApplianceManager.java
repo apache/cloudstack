@@ -38,6 +38,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -91,5 +92,10 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String getDnsBasicZoneUpdate();
     
     boolean applyStaticNats(Network network, List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+
+	boolean updateVmData(Network network, NicProfile nic,
+			VirtualMachineProfile<UserVm> profile,
+			List<? extends VirtualRouter> routers)
+			throws ResourceUnavailableException;
 
 }

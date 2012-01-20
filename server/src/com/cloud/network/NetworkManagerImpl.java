@@ -100,6 +100,7 @@ import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.UpdateUserDataElement;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -121,6 +122,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -147,6 +149,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -2800,6 +2803,44 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         return elements;
+    }
+    
+    private List<? extends UpdateUserDataElement> getUpdateUserDataElements() {
+    	 List<UpdateUserDataElement> elements = new ArrayList<UpdateUserDataElement>();
+         for (NetworkElement element : _networkElements) {
+             if (element instanceof UpdateUserDataElement) {
+                 elements.add((UpdateUserDataElement) element);
+             }
+         }
+         return elements;
+    }
+    
+    @Override
+    public boolean updateVmData(UserVm vm) {
+    	  Nic defaultNic = getDefaultNic(vm.getId());
+          if (defaultNic == null) {
+              s_logger.error("Unable to update vm data for vm " + vm.getDisplayName() + " as the instance doesn't have default nic");
+              return false;
+          }
+
+          Network defaultNetwork = getNetwork(defaultNic.getNetworkId());
+          NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null);
+          VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
+
+          List<? extends UpdateUserDataElement> elements = getUpdateUserDataElements();
+
+          boolean result = true;
+          try {
+          for (UpdateUserDataElement element : elements) {
+              if (!element.updateUserData(defaultNetwork, defaultNicProfile, vmProfile)) {
+                  result = false;
+              }
+          }
+          } catch (ResourceUnavailableException e) {
+        	  
+          }
+
+    	return true;
     }
 
     @Override

@@ -45,6 +45,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.UpdateUserDataElement;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -372,4 +373,20 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
+    
+	@Override
+	public boolean updateUserData(Network network, NicProfile nic,
+			VirtualMachineProfile<? extends VirtualMachine> vm)
+			throws ResourceUnavailableException {
+	    List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.trace("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+        
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+ 
+        return _routerMgr.updateVmData(network, nic, uservm, routers);
+	}
 }

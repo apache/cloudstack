@@ -2324,27 +2324,32 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand("users", addUsersCmd);
         cmds.addCommand("startVpn", startVpnCmd);
     }
+    
+    private void createvmDataCommand(DomainRouterVO router, UserVmVO userVM, DataCenterVO dc, Commands cmds) {
+    	boolean createVmData = true;
+    	long networkId = router.getNetworkId();
+        if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != userVM.getPodIdToDeployIn().longValue()) {
+            createVmData = false;
+        }
+        
+        if (createVmData) {
+            NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, userVM.getId());
+            if (nic != null) {
+                s_logger.debug("Creating user data entry for vm " + userVM + " on domR " + router);
+                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(userVM.getServiceOfferingId()).getDisplayText();
+                String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
+                cmds.addCommand("vmdata",
+                        generateVmDataCommand(router, nic.getIp4Address(), userVM.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), userVM.getHostName(), userVM.getInstanceName(), userVM.getId(), null));
+            }
+        }
+    }
 
     private void createVmDataCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
         List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Running, State.Migrating, State.Stopping);
         DataCenterVO dc = _dcDao.findById(router.getDataCenterIdToDeployIn());
         for (UserVmVO vm : vms) {
-            boolean createVmData = true;
-            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()) {
-                createVmData = false;
-            }
-            
-            if (createVmData) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-                if (nic != null) {
-                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                    String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-                    String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
-                    cmds.addCommand("vmdata",
-                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
-                }
-            }
+        	createvmDataCommand(router, vm, dc, cmds);
         }
     }
 
@@ -2508,6 +2513,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
         }
         return result;
+    }
+    
+    @Override
+    public boolean updateVmData(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    	  if (routers == null || routers.isEmpty()) {
+              s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
+              throw new CloudRuntimeException("Unable to save password to router");
+          }
+
+          boolean result = true;
+          UserVm userVm = profile.getVirtualMachine();
+          DataCenterVO dc = _dcDao.findById(userVm.getDataCenterIdToDeployIn());
+          for (VirtualRouter router : routers) {
+        	  Commands cmds = new Commands(OnError.Continue);
+        	  createvmDataCommand((DomainRouterVO)router, (UserVmVO)userVm, dc, cmds);
+        	  result = result && sendCommandsToRouter(router, cmds);
+          }
+          return result;
     }
 
     @Override
