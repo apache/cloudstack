@@ -1678,9 +1678,11 @@
                                       
                                       pollAsyncJobResult({
                                         _custom: args._custom,
-                                        complete: function(args) {
+                                        complete: function(args) {                                          
                                           // Create stickiness policy
-                                          if (stickyData && stickyData.methodname != 'none') {
+                                          if (stickyData &&
+                                              stickyData.methodname &&
+                                              stickyData.methodname != 'none') {
                                             var stickyURLData = '';
                                             var stickyParams;
 
@@ -1721,16 +1723,21 @@
                                                       jobId: json.createLBStickinessPolicy.jobid,
                                                     },
                                                     complete: function(args) {
-                                                      clearInterval(addStickyCheck);
                                                       complete();
+                                                      clearInterval(addStickyCheck);
                                                     },
                                                     error: function(args) {
+                                                      complete();
+                                                      cloudStack.dialog.notice({ message: args.message });
                                                       clearInterval(addStickyCheck);
                                                     }
                                                   });                                                  
                                                 }, 1000);
                                               },
-                                              error: error
+                                              error: function(json) {
+                                                complete();
+                                                cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
+                                              }
                                             });
                                           } else {
                                             complete();
