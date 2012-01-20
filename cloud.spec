@@ -543,6 +543,7 @@ fi
 %files agent
 %defattr(0644,root,root,0755)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.properties
+%config(noreplace) %{_sysconfdir}/%{name}/agent/dummy.agent.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/developer.properties.template
 %config(noreplace)  %{_sysconfdir}/%{name}/agent/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
