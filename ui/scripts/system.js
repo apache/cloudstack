@@ -29,7 +29,8 @@
               success: function(json) {
                 dataFns.podCount($.extend(data, {
                   zoneCount: json.listzonesresponse.count ?
-                    json.listzonesresponse.count : 0
+                    json.listzonesresponse.count : 0,
+                  zones: json.listzonesresponse.zone
                 }));
               }
             });
@@ -78,6 +79,9 @@
             if (data.zoneCount) {
               $.ajax({
                 url: createURL('listCapacity'),
+                data: {
+                  zoneid: data.zones[0].id // Temporary hack to keep dashboard working
+                },
                 success: function(json) {
                   var capacities = json.listcapacityresponse.capacity;
 
