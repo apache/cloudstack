@@ -139,19 +139,21 @@ convert_primary_to_32() {
 
 remove_routing() {
   local pubIp=$1
+  logger -t cloud "$(basename $0):Remove routing $pubIp on interface $ethDev"
   local ipNoMask=$(echo $pubIp | awk -F'/' '{print $1}')
   local mask=$(echo $pubIp | awk -F'/' '{print $2}')
   local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
 
   local tableName="Table_$ethDev"
-  local ethMask=$(ip route show | grep $ethDev | grep src | awk '{print $1}')
-  if [ "$ethMask" != "" ]
+  local ethMask=$(ip route list scope link dev $ethDev | awk '{print $1}')
+  if [ "$ethMask" == "" ]
   then
 # rules and routes will be deleted for the last ip of the interface.
-     sudo ip route delete throw $ethMask  table $tableName proto static
-     sudo ip rule delete from $ethMask table $tableName
      sudo ip rule delete fwmark $tableNo table $tableName
+     sudo ip rule delete table $tableName
+     sudo ip route flush  table $tableName 
      sudo ip route flush cache
+     logger -t cloud "$(basename $0):Remove routing $pubIp - routes and rules deleted"
   fi
 }
 
@@ -160,9 +162,9 @@ copy_routes_from_main() {
   local tableName=$1
 
 #get the network masks from the main table
-  local eth0Mask=$(ip route show | grep eth0 | grep src | awk '{print $1}')
-  local eth1Mask=$(ip route show | grep eth1 | grep src | awk '{print $1}')
-  local ethMask=$(ip route show | grep $ethDev | grep src | awk '{print $1}')
+  local eth0Mask=$(ip route list scope link dev eth0 | awk '{print $1}')
+  local eth1Mask=$(ip route list scope link dev eth1 | awk '{print $1}')
+  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
 
 # eth0,eth1 and other know routes will be skipped, so as main routing table will decide the route. This will be useful if the interface is down and up.  
   sudo ip route add throw $eth0Mask table $tableName proto static 
@@ -173,6 +175,7 @@ copy_routes_from_main() {
 
 add_routing() {
   local pubIp=$1
+  logger -t cloud "$(basename $0):Add routing $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   local mask=$(echo $1 | awk -F'/' '{print $2}')
 
@@ -185,7 +188,7 @@ add_routing() {
      then
        return 0;
      fi
-     echo "$tableNo $tableName" >> /etc/iproute2/rt_tables
+     sudo echo "$tableNo $tableName" >> /etc/iproute2/rt_tables
   fi
 
   copy_routes_from_main $tableName
@@ -193,13 +196,14 @@ add_routing() {
   sudo ip route add default via $defaultGwIP table $tableName proto static
   sudo ip route flush cache
 
-  local ethMask=$(ip route show | grep $ethDev | grep src | awk '{print $1}')
+  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
   local rulePresent=$(ip rule show | grep $ethMask)
   if [ "$rulePresent" == "" ]
   then
 # rules will be added while adding the first ip of the interface 
      sudo ip rule add from $ethMask table $tableName
      sudo ip rule add fwmark $tableNo table $tableName
+     logger -t cloud "$(basename $0):Add routing $pubIp rules added"
   fi
   return 0;
 }
