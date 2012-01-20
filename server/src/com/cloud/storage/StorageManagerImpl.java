@@ -112,7 +112,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -2051,7 +2050,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public void cleanupSecondaryStorage(boolean recurring) {
         try {
             // Cleanup templates in secondary storage hosts
-            List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+            List<HostVO> secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
             for (HostVO secondaryStorageHost : secondaryStorageHosts) {
                 try {
                     long hostId = secondaryStorageHost.getId();
