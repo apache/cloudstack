@@ -224,4 +224,5 @@ public interface StorageManager extends Manager {
 
 	List<Long> getUpHostsInPool(long poolId);
 
+    void cleanupSecondaryStorage(boolean recurring);
 }

@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
@@ -165,6 +166,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
             return execute((DeleteObjectFromSwiftCommand) cmd);
+        } else if (cmd instanceof CleanupSnapshotBackupCommand){
+            return execute((CleanupSnapshotBackupCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -837,6 +840,35 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, null);
     }
     
+    Answer execute(CleanupSnapshotBackupCommand cmd) {
+        String parent = getRootDir(cmd.getSecondaryStoragePoolURL());
+        if (!parent.endsWith(File.separator)) {
+            parent += File.separator;
+        }
+        String absoluteSnapsthotDir = parent + File.separator + "snapshots" + File.separator + cmd.getAccountId() + File.separator + cmd.getVolumeId();
+        File ssParent = new File(absoluteSnapsthotDir);
+        if (ssParent.exists() && ssParent.isDirectory()) {
+            File[] files = ssParent.listFiles();
+            for (File file : files) {
+                boolean found = false;
+                String filename = file.getName();
+                for (String uuid : cmd.getValidBackupUUIDs()) {
+                    if (filename.startsWith(uuid)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    file.delete();
+                    String msg = "snapshot " + filename + " is not recorded in DB, remove it";
+                    s_logger.warn(msg);
+                }
+            }
+        }
+        return new Answer(cmd, true, null);
+    }
+
+
     synchronized public String getRootDir(String secUrl) {
         try {
             URI uri = new URI(secUrl);
