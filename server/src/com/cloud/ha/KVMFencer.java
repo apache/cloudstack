@@ -84,6 +84,7 @@ public class KVMFencer implements FenceBuilder {
 
 		List<HostVO> hosts = _hostDao.listByCluster(host.getClusterId());
 		FenceCommand fence = new FenceCommand(vm, host);
+		fence.setSeq(true);
 
 		for (HostVO h : hosts) {
 			if (h.getHypervisorType() == HypervisorType.KVM) {
