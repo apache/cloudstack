@@ -582,6 +582,8 @@ public class Agent implements HandlerFactory, IAgentControl {
 
             try {
                 task.getLink().send(request.toBytes());
+                //if i can send pingcommand out, means the link is ok
+                setLastPingResponseTime();
             } catch (final ClosedChannelException e) {
                 s_logger.warn("Unable to send request: " + request.toString());
             }
