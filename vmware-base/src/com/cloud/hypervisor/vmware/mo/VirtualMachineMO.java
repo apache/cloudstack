@@ -247,7 +247,29 @@ public class VirtualMachineMO extends BaseMO {
 	}
 	
 	public VirtualMachinePowerState getPowerState() throws Exception {
-		return (VirtualMachinePowerState)getContext().getServiceUtil().getDynamicProperty(_mor, "runtime.powerState");
+	    
+	    VirtualMachinePowerState powerState = VirtualMachinePowerState.poweredOff;
+	    
+	    // This is really ugly, there is a case that when windows guest VM is doing sysprep, the temporary
+	    // rebooting process may let us pick up a "poweredOff" state during VMsync process, this can trigger
+	    // a series actions. Unfortunately, from VMware API we can not distinguish power state into such details.
+	    // We hope by giving it 3 second to re-read the state can cover this as a short-term solution.
+	    //
+	    // In the future, VMsync should not kick off CloudStack action (this is not a HA case) based on VM
+	    // state report, until then we can remove this hacking fix
+	    for(int i = 0; i < 3; i++) {
+	        powerState = (VirtualMachinePowerState)getContext().getServiceUtil().getDynamicProperty(_mor, "runtime.powerState");
+	        if(powerState == VirtualMachinePowerState.poweredOff) {
+	            try {
+	                Thread.sleep(1000);
+	            } catch(InterruptedException e) {
+	            }
+	        } else {
+	            break;
+	        }
+	    }
+	    
+	    return powerState;
 	}
 	
 	public boolean reset() throws Exception {
