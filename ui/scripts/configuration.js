@@ -1067,7 +1067,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation';
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
 											serviceCapabilityIndex++;
-										} 													
+										} 
+                    else if ((key == 'service.StaticNat.elasticIpCheckbox') && ("StaticNat" in serviceProviderMap)) {	//if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section								
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'; //??? waiting for Alena's response
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 										
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -1285,7 +1291,13 @@
                         ]
                       })
                     }
-                  },
+                  },									
+									"service.StaticNat.elasticIpCheckbox" : {
+										label: "Elastic IP",
+										isHidden: true,
+										dependsOn: 'service.StaticNat.isEnabled',
+										isBoolean: true,
+									},	
 
 									conservemode: { label: 'Conserve mode', isBoolean: true },
 									
