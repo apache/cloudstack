@@ -4,6 +4,8 @@
 
 package com.cloud.storage.resource;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -28,6 +30,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -232,9 +235,19 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             HostMO hostMo =  new HostMO(context, morHyperHost);
 
             try {
-                VmwareHypervisorHostNetworkSummary netSummary = hostMo.getHyperHostNetworkSummary(
-                	hostMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
-                _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
+                
+                ManagedObjectReference mor = hostMo.getHyperHostCluster();
+                ClusterMO clusterMo = new ClusterMO(hostMo.getContext(), mor);
+                List<Pair<ManagedObjectReference, String>> hostsInCluster = clusterMo.getClusterHosts();
+                for(Pair<ManagedObjectReference, String> hostPair : hostsInCluster) {
+                    HostMO hostIteratorMo = new HostMO(hostMo.getContext(), hostPair.first());
+                    
+                    VmwareHypervisorHostNetworkSummary netSummary = hostIteratorMo.getHyperHostNetworkSummary(
+                            hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
+                    _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
+                    
+                    s_logger.info("Setup firewall rule for host: " + netSummary.getHostIp());
+                }
             } catch(Throwable e) {
                 s_logger.warn("Unable to retrive host network information due to exception " + e.toString() + ", host: " + hostTokens[0] + "-" + hostTokens[1]);
             }
