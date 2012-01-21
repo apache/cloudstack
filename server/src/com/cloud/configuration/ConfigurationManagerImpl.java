@@ -1452,6 +1452,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+
+            if(allocationState == Grouping.AllocationState.Enabled){
+                //check if zone has necessary trafficTypes before enabling
+                try{
+                    if(NetworkType.Advanced == zone.getNetworkType()){
+                        //zone should have a physical network with public and management traffiType
+                        _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
+                        _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    }else{
+                        //zone should have a physical network with management traffiType
+                        _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    }
+                }catch(InvalidParameterValueException ex){
+                    throw new InvalidParameterValueException("Cannot enable this Zone since: "+ ex.getMessage());
+                }
+            }
+            
             zone.setAllocationState(allocationState);
         }
 
