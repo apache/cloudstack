@@ -1043,13 +1043,7 @@
                       serviceProviderMap[serviceData[1]] = formData[
                         'service.' + serviceData[1] + '.provider'
                       ];
-                    } 										
-										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation';
-											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
-											serviceCapabilityIndex++;
-										} 
+                    } 	                   							
 										else if((key == 'service.SourceNat.redundantRouterCapabilityCheckbox') && ("SourceNat" in serviceProviderMap)) { //if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section
 										  inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat';
 											inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = "RedundantRouter";
@@ -1061,7 +1055,19 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes';
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
 										  serviceCapabilityIndex++;
-										} 	
+										} 
+                    else if ((key == 'service.Lb.elasticLbCheckbox') && ("Lb" in serviceProviderMap)) {	//if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section								
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'; //??? waiting for Alena's response
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 										
+										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
+											serviceCapabilityIndex++;
+										} 													
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -1261,7 +1267,12 @@
                       });
                     }
                   },
-
+									"service.Lb.elasticLbCheckbox" : {
+                    label: "Elastic LB",
+                    isHidden: true,
+                    dependsOn: 'service.Lb.isEnabled',
+                    isBoolean: true,
+                  },
                   "service.Lb.lbIsolationDropdown": {
                     label: 'LB isolation',
                     isHidden: true,
