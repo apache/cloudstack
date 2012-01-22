@@ -42,6 +42,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.router.UpdateUserDataElement;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -65,7 +66,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement{
+public class DhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement, UpdateUserDataElement {
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -258,4 +259,20 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         return false;
     }
+
+	@Override
+	public boolean updateUserData(Network network, NicProfile nic,
+			VirtualMachineProfile<? extends VirtualMachine> vm)
+			throws ResourceUnavailableException {
+		 List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_USERDATA);
+	        if (routers == null || routers.isEmpty()) {
+	            s_logger.trace("Can't find dhcp element in network " + network.getId());
+	            return true;
+	        }
+	        
+	        @SuppressWarnings("unchecked")
+	        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+	 
+	        return _routerMgr.updateVmData(network, nic, uservm, routers);
+	}
 }

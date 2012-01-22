@@ -18,8 +18,17 @@
 package com.cloud.agent.api;
 
 public class MaintainCommand extends Command {
-
+	private boolean _maintain;
     public MaintainCommand() {
+    	_maintain = true;
+    }
+    
+    public void setMaintain(boolean maintain) {
+    	_maintain = maintain;
+    }
+    
+    public boolean getMaintain() {
+    	return _maintain;
     }
     
     @Override

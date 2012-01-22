@@ -397,7 +397,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
-        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+((value == null) ? "" : value));
+        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+ (((name.toLowerCase()).contains("password")) ? "*****" : 
+        									(((value == null) ? "" : value))));
         // check if config value exists
         if (_configDao.findByName(name) == null) {
             throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
@@ -682,10 +683,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (!privateIps.isEmpty()) {
             if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
                 throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
-            }
-            
-            // Delete corresponding capacity record
-            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null);
+            }                        
         }
         
         // Delete link local ip addresses for the pod
@@ -703,7 +701,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 _vlanDao.remove(vlan.getId());
             }
         }
-
+        
+        // Delete corresponding capacity records
+        _capacityDao.removeBy(null, null, podId, null);
+        
         // Delete the pod
         if (!(_podDao.remove(podId))) {
             throw new CloudRuntimeException("Failed to delete pod " + podId);

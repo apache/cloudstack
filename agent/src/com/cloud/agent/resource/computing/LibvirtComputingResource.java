@@ -68,6 +68,7 @@ import org.libvirt.StoragePoolInfo;
 import org.libvirt.StorageVol;
 import org.libvirt.StorageVolInfo;
 
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -170,6 +171,7 @@ import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.agent.resource.computing.LibvirtVMDef.SerialDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.TermPolicy;
+import com.cloud.agent.resource.computing.LibvirtVMDef.ClockDef;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
@@ -2232,6 +2234,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		term.setPowerOffPolicy("destroy");
 		term.setRebootPolicy("restart");
 		vm.addComp(term);
+		
+		ClockDef clock = new ClockDef();
+		if (vmTO.getOs().startsWith("Windows")) {
+			clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
+			clock.setTimer("rtc", "catchup", null);
+		}
+		
+		vm.addComp(clock);
 
 		DevicesDef devices = new DevicesDef();
 		devices.setEmulatorPath(_hypervisorPath);

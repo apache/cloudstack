@@ -41,10 +41,10 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID. Either this parameter, or clusterId has to be passed in")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID for the host")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID. Either this parameter, or hostId has to be passed in")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")

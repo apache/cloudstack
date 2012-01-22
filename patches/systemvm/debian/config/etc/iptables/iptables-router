@@ -23,4 +23,8 @@ COMMIT
 -A FORWARD -i eth0 -o eth2 -j ACCEPT
 -A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 COMMIT
+*mangle
+-A PREROUTING -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
+COMMIT
+
 

@@ -1570,6 +1570,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 return false;
             }
         }
+        
+        if (host.getHypervisorType() == HypervisorType.KVM) {
+        	MaintainCommand cmd = new MaintainCommand();
+        	cmd.setMaintain(false);
+        	easySend(hostId, cmd);
+        }
         disconnect(hostId, Event.ResetRequested, false);
         return true;
     }

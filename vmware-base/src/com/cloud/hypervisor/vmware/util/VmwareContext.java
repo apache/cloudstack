@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -47,12 +48,16 @@ import com.vmware.vim25.VimPortType;
 
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
-	
+
+    private static int MAX_CONNECT_RETRY = 5;
+    private static int CONNECT_RETRY_INTERVAL = 1000;
+    
 	private ExtendedAppUtil _appUtil;
 	private String _serverAddress;
 	
 	private Map<String, Object> _stockMap = new HashMap<String, Object>();
-	private int _CHUNKSIZE = 1*1024*1024;		// 1M 
+	private int _CHUNKSIZE = 1*1024*1024;		// 1M
+	
 	
 	static {
 		try {
@@ -328,7 +333,7 @@ public class VmwareContext {
 		conn.setRequestProperty("Connection", "Keep-Alive");  
 		conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");  
 		conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
-		conn.connect();
+		connectWithRetry(conn);
 		
 		BufferedOutputStream bos = null;
 		BufferedInputStream is = null;
@@ -368,7 +373,7 @@ public class VmwareContext {
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);  
 	    conn.setAllowUserInteraction(true);
-	    conn.connect();
+        connectWithRetry(conn);
 
     	long bytesWritten = 0;  
 	    InputStream in = null;  
@@ -387,8 +392,6 @@ public class VmwareContext {
 	    		if(progressUpdater != null)
 	    			progressUpdater.action(new Long(totalBytesDownloaded));
 	    	}  
-	    } catch(Throwable e) {
-	    	s_logger.error("Unexpected exception ", e);
 	    } finally {
 	    	if(in != null)
 	    		in.close();
@@ -533,7 +536,7 @@ public class VmwareContext {
 	    conn.setAllowUserInteraction(true);
 	    conn.setRequestProperty(org.apache.axis.transport.http.HTTPConstants.HEADER_COOKIE, cookieString);
 	    conn.setRequestMethod(httpMethod);
-	    conn.connect();
+        connectWithRetry(conn);
 	    return conn;
 	}
 	
@@ -556,6 +559,27 @@ public class VmwareContext {
 		org.apache.axis.MessageContext msgContext = callObj.getMessageContext();
 		String cookieString = (String)msgContext.getProperty(org.apache.axis.transport.http.HTTPConstants.HEADER_COOKIE);
 		return cookieString;
+	}
+	
+	private static void connectWithRetry(HttpURLConnection conn) throws Exception {
+	    boolean connected = false;
+	    for(int i = 0; i < MAX_CONNECT_RETRY && !connected; i++) {
+	        try {
+	            conn.connect();
+	            connected = true;
+                s_logger.info("Connected, conn: " + conn.toString() + ", retry: " + i);
+	        } catch (Exception e) {
+	            s_logger.warn("Unable to connect, conn: " + conn.toString() + ", message: " + e.toString() + ", retry: " + i);
+	        
+	            try {
+	                Thread.sleep(CONNECT_RETRY_INTERVAL);
+	            } catch(InterruptedException ex) {
+	            }
+	        }
+	    }
+	    
+	    if(!connected)
+	        throw new Exception("Unable to connect to " + conn.toString());
 	}
 	
 	public void close() {

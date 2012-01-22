@@ -1075,7 +1075,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
                
-	        synchronized (s_vms) {
+	        synchronized (_cluster.intern()) {
 	                s_logger.debug("1. The VM " + vmName + " is in Starting state.");
 	                s_vms.put(_cluster, _name, vmName, State.Starting);
 	        }
@@ -1158,7 +1158,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String msg = handleVmStartFailure(conn, vmName, vm, "", e);
             return new StartAnswer(cmd, msg);
         } finally {
-            synchronized (s_vms) {
+            synchronized (_cluster.intern()) {
                if (state != State.Stopped) {
                    s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
                    s_vms.put(_cluster, _name, vmName, state);
@@ -1598,6 +1598,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
+            
+            args += " -g ";
+            args += vlanGateway;
             
 
             String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
@@ -2138,7 +2141,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final State state = getVmState(conn, vmName);
         Integer vncPort = null;
         if (state == State.Running) {
-            synchronized (s_vms) {
+            synchronized (_cluster.intern()) {
                 s_logger.debug("3. The VM " + vmName + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, vmName, State.Running);
             }
@@ -2162,7 +2165,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (NicTO nic : nics) {
                 getNetwork(conn, nic);
             }
-            synchronized (s_vms) {
+            synchronized (_cluster.intern()) {
                 s_logger.debug("4. The VM " +  vm.getName() + " is in " + State.Migrating + " state");
                 s_vms.put(_cluster, _name, vm.getName(), State.Migrating);
             }
@@ -2442,7 +2445,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         state = s_vms.getState(_cluster, vmName);
         
-        synchronized (s_vms) {
+        synchronized (_cluster.intern()) {
             s_logger.debug("5. The VM " + vmName + " is in " + State.Stopping + " state");
             s_vms.put(_cluster, _name, vmName, State.Stopping);
         }
@@ -2508,7 +2511,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
-        	synchronized (s_vms) {
+        	synchronized (_cluster.intern()) {
 	            s_logger.debug("6. The VM " + vmName + " is in " + State.Stopping + " state");
 	            s_vms.put(_cluster, _name, vmName, state);
         	}
@@ -2633,7 +2636,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
-        synchronized (s_vms) {
+        synchronized (_cluster.intern()) {
             s_logger.debug("7. The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
             s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
         }
@@ -2659,7 +2662,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new RebootAnswer(cmd, "reboot succeeded", null, null);
         } finally {
-            synchronized (s_vms) {
+            synchronized (_cluster.intern()) {
                 s_logger.debug("8. The VM " + cmd.getVmName() + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
             }
@@ -3128,7 +3131,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (vms.size() == 0) {
-                synchronized (s_vms) {
+                synchronized (_cluster.intern()) {
                     s_logger.info("VM does not exist on XenServer" + _host.uuid);
                     s_vms.remove(_cluster, _name, vmName);
                 }
@@ -3153,7 +3156,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 State state = s_vms.getState(_cluster, vmName);
 
-                synchronized (s_vms) {
+                synchronized (_cluster.intern()) {
                         s_logger.debug("9. The VM " + vmName + " is in " + State.Stopping + " state");
                         s_vms.put(_cluster, _name, vmName, State.Stopping);
                 }
@@ -3217,7 +3220,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.getMessage();
                         s_logger.warn(msg, e);
                     } finally {
-                        synchronized (s_vms) {
+                        synchronized (_cluster.intern()) {
                             s_logger.debug("10. The VM " + vmName + " is in " + state + " state");
                             s_vms.put(_cluster, _name, vmName, state);
                         }
@@ -6673,7 +6676,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
   protected HashMap<String, Pair<String, State>> deltaClusterSync(Connection conn) {
       final HashMap<String, Pair<String, State>> changes = new HashMap<String, Pair<String, State>>();
 
-      synchronized (s_vms) {
+      synchronized (_cluster.intern()) {
     	  HashMap<String, Pair<String, State>> newStates = getAllVms(conn);
 	      if (newStates == null) {
 	          s_logger.warn("Unable to get the vm states so no state sync at this point.");

@@ -4757,22 +4757,30 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     @DB
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
-        if (cmd.getClusterId() == null && cmd.getHostId() == null) {
+        if ( !((cmd.getClusterId() == null) ^ (cmd.getHostId() == null)) ) {//Using Xor operator here.
             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
         } else if (cmd.getClusterId() == null) {
-            HostVO h = _hostDao.findById(cmd.getHostId());
-            if (h.getHypervisorType() == HypervisorType.XenServer) {
-                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+            HostVO host = _hostDao.findById(cmd.getHostId());
+            if (host == null){
+                throw new InvalidParameterValueException("The hostId " +cmd.getHostId()+ " doesnt exist");
+            }if (host.getHypervisorType() != HypervisorType.KVM) {
+                throw new InvalidParameterValueException("This operation is not permitted for " + host.getHypervisorType() + " with the parameter hostId");
             }
-            DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+            DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
             if (nv.getValue().equals(cmd.getUsername())) {
-                DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, cmd.getPassword());
+                DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, cmd.getPassword());
                 nvp.setValue(cmd.getPassword());
                 _detailsDao.persist(nvp);
             } else {
                 throw new InvalidParameterValueException("The username is not under use by management server.");
             }
         } else {
+            ClusterVO cluster = _clusterDao.findById(cmd.getClusterId());
+            if (cluster == null){
+                throw new InvalidParameterValueException("The clusterId " +cmd.getClusterId()+ " doesnt exist");
+            }if (cluster.getHypervisorType() != HypervisorType.XenServer){
+                throw new InvalidParameterValueException("This operation is not permitted for " + cluster.getHypervisorType() + " with the parameter clusterId");
+            }
             // get all the hosts in this cluster
             List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
             Transaction txn = Transaction.currentTxn();
