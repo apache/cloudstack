@@ -73,7 +73,8 @@
         $.ajax({
           url: createURL('listNetworks'),
           data: {
-            supportedServices: 'SecurityGroup'
+            supportedServices: 'SecurityGroup',
+						listAll: true
           },
           async: false,
           success: function(data) {
@@ -81,7 +82,8 @@
               url: createURL('listNetworks'),
               data: {
                 type: 'isolated',
-                supportedServices: 'SourceNat'
+                supportedServices: 'SourceNat',
+						    listAll: true
               },
               async: false,
               success: function(data) {
@@ -219,10 +221,11 @@
 							}
 						}											
             $.ajax({
-              url: createURL("listNetworks&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: {
                 type: 'isolated',
-                supportedServices: 'SourceNat'
+                supportedServices: 'SourceNat',
+								listAll: true
               },
               dataType: 'json',
               async: true,
