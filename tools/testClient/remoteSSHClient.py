@@ -1,7 +1,7 @@
 import paramiko 
 import cloudstackException
 class remoteSSHClient(object):
-    def __init__(self, host, port, user, passwd):
+    def __init__(self, host, port, user, passwd, timeout=120):
         self.host = host
         self.port = port
         self.user = user
@@ -9,7 +9,7 @@ class remoteSSHClient(object):
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            self.ssh.connect(str(host),int(port), user, passwd)
+            self.ssh.connect(str(host),int(port), user, passwd, timeout=timeout)
         except paramiko.SSHException, sshex:
             raise cloudstackException.InvalidParameterException(repr(sshex))
         

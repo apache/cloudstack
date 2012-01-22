@@ -1,6 +1,7 @@
 import httplib
 import urllib
 import base64
+import copy
 import hmac
 import hashlib
 import json
@@ -49,9 +50,16 @@ class cloudConnection(object):
         sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
 
         requestUrl += "&signature=%s"%sig
-
         self.connection.request("GET", "/client/api?%s"%requestUrl)
-        return self.connection.getresponse().read()
+
+        try:
+            response = self.connection.getresponse().read()
+        except httplib.HTTPException:
+            self.close()
+            self = copy.copy(self)
+        else:
+            return response
+        return
  
     def make_request_without_auth(self, command, requests={}):
         requests["command"] = command
@@ -121,10 +129,10 @@ class cloudConnection(object):
         else:
             result = self.make_request_without_auth(commandName, requests)
         
-        if self.logging is not None:
-            self.logging.debug("got result: "  + result)
         if result is None:
             return None
+        if self.logging is not None:
+            self.logging.debug("got result: "  + result)
         
         result = jsonHelper.getResultObj(result, response)
         if raw or isAsync == "false":
