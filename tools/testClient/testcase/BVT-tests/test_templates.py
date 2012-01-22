@@ -7,8 +7,6 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
-import remoteSSHClient
 from utils import *
 from base import *
 import urllib
@@ -16,8 +14,60 @@ from random import random
 #Import System modules
 import time
 
+class Services:
+    """Test Templates Services
+    """
 
-services = TEST_TEMPLATE_SERVICES
+    def __init__(self):
+        self.services = {
+                            "virtual_machine":
+                                        {
+                                            "template": 206, # Template used for VM creation
+                                            "zoneid": 1,
+                                            "serviceoffering": 1,
+                                            "displayname": "testVM",
+                                            "hypervisor": 'XenServer',
+                                            "account": 'admin', # Account for which VM should be created
+                                            "domainid": 1,
+                                            "protocol": 'TCP',
+                                         },
+                            "volume":
+                                        {
+                                            "offerings": 1,
+                                            "volumeoffering": 3,
+                                            "diskname": "TestVolumeTemplate",
+                                            "zoneid": 1,
+                                            "diskofferingid": 3,
+                                         },
+                            "template_1":
+                                        {
+                                            "displaytext": "Test Template Type 1",
+                                            "name": "testTemplate",
+                                            "ostypeid": 12,
+                                         },
+                            "template_2":
+                                        {
+                                            "displaytext": "Test Template Type 2",
+                                            "name": "testTemplate",
+                                            "ostypeid": 12,
+                                            "isfeatured": True,
+                                            "ispublic": True,
+                                            "isextractable": True,
+                                            "mode": "HTTP_DOWNLOAD",
+                                            "zoneid": 1,
+                                         },
+                            "templatefilter": 'self',
+                            "destzoneid": 2, # For Copy template (Destination zone)
+                            "sourcezoneid": 1, # For Copy template (Source zone)
+                            "isfeatured": True,
+                            "ispublic": True,
+                            "isextractable": False,
+                            "bootable": True,
+                            "passwordenabled": True,
+                            "ostypeid": 15,
+                            "account": 'testuser', # Normal user
+                            "domainid": 1,
+                         }
 
 class TestCreateTemplate(cloudstackTestCase):
 
@@ -35,17 +85,17 @@ class TestCreateTemplate(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @classmethod
     def setUpClass(cls):
-
+        cls.services = Services().services
         cls.api_client = fetch_api_client()
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
-                                        services["virtual_machine"]
+                                        cls.services["virtual_machine"]
                                         )
 
         #Stop virtual machine
@@ -60,6 +110,7 @@ class TestCreateTemplate(cloudstackTestCase):
         cmd.type = 'ROOT'
         list_volume = cls.api_client.listVolumes(cmd)
         cls.volume = list_volume[0]
+        cls._cleanup = [cls.virtual_machine]
         return
 
     @classmethod
@@ -67,10 +118,10 @@ class TestCreateTemplate(cloudstackTestCase):
         try:
             cls.api_client = fetch_api_client()
             #Cleanup resources used
-            cls.virtual_machine.delete(cls.api_client)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -84,11 +135,11 @@ class TestCreateTemplate(cloudstackTestCase):
         # 3. ListTemplates API should show the newly added template
 
         #Create template from Virtual machine and Volume ID
-        template = Template.create(self.apiclient, self.volume, services["template_1"])
+        template = Template.create(self.apiclient, self.volume, self.services["template_1"])
         self.cleanup.append(template)
 
         cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = services["templatefilter"]
+        cmd.templatefilter = self.services["templatefilter"]
         cmd.id = template.id
         list_template_response = self.apiclient.listTemplates(cmd)
 
@@ -102,29 +153,30 @@ class TestCreateTemplate(cloudstackTestCase):
 
         self.assertEqual(
                             template_response.displaytext,
-                            services["template_1"]["displaytext"],
+                            self.services["template_1"]["displaytext"],
                             "Check display text of newly created template"
                         )
+        name = template_response.name
         self.assertEqual(
-                            template_response.name,
-                            services["template_1"]["name"],
+                            name.count(self.services["template_1"]["name"]),
+                            1,
                             "Check name of newly created template"
                         )
         self.assertEqual(
                             template_response.ostypeid,
-                            services["template_1"]["ostypeid"],
+                            self.services["template_1"]["ostypeid"],
                             "Check osTypeID of newly created template"
                         )
 
         #Verify the database entry for template
         self.debug(
                    "select name, display_text, guest_os_id from vm_template where id = %s;"
-                   %template.id
+                   % template.id
                    )
 
         qresultset = self.dbclient.execute(
                                            "select name, display_text, guest_os_id from vm_template where id = %s;"
-                                           %template.id
+                                           % template.id
                                            )
 
         self.assertNotEqual(
@@ -135,21 +187,22 @@ class TestCreateTemplate(cloudstackTestCase):
 
         qresult = qresultset[0]
 
+        name = qresult[0]
         self.assertEqual(
-                            qresult[0],
-                            services["template_1"]["name"],
+                            name.count(self.services["template_1"]["name"]),
+                            1,
                             "Compare template name with database record"
                         )
 
         self.assertEqual(
                             qresult[1],
-                            services["template_1"]["displaytext"],
+                            self.services["template_1"]["displaytext"],
                             "Compare template display text with database record"
                         )
 
         self.assertEqual(
                             qresult[2],
-                            services["template_1"]["ostypeid"],
+                            self.services["template_1"]["ostypeid"],
                             "Compare template osTypeID with database record"
                         )
         return
@@ -159,11 +212,12 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
+        cls.services = Services().services
         cls.api_client = fetch_api_client()
         #create virtual machines
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
-                                        services["virtual_machine"]
+                                        cls.services["virtual_machine"]
                                         )
 
         #Stop virtual machine
@@ -180,20 +234,19 @@ class TestTemplates(cloudstackTestCase):
         cls.volume = list_volume[0]
 
         #Create templates for Edit, Delete & update permissions testcases
-        cls.template_1 = Template.create(cls.api_client, cls.volume, services["template_1"])
-        cls.template_2 = Template.create(cls.api_client, cls.volume, services["template_2"])
+        cls.template_1 = Template.create(cls.api_client, cls.volume, cls.services["template_1"])
+        cls.template_2 = Template.create(cls.api_client, cls.volume, cls.services["template_2"])
+        cls._cleanup = [cls.template_2, cls.virtual_machine]
 
     @classmethod
     def tearDownClass(cls):
         try:
             cls.api_client = fetch_api_client()
-
             #Cleanup created resources such as templates and VMs
-            cls.template_2.delete(cls.api_client)
-            cls.virtual_machine.delete(cls.api_client)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -212,7 +265,7 @@ class TestTemplates(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -232,15 +285,15 @@ class TestTemplates(cloudstackTestCase):
         cmd.id = self.template_1.id
         cmd.displaytext = new_displayText
         cmd.name = new_name
-        cmd.bootable = services["bootable"]
-        cmd.passwordenabled = services["passwordenabled"]
-        cmd.ostypeid = services["ostypeid"]
+        cmd.bootable = self.services["bootable"]
+        cmd.passwordenabled = self.services["passwordenabled"]
+        cmd.ostypeid = self.services["ostypeid"]
 
         self.apiclient.updateTemplate(cmd)
 
         # Verify template response for updated attributes
         cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = services["templatefilter"]
+        cmd.templatefilter = self.services["templatefilter"]
         cmd.id = self.template_1.id
 
         list_template_response = self.apiclient.listTemplates(cmd)
@@ -264,23 +317,23 @@ class TestTemplates(cloudstackTestCase):
                         )
         self.assertEqual(
                             str(template_response.passwordenabled).lower(),
-                            str(services["passwordenabled"]).lower(),
+                            str(self.services["passwordenabled"]).lower(),
                             "Check passwordenabled field of updated template"
                         )
         self.assertEqual(
                             template_response.ostypeid,
-                            services["ostypeid"],
+                            self.services["ostypeid"],
                             "Check OSTypeID of updated template"
                         )
         # Verify database entry for updated template attributes
         self.debug(
                    "select name, display_text, bootable, enable_password, guest_os_id from vm_template where id = %s;"
-                   %self.template_1.id
+                   % self.template_1.id
                    )
 
         qresultset = self.dbclient.execute(
                                            "select name, display_text, bootable, enable_password, guest_os_id  from vm_template where id = %s;"
-                                           %self.template_1.id
+                                           % self.template_1.id
                                            )
 
         self.assertNotEqual(
@@ -304,17 +357,17 @@ class TestTemplates(cloudstackTestCase):
                         )
         self.assertEqual(
                             qresult[2],
-                            int(services["bootable"]),
+                            int(self.services["bootable"]),
                             "Compare template enable_password field with database record"
                         )
         self.assertEqual(
                             qresult[3],
-                            int(services["passwordenabled"]),
+                            int(self.services["passwordenabled"]),
                             "Compare template display text with database record"
                         )
         self.assertEqual(
                             qresult[4],
-                            services["ostypeid"],
+                            self.services["ostypeid"],
                             "Compare template guest OS ID with database record"
                         )
         return
@@ -330,7 +383,7 @@ class TestTemplates(cloudstackTestCase):
         self.template_1.delete(self.apiclient)
 
         cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = services["templatefilter"]
+        cmd.templatefilter = self.services["templatefilter"]
         cmd.id = self.template_1.id
         list_template_response = self.apiclient.listTemplates(cmd)
 
@@ -340,12 +393,12 @@ class TestTemplates(cloudstackTestCase):
         # Verify database entry is removed for deleted template
         self.debug(
                    "select name, display_text from vm_template where id = %s;"
-                   %self.template_1.id
+                   % self.template_1.id
                    )
 
         qresultset = self.dbclient.execute(
                                            "select name, display_text  from vm_template where id = %s;"
-                                           %self.template_1.id
+                                           % self.template_1.id
                                            )
 
         self.assertEqual(
@@ -366,8 +419,8 @@ class TestTemplates(cloudstackTestCase):
 
         cmd = extractTemplate.extractTemplateCmd()
         cmd.id = self.template_2.id
-        cmd.mode = services["template_2"]["mode"]
-        cmd.zoneid = services["template_2"]["zoneid"]
+        cmd.mode = self.services["template_2"]["mode"]
+        cmd.zoneid = self.services["template_2"]["zoneid"]
         list_extract_response = self.apiclient.extractTemplate(cmd)
 
         # Format URL to ASCII to retrieve response code
@@ -382,12 +435,12 @@ class TestTemplates(cloudstackTestCase):
                         )
         self.assertEqual(
                             list_extract_response.extractMode,
-                            services["template_2"]["mode"],
+                            self.services["template_2"]["mode"],
                             "Check mode of extraction"
                         )
         self.assertEqual(
                             list_extract_response.zoneid,
-                            services["template_2"]["zoneid"],
+                            self.services["template_2"]["zoneid"],
                             "Check zone ID of extraction"
                         )
         self.assertEqual(
@@ -407,16 +460,16 @@ class TestTemplates(cloudstackTestCase):
         cmd = updateTemplatePermissions.updateTemplatePermissionsCmd()
         # Update template permissions
         cmd.id = self.template_2.id
-        cmd.isfeatured = services["isfeatured"]
-        cmd.ispublic = services["ispublic"]
-        cmd.isextractable =services["isextractable"]
+        cmd.isfeatured = self.services["isfeatured"]
+        cmd.ispublic = self.services["ispublic"]
+        cmd.isextractable = self.services["isextractable"]
 
         self.apiclient.updateTemplatePermissions(cmd)
 
         cmd = listTemplates.listTemplatesCmd()
         cmd.id = self.template_2.id
-        cmd.account = services["account"]
-        cmd.domainid = services["domainid"]
+        cmd.account = self.services["account"]
+        cmd.domainid = self.services["domainid"]
         cmd.templatefilter = 'featured'
         list_template_response = self.apiclient.listTemplates(cmd)
 
@@ -443,11 +496,11 @@ class TestTemplates(cloudstackTestCase):
         # Verify database entries for updated permissions
         self.debug(
                    "select public, featured, extractable from vm_template where id = %s;"
-                   %self.template_2.id
+                   % self.template_2.id
                    )
         qresultset = self.dbclient.execute(
                                            "select public, featured, extractable from vm_template where id = %s;"
-                                           %self.template_2.id
+                                           % self.template_2.id
                                            )
 
         self.assertNotEqual(
@@ -460,18 +513,18 @@ class TestTemplates(cloudstackTestCase):
 
         self.assertEqual(
                             qresult[0],
-                            int(services["ispublic"]),
+                            int(self.services["ispublic"]),
                             "Compare public permission with database record"
                         )
 
         self.assertEqual(
                             qresult[1],
-                            int(services["isfeatured"]),
+                            int(self.services["isfeatured"]),
                             "Compare featured permission with database record"
                         )
         self.assertEqual(
                             qresult[2],
-                            int(services["isextractable"]),
+                            int(self.services["isextractable"]),
                             "Compare extractable permission with database record"
                         )
         return
@@ -484,14 +537,14 @@ class TestTemplates(cloudstackTestCase):
 
         cmd = copyTemplate.copyTemplateCmd()
         cmd.id = self.template_2.id
-        cmd.destzoneid = services["destzoneid"]
-        cmd.sourcezoneid = services["sourcezoneid"]
+        cmd.destzoneid = self.services["destzoneid"]
+        cmd.sourcezoneid = self.services["sourcezoneid"]
         self.apiclient.copyTemplate(cmd)
 
         # Verify template is copied to another zone using ListTemplates
         cmd = listTemplates.listTemplatesCmd()
         cmd.id = self.template_2.id
-        cmd.templatefilter = services["templatefilter"]
+        cmd.templatefilter = self.services["templatefilter"]
         list_template_response = self.apiclient.listTemplates(cmd)
 
         template_response = list_template_response[0]
@@ -507,7 +560,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         self.assertEqual(
                             template_response.zoneid,
-                            services["destzoneid"],
+                            self.services["destzoneid"],
                             "Check zone ID of the copied template"
                         )
         return
@@ -520,8 +573,8 @@ class TestTemplates(cloudstackTestCase):
 
         cmd = listTemplates.listTemplatesCmd()
         cmd.templatefilter = 'featured'
-        cmd.account = services["account"]
-        cmd.domainid = services["domainid"]
+        cmd.account = self.services["account"]
+        cmd.domainid = self.services["domainid"]
 
         list_template_response = self.apiclient.listTemplates(cmd)
 
@@ -531,9 +584,9 @@ class TestTemplates(cloudstackTestCase):
                             "Check template available in List Templates"
                         )
         #Template response should list all 'public' templates
-        for k in range(len(list_template_response)):
+        for template in list_template_response:
            self.assertEqual(
-                            list_template_response[k].ispublic,
+                            template.ispublic,
                             True,
                             "ListTemplates should list only public templates"
                         )
@@ -547,8 +600,8 @@ class TestTemplates(cloudstackTestCase):
 
         cmd = listTemplates.listTemplatesCmd()
         cmd.templatefilter = 'featured'
-        cmd.account = services["account"]
-        cmd.domainid = services["domainid"]
+        cmd.account = self.services["account"]
+        cmd.domainid = self.services["domainid"]
 
         list_template_response = self.apiclient.listTemplates(cmd)
 
@@ -558,9 +611,9 @@ class TestTemplates(cloudstackTestCase):
                             "Check template available in List Templates"
                         )
 
-        for k in range(len(list_template_response)):
+        for template in list_template_response:
            self.assertNotEqual(
-                            list_template_response[k].templatetype,
+                            template.templatetype,
                             'SYSTEM',
                             "ListTemplates should not list any system templates"
                         )

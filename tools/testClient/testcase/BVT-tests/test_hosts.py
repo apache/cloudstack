@@ -7,14 +7,79 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 from utils import *
 from base import *
 
 #Import System modules
 import time
 
-services = TEST_HOSTS_SERVICES
+class Services:
+    """Test Hosts & Clusters Services
+    """
+
+    def __init__(self):
+        self.services = {
+                       "clusters": {
+                                   0: {
+                                        "clustername": "Xen Cluster",
+                                        "clustertype": "ExternalManaged", # CloudManaged or ExternalManaged"
+                                        "hypervisor": "XenServer", # Hypervisor type
+                                        "zoneid": 3,
+                                        "podid": 3,
+                                    },
+                                   1: {
+                                        "clustername": "KVM Cluster",
+                                        "clustertype": "CloudManaged", # CloudManaged or ExternalManaged"
+                                        "hypervisor": "KVM", # Hypervisor type
+                                        "zoneid": 3,
+                                        "podid": 3,
+                                        },
+                                   2: {
+                                        "hypervisor": 'VMware', # Hypervisor type
+                                        "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
+                                        "zoneid": 3,
+                                        "podid": 3,
+                                        "username": 'administrator',
+                                        "password": 'fr3sca',
+                                        "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
+                                        # Format: http:// vCenter Host / Datacenter / Cluster
+                                        "clustername": '192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
+                                        # Format: http:// IP_Address / Datacenter / Cluster
+                                        },
+                                    },
+                       "hosts": {
+                                 "xenserver": {     #Must be name of corresponding Hypervisor type in cluster in small letters
+                                          "zoneid": 3,
+                                          "podid": 3,
+                                          "clusterid": 16,
+                                          "hypervisor": 'XenServer', # Hypervisor type
+                                          "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
+                                          "url": 'http://192.168.100.210',
+                                          "username": "administrator",
+                                          "password": "fr3sca",
+                                          },
+                                 "kvm": {
+                                          "zoneid": 3,
+                                          "podid": 3,
+                                          "clusterid": 35,
+                                          "hypervisor": 'KVM', # Hypervisor type
+                                          "clustertype": 'CloudManaged', # CloudManaged or ExternalManaged"
+                                          "url": 'http://192.168.100.212',
+                                          "username": "root",
+                                          "password": "fr3sca",
+                                          },
+                                 "vmware": {
+                                          "zoneid": 3,
+                                          "podid": 3,
+                                          "clusterid": 16,
+                                          "hypervisor": 'VMware', # Hypervisor type
+                                          "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
+                                          "url": 'http://192.168.100.203',
+                                          "username": "administrator",
+                                          "password": "fr3sca",
+                                         },
+                                 }
+                       }
 
 class TestHosts(cloudstackTestCase):
 
@@ -22,6 +87,7 @@ class TestHosts(cloudstackTestCase):
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.services = Services().services
         self.cleanup = []
         return
 
@@ -32,7 +98,7 @@ class TestHosts(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_01_clusters(self):
@@ -45,7 +111,7 @@ class TestHosts(cloudstackTestCase):
         # 3. Verify that the host is added successfully and in Up state with listHosts API response
 
         #Create clusters with Hypervisor type XEN/KVM/VWare
-        for k,v in services["clusters"].items():
+        for k, v in self.services["clusters"].items():
             cluster = Cluster.create(self.apiclient, v)
 
             self.assertEqual(
@@ -62,14 +128,14 @@ class TestHosts(cloudstackTestCase):
             #If host is externally managed host is already added with cluster
             cmd = listHosts.listHostsCmd()
             cmd.clusterid = cluster.id
-            response = apiclient.listHosts(cmd)
+            response = self.apiclient.listHosts(cmd)
 
-            if not len(response):
+            if not response:
                 hypervisor_type = str(cluster.hypervisortype.lower())
                 host = Host.create(
                                self.apiclient,
                                cluster,
-                               services["hosts"][hypervisor_type]
+                               self.services["hosts"][hypervisor_type]
                                )
 
             #Cleanup Host & Cluster
@@ -113,6 +179,6 @@ class TestHosts(cloudstackTestCase):
             self.assertEqual(
                             cluster_response.hypervisortype,
                             cluster.hypervisortype,
-                            "Check hypervisor type with list clusters response is " +  v["hypervisor"] + " or not"
+                            "Check hypervisor type with list clusters response is " + v["hypervisor"] + " or not"
                         )
         return

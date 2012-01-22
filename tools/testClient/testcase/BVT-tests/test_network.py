@@ -8,19 +8,67 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 import remoteSSHClient
 from utils import *
 from base import *
 #Import System modules
 import time
 
-services = TEST_NETWORK_SERVICES
+class Services:
+    """Test Network Services
+    """
+
+    def __init__(self):
+        self.services = {
+                            "admin_account": "admin",
+                            "user_account": "testuser",
+                            "zoneid": 1,
+                            "domainid": 1,
+                            "account": {
+                                            "email": "test@test.com",
+                                            "firstname": "Test",
+                                            "lastname": "User",
+                                            "username": "testuser",
+                                            "password": "fr3sca",
+                                            "zoneid": 1,
+                                        },
+                            "server":
+                                    {
+                                        "template": 206, # Template used for VM creation
+                                        "zoneid": 1,
+                                        "serviceoffering": 1,
+                                        "diskoffering": 3,
+                                        "displayname": "testserver",
+                                        "username": "root",
+                                        "password": "fr3sca",
+                                        "hypervisor": 'XenServer',
+                                        "account": 'testuser',
+                                        "domainid": 1,
+                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
+                                        "privateport": 22,
+                                        "publicport": 22,
+                                        "protocol": 'TCP',
+                                },
+                        "natrule":
+                                {
+                                    "privateport": 22,
+                                    "publicport": 22,
+                                    "protocol": "TCP"
+                                },
+                        "lbrule":
+                                {
+                                    "name": "SSH",
+                                    "alg": "roundrobin", # Algorithm used for load balancing
+                                    "privateport": 80,
+                                    "publicport": 80,
+                                }
+                        }
 
 class TestPublicIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
 
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate public IP address for admin account"""
@@ -31,9 +79,9 @@ class TestPublicIP(cloudstackTestCase):
 
         ip_address = PublicIPAddress.create(
                                             self.apiclient,
-                                            services["admin_account"],
-                                            services["zoneid"],
-                                            services["domainid"]
+                                            self.services["admin_account"],
+                                            self.services["zoneid"],
+                                            self.services["domainid"]
                                             )
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.id = ip_address.ipaddress.id
@@ -78,9 +126,9 @@ class TestPublicIP(cloudstackTestCase):
 
         ip_address = PublicIPAddress.create(
                                             self.apiclient,
-                                            services["user_account"],
-                                            services["zoneid"],
-                                            services["domainid"]
+                                            self.services["user_account"],
+                                            self.services["zoneid"],
+                                            self.services["domainid"]
                                             )
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.id = ip_address.ipaddress.id
@@ -119,12 +167,13 @@ class TestPortForwarding(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.api_client = fetch_api_client()
+        cls.services = Services().services
         #Create an account, network, VM and IP addresses
-        cls.account = Account.create(cls.api_client, services["account"], admin=True)
+        cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
         cls.virtual_machine = VirtualMachine.create(
                                                     cls.api_client,
-                                                    services["server"],
-                                                    accountid=cls.account.account.name,
+                                                    cls.services["server"],
+                                                    accountid = cls.account.account.name,
                                                     )
 
         cls._cleanup = [cls.virtual_machine, cls.account]
@@ -152,11 +201,11 @@ class TestPortForwarding(cloudstackTestCase):
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         #Create NAT rule
-        nat_rule = NATRule.create(self.apiclient, self.virtual_machine, services["natrule"], src_nat_ip_addr.id)
+        nat_rule = NATRule.create(self.apiclient, self.virtual_machine, self.services["natrule"], src_nat_ip_addr.id)
         time.sleep(60)
 
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
@@ -177,7 +226,7 @@ class TestPortForwarding(cloudstackTestCase):
         try:
             self.virtual_machine.get_ssh_client(src_nat_ip_addr.ipaddress)
         except Exception as e:
-            self.fail("SSH Access failed for %s: %s" %(self.virtual_machine.ipaddress, e))
+            self.fail("SSH Access failed for %s: %s" % (self.virtual_machine.ipaddress, e))
 
         nat_rule.delete(self.apiclient)
         time.sleep(60)
@@ -208,13 +257,18 @@ class TestPortForwarding(cloudstackTestCase):
         #1. listPortForwardingRules should not return the deleted rule anymore
         #2. attempt to do ssh should now fail
 
-        ip_address = PublicIPAddress.create(self.apiclient, self.account.account.name)
+        ip_address = PublicIPAddress.create(
+                                            self.apiclient,
+                                            self.account.account.name,
+                                            self.services["zoneid"],
+                                            self.services["domainid"]
+                                            )
         self.clean_up.append(ip_address)
         #Create NAT rule
         nat_rule = NATRule.create(
                                   self.apiclient,
                                   self.virtual_machine,
-                                  services["natrule"],
+                                  self.services["natrule"],
                                   ip_address.ipaddress.id
                                   )
         time.sleep(60)
@@ -241,7 +295,7 @@ class TestPortForwarding(cloudstackTestCase):
         try:
             self.virtual_machine.get_ssh_client(public_ip = ip_address.ipaddress.ipaddress)
         except Exception as e:
-            self.fail("SSH Access failed for %s: %s" %(self.virtual_machine.ipaddress.ipaddress, e))
+            self.fail("SSH Access failed for %s: %s" % (self.virtual_machine.ipaddress.ipaddress, e))
 
         nat_rule.delete(apiclient)
         time.sleep(60)
@@ -266,29 +320,31 @@ class TestPortForwarding(cloudstackTestCase):
                                             )
         return
 
+
 class TestLoadBalancingRule(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
 
         cls.api_client = fetch_api_client()
+        cls.services = Services().services
         #Create an account, network, VM and IP addresses
-        cls.account = Account.create(cls.api_client, services["account"], admin=True)
+        cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
         cls.vm_1 = VirtualMachine.create(
                                             cls.api_client,
-                                            services["server"],
-                                            accountid=cls.account.account.name,
+                                            cls.services["server"],
+                                            accountid = cls.account.account.name,
                                         )
         cls.vm_2 = VirtualMachine.create(
                                             cls.api_client,
-                                            services["server"],
-                                            accountid=cls.account.account.name,
+                                            cls.services["server"],
+                                            accountid = cls.account.account.name,
                                         )
         cls.non_src_nat_ip = PublicIPAddress.create(
                                                     cls.api_client,
                                                     cls.account.account.name,
-                                                    services["zoneid"],
-                                                    services["domainid"]
+                                                    cls.services["zoneid"],
+                                                    cls.services["domainid"]
                                                     )
         cls._cleanup = [cls.vm_1, cls.vm_2, cls.non_src_nat_ip, cls.account]
 
@@ -316,13 +372,13 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         #Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
                                           self.apiclient,
-                                          services["lbrule"],
+                                          self.services["lbrule"],
                                           src_nat_ip_addr.id,
                                           accountid = self.account.account.name
                                           )
@@ -370,7 +426,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                                 src_nat_ip_addr.ipaddress,
-                                                services['lbrule']["publicport"],
+                                                self.services['natrule']["publicport"],
                                                 self.vm_1.username,
                                                 self.vm_1.password
                                             )
@@ -380,7 +436,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         time.sleep(20)
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                                 src_nat_ip_addr.ipaddress,
-                                                services['lbrule']["publicport"],
+                                                self.services['natrule']["publicport"],
                                                 self.vm_1.username,
                                                 self.vm_1.password
                                             )
@@ -411,7 +467,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         #Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
                                           self.apiclient,
-                                          services["lbrule"],
+                                          self.services["lbrule"],
                                           self.non_src_nat_ip.ipaddress.id,
                                           accountid = self.account.account.name
                                           )
@@ -458,7 +514,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                                 self.non_src_nat_ip.ipaddress.ipaddress,
-                                                services['lbrule']["publicport"],
+                                                self.services['natrule']["publicport"],
                                                 self.vm_1.username,
                                                 self.vm_1.password
                                             )
@@ -468,7 +524,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         time.sleep(20)
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                                 self.non_src_nat_ip.ipaddress.ipaddress,
-                                                services['lbrule']["publicport"],
+                                                self.services['natrule']["publicport"],
                                                 self.vm_1.username,
                                                 self.vm_1.password
                                             )
@@ -488,29 +544,30 @@ class TestLoadBalancingRule(cloudstackTestCase):
             ssh_1.execute("hostname")[0]
         return
 
+
 class TestRebootRouter(cloudstackTestCase):
 
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
         #Create an account, network, VM and IP addresses
-        self.account = Account.create(self.apiclient, services["account"], admin=True)
+        self.account = Account.create(self.apiclient, self.services["account"], admin = True)
         self.vm_1 = VirtualMachine.create(
                                             self.apiclient,
-                                            services["server"],
-                                            accountid=self.account.account.name,
+                                            self.services["server"],
+                                            accountid = self.account.account.name,
                                         )
-        src_nat_ip_addr = self.account.public_ip.ipaddress
 
         lb_rule = LoadBalancerRule.create(
                                             self.apiclient,
-                                            services["lbrule"],
+                                            self.services["lbrule"],
                                             src_nat_ip_addr.id,
                                             self.account.account.name
                                         )
         lb_rule.assign(self.apiclient, [self.vm_1])
-        #nat_rule = NATRule.create(self.apiclient, self.vm_1, services["natrule"], src_nat_ip_addr.id)
-        self.cleanup = [self.vm_1, lb_rule, account]
+        #nat_rule = NATRule.create(self.apiclient, self.vm_1, self.services["natrule"], src_nat_ip_addr.id)
+        self.cleanup = [self.vm_1, lb_rule, self.account]
         return
 
     def test_reboot_router(self):
@@ -535,52 +592,55 @@ class TestRebootRouter(cloudstackTestCase):
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         #we should be able to SSH after successful reboot
         try:
             remoteSSHClient.remoteSSHClient(
                                             src_nat_ip_addr.ipaddress,
-                                            services["natrule"]["publicport"],
+                                            self.services["natrule"]["publicport"],
                                             self.vm_1.username,
                                             self.vm_1.password
                                             )
         except Exception as e:
-            self.fail("SSH Access failed for %s: %s" %(self.vm_1.ipaddress, e))
+            self.fail("SSH Access failed for %s: %s" % (self.vm_1.ipaddress, e))
         return
 
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+
 class TestAssignRemoveLB(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
         #Create VMs, accounts
-        self.account = Account.create(self.apiclient, services["account"], admin=True)
+        self.account = Account.create(self.apiclient, self.services["account"], admin = True)
 
         self.vm_1 = VirtualMachine.create(
                                           self.apiclient,
-                                          services["server"],
-                                          accountid=self.account.account.name,
+                                          self.services["server"],
+                                          accountid = self.account.account.name,
                                           )
 
         self.vm_2 = VirtualMachine.create(
                                           self.apiclient,
-                                          services["server"],
-                                          accountid=self.account.account.name,
+                                          self.services["server"],
+                                          accountid = self.account.account.name,
                                           )
 
         self.vm_3 = VirtualMachine.create(
                                           self.apiclient,
-                                          services["server"],
-                                          accountid=self.account.account.name,
+                                          self.services["server"],
+                                          accountid = self.account.account.name,
                                           )
 
-        self.cleanup = [self.vm_1, self.vm_2, self.vm_3]
+        self.cleanup = [self.vm_1, self.vm_2, self.vm_3, self.account]
         return
+
 
     def test_assign_and_removal_elb(self):
         """Test for assign & removing load balancing rule"""
@@ -592,12 +652,12 @@ class TestAssignRemoveLB(cloudstackTestCase):
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         self.non_src_nat_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         lb_rule = LoadBalancerRule.create(
                                           self.apiclient,
-                                          services["lbrule"],
+                                          self.services["lbrule"],
                                           self.non_src_nat_ip.id,
                                           self.account.account.name
                                           )
@@ -606,20 +666,20 @@ class TestAssignRemoveLB(cloudstackTestCase):
         #Create SSH client for each VM
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                                 self.non_src_nat_ip.ipaddress,
-                                                services["natrule"]["publicport"],
+                                                self.services["natrule"]["publicport"],
                                                 self.vm_1.username,
                                                 self.vm_1.password
                                             )
 
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                                 self.non_src_nat_ip.ipaddress,
-                                                services["natrule"]["publicport"],
+                                                self.services["natrule"]["publicport"],
                                                 self.vm_2.username,
                                                 self.vm_2.password
                                             )
         ssh_3 = remoteSSHClient.remoteSSHClient(
                                                 self.non_src_nat_ip.ipaddress,
-                                                services["natrule"]["publicport"],
+                                                self.services["natrule"]["publicport"],
                                                 self.vm_3.username,
                                                 self.vm_3.password
                                             )
@@ -651,38 +711,40 @@ class TestAssignRemoveLB(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+
 class TestReleaseIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
         #Create an account, network, VM, Port forwarding rule, LB rules and IP addresses
-        self.account = Account.create(self.apiclient, services["account"], admin=True)
+        self.account = Account.create(self.apiclient, self.services["account"], admin = True)
 
         self.virtual_machine = VirtualMachine.create(
                                                     self.apiclient,
-                                                    services["server"],
-                                                    accountid=self.account.account.name,
+                                                    self.services["server"],
+                                                    accountid = self.account.account.name,
                                                     )
 
         self.ip_address = PublicIPAddress.create(
                                             self.apiclient,
                                             self.account.account.name,
-                                            services["zoneid"],
+                                            self.services["zoneid"],
                                             self.account.account.domainid
                                             )
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         self.ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
-        self.nat_rule = NATRule.create(self.apiclient, self.virtual_machine, services["natrule"], self.ip_addr.id)
-        self.lb_rule = LoadBalancerRule.create(self.apiclient, services["lbrule"], self.ip_addr.id, accountid = self.account.account.name)
-        self.cleanup  = [self.virtual_machine, self.account]
+        self.nat_rule = NATRule.create(self.apiclient, self.virtual_machine, self.services["natrule"], self.ip_addr.id)
+        self.lb_rule = LoadBalancerRule.create(self.apiclient, self.services["lbrule"], self.ip_addr.id, accountid = self.account.account.name)
+        self.cleanup = [self.virtual_machine, self.account]
         return
 
     def teardown(self):
-        cleanup_resources(self.apiclient,self.cleanup)
+        cleanup_resources(self.apiclient, self.cleanup)
 
     def test_releaseIP(self):
         """Test for Associate/Disassociate public IP address"""
@@ -726,7 +788,7 @@ class TestReleaseIP(cloudstackTestCase):
         with self.assertRaises(Exception):
             ssh_2 = remoteSSHClient.remoteSSHClient(
                                                 self.ip_addr.ipaddress,
-                                                services["natrule"]["publicport"],
+                                                self.services["natrule"]["publicport"],
                                                 self.virtual_machine.username,
                                                 self.virtual_machine.password
                                             )
@@ -738,27 +800,28 @@ class TestDeleteAccount(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
         #Create an account, network, VM and IP addresses
-        self.account = Account.create(self.apiclient, services["account"], admin=True)
+        self.account = Account.create(self.apiclient, self.services["account"], admin = True)
         self.vm_1 = VirtualMachine.create(
                                             self.apiclient,
-                                            services["server"],
-                                            accountid=self.account.account.name,
+                                            self.services["server"],
+                                            accountid = self.account.account.name,
                                         )
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         self.lb_rule = LoadBalancerRule.create(
                                             self.apiclient,
-                                            services["lbrule"],
+                                            self.services["lbrule"],
                                             src_nat_ip_addr.id,
                                             self.account.account.name
                                         )
         self.lb_rule.assign(self.apiclient, [self.vm_1])
-        self.nat_rule = NATRule.create(self.apiclient, self.vm_1, services["natrule"], src_nat_ip_addr.id)
+        self.nat_rule = NATRule.create(self.apiclient, self.vm_1, self.services["natrule"], src_nat_ip_addr.id)
         self.cleanup = []
         return
 
@@ -776,7 +839,7 @@ class TestDeleteAccount(cloudstackTestCase):
         # ListLoadBalancerRules should not list associated rules with deleted account
         cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
         # Unable to find account testuser1 in domain 1 : Exception
         with self.assertRaises(Exception):
             self.apiclient.listLoadBalancerRules(cmd)
@@ -784,7 +847,7 @@ class TestDeleteAccount(cloudstackTestCase):
         # ListPortForwardingRules should not list associated rules with deleted account
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["server"]["domainid"]
+        cmd.domainid = self.services["server"]["domainid"]
 
         with self.assertRaises(Exception):
             self.apiclient.listPortForwardingRules(cmd)

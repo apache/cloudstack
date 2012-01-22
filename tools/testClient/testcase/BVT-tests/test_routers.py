@@ -7,7 +7,6 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 import remoteSSHClient
 from utils import *
 from base import *
@@ -15,7 +14,38 @@ from base import *
 #Import System modules
 import time
 
-services = TEST_ROUTER_SERVICES
+class Services:
+    """Test router Services
+    """
+
+    def __init__(self):
+        self.services = {
+                        "virtual_machine":
+                                    {
+                                        "template": 206, # Template used for VM creation
+                                        "zoneid": 1,
+                                        "serviceoffering": 1,
+                                        "displayname": "testserver",
+                                        "username": "root",
+                                        "password": "fr3sca",
+                                        "ssh_port": 22,
+                                        "hypervisor": 'XenServer',
+                                        "domainid": 1,
+                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
+                                        "privateport": 22,
+                                        "publicport": 22,
+                                        "protocol": 'TCP',
+                                },
+                        "account": {
+                                            "email": "test@test.com",
+                                            "firstname": "Test",
+                                            "lastname": "User",
+                                            "username": "testuser",
+                                            "password": "fr3sca",
+                                            "zoneid": 1,
+                                        },
+                        "sleep_time": 300,
+                        }
 
 class TestRouterServices(cloudstackTestCase):
 
@@ -24,12 +54,13 @@ class TestRouterServices(cloudstackTestCase):
 
         cls.api_client = fetch_api_client()
 
+        cls.services = Services().services
         #Create an account, network, VM and IP addresses
-        cls.account = Account.create(cls.api_client, services["account"])
+        cls.account = Account.create(cls.api_client, cls.services["account"])
         cls.vm_1 = VirtualMachine.create(
                                             cls.api_client,
-                                            services["virtual_machine"],
-                                            accountid=cls.account.account.name,
+                                            cls.services["virtual_machine"],
+                                            accountid = cls.account.account.name,
                                         )
 
         cls.cleanup = [cls.vm_1, cls.account]
@@ -43,7 +74,7 @@ class TestRouterServices(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
@@ -67,35 +98,35 @@ class TestRouterServices(cloudstackTestCase):
                              0,
                              "Check list router response"
                              )
-        for i in range(len(list_router_response)):
+        for router in list_router_response:
             self.assertEqual(
-                            list_router_response[i].state,
+                            router.state,
                             'Running',
                             "Check list router response for router state"
                         )
 
             cmd = listZones.listZonesCmd()
-            cmd.zoneid = list_router_response[i].zoneid
+            cmd.zoneid = router.zoneid
             zone = self.apiclient.listZones(cmd)[0]
 
             self.assertEqual(
-                            list_router_response[i].dns1,
+                            router.dns1,
                             zone.dns1,
                             "Compare DNS1 of router and zone"
                         )
             self.assertEqual(
-                            list_router_response[i].dns2,
+                            router.dns2,
                             zone.dns2,
                             "Compare DNS2 of router and zone"
                         )
             self.assertEqual(
-                            hasattr(list_router_response[i],'guestipaddress'),
+                            hasattr(router, 'guestipaddress'),
                             True,
                             "Check whether router has guest IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_router_response[i],'linklocalip'),
+                            hasattr(router, 'linklocalip'),
                             True,
                             "Check whether router has link local IP field"
                             )
@@ -112,7 +143,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         list_router_response = self.apiclient.listRouters(cmd)
 
         self.assertNotEqual(
@@ -120,46 +151,46 @@ class TestRouterServices(cloudstackTestCase):
                              0,
                              "Check list router response"
                              )
-        for i in range(len(list_router_response)):
+        for router in list_router_response:
             self.assertEqual(
-                            list_router_response[i].state,
+                            router.state,
                             'Running',
                             "Check list router response for router state"
                         )
 
             cmd = listZones.listZonesCmd()
-            cmd.zoneid = list_router_response[i].zoneid
+            cmd.zoneid = router.zoneid
             zone = self.apiclient.listZones(cmd)[0]
 
             self.assertEqual(
-                            list_router_response[i].dns1,
+                            router.dns1,
                             zone.dns1,
                             "Compare DNS1 of router and zone"
                         )
             self.assertEqual(
-                            list_router_response[i].dns2,
+                            router.dns2,
                             zone.dns2,
                             "Compare DNS2 of router and zone"
                         )
             self.assertEqual(
-                            hasattr(list_router_response[i],'guestipaddress'),
+                            hasattr(router, 'guestipaddress'),
                             True,
                             "Check whether router has guest IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_router_response[i],'linklocalip'),
+                            hasattr(router, 'linklocalip'),
                             True,
                             "Check whether router has link local IP field"
                             )
 
             #Fetch corresponding ip ranges information from listVlanIpRanges
             cmd = listVlanIpRanges.listVlanIpRangesCmd()
-            cmd.id = list_ssvm_response[i].zoneid
+            cmd.id = router.zoneid
             ipranges_response = self.apiclient.listVlanIpRanges(cmd)[0]
 
             self.assertEqual(
-                            list_router_response[i].gateway,
+                            router.gateway,
                             ipranges_response.gateway,
                             "Check gateway with that of corresponding IP range"
                             )
@@ -174,7 +205,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         #Stop the router
@@ -205,7 +236,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         #Start the router
@@ -236,7 +267,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         public_ip = router.publicip
@@ -265,7 +296,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_05_network_gc(self):
+    def test_06_network_gc(self):
         """Test network GC
         """
 
@@ -277,7 +308,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listVirtualMachines.listVirtualMachinesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         list_vms = self.apiclient.listVirtualMachines(cmd)
 
         self.assertNotEqual(
@@ -286,10 +317,10 @@ class TestRouterServices(cloudstackTestCase):
                             "Check length of list VM response"
                         )
 
-        for i in range(len(list_vms)):
+        for vm in list_vms:
             # Stop all virtual machines associated with that account
             cmd = stopVirtualMachine.stopVirtualMachineCmd()
-            cmd.id = list_vms[i].id
+            cmd.id = vm.id
             self.apiclient.stopVirtualMachine(cmd)
 
         # Wait for network.gc.interval
@@ -297,12 +328,12 @@ class TestRouterServices(cloudstackTestCase):
         cmd.name = 'network.gc.interval'
         response = self.apiclient.listConfigurations(cmd)[0]
 
-        time.sleep(int(response.value))
+        time.sleep(int(response.value) * 2)
 
         #Check status of network router
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         self.assertEqual(
@@ -312,7 +343,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_06_router_internal_basic(self):
+    def test_07_router_internal_basic(self):
         """Test router internal basic zone
         """
         # Validate the following
@@ -322,7 +353,7 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         cmd = listHosts.listHostsCmd()
@@ -334,9 +365,9 @@ class TestRouterServices(cloudstackTestCase):
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
                                                 host.ipaddress,
-                                                services['virtual_machine']["publicport"],
-                                                services['virtual_machine']["username"],
-                                                services['virtual_machine']["password"]
+                                                self.services['virtual_machine']["publicport"],
+                                                self.services['virtual_machine']["username"],
+                                                self.services['virtual_machine']["password"]
                                             )
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % router.linklocalip
 
@@ -359,7 +390,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_07_router_internal_adv(self):
+    def test_08_router_internal_adv(self):
         """Test router internal advanced zone
         """
         # Validate the following
@@ -370,7 +401,7 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         cmd = listHosts.listHostsCmd()
@@ -382,9 +413,9 @@ class TestRouterServices(cloudstackTestCase):
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
                                                 host.ipaddress,
-                                                services['virtual_machine']["publicport"],
-                                                services['virtual_machine']["username"],
-                                                services['virtual_machine']["password"]
+                                                self.services['virtual_machine']["publicport"],
+                                                self.services['virtual_machine']["username"],
+                                                self.services['virtual_machine']["password"]
                                             )
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % router.linklocalip
 
@@ -424,7 +455,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_08_restart_network_cleanup(self):
+    def test_09_restart_network_cleanup(self):
         """Test restart network
         """
 
@@ -435,7 +466,7 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         #Store old values before restart
@@ -443,7 +474,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listNetworks.listNetworksCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         network = self.apiclient.listNetworks(cmd)[0]
 
         cmd = restartNetwork.restartNetworkCmd()
@@ -454,7 +485,7 @@ class TestRouterServices(cloudstackTestCase):
         # Get router details after restart
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         self.assertNotEqual(
@@ -464,7 +495,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_08_restart_network_wo_cleanup(self):
+    def test_10_restart_network_wo_cleanup(self):
         """Test restart network without cleanup
         """
 
@@ -474,7 +505,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listNetworks.listNetworksCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         network = self.apiclient.listNetworks(cmd)[0]
 
         cmd = restartNetwork.restartNetworkCmd()
@@ -485,7 +516,7 @@ class TestRouterServices(cloudstackTestCase):
         # Get router details after restart
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = services["virtual_machine"]["domainid"]
+        cmd.domainid = self.services["virtual_machine"]["domainid"]
         router = self.apiclient.listRouters(cmd)[0]
 
         cmd = listHosts.listHostsCmd()
@@ -497,9 +528,9 @@ class TestRouterServices(cloudstackTestCase):
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
                                                 host.ipaddress,
-                                                services['virtual_machine']["publicport"],
-                                                services['virtual_machine']["username"],
-                                                services['virtual_machine']["password"]
+                                                self.services['virtual_machine']["publicport"],
+                                                self.services['virtual_machine']["username"],
+                                                self.services['virtual_machine']["password"]
                                             )
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s uptime" % router.linklocalip
 

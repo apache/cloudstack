@@ -7,7 +7,6 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 import remoteSSHClient
 from utils import *
 from base import *
@@ -16,7 +15,27 @@ import telnetlib
 #Import System modules
 import time
 
-services = TEST_SSVM_SERVICES
+class Services:
+    """Test SSVM Services
+    """
+
+    def __init__(self):
+        self.services = {
+                      "ssvm": {
+                               "id": 1, # SSVM ID in particular zone
+                               "zoneid": 1,
+                               },
+                      "cpvm": {
+                               "id": 2, # CPVM ID in particular zone
+                               "zoneid": 1,
+                               "mgmtserverIP": '192.168.100.154'    # For Telnet
+                               },
+                      "host": {
+                               "username": 'root', # Credentials for SSH
+                               "password": 'fr3sca',
+                               "publicport": 22,
+                               },
+                      }
 
 class TestSSVMs(cloudstackTestCase):
 
@@ -24,6 +43,7 @@ class TestSSVMs(cloudstackTestCase):
 
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
+        self.services = Services().services
         return
 
     def tearDown(self):
@@ -32,7 +52,7 @@ class TestSSVMs(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_01_list_sec_storage_vm(self):
@@ -66,56 +86,56 @@ class TestSSVMs(cloudstackTestCase):
                             "Check number of SSVMs with number of zones"
                         )
         #For each secondary storage VM check private IP, public IP, link local IP and DNS
-        for i in range(len(list_ssvm_response)):
+        for ssvm in list_ssvm_response:
 
             self.assertEqual(
-                            list_ssvm_response[i].state,
+                            ssvm.state,
                             'Running',
                             "Check whether state of SSVM is running"
                         )
 
             self.assertEqual(
-                            hasattr(list_ssvm_response[i],'privateip'),
+                            hasattr(ssvm, 'privateip'),
                             True,
                             "Check whether SSVM has private IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_ssvm_response[i],'linklocalip'),
+                            hasattr(ssvm, 'linklocalip'),
                             True,
                             "Check whether SSVM has link local IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_ssvm_response[i],'publicip'),
+                            hasattr(ssvm, 'publicip'),
                             True,
                             "Check whether SSVM has public IP field"
                             )
 
             #Fetch corresponding ip ranges information from listVlanIpRanges
             cmd = listVlanIpRanges.listVlanIpRangesCmd()
-            cmd.id = list_ssvm_response[i].zoneid
+            cmd.id = ssvm.zoneid
             ipranges_response = self.apiclient.listVlanIpRanges(cmd)[0]
 
             self.assertEqual(
-                            list_ssvm_response[i].gateway,
+                            ssvm.gateway,
                             ipranges_response.gateway,
                             "Check gateway with that of corresponding ip range"
                             )
 
             #Fetch corresponding zone information from listZones
             cmd = listZones.listZonesCmd()
-            cmd.id = list_ssvm_response[i].zoneid
+            cmd.id = ssvm.zoneid
             zone_response = self.apiclient.listZones(cmd)[0]
 
             self.assertEqual(
-                            list_ssvm_response[i].dns1,
+                            ssvm.dns1,
                             zone_response.dns1,
                             "Check DNS1 with that of corresponding zone"
                             )
 
             self.assertEqual(
-                            list_ssvm_response[i].dns2,
+                            ssvm.dns2,
                             zone_response.dns2,
                             "Check DNS2 with that of corresponding zone"
                             )
@@ -152,55 +172,55 @@ class TestSSVMs(cloudstackTestCase):
                             "Check number of CPVMs with number of zones"
                         )
         #For each CPVM check private IP, public IP, link local IP and DNS
-        for i in range(len(list_cpvm_response)):
+        for cpvm in list_cpvm_response:
 
             self.assertEqual(
-                            list_cpvm_response[i].state,
+                            cpvm.state,
                             'Running',
                             "Check whether state of CPVM is running"
                         )
 
             self.assertEqual(
-                            hasattr(list_cpvm_response[i],'privateip'),
+                            hasattr(cpvm, 'privateip'),
                             True,
                             "Check whether CPVM has private IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_cpvm_response[i],'linklocalip'),
+                            hasattr(cpvm, 'linklocalip'),
                             True,
                             "Check whether CPVM has link local IP field"
                             )
 
             self.assertEqual(
-                            hasattr(list_cpvm_response[i],'publicip'),
+                            hasattr(cpvm, 'publicip'),
                             True,
                             "Check whether CPVM has public IP field"
                             )
             #Fetch corresponding ip ranges information from listVlanIpRanges
             cmd = listVlanIpRanges.listVlanIpRangesCmd()
-            cmd.id = list_ssvm_response[i].zoneid
+            cmd.id = cpvm.zoneid
             ipranges_response = self.apiclient.listVlanIpRanges(cmd)[0]
 
             self.assertEqual(
-                            list_cpvm_response[i].gateway,
+                            cpvm.gateway,
                             ipranges_response.gateway,
                             "Check gateway with that of corresponding ip range"
                             )
 
             #Fetch corresponding zone information from listZones
             cmd = listZones.listZonesCmd()
-            cmd.id = list_cpvm_response[i].zoneid
+            cmd.id = cpvm.zoneid
             zone_response = self.apiclient.listZones(cmd)[0]
 
             self.assertEqual(
-                            list_cpvm_response[i].dns1,
+                            cpvm.dns1,
                             zone_response.dns1,
                             "Check DNS1 with that of corresponding zone"
                             )
 
             self.assertEqual(
-                            list_cpvm_response[i].dns2,
+                            cpvm.dns2,
                             zone_response.dns2,
                             "Check DNS2 with that of corresponding zone"
                             )
@@ -216,7 +236,7 @@ class TestSSVMs(cloudstackTestCase):
         # 4. If no process is running/multiple process are running then the test is a failure
 
         cmd = listHosts.listHostsCmd()
-        cmd.zoneid = services["ssvm"]["zoneid"]
+        cmd.zoneid = self.services["ssvm"]["zoneid"]
         cmd.type = 'Routing'
         cmd.state = 'Up'
         host = self.apiclient.listHosts(cmd)[0]
@@ -230,9 +250,9 @@ class TestSSVMs(cloudstackTestCase):
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
                                                 host.ipaddress,
-                                                services['host']["publicport"],
-                                                services['host']["username"],
-                                                services['host']["password"]
+                                                self.services['host']["publicport"],
+                                                self.services['host']["username"],
+                                                self.services['host']["password"]
                                             )
 
         timeout = 5
@@ -289,7 +309,7 @@ class TestSSVMs(cloudstackTestCase):
         # 3. Service cloud status should report cloud agent status to be running
 
         cmd = listHosts.listHostsCmd()
-        cmd.zoneid = services["cpvm"]["zoneid"]
+        cmd.zoneid = self.services["cpvm"]["zoneid"]
         cmd.type = 'Routing'
         cmd.state = 'Up'
         host = self.apiclient.listHosts(cmd)[0]
@@ -300,19 +320,19 @@ class TestSSVMs(cloudstackTestCase):
         cpvm = self.apiclient.listSystemVms(cmd)[0]
 
         with assertNotRaises(Exception):
-            telnet = telnetlib.Telnet( services["cpvm"]["mgmtserverIP"] , '8250')
+            telnet = telnetlib.Telnet(self.services["cpvm"]["mgmtserverIP"] , '8250')
 
         self.debug("Cheking cloud process status")
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
                                                 host.ipaddress,
-                                                services['host']["publicport"],
-                                                services['host']["username"],
-                                                services['host']["password"]
+                                                self.services['host']["publicport"],
+                                                self.services['host']["username"],
+                                                self.services['host']["password"]
                                             )
         timeout = 5
         # Check status of cloud service
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " %  cpvm.linklocalip
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % cpvm.linklocalip
         c = ssh_command + "service cloud status"
 
         while True:
@@ -344,14 +364,14 @@ class TestSSVMs(cloudstackTestCase):
         # 3. If either of the two above steps fail the test is a failure
 
         cmd = stopSystemVm.stopSystemVmCmd()
-        cmd.id = services["ssvm"]["id"]
+        cmd.id = self.services["ssvm"]["id"]
         cmd.systemvmtype = 'secondarystoragevm'
         self.apiclient.stopSystemVm(cmd)
 
         #Sleep to ensure that SSVM is properly restarted
         time.sleep(90)
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["ssvm"]["id"]
+        cmd.id = self.services["ssvm"]["id"]
         list_ssvm_response = self.apiclient.listSystemVms(cmd)
 
         ssvm_response = list_ssvm_response[0]
@@ -375,12 +395,12 @@ class TestSSVMs(cloudstackTestCase):
         # 3. If either of the two above steps fail the test is a failure
 
         cmd = stopSystemVm.stopSystemVmCmd()
-        cmd.id = services["cpvm"]["id"]
+        cmd.id = self.services["cpvm"]["id"]
         cmd.systemvmtype = 'consoleproxy'
         self.apiclient.stopSystemVm(cmd)
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["cpvm"]["id"]
+        cmd.id = self.services["cpvm"]["id"]
 
         timeout = 10
         while True :
@@ -414,7 +434,7 @@ class TestSSVMs(cloudstackTestCase):
         # 3. The cloud process should still be running within the SSVM
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["ssvm"]["id"]
+        cmd.id = self.services["ssvm"]["id"]
         cmd.systemvmtype = 'secondarystoragevm'
         ssvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -423,13 +443,13 @@ class TestSSVMs(cloudstackTestCase):
         old_private_ip = ssvm_response.privateip
 
         cmd = rebootSystemVm.rebootSystemVmCmd()
-        cmd.id = services["ssvm"]["id"]
+        cmd.id = self.services["ssvm"]["id"]
         self.apiclient.rebootSystemVm(cmd)
 
         #Sleep to ensure that SSVM is properly stopped/started
         time.sleep(60)
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["ssvm"]["id"]
+        cmd.id = self.services["ssvm"]["id"]
         ssvm_response = self.apiclient.listSystemVms(cmd)[0]
 
         self.assertEqual(
@@ -462,7 +482,7 @@ class TestSSVMs(cloudstackTestCase):
         # 3. the cloud process should still be running within the CPVM
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["cpvm"]["id"]
+        cmd.id = self.services["cpvm"]["id"]
         cmd.systemvmtype = 'consoleproxy'
         cpvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -471,14 +491,14 @@ class TestSSVMs(cloudstackTestCase):
         old_private_ip = cpvm_response.privateip
 
         cmd = rebootSystemVm.rebootSystemVmCmd()
-        cmd.id = services["cpvm"]["id"]
+        cmd.id = self.services["cpvm"]["id"]
         self.apiclient.rebootSystemVm(cmd)
 
         #Sleep to ensure that SSVM is properly stopped/started
         time.sleep(60)
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.id = services["cpvm"]["id"]
+        cmd.id = self.services["cpvm"]["id"]
         cpvm_response = self.apiclient.listSystemVms(cmd)[0]
 
         self.assertEqual(
@@ -513,7 +533,7 @@ class TestSSVMs(cloudstackTestCase):
         # 4. cloud process within SSVM must be up and running
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.zoneid = services["ssvm"]["zoneid"]
+        cmd.zoneid = self.services["ssvm"]["zoneid"]
         cmd.systemvmtype = 'secondarystoragevm'
         ssvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -527,7 +547,7 @@ class TestSSVMs(cloudstackTestCase):
         time.sleep(60)
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.zoneid = services["ssvm"]["zoneid"]
+        cmd.zoneid = self.services["ssvm"]["zoneid"]
         cmd.systemvmtype = 'secondarystoragevm'
         ssvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -538,19 +558,19 @@ class TestSSVMs(cloudstackTestCase):
                         "Check SSVM new name with name of destroyed SSVM"
                         )
         self.assertEqual(
-                        hasattr(ssvm_response,'privateip'),
+                        hasattr(ssvm_response, 'privateip'),
                         True,
                         "Check whether SSVM has private IP field"
                         )
 
         self.assertEqual(
-                        hasattr(ssvm_response,'linklocalip'),
+                        hasattr(ssvm_response, 'linklocalip'),
                         True,
                         "Check whether SSVM has link local IP field"
                         )
 
         self.assertEqual(
-                        hasattr(ssvm_response,'publicip'),
+                        hasattr(ssvm_response, 'publicip'),
                         True,
                         "Check whether SSVM has public IP field"
                         )
@@ -569,7 +589,7 @@ class TestSSVMs(cloudstackTestCase):
         # 4. cloud process within CPVM must be up and running
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.zoneid = services["cpvm"]["zoneid"]
+        cmd.zoneid = self.services["cpvm"]["zoneid"]
         cmd.systemvmtype = 'consoleproxy'
         cpvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -583,7 +603,7 @@ class TestSSVMs(cloudstackTestCase):
         time.sleep(60)
 
         cmd = listSystemVms.listSystemVmsCmd()
-        cmd.zoneid = services["cpvm"]["zoneid"]
+        cmd.zoneid = self.services["cpvm"]["zoneid"]
         cmd.systemvmtype = 'consoleproxy'
         cpvm_response = self.apiclient.listSystemVms(cmd)[0]
 
@@ -594,19 +614,19 @@ class TestSSVMs(cloudstackTestCase):
                         "Check SSVM new name with name of destroyed CPVM"
                         )
         self.assertEqual(
-                        hasattr(cpvm_response,'privateip'),
+                        hasattr(cpvm_response, 'privateip'),
                         True,
                         "Check whether CPVM has private IP field"
                         )
 
         self.assertEqual(
-                        hasattr(cpvm_response,'linklocalip'),
+                        hasattr(cpvm_response, 'linklocalip'),
                         True,
                         "Check whether CPVM has link local IP field"
                         )
 
         self.assertEqual(
-                        hasattr(cpvm_response,'publicip'),
+                        hasattr(cpvm_response, 'publicip'),
                         True,
                         "Check whether CPVM has public IP field"
                         )

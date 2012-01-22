@@ -7,21 +7,72 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
-import remoteSSHClient
 from utils import *
 from base import *
 
 #Import System modules
 import time
 
-services = TEST_PRIMARY_STORAGE_SERVICES
+class Services:
+    """Test Primary storage Services
+    """
+
+    def __init__(self):
+        self.services = {
+                                 "nfs": {
+                                   0: {
+                                        "url": "nfs://192.168.100.131/Primary",
+                                        # Format: File_System_Type/Location/Path
+                                        "name": "Primary XEN",
+                                        "podid": 3,
+                                        "clusterid": 1, # XEN Cluster
+                                        "zoneid": 3,
+                                        "hypervisor": 'XEN',
+                                    },
+                                   1: {
+                                        "url": "nfs://192.168.100.131/Primary",
+                                        "name": "Primary KVM",
+                                        "podid": 3,
+                                        "clusterid": 40, # KVM Cluster
+                                        "zoneid": 3,
+                                        "hypervisor": 'KVM',
+                                        },
+                                   2: {
+                                        "url": "nfs://192.168.100.131/Primary",
+                                        "name": "Primary VMWare",
+                                        "podid": 3,
+                                        "clusterid": 33, # VMWare Cluster
+                                        "zoneid": 3,
+                                        "hypervisor": 'VMWare',
+                                        },
+                                    },
+                                 "iscsi": {
+                                   0: {
+                                        "url": "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
+                                        # Format : iscsi : // IP Address/ IQN number/ LUN #
+                                        "name": "Primary iSCSI",
+                                        "podid": 1,
+                                        "clusterid": 1, # XEN Cluster
+                                        "zoneid": 1,
+                                        "hypervisor": 'XEN',
+                                    },
+                                   1: {
+                                        "url": "iscsi://192.168.100.21/export",
+                                        "name": "Primary KVM",
+                                        "podid": 3,
+                                        "clusterid": 1, # KVM Cluster
+                                        "zoneid": 3,
+                                        "hypervisor": 'KVM',
+                                        },
+                                    },
+                                 }
 
 class TestPrimaryStorageServices(cloudstackTestCase):
 
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
+        self.services = Services().services
         self.cleanup = []
         return
 
@@ -31,7 +82,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_01_primary_storage(self):
@@ -44,7 +95,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         # 3. verify that the host is added successfully and in Up state with listHosts api response
 
         #Create NFS storage pools with on XEN/KVM/VMWare clusters
-        for k,v in services["nfs"].items():
+        for k, v in self.services["nfs"].items():
 
             #Host should be present before adding primary storage
             cmd = listHosts.listHostsCmd()
@@ -99,7 +150,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             self.cleanup = []
 
         # Create iSCSI storage pools with on XEN/KVM clusters
-        for k,v in services["iscsi"].items():
+        for k, v in self.services["iscsi"].items():
             storage = StoragePool.create(self.apiclient, v)
             self.cleanup.append(storage)
 

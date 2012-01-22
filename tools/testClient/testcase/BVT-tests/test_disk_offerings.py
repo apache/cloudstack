@@ -8,15 +8,31 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 from utils import *
 from base import *
 
-services = TEST_DISK_OFFERING
+class Services:
+    """Test Disk offerings Services
+    """
+
+    def __init__(self):
+        self.services = {
+                         "off_1": {
+                                        "name": "Disk offering 1",
+                                        "displaytext": "Disk offering 1",
+                                        "disksize": 1   # in GB
+                                },
+                         "off_2": {
+                                        "name": "Disk offering 2",
+                                        "displaytext": "Disk offering 2",
+                                        "disksize": 1   # in GB
+                                }
+                         }
 
 class TestCreateDiskOffering(cloudstackTestCase):
 
     def setUp(self):
+        self.services = Services().services
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -29,17 +45,17 @@ class TestCreateDiskOffering(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_01_create_disk_offering(self):
         """Test to create disk offering"""
 
         # Validate the following:
-        # 1. createDiskOfferings should return a valid information for newly created offering
+        # 1. createDiskOfferings should return valid info for new offering
         # 2. The Cloud Database contains the valid information
 
-        disk_offering = DiskOffering.create(self.apiclient, services["off_1"])
+        disk_offering = DiskOffering.create(self.apiclient, self.services["off_1"])
         self.cleanup.append(disk_offering)
 
         cmd = listDiskOfferings.listDiskOfferingsCmd()
@@ -55,19 +71,19 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
         self.assertEqual(
                             disk_response.displaytext,
-                            services["off_1"]["displaytext"],
+                            self.services["off_1"]["displaytext"],
                             "Check server id in createServiceOffering"
                         )
         self.assertEqual(
                             disk_response.name,
-                            services["off_1"]["name"],
+                            self.services["off_1"]["name"],
                             "Check name in createServiceOffering"
                         )
 
         #Verify the database entries for new disk offering
         qresultset = self.dbclient.execute(
                                            "select display_text, id from disk_offering where id = %s;"
-                                           %disk_offering.id
+                                           % disk_offering.id
                                            )
 
         self.assertNotEqual(
@@ -80,7 +96,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
         self.assertEqual(
                             qresult[0],
-                            services["off_1"]["displaytext"],
+                            self.services["off_1"]["displaytext"],
                             "Compare display text with database record"
                         )
         self.assertEqual(
@@ -106,23 +122,25 @@ class TestDiskOfferings(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @classmethod
     def setUpClass(cls):
+        cls.services = Services().services
         cls.api_client = fetch_api_client()
-        cls.disk_offering_1 = DiskOffering.create(cls.api_client, services["off_1"])
-        cls.disk_offering_2 = DiskOffering.create(cls.api_client, services["off_2"])
+        cls.disk_offering_1 = DiskOffering.create(cls.api_client, cls.services["off_1"])
+        cls.disk_offering_2 = DiskOffering.create(cls.api_client, cls.services["off_2"])
+        cls._cleanup = [cls.disk_offering_1]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             cls.api_client = fetch_api_client()
-            cls.disk_offering_1.delete(cls.api_client)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_02_edit_disk_offering(self):
@@ -136,7 +154,7 @@ class TestDiskOfferings(cloudstackTestCase):
         random_name = random_gen()
 
         cmd = updateDiskOffering.updateDiskOfferingCmd()
-        cmd.id= self.disk_offering_1.id
+        cmd.id = self.disk_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
 
@@ -168,7 +186,7 @@ class TestDiskOfferings(cloudstackTestCase):
         #Verify database entries for updated disk offerings
         qresultset = self.dbclient.execute(
                                            "select display_text, id from disk_offering where id = %s;"
-                                           %self.disk_offering_1.id
+                                           % self.disk_offering_1.id
                                            )
 
         self.assertNotEqual(
@@ -198,7 +216,6 @@ class TestDiskOfferings(cloudstackTestCase):
         # Validate the following:
         # 1. deleteDiskOffering should return a valid information for newly created offering
 
-
         cmd = deleteDiskOffering.deleteDiskOfferingCmd()
         cmd.id = self.disk_offering_2.id
         self.apiclient.deleteDiskOffering(cmd)
@@ -226,4 +243,3 @@ class TestDiskOfferings(cloudstackTestCase):
                             )
 
         return
-

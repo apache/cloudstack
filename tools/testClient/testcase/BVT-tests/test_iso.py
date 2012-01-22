@@ -7,8 +7,6 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
-import remoteSSHClient
 from utils import *
 from base import *
 import urllib
@@ -16,11 +14,55 @@ from random import random
 #Import System modules
 import time
 
-services = TEST_ISO_SERVICES
+class Services:
+    """Test ISO Services
+    """
+
+    def __init__(self):
+        self.services = {
+                      "iso_1":
+                                {
+                                 "displaytext": "Test ISO type 1",
+                                 "name": "testISOType_1",
+                                 "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                                 # Source URL where ISO is located
+                                 "zoneid": 1,
+                                 "isextractable": True,
+                                 "isfeatured": True,
+                                 "ispublic": True,
+                                 "ostypeid": 12,
+                                 },
+                        "iso_2":
+                                {
+                                 "displaytext": "Test ISO type 2",
+                                 "name": "testISOType_2",
+                                 "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                                 # Source URL where ISO is located
+                                 "zoneid": 1,
+                                 "isextractable": True,
+                                 "isfeatured": True,
+                                 "ispublic": True,
+                                 "ostypeid": 12,
+                                 "mode": 'HTTP_DOWNLOAD',
+                                 # Used in Extract template, value must be HTTP_DOWNLOAD
+                                 "ostypeid": 12,
+                                 },
+                            "destzoneid": 2, # Copy ISO from one zone to another (Destination Zone)
+                            "sourcezoneid": 1, # Copy ISO from one zone to another (Source Zone)
+                            "isfeatured": True,
+                            "ispublic": True,
+                            "isextractable": True,
+                            "bootable": True, # For edit template
+                            "passwordenabled": True,
+                            "ostypeid": 15,
+                            "account": 'bhavin333', # Normal user, no admin rights
+                            "domainid": 1,
+                     }
 
 class TestCreateIso(cloudstackTestCase):
 
     def setUp(self):
+        self.services = Services().services
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -34,7 +76,7 @@ class TestCreateIso(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -47,7 +89,7 @@ class TestCreateIso(cloudstackTestCase):
         # 2. UI should show the newly added ISO
         # 3. listIsos API should show the newly added ISO
 
-        iso = Iso.create(self.apiclient, services["iso_2"])
+        iso = Iso.create(self.apiclient, self.services["iso_2"])
         iso.download(self.apiclient)
         self.cleanup.append(iso)
 
@@ -65,28 +107,28 @@ class TestCreateIso(cloudstackTestCase):
 
         self.assertEqual(
                             iso_response.displaytext,
-                            services["iso_2"]["displaytext"],
+                            self.services["iso_2"]["displaytext"],
                             "Check display text of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.name,
-                            services["iso_2"]["name"],
+                            self.services["iso_2"]["name"],
                             "Check name of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.zoneid,
-                            services["iso_2"]["zoneid"],
+                            self.services["iso_2"]["zoneid"],
                             "Check zone ID of newly created ISO"
                         )
 
         #Verify the database entry for ISO
         self.debug(
                    "select name, display_text from vm_template where id = %s and format='ISO';"
-                   %iso.id
+                   % iso.id
                    )
         qresultset = self.dbclient.execute(
                                            "select name, display_text from vm_template where id = %s and format='ISO';"
-                                           %iso.id
+                                           % iso.id
                                            )
 
         self.assertNotEqual(
@@ -99,13 +141,13 @@ class TestCreateIso(cloudstackTestCase):
 
         self.assertEqual(
                             qresult[0],
-                            services["iso_2"]["name"],
+                            self.services["iso_2"]["name"],
                             "Compare ISO name with database record"
                         )
 
         self.assertEqual(
                             qresult[1],
-                            services["iso_2"]["displaytext"],
+                            self.services["iso_2"]["displaytext"],
                             "Compare ISO display text with database record"
                         )
         return
@@ -114,10 +156,11 @@ class TestISO(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.services = Services().services
         cls.api_client = fetch_api_client()
-        cls.iso_1 = Iso.create(cls.api_client, services["iso_1"])
+        cls.iso_1 = Iso.create(cls.api_client, cls.services["iso_1"])
         cls.iso_1.download(cls.api_client)
-        cls.iso_2 = Iso.create(cls.api_client, services["iso_2"])
+        cls.iso_2 = Iso.create(cls.api_client, cls.services["iso_2"])
         cls.iso_2.download(cls.api_client)
         return
 
@@ -128,7 +171,7 @@ class TestISO(cloudstackTestCase):
             cls.iso_2.delete(cls.api_client)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -144,7 +187,7 @@ class TestISO(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -165,9 +208,9 @@ class TestISO(cloudstackTestCase):
         cmd.id = self.iso_1.id
         cmd.displaytext = new_displayText
         cmd.name = new_name
-        cmd.bootable = services["bootable"]
-        cmd.passwordenabled = services["passwordenabled"]
-        cmd.ostypeid = services["ostypeid"]
+        cmd.bootable = self.services["bootable"]
+        cmd.passwordenabled = self.services["passwordenabled"]
+        cmd.ostypeid = self.services["ostypeid"]
 
         self.apiclient.updateIso(cmd)
 
@@ -195,24 +238,24 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             iso_response.bootable,
-                            services["bootable"],
+                            self.services["bootable"],
                             "Check if image is bootable of updated ISO"
                         )
 
         self.assertEqual(
                             iso_response.ostypeid,
-                            services["ostypeid"],
+                            self.services["ostypeid"],
                             "Check OSTypeID of updated ISO"
                         )
 
         #Verify database entry for updateIso
         self.debug(
                    "select name, display_text, bootable, guest_os_id from vm_template where id = %s and format='ISO';"
-                   %self.iso_1.id
+                   % self.iso_1.id
                    )
         qresultset = self.dbclient.execute(
                                            "select name, display_text, bootable, guest_os_id from vm_template where id = %s and format='ISO';"
-                                           %self.iso_1.id
+                                           % self.iso_1.id
                                            )
 
         self.assertNotEqual(
@@ -236,13 +279,13 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             qresult[2],
-                            int(services["bootable"]),
+                            int(self.services["bootable"]),
                             "Compare template enable_password field with database record"
                         )
 
         self.assertEqual(
                             qresult[3],
-                            services["ostypeid"],
+                            self.services["ostypeid"],
                             "Compare template guest OS ID with database record"
                         )
         return
@@ -267,11 +310,11 @@ class TestISO(cloudstackTestCase):
         #Verify whether database entry is deleted or not
         self.debug(
                    "select name, display_text from vm_template where id = %s and format='ISO';"
-                   %self.iso_1.id
+                   % self.iso_1.id
                    )
         qresultset = self.dbclient.execute(
                                            "select name, display_text from vm_template where id = %s and format='ISO';"
-                                           %self.iso_1.id
+                                           % self.iso_1.id
                                            )
 
         self.assertEqual(
@@ -291,8 +334,8 @@ class TestISO(cloudstackTestCase):
 
         cmd = extractIso.extractIsoCmd()
         cmd.id = self.iso_2.id
-        cmd.mode = services["iso_2"]["mode"]
-        cmd.zoneid = services["iso_2"]["zoneid"]
+        cmd.mode = self.services["iso_2"]["mode"]
+        cmd.zoneid = self.services["iso_2"]["zoneid"]
         list_extract_response = self.apiclient.extractIso(cmd)
 
         #Format URL to ASCII to retrieve response code
@@ -307,12 +350,12 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             list_extract_response.extractMode,
-                            services["iso_2"]["mode"],
+                            self.services["iso_2"]["mode"],
                             "Check mode of extraction"
                         )
         self.assertEqual(
                             list_extract_response.zoneid,
-                            services["iso_2"]["zoneid"],
+                            self.services["iso_2"]["zoneid"],
                             "Check zone ID of extraction"
                         )
         self.assertEqual(
@@ -332,16 +375,16 @@ class TestISO(cloudstackTestCase):
         cmd = updateIsoPermissions.updateIsoPermissionsCmd()
         cmd.id = self.iso_2.id
         #Update ISO permissions
-        cmd.isfeatured = services["isfeatured"]
-        cmd.ispublic = services["ispublic"]
-        cmd.isextractable = services["isextractable"]
+        cmd.isfeatured = self.services["isfeatured"]
+        cmd.ispublic = self.services["ispublic"]
+        cmd.isextractable = self.services["isextractable"]
         self.apiclient.updateIsoPermissions(cmd)
 
         #Verify ListIsos have updated permissions for the ISO for normal user
         cmd = listIsos.listIsosCmd()
         cmd.id = self.iso_2.id
-        cmd.account = services["account"]
-        cmd.domainid = services["domainid"]
+        cmd.account = self.services["account"]
+        cmd.domainid = self.services["domainid"]
         list_iso_response = self.apiclient.listIsos(cmd)
 
         iso_response = list_iso_response[0]
@@ -353,24 +396,24 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             iso_response.ispublic,
-                            services["ispublic"],
+                            self.services["ispublic"],
                             "Check ispublic permission of ISO"
                         )
 
         self.assertEqual(
                             iso_response.isfeatured,
-                            services["isfeatured"],
+                            self.services["isfeatured"],
                             "Check isfeatured permission of ISO"
                         )
 
         #Verify database entry for updated ISO permissions
         self.debug(
                    "select public, featured, extractable from vm_template where id = %s and format='ISO';"
-                   %self.iso_2.id
+                   % self.iso_2.id
                    )
         qresultset = self.dbclient.execute(
                                            "select public, featured, extractable from vm_template where id = %s and format='ISO';"
-                                           %self.iso_2.id
+                                           % self.iso_2.id
                                            )
 
         self.assertNotEqual(
@@ -383,18 +426,18 @@ class TestISO(cloudstackTestCase):
 
         self.assertEqual(
                             qresult[0],
-                            int(services["ispublic"]),
+                            int(self.services["ispublic"]),
                             "Compare ispublic permission with database record"
                         )
 
         self.assertEqual(
                             qresult[1],
-                            int(services["isfeatured"]),
+                            int(self.services["isfeatured"]),
                             "Compare isfeatured permission with database record"
                         )
         self.assertEqual(
                             qresult[2],
-                            int(services["isextractable"]),
+                            int(self.services["isextractable"]),
                             "Compare extractable permission with database record"
                         )
         return
@@ -407,8 +450,8 @@ class TestISO(cloudstackTestCase):
 
         cmd = copyIso.copyIsoCmd()
         cmd.id = self.iso_2.id
-        cmd.destzoneid = services["destzoneid"]
-        cmd.sourcezoneid = services["sourcezoneid"]
+        cmd.destzoneid = self.services["destzoneid"]
+        cmd.sourcezoneid = self.services["sourcezoneid"]
         self.apiclient.copyIso(cmd)
 
         #Verify ISO is copied to another zone using ListIsos
@@ -430,7 +473,7 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             iso_response.zoneid,
-                            services["destzoneid"],
+                            self.services["destzoneid"],
                             "Check zone ID of the copied ISO"
                         )
         return

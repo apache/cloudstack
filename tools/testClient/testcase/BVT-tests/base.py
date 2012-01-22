@@ -3,13 +3,15 @@
 # Copyright (c) 2012 Citrix.  All rights reserved.
 #
 
-""" Base class for all Cloudstack resources - Virtual machine, Volume, Snapshot etc
+""" Base class for all Cloudstack resources
+    -Virtual machine, Volume, Snapshot etc
 """
 
 from utils import is_server_ssh_ready, random_gen
 from cloudstackAPI import *
 #Import System modules
 import time
+import hashlib
 
 class Account:
     """ Account Life Cycle """
@@ -17,14 +19,18 @@ class Account:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin=False):
+    def create(cls, apiclient, services, admin = False):
         cmd = createAccount.createAccountCmd()
         #0 - User, 1 - Root Admin
         cmd.accounttype = int(admin)
         cmd.email = services["email"]
         cmd.firstname = services["firstname"]
         cmd.lastname = services["lastname"]
-        cmd.password = services["password"]
+
+        # Password Encoding
+        mdf = hashlib.md5()
+        mdf.update(services["password"])
+        cmd.password = mdf.hexdigest()
         cmd.username = services["username"]
         account = apiclient.createAccount(cmd)
 
@@ -34,6 +40,7 @@ class Account:
         cmd = deleteAccount.deleteAccountCmd()
         cmd.id = self.account.id
         apiclient.deleteAccount(cmd)
+
 
 class VirtualMachine:
     """Manage virtual machine lifecycle
@@ -48,7 +55,7 @@ class VirtualMachine:
         self.ipaddress = self.nic[0].ipaddress
 
     @classmethod
-    def create(cls, apiclient, services, templateid=None, accountid=None, networkids = None):
+    def create(cls, apiclient, services, templateid = None, accountid = None, networkids = None):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
         cmd.serviceofferingid = services["serviceoffering"]
         cmd.zoneid = services["zoneid"]
@@ -56,10 +63,19 @@ class VirtualMachine:
         cmd.account = accountid or services["account"]
         cmd.domainid = services["domainid"]
 
+        # List Networks for that user
+        command = listNetworks.listNetworksCmd()
+        command.zoneid = services["zoneid"]
+        command.account = accountid or services["account"]
+        command.domainid = services["domainid"]
+        network = apiclient.listNetworks(command)
+
         if networkids:
             cmd.networkids = networkids
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
+        elif network:   #If user already has source NAT created, then use that
+            cmd.networkids = network[0].id
 
         if templateid:
             cmd.templateid = templateid
@@ -70,7 +86,7 @@ class VirtualMachine:
             cmd.diskofferingid = services["diskoffering"]
         return VirtualMachine(apiclient.deployVirtualMachine(cmd).__dict__, services)
 
-    def get_ssh_client(self, ipaddress = None, reconnect=False):
+    def get_ssh_client(self, ipaddress = None, reconnect = False):
             if ipaddress != None:
                 self.ipaddress = ipaddress
             if reconnect:
@@ -87,22 +103,6 @@ class VirtualMachine:
                                                     self.password
                                                 )
             return self.ssh_client
-
-    def create_nat_rule(self, apiclient, services):
-        cmd = createPortForwardingRule.createPortForwardingRuleCmd()
-        cmd.ipaddressid = services["ipaddressid"]
-        cmd.privateport = services["privateport"]
-        cmd.publicport = services["publicport"]
-        cmd.protocol = services["protocol"]
-        cmd.virtualmachineid = self.id
-        return apiclient.createPortForwardingRule(cmd)
-
-
-    def delete_nat_rule(self, apiclient, nat_rule):
-        cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()
-        cmd.id = nat_rule.id
-        apiclient.deletePortForwardingRule(cmd)
-        return
 
     def delete(self, apiclient):
         cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
@@ -134,7 +134,7 @@ class Volume:
         cmd.diskofferingid = services["volumeoffering"]
         cmd.zoneid = services["zoneid"]
         cmd.account = services["account"]
-        cmd.domainid= services["domainid"]
+        cmd.domainid = services["domainid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -145,9 +145,8 @@ class Volume:
         cmd.size = services["customdisksize"]
         cmd.zoneid = services["zoneid"]
         cmd.account = services["account"]
-        cmd.domainid= services["domainid"]
+        cmd.domainid = services["domainid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
-
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services):
@@ -164,6 +163,7 @@ class Volume:
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = self.id
         apiclient.deleteVolume(cmd)
+
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -182,6 +182,7 @@ class Snapshot:
         cmd.id = self.id
         apiclient.deleteSnapshot(cmd)
 
+
 class Template:
     """Manage template life cycle"""
 
@@ -190,7 +191,6 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, volume, services):
-
         #Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
@@ -217,7 +217,6 @@ class Template:
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services):
-
         #Create template from Virtual machine and Snapshot ID
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
@@ -240,7 +239,6 @@ class Iso:
 
     @classmethod
     def create(cls, apiclient, services):
-
         #Create ISO from URL
         cmd = registerIso.registerIsoCmd()
         cmd.displaytext = services["displaytext"]
@@ -248,13 +246,16 @@ class Iso:
         cmd.ostypeid = services["ostypeid"]
         cmd.url = services["url"]
         cmd.zoneid = services["zoneid"]
-        cmd.isextractable = services["isextractable"]
-        cmd.isfeatured = services["isfeatured"]
-        cmd.ispublic = services["ispublic"]
+        if "isextractable" in services:
+            cmd.isextractable = services["isextractable"]
+        if "isfeatured" in services:
+            cmd.isfeatured = services["isfeatured"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
+
         return Iso(apiclient.createTemplate(cmd)[0].__dict__)
 
     def delete(self, apiclient):
-
         cmd = deleteIso.deleteIsoCmd()
         cmd.id = self.id
         apiclient.deleteIso(cmd)
@@ -265,7 +266,7 @@ class Iso:
         while True:
             time.sleep(120)
 
-            cmd= listIsos.listIsosCmd()
+            cmd = listIsos.listIsosCmd()
             cmd.id = self.id
             response = apiclient.listIsos(cmd)[0]
             # Check whether download is in progress (for Ex: 10% Downloaded)
@@ -284,7 +285,7 @@ class PublicIPAddress:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid, zoneid = None, domainid = None):
+    def create(cls, apiclient, accountid, zoneid = None, domainid = None, services = None):
         cmd = associateIpAddress.associateIpAddressCmd()
         cmd.account = accountid
         cmd.zoneid = zoneid or services["zoneid"]
@@ -297,6 +298,7 @@ class PublicIPAddress:
         apiclient.disassociateIpAddress(cmd)
         return
 
+
 class NATRule:
     """Manage NAT rule"""
 
@@ -304,22 +306,30 @@ class NATRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, virtual_machine, services, ipaddressid=None):
+    def create(cls, apiclient, virtual_machine, services, ipaddressid = None):
 
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
-        cmd.ipaddressid = ipaddressid or services["ipaddressid"]
+
+        if ipaddressid:
+            cmd.ipaddressid = ipaddressid
+        elif "ipaddressid" in services:
+            cmd.ipaddressid = services["ipaddressid"]
+        else: # If IP Address ID is not specified then assign new IP 
+            public_ip = PublicIPAddress.create(apiclient, virtual_machine.account, virtual_machine.zoneid, virtual_machine.domainid, services)
+            cmd.ipaddressid = public_ip.ipaddress.id
+
         cmd.privateport = services["privateport"]
         cmd.publicport = services["publicport"]
         cmd.protocol = services["protocol"]
         cmd.virtualmachineid = virtual_machine.id
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
-
     def delete(self, apiclient):
         cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()
         cmd.id = self.id
         apiclient.deletePortForwardingRule(cmd)
         return
+
 
 class ServiceOffering:
     """Manage service offerings cycle"""
@@ -332,12 +342,11 @@ class ServiceOffering:
 
         cmd = createServiceOffering.createServiceOfferingCmd()
         cmd.cpunumber = services["cpunumber"]
-        cmd.cpuspeed  = services["cpuspeed"]
+        cmd.cpuspeed = services["cpuspeed"]
         cmd.displaytext = services["displaytext"]
-        cmd.memory  = services["memory"]
+        cmd.memory = services["memory"]
         cmd.name = services["name"]
         return ServiceOffering(apiclient.createServiceOffering(cmd).__dict__)
-
 
     def delete(self, apiclient):
 
@@ -356,12 +365,11 @@ class DiskOffering:
     @classmethod
     def create(cls, apiclient, services):
 
-        cmd =createDiskOffering.createDiskOfferingCmd()
+        cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
-        cmd.disksize=services["disksize"]
+        cmd.disksize = services["disksize"]
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
-
 
     def delete(self, apiclient):
 
@@ -369,6 +377,7 @@ class DiskOffering:
         cmd.id = self.id
         apiclient.deleteDiskOffering(cmd)
         return
+
 
 class SnapshotPolicy:
     """Manage snapshot policies"""
@@ -387,13 +396,13 @@ class SnapshotPolicy:
         cmd.volumeid = volumeid
         return SnapshotPolicy(apiclient.createSnapshotPolicy(cmd).__dict__)
 
-
     def delete(self, apiclient):
 
         cmd = deleteSnapshotPolicies.deleteSnapshotPoliciesCmd()
         cmd.id = self.id
         apiclient.deleteSnapshotPolicies(cmd)
         return
+
 
 class LoadBalancerRule:
     """Manage Load Balancer rule"""
@@ -402,7 +411,7 @@ class LoadBalancerRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, ipaddressid, accountid=None):
+    def create(cls, apiclient, services, ipaddressid, accountid = None):
         cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
         cmd.publicipid = ipaddressid or services["ipaddressid"]
         cmd.account = accountid or services["account"]
@@ -414,7 +423,7 @@ class LoadBalancerRule:
 
     def delete(self, apiclient):
         cmd = deleteLoadBalancerRule.deleteLoadBalancerRuleCmd()
-        cmd.id =  self.id
+        cmd.id = self.id
         apiclient.deleteLoadBalancerRule(cmd)
         return
 
@@ -430,6 +439,7 @@ class LoadBalancerRule:
         cmd.virtualmachineids = [vm.id for vm in vms]
         self.apiclient.removeFromLoadBalancerRule(cmd)
         return
+
 
 class Cluster:
     """Manage Cluster life cycle"""
@@ -459,9 +469,10 @@ class Cluster:
 
     def delete(self, apiclient):
         cmd = deleteCluster.deleteClusterCmd()
-        cmd.id =  self.id
+        cmd.id = self.id
         apiclient.deleteCluster(cmd)
         return
+
 
 class Host:
     """Manage Host life cycle"""
@@ -486,7 +497,7 @@ class Host:
         if "password" in services:
             cmd.password = services["password"]
 
-        return Host(apiclient.addHost(cmd).__dict__)
+        return Host(apiclient.addHost(cmd)[0].__dict__)
 
     def delete(self, apiclient):
         # Host must be in maintenance mode before deletion
@@ -496,9 +507,10 @@ class Host:
         time.sleep(60)
 
         cmd = deleteHost.deleteHostCmd()
-        cmd.id =  self.id
+        cmd.id = self.id
         apiclient.deleteHost(cmd)
         return
+
 
 class StoragePool:
     """Manage Storage pools"""
@@ -521,10 +533,10 @@ class StoragePool:
     def delete(self, apiclient):
         # Storage pool must be in maintenance mode before deletion
         cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
-        cmd.id =  self.id
+        cmd.id = self.id
         apiclient.enableStorageMaintenance(cmd)
         time.sleep(60)
         cmd = deleteStoragePool.deleteStoragePoolCmd()
-        cmd.id =  self.id
+        cmd.id = self.id
         apiclient.deleteStoragePool(cmd)
         return

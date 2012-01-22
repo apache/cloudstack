@@ -16,7 +16,7 @@ import logging
 import string
 import random
 
-def random_gen(size=6, chars=string.ascii_uppercase + string.digits):
+def random_gen(size = 6, chars = string.ascii_uppercase + string.digits):
     """Generate Random Strings of variable length"""
     return ''.join(random.choice(chars) for x in range(size))
 
@@ -25,7 +25,7 @@ def cleanup_resources(api_client, resources):
     for obj in resources:
         obj.delete(api_client)
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
+def is_server_ssh_ready(ipaddress, port, username, password, retries = 50):
     """Return ssh handle else wait till sshd is running"""
     loop_cnt = retries
     while True:
@@ -45,21 +45,21 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
             return ssh
 
 
-def format_volume_to_ext3(ssh_client, device="/dev/sda" ):
+def format_volume_to_ext3(ssh_client, device = "/dev/sda"):
     """Format attached storage to ext3 fs"""
     cmds = [
-            "echo -e 'n\np\n1\n\n\nw' | fdisk %s" %device,
-            "mkfs.ext3 %s1" %device,
+            "echo -e 'n\np\n1\n\n\nw' | fdisk %s" % device,
+            "mkfs.ext3 %s1" % device,
            ]
     for c in cmds:
         ssh_client.execute(c)
 
-def fetch_api_client(config_file='datacenterCfg'):
+def fetch_api_client(config_file = 'datacenterCfg'):
     """Fetch the Cloudstack API Client"""
     config = configGenerator.get_setup_config(config_file)
     mgt = config.mgtSvr[0]
     testClientLogger = logging.getLogger("testClient")
-    asyncTimeout=3600
+    asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
             cloudstackConnection.cloudConnection(
                                                 mgt.mgtSvrIp,

@@ -8,11 +8,34 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from settings import *
 from utils import *
 from base import *
 
-services = TEST_SERVICE_OFFERING
+
+class Services:
+    """Test Service offerings Services
+    """
+
+    def __init__(self):
+        self.services = {
+                        "off_1":
+                            {
+                                "name": "Service Offering 1",
+                                "displaytext": "Service Offering 1",
+                                "cpunumber": 1,
+                                "cpuspeed": 200, # MHz
+                                "memory": 200, # in MBs
+                            },
+
+                         "off_2":
+                            {
+                                "name": "Service Offering 2",
+                                "displaytext": "Service Offering 2",
+                                "cpunumber": 1,
+                                "cpuspeed": 200, # MHz
+                                "memory": 200, # in MBs
+                            }
+                     }
 
 class TestCreateServiceOffering(cloudstackTestCase):
 
@@ -20,6 +43,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        self.services = Services().services
 
     def tearDown(self):
         try:
@@ -28,7 +52,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
@@ -39,7 +63,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
         # 1. createServiceOfferings should return a valid information for newly created offering
         # 2. The Cloud Database contains the valid information
 
-        service_offering = ServiceOffering.create(self.apiclient, services["off_1"])
+        service_offering = ServiceOffering.create(self.apiclient, self.services["off_1"])
         self.cleanup.append(service_offering)
 
         cmd = listServiceOfferings.listServiceOfferingsCmd()
@@ -55,27 +79,27 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         self.assertEqual(
                             list_service_response[0].cpunumber,
-                            services["off_1"]["cpunumber"],
+                            self.services["off_1"]["cpunumber"],
                             "Check server id in createServiceOffering"
                         )
         self.assertEqual(
                             list_service_response[0].cpuspeed,
-                            services["off_1"]["cpuspeed"],
+                            self.services["off_1"]["cpuspeed"],
                             "Check cpuspeed in createServiceOffering"
                         )
         self.assertEqual(
                             list_service_response[0].displaytext,
-                            services["off_1"]["displaytext"],
+                            self.services["off_1"]["displaytext"],
                             "Check server displaytext in createServiceOfferings"
                         )
         self.assertEqual(
                             list_service_response[0].memory,
-                            services["off_1"]["memory"],
+                            self.services["off_1"]["memory"],
                             "Check memory in createServiceOffering"
                         )
         self.assertEqual(
                             list_service_response[0].name,
-                            services["off_1"]["name"],
+                            self.services["off_1"]["name"],
                             "Check name in createServiceOffering"
                         )
         #Verify the service offerings with database records
@@ -94,17 +118,17 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         self.assertEqual(
                             qresult[0],
-                            services["off_1"]["cpunumber"],
+                            self.services["off_1"]["cpunumber"],
                             "Check number of CPUs allocated to service offering in the database"
                         )
         self.assertEqual(
                             qresult[1],
-                            services["off_1"]["cpuspeed"],
+                            self.services["off_1"]["cpuspeed"],
                             "Check number of CPUs allocated to service offering in the database"
                         )
         self.assertEqual(
                             qresult[2],
-                            services["off_1"]["memory"],
+                            self.services["off_1"]["memory"],
                             "Check number of CPUs allocated to service offering in the database"
                         )
         return
@@ -125,26 +149,28 @@ class TestServiceOfferings(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
     @classmethod
     def setUpClass(cls):
-
+        cls.services = Services().services
         cls.api_client = fetch_api_client()
-        cls.service_offering_1 = ServiceOffering.create(cls.api_client, services["off_1"])
-        cls.service_offering_2 = ServiceOffering.create(cls.api_client, services["off_2"])
+        cls.service_offering_1 = ServiceOffering.create(cls.api_client, cls.services["off_1"])
+        cls.service_offering_2 = ServiceOffering.create(cls.api_client, cls.services["off_2"])
+        cls._cleanup = [cls.service_offering_1]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             cls.api_client = fetch_api_client()
-            cls.service_offering_1.delete(cls.api_client)
+            #Clean up, terminate the created templates
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" %e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def test_02_edit_service_offering(self):
@@ -160,7 +186,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
         cmd = updateServiceOffering.updateServiceOfferingCmd()
         #Add parameters for API call
-        cmd.id= self.service_offering_1.id
+        cmd.id = self.service_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
         self.apiclient.updateServiceOffering(cmd)
