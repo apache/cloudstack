@@ -15,7 +15,8 @@
           status == 'Released' ||
           status == 'Creating' ||
           status == 'Allocating' ||
-          item.account == 'system') {
+          item.account == 'system' ||
+					item.iselastic == true ) {
         disallowedActions = allowedActions;
       }
 
@@ -40,10 +41,6 @@
         disallowedActions.push('disableVPN');
       }
 
-			if(item.iselastic) {
-			  disallowedActions.push('destroy');
-			}
-			
       allowedActions = $.grep(allowedActions, function(item) {
         return $.inArray(item, disallowedActions) == -1;
       });
