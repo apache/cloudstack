@@ -2827,6 +2827,13 @@ Dialogs*/
   margin-top: 2px;
 }
 
+.field-required {
+  color: #EE7B7B;
+  font-size: 14px;
+  padding: 0 3px 0 0;
+  font-weight: bold;
+}
+
 .ui-dialog div.form-container div.value {
   width: 61%;
   float: left;

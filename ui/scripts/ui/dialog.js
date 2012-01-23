@@ -58,6 +58,11 @@
             $('<label>').html(field.label + ':')
           );
 
+        // Add 'required asterisk' if field is required
+        if (field.validation && field.validation.required) {
+          $name.find('label').prepend($('<span>').addClass('field-required').html('*'));
+        }
+
         // Input area
         var $value = $('<div>').addClass('value')
           .appendTo($formItem);
