@@ -590,9 +590,12 @@
             add: {
               label: 'Acquire new IP',
               addRow: 'true',
-              action: function(args) {
+              action: function(args) {					
+								var apiCmd = "associateIpAddress";
+								if(args.context.networks[0].type == "Shared") 
+								  apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;											
                 $.ajax({
-                  url: createURL('associateIpAddress'),
+                  url: createURL(apiCmd),
                   data: {
                     networkId: args.context.networks[0].id
                   },
