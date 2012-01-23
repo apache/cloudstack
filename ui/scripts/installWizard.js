@@ -64,37 +64,37 @@
         });
       },
 
-      'tooltip.addGuestNetwork.name': function(args) {
+      'tooltip.configureGuestTraffic.name': function(args) {
         args.response.success({
           text: 'A name for your network'
         });
       },
 
-      'tooltip.addGuestNetwork.description': function(args) {
+      'tooltip.configureGuestTraffic.description': function(args) {
         args.response.success({
           text: 'A description for your network'
         });
       },
 
-      'tooltip.addGuestNetwork.guestGateway': function(args) {
+      'tooltip.configureGuestTraffic.guestGateway': function(args) {
         args.response.success({
           text: 'The gateway that the guests should use'
         });
       },
 
-      'tooltip.addGuestNetwork.guestNetmask': function(args) {
+      'tooltip.configureGuestTraffic.guestNetmask': function(args) {
         args.response.success({
           text: 'The netmask in use on the subnet that the guests should use'
         });
       },
 
-      'tooltip.addGuestNetwork.guestStartIp': function(args) {
+      'tooltip.configureGuestTraffic.guestStartIp': function(args) {
         args.response.success({
           text: 'The range of IP addresses that will be available for allocation to guests in this zone.  If one NIC is used, these IPs should be in the same CIDR as the pod CIDR.'
         });
       },
 
-      'tooltip.addGuestNetwork.guestEndIp': function(args) {
+      'tooltip.configureGuestTraffic.guestEndIp': function(args) {
         args.response.success({
           text: 'The range of IP addresses that will be available for allocation to guests in this zone.  If one NIC is used, these IPs should be in the same CIDR as the pod CIDR.'
         });
@@ -229,6 +229,8 @@
     },
 
     action: function(args) {
+      var success = args.response.success;
+      var message = args.response.message;
       
       // Get default network offering
       var selectedNetworkOffering;
@@ -257,6 +259,43 @@
             networkType: 'Basic',
             domain: 1,
             networkOfferingId: selectedNetworkOffering.id
+          }
+        },
+        response: {
+          success: function(args) {
+            // Poll System VMs, then enable zone
+            message('Creating system VMs (this may take a while)');
+            var poll = setInterval(function() {
+              $.ajax({
+                url: createURL('listSystemVms'),
+                dataType: 'json',
+                async: true,
+                success: function(data) {
+                  var systemVMs = data.listsystemvmsresponse.systemvm;
+
+                  if (systemVMs && systemVMs.length > 1) {
+                    if (systemVMs.length == $.grep(systemVMs, function(vm) {
+                      return vm.state == 'Running';
+                    }).length) {
+                      clearInterval(poll);
+                      message('System VMs are up.');
+                      message('Enabling zone...');
+                      cloudStack.zoneWizard.enableZoneAction({
+                        data: args.data,
+                        formData: args.formData,
+                        response: {
+                          success: function(args) {
+                            message('Done!');
+                            
+                            setTimeout(success, 2000);
+                          }
+                        }
+                      })
+                    }
+                  }
+                }
+              });
+            }, 5000);
           }
         }
       }));

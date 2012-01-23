@@ -2209,7 +2209,7 @@
 
       var complete = function(args) {			
         message('Zone creation complete!');
-        success({});
+        success(args);
       };
       
       if (startFn) {
