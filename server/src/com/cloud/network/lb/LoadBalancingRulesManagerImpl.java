@@ -567,14 +567,15 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         if (success) {
         	Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
         	NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-        	if (off.getElasticLb()) {
-                //release elastic Ip
+        	IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
+        	if (off.getElasticLb() && ip.getElastic()) {
+                //release elastic Ip if this is the last lb rule
         		//1) Check if there are any firewall rules left for the IP address
         		long rulesCount = _firewallDao.countRulesByIpId(lb.getSourceIpAddressId());
         		if (rulesCount > 0) {
-        			s_logger.warn("Unable to release elastic ip address id=" + lb.getSourceIpAddressId() + " as it has " + rulesCount + " firewall rules");
-        			success = false;
+        			s_logger.debug("Not relasing elastic ip address id=" + lb.getSourceIpAddressId() + " yet as it has " + rulesCount + " firewall rules");
         		} else {
+        			s_logger.debug("Releasing elastic ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
         			if (!_networkMgr.releasePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current().getCallerUserId(), caller)) {
             			s_logger.warn("Unable to release elastic ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
         				success = false;
