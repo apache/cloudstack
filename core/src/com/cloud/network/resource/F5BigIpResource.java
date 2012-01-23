@@ -936,22 +936,10 @@ public class F5BigIpResource implements ServerResource {
 					}
 					
 					long high = stat.getValue().getHigh(); 
-					long low = stat.getValue().getLow(); 
-					long full;
-					long rollOver = 0x7fffffff + 1;
+					long low = stat.getValue().getLow();
+					long full = getFullUsage(high, low);
 					
-					if (high >= 0) { 
-						full = (high << 32) & 0xffff0000; 
-					} else {
-						full = ((high & 0x7fffffff) << 32) + (0x80000000 << 32); 
-					}
-
-					if (low >= 0) {
-						full += low;
-					} else {
-						full += (low & 0x7fffffff) + rollOver;
-					}
-					
+										
 					bytesSentAndReceived[index] += full;
 				}
 				
@@ -966,6 +954,31 @@ public class F5BigIpResource implements ServerResource {
 		
 		return answer;
 	}
+	
+	private long getFullUsage(long high, long low) {
+		Double full; 
+		Double rollOver = new Double((double) 0x7fffffff); 
+		rollOver = new Double(rollOver.doubleValue() + 1.0); 
+		
+		if (high >= 0) { 
+			// shift left 32 bits and mask off new bits to 0's 
+			full = new Double((high << 32 & 0xffff0000)); 
+		} else {
+			// mask off sign bits + shift left by 32 bits then add the sign bit back
+			full = new Double(((high & 0x7fffffff) << 32) + (0x80000000 << 32)); 
+		}
+		
+		if (low >= 0) {
+			// add low to full and we're good
+			full = new Double(full.doubleValue() + (double) low); 
+		} else {
+			// add full to low after masking off sign bits and adding 1 to the masked off low order value
+			full = new Double(full.doubleValue() + (double) ((low & 0x7fffffff)) + rollOver.doubleValue()); 
+		}
+		
+		return full.longValue();
+	}
+
 	
 	// Misc methods
 	
