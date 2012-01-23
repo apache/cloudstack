@@ -108,12 +108,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId){
     	
     	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+    	SummedCapacitySearch.select("dcId", Func.NATIVE, SummedCapacitySearch.entity().getDataCenterId());
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
         SummedCapacitySearch.select("sumReserved", Func.SUM, SummedCapacitySearch.entity().getReservedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());
         SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());        
-                
-        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());
+        
+        if (zoneId==null && podId==null && clusterId==null){ // List all the capacities grouped by zone, capacity Type
+            SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getDataCenterId(), SummedCapacitySearch.entity().getCapacityType());            
+        }else {
+            SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());
+        }
         
         if (zoneId != null){
         	SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
@@ -262,6 +267,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	    public short capacityType;
 	    public Long clusterId;
 	    public Long podId;
+	    public Long dcId;
 	    public SummedCapacity() {
 	    }
 		public SummedCapacity(long sumUsed, long sumReserved, long sumTotal,
@@ -273,6 +279,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 			this.capacityType = capacityType;
 			this.clusterId = clusterId;
 			this.podId = podId;
+		}
+		public SummedCapacity(long sumUsed, long sumReserved, long sumTotal,
+                short capacityType, Long clusterId, Long podId, Long zoneId) {
+		    this(sumUsed, sumReserved, sumTotal, capacityType, clusterId, podId);
+	        this.dcId = zoneId;
 		}
 		public Short getCapacityType() {				
 			return capacityType;
@@ -286,6 +297,9 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		public Long getTotalCapacity() {
 			return sumTotal;
 		}
+		public Long getDataCenterId() {
+            return dcId;
+        }
 	}
 	public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
 

@@ -33,7 +33,7 @@ import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.Capacity;
 
-@Implementation(description="Lists capacity.", responseObject=CapacityResponse.class)
+@Implementation(description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
@@ -46,7 +46,7 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
  
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="lists capacity by the Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
     private Long zoneId;
 
     @IdentityMapper(entityTableName="host_pod_ref")
@@ -57,7 +57,7 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="lists capacity by the Cluster ID")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, description="recalculate capacities")
+    @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, description="recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +

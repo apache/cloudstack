@@ -1939,7 +1939,7 @@ public class ManagementServerImpl implements ManagementServer {
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
 
         for (SummedCapacity summedCapacity : summedCapacities){
-        	CapacityVO capacity = new CapacityVO(null, zoneId, podId, clusterId,
+        	CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), podId, clusterId,
         			summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), 
         			summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
         	
@@ -1950,14 +1950,27 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
-        //Show Sec. Storage only when the api is invoked for the zone layer.
-        if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) && podId == null && clusterId == null) {
-            capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
+        // Show Sec. Storage only when the api is invoked for the zone layer.
+        List<DataCenterVO> dcList = new ArrayList<DataCenterVO>();
+        if (zoneId==null && podId==null && clusterId==null){
+            dcList = ApiDBUtils.listZones();
+        }else if (zoneId != null){
+            dcList.add(ApiDBUtils.findZoneById(zoneId));
+        }else{
+            if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
+                capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
+            }
         }
-        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
-            capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
+        
+        for(DataCenterVO zone : dcList){
+            zoneId = zone.getId();
+            if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) && podId == null && clusterId == null) {
+                capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
+            }
+            if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
+                capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
+            }
         }
-
         return capacities;
     }
 
