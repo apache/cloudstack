@@ -67,8 +67,8 @@
   };
 
 	var securityGroupNetworkObjs = [];
-	var isolatedSourceNatNetworkObjs = [];	
-	var sharedLbStaticNatNetworkObjs = [];
+	var isolatedSourcenatNetworkObjs = [];	
+	var sharedLbStaticnatSgNetworkObjs = [];
 	
   cloudStack.sections.network = {
     title: 'Network',
@@ -99,7 +99,7 @@
 					async: false,
 					success: function(data) {					 
 						if (data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0) {
-							isolatedSourceNatNetworkObjs = data.listnetworksresponse.network;
+							isolatedSourcenatNetworkObjs = data.listnetworksresponse.network;
 						}
 					}
 				});
@@ -108,13 +108,13 @@
 					url: createURL('listNetworks'),
 					data: {
 						type: 'shared',
-						supportedServices: 'Lb,StaticNat',
+						supportedServices: 'Lb,StaticNat,SecurityGroup',
 						listAll: true
 					},
 					async: false,
 					success: function(data) {					 
 						if (data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0) {
-							sharedLbStaticNatNetworkObjs = data.listnetworksresponse.network;
+							sharedLbStaticnatSgNetworkObjs = data.listnetworksresponse.network;
 						}
 					}
 				});				
@@ -123,10 +123,10 @@
 				if(securityGroupNetworkObjs.length > 0) //if there is securityGroup networks
 				  sectionsToShow.push('securityGroups'); //show securityGroup section
 					
-				if(isolatedSourceNatNetworkObjs.length > 0 || sharedLbStaticNatNetworkObjs.length > 0) //if there is isolatedSourceNat networks or sharedLbStaticNat networks
+				if(isolatedSourcenatNetworkObjs.length > 0 || sharedLbStaticnatSgNetworkObjs.length > 0) //if there is isolatedSourceNat networks or sharedLbStaticnatSg networks
 				  sectionsToShow.push('networks');  //show network section
 					
-				if(sectionsToShow.length == 0) //if no securityGroup networks, nor isolatedSourceNat networks, nor sharedLbStaticNat networks
+				if(sectionsToShow.length == 0) //if no securityGroup networks, nor isolatedSourceNat networks, nor sharedLbStaticnatSg networks
 				  sectionsToShow.push('networks'); // still show network section (no networks in the grid though)
 				return sectionsToShow;					
       },
@@ -246,9 +246,9 @@
 							}
 						}		
 
-            //can't do pagination with 2 API calls ("listNetworjs&type=isolated&~", "listNetworks&type=shared&~")
-						/*						
-            $.ajax({
+            //temporary until Alena fixes listNetworks API to return both isolated and shared networks in one call		
+						var networkObjs1 = [];
+						$.ajax({
               url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: {
                 type: 'isolated',
@@ -256,19 +256,31 @@
 								listAll: true
               },
               dataType: 'json',
-              async: true,
+              async: false,
               success: function(data) {
-                args.response.success({
-                  data: data.listnetworksresponse.network
-                });
+							  if(data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0)
+                  networkObjs1 = data.listnetworksresponse.network;  
               },
               error: function(data) {
                 args.response.error(parseXMLHttpResponse(data));
               }
-            });
-						*/
-												
-						var networkObjs = $.extend(isolatedSourceNatNetworkObjs, sharedLbStaticNatNetworkObjs);						
+            });							
+						var networkObjs2 = [];
+						$.ajax({
+							url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+							data: {
+								type: 'shared',
+								supportedServices: 'Lb,StaticNat,SecurityGroup',
+								listAll: true
+							},
+							async: false,
+							success: function(data) {			
+                if(data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0)							
+								  networkObjs2 = data.listnetworksresponse.network; 								
+							}
+						});				
+							
+						var networkObjs = $.extend(networkObjs1, networkObjs2);						
 						args.response.success({
 							data: networkObjs
 						});		
