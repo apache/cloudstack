@@ -380,7 +380,7 @@
         tooltipID: 'addZone',
         diagram: '.part.zone',
         prevStepID: 'addZoneIntro',
-        nextStepID: 'addPodIntro',
+        nextStepID: 'addPod',
         form: {
           name: { label: 'Name', validation: { required: true } },
           dns1: { label: 'DNS 1', validation: { required: true } },
@@ -417,9 +417,13 @@
         nextStepID: 'addGuestNetwork',
         form: {
           name: { label: 'Name', validation: { required: true }},
-          gateway: { label: 'Gateway', validation: { required: true }},
-          netmask: { label: 'Netmask', validation: { required: true }},
-          ipRange: { label: 'IP Range', range: ['startip', 'endip'], validation: { required: true }}
+          reservedSystemGateway: { label: 'Gateway', validation: { required: true }},
+          reservedSystemNetmask: { label: 'Netmask', validation: { required: true }},
+          ipRange: {
+            label: 'IP Range',
+            range: ['reservedSystemStartIp', 'reservedSystemEndIp'],
+            validation: { required: true }
+          }
         }
       }),
 
@@ -433,7 +437,7 @@
         tooltipID: 'addGuestNetwork',
         diagram: '.part.zone, .part.pod',
         prevStepID: 'addPod',
-        nextStepID: 'addClusterIntro',
+        nextStepID: 'launchInfo',
         form: {
           name: { label: 'Name', validation: { required: true } },
           description: { label: 'Description', validation: { required: true } },
@@ -733,7 +737,7 @@
       }
     };
 
-    var initialStep = steps.intro().addClass('step');
+    var initialStep = steps.addZone().addClass('step');
     showDiagram('');
     $('html body').addClass('install-wizard');
 
