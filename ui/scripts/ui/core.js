@@ -241,11 +241,21 @@
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
           .appendTo($('#header'));
-    $(['Logout']).each(function() {
-      $('<a>')
+    $(['Logout', 'Help']).each(function() {
+      var $link = $('<a>')
         .attr({ href: '#' })
         .html(this.toString())
         .appendTo($options);
+
+      if (this == 'Help') {
+        $link.click(function() {
+          var helpURL = 'http://docs.cloud.com/CloudStack_Documentation';
+
+          window.open(helpURL, '_blank');
+          
+          return false;
+        });
+      }
     });
 
     // Initialize browser
