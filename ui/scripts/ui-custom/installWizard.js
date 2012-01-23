@@ -380,7 +380,7 @@
         tooltipID: 'addZone',
         diagram: '.part.zone',
         prevStepID: 'addZoneIntro',
-        nextStepID: 'addPod',
+        nextStepID: 'addPodIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
           dns1: { label: 'DNS 1', validation: { required: true } },
@@ -414,7 +414,7 @@
         tooltipID: 'addPod',
         diagram: '.part.zone, .part.pod',
         prevStepID: 'addPodIntro',
-        nextStepID: 'addGuestNetwork',
+        nextStepID: 'configureGuestTraffic',
         form: {
           name: { label: 'Name', validation: { required: true }},
           reservedSystemGateway: { label: 'Gateway', validation: { required: true }},
@@ -430,17 +430,15 @@
       /**
        * Add guest network form
        */
-      addGuestNetwork: elems.step({
+      configureGuestTraffic: elems.step({
         title: 'Add guest network',
         id: 'add-guest-network',
-        stateID: 'guestNetwork',
-        tooltipID: 'addGuestNetwork',
+        stateID: 'guestTraffic',
+        tooltipID: 'configureGuestTraffic',
         diagram: '.part.zone, .part.pod',
         prevStepID: 'addPod',
-        nextStepID: 'launchInfo',
+        nextStepID: 'addClusterIntro',
         form: {
-          name: { label: 'Name', validation: { required: true } },
-          description: { label: 'Description', validation: { required: true } },
           guestGateway: { label: 'Gateway', validation: { required: true } },
           guestNetmask: { label: 'Netmask', validation: { required: true } },
           guestIPRange: { label: 'IP Range', range: ['guestStartIp', 'guestEndIp'], validation: { required: true } }
@@ -455,7 +453,7 @@
         title: "Let's add a cluster.",
         subtitle: 'What is a cluster?',
         copyID: 'whatIsACluster',
-        prevStepID: 'addGuestNetwork',
+        prevStepID: 'configureGuestTraffic',
         nextStepID: 'addCluster',
         diagram: '.part.zone, .part.cluster'
       }),
@@ -558,6 +556,15 @@
           name: {
             label: 'Name',
             validation: { required: true }
+          },
+
+          protocol: {
+            label: 'Protocol',
+            select: function(args) {
+              args.response.success({
+                data: { id: 'nfs', description: 'NFS' }
+              });
+            }
           },
 
           server: {
@@ -737,7 +744,7 @@
       }
     };
 
-    var initialStep = steps.addZone().addClass('step');
+    var initialStep = steps.intro().addClass('step');
     showDiagram('');
     $('html body').addClass('install-wizard');
 
