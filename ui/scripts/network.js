@@ -584,7 +584,8 @@
               }
             },
             zonename: { label: 'Zone' },
-            vlanname: { label: 'VLAN' },
+            //vlanname: { label: 'VLAN' },
+						iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },
             account: { label: 'Account' },
             state: { label: 'State', indicator: { 'Allocated': 'on', 'Released': 'off' } }
           },
@@ -999,12 +1000,10 @@
                     account: { label: 'Account' },
                     zonename: { label: 'Zone' },
                     vlanname: { label: 'VLAN' },
-                    issourcenat: { label: 'Source NAT', isBoolean: true, converter: function(value) {
-                      return value ? 'Yes' : 'No';
-                    } },
-                    isstaticnat: { label: 'Static NAT', isBoolean: true, converter: function(value) {
-                      return value ? 'Yes' : 'No';
-                    } }
+                    issourcenat: { label: 'Source NAT', converter: cloudStack.converters.toBooleanText },
+                    isstaticnat: { label: 'Static NAT', converter: cloudStack.converters.toBooleanText },
+										iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },																	
+										virtualmachinedisplayname: { label: 'Virtual machine' }										
                   }
                 ],
 
