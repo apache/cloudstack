@@ -3837,6 +3837,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 networkOfferingChanged = true;
             }
         }
+        Map<String, String> newSvcProviders = new HashMap<String, String>();
+        if (networkOfferingChanged) {
+        	newSvcProviders = finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId());
+        }
 
         //don't allow to modify network domain if the service is not supported
         if (domainSuffix != null) {
@@ -3892,7 +3896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         		Transaction txn = Transaction.currentTxn();
                 txn.start();
         		network.setNetworkOfferingId(networkOfferingId);
-        		_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+        		_networksDao.update(networkId, network, newSvcProviders);
         		//get all nics using this network
         		//log remove usage events for old offering
         		//log assign usage events for new offering
