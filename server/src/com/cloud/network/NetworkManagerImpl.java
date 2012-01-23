@@ -5920,9 +5920,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		boolean success = true;
 		Long networkId = ip.getAssociatedWithNetworkId();
 		if (networkId != null) {
-		    Network guestNetwork = getNetwork(networkId);
-			NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-			if (offering.getElasticIp() && ip.getElastic() == true) {
+			if (ip.getElastic()) {
 				UserContext ctx = UserContext.current();
 				if (!releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
 					s_logger.warn("Unable to release elastic ip address id=" + ip.getId());
