@@ -1482,10 +1482,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Starting a router for " + guestNetwork + " in datacenter:" + dest.getDataCenter());
+        if(dest != null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Starting a router for " + guestNetwork + " in datacenter:" + dest.getDataCenter());
+            }
         }
-
+        
         assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
