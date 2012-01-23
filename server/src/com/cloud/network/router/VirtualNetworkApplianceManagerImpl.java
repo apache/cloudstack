@@ -1483,7 +1483,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Starting a router for " + guestNetwork + " in " + dest);
+            s_logger.debug("Starting a router for " + guestNetwork + " in datacenter:" + dest.getDataCenter());
         }
 
         assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
