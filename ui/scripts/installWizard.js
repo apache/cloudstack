@@ -263,39 +263,45 @@
         },
         response: {
           success: function(args) {
-            // Poll System VMs, then enable zone
-            message('Creating system VMs (this may take a while)');
-            var poll = setInterval(function() {
-              $.ajax({
-                url: createURL('listSystemVms'),
-                dataType: 'json',
-                async: true,
-                success: function(data) {
-                  var systemVMs = data.listsystemvmsresponse.systemvm;
-
-                  if (systemVMs && systemVMs.length > 1) {
-                    if (systemVMs.length == $.grep(systemVMs, function(vm) {
-                      return vm.state == 'Running';
-                    }).length) {
-                      clearInterval(poll);
-                      message('System VMs are up.');
-                      message('Enabling zone...');
-                      cloudStack.zoneWizard.enableZoneAction({
-                        data: args.data,
-                        formData: args.formData,
-                        response: {
-                          success: function(args) {
-                            message('Done!');
-                            
-                            setTimeout(success, 2000);
-                          }
-                        }
-                      })
-                    }
+            var enableZone = function() {
+              message('Enabling zone...');
+              cloudStack.zoneWizard.enableZoneAction({
+                data: args.data,
+                formData: args.data,
+                response: {
+                  success: function(args) {
+                    pollSystemVMs();
                   }
                 }
-              });
-            }, 5000);
+              });              
+            };
+
+            var pollSystemVMs = function() {
+              // Poll System VMs, then enable zone
+              message('Creating system VMs (this may take a while)');
+              var poll = setInterval(function() {
+                $.ajax({
+                  url: createURL('listSystemVms'),
+                  dataType: 'json',
+                  async: true,
+                  success: function(data) {
+                    var systemVMs = data.listsystemvmsresponse.systemvm;
+
+                    if (systemVMs && systemVMs.length > 1) {
+                      if (systemVMs.length == $.grep(systemVMs, function(vm) {
+                        return vm.state == 'Running';
+                      }).length) {
+                        clearInterval(poll);
+                        message('Installation completed!');
+                        setTimeout(success, 2000);
+                      }
+                    }
+                  }
+                });
+              }, 5000);
+            };
+
+            enableZone();
           }
         }
       }));
