@@ -32,10 +32,204 @@
       }
     },
 
+    zoneDashboard: function(args) {
+      setTimeout(function() {
+        args.response.success({
+          data: {
+            8: {
+              used: 12,
+              total: 24,
+              percent: 50
+            },
+
+            5: {
+              used: 12,
+              total: 24,
+              percent: 50
+            },
+
+            0: {
+              used: '1 GB',
+              total: '10 GB',
+              percent: 10
+            },
+
+            1: {
+              used: '1 ghZ',
+              total: '10 ghz',
+              percent: 10
+            },
+
+            2: {
+              used: '25 GB',
+              total: '100 GB',
+              percent: 25
+            },
+
+            6: {
+              used: '600 GB',
+              total: '1000 GB',
+              percent: 60
+            }
+          }
+        });
+      }, 200);
+    },
+
     // Network-as-a-service configuration
     naas: {
+      providerListView: {
+        id: 'networkProviders',
+        fields: {
+          name: { label: 'Name' },
+          state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off' } }
+        },
+        dataProvider: function(args) {
+          args.response.success({
+            data: [
+              {
+                id: 'netscaler',
+                name: 'NetScaler',
+                state: 'Enabled'
+              },
+              {
+                id: 'srx',
+                name: 'SRX',
+                state: 'Enabled'
+              },
+              {
+                id: 'f5',
+                name: 'F5',
+                state: 'Enabled'
+              },
+              {
+                id: 'virtualRouter',
+                name: 'Virtual Router',
+                state: 'Enabled'
+              },
+              {
+                id: 'securityGroups',
+                name: 'Security Groups',
+                state: 'Enabled'
+              }
+            ]
+          })
+        },
+
+        detailView: function(args) {
+          return cloudStack.sections.system.naas.networkProviders.types[
+            args.context.networkProviders[0].id
+          ];
+        }
+      },
       mainNetworks: {
         'public': {
+          detailView: {
+            actions: {
+              edit: {
+                label: 'Edit network details',
+                action: function(args) {
+                  args.response.success();
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'name' },
+                    displaytext: { label: 'displaytext' }
+                  },
+                  {
+                    broadcastdomaintype: { label: 'broadcastdomaintype' },
+                    traffictype: { label: 'traffictype' },
+                    gateway: { label: 'gateway' },
+                    netmask: { label: 'netmask' },
+                    startip: { isEditable: true, label: 'startip' },
+                    endip: { isEditable: true, label: 'endip' },
+                    zoneid: { label: 'zoneid' },
+                    networkofferingid: { label: 'networkofferingid' },
+                    networkofferingname: { label: 'networkofferingname' },
+                    networkofferingdisplaytext: { label: 'networkofferingdisplaytext' },
+                    networkofferingavailability: { label: 'networkofferingavailability' },
+                    isshared: { label: 'isshared' },
+                    issystem: { label: 'issystem' },
+                    state: { label: 'state' },
+                    related: { label: 'related' },
+                    broadcasturi: { label: 'broadcasturi' },
+                    dns1: { label: 'dns1' },
+                    type: { label: 'type' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({
+                    data: testData.data.networks[0]
+                  });
+                }
+              },
+              ipAddresses: {
+                title: 'IP Addresses',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    context: args.context,
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        setTimeout(function() {
+                          args.response.success({
+                            notification: {
+                              label: 'Added IP address',
+                              poll: testData.notifications.testPoll
+                            }
+                          });
+                        }, 500);
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Remove Rule',
+                        action: function(args) {
+                          setTimeout(function() {
+                            args.response.success({
+                              notification: {
+                                label: 'Removed IP address',
+                                poll: testData.notifications.testPoll
+                              }
+                            });
+                          }, 500);
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      setTimeout(function() {
+                        args.response.success({
+                          data: [
+                            {
+                              gateway: '10.223.110.223',
+                              netmask: '255.255.255.0',
+                              vlanid: '1480'
+                            }
+                          ]
+                        });
+                      }, 100);
+                    }
+                  });
+                }
+              }
+            }
+          }
+        },
+        'storage': {
           detailView: {
             actions: {
               edit: {
@@ -232,24 +426,42 @@
       },
 
       networks: {
-        actions: {
-          add: {
-            label: 'Add Network',
-            action: function(args) {
-              args.response.success();
-            }
+        listView: {
+          id: 'physicalNetworks',
+          hideToolbar: true,
+          fields: {
+            name: { label: 'Name' },
+            state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off' }},
+            vlan: { label: 'VLAN Range' }
           }
         },
         dataProvider: function(args) {
           setTimeout(function() {
             args.response.success({
-              data: [
-                { id: 1, name: 'Network A' },
-                { id: 2, name: 'Network B' },
-                { id: 3, name: 'Network C' }
+              data: args.context.zones[0].name == 'San Jose' ? [
+                { id: 1, name: 'Network A', state: 'Enabled', vlan: '1480-1559' },
+                { id: 2, name: 'Network B', state: 'Disabled', vlan: '1222-2000' },
+                { id: 3, name: 'Network C', state: 'Enabeld', vlan: '2333-2455' }
+              ] : [
+                { id: 1, name: 'Network A', state: 'Enabled', vlan: '1480-1559' }
               ]
             });
-          }, 500);
+          }, 300);
+        }
+      },
+
+      trafficTypes: {
+        dataProvider: function(args) {
+          setTimeout(function() {
+            args.response.success({
+              data: [
+                { id: 3, name: 'Public' },
+                { id: 1, name: 'Guest' },
+                { id: 2, name: 'Management' },
+                { id: 4, name: 'Storage' }
+              ]
+            });
+          }, 300);
         }
       },
 
@@ -274,6 +486,7 @@
         types: {
           // Virtual router list view
           virtualRouter: {
+            isMaximized: true,
             type: 'detailView',
             id: 'virtualRouter-providers',
             label: 'Virtual Router',
@@ -775,13 +988,29 @@
               allocationstate: { label: 'State' }
             },
             dataProvider: testData.dataProvider.listView('zones'),
+            actions: {
+              add: {
+                label: 'Add zone',
+                action: {
+                  custom: cloudStack.uiCustom.zoneWizard(
+                    cloudStack.zoneWizard
+                  )
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to add a zone?';
+                  },
+                  notification: function(args) {
+                    return 'Created new zone';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.customPoll(testData.data.zones[0])
+                }
+              }
+            },
             detailView: {
               isMaximized: true,
-              viewAll: {
-                path: 'instances',
-                label: 'Configuration',
-                custom: cloudStack.zoneChart()
-              },
               tabs: {
                 details: {
                   title: 'Details',
@@ -808,11 +1037,24 @@
                   ],
                   dataProvider: testData.dataProvider.detailView('zones')
                 },
+                compute: {
+                  title: 'Compute',
+                  custom: cloudStack.uiCustom.systemChart('compute')
+                },
+                network: {
+                  title: 'Network',
+                  custom: cloudStack.uiCustom.systemChart('network')
+                },
+                resources: {
+                  title: 'Resources',
+                  custom: cloudStack.uiCustom.systemChart('resources')
+                },
                 systemVMs: {
                   title: 'System VMs',
                   listView: {
                     label: 'System VMs',
                     id: 'systemVMs',
+                    hideToolbar: true,
                     fields: {
                       name: { label: 'Name' },
                       systemvmtype: {
@@ -1657,8 +1899,6 @@
 
                   protocol: {
                     label: 'Protocol',
-                    validation: { required: true },
-                    dependsOn: 'clusterId',
                     select: function(args) {
                       args.response.success({
                         data: [

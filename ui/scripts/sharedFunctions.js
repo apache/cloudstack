@@ -345,6 +345,70 @@ function ipFindCapabilityByName(pName, networkServiceObj) {
     return null;
 }
 
+//compose URL for adding primary storage
+function nfsURL(server, path) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "nfs://" + server + path;
+	else
+		url = server + path;
+	return url;
+}
+
+function presetupURL(server, path) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "presetup://" + server + path;
+	else
+		url = server + path;
+	return url;
+}
+
+function ocfs2URL(server, path) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "ocfs2://" + server + path;
+	else
+		url = server + path;
+	return url;
+}
+
+function SharedMountPointURL(server, path) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "SharedMountPoint://" + server + path;
+	else
+		url = server + path;
+	return url;
+}
+
+function clvmURL(vgname) {
+	var url;
+	if(vgname.indexOf("://")==-1)
+		url = "clvm://localhost/" + vgname;
+	else
+		url = vgname;
+	return url;
+}
+
+function vmfsURL(server, path) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "vmfs://" + server + path;
+	else
+		url = server + path;
+	return url;
+}
+
+function iscsiURL(server, iqn, lun) {
+	var url;
+	if(server.indexOf("://")==-1)
+		url = "iscsi://" + server + iqn + "/" + lun;
+	else
+		url = server + iqn + "/" + lun;
+	return url;
+}
+
 
 //VM Instance
 function getVmName(p_vmName, p_vmDisplayname) {

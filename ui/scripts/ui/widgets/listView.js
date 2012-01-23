@@ -1063,6 +1063,10 @@
       args.activeSection = listViewData.id;
     }
 
+    if (listViewData.hideToolbar) {
+      $toolbar.hide();
+    }
+
     // Add panel controls
     $('<div class="panel-controls">').append($('<div class="control expand">').attr({
       'ui-id': 'toggle-expand-panel'
@@ -1287,6 +1291,12 @@
           listViewActiveSection != '_zone' ?
             listViewActiveSection : detailViewArgs.section
         ] = [jsonObj];
+
+        if ($.isFunction(detailViewArgs.data)) {
+          detailViewArgs.data = detailViewArgs.data({
+            context: detailViewArgs.context
+          });
+        }
 
         createDetailView(detailViewArgs, function($detailView) {
           $detailView.data('list-view', $listView);

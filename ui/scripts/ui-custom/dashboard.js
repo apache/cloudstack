@@ -29,6 +29,7 @@
                       $browser.cloudBrowser('addPanel', {
                         title: 'Zone details',
                         parent: $dashboard.closest('.panel'),
+                        maximizeIfSelected: true,
                         complete: function($newPanel) {
                           $newPanel.detailView($.extend(true, {},
                             cloudStack.sections.dashboard.admin.zoneDetailView,

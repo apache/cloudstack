@@ -143,8 +143,9 @@
           selectFn = field.select;
           $input = $('<select>')
             .attr({ name: key })
-            .data('dialog-select-fn', function() {
-              selectFn(selectArgs);
+            .data('dialog-select-fn', function(args) {
+              selectFn(args ?
+                       $.extend(true, {}, selectArgs, args) : selectArgs);
             })
             .appendTo($value);
 
@@ -361,6 +362,7 @@
             click: function() {
               $(this).dialog('destroy');
               $('div.overlay').remove();
+              if (args.cancelAction) { args.cancelAction(); }
             }
           },
           {

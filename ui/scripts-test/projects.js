@@ -3,6 +3,128 @@
     requireInvitation: function(args) {
       return cloudStack.context.users[0].username == 'jdoe';
     },
+
+    dashboard: function(args) {
+      var dataFns = {
+        instances: function(data) {
+          dataFns.storage($.extend(data, {
+            runningInstances: 40,
+            stoppedInstances: 10,
+            totalInstances: 50
+          }));
+        },
+
+        storage: function(data) {
+          dataFns.bandwidth($.extend(data, {
+            totalVolumes: 70
+          }));
+        },
+
+        bandwidth: function(data) {
+          dataFns.ipAddresses($.extend(data, {
+            totalBandwidth: 1500
+          }));
+        },
+
+        ipAddresses: function(data) {
+          dataFns.loadBalancingRules($.extend(data, {
+            totalIPAddresses: 20
+          }));
+        },
+
+        loadBalancingRules: function(data) {
+          dataFns.portForwardingRules($.extend(data, {
+            totalLoadBalancers: 12
+          }));
+        },
+
+        portForwardingRules: function(data) {
+          dataFns.users($.extend(data, {
+            totalPortForwards: 30
+          }));
+        },
+
+        users: function(data) {
+          dataFns.events($.extend(data, {
+            users: $.map(testData.data.users, function(user) {
+              return {
+                account: user.account
+              };
+            })
+          }));
+        },
+
+        events: function(data) {
+          complete($.extend(data, {
+            events: $.map(testData.data.events, function(event) {
+              return {
+                date: event.created.substr(5, 2) +
+                  '/' + event.created.substr(8, 2) +
+                  '/' + event.created.substr(2, 2),
+                desc: event.description
+              };
+            })
+          }));
+        }
+      };
+
+      var complete = function(data) {
+        args.response.success({
+          data: data
+        });
+      };
+
+      dataFns.instances({});
+    },
+
+    resourceManagement: {
+      update: function(args) {
+        args.response.success();
+      },
+
+      dataProvider: function(args) {
+        args.response.success({
+          data: $.map(
+            testData.data.projectResourceLimits,
+            function(resource) {
+              var resourceMap = {
+                0: {
+                  id: 'user_vm',
+                  label: 'Max. User VMs'
+                },
+                1: {
+                  id: 'public_ip',
+                  label: 'Max. Public IPs'
+                },
+                2: {
+                  id: 'volume',
+                  label: 'Max. Volumes'
+                },
+                3: {
+                  id: 'snapshot',
+                  label: 'Max. Snapshots'
+                },
+                4: {
+                  id: 'template',
+                  label: 'Max. Templates'
+                },
+                5: {
+                  id: 'project',
+                  label: 'Max. Projects'
+                }
+              };
+              return {
+                id: resourceMap[resource.resourcetype].id,
+                label: resourceMap[resource.resourcetype].label,
+                type: resource.resourcetype,
+                value: resource.max
+              };
+            }
+          )
+        });
+
+      }
+    },
     
     add: function(args) {
       setTimeout(function() {

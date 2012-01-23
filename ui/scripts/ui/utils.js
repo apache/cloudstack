@@ -1,16 +1,25 @@
 (function($, cloudStack) {
   // General utils
-  cloudStack.serializeForm = function($form) {
+  cloudStack.serializeForm = function($form, options) {
+    if (!options) options = {};
+    
     var data = {};
+
     $($form.serializeArray()).each(function() {
       var dataItem = data[this.name];
+      var value = this.value;
 
-      if (!dataItem)
-        data[this.name] = this.value;
-      else if (dataItem && !$(dataItem).size())
-        data[this.name] = [dataItem, this.value];
-      else
-        dataItem.push(this.value);
+      if (options.escapeSlashes) {
+        value = value.replace(/\//g, '__forwardSlash__');
+      }
+
+      if (!dataItem) {
+        data[this.name] = value;
+      } else if (dataItem && !$(dataItem).size()) {
+        data[this.name] = [dataItem, value];
+      } else {
+        dataItem.push(value);
+      }
     });
 
     return data;

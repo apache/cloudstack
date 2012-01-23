@@ -40,6 +40,10 @@
         disallowedActions.push('disableVPN');
       }
 
+			if(item.iselastic) {
+			  disallowedActions.push('destroy');
+			}
+			
       allowedActions = $.grep(allowedActions, function(item) {
         return $.inArray(item, disallowedActions) == -1;
       });
@@ -62,14 +66,15 @@
     }
   };
 
+	var securityGroupNetworkObjs = [];
+	var isolatedSourceNatNetworkObjs = [];	
+	var sharedLbStaticNatNetworkObjs = [];
+	
   cloudStack.sections.network = {
     title: 'Network',
     id: 'network',
     sectionSelect: {
-      preFilter: function(args) {
-        var isSecurityGroupEnabled = false;
-        var hasIsolatedNetworks = false;
-
+      preFilter: function(args) {       
         $.ajax({
           url: createURL('listNetworks'),
           data: {
@@ -77,35 +82,55 @@
 						listAll: true
           },
           async: false,
-          success: function(data) {
-            $.ajax({
-              url: createURL('listNetworks'),
-              data: {
-                type: 'isolated',
-                supportedServices: 'SourceNat',
-						    listAll: true
-              },
-              async: false,
-              success: function(data) {
-                if (data.listnetworksresponse.network &&
-                    data.listnetworksresponse.network.length) {
-                  hasIsolatedNetworks = true;
-                }
-              }
-            });
-
-            if (data.listnetworksresponse.network &&
-                data.listnetworksresponse.network.length) {
-              isSecurityGroupEnabled = true;
+          success: function(data) {            
+            if (data.listnetworksresponse.network && data.listnetworksresponse.network.length) {
+              securityGroupNetworkObjs = data.listnetworksresponse.network;
             }
           }
         });
-
-        if (isSecurityGroupEnabled && !hasIsolatedNetworks) return ['securityGroups'];
-        if (isSecurityGroupEnabled && hasIsolatedNetworks) return ['securityGroups', 'networks'];
-
-        return ['networks'];
+				
+				$.ajax({
+					url: createURL('listNetworks'),
+					data: {
+						type: 'isolated',
+						supportedServices: 'SourceNat',
+						listAll: true
+					},
+					async: false,
+					success: function(data) {					 
+						if (data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0) {
+							isolatedSourceNatNetworkObjs = data.listnetworksresponse.network;
+						}
+					}
+				});
+				
+        $.ajax({
+					url: createURL('listNetworks'),
+					data: {
+						type: 'shared',
+						supportedServices: 'Lb,StaticNat',
+						listAll: true
+					},
+					async: false,
+					success: function(data) {					 
+						if (data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0) {
+							sharedLbStaticNatNetworkObjs = data.listnetworksresponse.network;
+						}
+					}
+				});				
+						
+				var sectionsToShow = [];
+				if(securityGroupNetworkObjs.length > 0) //if there is securityGroup networks
+				  sectionsToShow.push('securityGroups'); //show securityGroup section
+					
+				if(isolatedSourceNatNetworkObjs.length > 0 || sharedLbStaticNatNetworkObjs.length > 0) //if there is isolatedSourceNat networks or sharedLbStaticNat networks
+				  sectionsToShow.push('networks');  //show network section
+					
+				if(sectionsToShow.length == 0) //if no securityGroup networks, nor isolatedSourceNat networks, nor sharedLbStaticNat networks
+				  sectionsToShow.push('networks'); // still show network section (no networks in the grid though)
+				return sectionsToShow;					
       },
+			
       label: 'Select view'
     },
     sections: {
@@ -219,7 +244,10 @@
 									break;
 								}
 							}
-						}											
+						}		
+
+            //can't do pagination with 2 API calls ("listNetworjs&type=isolated&~", "listNetworks&type=shared&~")
+						/*						
             $.ajax({
               url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: {
@@ -234,11 +262,16 @@
                   data: data.listnetworksresponse.network
                 });
               },
-
               error: function(data) {
                 args.response.error(parseXMLHttpResponse(data));
               }
             });
+						*/
+												
+						var networkObjs = $.extend(isolatedSourceNatNetworkObjs, sharedLbStaticNatNetworkObjs);						
+						args.response.success({
+							data: networkObjs
+						});		
           },
 
           detailView: {
@@ -590,166 +623,7 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            },
-            enableStaticNAT: {
-              label: 'Enable static NAT',
-              action: {
-                noAdd: true,
-                custom: cloudStack.uiCustom.enableStaticNAT({
-                  listView: $.extend(true, {}, cloudStack.sections.instances, {
-                    listView: {
-                      dataProvider: function(args) {
-                        $.ajax({
-                          url: createURL('listVirtualMachines'),
-                          data: {
-                            networkid: args.context.networks[0].id
-                          },
-                          dataType: 'json',
-                          async: true,
-                          success: function(data) {
-                            args.response.success({
-                              data: $.grep(
-                                data.listvirtualmachinesresponse.virtualmachine ?
-                                  data.listvirtualmachinesresponse.virtualmachine : [],
-                                function(instance) {
-                                  return $.inArray(instance.state, [
-                                    'Destroyed'
-                                  ]) == -1;
-                                }
-                              )
-                            });
-                          },
-                          error: function(data) {
-                            args.response.error(parseXMLHttpResponse(data));
-                          }
-                        });
-                      }
-                    }
-                  }),
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL('enableStaticNat'),
-                      data: {
-                        ipaddressid: args.context.ipAddresses[0].id,
-                        virtualmachineid: args.context.instances[0].id
-                      },
-                      dataType: 'json',
-                      async: true,
-                      success: function(data) {
-                        args.response.success();
-                      },
-
-                      error: function(data) {
-                        args.response.error(parseXMLHttpResponse(data));
-                      }
-                    });
-                  }
-                })
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to enable static NAT?';
-                },
-                notification: function(args) {
-                  return 'Enabled Static NAT';
-                }
-              },
-              notification: {
-                poll: function(args) {
-                  args.complete({
-                    data: {
-                      isstaticnat: true
-                    }
-                  });
-                }
-              }
-            },
-            disableStaticNAT: {
-              label: 'Disable static NAT',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('disableStaticNat'),
-                  data: {
-                    ipaddressid: args.context.ipAddresses[0].id
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        jobId: data.disablestaticnatresponse.jobid,
-                        getUpdatedItem: function(json) {
-                          return $.extend(args.context.ipAddresses[0], {
-                            isstaticnat: false
-                          });
-                        },
-                        getActionFilter: function() {
-                          return actionFilters.ipAddresses;
-                        }
-                      }
-                    });
-                  },
-                  error: function(data) {
-                    args.response.error(parseXMLHttpResponse(data));
-                  }
-                });
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to disable static NAT?';
-                },
-                notification: function(args) {
-                  return 'Disable Static NAT';
-                }
-              },
-              notification: {
-                poll: pollAsyncJobResult
-              }
-            },
-            destroy: {
-              label: 'Release IP',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('disassociateIpAddress'),
-                  data: {
-                    id: args.context.ipAddresses[0].id
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        jobId: data.disassociateipaddressresponse.jobid,
-                        getActionFilter: function() {
-                          return function(args) {
-                            var allowedActions = [];
-
-                            return allowedActions;
-                          };
-                        },
-                        getUpdatedItem: function(args) {
-                          return {
-                            state: 'Released'
-                          };
-                        }
-                      }
-                    });
-                  },
-                  error: function(data) {
-                    args.response.error(parseXMLHttpResponse(data));
-                  }
-                });
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to release this IP?';
-                },
-                notification: function(args) {
-                  return 'Release IP';
-                }
-              },
-              notification: { poll: pollAsyncJobResult }
-            }
+            }            
           },
 
           dataProvider: function(args) {
@@ -1179,16 +1053,26 @@
               ipRules: {
                 title: 'Configuration',
                 custom: cloudStack.ipRules({
-                  preFilter: function(args) {
-                    if (args.context.ipAddresses[0].isstaticnat) {
-                      return args.items; // All items filtered means static NAT
+                  preFilter: function(args) {									  
+										var networkHavingLbService = false;
+										$(args.context.networks[0].service).each(function(){												 
+											if(this.name == "Lb") {
+												networkHavingLbService = true;
+												return false; //break $.each() loop
+											}
+										});
+										args.context.networks[0].networkHavingLbService = networkHavingLbService;
+																										
+									  var disallowedActions = [];
+                    if (args.context.ipAddresses[0].isstaticnat) { //All items filtered means static NAT
+										  disallowedActions.push("firewall");
+											disallowedActions.push("portForwarding");
+											disallowedActions.push("loadBalancing");										
                     }
-
-                    if (g_firewallRuleUiEnabled != 'true') {
-                      return ['firewall'];
+                    if (g_firewallRuleUiEnabled != 'true') {										  
+                      disallowedActions.push("firewall");
                     }
-
-                    return [];
+                    return disallowedActions;
                   },
 
                   // Firewall rules
@@ -1644,12 +1528,17 @@
                           publicport: args.data.publicport
                         };
                         var stickyData = $.extend(true, {}, args.data.sticky);
-
+																			
+												var apiCmd = "createLoadBalancerRule";												
+												if(args.context.networks[0].networkHavingLbService == true) 
+												  apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
+												else
+												  apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
+												
                         $.ajax({
-                          url: createURL('createLoadBalancerRule'),
+                          url: createURL(apiCmd),
                           data: $.extend(data, {
-                            openfirewall: openFirewall,
-                            publicipid: args.context.ipAddresses[0].id,
+                            openfirewall: openFirewall,                            
                             networkid: args.context.networks[0].id
                           }),
                           dataType: 'json',
@@ -1795,11 +1684,14 @@
                       }
                     },
                     dataProvider: function(args) {
+										  var apiCmd = "listLoadBalancerRules";										  
+											if(args.context.networks[0].networkHavingLbService == true) 
+												apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
+											else
+												apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
+																				
                       $.ajax({
-                        url: createURL('listLoadBalancerRules'),
-                        data: {
-                          publicipid: args.context.ipAddresses[0].id
-                        },
+                        url: createURL(apiCmd),                        
                         dataType: 'json',
                         async: true,
                         success: function(data) {

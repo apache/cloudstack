@@ -57,43 +57,10 @@
     // Admin dashboard
     admin: {
       zoneDetailView: {
-        isMaximized: true,
         tabs: {
-          details: {
-            title: 'Details',
-            fields: [
-              {
-                name: { label: 'Zone', isEditable: true }
-              },
-              {
-                id: { label: 'ID' },
-                allocationstate: { label: 'Allocation State' },
-                dns1: { label: 'DNS 1', isEditable: true },
-                dns2: { label: 'DNS 2', isEditable: true },
-                internaldns1: { label: 'Internal DNS 1', isEditable: true },
-                internaldns2: { label: 'Internal DNS 2', isEditable: true },
-                networktype: { label: 'Network Type' },
-                securitygroupsenabled: {
-                  label: 'Security Groups Enabled',
-                  converter:cloudStack.converters.toBooleanText
-                },
-                domain: {
-                  label: 'Network domain',
-                  isEditable: true
-                }
-              }
-            ],
-            dataProvider: function(args) {
-              $.ajax({
-                url: createURL('listZones'),
-                data: {
-                  id: args.context.physicalResources[0].id
-                },
-                success: function(json) {
-                  args.response.success({ data: json.listzonesresponse.zone[0] });
-                }
-              });
-            }
+          resources: {
+            title: 'Resources',
+            custom: cloudStack.uiCustom.systemChart('resources')
           }
         }
       },
@@ -277,7 +244,7 @@
                 complete($.extend(data, {
                   zoneCapacities: $.map(zoneCapacities.sort(sortFn), function(capacity) {
                     return {
-                      zoneID: capacity.zoneid,
+                      zoneID: zones[0].id, // Temporary fix for dashboard
                       zoneName: capacity.zoneName,
                       type: cloudStack.converters.toAlertType(capacity.type),
                       percent: parseInt(capacity.percentused),

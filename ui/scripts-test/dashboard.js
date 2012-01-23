@@ -50,11 +50,39 @@
                 used: 2
               },
               {
+                type: 'Reserved System IP',
+                zoneName: 'zone',
+                percent: 50,
+                total: 10,
+                used: 40
+              },
+              {
                 type: 'Storage Used',
                 zoneName: 'zone',
-                percent: 30,
+                percent: 10,
                 total: '50 GB',
                 used: '15 GB'
+              },
+              {
+                type: 'Secondary Storage',
+                zoneName: 'zone',
+                percent: 10,
+                total: '50 GB',
+                used: '15 GB'
+              },
+              {
+                type: 'Domain Router',
+                zoneName: 'zone',
+                percent: 25,
+                total: 30,
+                used: 100
+              },
+              {
+                type: 'Host',
+                zoneName: 'zone',
+                percent: 15,
+                total: '15.5 gHZ',
+                used: '100 gHZ'
               }
             ],
             alerts: $.map(testData.data.alerts, function(alert) {

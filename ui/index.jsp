@@ -410,14 +410,23 @@
       <div class="multi-wizard zone-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span>Select Type</span><span class="arrow"></span></li>
+            <li class="first"><span class="number">1</span><span>Zone Type</span><span class="arrow"></span></li>
             <li><span class="number">2</span><span>Setup Zone</span><span class="arrow"></span></li>
-            <li class="last"><span class="number">3</span><span>Setup Pod</span></li>
+            <li><span class="number">3</span><span>Setup Network</span><span class="arrow"></span></li>
+            <li style="display:none;"></li>
+            <li style="display:none;"></li>
+            <li style="display:none;"></li>
+            <li style="display:none;"></li>
+            <li><span class="number">4</span><span>Add Resources</span><span class="arrow"></span></li>
+            <li style="display:none;"></li>
+            <li style="display:none;"></li>
+            <li style="display:none;"></li>
+            <li class="last"><span class="number">5</span><span>Launch</span></li>
           </ul>
         </div>
         <div class="steps">
           <!-- Step 1: Select network -->
-          <div class="select-network">
+          <div class="select-network" zone-wizard-step-id="selectZoneType">
             <form>
               <div class="content">
                 <!-- Select template -->
@@ -439,279 +448,223 @@
             </form>
           </div>
 
-          <!-- Step 2: Setup zone -->
-          <div class="setup-zone">
+          <!-- Step 2: Add zone -->
+          <div class="setup-zone" zone-wizard-form="zone"
+               zone-wizard-step-id="addZone">
             <div class="main-desc">Please enter in the information to make a new zone.</div>
             <div class="content input-area">
-              <div class="select-container">
-                <form>
-                  <!-- Name -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Name</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="name" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- DNS 1 -->
-                  <div class="field odd">
-                    <div class="name">
-                      <span>DNS 1</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="dns1" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- DNS 2-->
-                  <div class="field">
-                    <div class="name">
-                      <span>DNS 2</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="dns2" />
-                    </div>
-                  </div>
-
-                  <!-- Internal DNS 1 -->
-                  <div class="field odd">
-                    <div class="name">
-                      <span>Internal DNS 1</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="internaldns1" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- Internal DNS 2 -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Internal DNS 2</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="internaldns2" />
-                    </div>
-                  </div>
-
-                  <!-- Network domain-->
-                  <div class="field odd">
-                    <div class="name">
-                      <span>Network domain</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="networkdomain" />
-                    </div>
-                  </div>
-
-                  <!-- Public -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Public</span>
-                    </div>
-                    <div class="value">
-                      <input name="public" type="checkbox" checked="checked" />
-                    </div>
-                  </div>
-
-                  <div class="conditional public">
-                    <!-- Domain -->
-                    <div class="field odd">
-                      <div class="name">
-                        <span>Domain</span>
-                      </div>
-                      <div class="value">
-                        <select name="zone-domain" class="domain required"></select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="conditional basic">
-                    <!-- Enable security groups -->
-                    <div class="field">
-                      <div class="name">
-                        <span>Enable security groups</span>
-                      </div>
-                      <div class="value">
-                        <input type="checkbox" name="security-groups-enabled" />
-                      </div>
-                    </div>
-                    <!-- Network Offering -->
-                    <div class="field">
-                      <div class="name">
-                        <span>Network Offering</span>
-                      </div>
-                      <div class="value">
-                        <select name="networkOfferingId" class="network-offering required"></select>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
+              <div class="select-container"></div>
             </div>
           </div>
 
-          <!-- Step 3: Setup pod -->
-          <div class="setup-pod">
-            <form>
-              <div class="main-desc">Please enter the following information to add a new pod</div>
-              <div class="content input-area">
-                <div class="select-container">
-                  <!-- Name -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Name</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="podName" class="required" />
-                    </div>
-                  </div>
+          <!-- Step 3.1: Setup Physical Network -->
+          <div class="setup-physical-network"
+               zone-wizard-step-id="setupPhysicalNetwork"
+               zone-wizard-prefilter="setupPhysicalNetwork">
+            <ul class="subnav">
+              <li class="physical-network active">Physical Network</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+            </ul>
+            <div class="main-desc"><em>DRAG-AND-DROP</em> different traffic types to your physical networks.</div>
+            <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span>Add physical network</span></div>
 
-                  <!-- Gateway -->
-                  <div class="field odd">
-                    <div class="name">
-                      <span>Gateway</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="podGateway" class="required" />
-                    </div>
+            <!-- Traffic types drag area -->
+            <div class="traffic-types-drag-area">
+              <div class="header">Traffic Types</div>
+              <ul>
+                <li class="management">
+                  <ul class="container">
+                    <li traffic-type-id="management"
+                        title="Management traffic type description"
+                        class="traffic-type-draggable management"></li>
+                  </ul>
+                  <div class="info">
+                    <div class="title">Management</div>
+                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
                   </div>
+                </li>
+                <li class="public">
+                  <ul class="container">
+                    <li traffic-type-id="public"
+                        title="Public traffic type description"
+                        class="traffic-type-draggable public"></li>
+                  </ul>
+                  <div class="info">
+                    <div class="title">Public</div>
+                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                  </div>
+                </li>
+                <li class="guest">
+                  <ul class="container">
+                    <li traffic-type-id="guest"
+                        title="Guest traffic type description"
+                        class="traffic-type-draggable guest clone"></li>
+                  </ul>
+                  <div class="info">
+                    <div class="title">Guest</div>
+                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                  </div>
+                </li>
+                <li class="storage">
+                  <ul class="container">
+                    <li traffic-type-id="storage"
+                        title="Storage traffic type description"
+                        class="traffic-type-draggable storage"></li>
+                  </ul>
+                  <div class="info">
+                    <div class="title">Storage</div>
+                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-                  <!-- Netmask -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Netmask</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="podNetmask" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- Reserved System IP -->
-                  <div class="field odd">
-                    <div class="name">
-                      <span>Reserved IP</span>
-                    </div>
-                    <div class="value multi-range">
-                      <input type="text" name="podStartIp" class="required" />
-                      <span class="divider">-</span>
-                      <input type="text" name="podEndIp" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
+            <div class="drag-helper-icon"></div>
+            <div class="content input-area">
+              <form></form>
+            </div>
           </div>
 
-          <!-- Step 4: Add IP range -->
-          <div class="add-ip-range disabled">
+          <!-- Step 3.1b: Setup Physical Network (basic zone) -->
+          <div class="setup-physical-network-basic"
+               zone-wizard-step-id="addBasicPhysicalNetwork"
+               zone-wizard-form="basicPhysicalNetwork"
+               zone-wizard-prefilter="addBasicPhysicalNetwork">
+            <ul class="subnav">
+              <li class="physical-network active">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+            </ul>
+
+            <div class="main-desc">Please specify Netscaler info</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 3.2: Configure public traffic -->
+          <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
+               zone-wizard-step-id="configurePublicTraffic">
+            <ul class="subnav">
+              <li class="physical-network">Netscaler</li>
+              <li class="public-network active">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+            </ul>
+
+            <div class="main-desc">Configure public traffic</div>
+            <div ui-custom="publicTrafficIPRange"></div>
+          </div>
+
+          <!-- Step 3.3: Add pod -->
+          <div class="add-pod" zone-wizard-form="pod"
+               zone-wizard-step-id="addPod">
+            <ul class="subnav">
+              <li class="physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod active">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+            </ul>
+
+            <div class="main-desc">Please specify a pod for this zone.</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 3.4: Configure guest traffic -->
+          <div class="setup-guest-traffic"
+               zone-wizard-form="guestTraffic"
+               zone-wizard-step-id="configureGuestTraffic"
+               zone-wizard-prefilter="configureGuestTraffic">
+            <ul class="subnav">
+              <li class="physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic active">Guest Traffic</li>
+            </ul>
+
+            <div class="main-desc">Please configure guest traffic for your physical network(s).</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 4.1: Add cluster -->
+          <div class="add-cluster" zone-wizard-form="cluster"
+               zone-wizard-step-id="addCluster">
+            <ul class="subnav">
+              <li class="cluster active">Cluster</li>
+              <li class="host">Host</li>
+              <li class="primary-storage">Primary Storage</li>
+              <li class="secondary-storage">Secondary Storage</li>
+            </ul>
+
+            <div class="main-desc">Please add a cluster for this zone.</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 4.2: Add host -->
+          <div class="add-cluster" zone-wizard-form="host"
+               zone-wizard-step-id="addHost">
+            <ul class="subnav">
+              <li class="cluster">Cluster</li>
+              <li class="host active">Host</li>
+              <li class="primary-storage">Primary Storage</li>
+              <li class="secondary-storage">Secondary Storage</li>
+            </ul>
+            <div class="main-desc">Please add a host for this zone.</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 4.3: Add primary storage -->
+          <div class="add-cluster" zone-wizard-form="primaryStorage"
+               zone-wizard-step-id="addPrimaryStorage">
+            <ul class="subnav">
+              <li class="cluster">Cluster</li>
+              <li class="host">Host</li>
+              <li class="primary-storage active">Primary Storage</li>
+              <li class="secondary-storage">Secondary Storage</li>
+            </ul>
+            <div class="main-desc">Please add a primary storage setup for this zone.</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 4.4: Add secondary storage -->
+          <div class="add-cluster" zone-wizard-form="secondaryStorage"
+               zone-wizard-step-id="addSecondaryStorage">
+            <ul class="subnav">
+              <li class="cluster">Cluster</li>
+              <li class="host">Host</li>
+              <li class="primary-storage">Primary Storage</li>
+              <li class="secondary-storage active">Secondary Storage</li>
+            </ul>
+            <div class="main-desc">Please add a secondary storage setup for this zone.</div>
+            <div class="content input-area">
+              <div class="select-container"></div>
+            </div>
+          </div>
+
+          <!-- Step 5: Launch -->
+          <div class="review" zone-wizard-step-id="launch">
+            <div class="main-desc">Launch zone</div>
+            <div class="main-desc launch" style="display:none;">
+              Please wait while your zone is being created; this may take a while...
+            </div>
             <form>
-              <div class="main-desc">Please add an IP range for your zone</div>
-              <div class="content input-area">
-                <div class="select-container">
-                  <!-- VLAN Type -->
-                  <div class="field conditional vlan">
-                    <div class="name">
-                      <span>VLAN</span>
-                    </div>
-                    <div class="value">
-                      <select name="vlan-type">
-                        <option value="untagged">Untagged</option>
-                        <option value="tagged">Tagged</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- VLAN ID -->
-                  <div class="field conditional security-groups vlan-type-tagged">
-                    <div class="name">
-                      <span>VLAN ID</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="vlan-id" class="required"/>
-                    </div>
-                  </div>
-
-                  <!-- Scope -->
-                  <div class="field conditional vlan-type-untagged">
-                    <div class="name">
-                      <span>Scope</span>
-                    </div>
-                    <div class="value">
-                      <select class="ip-scope" name="ip-scope-untagged">
-                        <option value="zone-wide">Zone-wide</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Scope (tagged) -->
-                  <div class="field conditional vlan-type-tagged">
-                    <div class="name">
-                      <span>Scope</span>
-                    </div>
-                    <div class="value">
-                      <select class="ip-scope" name="ip-scope-tagged">
-                        <option value="zone-wide">Zone-wide</option>
-                        <option value="account-specific">Account-specific</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Domain -->
-                  <div class="field conditional ip-scope-account-specific">
-                    <div class="name">
-                      <span>Domain</span>
-                    </div>
-                    <div class="value">
-                      <select name="ip-domain" class="domain required"></select>
-                    </div>
-                  </div>
-
-                  <!-- Account -->
-                  <div class="field conditional ip-scope-account-specific">
-                    <div class="name">
-                      <span>Account</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="account" />
-                    </div>
-                  </div>
-
-                  <!-- Gateway -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Guest Gateway</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="guest-gateway" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- Netmask -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Guest Netmask</span>
-                    </div>
-                    <div class="value">
-                      <input type="text" name="guest-netmask" class="required" />
-                    </div>
-                  </div>
-
-                  <!-- IP Range -->
-                  <div class="field">
-                    <div class="name">
-                      <span>Guest IP Range</span>
-                    </div>
-                    <div class="value multi-range">
-                      <input type="text" name="guest-ip-range-start" class="required" />
-                      <span class="divider">-</span>
-                      <input type="text" name="guest-ip-range-end" />
-                    </div>
-                  </div>
-                </div>
-              </div>
             </form>
+            <div class="launch-container" style="display: none">
+              <ul></ul>
+            </div>
           </div>
         </div>
 
@@ -1575,6 +1528,7 @@
     <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
     <script src="scripts/cloudStack.js" type="text/javascript"></script>
+    <script src="scripts/ui-custom/zoneChart.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/dashboard.js" type="text/javascript"></script>
     <script src="scripts/installWizard.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/installWizard.js" type="text/javascript"></script>
@@ -1593,8 +1547,8 @@
     <script src="scripts/accounts.js" type="text/javascript"></script>
     <script src="scripts/configuration.js" type="text/javascript"></script>
     <script src="scripts/globalSettings.js" type="text/javascript"></script>
+    <script src="scripts/zoneWizard.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/physicalResources.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/zoneChart.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/zoneWizard.js" type="text/javascript"></script>
     <script src="scripts/system.js" type="text/javascript"></script>
     <script src="scripts/domains.js" type="text/javascript"></script>
