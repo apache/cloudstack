@@ -209,7 +209,13 @@ class deployDataCenters():
         traffic_type = addTrafficType.addTrafficTypeCmd()
         traffic_type.physicalnetworkid = physical_network_id
         traffic_type.traffictype = traffictype
-        self.apiClient.addTrafficType(traffic_type)
+        return self.apiClient.addTrafficType(traffic_type)
+
+    def enableZone(self, zoneid, allocation_state="Enabled"):
+        zoneCmd = updateZone.updateZoneCmd()
+        zoneCmd.zoneid = zoneid
+        zoneCmd.allocationstate = allocation_state
+        return self.apiClient.updateZone(zoneCmd)
 
     def createZones(self, zones):
         for zone in zones:
@@ -263,6 +269,7 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
+            return self.enableZone(zoneId, "Enabled")
 
     def registerApiKey(self):
         listuser = listUsers.listUsersCmd()
