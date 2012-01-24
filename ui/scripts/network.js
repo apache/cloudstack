@@ -428,6 +428,14 @@
                 }
               }
             },
+						
+						tabFilter: function(args) {						  					
+              var hiddenTabs = [];  
+							if(args.context.networks[0].type == "Isolated")
+							  hiddenTabs.push("loadBalancing"); 							
+              return hiddenTabs;
+            },
+						
             tabs: {
               details: {
                 title: 'Details',
@@ -555,6 +563,20 @@
                   });
                 }
               }
+							
+							/*
+							,									
+							//Brian, please duplicate loadBalancing from another place to here
+              loadBalancing: {
+							  title: 'Load balancer',								
+								dataProvider: function(args) {
+                  args.response.success({                    
+                    data: {}
+                  });
+                }
+							}			
+							*/
+							
             }
           }
         }
