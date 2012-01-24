@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1340,7 +1341,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 
                 int allocateRetry = 0;
                 int startRetry = 0;
-                for (HypervisorType hType : supportedHypervisors) {
+                
+                
+                for (Iterator<HypervisorType> iter = supportedHypervisors.iterator();iter.hasNext();) {
+                    HypervisorType hType = iter.next();
                     try {
                         s_logger.debug("Allocating the domR with the hypervisor type " + hType);
                         VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
@@ -1361,7 +1365,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         router.setRole(Role.VIRTUAL_ROUTER);
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                     } catch (InsufficientCapacityException ex) {
-                        if (allocateRetry < 2) {
+                        if (allocateRetry < 2 && iter.hasNext()) {
                             s_logger.debug("Failed to allocate the domR with hypervisor type " + hType + ", retrying one more time");
                             continue;
                         } else {
@@ -1375,7 +1379,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), params);
                         break;
                     } catch (InsufficientCapacityException ex) {
-                        if (startRetry < 2) {
+                        if (startRetry < 2 && iter.hasNext()) {
                             s_logger.debug("Failed to start the domR  " + router + " with hypervisor type " + hType + ", destroying it and recreating one more time");
                             //destroy the router
                             destroyRouter(router.getId());
