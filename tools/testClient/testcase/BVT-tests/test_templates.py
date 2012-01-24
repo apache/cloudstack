@@ -20,16 +20,27 @@ class Services:
 
     def __init__(self):
         self.services = {
+                            "service_offering": {
+                                    "name": "Tiny Service Offering",
+                                    "displaytext": "Tiny service offering",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
+                                    },
+
                             "virtual_machine":
                                         {
-                                            "template": 206, # Template used for VM creation
+                                            "template": 256, # Template used for VM creation
                                             "zoneid": 1,
                                             "serviceoffering": 1,
                                             "displayname": "testVM",
                                             "hypervisor": 'XenServer',
-                                            "account": 'admin', # Account for which VM should be created
+                                            "account": 'testuser', # Account for which VM should be created
                                             "domainid": 1,
                                             "protocol": 'TCP',
+                                            "ssh_port": 22,
+                                            "username" : "root",
+                                            "password": "password"
                                          },
                             "volume":
                                         {
@@ -92,10 +103,12 @@ class TestCreateTemplate(cloudstackTestCase):
     def setUpClass(cls):
         cls.services = Services().services
         cls.api_client = fetch_api_client()
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
-                                        cls.services["virtual_machine"]
+                                        cls.services["virtual_machine"],
+                                        serviceofferingid = cls.service_offering.id
                                         )
 
         #Stop virtual machine
@@ -110,7 +123,7 @@ class TestCreateTemplate(cloudstackTestCase):
         cmd.type = 'ROOT'
         list_volume = cls.api_client.listVolumes(cmd)
         cls.volume = list_volume[0]
-        cls._cleanup = [cls.virtual_machine]
+        cls._cleanup = [cls.virtual_machine, cls.service_offering]
         return
 
     @classmethod
@@ -214,10 +227,12 @@ class TestTemplates(cloudstackTestCase):
 
         cls.services = Services().services
         cls.api_client = fetch_api_client()
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         #create virtual machines
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
-                                        cls.services["virtual_machine"]
+                                        cls.services["virtual_machine"],
+                                        serviceofferingid = cls.service_offering.id
                                         )
 
         #Stop virtual machine
@@ -236,7 +251,7 @@ class TestTemplates(cloudstackTestCase):
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(cls.api_client, cls.volume, cls.services["template_1"])
         cls.template_2 = Template.create(cls.api_client, cls.volume, cls.services["template_2"])
-        cls._cleanup = [cls.template_2, cls.virtual_machine]
+        cls._cleanup = [cls.template_2, cls.virtual_machine, cls.service_offering]
 
     @classmethod
     def tearDownClass(cls):

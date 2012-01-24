@@ -22,6 +22,13 @@ class Services:
 
     def __init__(self):
         self.services = {
+                         "service_offering": {
+                                    "name": "Tiny Service Offering",
+                                    "displaytext": "Tiny service offering",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
+                                    },
                         "volume_offerings": {
                             0: {
                                 "offerings": 1,
@@ -51,21 +58,19 @@ class Services:
                                 "domainid": 1,
                             },
                         },
-                            "customdiskofferingid": 16, #Custom disk offering should be availale
+                            "customdiskofferingid": 52, #Custom disk offering should be available
                             "customdisksize": 2, # GBs
                             "volumeoffering": 3,
                             "serviceoffering": 1,
-                            "template": 206,
+                            "template": 256,
                             "zoneid": 1,
                             "username": "root", # Creds for SSH to VM
-                            "password": "fr3sca",
+                            "password": "password",
                             "ssh_port": 22,
                             "diskname": "TestDiskServ",
                             "hypervisor": 'XenServer',
                             "account": 'testuser', # Account for VM instance
                             "domainid": 1,
-                            "ipaddressid": 4,
-                            # Optional, If not given Public IP will be assigned for that account before NAT rule creation
                             "privateport": 22,
                             "publicport": 22,
                             "protocol": 'TCP',
@@ -78,9 +83,18 @@ class TestCreateVolume(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
-        cls.virtual_machine = VirtualMachine.create(cls.api_client, cls.services)
-        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services)
-        cls._cleanup = [cls.nat_rule, cls.virtual_machine]
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
+        cls.virtual_machine = VirtualMachine.create(cls.api_client, cls.services, serviceofferingid = cls.service_offering.id)
+
+        cls.public_ip = PublicIPAddress.create(
+                                           cls.api_client,
+                                           cls.virtual_machine.account,
+                                           cls.virtual_machine.zoneid,
+                                           cls.virtual_machine.domainid,
+                                           cls.services
+                                           )
+        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services, ipaddressid = cls.public_ip.ipaddress.id)
+        cls._cleanup = [cls.nat_rule, cls.virtual_machine, cls.service_offering, cls.public_ip]
 
     def setUp(self):
 
@@ -146,10 +160,20 @@ class TestVolumes(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
-        cls.virtual_machine = VirtualMachine.create(cls.api_client, cls.services)
-        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services)
-        cls.volume = Volume.create(cls.api_client, self.services)
-        cls._cleanup = [cls.nat_rule, cls.virtual_machine, cls.volume]
+
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
+        cls.virtual_machine = VirtualMachine.create(cls.api_client, cls.services, serviceofferingid = cls.service_offering.id)
+
+        cls.public_ip = PublicIPAddress.create(
+                                           cls.api_client,
+                                           cls.virtual_machine.account,
+                                           cls.virtual_machine.zoneid,
+                                           cls.virtual_machine.domainid,
+                                           cls.services
+                                           )
+        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services, ipaddressid = cls.public_ip.ipaddress.id)
+        cls.volume = Volume.create(cls.api_client, cls.services)
+        cls._cleanup = [cls.nat_rule, cls.virtual_machine, cls.volume, cls.public_ip, cls.service_offering]
 
     @classmethod
     def tearDownClass(cls):
@@ -184,10 +208,6 @@ class TestVolumes(cloudstackTestCase):
         self.assertEqual(qresult[0], self.virtual_machine.id, "Check if volume is assc. with virtual machine in Database")
         #self.assertEqual(qresult[1], 0, "Check if device is valid in the database")
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.services["ipaddressid"]
-        public_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
-
         #Format the attached volume to a known fs
         format_volume_to_ext3(self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress))
 
@@ -217,7 +237,7 @@ class TestVolumes(cloudstackTestCase):
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
         """
-        self.virtual_machine.detach_volume(self.apiClient, self.virtual_machine)
+        self.virtual_machine.detach_volume(self.apiClient, self.volume)
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(60)
         cmd = listVolumes.listVolumesCmd()
@@ -248,7 +268,8 @@ class TestVolumes(cloudstackTestCase):
 
         #Attempt to download the volume and save contents locally
         try:
-            response = urllib2.urlopen(urllib2.unquote(extract_vol.url))
+            formatted_url = urllib.unquote_plus(extract_vol.url)
+            response = urllib.urlopen(formatted_url)
             fd, path = tempfile.mkstemp()
             os.close(fd)
             fd = open(path, 'wb')

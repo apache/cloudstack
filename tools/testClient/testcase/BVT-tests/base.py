@@ -19,7 +19,7 @@ class Account:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin = False):
+    def create(cls, apiclient, services, admin=False):
         cmd = createAccount.createAccountCmd()
         #0 - User, 1 - Root Admin
         cmd.accounttype = int(admin)
@@ -31,7 +31,7 @@ class Account:
         mdf = hashlib.md5()
         mdf.update(services["password"])
         cmd.password = mdf.hexdigest()
-        cmd.username = services["username"]
+        cmd.username = "-".join([services["username"], random_gen()])
         account = apiclient.createAccount(cmd)
 
         return Account(account.__dict__)
@@ -43,8 +43,8 @@ class Account:
 
 
 class VirtualMachine:
-    """Manage virtual machine lifecycle
-    """
+    """Manage virtual machine lifecycle"""
+
     def __init__(self, items, services):
         self.__dict__.update(items)
         self.username = services["username"]
@@ -55,12 +55,24 @@ class VirtualMachine:
         self.ipaddress = self.nic[0].ipaddress
 
     @classmethod
-    def create(cls, apiclient, services, templateid = None, accountid = None, networkids = None):
+    def create(cls, apiclient, services, templateid=None, accountid=None,
+                                networkids=None, serviceofferingid=None):
+
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
-        cmd.serviceofferingid = services["serviceoffering"]
+
+        if serviceofferingid:
+            cmd.serviceofferingid = serviceofferingid
+        elif "serviceoffering" in services:
+            cmd.serviceofferingid = services["serviceoffering"]
+
         cmd.zoneid = services["zoneid"]
         cmd.hypervisor = services["hypervisor"]
-        cmd.account = accountid or services["account"]
+
+        if accountid:
+            cmd.account = accountid
+        elif "account" in services:
+            cmd.account = services["account"]
+
         cmd.domainid = services["domainid"]
 
         # List Networks for that user
@@ -75,7 +87,8 @@ class VirtualMachine:
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
         elif network:   #If user already has source NAT created, then use that
-            cmd.networkids = network[0].id
+            if hasattr(network[0], "account"):
+                cmd.networkids = network[0].id
 
         if templateid:
             cmd.templateid = templateid
@@ -84,9 +97,12 @@ class VirtualMachine:
 
         if "diskoffering" in services:
             cmd.diskofferingid = services["diskoffering"]
-        return VirtualMachine(apiclient.deployVirtualMachine(cmd).__dict__, services)
+        return VirtualMachine(
+                              apiclient.deployVirtualMachine(cmd).__dict__,
+                              services
+                              )
 
-    def get_ssh_client(self, ipaddress = None, reconnect = False):
+    def get_ssh_client(self, ipaddress=None, reconnect=False):
             if ipaddress != None:
                 self.ipaddress = ipaddress
             if reconnect:
@@ -128,13 +144,28 @@ class Volume:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services):
+    def create(cls, apiclient, services, zoneid=None, account=None,
+               diskofferingid=None):
+
         cmd = createVolume.createVolumeCmd()
         cmd.name = services["diskname"]
-        cmd.diskofferingid = services["volumeoffering"]
-        cmd.zoneid = services["zoneid"]
-        cmd.account = services["account"]
         cmd.domainid = services["domainid"]
+
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
+
+        if account:
+            cmd.account = account
+        elif "account" in services:
+            cmd.account = services["account"]
+
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -285,11 +316,16 @@ class PublicIPAddress:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid, zoneid = None, domainid = None, services = None):
+    def create(cls, apiclient, accountid, zoneid=None, domainid=None,
+               services=None, networkid=None):
+
         cmd = associateIpAddress.associateIpAddressCmd()
         cmd.account = accountid
         cmd.zoneid = zoneid or services["zoneid"]
         cmd.domainid = domainid or services["domainid"]
+
+        if networkid:
+            cmd.networkid = networkid
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -306,7 +342,7 @@ class NATRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, virtual_machine, services, ipaddressid = None):
+    def create(cls, apiclient, virtual_machine, services, ipaddressid=None):
 
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
 
@@ -314,9 +350,6 @@ class NATRule:
             cmd.ipaddressid = ipaddressid
         elif "ipaddressid" in services:
             cmd.ipaddressid = services["ipaddressid"]
-        else: # If IP Address ID is not specified then assign new IP 
-            public_ip = PublicIPAddress.create(apiclient, virtual_machine.account, virtual_machine.zoneid, virtual_machine.domainid, services)
-            cmd.ipaddressid = public_ip.ipaddress.id
 
         cmd.privateport = services["privateport"]
         cmd.publicport = services["publicport"]
@@ -363,12 +396,15 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services):
+    def create(cls, apiclient, services, custom=False):
 
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
-        cmd.disksize = services["disksize"]
+        if custom:
+            cmd.customized = True
+        else:
+            cmd.disksize = services["disksize"]
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -411,7 +447,7 @@ class LoadBalancerRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, ipaddressid, accountid = None):
+    def create(cls, apiclient, services, ipaddressid, accountid=None):
         cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
         cmd.publicipid = ipaddressid or services["ipaddressid"]
         cmd.account = accountid or services["account"]
@@ -540,3 +576,50 @@ class StoragePool:
         cmd.id = self.id
         apiclient.deleteStoragePool(cmd)
         return
+
+class Network:
+    """Manage Network pools"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, accountid=None, domainid=None):
+
+        cmd = createNetwork.createNetworkCmd()
+        cmd.name = services["name"]
+        cmd.displaytext = services["displaytext"]
+        cmd.networkofferingid = services["networkoffering"]
+        cmd.zoneid = services["zoneid"]
+        if accountid:
+            cmd.account = accountid
+        if domainid:
+            cmd.domainid = domainid
+
+        return Network(apiclient.createNetwork(cmd).__dict__)
+
+    def delete(self, apiclient):
+        cmd = deleteNetwork.deleteNetworkCmd()
+        cmd.id = self.id
+        apiclient.deleteNetwork(cmd)
+
+
+def get_zone(apiclient):
+    "Returns a default zone"
+
+    cmd = listZones.listZonesCmd()
+    return apiclient.listZones(cmd)[1]
+
+def get_template(apiclient, zoneid, ostypeid=12):
+    "Returns a template"
+
+    cmd = listTemplates.listTemplatesCmd()
+    cmd.templatefilter = 'featured'
+    cmd.zoneid = zoneid
+    list_templates = apiclient.listTemplates(cmd)
+
+    for template in list_templates:
+        if template.ostypeid == ostypeid:
+            return template
+
+

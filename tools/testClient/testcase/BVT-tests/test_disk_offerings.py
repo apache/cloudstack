@@ -17,16 +17,11 @@ class Services:
 
     def __init__(self):
         self.services = {
-                         "off_1": {
-                                        "name": "Disk offering 1",
-                                        "displaytext": "Disk offering 1",
+                         "off": {
+                                        "name": "Disk offering",
+                                        "displaytext": "Disk offering",
                                         "disksize": 1   # in GB
                                 },
-                         "off_2": {
-                                        "name": "Disk offering 2",
-                                        "displaytext": "Disk offering 2",
-                                        "disksize": 1   # in GB
-                                }
                          }
 
 class TestCreateDiskOffering(cloudstackTestCase):
@@ -55,7 +50,10 @@ class TestCreateDiskOffering(cloudstackTestCase):
         # 1. createDiskOfferings should return valid info for new offering
         # 2. The Cloud Database contains the valid information
 
-        disk_offering = DiskOffering.create(self.apiclient, self.services["off_1"])
+        disk_offering = DiskOffering.create(
+                                        self.apiclient,
+                                        self.services["off"]
+                                        )
         self.cleanup.append(disk_offering)
 
         cmd = listDiskOfferings.listDiskOfferingsCmd()
@@ -71,38 +69,13 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
         self.assertEqual(
                             disk_response.displaytext,
-                            self.services["off_1"]["displaytext"],
+                            self.services["off"]["displaytext"],
                             "Check server id in createServiceOffering"
                         )
         self.assertEqual(
                             disk_response.name,
-                            self.services["off_1"]["name"],
+                            self.services["off"]["name"],
                             "Check name in createServiceOffering"
-                        )
-
-        #Verify the database entries for new disk offering
-        qresultset = self.dbclient.execute(
-                                           "select display_text, id from disk_offering where id = %s;"
-                                           % disk_offering.id
-                                           )
-
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        self.assertEqual(
-                            qresult[0],
-                            self.services["off_1"]["displaytext"],
-                            "Compare display text with database record"
-                        )
-        self.assertEqual(
-                            qresult[1],
-                            disk_offering.id,
-                            "Check ID in the database"
                         )
         return
 
@@ -129,8 +102,14 @@ class TestDiskOfferings(cloudstackTestCase):
     def setUpClass(cls):
         cls.services = Services().services
         cls.api_client = fetch_api_client()
-        cls.disk_offering_1 = DiskOffering.create(cls.api_client, cls.services["off_1"])
-        cls.disk_offering_2 = DiskOffering.create(cls.api_client, cls.services["off_2"])
+        cls.disk_offering_1 = DiskOffering.create(
+                                                  cls.api_client,
+                                                  cls.services["off"]
+                                                  )
+        cls.disk_offering_2 = DiskOffering.create(
+                                                  cls.api_client,
+                                                  cls.services["off"]
+                                                  )
         cls._cleanup = [cls.disk_offering_1]
         return
 
@@ -147,7 +126,8 @@ class TestDiskOfferings(cloudstackTestCase):
         """Test to update existing disk offering"""
 
         # Validate the following:
-        # 1. updateDiskOffering should return a valid information for newly created offering
+        # 1. updateDiskOffering should return
+        #    a valid information for newly created offering
 
         #Generate new name & displaytext from random data
         random_displaytext = random_gen()
@@ -173,48 +153,23 @@ class TestDiskOfferings(cloudstackTestCase):
         disk_response = list_disk_response[0]
 
         self.assertEqual(
-                            disk_response.displaytext,
-                            random_displaytext,
-                            "Check service displaytext in updateServiceOffering"
+                        disk_response.displaytext,
+                        random_displaytext,
+                        "Check service displaytext in updateServiceOffering"
                         )
         self.assertEqual(
-                            disk_response.name,
-                            random_name,
-                            "Check service name in updateServiceOffering"
+                        disk_response.name,
+                        random_name,
+                        "Check service name in updateServiceOffering"
                         )
-
-        #Verify database entries for updated disk offerings
-        qresultset = self.dbclient.execute(
-                                           "select display_text, id from disk_offering where id = %s;"
-                                           % self.disk_offering_1.id
-                                           )
-
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        self.assertEqual(
-                            qresult[0],
-                            random_displaytext,
-                            "Compare displaytext with database record"
-                        )
-        self.assertEqual(
-                            qresult[1],
-                            self.disk_offering_1.id,
-                            "Check name in the database"
-                        )
-
         return
 
     def test_03_delete_disk_offering(self):
         """Test to delete disk offering"""
 
         # Validate the following:
-        # 1. deleteDiskOffering should return a valid information for newly created offering
+        # 1. deleteDiskOffering should return
+        #    a valid information for newly created offering
 
         cmd = deleteDiskOffering.deleteDiskOfferingCmd()
         cmd.id = self.disk_offering_2.id
@@ -225,21 +180,8 @@ class TestDiskOfferings(cloudstackTestCase):
         list_disk_response = self.apiclient.listDiskOfferings(cmd)
 
         self.assertEqual(
-                            list_disk_response,
-                            None,
-                            "Check if disk offering exists in listDiskOfferings"
+                        list_disk_response,
+                        None,
+                        "Check if disk offering exists in listDiskOfferings"
                         )
-
-        #Verify database entry for deleted disk offering
-        qresultset = self.dbclient.execute(
-                                           "select display_text, name from disk_offering where id = %s;"
-                                           % str(self.disk_offering_2.id)
-                                           )
-
-        self.assertEqual(
-                            len(qresultset),
-                            1,
-                            "Check DB Query result set"
-                            )
-
         return

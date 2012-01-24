@@ -24,29 +24,34 @@ class Services:
                             "user_account": "testuser",
                             "zoneid": 1,
                             "domainid": 1,
+                            "service_offering": {
+                                    "name": "Tiny Service Offering",
+                                    "displaytext": "Tiny service offering",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
+                                    },
                             "account": {
                                             "email": "test@test.com",
                                             "firstname": "Test",
                                             "lastname": "User",
-                                            "username": "testuser",
-                                            "password": "fr3sca",
+                                            "username": "test",
+                                            "password": "password",
                                             "zoneid": 1,
                                         },
                             "server":
                                     {
-                                        "template": 206, # Template used for VM creation
-                                        "zoneid": 1,
-                                        "serviceoffering": 1,
-                                        "diskoffering": 3,
+                                        "template": 7, # Template used for VM creation
+                                        "zoneid": 3,
                                         "displayname": "testserver",
                                         "username": "root",
                                         "password": "fr3sca",
-                                        "hypervisor": 'XenServer',
+                                        "hypervisor": 'VMWare',
                                         "account": 'testuser',
                                         "domainid": 1,
-                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
                                         "privateport": 22,
                                         "publicport": 22,
+                                        "ssh_port": 22,
                                         "protocol": 'TCP',
                                 },
                         "natrule":
@@ -170,13 +175,15 @@ class TestPortForwarding(cloudstackTestCase):
         cls.services = Services().services
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         cls.virtual_machine = VirtualMachine.create(
                                                     cls.api_client,
                                                     cls.services["server"],
                                                     accountid = cls.account.account.name,
+                                                    serviceofferingid = cls.service_offering.id
                                                     )
 
-        cls._cleanup = [cls.virtual_machine, cls.account]
+        cls._cleanup = [cls.virtual_machine, cls.account, cls.service_offering]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -185,11 +192,11 @@ class TestPortForwarding(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cleanup_resources(cls.api_client, cls._cleanup)
+        #cleanup_resources(cls.api_client, cls._cleanup)
         return
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
+        #cleanup_resources(self.apiclient, self.cleanup)
         return
 
     def test_01_port_fwd_on_src_nat(self):
@@ -243,7 +250,7 @@ class TestPortForwarding(cloudstackTestCase):
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
             remoteSSHClient.remoteSSHClient(
-                                            ip.ipaddress,
+                                            src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
                                             self.virtual_machine.password
@@ -261,7 +268,8 @@ class TestPortForwarding(cloudstackTestCase):
                                             self.apiclient,
                                             self.account.account.name,
                                             self.services["zoneid"],
-                                            self.services["domainid"]
+                                            self.services["domainid"],
+                                            self.services["server"]
                                             )
         self.clean_up.append(ip_address)
         #Create NAT rule
@@ -293,7 +301,7 @@ class TestPortForwarding(cloudstackTestCase):
                         )
 
         try:
-            self.virtual_machine.get_ssh_client(public_ip = ip_address.ipaddress.ipaddress)
+            self.virtual_machine.get_ssh_client(ip_address.ipaddress.ipaddress)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % (self.virtual_machine.ipaddress.ipaddress, e))
 
@@ -330,23 +338,27 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.services = Services().services
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         cls.vm_1 = VirtualMachine.create(
                                             cls.api_client,
                                             cls.services["server"],
                                             accountid = cls.account.account.name,
+                                            serviceofferingid = cls.service_offering.id
                                         )
         cls.vm_2 = VirtualMachine.create(
                                             cls.api_client,
                                             cls.services["server"],
                                             accountid = cls.account.account.name,
+                                            serviceofferingid = cls.service_offering.id
                                         )
         cls.non_src_nat_ip = PublicIPAddress.create(
                                                     cls.api_client,
                                                     cls.account.account.name,
                                                     cls.services["zoneid"],
-                                                    cls.services["domainid"]
+                                                    cls.services["domainid"],
+                                                    cls.services["server"]
                                                     )
-        cls._cleanup = [cls.vm_1, cls.vm_2, cls.non_src_nat_ip, cls.account]
+        cls._cleanup = [cls.vm_1, cls.vm_2, cls.non_src_nat_ip, cls.account, cls.service_offering]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -553,11 +565,18 @@ class TestRebootRouter(cloudstackTestCase):
         self.services = Services().services
         #Create an account, network, VM and IP addresses
         self.account = Account.create(self.apiclient, self.services["account"], admin = True)
+        self.service_offering = ServiceOffering.create(self.apiclient, self.services["service_offering"])
         self.vm_1 = VirtualMachine.create(
                                             self.apiclient,
                                             self.services["server"],
                                             accountid = self.account.account.name,
+                                            serviceofferingid = self.service_offering.id
                                         )
+
+        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
+        cmd.account = self.account.account.name
+        cmd.domainid = self.account.account.domainid
+        src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         lb_rule = LoadBalancerRule.create(
                                             self.apiclient,
@@ -566,8 +585,8 @@ class TestRebootRouter(cloudstackTestCase):
                                             self.account.account.name
                                         )
         lb_rule.assign(self.apiclient, [self.vm_1])
-        #nat_rule = NATRule.create(self.apiclient, self.vm_1, self.services["natrule"], src_nat_ip_addr.id)
-        self.cleanup = [self.vm_1, lb_rule, self.account]
+        self.nat_rule = NATRule.create(self.apiclient, self.vm_1, self.services["natrule"], ipaddressid = src_nat_ip_addr.id)
+        self.cleanup = [self.vm_1, lb_rule, self.service_offering, self.account, self.nat_rule]
         return
 
     def test_reboot_router(self):
@@ -619,26 +638,30 @@ class TestAssignRemoveLB(cloudstackTestCase):
         self.services = Services().services
         #Create VMs, accounts
         self.account = Account.create(self.apiclient, self.services["account"], admin = True)
+        self.service_offering = ServiceOffering.create(self.apiclient, self.services["service_offering"])
 
         self.vm_1 = VirtualMachine.create(
                                           self.apiclient,
                                           self.services["server"],
                                           accountid = self.account.account.name,
+                                          serviceofferingid = self.service_offering.id
                                           )
 
         self.vm_2 = VirtualMachine.create(
                                           self.apiclient,
                                           self.services["server"],
                                           accountid = self.account.account.name,
+                                          serviceofferingid = self.service_offering.id
                                           )
 
         self.vm_3 = VirtualMachine.create(
                                           self.apiclient,
                                           self.services["server"],
                                           accountid = self.account.account.name,
+                                          serviceofferingid = self.service_offering.id
                                           )
 
-        self.cleanup = [self.vm_1, self.vm_2, self.vm_3, self.account]
+        self.cleanup = [self.vm_1, self.vm_2, self.vm_3, self.account, self.service_offering]
         return
 
 
@@ -720,10 +743,13 @@ class TestReleaseIP(cloudstackTestCase):
         #Create an account, network, VM, Port forwarding rule, LB rules and IP addresses
         self.account = Account.create(self.apiclient, self.services["account"], admin = True)
 
+        self.service_offering = ServiceOffering.create(self.apiclient, self.services["service_offering"])
+
         self.virtual_machine = VirtualMachine.create(
                                                     self.apiclient,
                                                     self.services["server"],
                                                     accountid = self.account.account.name,
+                                                    serviceofferingid = self.service_offering.id
                                                     )
 
         self.ip_address = PublicIPAddress.create(
@@ -803,10 +829,12 @@ class TestDeleteAccount(cloudstackTestCase):
         self.services = Services().services
         #Create an account, network, VM and IP addresses
         self.account = Account.create(self.apiclient, self.services["account"], admin = True)
+        self.service_offering = ServiceOffering.create(self.apiclient, self.services["service_offering"])
         self.vm_1 = VirtualMachine.create(
                                             self.apiclient,
                                             self.services["server"],
                                             accountid = self.account.account.name,
+                                            serviceofferingid = self.service_offering.id
                                         )
 
         cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
@@ -865,4 +893,3 @@ class TestDeleteAccount(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
         return
-

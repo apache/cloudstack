@@ -20,18 +20,23 @@ class Services:
 
     def __init__(self):
         self.services = {
+                         "service_offering": {
+                                    "name": "Tiny Service Offering",
+                                    "displaytext": "Tiny service offering",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
+                                    },
                         "virtual_machine":
                                     {
-                                        "template": 206, # Template used for VM creation
-                                        "zoneid": 1,
-                                        "serviceoffering": 1,
+                                        "template": 7, # Template used for VM creation
+                                        "zoneid": 3,
                                         "displayname": "testserver",
                                         "username": "root",
                                         "password": "fr3sca",
                                         "ssh_port": 22,
-                                        "hypervisor": 'XenServer',
+                                        "hypervisor": 'VMWare',
                                         "domainid": 1,
-                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
@@ -56,14 +61,16 @@ class TestRouterServices(cloudstackTestCase):
 
         cls.services = Services().services
         #Create an account, network, VM and IP addresses
-        cls.account = Account.create(cls.api_client, cls.services["account"])
+        cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         cls.vm_1 = VirtualMachine.create(
                                             cls.api_client,
                                             cls.services["virtual_machine"],
                                             accountid = cls.account.account.name,
+                                            serviceofferingid = cls.service_offering.id
                                         )
 
-        cls.cleanup = [cls.vm_1, cls.account]
+        cls.cleanup = [cls.vm_1, cls.account, cls.service_offering]
         return
 
     @classmethod

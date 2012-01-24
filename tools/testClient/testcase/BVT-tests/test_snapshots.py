@@ -17,20 +17,25 @@ class Services:
 
     def __init__(self):
         self.services = {
+                                "service_offering": {
+                                    "name": "Tiny Service Offering",
+                                    "displaytext": "Tiny service offering",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
+                                    },
                                 "server_with_disk":
                                     {
-                                        "template": 206, # Template used for VM creation
+                                        "template": 256, # Template used for VM creation
                                         "zoneid": 1,
-                                        "serviceoffering": 1,
                                         "diskoffering": 3, # Optional, if specified data disk will be allocated to VM
                                         "displayname": "testserver",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
                                         "account": 'testuser',
                                         "domainid": 1,
-                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
@@ -38,17 +43,15 @@ class Services:
 
                                 "server_without_disk":
                                     {
-                                        "template": 206, # Template used for VM creation
+                                        "template": 256, # Template used for VM creation
                                         "zoneid": 1,
-                                        "serviceoffering": 1,
                                         "displayname": "testserver",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
                                         "account": 'testuser',
                                         "domainid": 1,
-                                        "ipaddressid": 4, # IP Address ID of Public IP, If not specified new public IP 
                                         "privateport": 22, # For NAT rule creation
                                         "publicport": 22,
                                         "protocol": 'TCP',
@@ -66,7 +69,7 @@ class Services:
                                 "templates":
                                 {
                                     "displaytext": 'Test template snapshot',
-                                    "name": 'template_from_snapshot_3',
+                                    "name": 'template_from_snapshot',
                                     "ostypeid": 12,
                                     "templatefilter": 'self',
                                 },
@@ -76,8 +79,7 @@ class Services:
                                  "serviceofferingid": 1,
                                 },
                             "diskdevice": "/dev/xvda",
-                            "offerings": 1,
-                            "template": 206,
+                            "template": 256,
                             "zoneid": 1,
                             "diskoffering": 3,
                             "diskname": "TestDiskServ",
@@ -91,9 +93,11 @@ class Services:
                             "random_data": "random.data",
                             "exportpath": 'SecondaryStorage',
                             "sec_storage": '192.168.100.131',
+                            # IP address of Sec storage where snapshots are stored
                             "mgmt_server_ip": '192.168.100.154',
+                            # Required for verifying snapshots on secondary storage 
                             "username": "root",
-                            "password": "fr3sca",
+                            "password": "password",
                             "ssh_port": 22,
                          }
 
@@ -103,12 +107,21 @@ class TestSnapshots(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
         cls.virtual_machine = cls.virtual_machine_with_disk = \
-                    VirtualMachine.create(cls.api_client, cls.services["server_with_disk"])
+                    VirtualMachine.create(cls.api_client, cls.services["server_with_disk"], serviceofferingid = cls.service_offering.id)
         cls.virtual_machine_without_disk = \
-                    VirtualMachine.create(cls.api_client, cls.services["server_without_disk"])
-        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services["server_with_disk"])
-        cls._cleanup = [cls.virtual_machine, cls.virtual_machine_without_disk, cls.nat_rule]
+                    VirtualMachine.create(cls.api_client, cls.services["server_without_disk"], serviceofferingid = cls.service_offering.id)
+
+        cls.public_ip = PublicIPAddress.create(
+                                           cls.api_client,
+                                           cls.virtual_machine.account,
+                                           cls.virtual_machine.zoneid,
+                                           cls.virtual_machine.domainid,
+                                           cls.services["server_with_disk"]
+                                           )
+        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services["server_with_disk"], ipaddressid = cls.public_ip.ipaddress.id)
+        cls._cleanup = [cls.virtual_machine, cls.nat_rule, cls.virtual_machine_without_disk, cls.public_ip, cls.service_offering]
         return
 
     @classmethod
@@ -268,10 +281,6 @@ class TestSnapshots(cloudstackTestCase):
         random_data_0 = random_gen(100)
         random_data_1 = random_gen(100)
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.services["server_with_disk"]["ipaddressid"]
-        public_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
-
         ssh_client = self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
         #Format partition using ext3
         format_volume_to_ext3(ssh_client, self.services["diskdevice"])
@@ -330,10 +339,6 @@ class TestSnapshots(cloudstackTestCase):
         cmd.id = volume.id
         cmd.virtualmachineid = new_virtual_machine.id
         volume = self.apiclient.attachVolume(cmd)
-
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.services["server_without_disk"]["ipaddressid"]
-        public_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         #Login to VM to verify test directories and files
         ssh = new_virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
@@ -504,10 +509,6 @@ class TestSnapshots(cloudstackTestCase):
         random_data_0 = random_gen(100)
         random_data_1 = random_gen(100)
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.services["server_with_disk"]["ipaddressid"]
-        public_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
-
         #Login to virtual machine
         ssh_client = self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
 
@@ -564,13 +565,10 @@ class TestSnapshots(cloudstackTestCase):
         new_virtual_machine = VirtualMachine.create(
                                                         self.apiclient,
                                                         self.services["server_without_disk"],
-                                                        template.id
+                                                        templateid = template.id,
+                                                        serviceofferingid = self.service_offering.id
                                                     )
         self.cleanup.append(new_virtual_machine)
-
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.services["server_without_disk"]["ipaddressid"]
-        public_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
 
         #Login to VM & mount directory
         ssh = new_virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
