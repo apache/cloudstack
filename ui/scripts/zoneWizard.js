@@ -108,11 +108,26 @@
           });
         },
         fields: {
-          name: { label: 'Name', validation: { required: true } },
-          dns1: { label: 'DNS 1', validation: { required: true } },
-          dns2: { label: 'DNS 2' },
-          internaldns1: { label: 'Internal DNS 1', validation: { required: true } },
-          internaldns2: { label: 'Internal DNS 2' },			
+          name: {
+            label: 'Name', validation: { required: true },
+            desc: 'A name for the zone.'
+          },
+          dns1: {
+            label: 'DNS 1', validation: { required: true },
+            desc: 'Name of a DNS server for use for use by VMs in the zone. The public IP addresses for the zone must hav a route to this server.'
+          },
+          dns2: {
+            label: 'DNS 2',
+            desc: 'A second DNS server name for use by VMs in the zone. The public IP addresses for the zone must hav a route to this server.'
+          },
+          internaldns1: {
+            label: 'Internal DNS 1', validation: { required: true },
+            desc: 'Name of a DNS server for use by CloudStack\'s internal system VMs in the zone. The private IP address for the pods must have a route to this server.'
+          },
+          internaldns2: {
+            label: 'Internal DNS 2',
+            desc: 'Name of a DNS server for use by CloudStack\'s internal system VMs in the zone. The private IP address for the pods must have a route to this server.'
+          },			
 					networkOfferingId: {
             label: 'Network Offering',            
             select: function(args) {             
@@ -172,7 +187,10 @@
 							});							
             }
           },	
-          networkdomain: { label: 'Network Domain' },
+          networkdomain: {
+            label: 'Network Domain',
+            desc: 'A DNS suffix that will create a custom domain name for the network that is accessed by guest VMs.'
+          },
           ispublic: {
             isReverse: true,
             isBoolean: true,
@@ -209,15 +227,18 @@
         fields: {
           name: {
             label: 'Pod name',
-            validation: { required: true }
+            validation: { required: true },
+            desc: 'A name for this pod.'
           },
           reservedSystemGateway: {
             label: 'Reserved system gateway',
-            validation: { required: true }
+            validation: { required: true },
+            desc: 'The gateway for the hosts in the pod.'
           },
           reservedSystemNetmask: {
             label: 'Reserved system netmask',
-            validation: { required: true }
+            validation: { required: true },
+            desc: 'The network prefix that defines the pod\'s subnet. Uses CIDR notation.'
           },
           reservedSystemStartIp: {
             label: 'Start Reserved system IP',

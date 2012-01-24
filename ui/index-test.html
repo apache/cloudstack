@@ -431,15 +431,19 @@
               <div class="content">
                 <!-- Select template -->
                 <div class="section select-network-model">
-                  <h3>Setup zone type</h3>
+                  <h3>Set up zone type</h3>
                   <p>Please select a configuration for your zone.</p>
                   <div class="select-area">
-                    <div class="desc">Choose this network model if you do <em>not</em> want to enable any VLAN support. All virtual instances created under this network model will be assigned an IP directly from the network and security groups are used to provide security and segregation.</div>
+                    <div class="desc">                      
+                      Provide a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)
+                    </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
                     <label>Basic</label>
                   </div>
                   <div class="select-area">
-                    <div class="desc">Choose this network model if you wish to enable VLAN support. This network model provides the most flexibility in allowing administrators to provide custom network offerings such as providing firewall, vpn, or load balancer support as well as enabling direct vs virtual networking.</div>
+                    <div class="desc">
+                      For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.
+                    </div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label>Advanced</label>
                   </div>
@@ -451,7 +455,9 @@
           <!-- Step 2: Add zone -->
           <div class="setup-zone" zone-wizard-form="zone"
                zone-wizard-step-id="addZone">
-            <div class="main-desc">Please enter in the information to make a new zone.</div>
+            <div class="info-desc">
+              A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -467,7 +473,9 @@
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
             </ul>
-            <div class="main-desc"><em>DRAG-AND-DROP</em> different traffic types to your physical networks.</div>
+            <div class="info-desc">
+              When adding an advanced zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the management server. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined.<br/><br/><strong>Drag and drop one or more traffic types</strong> onto each physical network.
+            </div>
             <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span>Add physical network</span></div>
 
             <!-- Traffic types drag area -->
@@ -477,7 +485,7 @@
                 <li class="management">
                   <ul class="container">
                     <li traffic-type-id="management"
-                        title="Management traffic type description"
+                        title="Traffic between the internet and virtual machines in the cloud."
                         class="traffic-type-draggable management"></li>
                   </ul>
                   <div class="info">
@@ -488,7 +496,7 @@
                 <li class="public">
                   <ul class="container">
                     <li traffic-type-id="public"
-                        title="Public traffic type description"
+                        title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
                         class="traffic-type-draggable public"></li>
                   </ul>
                   <div class="info">
@@ -499,7 +507,7 @@
                 <li class="guest">
                   <ul class="container">
                     <li traffic-type-id="guest"
-                        title="Guest traffic type description"
+                        title="Traffic between end-user virtual machines"
                         class="traffic-type-draggable guest clone"></li>
                   </ul>
                   <div class="info">
@@ -510,7 +518,7 @@
                 <li class="storage">
                   <ul class="container">
                     <li traffic-type-id="storage"
-                        title="Storage traffic type description"
+                        title="Traffic between primary and secondary storage servers, such as VM templates and snapshots"
                         class="traffic-type-draggable storage"></li>
                   </ul>
                   <div class="info">
@@ -533,12 +541,13 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addBasicPhysicalNetwork">
             <ul class="subnav">
-              <li class="physical-network active">Physical Network</li>
+              <li class="physical-network active">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
             </ul>
-            <div class="main-desc">Please specify your physical network for this zone.</div>
+
+            <div class="info-desc">Please specify Netscaler info</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -548,12 +557,15 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
-              <li class="physical-network">Physical Network</li>
+              <li class="physical-network">Netscaler</li>
               <li class="public-network active">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
             </ul>
-            <div class="main-desc">Configure public traffic</div>
+
+            <div class="info-desc">
+              Public traffic is generated when VMs in the cloud access the internet. Publicly-accessible IPs must be allocated for this purpose. End users can use the CloudStack UI to acquire these IPs to implement NAT between their guest network and their public network.<br/><br/>Provide at lease one range of IP addresses for internet traffic.
+            </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
 
@@ -561,27 +573,35 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
-              <li class="physical-network">Physical Network</li>
+              <li class="physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod active">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
             </ul>
-            <div class="main-desc">Please specify a pod for this zone.</div>
+
+            <div class="info-desc">
+              Each zone must contain in one or more pods, and we will add the first pod now. A pod contains hosts and primary storage servers, which you will add in a later step. First, configure a range of reserved IP addresses for CloudStack's internal management traffic. The reserved IP range must be unique for each zone in the cloud.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
           </div>
 
           <!-- Step 3.4: Configure guest traffic -->
-          <div class="setup-guest-traffic" zone-wizard-form="guestTraffic"
-               zone-wizard-step-id="configureGuestTraffic">
+          <div class="setup-guest-traffic"
+               zone-wizard-form="guestTraffic"
+               zone-wizard-step-id="configureGuestTraffic"
+               zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
-              <li class="physical-network">Physical Network</li>
+              <li class="physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic active">Guest Traffic</li>
             </ul>
-            <div class="main-desc">Please this zone's guest traffic network.</div>
+
+            <div class="info-desc">
+              Enter the first and last IP addresses that define a range that CloudStack can assign to guest VMs. We strongly recommend the use of multiple NICs. If multiple NICs are used, the guest IPs may be in a separate subnet. If one NIC is used, the guest IPs should be in the same CIDR as the pod's CIDR, but not within the reserved system IP range.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -596,7 +616,10 @@
               <li class="primary-storage">Primary Storage</li>
               <li class="secondary-storage">Secondary Storage</li>
             </ul>
-            <div class="main-desc">Please add a cluster for this zone.</div>
+
+            <div class="info-desc">
+              Each pod must contain one or more clusters, and we will add the first cluster now. A cluster provides a way to group hosts. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared storage. Each cluster consists of one or more hosts and one or more primary storage servers.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -611,7 +634,9 @@
               <li class="primary-storage">Primary Storage</li>
               <li class="secondary-storage">Secondary Storage</li>
             </ul>
-            <div class="main-desc">Please add a host for this zone.</div>
+            <div class="info-desc">
+              Each cluster must contain at lease one host (computer) for guest VMs to run on, and we will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server.<br/><br/>Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -626,7 +651,9 @@
               <li class="primary-storage active">Primary Storage</li>
               <li class="secondary-storage">Secondary Storage</li>
             </ul>
-            <div class="main-desc">Please add a primary storage setup for this zone.</div>
+            <div class="info-desc">
+              Each cluster must contain one or more primary storage servers, and we will add the first one now. Primary storage contains the disk volumes for all the VMs running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -641,15 +668,17 @@
               <li class="primary-storage">Primary Storage</li>
               <li class="secondary-storage active">Secondary Storage</li>
             </ul>
-            <div class="main-desc">Please add a secondary storage setup for this zone.</div>
+            <div class="info-desc">
+              Each zone must have at lease one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
           </div>
 
-          <!-- Step 5: Review & launch -->
+          <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-            <div class="main-desc">Review & launch</div>
+            <div class="main-desc">Launch zone</div>
             <div class="main-desc launch" style="display:none;">
               Please wait while your zone is being created; this may take a while...
             </div>

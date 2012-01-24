@@ -63,6 +63,11 @@
           $name.find('label').prepend($('<span>').addClass('field-required').html('*'));
         }
 
+        // Tooltip description
+        if (field.desc) {
+          $formItem.attr({ title: field.desc });
+        }
+
         // Input area
         var $value = $('<div>').addClass('value')
           .appendTo($formItem);

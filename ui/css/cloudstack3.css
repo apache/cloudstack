@@ -5176,7 +5176,7 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .select-container {
-  height: 413px;
+  height: 333px;
   overflow: auto;
   /*[empty]display:;*/
 }
@@ -5189,6 +5189,33 @@ label.error {
   left: 0;
   top: 0;
   margin: 23px 0 0px 6px;
+}
+
+.multi-wizard.zone-wizard .info-desc {
+  font-size: 11px;
+  float: left;
+  text-align: left;
+  overflow: auto;
+  padding: 11px;
+  width: 698px;
+  margin: 29px 0 68px 5px;
+  background: #FFFFFF;
+  border: 1px solid #C7C7C7;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.multi-wizard.zone-wizard .setup-public-traffic .info-desc,
+.multi-wizard.zone-wizard .setup-guest-traffic .info-desc,
+.multi-wizard.zone-wizard .setup-physical-network .info-desc {
+  margin-bottom: 12px;
+}
+
+.multi-wizard.zone-wizard .info-desc strong {
+  font-weight: bold;
 }
 
 .multi-wizard.zone-wizard .main-desc em {
@@ -5307,16 +5334,15 @@ label.error {
 
 .multi-wizard.zone-wizard .content.input-area {
   width: 721px;
-  /*[empty]height:;*/
   min-height: inherit;
-  margin: 2px auto auto 4px;
+  margin: -50px auto auto 4px;
   overflow: auto;
 }
 
 /*** Add physical network -- network form items*/
 .multi-wizard.zone-wizard .setup-physical-network .content.input-area {
   width: 627px;
-  height: 438px;
+  height: 396px;
   background: none;
   position: relative;
 }
@@ -5339,6 +5365,7 @@ label.error {
   float: right;
   height: auto;
   border: 1px solid #BFBFBF;
+  overflow: visible;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -5364,7 +5391,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-container.multi .physical-network-icon {
   width: 61px;
-  height: 59px;
+  height: 53px;
   float: left;
   border-right: 1px solid #CDCDCD;
   background: url(../images/sprites.png) -109px -1393px;
@@ -5389,7 +5416,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container.multi .drop-container {
   background: #DAE2EC;
   width: 484px;
-  height: 73px;
+  height: 65px;
   clear: both;
   position: relative;
   /*+border-radius:4px;*/
@@ -5420,7 +5447,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-container.multi .drop-container ul li {
   float: left;
-  margin: 6px 0 0 16px;
+  margin: 0px 0 0 16px;
 }
 
 .multi-wizard.zone-wizard .select-container.multi .drop-container span.empty-message {
@@ -5436,7 +5463,7 @@ label.error {
 /*** Add physical network -- traffic type drag area*/
 .multi-wizard.zone-wizard .traffic-types-drag-area {
   width: 96px;
-  height: 398px;
+  height: 370px;
   background: #F0F1F2 none;
   border: 1px solid #DCCACA;
   /*+border-radius:4px;*/
@@ -5622,7 +5649,7 @@ label.error {
 /*** Configure guest network -- tabs*/
 .multi-wizard.zone-wizard .setup-guest-traffic .ui-widget-content {
   width: 682px;
-  height: 308px;
+  height: 244px;
   border-bottom: none;
   border-right: none;
   /*+placement:shift -1px -7px;*/
