@@ -112,8 +112,27 @@
           context: context
         }) : [];
 
-        // Filter disabled tabs
-        if (preFilter.length) {
+        // 1. choose between staticNAT chart and non-staticNAT chart  2. filter disabled tabs  
+        if (preFilter.length) {				 
+					if($.inArray('nonStaticNATChart', preFilter) != -1) { //choose static NAT chart
+					  if($.inArray('firewall', preFilter) == -1) {           
+						  return staticNATChart(args, true); //static NAT including Firewall 
+						}
+						else { 
+						  return staticNATChart(args, false); //static NAT excluding Firewall 
+						}						
+					}
+					else {  //choose non-static NAT chart
+            $(preFilter).each(function() {
+              var id = this;
+
+              var $li = $chart.find('li').filter(function() {
+                return $(this).hasClass(id);
+              }).addClass('disabled');
+            });
+          }
+					
+					/*
           if (preFilter.length == 3) { // 'firewall', 'portForwarding', 'loadBalancing'            
             return staticNATChart(args, true); //static NAT including Firewall 
           }
@@ -129,6 +148,7 @@
               }).addClass('disabled');
             });
           }
+					*/
         }
 
         $chart.find('.view-details').click(function() {

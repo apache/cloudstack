@@ -1075,7 +1075,32 @@
 											}
 										});
 										args.context.networks[0].networkHavingLbService = networkHavingLbService;
-																										
+												
+												
+													
+										var disallowedActions = [];
+										if (args.context.ipAddresses[0].isstaticnat)  
+										  disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.									
+										                    
+										var networkHavingFirewallService = false;										
+										var networkHavingPortForwardingService = false;
+										var networkHavingLbService = false;																				
+										$(args.context.networks[0].service).each(function(){												 
+											if(this.name == "Firewall") 
+												networkHavingFirewallService = true;		
+											if(this.name == "PortForwarding")
+											  networkHavingPortForwardingService = true;
+											if(this.name == "Lb")
+											  networkHavingLbService = true;											
+										});		
+										if(networkHavingFirewallService == false) 
+										  disallowedActions.push("firewall"); 	
+										if(networkHavingPortForwardingService == false) 
+										  disallowedActions.push("portForwarding");
+										if(networkHavingLbService == false) 
+										  disallowedActions.push("loadBalancing");																					
+																					
+										/*	
 									  var disallowedActions = [];
                     if (args.context.ipAddresses[0].isstaticnat) { //All items filtered means static NAT
 										  disallowedActions.push("firewall");
@@ -1097,6 +1122,10 @@
                     if (g_firewallRuleUiEnabled != 'true') {										  
                       disallowedActions.push("firewall");
                     }
+										*/
+										
+										
+										
                     return disallowedActions;
                   },
 
