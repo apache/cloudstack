@@ -810,10 +810,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) {
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
         
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            //no need to make permission checks if the system makes the call
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getType())) {
+            //no need to make permission checks if the system/root admin makes the call
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("No need to make permission check for System account, returning true");
+                s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             } 
             return;
         }
