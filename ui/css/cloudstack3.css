@@ -6828,7 +6828,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 /*System Dashboard*/
 .system-dashboard {
   height: 258px;
-  width: 781px;
+  width: 762px;
   display: block;
   background: #8DA4B9 url(../images/bg-gradients.png) repeat-x 0px -475px;
   /*+border-radius:8px;*/
@@ -6843,7 +6843,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   box-shadow: inset 0px 0px 1px #FFFFFF;
   border: 1px solid #BFD4E1;
   position: relative;
-  margin: 18px 0 0 6px;
+  margin: 18px 0 0 15px;
   font-weight: bold;
 }
 
@@ -6916,7 +6916,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   height: 178px;
   padding: 0;
   background: url(../images/bg-gradients.png) repeat-x 0px -1003px;
-  margin: 0 0 0 12px;
+  margin: 0 0 0 8px;
   /*+border-radius:7px;*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
@@ -7420,13 +7420,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .project-dashboard-view .overview-area {
-  width: 533px;
   float: left;
 }
 
 .project-dashboard-view .compute-and-storage .system-dashboard,
 .project-dashboard-view .users .system-dashboard {
-  width: 526px;
+  width: 510px;
   height: 230px;
   float: left;
 }
@@ -7518,7 +7517,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .project-dashboard-view .users .system-dashboard {
-  width: 526px;
+  width: 510px;
   height: 100%;
 }
 
@@ -7551,8 +7550,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 /**** Info box*/
 .info-boxes {
   float: right;
-  width: 226px;
-  height: 558px;
+  width: 233px;
+  height: 551px;
   margin: 21px 5px 0 0;
 }
 
