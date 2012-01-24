@@ -1550,6 +1550,7 @@
     <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
     <script src="scripts/cloudStack.js" type="text/javascript"></script>
+    <script src="scripts/lbStickyPolicy.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/zoneChart.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/dashboard.js" type="text/javascript"></script>
     <script src="scripts/installWizard.js" type="text/javascript"></script>

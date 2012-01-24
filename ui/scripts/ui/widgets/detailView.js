@@ -232,7 +232,7 @@
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
-          var $browser = $detailView.data('view-args').$browser;
+          var $browser = $('#browser .container');
           var $panel = $detailView.closest('.panel');
 
           $browser.cloudBrowser('selectPanel', {
