@@ -42,7 +42,7 @@
         return true;
       };
 
-      var staticNATChart = function(args) {
+      var staticNATChart = function(args, includingFirewall) {
         var $chart = $('#template').find('.network-chart.static-nat').clone();
         var $vmName = $chart.find('li.static-nat-enabled .vmname');
         var $browser = $('#browser .container');
@@ -91,15 +91,21 @@
             }
           }
         });
-
-        $chart.find('li.firewall .view-details').click(function() {
-          makeMultiEditPanel($(this), { title: 'NAT Port Range'});
-        });
+			
+				if(includingFirewall == true) {
+				  $chart.find('li.firewall .view-details').click(function() {
+						makeMultiEditPanel($(this), { title: 'NAT Port Range'});
+					});				
+				}
+				else {				
+					$chart.find('li.firewall').hide(); 
+				}
 
         return $chart;
       };
 
       var netChart = function(args) {
+		
         var $chart = $('#template').find('.network-chart.normal').clone();
         var preFilter = args.preFilter ? args.preFilter({
           items: ['firewall', 'portForwarding', 'loadBalancing'],
@@ -108,10 +114,13 @@
 
         // Filter disabled tabs
         if (preFilter.length) {
-          if (preFilter.length == 3) { // All items
-            // Assume this is a static NAT
-            return staticNATChart(args);
-          } else {
+          if (preFilter.length == 3) { // 'firewall', 'portForwarding', 'loadBalancing'            
+            return staticNATChart(args, true); //static NAT including Firewall 
+          }
+          else if (preFilter.length == 4) { // 'firewall', 'portForwarding', 'loadBalancing', 'staticnatFirewall'            
+            return staticNATChart(args, false); //static NAT excluding Firewall 
+          }				
+					else {
             $(preFilter).each(function() {
               var id = this;
 

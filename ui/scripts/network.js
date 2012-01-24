@@ -1080,7 +1080,19 @@
                     if (args.context.ipAddresses[0].isstaticnat) { //All items filtered means static NAT
 										  disallowedActions.push("firewall");
 											disallowedActions.push("portForwarding");
-											disallowedActions.push("loadBalancing");										
+											disallowedActions.push("loadBalancing");	
+                     
+											var networkHavingFirewallService = false;
+											$(args.context.networks[0].service).each(function(){												 
+												if(this.name == "Firewall") {
+													networkHavingFirewallService = true;
+													return false; //break $.each() loop
+												}
+											});
+											
+                      if(networkHavingFirewallService == false) {
+                        disallowedActions.push("staticnatFirewall");	
+                      }											
                     }
                     if (g_firewallRuleUiEnabled != 'true') {										  
                       disallowedActions.push("firewall");
