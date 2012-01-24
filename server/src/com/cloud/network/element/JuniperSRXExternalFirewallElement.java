@@ -108,15 +108,26 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
     @Inject HostDetailsDao _hostDetailDao;
 
-    private boolean canHandle(Network config) {
-        DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() != Network.GuestType.Shared)) {
-            s_logger.trace("Not handling network type = " + config.getGuestType());
+    private boolean canHandle(Network network, Service service) {
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
+            s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
-        }   
+        }
+
+        if (service == null) {
+            if (!_networkManager.isProviderForNetwork(getProvider(), network.getId())) {
+                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                return false;
+            }
+        } else {
+            if (!_networkManager.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                return false;
+            }
+        }
         
-        return _networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
-        _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.JuniperSRX);
+        return true;
     }
 
     @Override
@@ -129,7 +140,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }
         
-        if (!canHandle(network)) {
+        if (!canHandle(network, null)) {
             return false;
         }
 
@@ -161,7 +172,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }
         
-        if (!canHandle(network)) {
+        if (!canHandle(network, null)) {
             return false;
         }
         try {
@@ -179,7 +190,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     
     @Override
     public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (!canHandle(config)) {
+        if (!canHandle(config, Service.Firewall)) {
             return false;
         }
         
@@ -188,7 +199,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean startVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        if (!canHandle(config)) {
+        if (!canHandle(config, Service.Vpn)) {
             return false;
         }
         
@@ -198,7 +209,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean stopVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        if (!canHandle(config)) {
+        if (!canHandle(config, Service.Vpn)) {
             return false;
         }
         
@@ -209,7 +220,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
         Network config = _networksDao.findById(vpn.getNetworkId());
         
-        if (!canHandle(config)) {
+        if (!canHandle(config, Service.Vpn)) {
             return null;
         }
         
@@ -266,7 +277,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.PortForwarding)) {
             return false;
         }
         

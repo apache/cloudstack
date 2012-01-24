@@ -83,6 +83,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -367,14 +368,8 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
         
-        boolean sharedSourceNat = false;
-        Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
-        if (sourceNatCapabilities != null) {
-            String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
-            if (supportedSourceNatTypes.contains("zone")) {
-                sharedSourceNat = true;
-            }
-        }
+        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());      
+        boolean sharedSourceNat = offering.getSharedSourceNat();
         
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
@@ -394,15 +389,19 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         long guestVlanTag = Long.parseLong(network.getBroadcastUri().getHost());
         String guestVlanGateway = network.getGateway();
         String guestVlanCidr = network.getCidr();
-        String sourceNatIpAddress = sourceNatIp.getAddress().addr();
-        
-        VlanVO publicVlan = _vlanDao.findById(sourceNatIp.getVlanId());
-        String publicVlanTag = publicVlan.getVlanTag();
+        String sourceNatIpAddress = null;
+        String publicVlanTag = null;
+
+        if (sourceNatIp != null) {
+            sourceNatIpAddress = sourceNatIp.getAddress().addr();
+            VlanVO publicVlan = _vlanDao.findById(sourceNatIp.getVlanId());
+            publicVlanTag = publicVlan.getVlanTag();
+        }
 
         // Get network rate
         Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
 
-        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, null, networkRate, sourceNatIp.isOneToOneNat());
+        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, null, networkRate, false);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
