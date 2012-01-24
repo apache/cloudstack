@@ -445,7 +445,7 @@
 							
               var hiddenTabs = [];  							
 							if(showLbTab == false)
-							  hiddenTabs.push("loadBalancing"); 							
+							  hiddenTabs.push("loadBalancer"); 							
               return hiddenTabs;
             },
 
@@ -659,10 +659,10 @@
 													
 												  var apiCmd = "createLoadBalancerRule";		
 												  //if(args.context.networks[0].type == "Shared") 
-												  //apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
+												  apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
 												  //else //args.context.networks[0].type == "Isolated"
-												  apiCmd += "&account=" + args.context.users[0].account;
-                          apiCmd += '&domainid=' + args.context.users[0].domainid;
+												  //apiCmd += "&account=" + args.context.users[0].account;
+                          //apiCmd += '&domainid=' + args.context.users[0].domainid;
 												  
                           $.ajax({
                             url: createURL(apiCmd),
@@ -908,20 +908,6 @@
                   )
                 }
               }
-							
-							
-							,									
-							//Brian, please duplicate loadBalancing from another place to here
-              loadBalancing: {
-							  title: 'Load balancer',								
-								dataProvider: function(args) {
-                  args.response.success({                    
-                    data: {}
-                  });
-                }
-							}			
-						
-							
             }
           }
         }
