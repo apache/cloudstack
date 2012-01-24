@@ -29,6 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
@@ -70,7 +71,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() throws InsufficientAddressCapacityException{
         UserContext.current().setEventDetails("Ip Id: "+getIpAddressId());
         boolean result = _networkService.disassociateIpAddress(id);
         if (result) {

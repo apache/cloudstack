@@ -1877,7 +1877,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
-    public boolean disassociateIpAddress(long ipAddressId) {
+    public boolean disassociateIpAddress(long ipAddressId) throws InsufficientAddressCapacityException{
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
@@ -1920,6 +1920,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = releasePublicIpAddress(ipAddressId, userId, caller);
         if (success) {
+        	Network guestNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
+     		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+     		Long vmId = ipVO.getAssociatedWithVmId();
+     		if (offering.getElasticIp() && vmId != null)  {
+     			_rulesMgr.enableElasticIpAndStaticNatForVm(_userVmDao.findById(vmId), true);
+     			return true;
+     		} 
         	return true;
         } else {
         	s_logger.warn("Failed to release public ip address id=" + ipAddressId);

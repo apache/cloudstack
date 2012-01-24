@@ -55,7 +55,7 @@ public interface NetworkService {
      */
     IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
-    boolean disassociateIpAddress(long ipAddressId);
+    boolean disassociateIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
     Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException;
 
