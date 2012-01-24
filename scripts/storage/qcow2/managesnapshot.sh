@@ -23,7 +23,6 @@
 # $Id: managesnapshot.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/storage/qcow2/managesnapshot.sh $
 # managesnapshot.sh -- manage snapshots for a single disk (create, destroy, rollback)
 #
-
 usage() {
   printf "Usage: %s: -c <path to disk> -n <snapshot name>\n" $(basename $0) >&2
   printf "Usage: %s: -d <path to disk> -n <snapshot name>\n" $(basename $0) >&2
@@ -74,14 +73,14 @@ create_snapshot() {
 
 destroy_snapshot() {
   local disk=$1
-  local snapshotname=$2
+  local snapshotname="$2"
   local failed=0
 
   if [ -d $disk ]
   then
-     if [ -f $disk/$snapshotname ]
+     if [ -f $disk/"$snapshotname" ]
      then
-	    rm -rf $disk/$snapshotname >& /dev/null
+	    rm -rf $disk/"$snapshotname" >& /dev/null
      fi
 
      return $failed
@@ -94,7 +93,7 @@ destroy_snapshot() {
      return $failed
   fi
 
-  $qemu_img snapshot -d $snapshotname $disk
+  $qemu_img snapshot -d "$snapshotname" $disk
   if [ $? -gt 0 ]
   then
      failed=2
@@ -109,7 +108,7 @@ rollback_snapshot() {
   local snapshotname=$2
   local failed=0
 
-  $qemu_img snapshot -a $snapshotname $disk
+  $qemu_img snapshot -a "$snapshotname" $disk
   
   if [ $? -gt 0 ]
   then
@@ -121,9 +120,9 @@ rollback_snapshot() {
 }
 backup_snapshot() {
   local disk=$1
-  local snapshotname=$2
+  local snapshotname="$2"
   local destPath=$3
-  local destName=$4
+  local destName="$4"
 
   if [ ! -d $destPath ]
   then
@@ -143,7 +142,7 @@ backup_snapshot() {
     return 1
   fi
 
-  $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+  $qemu_img convert -f qcow2 -O qcow2 -s "$snapshotname" $disk $destPath/"$destName" >& /dev/null
   if [ $? -gt 0 ]
   then
     printf "Failed to backup $snapshotname for disk $disk to $destPath" >&2
@@ -203,7 +202,7 @@ then
   exit $?
 elif [ "$bflag" == "1" ]
 then
-  backup_snapshot $pathval $snapshot $destPath $tmplName
+  backup_snapshot $pathval "$snapshot" $destPath "$tmplName"
   exit $?
 elif [ "$rflag" == "1" ]
 then

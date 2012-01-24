@@ -1366,7 +1366,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		String primaryPath = spd.getTargetPath();
     		String volUuid = UUID.randomUUID().toString();
     		String volPath = primaryPath + File.separator + volUuid;
-    		String result = executeBashScript("cp " + snapshotPath + " " + volPath);
+    		String result = executeBashScript("cp " + "\""+snapshotPath +"\""+ " " + volPath);
     		if (result != null) {
     			return new CreateVolumeFromSnapshotAnswer(cmd, false, result, null);
     		}
