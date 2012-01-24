@@ -44,13 +44,15 @@
 
             stickinessCapabilities.push({ methodname: 'none', paramlist: [] });
             
-            $(stickinessCapabilities).each(function(stickyCapability) {
+            $(stickinessCapabilities).each(function() {
+              var stickyCapability = this;
+              
               stickyOptions.push({
                 id: stickyCapability.methodname,
                 description: stickyCapability.methodname
               });
             });
-            
+
             args.response.success({
               data: stickyOptions
             }, 500);
