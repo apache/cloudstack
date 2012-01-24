@@ -35,15 +35,9 @@
           select: function(args) {
             var $select = args.$select;
             var $form = $select.closest('form');
-            var stickyOptions = [
-              {
-                id: 'none',
-                description: 'None'
-              }
-            ];
+            var stickyOptions = [];
 
-            stickinessCapabilities.push({ methodname: 'none', paramlist: [] });
-            
+            stickinessCapabilities.push({ methodname: 'None', paramlist: [] });
             $(stickinessCapabilities).each(function() {
               var stickyCapability = this;
               
@@ -52,6 +46,10 @@
                 description: stickyCapability.methodname
               });
             });
+
+            stickyOptions = stickyOptions.sort(function() {
+              return this.id != 'None';
+            })
 
             args.response.success({
               data: stickyOptions
