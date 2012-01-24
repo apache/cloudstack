@@ -36,7 +36,7 @@ var pollAsyncJobResult = function(args) {
   $.ajax({
     url: createURL("queryAsyncJobResult&jobId=" + args._custom.jobId),
     dataType: "json",
-    async: false,
+    async: true,
     success: function(json) {
       var result = json.queryasyncjobresultresponse;
       if (result.jobstatus == 0) {
