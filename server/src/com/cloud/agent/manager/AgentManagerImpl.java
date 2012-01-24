@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -147,6 +149,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     protected int _monitorId = 0;
+    private Lock _agentStatusLock = new ReentrantLock();
 
     protected NioServer _connection;
     @Inject
@@ -1393,22 +1396,29 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     
     @Override
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId) {
-        if (status_logger.isDebugEnabled()) {
-            ResourceState state = host.getResourceState();
-            StringBuilder msg = new StringBuilder("Transition:");
-            msg.append("[Resource state = ").append(state);
-            msg.append(", Agent event = ").append(e.toString());
-            msg.append(", Host id = ").append(host.getId()).append(", name = " + host.getName()).append("]");
-            status_logger.debug(msg);
-        }
-        
-        host.setManagementServerId(msId);
-        try {
-            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
-        } catch (NoTransitionException e1) {
-        	status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName()+ ", mangement server id is " + msId);
-            throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," + e1.getMessage());
-        }
+		try {
+			_agentStatusLock.lock();
+			if (status_logger.isDebugEnabled()) {
+				ResourceState state = host.getResourceState();
+				StringBuilder msg = new StringBuilder("Transition:");
+				msg.append("[Resource state = ").append(state);
+				msg.append(", Agent event = ").append(e.toString());
+				msg.append(", Host id = ").append(host.getId()).append(", name = " + host.getName()).append("]");
+				status_logger.debug(msg);
+			}
+
+			host.setManagementServerId(msId);
+			try {
+				return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+			} catch (NoTransitionException e1) {
+				status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName()
+				        + ", mangement server id is " + msId);
+				throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is "
+				        + msId + "," + e1.getMessage());
+			}
+		} finally {
+			_agentStatusLock.unlock();
+		}
     }
     
     public boolean disconnectAgent(HostVO host, Status.Event e, long msId) {
