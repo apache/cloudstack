@@ -400,12 +400,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
             throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId + " as it's already assigned to antoher vm");
         }
-        
-        
-        // If there is public ip address already associated with the vm, throw an exception
+          
         IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vmId);
         
         if (oldIP != null) {
+        	//If elasticIP functionality is supported in the network, we always have to disable static nat on the old ip in order to re-enable it on the new one
             Long networkId = oldIP.getAssociatedWithNetworkId();
         	boolean reassignStaticNat = false;
     		if (networkId != null) {
@@ -415,6 +414,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     				reassignStaticNat = true;
     			}
     		}
+    		
+    		// If there is public ip address already associated with the vm, throw an exception
     		if (!reassignStaticNat) {
                 throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId + " is already associated with ip id=" + oldIP.getId());
     		}
@@ -423,7 +424,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     		if (!disableStaticNat(oldIP.getId(), caller, callerUserId, true)) {
     			throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
     		}
-        }	
+        }
 	}
 
 
@@ -1018,18 +1019,31 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public boolean disableStaticNat(long ipId) throws ResourceUnavailableException{
+    public boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException{
     	UserContext ctx = UserContext.current();
     	Account caller = ctx.getCaller();
     	IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
                 
         if (ipAddress.getElastic()) {
-        	throw new InvalidParameterValueException("Can't release elastic IP address " + ipAddress);
+        	throw new InvalidParameterValueException("Can't disable static nat for elastic IP address " + ipAddress);
         }
-
-    	return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
-    	
+        
+        Long vmId = ipAddress.getAssociatedWithVmId();
+        if (vmId == null) {
+        	throw new InvalidParameterValueException("IP address " + ipAddress + " is not associated with any vm Id");
+        }
+        
+        //if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to re-enable it on the new one
+        //enable static nat takes care of that
+	    Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
+		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+		if (offering.getElasticIp())  {
+			enableElasticIpAndStaticNatForVm(_vmDao.findById(vmId), true);
+			return true;
+		} else {
+	    	return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
+		}
     }
 
     @Override @DB
@@ -1159,7 +1173,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     
 	@Override
-    public void enableElasticIpAndStaticNatForVm(UserVm vm) throws InsufficientAddressCapacityException{
+    public void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException{
     	boolean success = true;
     	
     	//enable static nat if eIp capability is supported
@@ -1170,7 +1184,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     		if (offering.getElasticIp()) {
     			
 				//check if there is already static nat enabled
-				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null) {
+				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
 					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
 					continue;
 				}

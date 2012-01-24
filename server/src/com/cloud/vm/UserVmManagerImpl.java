@@ -2720,7 +2720,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         //enable elastic ip for vm
-         _rulesMgr.enableElasticIpAndStaticNatForVm(profile.getVirtualMachine());
+         _rulesMgr.enableElasticIpAndStaticNatForVm(profile.getVirtualMachine(), false);
          
          return true;
     }

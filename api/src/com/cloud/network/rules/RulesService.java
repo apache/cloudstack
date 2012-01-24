@@ -20,6 +20,7 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
@@ -69,6 +70,6 @@ public interface RulesService {
     
     List<String> getSourceCidrs(long ruleId);
 
-	boolean disableStaticNat(long ipId) throws ResourceUnavailableException;
+	boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException;
   
 }

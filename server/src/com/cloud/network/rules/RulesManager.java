@@ -72,7 +72,7 @@ public interface RulesManager extends RulesService {
     
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
-	void enableElasticIpAndStaticNatForVm(UserVm vm) throws InsufficientAddressCapacityException;
+	void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
 	
     boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 

@@ -28,7 +28,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
@@ -77,7 +79,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public void execute() throws ResourceUnavailableException {
+    public void execute() throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException {
         boolean result = _rulesService.disableStaticNat(ipAddressId);
         
         if (result) {
