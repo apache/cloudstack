@@ -893,7 +893,7 @@
                         dataType: 'json',
                         async: true,
                         success: function(data) {
-                          args.response.success();
+                          args.response.success({ fullRefresh: true });											
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));
@@ -1598,6 +1598,7 @@
                               async: true,
                               success: function(data) {
                                 args.response.success({
+																  fullRefresh: true,
                                   _custom: {
                                     jobId: jobID
                                   },
