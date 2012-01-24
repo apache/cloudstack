@@ -4973,7 +4973,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (pNtwkId == null) {
                 throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
             }
-
             return pNtwkId;
         } else {
             return pNtwks.get(0).getId();
@@ -5207,6 +5206,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isSecurityGroupSupportedInNetwork(Network network) {
+    	if (network.getTrafficType() != TrafficType.Guest) {
+    		s_logger.trace("Security group can be enabled for Guest networks only; and network " + network + " has a diff traffic type");
+    		return false;
+    	}
+    	
         Long physicalNetworkId = network.getPhysicalNetworkId();
 
         //physical network id can be null in Guest Network in Basic zone, so locate the physical network
@@ -5558,6 +5562,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public String getNetworkTag(HypervisorType hType, Network network) {
+    	//no network tag for control traffic type
+    	if (network.getTrafficType() == TrafficType.Control) {
+    		return null;
+    	}
+    	
+    	Long physicalNetworkId = null;
+    	if (network.getTrafficType() != TrafficType.Guest) {
+        	physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network);
+    	} else {
+    		NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+    		physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags());
+    	}
+
+        if (physicalNetworkId == null) {
+            assert (false) : "Can't get the physical network";
+            s_logger.warn("Can't get the physical network");
+            return null;
+        }
+
+        return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, network.getTrafficType(), hType);
+    }
+
+	protected Long getNonGuestNetworkPhysicalNetworkId(Network network) {
+		//no physical network for control traffic type
+    	if (network.getTrafficType() == TrafficType.Control) {
+    		return null;
+    	}
+    	
         Long physicalNetworkId = network.getPhysicalNetworkId();
 
         if (physicalNetworkId == null) {
@@ -5575,15 +5607,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
-
-        if (physicalNetworkId == null) {
-            assert (false) : "Can't get the physical network";
-            s_logger.warn("Can't get the physical network");
-            return null;
-        }
-
-        return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, network.getTrafficType(), hType);
-    }
+		return physicalNetworkId;
+	}
 
 
     @Override
@@ -5681,9 +5706,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public Long getPhysicalNetworkId(Network network) {
+    	if (network.getTrafficType() != TrafficType.Guest) {
+    		return getNonGuestNetworkPhysicalNetworkId(network);
+    	}
+    	
         Long physicalNetworkId = network.getPhysicalNetworkId();
+        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         if (physicalNetworkId == null) {
-            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags());
         }
         return physicalNetworkId;
     }

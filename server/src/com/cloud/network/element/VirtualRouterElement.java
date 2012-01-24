@@ -108,7 +108,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(Network network, Service service) {
-        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+    	Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+    	if (physicalNetworkId == null) {
+    		return false;
+    	}
+    	
+        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, "VirtualRouter")) {
             return false;
         }
         
@@ -144,7 +149,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (!canHandle(network, null)) {
+    	if (vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+    	
+    	if (!canHandle(network, null)) {
         	return false;
         }
     	
@@ -154,11 +163,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
         if (!_networkMgr.isProviderEnabledInPhysicalNetwork(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
-        }
-        
-        if (vm.getType() != VirtualMachine.Type.User) {
-            return false;
-        }
+        } 
 
         @SuppressWarnings("unchecked")
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
