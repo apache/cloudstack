@@ -1066,18 +1066,7 @@
               ipRules: {
                 title: 'Configuration',
                 custom: cloudStack.ipRules({
-                  preFilter: function(args) {									  
-										var networkHavingLbService = false;
-										$(args.context.networks[0].service).each(function(){												 
-											if(this.name == "Lb") {
-												networkHavingLbService = true;
-												return false; //break $.each() loop
-											}
-										});
-										args.context.networks[0].networkHavingLbService = networkHavingLbService;
-												
-												
-													
+                  preFilter: function(args) {			
 										var disallowedActions = [];
 										if (args.context.ipAddresses[0].isstaticnat)  
 										  disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.									
@@ -1099,33 +1088,7 @@
 										  disallowedActions.push("portForwarding");
 										if(networkHavingLbService == false) 
 										  disallowedActions.push("loadBalancing");																					
-																					
-										/*	
-									  var disallowedActions = [];
-                    if (args.context.ipAddresses[0].isstaticnat) { //All items filtered means static NAT
-										  disallowedActions.push("firewall");
-											disallowedActions.push("portForwarding");
-											disallowedActions.push("loadBalancing");	
-                     
-											var networkHavingFirewallService = false;
-											$(args.context.networks[0].service).each(function(){												 
-												if(this.name == "Firewall") {
-													networkHavingFirewallService = true;
-													return false; //break $.each() loop
-												}
-											});
-											
-                      if(networkHavingFirewallService == false) {
-                        disallowedActions.push("staticnatFirewall");	
-                      }											
-                    }
-                    if (g_firewallRuleUiEnabled != 'true') {										  
-                      disallowedActions.push("firewall");
-                    }
-										*/
-										
-										
-										
+									
                     return disallowedActions;
                   },
 
@@ -1583,10 +1546,10 @@
                         };
                         var stickyData = $.extend(true, {}, args.data.sticky);
 																			
-												var apiCmd = "createLoadBalancerRule";												
-												if(args.context.networks[0].networkHavingLbService == true) 
+												var apiCmd = "createLoadBalancerRule";		
+												if(args.context.networks[0].type == "Shared") 
 												  apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
-												else
+												else //args.context.networks[0].type == "Isolated"
 												  apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
 												
                         $.ajax({
@@ -1738,10 +1701,10 @@
                       }
                     },
                     dataProvider: function(args) {
-										  var apiCmd = "listLoadBalancerRules";										  
-											if(args.context.networks[0].networkHavingLbService == true) 
+										  var apiCmd = "listLoadBalancerRules";												  									
+											if(args.context.networks[0].type == "Shared") 
 												apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
-											else
+											else //args.context.networks[0].type == "Isolated"
 												apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
 																				
                       $.ajax({
