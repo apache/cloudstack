@@ -1486,6 +1486,8 @@
                               dataType: 'json',
                               async: true,
                               success: function(data) {
+                                var lbCreationComplete = false;
+
                                 args.response.success({
 																  fullRefresh: true,
                                   _custom: {
@@ -1499,7 +1501,13 @@
                                       
                                       pollAsyncJobResult({
                                         _custom: args._custom,
-                                        complete: function(args) {                                          
+                                        complete: function(args) {
+                                          if (lbCreationComplete) {
+                                            return;
+                                          }
+                                          
+                                          lbCreationComplete = true;
+                                          
                                           // Create stickiness policy
                                           if (stickyData &&
                                               stickyData.methodname &&
