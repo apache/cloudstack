@@ -1569,9 +1569,9 @@
                         var stickyData = $.extend(true, {}, args.data.sticky);
 																			
 												var apiCmd = "createLoadBalancerRule";		
-												if(args.context.networks[0].type == "Shared") 
-												  apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
-												else //args.context.networks[0].type == "Isolated"
+												//if(args.context.networks[0].type == "Shared") 
+												  //apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
+												//else //args.context.networks[0].type == "Isolated"
 												  apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
 												
                         $.ajax({
@@ -1725,9 +1725,9 @@
                     },
                     dataProvider: function(args) {
 										  var apiCmd = "listLoadBalancerRules";												  									
-											if(args.context.networks[0].type == "Shared") 
-												apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
-											else //args.context.networks[0].type == "Isolated"
+											//if(args.context.networks[0].type == "Shared") 
+											//	apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
+											//else //args.context.networks[0].type == "Isolated"
 												apiCmd += "&publicipid=" + args.context.ipAddresses[0].id;
 																				
                       $.ajax({
