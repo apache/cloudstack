@@ -78,8 +78,15 @@ ip_entry() {
   
   return 0
 }
+get_lb_vif_list() {
+# add eth0 to the VIF_LIST if it is not there, this allows guest VMs to use the LB service.
+  local lb_list="$VIF_LIST eth0";
+  lb_list=$(echo $lb_list | tr " " "\n" | sort | uniq | tr "\n" " ")
+  echo $lb_list
+}
 fw_remove_backup() {
-  for vif in $VIF_LIST; do 
+  local lb_vif_list=$(get_lb_vif_list)
+  for vif in $lb_vif_list; do 
     sudo iptables -F back_load_balancer_$vif 2> /dev/null
     sudo iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
     sudo iptables -X back_load_balancer_$vif 2> /dev/null
@@ -89,7 +96,8 @@ fw_remove_backup() {
   sudo iptables -X back_lb_stats 2> /dev/null
 }
 fw_restore() {
-  for vif in $VIF_LIST; do 
+  local lb_vif_list=$(get_lb_vif_list)
+  for vif in $lb_vif_list; do 
     sudo iptables -F load_balancer_$vif 2> /dev/null
     sudo iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
     sudo iptables -X load_balancer_$vif 2> /dev/null
@@ -120,7 +128,8 @@ fw_entry() {
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
 
 # back up the iptable rules by renaming before creating new. 
-  for vif in $VIF_LIST; do 
+  local lb_vif_list=$(get_lb_vif_list)
+  for vif in $lb_vif_list; do 
     sudo iptables -E load_balancer_$vif back_load_balancer_$vif 2> /dev/null
     sudo iptables -N load_balancer_$vif 2> /dev/null
     sudo iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
@@ -133,8 +142,8 @@ fw_entry() {
   do
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)    
-    
-    for vif in $VIF_LIST; do 
+    local lb_vif_list=$(get_lb_vif_list)
+    for vif in $lb_vif_list; do 
 
 #TODO : The below delete will be used only when we upgrade the from older verion to the newer one , the below delete become obsolute in the future.
       sudo iptables -D INPUT -i $vif  -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
