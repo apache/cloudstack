@@ -627,7 +627,7 @@
 
           <!-- Step 4.2: Add host -->
           <div class="add-cluster" zone-wizard-form="host"
-               zone-wizard-step-id="addHost">
+               zone-wizard-step-id="addHost" zone-wizard-prefilter="addHost">
             <ul class="subnav">
               <li class="cluster">Cluster</li>
               <li class="host active">Host</li>

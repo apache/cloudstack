@@ -88,7 +88,11 @@
           $.grep(args.groupedData.physicalNetworks, function(network) {
             return $.inArray('guest', network.trafficTypes) > -1;
           }).length;
-      }
+      },
+			
+			addHost: function(args) {
+			  return (args.groupedData.cluster.hypervisor != "VMware");
+			}
     },
     
     forms: {
@@ -2033,12 +2037,21 @@
 						url: createURL("addCluster" + array1.join("")),
 						dataType: "json",
 						async: true,
-						success: function(json) {		
-							stepFns.addHost({
-								data: $.extend(args.data, {
-									returnedCluster: json.addclusterresponse.cluster[0]
-								})
-							});
+						success: function(json) {								  
+							if(args.groupedData.cluster.hypervisor != "VMware") {
+								stepFns.addHost({
+									data: $.extend(args.data, {
+										returnedCluster: json.addclusterresponse.cluster[0]
+									})
+								});
+							}
+							else { //args.groupedData.cluster.hypervisor == "VMware", skip add host step					  
+								stepFns.addPrimaryStorage({
+									data: $.extend(args.data, {
+										returnedCluster: json.addclusterresponse.cluster[0]
+									})
+								});
+							}
 						},
 						error: function(XMLHttpResponse) {
 							var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
