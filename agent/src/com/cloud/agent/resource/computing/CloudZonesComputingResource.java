@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -25,10 +25,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 
@@ -84,7 +84,7 @@ import com.cloud.vm.VirtualMachine.State;
 
 /**
  * Logic specific to the Cloudzones feature
- * 
+ *
  *  }
  **/
 
@@ -98,7 +98,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
     protected String _hostMacAddress;
     protected VmDataServer _vmDataServer = new JettyVmDataServer();
 
-    
+
     private void setupDhcpManager(Connect conn, String bridgeName) {
 
         _dhcpSnooper = new DhcpSnooperImpl(bridgeName, _dhcpTimeout);
@@ -117,10 +117,10 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
         } catch (LibvirtException e) {
             s_logger.debug("Failed to get MACs: " + e.toString());
         }
-        
+
         _dhcpSnooper.initializeMacTable(macs);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -130,16 +130,16 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
         }
 
         _parent = (String)params.get("mount.path");
-        
+
         try {
             _dhcpTimeout =  Long.parseLong((String)params.get("dhcp.timeout"));
         } catch (Exception e) {
             _dhcpTimeout = 1200000;
         }
-        
+
         _hostIp = (String)params.get("host.ip");
         _hostMacAddress = (String)params.get("host.mac.address");
-        
+
         try {
             Connect conn;
             conn = LibvirtConnection.getConnection();
@@ -148,19 +148,19 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             s_logger.debug("Failed to get libvirt connection:" + e.toString());
             return false;
         }
-        
+
         _dhcpSnooper.configure(name, params);
         _vmDataServer.configure(name, params);
-       
+
         return true;
     }
-   
+
     @Override
     protected synchronized StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName();
         LibvirtVMDef vm = null;
-        
+
         State state = State.Stopped;
         Connect conn = null;
         try {
@@ -172,12 +172,12 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             vm = createVMFromSpec(vmSpec);
 
             createVbd(conn, vmSpec, vmName, vm);
-            
+
             createVifs(conn, vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
             startDomain(conn, vmName, vm.toString());
-            
+
 
             NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
@@ -197,7 +197,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
                 	attachOrDetachDevice(conn, true, vmName, disk.toString());
                 }
             }
-            
+
             if (vmSpec.getType() == VirtualMachine.Type.User) {
                 for (NicTO nic: nics) {
                     if (nic.getType() == TrafficType.Guest) {
@@ -210,13 +210,13 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
                         }
                         s_logger.debug(ipAddr);
                         nic.setIp(ipAddr.getHostAddress());
-                        
+
                         post_default_network_rules(conn, vmName, nic, vmSpec.getId(), _dhcpSnooper.getDhcpServerIP(), _hostIp, _hostMacAddress);
                         _vmDataServer.handleVmStarted(cmd.getVirtualMachine());
                     }
                 }
             }
-            
+
             state = State.Running;
             return new StartAnswer(cmd);
         } catch (Exception e) {
@@ -235,13 +235,13 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             }
         }
     }
-    
+
     protected Answer execute(StopCommand cmd) {
         final String vmName = cmd.getVmName();
-        
+
         Long bytesReceived = new Long(0);
         Long bytesSent = new Long(0);
-        
+
         State state = null;
         synchronized(_vms) {
             state = _vms.get(vmName);
@@ -249,25 +249,25 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
         }
         try {
             Connect conn = LibvirtConnection.getConnection();
-            
+
             try {
                 Domain dm =  conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
             } catch (LibvirtException e) {
                 state = State.Stopped;
                 return new StopAnswer(cmd, null, 0, bytesSent, bytesReceived);
             }
-            
+
             String macAddress = null;
             if (vmName.startsWith("i-")) {
                 List<InterfaceDef> nics = getInterfaces(conn, vmName);
                 if (!nics.isEmpty()) {
-                    macAddress = nics.get(0).getMacAddress(); 
+                    macAddress = nics.get(0).getMacAddress();
                 }
             }
-            
+
             destroy_network_rules_for_vm(conn, vmName);
             String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
-            
+
             try {
                 cleanupVnet(conn, cmd.getVnet());
                 _dhcpSnooper.cleanup(macAddress, vmName);
@@ -275,7 +275,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             } catch (Exception e) {
 
             }
-            
+
             state = State.Stopped;
             return new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
         } catch (LibvirtException e) {
@@ -290,7 +290,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             }
         }
     }
-    
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof VmDataCommand) {
@@ -304,7 +304,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
     protected Answer execute(final VmDataCommand cmd) {
         return _vmDataServer.handleVmDataCommand(cmd);
     }
-    
+
     protected Answer execute(final SavePasswordCommand cmd) {
         return new Answer(cmd);
     }
