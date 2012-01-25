@@ -637,7 +637,7 @@
                           label: 'Stickiness',
                           custom: {
                             buttonLabel: 'Configure',
-                            action: cloudStack.lbStickyPolicy()
+                            action: cloudStack.lbStickyPolicy.dialog()
                           }
                         },
                         'add-vm': {
@@ -707,68 +707,20 @@
                                             }
                                             
                                             lbCreationComplete = true;                                           
-																						alert("The load balancer rule has been added under IP " + args.data.loadbalancer.publicip );
-																						
-                                            // Create stickiness policy
+																						cloudStack.dialog.notice({
+                                              message: "The load balancer rule has been added under IP " +
+                                                args.data.loadbalancer.publicip
+                                            });
+                                            
                                             if (stickyData &&
                                                 stickyData.methodname &&
-                                                stickyData.methodname != 'none') {
-                                              var stickyURLData = '';
-                                              var stickyParams;
-
-                                              switch (stickyData.methodname) {
-                                              case 'LbCookie':
-                                                stickyParams = ['name', 'mode', 'nocache', 'indirect', 'postonly', 'domain'];
-                                                break;
-                                              case 'AppCookie':
-                                                stickyParams = ['name', 'length', 'holdtime', 'request-learn', 'prefix', 'mode'];
-                                                break;
-                                              case 'SourceBased':
-                                                stickyParams = ['tablesize', 'expire'];
-                                                break;
-                                              }
-
-                                              $(stickyParams).each(function(index) {
-                                                var param = '&param[' + index + ']';
-                                                var name = this;
-                                                var value = stickyData[name];
-
-                                                if (!value) return true;
-                                                if (value == 'on') value = true;
-                                                
-                                                stickyURLData += param + '.name=' + name + param + '.value=' + value;
-                                              });
-
-                                              $.ajax({
-                                                url: createURL('createLBStickinessPolicy' + stickyURLData),
-                                                data: {
-                                                  lbruleid: args.data.loadbalancer.id,
-                                                  name: stickyData.name,
-                                                  methodname: stickyData.methodname
-                                                },
-                                                success: function(json) {
-                                                  var addStickyCheck = setInterval(function() {
-                                                    pollAsyncJobResult({
-                                                      _custom: {
-                                                        jobId: json.createLBStickinessPolicy.jobid,
-                                                      },
-                                                      complete: function(args) {
-                                                        complete();
-                                                        clearInterval(addStickyCheck);
-                                                      },
-                                                      error: function(args) {
-                                                        complete();
-                                                        cloudStack.dialog.notice({ message: args.message });
-                                                        clearInterval(addStickyCheck);
-                                                      }
-                                                    });                                                  
-                                                  }, 1000);
-                                                },
-                                                error: function(json) {
-                                                  complete();
-                                                  cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
-                                                }
-                                              });
+                                                stickyData.methodname != 'None') {
+                                              cloudStack.lbStickyPolicy.actions.add(
+                                                args.data.loadbalancer.id,
+                                                stickyData,
+                                                complete, // Complete
+                                                complete // Error
+                                              );
                                             } else {
                                               complete();
                                             }
@@ -1668,7 +1620,7 @@
                         label: 'Stickiness',
                         custom: {
                           buttonLabel: 'Configure',
-                          action: cloudStack.lbStickyPolicy()
+                          action: cloudStack.lbStickyPolicy.dialog()
                         }
                       },
                       'add-vm': {
@@ -1742,62 +1694,12 @@
                                           if (stickyData &&
                                               stickyData.methodname &&
                                               stickyData.methodname != 'None') {
-                                            var stickyURLData = '';
-                                            var stickyParams;
-
-                                            switch (stickyData.methodname) {
-                                              case 'LbCookie':
-                                              stickyParams = ['name', 'mode', 'nocache', 'indirect', 'postonly', 'domain'];
-                                              break;
-                                              case 'AppCookie':
-                                              stickyParams = ['name', 'length', 'holdtime', 'request-learn', 'prefix', 'mode'];
-                                              break;
-                                              case 'SourceBased':
-                                              stickyParams = ['tablesize', 'expire'];
-                                              break;
-                                            }
-
-                                            $(stickyParams).each(function(index) {
-                                              var param = '&param[' + index + ']';
-                                              var name = this;
-                                              var value = stickyData[name];
-
-                                              if (!value) return true;
-                                              if (value == 'on') value = true;
-                                              
-                                              stickyURLData += param + '.name=' + name + param + '.value=' + value;
-                                            });
-
-                                            $.ajax({
-                                              url: createURL('createLBStickinessPolicy' + stickyURLData),
-                                              data: {
-                                                lbruleid: args.data.loadbalancer.id,
-                                                name: stickyData.name,
-                                                methodname: stickyData.methodname
-                                              },
-                                              success: function(json) {
-                                                var addStickyCheck = setInterval(function() {
-                                                  pollAsyncJobResult({
-                                                    _custom: {
-                                                      jobId: json.createLBStickinessPolicy.jobid,
-                                                    },
-                                                    complete: function(args) {
-                                                      complete();
-                                                      clearInterval(addStickyCheck);
-                                                    },
-                                                    error: function(args) {
-                                                      complete();
-                                                      cloudStack.dialog.notice({ message: args.message });
-                                                      clearInterval(addStickyCheck);
-                                                    }
-                                                  });                                                  
-                                                }, 1000);
-                                              },
-                                              error: function(json) {
-                                                complete();
-                                                cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
-                                              }
-                                            });
+                                            cloudStack.lbStickyPolicy.actions.add(
+                                              args.data.loadbalancer.id,
+                                              stickyData,
+                                              complete, // Complete
+                                              complete // Error
+                                            );
                                           } else {
                                             complete();
                                           }
@@ -1891,11 +1793,15 @@
                                   stickyData = {
                                     _buttonLabel: stickyPolicy.methodname,
                                     methodname: stickyPolicy.methodname,
-                                    id: stickyPolicy.id
+                                    stickyName: stickyPolicy.name,
+                                    id: stickyPolicy.id,
+                                    lbRuleID: item.id
                                   };
                                   $.extend(stickyData, stickyPolicy.params);
                                 } else {
-                                  stickyData = {};
+                                  stickyData = {
+                                    lbRuleID: item.id
+                                  };
                                 }
                               },
                               error: function(json) {
