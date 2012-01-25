@@ -29,6 +29,8 @@ COMMIT
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A POSTROUTING -p udp --dport bootpc -j CHECKSUM --checksum-fill
 -A PREROUTING -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
+COMMIT
+*mangle
+-A POSTROUTING -p udp --dport bootpc -j CHECKSUM --checksum-fill
 COMMIT
