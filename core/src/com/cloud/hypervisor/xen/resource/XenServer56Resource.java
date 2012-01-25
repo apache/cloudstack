@@ -224,6 +224,11 @@ public class XenServer56Resource extends CitrixResourceBase {
             for (VM vm : vms) {
                 vm.powerStateReset(conn);
                 vm.destroy(conn);
+                //remove the VM from s_vms
+                synchronized (_cluster.intern()) {
+	                s_logger.info("Fence command for VM " + vm.getNameLabel(conn));
+	                s_vms.remove(_cluster, _name, vm.getNameLabel(conn));
+            	}
             }
             return new FenceAnswer(cmd);
         } catch (XmlRpcException e) {
