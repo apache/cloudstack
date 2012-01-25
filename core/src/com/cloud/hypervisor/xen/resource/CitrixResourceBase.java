@@ -6644,7 +6644,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
   }
   
   protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
-      XenServerPoolVms vms = new XenServerPoolVms();
+	  synchronized (_cluster.intern()) {
+		  s_vms.clear(_cluster);
+	  }
       try {
           Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
           for (VM.Record record: vm_map.values()) {
@@ -6658,7 +6660,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
               String host_uuid = null;
               if( ! isRefNull(host) ) {
                   host_uuid = host.getUuid(conn);
-                  vms.put(_cluster, host_uuid, vm_name, state);
+                  synchronized (_cluster.intern()) {
+                	  s_vms.put(_cluster, host_uuid, vm_name, state);
+                  }
               }
               if (s_logger.isTraceEnabled()) {
                   s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
@@ -6669,7 +6673,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
           s_logger.warn(msg, e);
           throw new CloudRuntimeException(msg);
       }
-      return vms.getClusterVmState(_cluster);
+      return s_vms.getClusterVmState(_cluster);
   }
 
 

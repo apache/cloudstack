@@ -106,6 +106,11 @@ public class XenServer56FP1Resource extends XenServer56Resource {
                         }
                     }
                 }
+                //remove the VM from s_vms
+                synchronized (_cluster.intern()) {
+	                s_logger.info("Fence command for VM " + vm.getNameLabel(conn));
+	                s_vms.remove(_cluster, _name, vm.getNameLabel(conn));
+            	}
             }
             return new FenceAnswer(cmd);
         } catch (XmlRpcException e) {
