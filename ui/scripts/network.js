@@ -1085,7 +1085,10 @@
               }							
 							if(ipAddress.iselastic == true) {
 							  disabledTabs.push('vpn');
-								disabledTabs.push('ipRules');
+								
+								debugger;
+                if(ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null)								
+								  disabledTabs.push('ipRules');								
 							}			
               return disabledTabs;
             },
