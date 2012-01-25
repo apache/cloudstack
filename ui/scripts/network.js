@@ -1085,8 +1085,7 @@
               }							
 							if(ipAddress.iselastic == true) {
 							  disabledTabs.push('vpn');
-								
-								debugger;
+														
                 if(ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null)								
 								  disabledTabs.push('ipRules');								
 							}			
@@ -1354,14 +1353,14 @@
                     networkid: { label: 'Network ID' },
                     associatednetworkid: { label: 'Assoc. Network ID' },
                     state: { label: 'State' },
+										issourcenat: { label: 'Source NAT', converter: cloudStack.converters.toBooleanText },
+                    isstaticnat: { label: 'Static NAT', converter: cloudStack.converters.toBooleanText },
+										iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },																	
+										virtualmachinedisplayname: { label: 'Virtual machine' },			
                     domain: { label: 'Domain' },
                     account: { label: 'Account' },
                     zonename: { label: 'Zone' },
-                    vlanname: { label: 'VLAN' },
-                    issourcenat: { label: 'Source NAT', converter: cloudStack.converters.toBooleanText },
-                    isstaticnat: { label: 'Static NAT', converter: cloudStack.converters.toBooleanText },
-										iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },																	
-										virtualmachinedisplayname: { label: 'Virtual machine' }										
+                    vlanname: { label: 'VLAN' }                   							
                   }
                 ],
 
