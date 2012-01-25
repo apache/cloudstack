@@ -1,4 +1,18 @@
 (function(cloudStack, $, testData) {
+  var ipChangeNotice = function() {
+    cloudStack.dialog.confirm({
+      message: 'Your IP addresses may have changed; would you like to refresh the listing? Note that in this case the details pane will close.',
+      action: function() {
+        $('#browser .container').cloudBrowser('selectPanel', {
+          panel: $('#browser .panel:last').prev(),
+          complete: function() {
+            $(window).trigger('cloudStack.fullRefresh');
+          }
+        });
+      }
+    });
+  };
+  
   var actionFilters = {
     ipAddress: function(args) {
       var allowedActions = args.context.actions;
@@ -1088,12 +1102,10 @@
                     args.complete({
                       data: {
                         isstaticnat: true
-                      }
+                      },
                     });
 
-                    setTimeout(function() {
-                      $(window).trigger('cloudStack.fullRefresh');
-                    }, 500);
+                    ipChangeNotice();
                   }
                 }
               },
@@ -1122,7 +1134,7 @@
                               return ['enableStaticNAT'];
                             };
                           },
-													fullRefreshAfterComplete: true
+													onComplete: ipChangeNotice
                         }
                       });
                     },
@@ -1169,7 +1181,9 @@
                               state: 'Released'
                             };
                           },
-													fullRefreshAfterComplete: true
+													onComplete: function() {
+                            $(window).trigger('cloudStack.fullRefresh');
+                          }
                         }
                       });
                     },
