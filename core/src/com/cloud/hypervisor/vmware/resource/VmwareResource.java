@@ -1381,7 +1381,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 i++;
             }
 
-            for (VolumeTO vol : disks) {
+            for (VolumeTO vol : sortVolumesByDeviceId(disks)) {
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
                 if (vol.getType() == Volume.Type.ISO) {
@@ -1575,6 +1575,29 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         });
 
         return listForSort.toArray(new NicTO[0]);
+    }
+    
+    private VolumeTO[] sortVolumesByDeviceId(VolumeTO[] volumes) {
+
+        List<VolumeTO> listForSort = new ArrayList<VolumeTO>();
+        for (VolumeTO vol : volumes) {
+            listForSort.add(vol);
+        }
+        Collections.sort(listForSort, new Comparator<VolumeTO>() {
+
+            @Override
+            public int compare(VolumeTO arg0, VolumeTO arg1) {
+                if (arg0.getDeviceId() < arg1.getDeviceId()) {
+                    return -1;
+                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
+                    return 0;
+                }
+
+                return 1;
+            }
+        });
+
+        return listForSort.toArray(new VolumeTO[0]);
     }
 
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context, VolumeTO[] disks) throws Exception {
