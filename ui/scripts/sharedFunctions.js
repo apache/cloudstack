@@ -63,7 +63,11 @@ var pollAsyncJobResult = function(args) {
 						setTimeout(function() {
 							$(window).trigger('cloudStack.fullRefresh');
 						}, 500);
-					}					
+					}
+
+          if (args._custom.onComplete) {
+            args._custom.onComplete(json);
+          }
         }
         else if (result.jobstatus == 2) { // Failed          
           var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;
