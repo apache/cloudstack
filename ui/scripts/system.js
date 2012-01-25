@@ -1444,8 +1444,7 @@
             vlan: { label: 'VLAN Range' }
           }
         },
-        dataProvider: function(args) {
-          selectedZoneObj = args.context.zones[0];
+        dataProvider: function(args) {          
           cloudStack.sections.system.naas.networkProviders.statusCheck({
             context: args.context
           });
@@ -3132,6 +3131,7 @@
                         id: args.context.physicalResources[0].id
                       },
                       success: function(json) {
+											  selectedZoneObj = json.listzonesresponse.zone[0];
                         args.response.success({ data: json.listzonesresponse.zone[0] });
                       }
                     });
