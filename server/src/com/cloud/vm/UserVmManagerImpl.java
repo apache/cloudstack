@@ -2780,6 +2780,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
+    	//release elastic IP here
+    	IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
+    	if (ip != null && ip.getElastic()) {
+    		UserContext ctx = UserContext.current();
+    		try {
+            	_rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
+    		} catch (Exception ex) {
+    			s_logger.warn("Failed to disable static nat and release elastic ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+    		}
+    	}
     }
 
     public String generateRandomPassword() {
