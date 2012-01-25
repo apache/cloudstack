@@ -2038,7 +2038,7 @@
 						dataType: "json",
 						async: true,
 						success: function(json) {								  
-							if(args.data.hypervisor != "VMware") {
+							if(args.data.cluster.hypervisor != "VMware") {
 								stepFns.addHost({
 									data: $.extend(args.data, {
 										returnedCluster: json.addclusterresponse.cluster[0]
