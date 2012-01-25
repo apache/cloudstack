@@ -58,6 +58,12 @@ var pollAsyncJobResult = function(args) {
           else {
             args.complete({ data: json.queryasyncjobresultresponse.jobresult });
           }
+										
+					if(args._custom.fullRefreshAfterComplete == true) {
+						setTimeout(function() {
+							$(window).trigger('cloudStack.fullRefresh');
+						}, 500);
+					}					
         }
         else if (result.jobstatus == 2) { // Failed          
           var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;

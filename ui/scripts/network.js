@@ -689,8 +689,7 @@
                                 success: function(data) {
                                   var lbCreationComplete = false;
 
-                                  args.response.success({
-																    fullRefresh: true,
+                                  args.response.success({																    
                                     _custom: {
                                       jobId: jobID
                                     },
@@ -1226,7 +1225,7 @@
                         dataType: 'json',
                         async: true,
                         success: function(data) {
-                          args.response.success({ fullRefresh: true });											
+                          args.response.success({});											
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));
@@ -1277,7 +1276,8 @@
                             return function(args) {
                               return ['enableStaticNAT'];
                             };
-                          }
+                          },
+													fullRefreshAfterComplete: true
                         }
                       });
                     },
@@ -1323,7 +1323,8 @@
                             return {
                               state: 'Released'
                             };
-                          }
+                          },
+													fullRefreshAfterComplete: true
                         }
                       });
                     },
@@ -1825,8 +1826,7 @@
                               success: function(data) {
                                 var lbCreationComplete = false;
                                 
-                                args.response.success({
-																  fullRefresh: true,
+                                args.response.success({																  
                                   _custom: {
                                     jobId: jobID
                                   },
