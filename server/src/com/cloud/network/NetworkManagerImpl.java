@@ -2534,6 +2534,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         path = _domainDao.findById(caller.getDomainId()).getPath();
+        if (listAll) {
+        	isRecursive = true;
+        }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
