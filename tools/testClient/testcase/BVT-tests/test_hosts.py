@@ -22,58 +22,60 @@ class Services:
                        "clusters": {
                                    0: {
                                         "clustername": "Xen Cluster",
-                                        "clustertype": "ExternalManaged", # CloudManaged or ExternalManaged"
-                                        "hypervisor": "XenServer", # Hypervisor type
-                                        "zoneid": 3,
-                                        "podid": 3,
+                                        "clustertype": "ExternalManaged",
+                                        # CloudManaged or ExternalManaged"
+                                        "hypervisor": "XenServer",
+                                        # Hypervisor type
                                     },
                                    1: {
                                         "clustername": "KVM Cluster",
-                                        "clustertype": "CloudManaged", # CloudManaged or ExternalManaged"
-                                        "hypervisor": "KVM", # Hypervisor type
-                                        "zoneid": 3,
-                                        "podid": 3,
+                                        "clustertype": "CloudManaged",
+                                        # CloudManaged or ExternalManaged"
+                                        "hypervisor": "KVM",
+                                        # Hypervisor type
                                         },
                                    2: {
-                                        "hypervisor": 'VMware', # Hypervisor type
-                                        "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
-                                        "zoneid": 3,
-                                        "podid": 3,
+                                        "hypervisor": 'VMware',
+                                        # Hypervisor type
+                                        "clustertype": 'ExternalManaged',
+                                        # CloudManaged or ExternalManaged"
                                         "username": 'administrator',
                                         "password": 'fr3sca',
                                         "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
-                                        # Format: http:// vCenter Host / Datacenter / Cluster
+                                        # Format:http://vCenter Host/Datacenter/Cluster
                                         "clustername": '192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
-                                        # Format: http:// IP_Address / Datacenter / Cluster
+                                        # Format: http://IP_Address/Datacenter/Cluster
                                         },
                                     },
                        "hosts": {
-                                 "xenserver": {     #Must be name of corresponding Hypervisor type in cluster in small letters
-                                          "zoneid": 3,
-                                          "podid": 3,
+                                 "xenserver": {
+                                # Must be name of corresponding Hypervisor type
+                                # in cluster in small letters
                                           "clusterid": 16,
-                                          "hypervisor": 'XenServer', # Hypervisor type
-                                          "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
+                                          "hypervisor": 'XenServer',
+                                          # Hypervisor type
+                                          "clustertype": 'ExternalManaged',
+                                          # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.210',
                                           "username": "administrator",
                                           "password": "fr3sca",
                                           },
                                  "kvm": {
-                                          "zoneid": 3,
-                                          "podid": 3,
                                           "clusterid": 35,
-                                          "hypervisor": 'KVM', # Hypervisor type
-                                          "clustertype": 'CloudManaged', # CloudManaged or ExternalManaged"
+                                          "hypervisor": 'KVM',
+                                          # Hypervisor type
+                                          "clustertype": 'CloudManaged',
+                                          # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.212',
                                           "username": "root",
                                           "password": "fr3sca",
                                           },
                                  "vmware": {
-                                          "zoneid": 3,
-                                          "podid": 3,
                                           "clusterid": 16,
-                                          "hypervisor": 'VMware', # Hypervisor type
-                                          "clustertype": 'ExternalManaged', # CloudManaged or ExternalManaged"
+                                          "hypervisor": 'VMware',
+                                          # Hypervisor type
+                                          "clustertype": 'ExternalManaged',
+                                          # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.203',
                                           "username": "administrator",
                                           "password": "fr3sca",
@@ -89,6 +91,27 @@ class TestHosts(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.services = Services().services
         self.cleanup = []
+
+        # Get Zone and pod
+        self.zone = get_zone(self.apiclient)
+        self.pod = get_pod(self.apiclient, self.zone.id)
+
+        self.services["clusters"][0]["zoneid"] = self.zone.id
+        self.services["clusters"][1]["zoneid"] = self.zone.id
+        self.services["clusters"][2]["zoneid"] = self.zone.id
+
+        self.services["clusters"][0]["podid"] = self.pod.id
+        self.services["clusters"][1]["podid"] = self.pod.id
+        self.services["clusters"][2]["podid"] = self.pod.id
+
+        self.services["hosts"]["xenserver"]["zoneid"] = self.zone.id
+        self.services["hosts"]["kvm"]["zoneid"] = self.zone.id
+        self.services["hosts"]["vmware"]["zoneid"] = self.zone.id
+
+        self.services["hosts"]["xenserver"]["podid"] = self.pod.id
+        self.services["hosts"]["kvm"]["podid"] = self.pod.id
+        self.services["hosts"]["vmware"]["podid"] = self.pod.id
+
         return
 
     def tearDown(self):
@@ -108,22 +131,23 @@ class TestHosts(cloudstackTestCase):
         # Validate the following:
         # 1. Verify hypervisortype returned by API is Xen/KVM/VWare
         # 2. Verify that the cluster is in 'Enabled' allocation state
-        # 3. Verify that the host is added successfully and in Up state with listHosts API response
+        # 3. Verify that the host is added successfully and in Up state
+        #    with listHosts API response
 
         #Create clusters with Hypervisor type XEN/KVM/VWare
         for k, v in self.services["clusters"].items():
             cluster = Cluster.create(self.apiclient, v)
 
             self.assertEqual(
-                            cluster.hypervisortype,
-                            v["hypervisor"],
-                            "Check hypervisor type of created cluster is " + v["hypervisor"] + " or not"
-                        )
+                    cluster.hypervisortype,
+                    v["hypervisor"],
+                    "Check hypervisor type is " + v["hypervisor"] + " or not"
+                    )
             self.assertEqual(
-                            cluster.allocationstate,
-                            'Enabled',
-                            "Check whether allocation state of cluster is enabled"
-                        )
+                    cluster.allocationstate,
+                    'Enabled',
+                    "Check whether allocation state of cluster is enabled"
+                    )
 
             #If host is externally managed host is already added with cluster
             cmd = listHosts.listHostsCmd()
@@ -177,8 +201,8 @@ class TestHosts(cloudstackTestCase):
                             "Check cluster ID with list clusters response"
                         )
             self.assertEqual(
-                            cluster_response.hypervisortype,
-                            cluster.hypervisortype,
-                            "Check hypervisor type with list clusters response is " + v["hypervisor"] + " or not"
-                        )
+                cluster_response.hypervisortype,
+                cluster.hypervisortype,
+                "Check hypervisor type with is " + v["hypervisor"] + " or not"
+                )
         return

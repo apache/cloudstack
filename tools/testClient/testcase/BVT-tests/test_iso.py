@@ -14,50 +14,55 @@ from random import random
 #Import System modules
 import time
 
+
 class Services:
     """Test ISO Services
     """
 
     def __init__(self):
         self.services = {
-                      "iso_1":
-                                {
-                                 "displaytext": "Test ISO type 1",
-                                 "name": "testISOType_1",
-                                 "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
-                                 # Source URL where ISO is located
-                                 "zoneid": 1,
-                                 "isextractable": True,
-                                 "isfeatured": True,
-                                 "ispublic": True,
-                                 "ostypeid": 12,
-                                 },
-                        "iso_2":
-                                {
-                                 "displaytext": "Test ISO type 2",
-                                 "name": "testISOType_2",
-                                 "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
-                                 # Source URL where ISO is located
-                                 "zoneid": 1,
-                                 "isextractable": True,
-                                 "isfeatured": True,
-                                 "ispublic": True,
-                                 "ostypeid": 12,
-                                 "mode": 'HTTP_DOWNLOAD',
-                                 # Used in Extract template, value must be HTTP_DOWNLOAD
-                                 "ostypeid": 12,
-                                 },
-                            "destzoneid": 2, # Copy ISO from one zone to another (Destination Zone)
-                            "sourcezoneid": 1, # Copy ISO from one zone to another (Source Zone)
-                            "isfeatured": True,
-                            "ispublic": True,
-                            "isextractable": True,
-                            "bootable": True, # For edit template
-                            "passwordenabled": True,
-                            "ostypeid": 15,
-                            "account": 'bhavin333', # Normal user, no admin rights
-                            "domainid": 1,
-                     }
+            "account": {
+                        "email": "test@test.com",
+                        "firstname": "Test",
+                        "lastname": "User",
+                        "username": "test",
+                        "password": "password",
+                        },
+            "iso_1":
+                    {
+                        "displaytext": "Test ISO type 1",
+                        "name": "testISOType_1",
+                        "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                        # Source URL where ISO is located
+                        "isextractable": True,
+                        "isfeatured": True,
+                        "ispublic": True,
+                        "ostypeid": 12,
+                    },
+            "iso_2":
+                    {
+                        "displaytext": "Test ISO type 2",
+                        "name": "testISOType_2",
+                        "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                        # Source URL where ISO is located
+                        "isextractable": True,
+                        "isfeatured": True,
+                        "ispublic": True,
+                        "ostypeid": 12,
+                        "mode": 'HTTP_DOWNLOAD',
+                        # Used in Extract template, value must be HTTP_DOWNLOAD
+                    },
+            "destzoneid": 2,
+            # Copy ISO from one zone to another (Destination Zone)
+            "isfeatured": True,
+            "ispublic": True,
+            "isextractable": True,
+            "bootable": True, # For edit template
+            "passwordenabled": True,
+            "ostypeid": 12,
+            "domainid": 1,
+        }
+
 
 class TestCreateIso(cloudstackTestCase):
 
@@ -65,6 +70,9 @@ class TestCreateIso(cloudstackTestCase):
         self.services = Services().services
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        # Get Zone, Domain and templates
+        self.zone = get_zone(self.apiclient)
+        self.services["iso_2"]["zoneid"] = self.zone.id
         self.cleanup = []
         return
 
@@ -85,7 +93,8 @@ class TestCreateIso(cloudstackTestCase):
         """
 
         # Validate the following:
-        # 1. database (vm_template table) should be updated with newly created ISO
+        # 1. database (vm_template table) should be
+        #    updated with newly created ISO
         # 2. UI should show the newly added ISO
         # 3. listIsos API should show the newly added ISO
 
@@ -120,37 +129,8 @@ class TestCreateIso(cloudstackTestCase):
                             self.services["iso_2"]["zoneid"],
                             "Check zone ID of newly created ISO"
                         )
-
-        #Verify the database entry for ISO
-        self.debug(
-                   "select name, display_text from vm_template where id = %s and format='ISO';"
-                   % iso.id
-                   )
-        qresultset = self.dbclient.execute(
-                                           "select name, display_text from vm_template where id = %s and format='ISO';"
-                                           % iso.id
-                                           )
-
-        self.assertNotEqual(
-                                len(qresultset),
-                                0,
-                                "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        self.assertEqual(
-                            qresult[0],
-                            self.services["iso_2"]["name"],
-                            "Compare ISO name with database record"
-                        )
-
-        self.assertEqual(
-                            qresult[1],
-                            self.services["iso_2"]["displaytext"],
-                            "Compare ISO display text with database record"
-                        )
         return
+
 
 class TestISO(cloudstackTestCase):
 
@@ -158,17 +138,31 @@ class TestISO(cloudstackTestCase):
     def setUpClass(cls):
         cls.services = Services().services
         cls.api_client = fetch_api_client()
+
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client)
+        cls.services["iso_1"]["zoneid"] = cls.zone.id
+        cls.services["iso_2"]["zoneid"] = cls.zone.id
+        cls.services["sourcezoneid"] = cls.zone.id
+        #Create an account, network, VM and IP addresses
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            )
+        cls.services["account"] = cls.account.account.name
         cls.iso_1 = Iso.create(cls.api_client, cls.services["iso_1"])
         cls.iso_1.download(cls.api_client)
         cls.iso_2 = Iso.create(cls.api_client, cls.services["iso_2"])
         cls.iso_2.download(cls.api_client)
+        cls._cleanup = [cls.iso_2, cls.account]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             cls.api_client = fetch_api_client()
-            cls.iso_2.delete(cls.api_client)
+            #Clean up, terminate the created templates
+            cleanup_resources(cls.api_client, cls.cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -247,47 +241,6 @@ class TestISO(cloudstackTestCase):
                             self.services["ostypeid"],
                             "Check OSTypeID of updated ISO"
                         )
-
-        #Verify database entry for updateIso
-        self.debug(
-                   "select name, display_text, bootable, guest_os_id from vm_template where id = %s and format='ISO';"
-                   % self.iso_1.id
-                   )
-        qresultset = self.dbclient.execute(
-                                           "select name, display_text, bootable, guest_os_id from vm_template where id = %s and format='ISO';"
-                                           % self.iso_1.id
-                                           )
-
-        self.assertNotEqual(
-                                len(qresultset),
-                                0,
-                                "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        self.assertEqual(
-                            qresult[0],
-                            new_name,
-                            "Compare ISO name with database record"
-                        )
-
-        self.assertEqual(
-                            qresult[1],
-                            new_displayText,
-                            "Compare ISO display text with database record"
-                        )
-        self.assertEqual(
-                            qresult[2],
-                            int(self.services["bootable"]),
-                            "Compare template enable_password field with database record"
-                        )
-
-        self.assertEqual(
-                            qresult[3],
-                            self.services["ostypeid"],
-                            "Compare template guest OS ID with database record"
-                        )
         return
 
     def test_03_delete_iso(self):
@@ -305,23 +258,11 @@ class TestISO(cloudstackTestCase):
         cmd.id = self.iso_1.id
         list_iso_response = self.apiclient.listIsos(cmd)
 
-        self.assertEqual(list_iso_response, None, "Check if ISO exists in ListIsos")
-
-        #Verify whether database entry is deleted or not
-        self.debug(
-                   "select name, display_text from vm_template where id = %s and format='ISO';"
-                   % self.iso_1.id
-                   )
-        qresultset = self.dbclient.execute(
-                                           "select name, display_text from vm_template where id = %s and format='ISO';"
-                                           % self.iso_1.id
-                                           )
-
         self.assertEqual(
-                                len(qresultset),
-                                1,
-                                "Check DB Query result set"
-                            )
+                         list_iso_response,
+                         None,
+                         "Check if ISO exists in ListIsos"
+                         )
         return
 
     def test_04_extract_Iso(self):
@@ -329,7 +270,8 @@ class TestISO(cloudstackTestCase):
 
         # Validate the following
         # 1. Admin should able  extract and download the ISO
-        # 2. ListIsos should display all the public templates for all kind of users
+        # 2. ListIsos should display all the public templates
+        #    for all kind of users
         # 3 .ListIsos should not display the system templates
 
         cmd = extractIso.extractIsoCmd()
@@ -370,7 +312,8 @@ class TestISO(cloudstackTestCase):
 
         # validate the following
         # 1. listIsos returns valid permissions set for ISO
-        # 2. permission changes should be reflected in vm_template table in database
+        # 2. permission changes should be reflected in vm_template
+        #    table in database
 
         cmd = updateIsoPermissions.updateIsoPermissionsCmd()
         cmd.id = self.iso_2.id
@@ -383,8 +326,8 @@ class TestISO(cloudstackTestCase):
         #Verify ListIsos have updated permissions for the ISO for normal user
         cmd = listIsos.listIsosCmd()
         cmd.id = self.iso_2.id
-        cmd.account = self.services["account"]
-        cmd.domainid = self.services["domainid"]
+        cmd.account = self.account.account.name
+        cmd.domainid = self.account.account.domainid
         list_iso_response = self.apiclient.listIsos(cmd)
 
         iso_response = list_iso_response[0]
@@ -405,48 +348,14 @@ class TestISO(cloudstackTestCase):
                             self.services["isfeatured"],
                             "Check isfeatured permission of ISO"
                         )
-
-        #Verify database entry for updated ISO permissions
-        self.debug(
-                   "select public, featured, extractable from vm_template where id = %s and format='ISO';"
-                   % self.iso_2.id
-                   )
-        qresultset = self.dbclient.execute(
-                                           "select public, featured, extractable from vm_template where id = %s and format='ISO';"
-                                           % self.iso_2.id
-                                           )
-
-        self.assertNotEqual(
-                                len(qresultset),
-                                0,
-                                "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        self.assertEqual(
-                            qresult[0],
-                            int(self.services["ispublic"]),
-                            "Compare ispublic permission with database record"
-                        )
-
-        self.assertEqual(
-                            qresult[1],
-                            int(self.services["isfeatured"]),
-                            "Compare isfeatured permission with database record"
-                        )
-        self.assertEqual(
-                            qresult[2],
-                            int(self.services["isextractable"]),
-                            "Compare extractable permission with database record"
-                        )
         return
 
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 
         #Validate the following
-        #1. copy ISO should be successful and secondary storage should contain new copied ISO.
+        #1. copy ISO should be successful and secondary storage
+        #   should contain new copied ISO.
 
         cmd = copyIso.copyIsoCmd()
         cmd.id = self.iso_2.id

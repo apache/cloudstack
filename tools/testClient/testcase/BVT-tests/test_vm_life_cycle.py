@@ -271,14 +271,14 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         )
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.small_virtual_machine.account,
-                                           cls.small_virtual_machine.zoneid,
-                                           cls.small_virtual_machine.domainid,
+                                           cls.virtual_machine.account,
+                                           cls.virtual_machine.zoneid,
+                                           cls.virtual_machine.domainid,
                                            cls.services["small"]
                                            )
         cls.nat_rule = NATRule.create(
                             cls.api_client,
-                            cls.small_virtual_machine,
+                            cls.virtual_machine,
                             cls.services["small"],
                             ipaddressid=cls.public_ip.ipaddress.id
                             )
@@ -717,11 +717,17 @@ class TestVMLifeCycle(cloudstackTestCase):
         c = "fdisk -l|grep %s|head -1" % self.services["diskdevice"]
         res = ssh_client.execute(c)
         #Disk /dev/xvdd: 4393 MB, 4393723904 bytes
-        actual_disk_size = res[0].split()[4]
+
+        # Res may contain more than one strings depending on environment
+        # Split res with space as delimiter to form new list (result)   
+        result = []
+        for i in res:
+            for k in i.split():
+                result.append(k)
 
         self.assertEqual(
-                         str(iso.size),
-                         actual_disk_size,
+                         str(iso.size) in result,
+                         True,
                          "Check size of the attached ISO"
                          )
 

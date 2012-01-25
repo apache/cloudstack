@@ -19,35 +19,27 @@ class Services:
 
     def __init__(self):
         self.services = {
-                             "storage": {
-                                         "zoneid": 3,
-                                         "podid": 3,
-                                         "url": "nfs://192.168.100.131/SecStorage"
-                                         # Format: File_System_Type/Location/Path
-                                         },
-                             "hypervisors": {
-                                             0: {
-                                                 "hypervisor": "XenServer",
-                                                 "zoneid": 3,
-                                                 "podid": 3,
-                                                 "templatefilter": "self",
-                                                 },
-                                             1: {
-                                                 "hypervisor": "KVM",
-                                                 "zoneid": 3,
-                                                 "podid": 3,
-                                                 "templatefilter": "self",
-                                                 },
-                                             2: {
-                                                 "hypervisor": "VMWare",
-                                                 "zoneid": 3,
-                                                 "podid": 3,
-                                                 "templatefilter": "self",
-                                                 },
-                                             },
-                             "sleep": 180,
-                             "timeout": 5,
-                             }
+                         "storage": {
+                                "url": "nfs://192.168.100.131/SecStorage"
+                                # Format: File_System_Type/Location/Path
+                            },
+                        "hypervisors": {
+                            0: {
+                                    "hypervisor": "XenServer",
+                                    "templatefilter": "self",
+                                },
+                            1: {
+                                    "hypervisor": "KVM",
+                                    "templatefilter": "self",
+                                },
+                            2: {
+                                    "hypervisor": "VMWare",
+                                    "templatefilter": "self",
+                                },
+                            },
+                         "sleep": 180,
+                         "timeout": 5,
+                        }
 
 class TestSecStorageServices(cloudstackTestCase):
 
@@ -56,6 +48,20 @@ class TestSecStorageServices(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
         self.services = Services().services
+        # Get Zone and pod
+        self.zone = get_zone(self.apiclient)
+        self.pod = get_pod(self.apiclient, self.zone.id)
+
+        self.services["storage"]["zoneid"] = self.zone.id
+        self.services["storage"]["podid"] = self.pod.id
+
+        self.services["hypervisors"][0]["zoneid"] = self.zone.id
+        self.services["hypervisors"][1]["zoneid"] = self.zone.id
+        self.services["hypervisors"][2]["zoneid"] = self.zone.id
+
+        self.services["hypervisors"][0]["podid"] = self.pod.id
+        self.services["hypervisors"][1]["podid"] = self.pod.id
+        self.services["hypervisors"][2]["podid"] = self.pod.id
         return
 
     def tearDown(self):
@@ -75,13 +81,13 @@ class TestSecStorageServices(cloudstackTestCase):
         # 2. Verify with listHosts and type secondarystorage
 
         cmd = addSecondaryStorage.addSecondaryStorageCmd()
-        cmd.zoneid = self.services["storage"]["zoneid"]
+        cmd.zoneid = self.zone.id
         cmd.url = self.services["storage"]["url"]
         sec_storage = self.apiclient.addSecondaryStorage(cmd)
 
         self.assertEqual(
                             sec_storage.zoneid,
-                            self.services["storage"]["zoneid"],
+                            self.zone.id,
                             "Check zoneid where sec storage is added"
                         )
 
@@ -115,13 +121,14 @@ class TestSecStorageServices(cloudstackTestCase):
         """
 
         # 1. verify listHosts has all 'routing' hosts in UP state
-        # 2. verify listStoragePools shows all primary storage pools in UP state
+        # 2. verify listStoragePools shows all primary storage pools
+        #    in UP state
         # 3. verify that secondary storage was added successfully
 
         cmd = listHosts.listHostsCmd()
         cmd.type = 'Routing'
-        cmd.zoneid = self.services["storage"]["zoneid"]
-        cmd.podid = self.services["storage"]["podid"]
+        cmd.zoneid = self.zone.id
+        cmd.podid = self.pod.id
         list_hosts_response = self.apiclient.listHosts(cmd)
         # ListHosts has all 'routing' hosts in UP state
         self.assertNotEqual(
@@ -139,8 +146,8 @@ class TestSecStorageServices(cloudstackTestCase):
         # ListStoragePools shows all primary storage pools in UP state
         cmd = listStoragePools.listStoragePoolsCmd()
         cmd.name = 'Primary'
-        cmd.zoneid = self.services["storage"]["zoneid"]
-        cmd.podid = self.services["storage"]["podid"]
+        cmd.zoneid = self.zone.id
+        cmd.podid = self.pod.id
         list_storage_response = self.apiclient.listStoragePools(cmd)
 
         self.assertNotEqual(
@@ -159,7 +166,7 @@ class TestSecStorageServices(cloudstackTestCase):
         # Secondary storage is added successfully
         cmd = listHosts.listHostsCmd()
         cmd.type = 'SecondaryStorage'
-        cmd.zoneid = self.services["storage"]["zoneid"]
+        cmd.zoneid = self.zone.id
 
         timeout = self.services["timeout"]
         while True:
@@ -187,8 +194,8 @@ class TestSecStorageServices(cloudstackTestCase):
 
         cmd = listSystemVms.listSystemVmsCmd()
         cmd.systemvmtype = 'secondarystoragevm'
-        cmd.zoneid = self.services["storage"]["zoneid"]
-        cmd.podid = self.services["storage"]["podid"]
+        cmd.zoneid = self.zone.id
+        cmd.podid = self.pod.id
 
         timeout = self.services["timeout"]
 
@@ -222,13 +229,14 @@ class TestSecStorageServices(cloudstackTestCase):
 
         # Validate the following
         # If SSVM is in UP state and running
-        # 1. wait for listTemplates to show all builtin templates downloaded for all added hypervisors and in “Ready” state"
+        # 1. wait for listTemplates to show all builtin templates
+        #    downloaded for all added hypervisors and in “Ready” state"
 
         for k, v in self.services["hypervisors"].items():
 
             cmd = listTemplates.listTemplatesCmd()
             cmd.hypervisor = v["hypervisor"]
-            cmd.zoneid = v["zoneid"]
+            cmd.zoneid = self.zone.id
             cmd.templatefilter = v["templatefilter"]
             list_templates = self.apiclient.listTemplates(cmd)
 
@@ -241,7 +249,7 @@ class TestSecStorageServices(cloudstackTestCase):
             cmd = listTemplates.listTemplatesCmd()
             cmd.id = templateid
             cmd.templatefilter = v["templatefilter"]
-            cmd.zoneid = v["zoneid"]
+            cmd.zoneid = self.zone.id
 
             while True and (templateid != None):
 

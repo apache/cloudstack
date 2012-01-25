@@ -14,6 +14,7 @@ from base import *
 #Import System modules
 import time
 
+
 class Services:
     """Test router Services
     """
@@ -29,11 +30,9 @@ class Services:
                                     },
                         "virtual_machine":
                                     {
-                                        "template": 7, # Template used for VM creation
-                                        "zoneid": 3,
-                                        "displayname": "testserver",
+                                        "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'VMWare',
                                         "domainid": 1,
@@ -47,10 +46,10 @@ class Services:
                                             "lastname": "User",
                                             "username": "testuser",
                                             "password": "fr3sca",
-                                            "zoneid": 1,
                                         },
-                        "sleep_time": 300,
+                         "ostypeid":12,
                         }
+
 
 class TestRouterServices(cloudstackTestCase):
 
@@ -58,19 +57,38 @@ class TestRouterServices(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.api_client = fetch_api_client()
-
         cls.services = Services().services
-        #Create an account, network, VM and IP addresses
-        cls.account = Account.create(cls.api_client, cls.services["account"], admin = True)
-        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
-        cls.vm_1 = VirtualMachine.create(
-                                            cls.api_client,
-                                            cls.services["virtual_machine"],
-                                            accountid = cls.account.account.name,
-                                            serviceofferingid = cls.service_offering.id
-                                        )
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client)
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
-        cls.cleanup = [cls.vm_1, cls.account, cls.service_offering]
+        #Create an account, network, VM and IP addresses
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True
+                                     )
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.vm_1 = VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["virtual_machine"],
+                                    templateid=template.id,
+                                    accountid=cls.account.account.name,
+                                    serviceofferingid=cls.service_offering.id
+                                    )
+        cls.cleanup = [
+                       cls.vm_1,
+                       cls.account,
+                       cls.service_offering
+                       ]
         return
 
     @classmethod
@@ -150,7 +168,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         list_router_response = self.apiclient.listRouters(cmd)
 
         self.assertNotEqual(
@@ -212,7 +230,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         router = self.apiclient.listRouters(cmd)[0]
 
         #Stop the router
@@ -221,7 +239,6 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.stopRouter(cmd)
 
         #List routers to check state of router
-
         cmd = listRouters.listRoutersCmd()
         cmd.id = router.id
         router_response = self.apiclient.listRouters(cmd)[0]
@@ -243,7 +260,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         router = self.apiclient.listRouters(cmd)[0]
 
         #Start the router
@@ -252,7 +269,6 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.startRouter(cmd)
 
         #List routers to check state of router
-
         cmd = listRouters.listRoutersCmd()
         cmd.id = router.id
         router_response = self.apiclient.listRouters(cmd)[0]
@@ -274,7 +290,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         router = self.apiclient.listRouters(cmd)[0]
 
         public_ip = router.publicip
@@ -315,7 +331,7 @@ class TestRouterServices(cloudstackTestCase):
 
         cmd = listVirtualMachines.listVirtualMachinesCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         list_vms = self.apiclient.listVirtualMachines(cmd)
 
         self.assertNotEqual(
@@ -340,13 +356,13 @@ class TestRouterServices(cloudstackTestCase):
         #Check status of network router
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         router = self.apiclient.listRouters(cmd)[0]
 
         self.assertEqual(
-                            router.state,
-                            'Stopped',
-                            "Check state of the router after stopping all VMs associated with that account"
+            router.state,
+            'Stopped',
+            "Check state of the router after stopping all VMs associated"
                         )
         return
 
@@ -355,12 +371,13 @@ class TestRouterServices(cloudstackTestCase):
         """
         # Validate the following
         # 1. Router only does dhcp
-        # 2. Verify that ports 67 (DHCP) and 53 (DNS) are open on UDP by checking status of dnsmasq process
+        # 2. Verify that ports 67 (DHCP) and 53 (DNS) are open on UDP
+        #    by checking status of dnsmasq process
 
         # Find router associated with user account
         cmd = listRouters.listRoutersCmd()
         cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
+        cmd.domainid = self.account.account.domainid
         router = self.apiclient.listRouters(cmd)[0]
 
         cmd = listHosts.listHostsCmd()
@@ -371,12 +388,13 @@ class TestRouterServices(cloudstackTestCase):
 
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
-                                                host.ipaddress,
-                                                self.services['virtual_machine']["publicport"],
-                                                self.services['virtual_machine']["username"],
-                                                self.services['virtual_machine']["password"]
-                                            )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % router.linklocalip
+                            host.ipaddress,
+                            self.services['virtual_machine']["publicport"],
+                            self.vm_1.username,
+                                self.vm_1.password
+                            )
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s "\
+                        % router.linklocalip
 
         # Double hop into router
         timeout = 5
@@ -419,12 +437,13 @@ class TestRouterServices(cloudstackTestCase):
 
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
-                                                host.ipaddress,
-                                                self.services['virtual_machine']["publicport"],
-                                                self.services['virtual_machine']["username"],
-                                                self.services['virtual_machine']["password"]
-                                            )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % router.linklocalip
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password
+                                )
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s "\
+                        % router.linklocalip
 
         # Double hop into router
         timeout = 5
@@ -468,7 +487,8 @@ class TestRouterServices(cloudstackTestCase):
 
         # Validate the following
         # 1. When cleanup = true, router is destroyed and a new one created
-        # 2. New router will have new publicIp and linkLocalIp and all it's services should resume
+        # 2. New router will have new publicIp and linkLocalIp and
+        #    all it's services should resume
 
         # Find router associated with user account
         cmd = listRouters.listRoutersCmd()
@@ -507,7 +527,8 @@ class TestRouterServices(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. When cleanup = false, router is restarted and all services inside the router are restarted
+        # 1. When cleanup = false, router is restarted and
+        #    all services inside the router are restarted
         # 2. check 'uptime' to see if the actual restart happened
 
         cmd = listNetworks.listNetworksCmd()
@@ -534,12 +555,13 @@ class TestRouterServices(cloudstackTestCase):
 
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
-                                                host.ipaddress,
-                                                self.services['virtual_machine']["publicport"],
-                                                self.services['virtual_machine']["username"],
-                                                self.services['virtual_machine']["password"]
-                                            )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s uptime" % router.linklocalip
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password
+                                )
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s uptime"\
+                        % router.linklocalip
 
         # Double hop into router to check router uptime
         timeout = 5

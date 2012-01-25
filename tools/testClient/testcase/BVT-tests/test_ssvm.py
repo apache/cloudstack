@@ -23,12 +23,10 @@ class Services:
         self.services = {
                       "ssvm": {
                                "id": 1, # SSVM ID in particular zone
-                               "zoneid": 1,
                                },
                       "cpvm": {
                                "id": 2, # CPVM ID in particular zone
-                               "zoneid": 1,
-                               "mgmtserverIP": '192.168.100.154'    # For Telnet
+                               "mgmtserverIP": '192.168.100.154'   # For Telnet
                                },
                       "host": {
                                "username": 'root', # Credentials for SSH
@@ -44,6 +42,9 @@ class TestSSVMs(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
         self.services = Services().services
+        self.zone = get_zone(self.apiclient)
+        self.services["ssvm"]["zoneid"] = self.zone.id
+        self.services["cpvm"]["zoneid"] = self.zone.id
         return
 
     def tearDown(self):
@@ -60,10 +61,13 @@ class TestSSVMs(cloudstackTestCase):
         """
 
         # Validate the following:
-        # 1. listSystemVM (systemvmtype=secondarystoragevm) should return only ONE SSVM per zone
+        # 1. listSystemVM (systemvmtype=secondarystoragevm)
+        #    should return only ONE SSVM per zone
         # 2. The returned SSVM should be in Running state
-        # 3. listSystemVM for secondarystoragevm should list publicip, privateip and link-localip
-        # 4. The gateway programmed on the ssvm by listSystemVm should be the same as the gateway returned by listVlanIpRanges
+        # 3. listSystemVM for secondarystoragevm should list publicip,
+        #    privateip and link-localip
+        # 4. The gateway programmed on the ssvm by listSystemVm should be
+        #    the same as the gateway returned by listVlanIpRanges
         # 5. DNS entries must match those given for the zone
 
         cmd = listSystemVms.listSystemVmsCmd()
@@ -85,7 +89,8 @@ class TestSSVMs(cloudstackTestCase):
                             len(list_zones_response),
                             "Check number of SSVMs with number of zones"
                         )
-        #For each secondary storage VM check private IP, public IP, link local IP and DNS
+        #For each secondary storage VM check private IP,
+        #public IP, link local IP and DNS
         for ssvm in list_ssvm_response:
 
             self.assertEqual(
@@ -146,10 +151,13 @@ class TestSSVMs(cloudstackTestCase):
         """
 
         # Validate the following:
-        # 1. listSystemVM (systemvmtype=consoleproxy) should return at least ONE CPVM per zone
+        # 1. listSystemVM (systemvmtype=consoleproxy) should return
+        #    at least ONE CPVM per zone
         # 2. The returned ConsoleProxyVM should be in Running state
-        # 3. listSystemVM for console proxy should list publicip, privateip and link-localip
-        # 4. The gateway programmed on the console proxy should be the same as the gateway returned by listZones
+        # 3. listSystemVM for console proxy should list publicip, privateip
+        #    and link-localip
+        # 4. The gateway programmed on the console proxy should be the same
+        #    as the gateway returned by listZones
         # 5. DNS entries must match those given for the zone
 
         cmd = listSystemVms.listSystemVmsCmd()
@@ -230,10 +238,13 @@ class TestSSVMs(cloudstackTestCase):
         """Test SSVM Internals"""
 
         # Validate the following
-        # 1. The SSVM check script should not return any WARN|ERROR|FAIL messages
-        # 2. If you are unable to login to the SSVM with the signed key then test is deemed a failure
+        # 1. The SSVM check script should not return any
+        #    WARN|ERROR|FAIL messages
+        # 2. If you are unable to login to the SSVM with the signed key
+        #    then test is deemed a failure
         # 3. There should be only one ""cloud"" process running within the SSVM
-        # 4. If no process is running/multiple process are running then the test is a failure
+        # 4. If no process is running/multiple process are running
+        #    then the test is a failure
 
         cmd = listHosts.listHostsCmd()
         cmd.zoneid = self.services["ssvm"]["zoneid"]
@@ -249,14 +260,15 @@ class TestSSVMs(cloudstackTestCase):
         self.debug("Cheking cloud process status")
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
-                                                host.ipaddress,
-                                                self.services['host']["publicport"],
-                                                self.services['host']["username"],
-                                                self.services['host']["password"]
-                                            )
+                                        host.ipaddress,
+                                        self.services['host']["publicport"],
+                                        self.services['host']["username"],
+                                        self.services['host']["password"]
+                                    )
 
         timeout = 5
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % ssvm.linklocalip
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " \
+                        % ssvm.linklocalip
         c = ssh_command + "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL"
 
         # Ensure the SSH login is successful
@@ -304,9 +316,11 @@ class TestSSVMs(cloudstackTestCase):
         """Test CPVM Internals"""
 
         # Validate the following
-        # 1. test that telnet access on 8250 is available to the management server for the CPVM
+        # 1. test that telnet access on 8250 is available to
+        #    the management server for the CPVM
         # 2. No telnet access, test FAIL
-        # 3. Service cloud status should report cloud agent status to be running
+        # 3. Service cloud status should report cloud agent status to be
+        #    running
 
         cmd = listHosts.listHostsCmd()
         cmd.zoneid = self.services["cpvm"]["zoneid"]
@@ -320,24 +334,29 @@ class TestSSVMs(cloudstackTestCase):
         cpvm = self.apiclient.listSystemVms(cmd)[0]
 
         with assertNotRaises(Exception):
-            telnet = telnetlib.Telnet(self.services["cpvm"]["mgmtserverIP"] , '8250')
+            telnet = telnetlib.Telnet(
+                                      self.services["cpvm"]["mgmtserverIP"] ,
+                                      '8250'
+                                      )
 
         self.debug("Cheking cloud process status")
         #SSH to the machine
         ssh = remoteSSHClient.remoteSSHClient(
-                                                host.ipaddress,
-                                                self.services['host']["publicport"],
-                                                self.services['host']["username"],
-                                                self.services['host']["password"]
-                                            )
+                                        host.ipaddress,
+                                        self.services['host']["publicport"],
+                                        self.services['host']["username"],
+                                        self.services['host']["password"]
+                                    )
         timeout = 5
         # Check status of cloud service
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " % cpvm.linklocalip
+        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s " \
+                        % cpvm.linklocalip
         c = ssh_command + "service cloud status"
 
         while True:
             res = ssh.execute(c)[0]
-            # Response: cloud.com service (type=secstorage) is running: process id: 2346
+            # Response: cloud.com service (type=secstorage) is
+            # running: process id: 2346
 
             #Check if double hop is successful
             if res != "Host key verification failed.":
@@ -360,7 +379,9 @@ class TestSSVMs(cloudstackTestCase):
 
         # Validate the following
         # 1. The SSVM should go to stop state
-        # 2. After a brief delay of say one minute, the SSVM should be restarted once again and return to Running state with previous two test cases still passing
+        # 2. After a brief delay of say one minute, the SSVM should be
+        #    restarted once again and return to Running state with previous two
+        #    test cases still passing
         # 3. If either of the two above steps fail the test is a failure
 
         cmd = stopSystemVm.stopSystemVmCmd()
@@ -391,7 +412,9 @@ class TestSSVMs(cloudstackTestCase):
 
         # Validate the following
         # 1. The CPVM should go to stop state
-        # 2. After a brief delay of say one minute, the SSVM should be restarted once again and return to Running state with previous two test cases still passing
+        # 2. After a brief delay of say one minute, the SSVM should be
+        #    restarted once again and return to Running state with previous
+        #    two test cases still passing
         # 3. If either of the two above steps fail the test is a failure
 
         cmd = stopSystemVm.stopSystemVmCmd()
@@ -430,7 +453,8 @@ class TestSSVMs(cloudstackTestCase):
         """
         # Validate the following
         # 1. The SSVM should go to stop and return to Running state
-        # 2. SSVM's public-ip and private-ip must remain the same before and after reboot
+        # 2. SSVM's public-ip and private-ip must remain the same
+        #    before and after reboot
         # 3. The cloud process should still be running within the SSVM
 
         cmd = listSystemVms.listSystemVmsCmd()
@@ -459,16 +483,16 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         self.assertEqual(
-                        ssvm_response.publicip,
-                        old_public_ip,
-                        "Check Public IP after reboot with that of before reboot"
-                        )
+                    ssvm_response.publicip,
+                    old_public_ip,
+                    "Check Public IP after reboot with that of before reboot"
+                    )
 
         self.assertEqual(
-                        ssvm_response.privateip,
-                        old_private_ip,
-                        "Check Private IP after reboot with that of before reboot"
-                        )
+                    ssvm_response.privateip,
+                    old_private_ip,
+                    "Check Private IP after reboot with that of before reboot"
+                    )
         #Call to verify cloud process is running
         self.test_03_ssvm_internals()
         return
@@ -478,7 +502,8 @@ class TestSSVMs(cloudstackTestCase):
         """
         # Validate the following
         # 1. The CPVM should go to stop and return to Running state
-        # 2. CPVM's public-ip and private-ip must remain the same before and after reboot
+        # 2. CPVM's public-ip and private-ip must remain
+        #    the same before and after reboot
         # 3. the cloud process should still be running within the CPVM
 
         cmd = listSystemVms.listSystemVmsCmd()
@@ -508,16 +533,16 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         self.assertEqual(
-                        cpvm_response.publicip,
-                        old_public_ip,
-                        "Check Public IP after reboot with that of before reboot"
-                        )
+                    cpvm_response.publicip,
+                    old_public_ip,
+                    "Check Public IP after reboot with that of before reboot"
+                    )
 
         self.assertEqual(
-                        cpvm_response.privateip,
-                        old_private_ip,
-                        "Check Private IP after reboot with that of before reboot"
-                        )
+                    cpvm_response.privateip,
+                    old_private_ip,
+                    "Check Private IP after reboot with that of before reboot"
+                    )
         #Call to verify cloud process is running
         self.test_04_cpvm_internals()
         return
@@ -528,7 +553,8 @@ class TestSSVMs(cloudstackTestCase):
 
         # Validate the following
         # 1. SSVM should be completely destroyed and a new one will spin up
-        # 2. listSystemVMs will show a different name for the systemVM from what it was before
+        # 2. listSystemVMs will show a different name for the
+        #    systemVM from what it was before
         # 3. new SSVM will have a public/private and link-local-ip
         # 4. cloud process within SSVM must be up and running
 
@@ -551,7 +577,8 @@ class TestSSVMs(cloudstackTestCase):
         cmd.systemvmtype = 'secondarystoragevm'
         ssvm_response = self.apiclient.listSystemVms(cmd)[0]
 
-        # Verify Name, Public IP, Private IP and Link local IP for newly created SSVM
+        # Verify Name, Public IP, Private IP and Link local IP
+        # for newly created SSVM
         self.assertNotEqual(
                         ssvm_response.name,
                         old_name,
@@ -584,7 +611,8 @@ class TestSSVMs(cloudstackTestCase):
 
         # Validate the following
         # 1. CPVM should be completely destroyed and a new one will spin up
-        # 2. listSystemVMs will show a different name for the systemVM from what it was before
+        # 2. listSystemVMs will show a different name for the systemVM from
+        #    what it was before
         # 3. new CPVM will have a public/private and link-local-ip
         # 4. cloud process within CPVM must be up and running
 
@@ -607,7 +635,8 @@ class TestSSVMs(cloudstackTestCase):
         cmd.systemvmtype = 'consoleproxy'
         cpvm_response = self.apiclient.listSystemVms(cmd)[0]
 
-        # Verify Name, Public IP, Private IP and Link local IP for newly created CPVM
+        # Verify Name, Public IP, Private IP and Link local IP
+        # for newly created CPVM
         self.assertNotEqual(
                         cpvm_response.name,
                         old_name,

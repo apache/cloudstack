@@ -17,81 +17,83 @@ class Services:
 
     def __init__(self):
         self.services = {
-                                "service_offering": {
-                                    "name": "Tiny Service Offering",
-                                    "displaytext": "Tiny service offering",
+                        "account": {
+                                    "email": "test@test.com",
+                                    "firstname": "Test",
+                                    "lastname": "User",
+                                    "username": "test",
+                                    # Random characters are appended for unique
+                                    # username
+                                    "password": "fr3sca",
+                         },
+                         "service_offering": {
+                                    "name": "Tiny Instance",
+                                    "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
-                                    },
-                                "server_with_disk":
+                                    "cpuspeed": 200, # in MHz
+                                    "memory": 256, # In MBs
+                        },
+                        "disk_offering": {
+                                    "displaytext": "Small",
+                                    "name": "Small",
+                                    "disksize": 1
+                        },
+                        "server_with_disk":
                                     {
-                                        "template": 256, # Template used for VM creation
-                                        "zoneid": 1,
-                                        "diskoffering": 3, # Optional, if specified data disk will be allocated to VM
                                         "displayname": "testserver",
                                         "username": "root",
                                         "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
-                                        "account": 'testuser',
                                         "domainid": 1,
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
                                 },
 
-                                "server_without_disk":
+                        "server_without_disk":
                                     {
-                                        "template": 256, # Template used for VM creation
-                                        "zoneid": 1,
                                         "displayname": "testserver",
                                         "username": "root",
                                         "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
-                                        "account": 'testuser',
                                         "domainid": 1,
-                                        "privateport": 22, # For NAT rule creation
+                                        "privateport": 22,
+                                        # For NAT rule creation
                                         "publicport": 22,
                                         "protocol": 'TCP',
                                 },
 
-                                "recurring_snapshot":
+                            "recurring_snapshot":
                                     {
-                                     "intervaltype": 'HOURLY', # Frequency of snapshots
+                                     "intervaltype": 'HOURLY',
+                                     # Frequency of snapshots
                                      "maxsnaps": 2, # Should be min 2
                                      "schedule": 1,
                                      "timezone": 'US/Arizona',
                                      # Timezone Formats - http://cloud.mindtouch.us/CloudStack_Documentation/Developer's_Guide%3A_CloudStack 
                                 },
 
-                                "templates":
+                            "templates":
                                 {
-                                    "displaytext": 'Test template snapshot',
-                                    "name": 'template_from_snapshot',
+                                    "displaytext": 'Template from snapshot',
+                                    "name": 'Template from snapshot',
                                     "ostypeid": 12,
                                     "templatefilter": 'self',
                                 },
-                                "small_instance":
-                                {
-                                 "zoneid": 1,
-                                 "serviceofferingid": 1,
-                                },
+                            "ostypeid": 12,
+                            # Cent OS 5.3 (64 bit)
                             "diskdevice": "/dev/xvda",
-                            "template": 256,
-                            "zoneid": 1,
-                            "diskoffering": 3,
                             "diskname": "TestDiskServ",
                             "size": 1, # GBs
-                            "account": 'testuser',
                             "domainid": 1,
                             "mount_dir": "/mnt/tmp",
                             "sub_dir": "test",
                             "sub_lvl_dir1": "test1",
                             "sub_lvl_dir2": "test2",
                             "random_data": "random.data",
-                            "exportpath": 'SecondaryStorage',
+                            "exportpath": 'SecStorage',
                             "sec_storage": '192.168.100.131',
                             # IP address of Sec storage where snapshots are stored
                             "mgmt_server_ip": '192.168.100.154',
@@ -107,11 +109,55 @@ class TestSnapshots(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
-        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client)
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"]
+                                    )
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.services["server_with_disk"]["zoneid"] = cls.zone.id
+        cls.services["server_with_disk"]["diskoffering"] = cls.disk_offering.id
+
+        cls.services["server_without_disk"]["zoneid"] = cls.zone.id
+
+        cls.services["template"] = template.id
+        cls.services["zoneid"] = cls.zone.id
+        cls.services["diskoffering"] = cls.disk_offering.id
+
+        # Create VMs, NAT Rules etc
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            admin=True
+                            )
+
+        cls.services["account"] = cls.account.account.name
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
         cls.virtual_machine = cls.virtual_machine_with_disk = \
-                    VirtualMachine.create(cls.api_client, cls.services["server_with_disk"], serviceofferingid = cls.service_offering.id)
+                    VirtualMachine.create(
+                                cls.api_client,
+                                cls.services["server_with_disk"],
+                                templateid=template.id,
+                                accountid=cls.account.account.name,
+                                serviceofferingid=cls.service_offering.id
+                                )
         cls.virtual_machine_without_disk = \
-                    VirtualMachine.create(cls.api_client, cls.services["server_without_disk"], serviceofferingid = cls.service_offering.id)
+                    VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["server_without_disk"],
+                                    templateid=template.id,
+                                    accountid=cls.account.account.name,
+                                    serviceofferingid=cls.service_offering.id
+                                    )
 
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
@@ -120,8 +166,20 @@ class TestSnapshots(cloudstackTestCase):
                                            cls.virtual_machine.domainid,
                                            cls.services["server_with_disk"]
                                            )
-        cls.nat_rule = NATRule.create(cls.api_client, cls.virtual_machine, cls.services["server_with_disk"], ipaddressid = cls.public_ip.ipaddress.id)
-        cls._cleanup = [cls.virtual_machine, cls.nat_rule, cls.virtual_machine_without_disk, cls.public_ip, cls.service_offering]
+        cls.nat_rule = NATRule.create(
+                                    cls.api_client,
+                                    cls.virtual_machine,
+                                    cls.services["server_with_disk"],
+                                    ipaddressid=cls.public_ip.ipaddress.id
+                                    )
+        cls._cleanup = [
+                        cls.virtual_machine,
+                        cls.nat_rule,
+                        cls.public_ip,
+                        cls.service_offering,
+                        cls.disk_offering,
+                        cls.account,
+                        ]
         return
 
     @classmethod
@@ -152,9 +210,11 @@ class TestSnapshots(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1.listSnapshots should list the snapshot that was created.
-        # 2.verify that secondary storage NFS share contains the reqd volume under /secondary/snapshots/$volumeid/$snapshot_uuid
-        # 3.verify backup_snap_id was non null in the `snapshots` table
+        # 1. listSnapshots should list the snapshot that was created.
+        # 2. verify that secondary storage NFS share contains
+        #    the reqd volume under
+        #    /secondary/snapshots/$volumeid/$snapshot_uuid
+        # 3. verify backup_snap_id was non null in the `snapshots` table
 
         cmd = listVolumes.listVolumesCmd()
         cmd.virtualmachineid = self.virtual_machine_with_disk.id
@@ -167,20 +227,29 @@ class TestSnapshots(cloudstackTestCase):
         cmd.id = snapshot.id
         list_snapshots = self.apiclient.listSnapshots(cmd)
 
-        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        self.assertNotEqual(
+                            list_snapshots,
+                            None,
+                            "Check if result exists in list item call"
+                            )
         self.assertEqual(
                             list_snapshots[0].id,
                             snapshot.id,
                             "Check resource id in list resources call"
                         )
-        self.debug("select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" % snapshot.id)
-        qresultset = self.dbclient.execute("select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" % snapshot.id)
+        self.debug(
+            "select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" \
+            % snapshot.id
+            )
+        qresultset = self.dbclient.execute(
+                        "select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" \
+                        % snapshot.id
+                        )
         self.assertNotEqual(
                             len(qresultset),
                             0,
                             "Check DB Query result set"
                             )
-
 
         qresult = qresultset[0]
         self.assertNotEqual(
@@ -190,25 +259,29 @@ class TestSnapshots(cloudstackTestCase):
                         )
 
         # Login to management server to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
-                                                self.services["mgmt_server_ip"],
-                                                self.services["ssh_port"],
-                                                self.services["username"],
-                                                self.services["password"]
-                                            )
-
+        ssh_client = self.virtual_machine_without_disk.get_ssh_client(
+                                                        self.nat_rule.ipaddress
+                                                        )
         cmds = [    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (self.services["sec_storage"], self.services["exportpath"], self.services["mount_dir"]),
-                    "ls %s/snapshots/%s/%s" % (self.services["mount_dir"], qresult[1], qresult[2]),
+                    "mount %s:/%s %s" % (
+                                         self.services["sec_storage"],
+                                         self.services["exportpath"],
+                                         self.services["mount_dir"]
+                                         ),
+                    "ls %s/snapshots/%s/%s" % (
+                                               self.services["mount_dir"],
+                                               qresult[1],
+                                               qresult[2]
+                                               ),
                 ]
 
         for c in cmds:
             result = ssh_client.execute(c)
 
         self.assertEqual(
-                            result[0],
-                            str(qresult[3]) + ".vhd",
-                            "Check snapshot UUID in secondary storage and database"
+                        result[0],
+                        str(qresult[3]) + ".vhd",
+                        "Check snapshot UUID in secondary storage and database"
                         )
         return
 
@@ -226,14 +299,24 @@ class TestSnapshots(cloudstackTestCase):
         cmd.id = snapshot.id
         list_snapshots = self.apiclient.listSnapshots(cmd)
 
-        self.assertNotEqual(list_snapshots, None, "Check if result exists in list item call")
+        self.assertNotEqual(
+                            list_snapshots,
+                            None,
+                            "Check if result exists in list item call"
+                            )
         self.assertEqual(
                             list_snapshots[0].id,
                             snapshot.id,
                             "Check resource id in list resources call"
                         )
-        self.debug("select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" % 6)#snapshot.id
-        qresultset = self.dbclient.execute("select backup_snap_id, account_id, volume_id, backup_snap_id from snapshots where id = %s;" % 6) # snapshot.id
+        self.debug(
+            "select backup_snap_id, account_id, volume_id, path from snapshots where id = %s;" \
+            % snapshot.id
+            )
+        qresultset = self.dbclient.execute(
+                        "select backup_snap_id, account_id, volume_id, backup_snap_id from snapshots where id = %s;" \
+                        % snapshot.id
+                        )
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -249,16 +332,20 @@ class TestSnapshots(cloudstackTestCase):
                         )
 
         # Login to management server to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
-                                                self.services["mgmt_server_ip"],
-                                                self.services["ssh_port"],
-                                                self.services["username"],
-                                                self.services["password"]
-                                            )
-
+        ssh_client = self.virtual_machine_with_disk.get_ssh_client(
+                                                        self.nat_rule.ipaddress
+                                                        )
         cmds = [    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (self.services["sec_storage"], self.services["exportpath"], self.services["mount_dir"]),
-                    "ls %s/snapshots/%s/%s" % (self.services["mount_dir"], qresult[1], qresult[2]),
+                    "mount %s:/%s %s" % (
+                                         self.services["sec_storage"],
+                                         self.services["exportpath"],
+                                         self.services["mount_dir"]
+                                         ),
+                    "ls %s/snapshots/%s/%s" % (
+                                               self.services["mount_dir"],
+                                               qresult[1],
+                                               qresult[2]
+                                               ),
                 ]
         for c in cmds:
             result = ssh_client.execute(c)
@@ -281,11 +368,19 @@ class TestSnapshots(cloudstackTestCase):
         random_data_0 = random_gen(100)
         random_data_1 = random_gen(100)
 
-        ssh_client = self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
+        ssh_client = self.virtual_machine.get_ssh_client(
+                                                self.nat_rule.ipaddress
+                                                )
         #Format partition using ext3
-        format_volume_to_ext3(ssh_client, self.services["diskdevice"])
+        format_volume_to_ext3(
+                              ssh_client,
+                              self.services["diskdevice"]
+                              )
         cmds = [    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s1 %s" % (self.services["diskdevice"], self.services["mount_dir"]),
+                    "mount %s1 %s" % (
+                                      self.services["diskdevice"],
+                                      self.services["mount_dir"]
+                                      ),
                     "pushd %s" % self.services["mount_dir"],
                     "mkdir -p %s/{%s,%s} " % (
                                                 self.services["sub_dir"],
@@ -317,7 +412,11 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(self.apiclient, volume.id)
         self.cleanup.append(snapshot)
         #Create volume from snapshot
-        volume = Volume.create_from_snapshot(self.apiclient, snapshot.id, self.services)
+        volume = Volume.create_from_snapshot(
+                                             self.apiclient,
+                                             snapshot.id,
+                                             self.services
+                                             )
         self.cleanup.append(volume)
         cmd = listVolumes.listVolumesCmd()
         cmd.id = volume.id
@@ -344,35 +443,37 @@ class TestSnapshots(cloudstackTestCase):
         ssh = new_virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
         cmds = [
                     "mkdir %s" % self.services["mount_dir"],
-                    "mount %s1 %s" % (self.services["diskdevice"], self.services["mount_dir"])
+                    "mount %s1 %s" % (
+                                      self.services["diskdevice"],
+                                      self.services["mount_dir"]
+                                      )
                ]
 
         for c in cmds:
             self.debug(ssh.execute(c))
 
         returned_data_0 = ssh.execute("cat %s/%s/%s" % (
-                                                        self.services["sub_dir"],
-                                                        self.services["sub_lvl_dir1"],
-                                                        self.services["random_data"]
-                                                        )
-                                    )
+                                                self.services["sub_dir"],
+                                                self.services["sub_lvl_dir1"],
+                                                self.services["random_data"]
+                                    ))
 
         returned_data_1 = ssh.execute("cat %s/%s/%s" % (
-                                                        self.services["sub_dir"],
-                                                        self.services["sub_lvl_dir2"],
-                                                        self.services["random_data"]
+                                                self.services["sub_dir"],
+                                                self.services["sub_lvl_dir2"],
+                                                self.services["random_data"]
                                     ))
         #Verify returned data
         self.assertEqual(
-                            random_data_0,
-                            returned_data_0[0],
-                            "Verify newly attached volume contents with existing one"
+                    random_data_0,
+                    returned_data_0[0],
+                    "Verify newly attached volume contents with existing one"
                         )
         self.assertEqual(
-                            random_data_1,
-                            returned_data_1[0],
-                            "Verify newly attached volume contents with existing one"
-                        )
+                    random_data_1,
+                    returned_data_1[0],
+                    "Verify newly attached volume contents with existing one"
+                )
 
         #detach volume for cleanup
         cmd = detachVolume.detachVolumeCmd()
@@ -398,7 +499,11 @@ class TestSnapshots(cloudstackTestCase):
         cmd = listSnapshots.listSnapshotsCmd()
         cmd.id = snapshot.id
         list_snapshots = self.apiclient.listSnapshots(cmd)
-        self.assertEqual(list_snapshots, None, "Check if result exists in list item call")
+        self.assertEqual(
+                         list_snapshots,
+                         None,
+                         "Check if result exists in list item call"
+                         )
         return
 
     def test_05_recurring_snapshot_root_disk(self):
@@ -412,7 +517,11 @@ class TestSnapshots(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine_with_disk.id
         cmd.type = 'ROOT'
         volume = self.apiclient.listVolumes(cmd)
-        recurring_snapshot = SnapshotPolicy.create(self.apiclient, volume[0].id, self.services["recurring_snapshot"])
+        recurring_snapshot = SnapshotPolicy.create(
+                                           self.apiclient,
+                                           volume[0].id,
+                                           self.services["recurring_snapshot"]
+                                        )
         self.cleanup.append(recurring_snapshot)
         #ListSnapshotPolicy should return newly created policy
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
@@ -420,20 +529,27 @@ class TestSnapshots(cloudstackTestCase):
         cmd.volumeid = volume[0].id
         list_snapshots_policy = self.apiclient.listSnapshotPolicies(cmd)
 
-        self.assertNotEqual(list_snapshots_policy, None, "Check if result exists in list item call")
+        self.assertNotEqual(
+                            list_snapshots_policy,
+                            None,
+                            "Check if result exists in list item call"
+                            )
         snapshots_policy = list_snapshots_policy[0]
         self.assertEqual(
-                            snapshots_policy.id,
-                            recurring_snapshot.id,
-                            "Check recurring snapshot id in list resources call"
+                        snapshots_policy.id,
+                        recurring_snapshot.id,
+                        "Check recurring snapshot id in list resources call"
                         )
         self.assertEqual(
-                            snapshots_policy.maxsnaps,
-                            self.services["recurring_snapshot"]["maxsnaps"],
-                            "Check interval type in list resources call"
+                        snapshots_policy.maxsnaps,
+                        self.services["recurring_snapshot"]["maxsnaps"],
+                        "Check interval type in list resources call"
                         )
-        #Sleep for (maxsnaps+1) hours to verify only maxsnaps snapshots are retained
-        time.sleep(((self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600)
+        # Sleep for (maxsnaps+1) hours to verify
+        # only maxsnaps snapshots are retained
+        time.sleep(
+            ((self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600
+            )
         cmd = listSnapshots.listSnapshotsCmd()
         cmd.volumeid = volume.id
         cmd.intervaltype = self.services["recurring_snapshot"]["intervaltype"]
@@ -457,7 +573,11 @@ class TestSnapshots(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine_with_disk.id
         cmd.type = 'DATADISK'
         volume = self.apiclient.listVolumes(cmd)
-        recurring_snapshot = SnapshotPolicy.create(self.apiclient, volume[0].id, self.services["recurring_snapshot"])
+        recurring_snapshot = SnapshotPolicy.create(
+                                    self.apiclient,
+                                    volume[0].id,
+                                    self.services["recurring_snapshot"]
+                                )
         self.cleanup.append(recurring_snapshot)
         #ListSnapshotPolicy should return newly created policy
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
@@ -465,12 +585,16 @@ class TestSnapshots(cloudstackTestCase):
         cmd.volumeid = volume[0].id
         list_snapshots_policy = self.apiclient.listSnapshotPolicies(cmd)
 
-        self.assertNotEqual(list_snapshots_policy, None, "Check if result exists in list item call")
+        self.assertNotEqual(
+                            list_snapshots_policy,
+                            None,
+                            "Check if result exists in list item call"
+                            )
         snapshots_policy = list_snapshots_policy[0]
         self.assertEqual(
-                            snapshots_policy.id,
-                            recurring_snapshot.id,
-                            "Check recurring snapshot id in list resources call"
+                        snapshots_policy.id,
+                        recurring_snapshot.id,
+                        "Check recurring snapshot id in list resources call"
                         )
         self.assertEqual(
                             snapshots_policy.maxsnaps,
@@ -478,8 +602,11 @@ class TestSnapshots(cloudstackTestCase):
                             "Check interval type in list resources call"
                         )
 
-        #Sleep for (maxsnaps+1) hours to verify only maxsnaps snapshots are retained
-        time.sleep(((self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600)
+        # Sleep for (maxsnaps+1) hours to
+        # verify only maxsnaps snapshots are retained
+        time.sleep(
+            ((self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600
+            )
 
         cmd = listSnapshots.listSnapshotsCmd()
         cmd.volumeid = volume.id
@@ -510,10 +637,15 @@ class TestSnapshots(cloudstackTestCase):
         random_data_1 = random_gen(100)
 
         #Login to virtual machine
-        ssh_client = self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
+        ssh_client = self.virtual_machine.get_ssh_client(
+                                                        self.nat_rule.ipaddress
+                                                        )
 
         cmds = [    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s1 %s" % (self.services["diskdevice"], self.services["mount_dir"]),
+                    "mount %s1 %s" % (
+                                      self.services["diskdevice"],
+                                      self.services["mount_dir"]
+                                      ),
                     "pushd %s" % self.services["mount_dir"],
                     "mkdir -p %s/{%s,%s} " % (
                                                 self.services["sub_dir"],
@@ -546,14 +678,22 @@ class TestSnapshots(cloudstackTestCase):
         self.cleanup.append(snapshot)
 
         # Generate template from the snapshot
-        template = Template.create_from_snapshot(self.apiclient, snapshot, self.services["templates"])
+        template = Template.create_from_snapshot(
+                                    self.apiclient,
+                                    snapshot,
+                                    self.services["templates"]
+                                    )
 
         cmd = listTemplates.listTemplatesCmd()
         cmd.templatefilter = self.services["templates"]["templatefilter"]
         cmd.id = template.id
         list_templates = self.apiclient.listTemplates(cmd)
 
-        self.assertNotEqual(list_templates, None, "Check if result exists in list item call")
+        self.assertNotEqual(
+                            list_templates,
+                            None,
+                            "Check if result exists in list item call"
+                            )
 
         self.assertEqual(
                             list_templates[0].id,
@@ -563,34 +703,46 @@ class TestSnapshots(cloudstackTestCase):
 
         # Deploy new virtual machine using template
         new_virtual_machine = VirtualMachine.create(
-                                                        self.apiclient,
-                                                        self.services["server_without_disk"],
-                                                        templateid = template.id,
-                                                        serviceofferingid = self.service_offering.id
-                                                    )
+                                    self.apiclient,
+                                    self.services["server_without_disk"],
+                                    templateid=template.id,
+                                    accountid=self.account.account.name,
+                                    serviceofferingid=self.service_offering.id
+                                    )
         self.cleanup.append(new_virtual_machine)
 
         #Login to VM & mount directory
         ssh = new_virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
         cmds = [
                     "mkdir %s" % self.services["mount_dir"],
-                    "mount %s1 %s" % (self.services["diskdevice"], self.services["mount_dir"])
+                    "mount %s1 %s" % (
+                                      self.services["diskdevice"],
+                                      self.services["mount_dir"]
+                                      )
                ]
 
         for c in cmds:
             ssh.execute(c)
 
         returned_data_0 = ssh.execute("cat %s/%s/%s" % (
-                                                        self.services["sub_dir"],
-                                                        self.services["sub_lvl_dir1"],
-                                                        self.services["random_data"]
+                                                self.services["sub_dir"],
+                                                self.services["sub_lvl_dir1"],
+                                                self.services["random_data"]
                                     ))
         returned_data_1 = ssh.execute("cat %s/%s/%s" % (
-                                                        self.services["sub_dir"],
-                                                        self.services["sub_lvl_dir2"],
-                                                        self.services["random_data"]
+                                                self.services["sub_dir"],
+                                                self.services["sub_lvl_dir2"],
+                                                self.services["random_data"]
                                     ))
         #Verify returned data
-        self.assertEqual(random_data_0, returned_data_0[0], "Verify newly attached volume contents with existing one")
-        self.assertEqual(random_data_1, returned_data_1[0], "Verify newly attached volume contents with existing one")
+        self.assertEqual(
+                random_data_0,
+                returned_data_0[0],
+                "Verify newly attached volume contents with existing one"
+                )
+        self.assertEqual(
+                random_data_1,
+                returned_data_1[0],
+                "Verify newly attached volume contents with existing one"
+                )
         return

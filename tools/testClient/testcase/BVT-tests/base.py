@@ -284,7 +284,7 @@ class Iso:
         if "ispublic" in services:
             cmd.ispublic = services["ispublic"]
 
-        return Iso(apiclient.createTemplate(cmd)[0].__dict__)
+        return Iso(apiclient.registerIso(cmd)[0].__dict__)
 
     def delete(self, apiclient):
         cmd = deleteIso.deleteIsoCmd()
@@ -608,7 +608,14 @@ def get_zone(apiclient):
     "Returns a default zone"
 
     cmd = listZones.listZonesCmd()
-    return apiclient.listZones(cmd)[1]
+    return apiclient.listZones(cmd)[0]
+
+def get_pod(apiclient, zoneid):
+    "Returns a default pod for specified zone"
+
+    cmd = listPods.listPodsCmd()
+    cmd.zoneid = zoneid
+    return apiclient.listPods(cmd)[0]
 
 def get_template(apiclient, zoneid, ostypeid=12):
     "Returns a template"
