@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.resource.computing;
@@ -31,7 +31,7 @@ public class LibvirtVMDef {
 	private String _domUUID;
 	private String _desc;
 	private final Map<String, Object> components = new HashMap<String,Object>();
-	
+
 	public static class GuestDef {
 		enum guestType {
 			KVM,
@@ -106,7 +106,7 @@ public class LibvirtVMDef {
 				return null;
 		}
 	}
-	
+
 	public static class GuestResourceDef {
 		private long _mem;
 		private int _currentMem = -1;
@@ -140,7 +140,7 @@ public class LibvirtVMDef {
 			return resBuidler.toString();
 		}
 	}
-	
+
 	public static class FeaturesDef {
 		private final List<String> _features = new ArrayList<String>();
 		public void addFeatures(String feature) {
@@ -182,14 +182,14 @@ public class LibvirtVMDef {
 			return term.toString();
 		}
 	}
-	
+
 	public static class ClockDef {
 		public enum ClockOffset {
 			UTC("utc"),
 			LOCALTIME("localtime"),
 			TIMEZONE("timezone"),
 			VARIABLE("variable");
-			
+
 			private String _offset;
 			private ClockOffset(String offset) {
 				_offset = offset;
@@ -203,21 +203,21 @@ public class LibvirtVMDef {
 		private String _timerName;
 		private String _tickPolicy;
 		private String _track;
-		
+
 		public ClockDef() {
 			_offset = ClockOffset.UTC;
 		}
-		
+
 		public void setClockOffset(ClockOffset offset) {
 			_offset = offset;
 		}
-		
+
 		public void setTimer(String timerName, String tickPolicy, String track) {
 			_timerName = timerName;
 			_tickPolicy = tickPolicy;
 			_track = track;
 		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder clockBuilder = new StringBuilder();
@@ -228,19 +228,19 @@ public class LibvirtVMDef {
 				clockBuilder.append("<timer name='");
 				clockBuilder.append(_timerName);
 				clockBuilder.append("' ");
-				
+
 				if (_tickPolicy != null) {
 					clockBuilder.append("tickpolicy='");
 					clockBuilder.append(_tickPolicy);
 					clockBuilder.append("' ");
 				}
-				
+
 				if (_track != null) {
 					clockBuilder.append("track='");
 					clockBuilder.append(_track);
 					clockBuilder.append("' ");
 				}
-				
+
 				clockBuilder.append(">\n");
 				clockBuilder.append("</timer>\n");
 			}
@@ -248,13 +248,13 @@ public class LibvirtVMDef {
 			return clockBuilder.toString();
 		}
 	}
-	
+
 	public static class DevicesDef {
 		private String _emulator;
 		private final Map<String, List<?>> devices = new HashMap<String, List<?>>();
 		public boolean addDevice(Object device) {
 			Object dev = devices.get(device.getClass().toString());
-			if (dev == null) { 
+			if (dev == null) {
 				List<Object> devs = new ArrayList<Object>();
 				devs.add(device);
 				devices.put(device.getClass().toString(), devs);
@@ -274,7 +274,7 @@ public class LibvirtVMDef {
 			if (_emulator != null) {
 				devicesBuilder.append("<emulator>" + _emulator + "</emulator>\n");
 			}
-		
+
 			for (List<?> devs : devices.values()) {
 				for (Object dev : devs) {
 					devicesBuilder.append(dev.toString());
@@ -289,7 +289,7 @@ public class LibvirtVMDef {
 		public List<InterfaceDef> getInterfaces() {
 			return (List<InterfaceDef>)devices.get(InterfaceDef.class.toString());
 		}
-		
+
 	}
 	public static class DiskDef {
 		enum deviceType {
@@ -347,7 +347,7 @@ public class LibvirtVMDef {
 				return _fmtType;
 			}
 		}
-		
+
 		private deviceType _deviceType; /*floppy, disk, cdrom*/
 		private diskType _diskType;
 		private String _sourcePath;
@@ -374,7 +374,7 @@ public class LibvirtVMDef {
 			if ( devId == 2 ) {
 				devId++;
 			}
-			
+
 			char suffix = (char)('a' + devId);
 			if (bus == diskBus.SCSI) {
 				return "sd" + suffix;
@@ -382,11 +382,11 @@ public class LibvirtVMDef {
 				return "vd" + suffix;
 			}
 			return "hd" + suffix;
-			
+
 		}
-		
+
 		public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType) {
-			
+
 			_diskType = diskType.FILE;
 			_deviceType = deviceType.DISK;
 			_sourcePath = filePath;
@@ -484,7 +484,7 @@ public class LibvirtVMDef {
 			return diskBuilder.toString();
 		}
 	}
-	
+
 	public static class InterfaceDef {
 		enum guestNetType {
 			BRIDGE("bridge"),
@@ -543,15 +543,15 @@ public class LibvirtVMDef {
 			_macAddr = macAddr;
 			_model = model;
 		}
-		
+
 		public void setHostNetType(hostNicType hostNetType) {
 			_hostNetType = hostNetType;
 		}
-		
+
 		public hostNicType getHostNetType() {
 			return _hostNetType;
 		}
-		
+
 		public String getBrName() {
 			return _sourceName;
 		}
@@ -564,7 +564,7 @@ public class LibvirtVMDef {
 		public String getMacAddress() {
 		    return _macAddr;
 		}
-		
+
 		@Override
         public String toString() {
 			StringBuilder netBuilder = new StringBuilder();
@@ -738,75 +738,75 @@ public class LibvirtVMDef {
 		vmBuilder.append("</domain>\n");
 		return vmBuilder.toString();
 	}
-	
+
 	public static void main(String [] args){
 		System.out.println("testing");
 		LibvirtVMDef vm = new LibvirtVMDef();
 		vm.setHvsType("kvm");
 		vm.setDomainName("testing");
 		vm.setDomUUID(UUID.randomUUID().toString());
-		
+
 		GuestDef guest = new GuestDef();
 		guest.setGuestType(GuestDef.guestType.KVM);
 		guest.setGuestArch("x86_64");
 		guest.setMachineType("pc-0.11");
 		guest.setBootOrder(GuestDef.bootOrder.HARDISK);
 		vm.addComp(guest);
-		
+
 		GuestResourceDef grd = new GuestResourceDef();
 		grd.setMemorySize(512*1024);
 		grd.setVcpuNum(1);
 		vm.addComp(grd);
-		
+
 		FeaturesDef features = new FeaturesDef();
 		features.addFeatures("pae");
 		features.addFeatures("apic");
 		features.addFeatures("acpi");
 		vm.addComp(features);
-		
+
 		TermPolicy term = new TermPolicy();
 		term.setCrashPolicy("destroy");
 		term.setPowerOffPolicy("destroy");
 		term.setRebootPolicy("destroy");
 		vm.addComp(term);
-		
+
 		DevicesDef devices = new DevicesDef();
 		devices.setEmulatorPath("/usr/bin/cloud-qemu-system-x86_64");
-		
+
 		DiskDef hda = new DiskDef();
 		hda.defFileBasedDisk("/path/to/hda1", 0, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		devices.addDevice(hda);
-		
+
 		DiskDef hdb = new DiskDef();
 		hdb.defFileBasedDisk("/path/to/hda2", 1,  DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		devices.addDevice(hdb);
-		
+
 		InterfaceDef pubNic = new InterfaceDef();
 		pubNic.defBridgeNet("cloudbr0", "vnet1", "00:16:3e:77:e2:a1", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(pubNic);
-		
+
 		InterfaceDef privNic = new InterfaceDef();
 		privNic.defPrivateNet("cloud-private", null, "00:16:3e:77:e2:a2", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(privNic);
-		
+
 		InterfaceDef vlanNic = new InterfaceDef();
 		vlanNic.defBridgeNet("vnbr1000", "tap1", "00:16:3e:77:e2:a2", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(vlanNic);
-		
+
 		SerialDef serial = new SerialDef("pty", null, (short)0);
 		devices.addDevice(serial);
-		
+
 		ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
 		devices.addDevice(console);
-		
+
 		GraphicDef grap = new GraphicDef("vnc", (short)0, true, null, null, null);
 		devices.addDevice(grap);
-		
+
 		InputDef input = new InputDef("tablet", "usb");
 		devices.addDevice(input);
-		
+
 		vm.addComp(devices);
-		
+
 		System.out.println(vm.toString());
 	}
 

@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.resource.computing;
@@ -31,7 +31,7 @@ public class LibvirtStorageVolumeDef {
 		public String toString() {
 			return _format;
 		}
-		
+
 		public static volFormat getFormat(String format) {
 			if (format == null) {
 				return null;
@@ -49,7 +49,7 @@ public class LibvirtStorageVolumeDef {
 	private volFormat _volFormat;
 	private String _backingPath;
 	private volFormat _backingFormat;
-	
+
 	public LibvirtStorageVolumeDef(String volName, Long size, volFormat format, String tmplPath, volFormat tmplFormat) {
 		_volName = volName;
 		_volSize = size;
@@ -57,7 +57,7 @@ public class LibvirtStorageVolumeDef {
 		_backingPath = tmplPath;
 		_backingFormat = tmplFormat;
 	}
-	
+
 	public volFormat getFormat() {
 		return this._volFormat;
 	}
@@ -66,7 +66,7 @@ public class LibvirtStorageVolumeDef {
 		StringBuilder storageVolBuilder = new StringBuilder();
 		storageVolBuilder.append("<volume>\n");
 		storageVolBuilder.append("<name>" + _volName + "</name>\n");
-		if (_volSize != null) { 
+		if (_volSize != null) {
 			storageVolBuilder.append("<capacity >" + _volSize + "</capacity>\n");
 		}
 		storageVolBuilder.append("<target>\n");
@@ -84,5 +84,5 @@ public class LibvirtStorageVolumeDef {
 		storageVolBuilder.append("</volume>\n");
 		return storageVolBuilder.toString();
 	}
-	
+
 }

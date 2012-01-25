@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.resource.computing;
@@ -46,13 +46,13 @@ public class KVMHABase {
 		PrimaryStorage,
 		SecondaryStorage
 	}
-	public static class NfsStoragePool {		
+	public static class NfsStoragePool {
 		String _poolUUID;
 		String _poolIp;
 		String _poolMountSourcePath;
 		String _mountDestPath;
 		PoolType _type;
-		
+
 		public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
 			this._poolUUID = poolUUID;
 			this._poolIp = poolIp;
@@ -61,12 +61,12 @@ public class KVMHABase {
 			this._type = type;
 		}
 	}
-	
+
 	protected String checkingMountPoint(NfsStoragePool pool, String poolName) {
 		String mountSource = pool._poolIp + ":" + pool._poolMountSourcePath;
 		String mountPaths = Script.runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
 		String destPath = pool._mountDestPath;
-		
+
 		if (mountPaths != null) {
 			String token[] = mountPaths.split(" ");
 			String mountType = token[2];
@@ -97,16 +97,16 @@ public class KVMHABase {
 				if (result != null) {
 					destPath = null;
 				}
-				
+
 				destroyVMs(destPath);
 			}
 		}
-		
+
 		return destPath;
 	}
-	
+
 	protected String getMountPoint(NfsStoragePool storagePool) {
-		
+
 		StoragePool pool = null;
 		String poolName = null;
 		try {
@@ -121,7 +121,7 @@ public class KVMHABase {
 			}
 			poolName = pool.getName();
 		} catch (LibvirtException e) {
-			
+
 		} finally {
 			try {
 				if (pool != null) {
@@ -131,9 +131,9 @@ public class KVMHABase {
 
 			}
 		}
-		
+
 		return checkingMountPoint(storagePool, poolName);
-	} 
+	}
 
 	protected void destroyVMs(String mountPath) {
 		/*if there are VMs using disks under this mount path, destroy them*/
@@ -142,25 +142,25 @@ public class KVMHABase {
 		cmd.add("ps axu|grep qemu|grep " + mountPath + "* |awk '{print $2}'");
 		AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 		String result = cmd.execute(parser);
-		
+
 		if (result != null) {
 			return;
 		}
-		
+
 		String pids[] = parser.getLines().split("\n");
 		for (String pid : pids) {
 			Script.runSimpleBashScript("kill -9 " + pid);
 		}
 	}
-	
+
 	protected String getHBFile(String mountPoint, String hostIP) {
 		return mountPoint + File.separator + "KVMHA" + File.separator + "hb-" + hostIP;
 	}
-	
+
 	protected String getHBFolder(String mountPoint) {
 		return mountPoint + File.separator + "KVMHA" + File.separator;
 	}
-	
+
 	protected String runScriptRetry(String cmdString, OutputInterpreter interpreter) {
 		String result = null;
 		for (int i = 0; i < 3; i++) {
@@ -172,31 +172,31 @@ public class KVMHABase {
 			else {
 				result = cmd.execute();
 			}
-			if (result == Script.ERR_TIMEOUT) {			
+			if (result == Script.ERR_TIMEOUT) {
 				continue;
 			} else if (result == null) {
 				break;
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	public static void main(String[] args) {
-	
+
 		NfsStoragePool pool = new KVMHAMonitor.NfsStoragePool(null,null,null,null, PoolType.PrimaryStorage);
-	
+
 		KVMHAMonitor haWritter = new KVMHAMonitor(pool, "192.168.1.163", null);
 		Thread ha = new Thread(haWritter);
 		ha.start();
-		
+
 		KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(), "192.168.1.163");
-		
+
 		ExecutorService exe = Executors.newFixedThreadPool(1);
 		Future<Boolean> future = exe.submit((Callable<Boolean>)haChecker);
 		try {
 			for (int i = 0; i < 10; i++) {
-				System.out.println(future.get());		
+				System.out.println(future.get());
 				future = exe.submit((Callable<Boolean>)haChecker);
 			}
 		} catch (InterruptedException e) {
@@ -206,7 +206,7 @@ public class KVMHABase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
 }

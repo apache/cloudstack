@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.resource.computing;
 
@@ -51,20 +51,20 @@ public class LibvirtDomainXMLParser {
 	private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
 	private Integer vncPort;
 	private String desc;
-	
+
 	public boolean parseDomainXML(String domXML) {
 	    DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            
+
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(domXML));
             Document doc = builder.parse(is);
-            
+
             Element rootElement = doc.getDocumentElement();
-            
+
             desc = getTagValue("description", rootElement);
-            
+
             Element devices = (Element)rootElement.getElementsByTagName("devices").item(0);
             NodeList disks = devices.getElementsByTagName("disk");
             for (int i = 0; i < disks.getLength(); i++) {
@@ -77,7 +77,7 @@ public class LibvirtDomainXMLParser {
                 String bus = getAttrValue("target", "bus", disk);
                 String type = disk.getAttribute("type");
                 String device = disk.getAttribute("device");
-                
+
                 DiskDef def = new DiskDef();
                 if (type.equalsIgnoreCase("file")) {
                     if (device.equalsIgnoreCase("disk")) {
@@ -94,11 +94,11 @@ public class LibvirtDomainXMLParser {
                 }
                 diskDefs.add(def);
             }
-            
+
             NodeList nics = devices.getElementsByTagName("interface");
             for (int i = 0; i < nics.getLength(); i++ ) {
                 Element nic = (Element)nics.item(i);
-                
+
                 String type = nic.getAttribute("type");
                 String mac = getAttrValue("mac", "address", nic);
                 String dev = getAttrValue("target", "dev", nic);
@@ -114,7 +114,7 @@ public class LibvirtDomainXMLParser {
                 }
                 interfaces.add(def);
             }
-            
+
             Element graphic = (Element)devices.getElementsByTagName("graphics").item(0);
             String port = graphic.getAttribute("port");
             if (port != null) {
@@ -140,18 +140,18 @@ public class LibvirtDomainXMLParser {
         }
         return false;
 	}
-	
+
 	private static String getTagValue(String tag, Element eElement){
 	    NodeList tagNodeList = eElement.getElementsByTagName(tag);
 	    if (tagNodeList == null || tagNodeList.getLength() == 0) {
 	        return null;
 	    }
-	    
+
 	    NodeList nlList= tagNodeList.item(0).getChildNodes();
 
-	    Node nValue = (Node) nlList.item(0); 
+	    Node nValue = (Node) nlList.item(0);
 
-	    return nValue.getNodeValue();    
+	    return nValue.getNodeValue();
 	}
 
 	private static String getAttrValue(String tag, String attr, Element eElement){
@@ -162,19 +162,19 @@ public class LibvirtDomainXMLParser {
 	    Element node = (Element)tagNode.item(0);
 	    return node.getAttribute(attr);
 	}
-	
+
 	public Integer getVncPort() {
 		return vncPort;
 	}
-	
+
 	public List<InterfaceDef> getInterfaces() {
 		return interfaces;
 	}
-	
+
 	public List<DiskDef> getDisks() {
 		return diskDefs;
 	}
-	
+
 	public String getDescription() {
 		return desc;
 	}
@@ -244,7 +244,7 @@ public class LibvirtDomainXMLParser {
 		}
 		System.out.println(parser.getVncPort());
 		System.out.println(parser.getDescription());
-		
+
 		List<String> test = new ArrayList<String>(1);
 		test.add("1");
 		test.add("2");

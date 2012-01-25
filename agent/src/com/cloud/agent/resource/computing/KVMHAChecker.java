@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.resource.computing;
@@ -38,12 +38,12 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 		this._pools = pools;
 		this._hostIP = host;
 	}
-	
+
 	/*True means heartbeaing is on going, or we can't get it's status. False means heartbeating is stopped definitely */
 	private Boolean checkingHB() {
 		List<Boolean> results = new ArrayList<Boolean>();
 		for (NfsStoragePool pool : _pools) {
-			
+
 			Script cmd = new Script(_heartBeatPath, _heartBeatCheckerTimeout, s_logger);
 			cmd.add("-i", pool._poolIp);
 			cmd.add("-p", pool._poolMountSourcePath);
@@ -63,20 +63,20 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 				results.add(true);
 			}
 		}
-			
-		
+
+
 		for (Boolean r : results) {
 			if (r) {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
 	@Override
 	public Boolean call() throws Exception {
 		//s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new org.apache.log4j.PatternLayout(), "System.out"));
-		return checkingHB();	
+		return checkingHB();
 	}
 }

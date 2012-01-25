@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.resource.computing;
@@ -109,7 +109,7 @@ import com.cloud.vm.VirtualMachine.State;
 
 /**
  * Pretends to be a computing resource
- * 
+ *
  */
 @Local(value={ServerResource.class})
 public class FakeComputingResource extends ServerResourceBase implements ServerResource {
@@ -130,7 +130,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
     public StartupCommand[] initialize() {
         Map<String, VmState> changes = null;
 
- 
+
         final List<Object> info = getHostInfo();
 
         final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes);
@@ -145,7 +145,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
 
         return new StartupCommand[]{cmd, sscmd};
-       
+
     }
 
     private Map<String, String> getVersionStrings() {
@@ -153,8 +153,8 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         String hostOs = (String) _params.get("Host.OS");
         String hostOsVer = (String) _params.get("Host.OS.Version");
         String hostOsKernVer = (String) _params.get("Host.OS.Kernel.Version");
-        result.put("Host.OS", hostOs==null?"Fedora":hostOs); 
-        result.put("Host.OS.Version", hostOsVer==null?"14":hostOsVer); 
+        result.put("Host.OS", hostOs==null?"Fedora":hostOs);
+        result.put("Host.OS.Version", hostOsVer==null?"14":hostOsVer);
         result.put("Host.OS.Kernel.Version", hostOsKernVer==null?"2.6.35.6-45.fc14.x86_64":hostOsKernVer);
         return result;
     }
@@ -164,29 +164,29 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         cmd.setPrivateIpAddress((String)_params.get("private.ip.address"));
         cmd.setPrivateMacAddress((String)_params.get("private.mac.address"));
         cmd.setPrivateNetmask((String)_params.get("private.ip.netmask"));
-        
+
         cmd.setStorageIpAddress((String)_params.get("private.ip.address"));
         cmd.setStorageMacAddress((String)_params.get("private.mac.address"));
         cmd.setStorageNetmask((String)_params.get("private.ip.netmask"));
         cmd.setGatewayIpAddress((String)_params.get("gateway.ip.address"));
 
     }
-    
+
     protected  StoragePoolInfo initializeLocalStorage() {
         String hostIp = (String)_params.get("private.ip.address");
         String localStoragePath = (String)_params.get("local.storage.path");
         String lh = hostIp + localStoragePath;
         String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
-        
+
         String capacity = (String)_params.get("local.storage.capacity");
         String available = (String)_params.get("local.storage.avail");
 
-        return new StoragePoolInfo(uuid, hostIp, localStoragePath, 
-                                   localStoragePath, StoragePoolType.Filesystem, 
+        return new StoragePoolInfo(uuid, hostIp, localStoragePath,
+                                   localStoragePath, StoragePoolType.Filesystem,
                                    Long.parseLong(capacity), Long.parseLong(available));
 
     }
-    
+
     @Override
     public PingCommand getCurrentStatus(long id) {
         final HashMap<String, State> newStates = new HashMap<String, State>();
@@ -205,7 +205,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
                         return execute((GetHostStatsCommand)cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {
                 return execute((PrimaryStorageDownloadCommand) cmd);
-                                
+
             } else if (cmd instanceof StopCommand) {
                 return execute((StopCommand)cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
@@ -295,7 +295,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
     protected synchronized ReadyAnswer execute(ReadyCommand cmd) {
         return new ReadyAnswer(cmd);
     }
-    
+
     private Answer execute(PrimaryStorageDownloadCommand cmd) {
         return new PrimaryStorageDownloadAnswer(cmd.getLocalPath(), 16000000L);
     }
@@ -308,23 +308,23 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
     protected String getDefaultScriptsDir() {
         return null;
     }
-    
-    
+
+
     protected String getConfiguredProperty(String key, String defaultValue) {
         String val = (String)_params.get(key);
         return val==null?defaultValue:val;
     }
-    
+
     protected Long getConfiguredProperty(String key, Long defaultValue) {
         String val = (String)_params.get(key);
-        
+
         if (val != null) {
             Long result = Long.parseLong(val);
             return result;
         }
         return defaultValue;
     }
-    
+
     protected List<Object> getHostInfo() {
         final ArrayList<Object> info = new ArrayList<Object>();
         long speed = getConfiguredProperty("cpuspeed", 4000L) ;
@@ -338,9 +338,9 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         info.add(speed);
         info.add(ram);
         info.add(cap);
-        info.add(dom0ram);        
+        info.add(dom0ram);
         return info;
-        
+
     }
     private Map<String, Object> getSimulatorProperties() throws ConfigurationException {
         final File file = PropertiesUtil.findConfigFile("simulator.properties");
@@ -353,10 +353,10 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         try {
             properties.load(new FileInputStream(file));
 
-            
+
             final Map<String, Object> params = PropertiesUtil.toMap(properties);
 
-           
+
             return params;
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
@@ -364,9 +364,9 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
     }
-       
 
-    
+
+
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -387,7 +387,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         return _params;
     }
 
-    
+
     protected synchronized StartAnswer execute(StartCommand cmd) {
         VmMgr vmMgr = getVmManager();
 
@@ -404,7 +404,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
                 MockVm vm = vmMgr.createVmFromSpec(vmSpec);
                 vmMgr.createVbd(vmSpec, vmName, vm);
                 vmMgr.createVif(vmSpec, vmName, vm);
-           
+
                 state = State.Running;
                 for (NicTO nic: cmd.getVirtualMachine().getNics()) {
                     if (nic.getType() == TrafficType.Guest) {
@@ -440,7 +440,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         Long bytesReceived = null;
         Long bytesSent = null;
 
-       
+
 
         State state = null;
         synchronized (_vms) {
@@ -471,7 +471,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
                 answer = new StopAnswer(cmd, result, port, bytesSent,
                         bytesReceived);
             }
-          
+
             _dhcpSnooper.cleanup(vmName, null);
 
             return answer;
@@ -487,11 +487,11 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
     protected Answer execute(final VmDataCommand cmd) {
         return _vmDataServer.handleVmDataCommand(cmd);
     }
-    
+
     protected Answer execute(final SavePasswordCommand cmd) {
         return new Answer(cmd);
     }
-    
+
     protected Answer execute(RebootCommand cmd) {
         VmMgr vmMgr = getVmManager();
         vmMgr.rebootVM(cmd.getVmName());
@@ -501,15 +501,15 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
     private Answer execute(PingTestCommand cmd) {
         return new Answer(cmd);
     }
-    
+
     protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
         return null;
     }
-    
+
     private VmMgr getVmManager() {
         return _vmManager;
     }
-    
+
     protected Answer execute(GetHostStatsCommand cmd) {
         VmMgr vmMgr =  getVmManager();
         return new GetHostStatsAnswer(cmd, vmMgr.getHostCpuUtilization(), vmMgr
@@ -526,7 +526,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         return new CheckHealthAnswer(cmd, true);
     }
 
-    
+
     protected CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
         VmMgr vmMgr = getVmManager();
@@ -565,7 +565,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
             return new CreateAnswer(cmd, new Exception("Unexpected exception"));
         }
     }
-    
+
 
 
     protected HashMap<String, State> sync() {
@@ -645,7 +645,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
 
         return changes;
     }
-    
+
     protected Answer execute(DestroyCommand cmd) {
         return new Answer(cmd, true, null);
     }

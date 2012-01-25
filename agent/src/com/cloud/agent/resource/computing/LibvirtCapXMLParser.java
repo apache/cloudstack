@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.resource.computing;
 
@@ -54,12 +54,12 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 			_domainTypeKVM = false;
 		} else if (qName.equalsIgnoreCase("emulator")) {
 			_emulatorFlag = false;
-			
+
 		} else if (_host) {
 			_capXML.append("<").append("/").append(qName).append(">");
 		}
 	}
-	
+
 	@Override
 	public void characters(char[] ch, int start, int length) throws SAXException {
 		if (_host) {
@@ -70,7 +70,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 			_emulator.append(ch, start, length);
 		}
 	}
-	
+
 
 	@Override
 	public void startElement(String uri, String localName, String qName,
@@ -102,7 +102,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 		}
 
 	}
-	
+
 	public String parseCapabilitiesXML(String capXML) {
 		if (!_initialized){
 			return null;
@@ -110,22 +110,22 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 		try {
 			_sp.parse(new InputSource(new StringReader(capXML)), this);
 			return _capXML.toString();
-		}catch(SAXException se) {
+		} catch(SAXException se) {
 			s_logger.warn(se.getMessage());
-		}catch (IOException ie) {
+		} catch (IOException ie) {
 			s_logger.error(ie.getMessage());
 		}
 		return null;
 	}
-	
+
 	public ArrayList<String> getGuestOsType() {
 		return guestOsTypes;
 	}
-	
+
 	public String getEmulator() {
 		return _emulator.toString();
 	}
-	
+
 	public static void main(String [] args) {
 		String capXML = "<capabilities>"+
 		"  <host>"+
@@ -218,7 +218,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 		"    </features>"+
 		"  </guest>"+
 		"</capabilities>";
-		
+
 		LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
 		String cap = parser.parseCapabilitiesXML(capXML);
 		System.out.println(parser.getGuestOsType());

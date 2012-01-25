@@ -21,13 +21,13 @@ public class LibvirtStorageVolumeXMLParser{
         DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            
+
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(volXML));
             Document doc = builder.parse(is);
-            
+
             Element rootElement = doc.getDocumentElement();
-            
+
             String VolName = getTagValue("name", rootElement);
             Element target = (Element)rootElement.getElementsByTagName("target").item(0);
             String format = getAttrValue("type", "format", target);
@@ -42,14 +42,14 @@ public class LibvirtStorageVolumeXMLParser{
         }
         return null;
     }
-    
+
     private static String getTagValue(String tag, Element eElement){
         NodeList nlList= eElement.getElementsByTagName(tag).item(0).getChildNodes();
-        Node nValue = (Node) nlList.item(0); 
-     
-        return nValue.getNodeValue();    
+        Node nValue = (Node) nlList.item(0);
+
+        return nValue.getNodeValue();
      }
-    
+
     private static String getAttrValue(String tag, String attr, Element eElement){
         NodeList tagNode = eElement.getElementsByTagName(tag);
         if (tagNode.getLength() == 0) {
@@ -59,7 +59,7 @@ public class LibvirtStorageVolumeXMLParser{
         return node.getAttribute(attr);
      }
 
-    
+
     public static void main(String[] args) {
         s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new org.apache.log4j.PatternLayout(), "System.out"));
         String storagePool = "<pool type='dir'>" +
@@ -82,7 +82,7 @@ public class LibvirtStorageVolumeXMLParser{
         "</permissions>" +
         "</target>" +
         "</pool>";
-        
+
         LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
         LibvirtStoragePoolDef pool = parser.parseStoragePoolXML(storagePool);
         s_logger.debug(pool.toString());
