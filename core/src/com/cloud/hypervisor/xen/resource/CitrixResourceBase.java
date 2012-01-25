@@ -2466,18 +2466,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         s_logger.warn(logX(sr, "Unable to remove SR"));
     }
 
-    private boolean isPVInstalled(Connection conn, VM vm) throws BadServerResponse, XenAPIException, XmlRpcException {
-        VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
-        if (isRefNull(vmmetric)) {
-            return false;
-        }
-        Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
-        if (PVversion != null && PVversion.containsKey("major")) {
-            return true;
-        }
-        return false;
-    }
-
     protected MigrateAnswer execute(final MigrateCommand cmd) {
         Connection conn = getConnection();
         final String vmName = cmd.getVmName();
@@ -2508,34 +2496,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new MigrateAnswer(cmd, false, msg, null);
             }
             for (VM vm : vms) {
-                if (vm.getPVBootloader(conn).equals("pygrub") && !isPVInstalled(conn, vm)) {
-                    // Only fake PV driver for PV kernel, the PV driver is installed, but XenServer doesn't think it is installed
-                    String uuid = vm.getUuid(conn);
-                    String result = callHostPlugin(conn, "vmops", "preparemigration", "uuid", uuid);
-                    if (result == null || result.isEmpty()) {
-                        return new MigrateAnswer(cmd, false, "migration failed due to preparemigration failed", null);
-                    }
-                    // check if pv version is successfully set up
-                    int i = 0;
-                    for (; i < 20; i++) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (final InterruptedException ex) {
-                        }
-                        if( isPVInstalled(conn, vm) ) {
-                            break;
-                        }
-                    }
-                    if (i >= 20) {
-                        s_logger.warn("Can not fake PV driver for " + vmName);
-                    }
-                }
-                if( ! isPVInstalled(conn, vm) ) {
-                    String msg = "Migration failed due to PV drivers is not installed for " + vmName;
-                    s_logger.warn(msg);
-                    return new MigrateAnswer(cmd, false, msg, null);
-                }
-
                 Set<VBD> vbds = vm.getVBDs(conn);
                 for( VBD vbd : vbds) {
                     VBD.Record vbdRec = vbd.getRecord(conn);
