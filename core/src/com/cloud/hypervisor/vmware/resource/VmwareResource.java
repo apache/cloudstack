@@ -867,6 +867,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String controlIp = VmwareResource.getRouterSshControlIp(cmd);
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
+
+            // command may sometimes be redirect to a wrong host, we relax
+            // the check and will try to find it within cluster
+            if(vmMo == null) {
+                if(hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(),
+                        ((HostMO)hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(routerName);
+                }
+            }
+
             if (vmMo == null) {
                 String msg = "Router " + routerName + " no longer exists to execute IPAssoc command";
                 s_logger.error(msg);
