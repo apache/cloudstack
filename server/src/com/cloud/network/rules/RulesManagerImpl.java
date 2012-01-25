@@ -272,6 +272,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long domainId = ipAddress.getAllocatedInDomainId();
 
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
+        
+        Network network = _networkMgr.getNetwork(networkId);
+        NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        if (off.getElasticIp()) {
+        	throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
+        }
 
         String dstIp = _networkMgr.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
 
