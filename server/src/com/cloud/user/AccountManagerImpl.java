@@ -299,6 +299,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
+        
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getType())) {
+            //no need to make permission checks if the system/root admin makes the call
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
+            } 
+            return;
+        }
+
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
         Long ownerId = null;
         ControlledEntity prevEntity = null;

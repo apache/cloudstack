@@ -134,6 +134,76 @@ convert_primary_to_32() {
   done
 }
 
+remove_routing() {
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Remove routing $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $pubIp | awk -F'/' '{print $1}')
+  local mask=$(echo $pubIp | awk -F'/' '{print $2}')
+  local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
+
+  local tableName="Table_$ethDev"
+  local ethMask=$(ip route list scope link dev $ethDev | awk '{print $1}')
+  if [ "$ethMask" == "" ]
+  then
+# rules and routes will be deleted for the last ip of the interface.
+     sudo ip rule delete fwmark $tableNo table $tableName
+     sudo ip rule delete table $tableName
+     sudo ip route flush  table $tableName 
+     sudo ip route flush cache
+     logger -t cloud "$(basename $0):Remove routing $pubIp - routes and rules deleted"
+  fi
+}
+
+# copy eth0,eth1 and the current public interface
+copy_routes_from_main() {
+  local tableName=$1
+
+#get the network masks from the main table
+  local eth0Mask=$(ip route list scope link dev eth0 | awk '{print $1}')
+  local eth1Mask=$(ip route list scope link dev eth1 | awk '{print $1}')
+  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+
+# eth0,eth1 and other know routes will be skipped, so as main routing table will decide the route. This will be useful if the interface is down and up.  
+  sudo ip route add throw $eth0Mask table $tableName proto static 
+  sudo ip route add throw $eth1Mask table $tableName proto static 
+  sudo ip route add throw $ethMask  table $tableName proto static 
+  return 0;
+}
+
+add_routing() {
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Add routing $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  local mask=$(echo $1 | awk -F'/' '{print $2}')
+
+  local tableName="Table_$ethDev"
+  local tablePresent=$(grep $tableName /etc/iproute2/rt_tables)
+  local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
+  if [ "$tablePresent" == "" ]
+  then
+     if [ "$tableNo" == ""] 
+     then
+       return 0;
+     fi
+     sudo echo "$tableNo $tableName" >> /etc/iproute2/rt_tables
+  fi
+
+  copy_routes_from_main $tableName
+# NOTE: this  entry will be deleted if the interface is down without knowing to Management server, in that case all the outside traffic will be send through main routing table or it will be the first public NIC.
+  sudo ip route add default via $defaultGwIP table $tableName proto static
+  sudo ip route flush cache
+
+  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+  local rulePresent=$(ip rule show | grep $ethMask)
+  if [ "$rulePresent" == "" ]
+  then
+# rules will be added while adding the first ip of the interface 
+     sudo ip rule add from $ethMask table $tableName
+     sudo ip rule add fwmark $tableNo table $tableName
+     logger -t cloud "$(basename $0):Add routing $pubIp rules added"
+  fi
+  return 0;
+}
 
 add_nat_entry() {
   local pubIp=$1
@@ -167,6 +237,7 @@ add_nat_entry() {
       sudo ip link set $ethDev up
       sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
+  add_routing $1 
 
   return 0
 }
@@ -182,6 +253,7 @@ del_nat_entry() {
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
   sudo ip addr del dev $ethDev "$ipNoMask/$mask"
  
+  remove_routing $1
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
@@ -205,7 +277,7 @@ add_an_ip () {
       sudo ip link set $ethDev up
       sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
-
+  add_routing $1 
   return $?
    
 }
@@ -236,6 +308,7 @@ remove_an_ip () {
         fi
     result=$?
   fi
+  remove_routing $1
   if [ $result -gt 0  -a $result -ne 2 ]
   then
      return 1
@@ -268,7 +341,7 @@ then
     if_keep_state=1
 fi
 
-while getopts 'fADa:l:c:' OPTION
+while getopts 'fADa:l:c:g:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -284,6 +357,9 @@ do
 		;;
   c)	cflag=1
   		ethDev="$OPTARG"
+  		;;
+  g)	gflag=1
+  		defaultGwIP="$OPTARG"
   		;;
   ?)	usage
                 unlock_exit 2 $lock $locked
