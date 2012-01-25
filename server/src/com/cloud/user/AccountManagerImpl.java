@@ -318,7 +318,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 Account account = ApiDBUtils.findAccountById(entity.getAccountId());
                 domainId = account != null ? account.getDomainId() : -1 ;
             }
-            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)) {
+            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) && !(accessType != null && accessType == AccessType.UseNetwork)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 //for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
