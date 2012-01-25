@@ -72,10 +72,12 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -200,6 +202,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private DomainDao _domainDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    private IPAddressDao _ipAddressDao;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -564,6 +568,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         s_logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
                     }
                 }
+            }
+            
+            //release ip addresses belonging to the account
+            List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
+            for (IpAddress ip : ipsToRelease) {
+            	s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
+            	if (!_networkMgr.releasePublicIpAddress(ip.getId(), callerUserId, caller)) {
+            		s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+            		accountCleanupNeeded = true;
+            	}
             }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned up
