@@ -4761,18 +4761,10 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
         } else if (cmd.getClusterId() == null) {
             HostVO host = _hostDao.findById(cmd.getHostId());
-            if (host == null){
-                throw new InvalidParameterValueException("The hostId " +cmd.getHostId()+ " doesnt exist");
-            }if (host.getHypervisorType() != HypervisorType.KVM) {
-                throw new InvalidParameterValueException("This operation is not permitted for " + host.getHypervisorType() + " with the parameter hostId");
-            }
-            DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
-            if (nv.getValue().equals(cmd.getUsername())) {
-                DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, cmd.getPassword());
-                nvp.setValue(cmd.getPassword());
-                _detailsDao.persist(nvp);
-            } else {
-                throw new InvalidParameterValueException("The username is not under use by management server.");
+            if (host != null && host.getHypervisorType() == HypervisorType.XenServer) {
+                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+            }else {
+                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
         } else {
             ClusterVO cluster = _clusterDao.findById(cmd.getClusterId());

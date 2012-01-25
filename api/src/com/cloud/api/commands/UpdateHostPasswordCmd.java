@@ -25,9 +25,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.response.RegisterResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
@@ -50,7 +47,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")
     private String username;
     
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the password for the host/cluster")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the new password for the host/cluster")
     private String password;
 
     // ///////////////////////////////////////////////////
