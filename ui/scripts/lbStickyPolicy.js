@@ -163,7 +163,8 @@
 
         var notParams = ['methodname', 'stickyName'];
 
-        $(stickyParams).each(function(index) {
+        var index = 0;
+        $(stickyParams).each(function() {
           var param = '&param[' + index + ']';
           var name = this.toString();
           var value = data[name];
@@ -172,6 +173,8 @@
           if (value == 'on') value = true;
           
           stickyURLData += param + '.name=' + name + param + '.value=' + value;
+
+          index++;
 
           return true;
         });
