@@ -66,7 +66,7 @@ public class DhcpPacketParser implements Runnable{
         DHCPINFORM(8);
         int _type;
         DHCPMSGTYPE(int type) {
-            _type = type; 
+            _type = type;
         }
         int getValue() {
             return _type;
@@ -80,7 +80,7 @@ public class DhcpPacketParser implements Runnable{
             return null;
         }
     }
-    
+
     private class DHCPMSG {
         DHCPMSGTYPE msgType;
         byte[] caddr;
@@ -93,13 +93,13 @@ public class DhcpPacketParser implements Runnable{
             chaddr = new byte[6];
         }
     }
-    
+
     private PcapPacket _buffer;
     private int _offset;
     private int _len;
     private DhcpSnooperImpl _manager;
-    
-    
+
+
     public DhcpPacketParser(PcapPacket buffer, int offset, int len, DhcpSnooperImpl manager) {
         _buffer = buffer;
         _offset = offset;
@@ -118,15 +118,15 @@ public class DhcpPacketParser implements Runnable{
     private long getUInt(int offset) {
         return _buffer.getUInt(getPos(offset));
     }
-    
+
     private DHCPMSG getDhcpMsg() {
         long magic = getUInt(DHCPPACKET.MAGIC.getValue());
         if (magic != 0x63538263) {
             return null;
         }
-        
+
         DHCPMSG msg = new DHCPMSG();
-        
+
         int pos = DHCPPACKET.OPTIONS.getValue();
         while (pos <= _len) {
             int type = (int)getByte(pos++) & 0xff;
@@ -141,7 +141,7 @@ public class DhcpPacketParser implements Runnable{
             if (pos <= _len) {
                 len = ((int)getByte(pos++)) & 0xff;
             }
-            
+
             if (type == DHCPOPTIONTYPE.MESSAGETYPE.getValue() || type == DHCPOPTIONTYPE.REQUESTEDIP.getValue()) {
                 /*Read data only if needed */
                 byte[] data = null;
@@ -149,17 +149,17 @@ public class DhcpPacketParser implements Runnable{
                     data = new byte[len];
                     getByteArray(pos, data);
                 }
-                
+
                 if (type == DHCPOPTIONTYPE.MESSAGETYPE.getValue()) {
                     msg.msgType = DHCPMSGTYPE.valueOf((int)data[0]);
                 } else if (type == DHCPOPTIONTYPE.REQUESTEDIP.getValue()) {
                     msg.requestedIP = data;
                 }
             }
-            
+
             pos += len;
         }
-        
+
         if (msg.msgType == DHCPMSGTYPE.DHCPREQUEST) {
             getByteArray(DHCPPACKET.CHADDR.getValue(), msg.chaddr);
             getByteArray(DHCPPACKET.CIADDR.getValue(), msg.caddr);
@@ -168,7 +168,7 @@ public class DhcpPacketParser implements Runnable{
         }
         return msg;
     }
-    
+
     private String formatMacAddress(byte[] mac) {
         StringBuffer sb = new StringBuffer();
         Formatter formatter = new Formatter(sb);
@@ -177,7 +177,7 @@ public class DhcpPacketParser implements Runnable{
         }
         return sb.toString();
     }
-    
+
     private String getDestMacAddress() {
         Ethernet ether = new Ethernet();
         if (_buffer.hasHeader(ether)) {
@@ -186,7 +186,7 @@ public class DhcpPacketParser implements Runnable{
         }
         return null;
     }
-    
+
     private InetAddress getDHCPServerIP() {
         Ip4 ip = new Ip4();
         if (_buffer.hasHeader(ip)) {
@@ -198,7 +198,7 @@ public class DhcpPacketParser implements Runnable{
         }
         return null;
     }
-    
+
     @Override
     public void run() {
         DHCPMSG msg = getDhcpMsg();
@@ -206,7 +206,7 @@ public class DhcpPacketParser implements Runnable{
         if (msg == null) {
             return;
         }
-        
+
         if (msg.msgType == DHCPMSGTYPE.DHCPACK) {
             InetAddress ip = null;
             try {
@@ -240,8 +240,8 @@ public class DhcpPacketParser implements Runnable{
     }
 
     private void test() {
-        JPacket packet = new JMemoryPacket(Ethernet.ID,  
-        "      06fa 8800 00b3 0656 d200 0027 8100 001a 0800 4500 0156 64bf 0000 4011 f3f2 ac1a 6412 ac1a 649e 0043 0044 0001 0000 0001");  
+        JPacket packet = new JMemoryPacket(Ethernet.ID,
+        "      06fa 8800 00b3 0656 d200 0027 8100 001a 0800 4500 0156 64bf 0000 4011 f3f2 ac1a 6412 ac1a 649e 0043 0044 0001 0000 0001");
         Ethernet eth = new Ethernet();
         if (packet.hasHeader(eth)) {
             System.out.print(" ether:" + eth);

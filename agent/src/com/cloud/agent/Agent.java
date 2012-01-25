@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent;
 
@@ -77,9 +77,9 @@ import com.cloud.utils.script.Script;
  *         || host | host to connect to | ip address | localhost ||
  *         || port | port to connect to | port number | 8250 ||
  *         || instance | Used to allow multiple agents running on the same host | String | none || * }
- * 
+ *
  *         For more configuration options, see the individual types.
- * 
+ *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
     private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
@@ -132,8 +132,8 @@ public class Agent implements HandlerFactory, IAgentControl {
         _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
 
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-        
-        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, 
+
+        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES,
                                                 new SynchronousQueue<Runnable>(), new NamedThreadFactory("UgentTask")
                                                 );
     }
@@ -167,10 +167,10 @@ public class Agent implements HandlerFactory, IAgentControl {
         s_logger.debug("Adding shutdown hook");
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 
-        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, 
+        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES,
                                                 new SynchronousQueue<Runnable>(), new NamedThreadFactory("UgentTask")
                                                 );
-        
+
         s_logger.info("Agent [id = " + (_id != null ? _id : "new") + " : type = " + getResourceName() + " : zone = " + _shell.getZone() + " : pod = " + _shell.getPod() + " : workers = "
                 + _shell.getWorkers() + " : host = " + _shell.getHost() + " : port = " + _shell.getPort());
     }
@@ -265,7 +265,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             _resource.stop();
             _resource = null;
         }
-        
+
         _ugentTaskPool.shutdownNow();
     }
 
@@ -435,9 +435,9 @@ public class Agent implements HandlerFactory, IAgentControl {
 
         setLastPingResponseTime();
         scheduleWatch(link, response, _pingInterval, _pingInterval);
-      
+
         _ugentTaskPool.setKeepAliveTime(2* _pingInterval, TimeUnit.MILLISECONDS);
-        
+
         s_logger.info("Startup Response Received: agent id = " + getId());
     }
 

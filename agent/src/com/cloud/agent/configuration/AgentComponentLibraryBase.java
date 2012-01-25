@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2011 Cloud.com.  All rights reserved.
  *
- * This software is licensed under the GNU General Public License v3 or later. 
+ * This software is licensed under the GNU General Public License v3 or later.
  *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,17 +55,17 @@ public class AgentComponentLibraryBase extends ComponentLibraryBase {
     public Map<Class<?>, Class<?>> getFactories() {
         return null;
     }
-    
+
     protected void populateManagers() {
         //addManager("StackMaidManager", StackMaidManagerImpl.class);
     }
-    
+
     protected void populateAdapters() {
-        
+
     }
-    
+
     protected void populateServices() {
-        
+
     }
 
     @Override

@@ -24,7 +24,7 @@ public class DhcpProtocolParserServer extends Thread {
         _executor = new ThreadPoolExecutor(workers, 10 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("DhcpListener"));
         _running = true;
     }
-    
+
     public void run() {
         while(_running) {
             try {

@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -25,10 +25,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.dhcp;
 
@@ -83,7 +83,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
     private DhcpServer _server;
     protected long _timeout = 1200000;
     protected InetAddress _dhcpServerIp;
-   
+
     public DhcpSnooperImpl(String bridge, long timeout) {
 
         _timeout = timeout;
@@ -93,7 +93,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
         _server = new DhcpServer(this, bridge);
         _server.start();
     }
-    
+
 
     @Override
     public InetAddress getIPAddr(String macAddr, String vmName) {
@@ -105,7 +105,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
         } else {
             addr._state = DHCPState.DHCPRESET;
         }
-        
+
         synchronized(addr) {
             try {
                 addr.wait(_timeout);
@@ -116,14 +116,14 @@ public class DhcpSnooperImpl implements DhcpSnooper {
                 return addr._ip;
             }
         }
-        
+
         return null;
     }
-    
+
     public InetAddress getDhcpServerIP() {
         return _dhcpServerIp;
     }
-    
+
 
     @Override
     public void cleanup(String macAddr, String vmName) {
@@ -137,7 +137,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             s_logger.debug("Failed to cleanup: " + e.toString());
         }
     }
-    
+
 
     @Override
     public Map<String, InetAddress> syncIpAddr() {
@@ -150,7 +150,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
         }
         return vmIpMap;
     }
-    
+
     @Override
     public void initializeMacTable(List<Pair<String, String>> macVmNameList) {
         for (Pair<String, String> macVmname : macVmNameList) {
@@ -158,7 +158,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             _macIpMap.put(macVmname.first(), ipAdrr);
         }
     }
-    
+
     protected void setIPAddr(String macAddr, InetAddress ip, DHCPState state, InetAddress dhcpServerIp) {
         String macAddrLowerCase = macAddr.toLowerCase();
         if (state == DHCPState.DHCPREQUESTED) {
@@ -166,7 +166,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             if (ipAddr == null) {
                 return;
             }
-           
+
             _ipMacMap.put(ip, macAddr);
         } else if (state == DHCPState.DHCPACKED) {
             _dhcpServerIp = dhcpServerIp;
@@ -177,7 +177,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
                     return;
                 }
             }
-            
+
             IPAddr addr = _macIpMap.get(destMac);
             if (addr != null) {
                 addr._ip = ip;
@@ -188,7 +188,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             }
         }
     }
-    
+
     /* (non-Javadoc)
      * @see com.cloud.agent.dhcp.DhcpSnooper#stop()
      */
@@ -198,7 +198,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
         _server.StopServer();
         return true;
     }
-    
+
     private class DhcpServer extends Thread {
         private DhcpSnooperImpl _manager;
         private String _bridge;
@@ -214,7 +214,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             _pcapedDev.breakloop();
             _pcapedDev.close();
         }
-        
+
         private Pcap initializePcap() {
             try {
                 List<PcapIf> alldevs = new ArrayList<PcapIf>();
@@ -265,7 +265,7 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             }
             return null;
         }
-        
+
         public void run() {
             while (_loop) {
                 try {
@@ -273,12 +273,12 @@ public class DhcpSnooperImpl implements DhcpSnooper {
                     if (_pcapedDev == null) {
                         return;
                     }
-                    
+
                     PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
                         public void nextPacket(PcapPacket packet, String user) {
-                            Udp u = new Udp(); 
+                            Udp u = new Udp();
                             if (packet.hasHeader(u)) {
-                                int offset = u.getOffset() + u.getLength(); 
+                                int offset = u.getOffset() + u.getLength();
                                 _executor.execute(new DhcpPacketParser(packet, offset, u.length() - u.getLength(), _manager));
                             }
                         }
@@ -298,13 +298,13 @@ public class DhcpSnooperImpl implements DhcpSnooper {
             }
         }
     }
-    
+
     static public void main(String args[]) {
         s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new org.apache.log4j.PatternLayout(), "System.out"));
        final DhcpSnooperImpl manager = new DhcpSnooperImpl("cloudbr0", 10000);
        s_logger.debug(manager.getIPAddr("02:00:4c:66:00:03", "i-2-5-VM"));
        manager.stop();
-       
+
     }
 
     @Override

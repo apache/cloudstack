@@ -111,7 +111,7 @@ public class FakeDhcpSnooper implements DhcpSnooper {
 
     @Override
     public void initializeMacTable(List<Pair<String, String>> macVmNameList) {
-      
+
 
     }
 

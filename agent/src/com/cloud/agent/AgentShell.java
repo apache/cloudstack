@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent;
@@ -118,7 +118,7 @@ public class AgentShell implements IAgentShell {
     public String getHost() {
     	return _host;
     }
-    
+
     @Override
     public String getPrivateIp() {
     	return _privateIp;
@@ -378,7 +378,7 @@ public class AgentShell implements IAgentShell {
             _storage.configure("Storage", new HashMap<String, Object>());
         }
 
-        
+
         // merge with properties from command line to let resource access command line parameters
         for(Map.Entry<String, Object> cmdLineProp : getCmdLineProperties().entrySet()) {
         	_properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
@@ -539,10 +539,10 @@ public class AgentShell implements IAgentShell {
             } else {
                 instance += ".";
             }
-            
+
             String pidDir = getProperty(null, "piddir");
-            
-            
+
+
             final String run = "agent." + instance + "pid";
             s_logger.debug("Checking to see if " + run + "exists.");
         	ProcessUtil.pidCheck(pidDir, run);
