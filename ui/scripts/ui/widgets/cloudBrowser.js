@@ -213,6 +213,7 @@
       var $container = this.element;
       var $toShow = _panel.lower($container, $panel);
       var $toRemove = _panel.higher($container, $panel);
+      var complete = args.complete;
 
       if ($panel.hasClass('maximized')) return false;
 
@@ -235,6 +236,8 @@
           duration: 500,
           complete: function() {
             $(this).remove();
+            
+            if (complete) complete($toShow);
           }
        }
       );
