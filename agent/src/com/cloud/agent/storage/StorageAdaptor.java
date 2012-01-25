@@ -8,7 +8,7 @@ import com.cloud.agent.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StorageAdaptor {
-	
+
 	public KVMStoragePool getStoragePool(String uuid);
 	public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
 	public KVMStoragePool createStoragePool(String name, String host, String path, StoragePoolType type);

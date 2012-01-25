@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.storage;
@@ -53,13 +53,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
-    
+
     public LibvirtStorageAdaptor(StorageLayer storage
                                  ) {
         _storageLayer = storage;
         _manageSnapshotPath = Script.findScript("scripts/storage/qcow2/", "managesnapshot.sh");
     }
-    
+
     @Override
     public boolean createFolder(String uuid, String path) {
     	String mountPoint = _mountPoint + File.separator + uuid;
@@ -69,14 +69,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     	}
     	return true;
     }
-    
+
     public StorageVol getVolume(StoragePool pool, String volName) {
         StorageVol vol = null;
-		
+
         try {
             vol = pool.storageVolLookupByName(volName);
         } catch (LibvirtException e) {
-            
+
         }
         if (vol == null) {
             storagePoolRefresh(pool);
@@ -88,13 +88,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
         return vol;
     }
-    
+
     public StorageVol createVolume(Connect conn, StoragePool pool, String uuid, long size, volFormat format) throws LibvirtException {
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), size, format, null, null);
         s_logger.debug(volDef.toString());
         return pool.storageVolCreateXML(volDef.toString(), 0);
     }
-    
+
     public StoragePool getStoragePoolbyURI(Connect conn, URI uri) throws LibvirtException {
         String sourcePath;
         String uuid;
@@ -112,8 +112,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
             protocal = "NFS";
         }
-       
-       
+
+
         String targetPath = _mountPoint + File.separator + uuid;
         StoragePool sp = null;
         try {
@@ -136,7 +136,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid,
                             null, null, sourcePath);
                 }
-                
+
                 synchronized (getStoragePool(uuid)) {
                     sp = conn.storagePoolDefineXML(spd.toString(), 0);
 
@@ -167,17 +167,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return sp;
         }
     }
-    
+
     public void storagePoolRefresh(StoragePool pool) {
         try {
             synchronized (getStoragePool(pool.getUUIDString())) {
                 pool.refresh(0);
             }
         } catch (LibvirtException e) {
-            
+
         }
     }
-    
+
     private StoragePool createNfsStoragePool(Connect conn, String uuid, String host, String path) {
         String targetPath = _mountPoint + File.separator + uuid;
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid,
@@ -202,7 +202,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return null;
         }
     }
-    
+
     private StoragePool CreateSharedStoragePool(Connect conn, String uuid, String host, String path) {
         String mountPoint = path;
         if (!_storageLayer.exists(mountPoint)) {
@@ -215,7 +215,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.debug(spd.toString());
             sp = conn.storagePoolDefineXML(spd.toString(), 0);
             sp.create(0);
-          
+
             return sp;
         } catch (LibvirtException e) {
             s_logger.debug(e.toString());
@@ -230,9 +230,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return null;
         }
     }
-    
+
     private StoragePool createCLVMStoragePool(Connect conn, String uuid, String host, String path) {
-    	
+
     	String volgroupPath = "/dev/" + path;
 
     	LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.LOGICAL, uuid, uuid,
@@ -257,7 +257,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     	}
 
     }
-    
+
     public StorageVol copyVolume(StoragePool destPool, LibvirtStorageVolumeDef destVol, StorageVol srcVol, int timeout) throws LibvirtException {
         StorageVol vol = destPool.storageVolCreateXML(destVol.toString(), 0);
         String srcPath = srcVol.getKey();
@@ -265,7 +265,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         Script.runSimpleBashScript("cp " + srcPath + " " + destPath, timeout);
         return vol;
     }
-    
+
     public boolean copyVolume(String srcPath, String destPath, String volumeName, int timeout)  throws InternalErrorException{
         _storageLayer.mkdirs(destPath);
         if (!_storageLayer.exists(srcPath)) {
@@ -278,19 +278,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return true;
         }
     }
-    
+
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
         String poolDefXML = pool.getXMLDesc(0);
         LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
         return parser.parseStoragePoolXML(poolDefXML);
     }
-    
+
     public LibvirtStorageVolumeDef getStorageVolumeDef(Connect conn, StorageVol vol) throws LibvirtException {
         String volDefXML = vol.getXMLDesc(0);
         LibvirtStorageVolumeXMLParser parser = new LibvirtStorageVolumeXMLParser();
         return parser.parseStorageVolumeXML(volDefXML);
     }
-    
+
     public StorageVol getVolumeFromURI(Connect conn, String volPath) throws LibvirtException, URISyntaxException {
         int index = volPath.lastIndexOf("/");
         URI volDir = null;
@@ -315,25 +315,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
     }
-    
+
     public StoragePool createFileBasedStoragePool(Connect conn, String localStoragePath, String uuid) {
         if (!(_storageLayer.exists(localStoragePath) && _storageLayer.isDirectory(localStoragePath))) {
             return null;
         }
-        
+
         File path = new File(localStoragePath);
         if (!(path.canWrite() && path.canRead() && path.canExecute())) {
             return null;
         }
-        
+
         StoragePool pool = null;
-      
+
         try {
             pool = conn.storagePoolLookupByUUIDString(uuid);
         } catch (LibvirtException e) {
-            
+
         }
-        
+
         if (pool == null) {
             LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid,
                     null, null, localStoragePath);
@@ -352,20 +352,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException(e.toString());
             }
         }
-       
+
         try {
             StoragePoolInfo spi = pool.getInfo();
             if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
                 pool.create(0);
             }
-         
+
         } catch (LibvirtException e) {
         	throw new CloudRuntimeException(e.toString());
         }
 
         return pool;
     }
-    
+
     private void getStats(LibvirtStoragePool pool) {
     	Script statsScript = new Script("/bin/bash", s_logger);
     	statsScript.add("-c");
@@ -383,14 +383,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     		}
     	}
     }
-    
+
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
     	StoragePool storage = null;
     	try {
     		Connect conn = LibvirtConnection.getConnection();
     		storage = conn.storagePoolLookupByUUIDString(uuid);
-    	
+
     		if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
     			storage.create(0);
     		}
@@ -415,12 +415,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     		throw new CloudRuntimeException(e.toString());
     	}
     }
-    
+
 	@Override
 	public KVMPhysicalDisk getPhysicalDisk(
 			String volumeUuid, KVMStoragePool pool) {
 		LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
-		
+
 		try {
 			StorageVol vol = this.getVolume(libvirtPool.getPool(), volumeUuid);
 			KVMPhysicalDisk disk;
@@ -439,9 +439,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		} catch (LibvirtException e) {
 			throw new CloudRuntimeException(e.toString());
 		}
-		
+
 	}
-	
+
 	@Override
 	public KVMStoragePool createStoragePool(String name, String host, String path, StoragePoolType type) {
 		StoragePool sp = null;
@@ -451,7 +451,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		} catch (LibvirtException e) {
 			throw new CloudRuntimeException(e.toString());
 		}
-		
+
 		try {
 			sp = conn.storagePoolLookupByUUIDString(name);
 		} catch (LibvirtException e) {
@@ -473,7 +473,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
 				sp.create(0);
 			}
-			
+
 			LibvirtStoragePoolDef spd = getStoragePoolDef(conn, sp);
 			LibvirtStoragePool pool = new LibvirtStoragePool(name, sp.getName(), type, this, sp);
 			pool.setLocalPath(spd.getTargetPath());
@@ -488,7 +488,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		} catch (LibvirtException e) {
 			throw new CloudRuntimeException(e.toString());
 		}
-		
+
 	}
 	@Override
 	public boolean deleteStoragePool(String uuid) {
@@ -516,7 +516,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			throw new CloudRuntimeException(e.toString());
 		}
 	}
-	
+
 	@Override
 	public KVMPhysicalDisk createPhysicalDisk(String name,
 			KVMStoragePool pool, PhysicalDiskFormat format, long size) {
@@ -598,20 +598,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		String sourcePath = disk.getPath();
 		String destPath = newDisk.getPath();
 
-		Script.runSimpleBashScript("qemu-img convert -f " + disk.getFormat() + " -O " + newDisk.getFormat() + " " + sourcePath + " " + destPath); 
+		Script.runSimpleBashScript("qemu-img convert -f " + disk.getFormat() + " -O " + newDisk.getFormat() + " " + sourcePath + " " + destPath);
 		return newDisk;
 	}
 
 	@Override
 	public KVMStoragePool getStoragePoolByUri(String uri) {
 		URI storageUri = null;
-		
+
 		try {
 			storageUri = new URI(uri);
 		} catch (URISyntaxException e) {
 			throw new CloudRuntimeException(e.toString());
 		}
-	
+
 		String sourcePath = null;
 		String uuid = null;
 		String sourceHost = "";
@@ -623,7 +623,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			uuid = UUID.randomUUID().toString();
 			protocal = StoragePoolType.NetworkFilesystem;
 		}
-		
+
 		return createStoragePool(uuid, sourceHost, sourcePath, protocal);
 	}
 
@@ -638,7 +638,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			String snapshotName, String name, KVMStoragePool destPool) {
 		return null;
 	}
-	
+
 	@Override
 	public boolean refresh(KVMStoragePool pool) {
 		LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
@@ -663,10 +663,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		} catch (LibvirtException e) {
 			return false;
 		}
-		
+
 		return true;
 	}
 
-	
-    
+
+
 }

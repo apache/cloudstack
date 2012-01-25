@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2011 Cloud.com.  All rights reserved.
  *
- * This software is licensed under the GNU General Public License v3 or later. 
+ * This software is licensed under the GNU General Public License v3 or later.
  *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ import com.cloud.utils.script.Script;
 @Local (value={VmDataServer.class})
 public class JettyVmDataServer implements VmDataServer {
     private static final Logger s_logger = Logger.getLogger(JettyVmDataServer.class);
-    
+
     public static final String USER_DATA = "user-data";
     public static final String META_DATA = "meta-data";
     protected String _vmDataDir;
@@ -77,20 +77,20 @@ public class JettyVmDataServer implements VmDataServer {
     protected String _hostIp;
     protected Map<String, String> _ipVmMap = new HashMap<String, String>();
     protected StorageLayer _fs = new JavaStorageLayer();
-    
+
     public class VmDataServlet extends HttpServlet {
 
         private static final long serialVersionUID = -1640031398971742349L;
-        
+
         JettyVmDataServer _vmDataServer;
         String _dataType; //userdata or meta-data
-       
-        
+
+
         public VmDataServlet(JettyVmDataServer dataServer, String dataType) {
             this._vmDataServer = dataServer;
             this._dataType = dataType;
         }
-        
+
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp)
                 throws ServletException, IOException {
@@ -105,8 +105,8 @@ public class JettyVmDataServer implements VmDataServer {
                 handleMetaData(req, resp);
             }
         }
-        
-        protected void handleUserData(HttpServletRequest req, HttpServletResponse resp) 
+
+        protected void handleUserData(HttpServletRequest req, HttpServletResponse resp)
                 throws ServletException, IOException {
             String metadataItem = req.getPathInfo();
             String requester = req.getRemoteAddr();
@@ -119,20 +119,20 @@ public class JettyVmDataServer implements VmDataServer {
                     metadataItem = path[1];
                 }
             }
-          
+
             if (metadataItem != null)
                 data = _vmDataServer.getVmDataItem(requester, metadataItem);
-           
+
             if (data != null){
                 resp.getWriter().print(data);
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
             }
-            
+
         }
-        
-        protected void handleMetaData(HttpServletRequest req, HttpServletResponse resp) 
+
+        protected void handleMetaData(HttpServletRequest req, HttpServletResponse resp)
                 throws ServletException, IOException {
             String metadataItem = req.getPathInfo();
             String requester = req.getRemoteAddr();
@@ -145,9 +145,9 @@ public class JettyVmDataServer implements VmDataServer {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
             }
         }
-        
+
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -165,7 +165,7 @@ public class JettyVmDataServer implements VmDataServer {
                 fileservingPort = Integer.parseInt(port);
             }
             _hostIp = (String) params.get("host.ip");
-            
+
             if (_vmDataDir == null) {
                 _vmDataDir = "/var/www/html";
             }
@@ -180,7 +180,7 @@ public class JettyVmDataServer implements VmDataServer {
         }
         return success;
     }
-    
+
     protected boolean buildIpVmMap() {
         String[] dirs = _fs.listFiles(_vmDataDir);
         for (String dir: dirs) {
@@ -194,7 +194,7 @@ public class JettyVmDataServer implements VmDataServer {
                     if (ipv4file.equalsIgnoreCase("local-ipv4")){
                         try {
                             BufferedReader input =  new BufferedReader(new FileReader(dfile));
-                            String line = null; 
+                            String line = null;
                             while (( line = input.readLine()) != null){
                                 if (NetUtils.isValidIp(line)) {
                                     _ipVmMap.put(line, vm);
@@ -208,7 +208,7 @@ public class JettyVmDataServer implements VmDataServer {
                         } catch (IOException e) {
                            s_logger.warn("Failed to get ip address of " + vm);
                         }
-                        
+
                     }
                 }
             }
@@ -225,7 +225,7 @@ public class JettyVmDataServer implements VmDataServer {
         try {
             BufferedReader input =  new BufferedReader(new FileReader(vmDataFile));
             StringBuilder result = new StringBuilder();
-            String line = null; 
+            String line = null;
             while ((line = input.readLine()) != null) {
                 result.append(line);
             }
@@ -237,39 +237,39 @@ public class JettyVmDataServer implements VmDataServer {
         } catch (IOException e) {
             s_logger.warn("Failed to read requested file " + vmDataFile);
             return null;
-        } 
+        }
     }
 
     private void setupJetty(int vmDataPort, int fileservingPort) throws Exception {
         _jetty  = new Server();
- 
+
         SelectChannelConnector connector0 = new SelectChannelConnector();
         connector0.setHost(_hostIp);
         connector0.setPort(fileservingPort);
         connector0.setMaxIdleTime(30000);
         connector0.setRequestBufferSize(8192);
- 
+
         SelectChannelConnector connector1 = new SelectChannelConnector();
         connector1.setHost(_hostIp);
         connector1.setPort(vmDataPort);
         connector1.setThreadPool(new QueuedThreadPool(5));
         connector1.setMaxIdleTime(30000);
         connector1.setRequestBufferSize(8192);
-        
+
         _jetty.setConnectors(new Connector[]{ connector0, connector1});
- 
+
         Context root = new Context(_jetty,"/latest",Context.SESSIONS);
         root.setResourceBase(_vmDataDir);
         root.addServlet(new ServletHolder(new VmDataServlet(this, USER_DATA)), "/*");
-       
-        
-        ResourceHandler resource_handler = new ResourceHandler(); 
+
+
+        ResourceHandler resource_handler = new ResourceHandler();
         resource_handler.setResourceBase("/var/lib/images/");
- 
+
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[] { root, resource_handler, new DefaultHandler() });
         _jetty.setHandler(handlers);
- 
+
         _jetty.start();
         //_jetty.join();
     }
@@ -298,7 +298,7 @@ public class JettyVmDataServer implements VmDataServer {
 
         Script.runSimpleBashScript("rm -rf " + vmDataDir);
         _fs.mkdirs(vmDataDir);
-        
+
         for (String [] item : cmd.getVmData()) {
             try {
                 _fs.create(vmDataDir, item[1]);
@@ -330,7 +330,7 @@ public class JettyVmDataServer implements VmDataServer {
     public void handleVmStarted(VirtualMachineTO vm) {
         for (NicTO nic: vm.getNics()) {
             if (nic.getType() == TrafficType.Guest) {
-                if (nic.getIp() != null) {              
+                if (nic.getIp() != null) {
                     String ipv4File = _vmDataDir + File.separator + vm.getName() + File.separator + "local-ipv4";
                     try {
                         _fs.create(_vmDataDir + File.separator + vm.getName(), "local-ipv4");
@@ -342,9 +342,9 @@ public class JettyVmDataServer implements VmDataServer {
                         s_logger.warn("Failed to create or write to local-ipv4 file " + ipv4File,e);
                     }
 
-                    
+
                 }
-                
+
             }
         }
     }

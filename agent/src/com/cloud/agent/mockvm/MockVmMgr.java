@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.mockvm;
@@ -37,7 +37,7 @@ public class MockVmMgr implements VmMgr {
 	
 	private final Map<String, MockVm> vms = new HashMap<String, MockVm>();
 	private long vncPortMap = 0;
-	
+
 	private Map<String, Object> _params = null;
 	
 	public MockVmMgr() {
@@ -185,7 +185,7 @@ public class MockVmMgr implements VmMgr {
 	
 	@Override
 	public int getHostCpuCount() {
-	   
+
         return getConfiguredProperty("cpus", 4);
 	}
 	
@@ -255,10 +255,10 @@ public class MockVmMgr implements VmMgr {
 	@Override
 	public MockVm createVmFromSpec(VirtualMachineTO vmSpec) {
 		String vmName = vmSpec.getName();
-		long ramSize = vmSpec.getMinRam();		
+		long ramSize = vmSpec.getMinRam();
 		int utilizationPercent = randSeed.nextInt() % 100;
 		MockVm vm = null;
-		
+
 		synchronized(this) {
 			vm = vms.get(vmName);
 			if(vm == null) {
@@ -266,13 +266,13 @@ public class MockVmMgr implements VmMgr {
 					s_logger.debug("host is out of memory");
 					throw new CloudRuntimeException("Host is out of Memory");
 				}
-					
+
 				int vncPort = allocVncPort();
 				if(vncPort < 0){
 					s_logger.debug("Unable to allocate VNC port");
 					throw new CloudRuntimeException("Unable to allocate vnc port");
 				}
-				
+
 				vm = new MockVm(vmName, State.Running, ramSize, vmSpec.getCpus(), utilizationPercent, vncPort);
 				vms.put(vmName, vm);
 			}
@@ -283,33 +283,33 @@ public class MockVmMgr implements VmMgr {
 	@Override
 	public void createVbd(VirtualMachineTO vmSpec, String vmName, MockVm vm) {
 		// TODO Auto-generated method stub
-			
+
 	}
 
 	@Override
 	public void createVif(VirtualMachineTO vmSpec, String vmName, MockVm vm) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
     @Override
     public void configure(Map<String, Object> params) {
         _params = params;
     }
-    
+
     protected Long getConfiguredProperty(String key, Long defaultValue) {
         String val = (String)_params.get(key);
-        
+
         if (val != null) {
             Long result = Long.parseLong(val);
             return result;
         }
         return defaultValue;
     }
-    
+
     protected Integer getConfiguredProperty(String key, Integer defaultValue) {
         String val = (String)_params.get(key);
-        
+
         if (val != null) {
             Integer result = Integer.parseInt(val);
             return result;

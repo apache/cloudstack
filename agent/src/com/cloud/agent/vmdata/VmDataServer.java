@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2011 Cloud.com.  All rights reserved.
  *
- * This software is licensed under the GNU General Public License v3 or later. 
+ * This software is licensed under the GNU General Public License v3 or later.
  *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,10 @@ import com.cloud.utils.component.Manager;
  *
  */
 public interface VmDataServer extends Manager {
-    
+
     public Answer handleVmDataCommand(VmDataCommand cmd);
-    
+
     public void handleVmStarted(VirtualMachineTO vm);
-    
+
     public void handleVmStopped(String vmName);
 }

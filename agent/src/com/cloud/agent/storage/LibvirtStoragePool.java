@@ -18,7 +18,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	protected StoragePoolType type;
 	protected StorageAdaptor _storageAdaptor;
 	protected StoragePool _pool;
-	
+
 	public LibvirtStoragePool(String uuid, String name, StoragePoolType type, StorageAdaptor adaptor, StoragePool pool) {
 		this.uuid = uuid;
 		this.name = name;
@@ -27,43 +27,43 @@ public class LibvirtStoragePool implements KVMStoragePool {
 		this.capacity = 0;
 		this.used = 0;
 		this._pool = pool;
-		
+
 	}
-	
+
 	public void setCapacity(long capacity) {
 		this.capacity = capacity;
 	}
-	
+
 	@Override
 	public long getCapacity() {
 		return this.capacity;
 	}
-	
+
 	public void setUsed(long used) {
 		this.used = used;
 	}
-	
+
 	@Override
 	public long getUsed() {
 		return this.used;
 	}
-	
+
 	public StoragePoolType getStoragePoolType() {
 		return this.type;
 	}
-	
+
 	public String getName() {
 		return this.name;
 	}
-	
+
 	public String getUuid() {
 		return this.uuid;
 	}
-	
+
 	public String uri() {
 		return this.uri;
 	}
-	
+
 	@Override
 	public PhysicalDiskFormat getDefaultFormat() {
 		if (getStoragePoolType() == StoragePoolType.CLVM) {
@@ -72,27 +72,27 @@ public class LibvirtStoragePool implements KVMStoragePool {
 			return PhysicalDiskFormat.QCOW2;
 		}
 	}
-	
+
 	@Override
 	public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, long size) {
 		return this._storageAdaptor.createPhysicalDisk(name, this, format, size);
 	}
-	
+
 	@Override
 	public KVMPhysicalDisk createPhysicalDisk(String name, long size) {
 		return this._storageAdaptor.createPhysicalDisk(name, this, this.getDefaultFormat(), size);
 	}
-	
+
 	@Override
 	public KVMPhysicalDisk getPhysicalDisk(String volumeUuid) {
 		return this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
 	}
-	
+
 	@Override
 	public boolean deletePhysicalDisk(String uuid) {
 		return this._storageAdaptor.deletePhysicalDisk(uuid, this);
 	}
-	
+
 	@Override
 	public List<KVMPhysicalDisk> listPhysicalDisks() {
 		return this._storageAdaptor.listPhysicalDisks(this.uuid, this);
@@ -108,7 +108,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 		if (this.type == StoragePoolType.Filesystem) {
 			return false;
 		}
-	
+
 		return true;
 	}
 
@@ -116,7 +116,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	public String getLocalPath() {
 		return this.localPath;
 	}
-	
+
 	public void setLocalPath(String localPath) {
 		this.localPath = localPath;
 	}
@@ -125,7 +125,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	public StoragePoolType getType() {
 		return this.type;
 	}
-	
+
 	public StoragePool getPool() {
 		return this._pool;
 	}
@@ -134,7 +134,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	public boolean delete() {
 		return this._storageAdaptor.deleteStoragePool(this);
 	}
-	
+
 	@Override
 	public boolean createFolder(String path) {
 		return this._storageAdaptor.createFolder(this.uuid, path);

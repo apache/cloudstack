@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.resource.consoleproxy;
 
@@ -63,7 +63,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 /**
- * 
+ *
  * I don't want to introduce extra cross-cutting concerns into console proxy process, as it involves configurations like
  * zone/pod, agent auto self-upgrade etc. I also don't want to introduce more module dependency issues into our build system,
  * cross-communication between this resource and console proxy will be done through reflection. As a result, come out with
@@ -71,22 +71,22 @@ import com.cloud.utils.script.Script;
  *
  * We will deploy an agent shell inside console proxy VM, and this agent shell will launch current console proxy from within
  * this special server resource, through it console proxy can build a communication channel with management server.
- * 
+ *
  */
 public class ConsoleProxyResource extends ServerResourceBase implements ServerResource {
     static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);
-    
+
     private final Properties _properties = new Properties();
     private Thread _consoleProxyMain = null;
-    
+
     long _proxyVmId;
     int _proxyPort;
-    
+
     String _localgw;
-    String _eth1ip; 
-    String _eth1mask;    
+    String _eth1ip;
+    String _eth1mask;
     String _pubIp;
-    
+
     @Override
     public Answer executeRequest(final Command cmd) {
         if (cmd instanceof CheckConsoleProxyLoadCommand) {
@@ -98,7 +98,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if(cmd instanceof CheckHealthCommand) {
         	return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
-        } else if(cmd instanceof StartConsoleProxyAgentHttpHandlerCommand) { 
+        } else if(cmd instanceof StartConsoleProxyAgentHttpHandlerCommand) {
         	return execute((StartConsoleProxyAgentHttpHandlerCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -109,7 +109,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 		launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword());
 		return new Answer(cmd);
 	}
-    
+
     private void disableRpFilter() {
     	try {
 			FileWriter fstream = new FileWriter("/proc/sys/net/ipv4/conf/eth2/rp_filter");
@@ -177,16 +177,16 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
-    
+
     @Override
     protected String getDefaultScriptsDir() {
         return null;
     }
-    
+
     public Type getType() {
         return Host.Type.ConsoleProxy;
     }
-    
+
     @Override
     public synchronized StartupCommand [] initialize() {
         final StartupProxyCommand cmd = new StartupProxyCommand();
@@ -201,12 +201,12 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     @Override
     public void disconnected() {
     }
-    
+
     @Override
     public PingCommand getCurrentStatus(long id) {
         return new PingCommand(Type.ConsoleProxy, id);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _localgw = (String)params.get("localgw");
@@ -217,20 +217,20 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         } else {
         	s_logger.warn("WARNING: eth1ip parameter is not found!");
         }
-        
+
         String eth2ip = (String) params.get("eth2ip");
         if (eth2ip != null) {
         	params.put("public.network.device", "eth2");
         } else {
         	s_logger.warn("WARNING: eth2ip parameter is not found!");
         }
-    	
+
         super.configure(name, params);
-        
+
         for(Map.Entry<String, Object> entry : params.entrySet()) {
         	_properties.put(entry.getKey(), entry.getValue());
         }
-        
+
         String value = (String)params.get("premium");
         if(value != null && value.equals("premium"))
         	_proxyPort = 443;
@@ -238,7 +238,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         	value = (String)params.get("consoleproxy.httpListenPort");
         	_proxyPort = NumbersUtil.parseInt(value, 80);
         }
-        
+
         value = (String)params.get("proxy_vm");
         _proxyVmId = NumbersUtil.parseLong(value, 0);
 
@@ -258,20 +258,20 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
             }
         }
-        
+
         _pubIp = (String)params.get("public.ip");
-        
+
         value = (String)params.get("disable_rp_filter");
         if(value != null && value.equalsIgnoreCase("true")) {
         	disableRpFilter();
         }
-        
+
         if(s_logger.isInfoEnabled())
         	s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + _proxyVmId);
-        
+
         return true;
     }
-    
+
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
     	s_logger.debug("addRouteToInternalIp: localgw=" + localgw + ", eth1ip=" + eth1ip + ", eth1mask=" + eth1mask + ",destIp=" + destIpOrCidr);
     	if (destIpOrCidr == null) {
@@ -310,12 +310,12 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 			s_logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
     	}
     }
-    
+
     @Override
     public String getName() {
         return _name;
     }
-    
+
     private void launchConsoleProxy(final byte[] ksBits, final String ksPassword) {
     	final Object resource = this;
     	if(_consoleProxyMain == null) {
@@ -357,7 +357,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     public boolean authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket) {
     	ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(host, port, vmId, sid, ticket);
-    	
+
     	try {
 			AgentControlAnswer answer = getAgentControl().sendRequest(cmd, 10000);
 			if(answer != null) {
@@ -365,31 +365,31 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 			} else {
 				s_logger.error("Authentication failed for vm: " + vmId + " with sid: " + sid);
 			}
-			
+
 		} catch (AgentControlChannelException e) {
 			s_logger.error("Unable to send out console access authentication request due to " + e.getMessage(), e);
 		}
-    	
+
     	return false;
     }
-    
+
     public void reportLoadInfo(String gsonLoadInfo) {
     	ConsoleProxyLoadReportCommand cmd = new ConsoleProxyLoadReportCommand(_proxyVmId, gsonLoadInfo);
     	try {
 			getAgentControl().postRequest(cmd);
-			
+
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Report proxy load info, proxy : " + _proxyVmId + ", load: " + gsonLoadInfo);
 		} catch (AgentControlChannelException e) {
 			s_logger.error("Unable to send out load info due to " + e.getMessage(), e);
 		}
     }
-    
+
     public void ensureRoute(String address) {
     	if(_localgw != null) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Ensure route for " + address + " via " + _localgw);
-			
+
 			// this method won't be called in high frequency, serialize access to script execution
 			synchronized(this) {
 			    try {
