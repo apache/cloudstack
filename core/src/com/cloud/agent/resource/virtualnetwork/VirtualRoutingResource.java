@@ -635,6 +635,9 @@ public class VirtualRoutingResource implements Manager {
 
         String publicNic = "eth" + nicNum;
         command.add("-c", publicNic);
+        
+        command.add("-g", vlanGateway);
+        
 
         return command.execute();
     }

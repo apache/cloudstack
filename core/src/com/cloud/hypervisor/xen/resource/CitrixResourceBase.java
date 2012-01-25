@@ -1639,7 +1639,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
-
+            
+            args += " -g ";
+            args += vlanGateway;
+            
 
             String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
             if (result == null || result.isEmpty()) {

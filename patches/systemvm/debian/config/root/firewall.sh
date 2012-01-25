@@ -59,6 +59,7 @@ tcp_or_udp_entry() {
   local op=$5
   local proto=$6
   local cidrs=$7
+
   logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
@@ -67,11 +68,16 @@ tcp_or_udp_entry() {
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
   local dev=$(ip_to_dev $publicIp)
+  local tableNo=$(echo $dev | awk -F'eth' '{print $2}')
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
   (sudo iptables -t nat $op PREROUTING --proto $proto -i $dev -d $publicIp \
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  (sudo iptables -t mangle $op PREROUTING --proto $proto -i $dev -d $publicIp \
+           --destination-port $port -j MARK --set-mark $tableNo) && 
+  (sudo iptables -t mangle $op PREROUTING --proto $proto -i $dev -d $publicIp \
+           --destination-port $port -m state --state NEW -j CONNMARK --save-mark) &&
   (sudo iptables -t nat $op OUTPUT  --proto $proto -d $publicIp  \
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
