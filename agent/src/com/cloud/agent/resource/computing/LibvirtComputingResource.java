@@ -225,7 +225,7 @@ import com.cloud.vm.VirtualMachineName;
  *    || pool | the parent of the storage pool hierarchy
  *  }
  **/
-@Local(value={ServerResource.class})
+@Local(value = {ServerResource.class })
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
@@ -258,7 +258,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		@Override
 		public String interpret(BufferedReader reader) throws IOException {
 			String line = null;
-		    int numLines=0;
+		    int numLines = 0;
 		    while ((line = reader.readLine()) != null) {
 		       String [] toks = line.trim().split("=");
 		       if (toks.length < 2) {
@@ -342,7 +342,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 	private String getEndIpFromStartIp(String startIp, int numIps) {
 		String[] tokens = startIp.split("[.]");
-		assert(tokens.length == 4);
+		assert (tokens.length == 4);
 		int lastbyte = Integer.parseInt(tokens[3]);
 		lastbyte = lastbyte + numIps;
 		tokens[3] = Integer.toString(lastbyte);
@@ -613,7 +613,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
          value = (String)params.get("scripts.timeout");
-        _timeout = NumbersUtil.parseInt(value, 30*60) * 1000;
+        _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         value = (String)params.get("stop.script.timeout");
         _stopTimeout = NumbersUtil.parseInt(value, 120) * 1000;
@@ -622,7 +622,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
 
         value = (String)params.get("host.reserved.mem.mb");
-        _dom0MinMem = NumbersUtil.parseInt(value, 0)*1024*1024;
+        _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
 
 
         value = (String)params.get("debug.mode");
@@ -772,9 +772,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 
-	protected String startDomain(Connect conn, String vmName, String domainXML) throws LibvirtException, InternalErrorException{
+	protected String startDomain(Connect conn, String vmName, String domainXML) throws LibvirtException, InternalErrorException {
 		/*No duplicated vm, we will success, or failed*/
-		boolean failed =false;
+		boolean failed = false;
 		Domain dm = null;
 		try {
 			dm = conn.domainDefineXML(domainXML);
@@ -862,7 +862,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 		String result = null;
 		//String result = test.startDomainRouter("domr1", "/var/lib/images/centos.5-4.x86-64/centos-small.img", 128, "0064", "02:00:30:00:01:01", "00:16:3e:77:e2:a1", "02:00:30:00:64:01");
-		boolean created = (result==null);
+		boolean created = (result == null);
 		s_logger.info("Domain " + (created?" ":" not ") + " created");
 
 		s_logger.info("Rule " + (created?" ":" not ") + " created");
@@ -945,9 +945,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((FenceCommand) cmd);
             } else if (cmd instanceof StartCommand ) {
             	return execute((StartCommand) cmd);
-            }  else if (cmd instanceof IpAssocCommand) {
+            } else if (cmd instanceof IpAssocCommand) {
                 return execute((IpAssocCommand)cmd);
-            }else if (cmd instanceof NetworkElementCommand) {
+            } else if (cmd instanceof NetworkElementCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
             	return execute((CheckSshCommand) cmd);
@@ -1704,7 +1704,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					success = false;
 				}
 			}
-		} catch(final IOException e) {
+		} catch (final IOException e) {
 			s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
 			success = false;
 		}
@@ -1784,7 +1784,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			if (state == State.Running) {
 				vncPort = getVncPort(conn, cmd.getVmName());
 
-				synchronized(_vms) {
+				synchronized (_vms) {
 					_vms.put(cmd.getVmName(), State.Running);
 				}
 			}
@@ -1801,7 +1801,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (computingHostIp != null) {
             result = doPingTest(computingHostIp);
-        } else if (cmd.getRouterIp() != null && cmd.getPrivateIp() != null){
+        } else if (cmd.getRouterIp() != null && cmd.getPrivateIp() != null) {
             result = doPingTest(cmd.getRouterIp(), cmd.getPrivateIp());
         } else {
         	return new Answer(cmd, false, "routerip and private ip is null");
@@ -1831,7 +1831,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 		State state = null;
 		String result = null;
-		synchronized(_vms) {
+		synchronized (_vms) {
 			state = _vms.get(vmName);
 			_vms.put(vmName, State.Stopping);
 		}
@@ -1845,7 +1845,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
 			dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
 			/*Hard code lm flags: VIR_MIGRATE_LIVE(1<<0) and VIR_MIGRATE_PERSIST_DEST(1<<3)*/
-			destDomain = dm.migrate(dconn, (1<<0)|(1<<3), vmName, "tcp:" + cmd.getDestinationIp(), 0);
+			destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), vmName, "tcp:" + cmd.getDestinationIp(), 0);
 		} catch (LibvirtException e) {
 			s_logger.debug("Can't migrate domain: " + e.getMessage());
 			result = e.getMessage();
@@ -1869,7 +1869,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 
 		if (result != null) {
-			synchronized(_vms) {
+			synchronized (_vms) {
 				_vms.put(vmName, state);
 			}
 		} else {
@@ -1897,7 +1897,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					vlanId = broadcastUri.getHost();
 				}
 				if (nic.getType() == TrafficType.Guest) {
-					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
 						createVlanBr(vlanId, _pifs.first());
 					}
 				} else if (nic.getType() == TrafficType.Control) {
@@ -1986,7 +1986,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 		Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 
-		HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, nicStats.first()/1000, nicStats.second()/1000, "host", totMem, freeMem, 0, 0);
+		HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, nicStats.first() / 1000, nicStats.second() / 1000, "host", totMem, freeMem, 0, 0);
 		return new GetHostStatsAnswer(cmd, hostStats);
 	}
 
@@ -2029,7 +2029,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	 private Answer execute(NetworkUsageCommand cmd) {
-		 if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+		 if (cmd.getOption() != null && cmd.getOption().equals("create") ) {
 			 String result = networkUsage(cmd.getPrivateIP(), "create", null);
 			 NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
 			 return answer;
@@ -2043,7 +2043,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		Long bytesReceived = null;
     	Long bytesSent = null;
 
-    	synchronized(_vms) {
+    	synchronized (_vms) {
     		_vms.put(cmd.getVmName(), State.Starting);
     	}
 
@@ -2098,14 +2098,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			Connect conn = LibvirtConnection.getConnection();
 			for (String vmName : vmNames) {
 				VmStatsEntry statEntry = getVmStat(conn, vmName);
-				if( statEntry == null ) {
+				if ( statEntry == null ) {
                     continue;
                 }
 
 				vmStatsNameMap.put(vmName, statEntry);
 			}
 			return new GetVmStatsAnswer(cmd, vmStatsNameMap);
-		}catch (LibvirtException e) {
+		} catch (LibvirtException e) {
 			s_logger.debug("Can't get vm stats: " + e.toString());
 			return new GetVmStatsAnswer(cmd, null);
 		}
@@ -2119,7 +2119,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Long bytesSent = new Long(0);
 
         State state = null;
-        synchronized(_vms) {
+        synchronized (_vms) {
             state = _vms.get(vmName);
             _vms.put(vmName, State.Stopping);
         }
@@ -2146,7 +2146,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException e) {
         	return new StopAnswer(cmd, e.getMessage());
         } finally {
-            synchronized(_vms) {
+            synchronized (_vms) {
                 if (state != null) {
                     _vms.put(vmName, state);
                 } else {
@@ -2253,7 +2253,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		vm.addComp(guest);
 
 		GuestResourceDef grd = new GuestResourceDef();
-		grd.setMemorySize(vmTO.getMinRam()/1024);
+		grd.setMemorySize(vmTO.getMinRam() / 1024);
 		grd.setVcpuNum(vmTO.getCpus());
 		vm.addComp(grd);
 
@@ -2378,7 +2378,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 
-	protected void createVbd(Connect conn, VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException{
+	protected void createVbd(Connect conn, VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
 		List<DiskDef> disks = new ArrayList<DiskDef>();
 		for (VolumeTO volume : vmSpec.getDisks()) {
 			KVMPhysicalDisk physicalDisk = null;
@@ -2485,7 +2485,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		patchSystemVm(bootArgs, datadiskPath, vmName);
 	}
 
-	private String createVlanBr(String vlanId, String nic) throws InternalErrorException{
+	private String createVlanBr(String vlanId, String nic) throws InternalErrorException {
 		String brName = setVnetBrName(vlanId);
 		createVnet(vlanId, nic);
 		return brName;
@@ -2501,7 +2501,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (nic.getType() == TrafficType.Guest) {
-            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
                 String brName = createVlanBr(vlanId, _pifs.first());
                 intf.defBridgeNet(brName, null, nic.getMac(), model);
             } else {
@@ -2656,7 +2656,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 
-	protected synchronized String attachOrDetachDevice(Connect conn, boolean attach, String vmName, String xml) throws LibvirtException, InternalErrorException{
+	protected synchronized String attachOrDetachDevice(Connect conn, boolean attach, String vmName, String xml) throws LibvirtException, InternalErrorException {
 		Domain dm = null;
 		try {
 			dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes((vmName.getBytes())));
@@ -2713,7 +2713,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String result = command.execute(kvi);
         if (result == null) {
         	return kvi.getKeyValues();
-        }else {
+        } else {
         	return new HashMap<String, String>(1);
         }
 	}
@@ -2722,7 +2722,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	public StartupCommand [] initialize() {
         Map<String, State> changes = null;
 
-        synchronized(_vms) {
+        synchronized (_vms) {
         	_vms.clear();
         	changes = sync();
         }
@@ -2765,7 +2765,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 		final HashMap<String, State> changes = new HashMap<String, State>();
 
-		synchronized(_vms) {
+		synchronized (_vms) {
 			newStates = getAllVms();
 			if (newStates == null) {
 				s_logger.debug("Unable to get the vm states so no state sync at this point.");
@@ -2955,13 +2955,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         try {
                 vms = conn.listDefinedDomains();
-        } catch (final LibvirtException e){
+        } catch (final LibvirtException e) {
                 s_logger.warn("Unable to listDomains", e);
                 return null;
         }
 
         Domain dm = null;
-        for (int i =0; i < ids.length; i++) {
+        for (int i = 0; i < ids.length; i++) {
             try {
                 dm = conn.domainLookupByID(ids[i]);
 
@@ -3026,7 +3026,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	boolean result = false;
         	try {
         		BufferedReader in = new BufferedReader(new FileReader("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"));
-        		speed = Long.parseLong(in.readLine())/1000;
+        		speed = Long.parseLong(in.readLine()) / 1000;
         		result = true;
         	} catch (FileNotFoundException e) {
 
@@ -3045,7 +3045,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(conn.getCapabilities());
             ArrayList<String> oss = parser.getGuestOsType();
-            for(String s : oss) {
+            for (String s : oss) {
                 /*Even host supports guest os type more than hvm, we only report hvm to management server*/
             	if (s.equalsIgnoreCase("hvm")) {
             		cap = "hvm";
@@ -3063,7 +3063,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         info.add(speed);
         info.add(ram);
         info.add(cap);
-        long dom0ram = Math.min(ram/10, 768*1024*1024L);//save a maximum of 10% of system ram or 768M
+        long dom0ram = Math.min(ram / 10, 768 * 1024 * 1024L);//save a maximum of 10% of system ram or 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
     	s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram);
@@ -3186,7 +3186,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             		return null;
             	}
     			dm.shutdown();
-    			int retry = _stopTimeout/2000;
+    			int retry = _stopTimeout / 2000;
     			/*Wait for the domain gets into shutoff state*/
     			while ((dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) && (retry >= 0)) {
     				Thread.sleep(2000);
@@ -3220,7 +3220,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public synchronized String cleanupVnet(Connect conn, final String vnetId) {
 		// VNC proxy VMs do not have vnet
-		if(vnetId == null || vnetId.isEmpty() || isDirectAttachedNetwork(vnetId)) {
+		if (vnetId == null || vnetId.isEmpty() || isDirectAttachedNetwork(vnetId)) {
             return null;
         }
 
@@ -3276,7 +3276,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private String getHypervisorPath(Connect conn) {
-    	File f =new File("/usr/bin/cloud-qemu-kvm");
+    	File f = new File("/usr/bin/cloud-qemu-kvm");
     	if (f.exists()) {
     		return "/usr/bin/cloud-qemu-kvm";
     	} else {
@@ -3348,7 +3348,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean isCentosHost() {
-    	if (_hvVersion <=9 ) {
+    	if (_hvVersion <= 9 ) {
     		return true;
     	} else {
             return false;
@@ -3483,7 +3483,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	Calendar _timestamp;
     }
 
-    private VmStatsEntry getVmStat(Connect conn, String vmName) throws LibvirtException{
+    private VmStatsEntry getVmStat(Connect conn, String vmName) throws LibvirtException {
     	Domain dm = null;
     	try {
     		dm = getDomain(conn, vmName);
@@ -3504,11 +3504,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		long elapsedTime = 0;
     		if (oldStats != null) {
     			elapsedTime = now.getTimeInMillis() - oldStats._timestamp.getTimeInMillis();
-    			double utilization = (info.cpuTime - oldStats._usedTime)/((double)elapsedTime*1000000);
+    			double utilization = (info.cpuTime - oldStats._usedTime) / ((double)elapsedTime * 1000000);
 
     			NodeInfo node = conn.nodeInfo();
-    			utilization = utilization/node.cpus;
-    			stats.setCPUUtilization(utilization*100);
+    			utilization = utilization / node.cpus;
+    			stats.setCPUUtilization(utilization * 100);
     		}
 
     		/*get network stats*/
@@ -3525,10 +3525,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		if (oldStats != null) {
     			long deltarx = rx - oldStats._rx;
     			if (deltarx > 0)
-    				stats.setNetworkReadKBs(deltarx/1000);
+    				stats.setNetworkReadKBs(deltarx / 1000);
     			long deltatx = tx - oldStats._tx;
     			if (deltatx > 0)
-    				stats.setNetworkWriteKBs(deltatx/1000);
+    				stats.setNetworkWriteKBs(deltatx / 1000);
     		}
 
     		vmStats newStat = new vmStats();
@@ -3729,7 +3729,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String result = get_rule_logs_for_vms();
         s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
         String [] rulelogs = result != null ?result.split(";"): new String [0];
-        for (String rulesforvm: rulelogs){
+        for (String rulesforvm: rulelogs) {
         	String [] log = rulesforvm.split(",");
         	if (log.length != 6) {
         		continue;
