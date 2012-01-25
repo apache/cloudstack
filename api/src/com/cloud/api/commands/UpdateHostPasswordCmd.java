@@ -26,9 +26,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.response.RegisterResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
@@ -42,18 +39,19 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    // TO DO - this is of no use currently. Probably need to remove it.
     @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
     private Long hostId;
 
     @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID for the host")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")
     private String username;
     
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the password for the host/cluster")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the new password for the host/cluster")
     private String password;
 
     // ///////////////////////////////////////////////////

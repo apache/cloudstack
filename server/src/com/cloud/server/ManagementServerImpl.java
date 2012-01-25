@@ -141,6 +141,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -3060,42 +3061,47 @@ public class ManagementServerImpl implements ManagementServer {
         if (cmd.getClusterId() == null && cmd.getHostId() == null) {
             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
         } else if (cmd.getClusterId() == null) {
-            HostVO h = _hostDao.findById(cmd.getHostId());
-            if (h.getHypervisorType() == HypervisorType.XenServer) {
+            HostVO host = _hostDao.findById(cmd.getHostId());
+            if (host != null && host.getHypervisorType() == HypervisorType.XenServer) {
                 throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
-            }
-            DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-            if (nv.getValue().equals(cmd.getUsername())) {
-                DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, cmd.getPassword());
-                nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                _detailsDao.persist(nvp);
-            } else {
-                throw new InvalidParameterValueException("The username is not under use by management server.");
+            }else {
+                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
         } else {
+            
+            ClusterVO cluster = ApiDBUtils.findClusterById(cmd.getClusterId());
+            if (cluster == null || cluster.getHypervisorType() !=  HypervisorType.XenServer){
+                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
+            }
             // get all the hosts in this cluster
             List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
             Transaction txn = Transaction.currentTxn();
-            txn.start();
-            for (HostVO h : hosts) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Changing password for host name = " + h.getName());
+            try{
+                txn.start();
+                for (HostVO h : hosts) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Changing password for host name = " + h.getName());
+                    }
+                    // update password for this host
+                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    if (nv.getValue().equals(cmd.getUsername())) {
+                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else {
+                        // if one host in the cluster has diff username then rollback to maintain consistency
+                        txn.rollback();
+                        throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                    }
                 }
-                // update password for this host
-                DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                if (nv.getValue().equals(cmd.getUsername())) {
-                    DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                    nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                    _detailsDao.persist(nvp);
-                } else {
-                    // if one host in the cluster has diff username then rollback to maintain consistency
-                    txn.rollback();
-                    throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                }
+                txn.commit();
+                // if hypervisor is xenserver then we update it in CitrixResourceBase
+            }catch (Exception e) {
+                txn.rollback();
+                throw new CloudRuntimeException("Failed to update password " + e.getMessage());                
             }
-            txn.commit();
-            // if hypervisor is xenserver then we update it in CitrixResourceBase
         }
+        
         return true;
     }
 

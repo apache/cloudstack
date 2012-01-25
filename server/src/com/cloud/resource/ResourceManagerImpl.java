@@ -1916,7 +1916,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         return result;
                     }
                     
-                    doUpdateHostPassword(cmd.getHostId());
+                    doUpdateHostPassword(h.getId());
                 } catch (AgentUnavailableException e) {
                 }
             }
