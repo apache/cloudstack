@@ -1161,7 +1161,8 @@
                           jobId: data.disablestaticnatresponse.jobid,
                           getUpdatedItem: function() {
                             return {
-                              isstaticnat: false
+                              isstaticnat: false,
+															virtualmachinedisplayname: ""
                             };
                           },
                           getActionFilter: function() {
