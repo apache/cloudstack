@@ -268,6 +268,7 @@
               cloudStack.zoneWizard.enableZoneAction({
                 data: args.data,
                 formData: args.data,
+                launchData: args.data,
                 response: {
                   success: function(args) {
                     pollSystemVMs();

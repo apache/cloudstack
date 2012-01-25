@@ -637,7 +637,7 @@
         $launchStep.find('.launch-container').show();
         $launchStep.find('ul').html('');
         $wizard.find('.buttons').hide();
-
+        $wizard.find('.button.previous').remove();
 
         var makeMessage = function(message, isError) {
           var $li = $('<li>')
@@ -678,6 +678,7 @@
 
                 enableZoneAction({
                   formData: data,
+                  data: data,
                   launchData: args.data,
                   response: {
                     success: function(args) {

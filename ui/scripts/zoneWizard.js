@@ -880,6 +880,7 @@
       var message = args.response.message;
       //var data = args.data; 
       var startFn = args.startFn;
+      var data = args.data;
 					
       var stepFns = {
         addZone: function() {
@@ -1874,6 +1875,11 @@
 								success: function(json) {								 
 									var item = json.createvlaniprangeresponse.vlan;
 									returnedPublicTraffic.push(item);
+                  stepFns.configureGuestTraffic({
+							      data: $.extend(args.data, {
+								      returnedPublicTraffic: returnedPublicTraffic
+							      })
+						      });		
 								},
 								error: function(XMLHttpResponse) {								  
 									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -1881,12 +1887,6 @@
 								}
 							});							
 						});				
-            
-						stepFns.configureGuestTraffic({
-							data: $.extend(args.data, {
-								returnedPublicTraffic: returnedPublicTraffic
-							})
-						});		
 						
 					}
 					else { //basic zone without public traffic type , skip to next step
@@ -2234,7 +2234,9 @@
       };
       
       if (startFn) {
-        stepFns[startFn.fn](startFn.args);
+        stepFns[startFn.fn]({
+          data: $.extend(startFn.args.data, data)
+        });
       } else {
         stepFns.addZone({});
       }
@@ -2242,7 +2244,7 @@
 
     enableZoneAction: function(args) {		 
 		  $.ajax({
-			  url: createURL("updateZone&allocationstate=Enabled&id=" + args.formData.returnedZone.id),
+			  url: createURL("updateZone&allocationstate=Enabled&id=" + args.launchData.returnedZone.id),
 				dataType: "json",
 				success: function(json) {				  
 					args.formData.returnedZone = json.updatezoneresponse.zone;
