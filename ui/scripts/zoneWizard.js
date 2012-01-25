@@ -1503,8 +1503,7 @@
 																																																							}
 																																																							else {
 																																																								$("body").stopTime(updateNetworkServiceProviderTimer);
-																																																								if(result.jobstatus == 1) {
-																																																																																																																
+																																																								if(result.jobstatus == 1) {																																																																																																																
 																																																									//create a guest network for basic zone
 																																																									var array2 = [];
 																																																									array2.push("&zoneid=" + args.data.returnedZone.id);
@@ -1522,10 +1521,12 @@
 																																																													returnedGuestNetwork: json.createnetworkresponse.network
 																																																												})
 																																																											});		
-																																																										}
-																																																									});		
-																																																									
-																																																																																																																
+																																																										},																																																									
+																																																										error: function(XMLHttpResponse) {
+																																																											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																																																											alert("failed to create a guest network for basic zone. Error: " + errorMsg);
+																																																										}																																																										
+																																																									});																																																				
 																																																								}
 																																																								else if(result.jobstatus == 2) {
 																																																								  alert("failed to enable Netscaler provider. Error: " + fromdb(result.jobresult.errortext));
@@ -1537,12 +1538,13 @@
 																																																			},
 																																																			error: function(XMLHttpResponse) {
 																																																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																																				alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
+																																																				alert("failed to enable Netscaler provider. Error: " + errorMsg);
 																																																			}
 																																																		});																																																		
 																																																	}
 																																																	else if(result.jobstatus == 2) {
-																																																		error('addBasicPhysicalNetwork', fromdb(result.jobresult.errortext), { fn: 'configurePhysicalNetwork', args: args });
+																																																	  alert("addNetscalerLoadBalancer failed. Error: " + fromdb(result.jobresult.errortext));																																																	  
+																																																		//error('addBasicPhysicalNetwork', fromdb(result.jobresult.errortext), { fn: 'configurePhysicalNetwork', args: args });
 																																																	}
 																																																}							
 																																															}																					
@@ -1596,7 +1598,7 @@
 																																},
 																																error: function(XMLHttpResponse) {
 																																	var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																	alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+																																	alert("failed to enable security group provider. Error: " + errorMsg);
 																																}
 																															});
 																														});
@@ -1632,7 +1634,7 @@
 																								},
 																								error: function(XMLHttpResponse) {
 																									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																									alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+																									alert("failed to enable Virtual Router Provider. Error: " + errorMsg);
 																								}
 																							});
 																						});
