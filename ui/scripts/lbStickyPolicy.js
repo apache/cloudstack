@@ -113,7 +113,6 @@
           var data = cloudStack.serializeForm(args.$form);
 
           if ($item) {
-            debugger;
             $.ajax({
               url: createURL('')
             });
