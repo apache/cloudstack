@@ -78,8 +78,9 @@
               .click(function() {
                 var $button = $(this);
                 field.custom.action({
-                  context: {},
+                  context: options.context ? options.context : cloudStack.context,
                   data: $td.data('multi-custom-data'),
+                  $item: $td,
                   response: {
                     success: function(args) {
                       if (args.data['_buttonLabel']) {

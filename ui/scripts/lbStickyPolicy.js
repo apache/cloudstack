@@ -4,6 +4,7 @@
       var success = args.response.success;
       var context = args.context;
       var network = args.context.networks[0];
+      var $item = args.$item;
 
       var lbService = $.grep(network.service, function(service) {
         return service.name == 'Lb';
@@ -110,11 +111,21 @@
         },
         after: function(args) {
           var data = cloudStack.serializeForm(args.$form);
-          success({
-            data: $.extend(data, {
-              _buttonLabel: data.methodname.toUpperCase()
-            })
-          });
+
+          if ($item) {
+            debugger;
+            $.ajax({
+              url: createURL('')
+            });
+            
+            $(window).trigger('cloudStack.fullRefresh');
+          } else {
+            success({
+              data: $.extend(data, {
+                _buttonLabel: data.methodname
+              })
+            });
+          }
         }
       });
     };
