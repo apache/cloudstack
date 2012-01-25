@@ -628,7 +628,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		if(ocs != null) {
 			for(ObjectContent oc : ocs) {
 				DatastoreSummary dsSummary = (DatastoreSummary)VmwareHelper.getPropValue(oc, "summary");
-				if(dsSummary.getMultipleHostAccess() == false) {
+				if(dsSummary.getMultipleHostAccess() == false && dsSummary.isAccessible() && dsSummary.getType().equalsIgnoreCase("vmfs")) {
 					ManagedObjectReference morDs = oc.getObj();
 					String name = (String)VmwareHelper.getPropValue(oc, "name");
 					
