@@ -52,7 +52,7 @@
         return args.data['network-model'] == 'Advanced';
       },
 
-      addBasicPhysicalNetwork: function(args) {
+      addNetscalerDevice: function(args) {
         return args.data['network-model'] == 'Basic';
       },
 

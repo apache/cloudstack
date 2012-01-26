@@ -535,11 +535,11 @@
             </div>
           </div>
 
-          <!-- Step 3.1b: Setup Physical Network (basic zone) -->
+          <!-- Step 3.1b: Add Netscaler device -->
           <div class="setup-physical-network-basic"
-               zone-wizard-step-id="addBasicPhysicalNetwork"
+               zone-wizard-step-id="addNetscalerDevice"
                zone-wizard-form="basicPhysicalNetwork"
-               zone-wizard-prefilter="addBasicPhysicalNetwork">
+               zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
               <li class="physical-network active">Netscaler</li>
               <li class="public-network">Public traffic</li>
