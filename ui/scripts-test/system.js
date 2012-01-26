@@ -113,7 +113,7 @@
                 state: 'Enabled'
               }
             ]
-          })
+          });
         },
 
         detailView: function(args) {
@@ -968,7 +968,7 @@
                 }
               }
             }
-          },
+          }
         }
       }
     },
@@ -1027,7 +1027,7 @@
                       internaldns2: { label: 'Internal DNS 2', isEditable: true },
                       networktype: { label: 'Network Type' },
                       securitygroupsenabled: {
-                        label: 'Security Groups Enabled',
+                        label: 'Security Groups Enabled'
                       },
                       domain: {
                         label: 'Network domain',

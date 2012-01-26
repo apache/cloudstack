@@ -96,35 +96,35 @@
           pods: {
             label: 'Pods',
             viewAll: {
-              action: actions.listView('pods', context),
+              action: actions.listView('pods', context)
             }
           },
 
           clusters: {
             label: 'Clusters',
             viewAll: {
-              action: actions.listView('clusters', context),
+              action: actions.listView('clusters', context)
             }
           },
 
           hosts: {
             label: 'Hosts',
             viewAll: {
-              action: actions.listView('hosts', context),
+              action: actions.listView('hosts', context)
             }
          },
 
           primaryStorage: {
             label: 'Primary Storage',
             viewAll: {
-              action: actions.listView('primary-storage', context),
+              action: actions.listView('primary-storage', context)
             }
           },
 
           secondaryStorage: {
             label: 'Secondary Storage',
             viewAll: {
-              action: actions.listView('secondary-storage', context),
+              action: actions.listView('secondary-storage', context)
             }
           }
         };
@@ -313,7 +313,7 @@
         var $stats = $('<div>').addClass('stats');
         var $container = $('<div>').addClass('dashboard-container head');
         var $top = $('<div>').addClass('top');
-        var $title = $('<div>').addClass('title').append($('<span>').html('System-wide capacity'))
+        var $title = $('<div>').addClass('title').append($('<span>').html('System-wide capacity'));
 
         var chartItems = {
           // The keys are based on the internal type ID associated with each capacity
@@ -340,7 +340,7 @@
           6: {
             name: 'Secondary Storage'
           }
-        }
+        };
 
         $top.append($title);
         $container.append($top, $stats.append($chartItems));

@@ -32,7 +32,7 @@
               label: 'Remove Rule',
               action: function(args) {
                 multiEditData = $.grep(multiEditData, function(item) {
-                  return item.index != args.context.multiRule[0].index
+                  return item.index != args.context.multiRule[0].index;
                 });
                 args.response.success();
               }
@@ -108,13 +108,13 @@
                     description: domain.name
                   };
                 })
-              })
+              });
             }
           },
           'security-groups-enabled': {
             label: 'Security Groups Enabled',
             isBoolean: true,
-            isReverse: true,
+            isReverse: true
           },
 
           networkOfferingIdWithoutSG: {
@@ -143,7 +143,7 @@
                     description: offering.name
                   };
                 })
-              })
+              });
             }
           }
         }
@@ -229,7 +229,7 @@
               var array1 = [];
               var selectedZoneObj = {
                 securitygroupsenabled: args.context.zones[0]['security-groups-enabled']
-              }
+              };
               if(selectedZoneObj.securitygroupsenabled) {
                 array1.push({id: 'account-specific', description: 'Account'});
               }

@@ -1257,7 +1257,7 @@
                     label: "Redundant router capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
-                    isBoolean: true,
+                    isBoolean: true
                   },
 
                   "service.SourceNat.sourceNatTypeDropdown": {
@@ -1277,7 +1277,7 @@
                     label: "Elastic LB",
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
-                    isBoolean: true,
+                    isBoolean: true
                   },
                   "service.Lb.lbIsolationDropdown": {
                     label: 'LB isolation',
@@ -1296,7 +1296,7 @@
 										label: "Elastic IP",
 										isHidden: true,
 										dependsOn: 'service.StaticNat.isEnabled',
-										isBoolean: true,
+										isBoolean: true
 									},	
 
 									conservemode: { label: 'Conserve mode', isBoolean: true },

@@ -8,7 +8,7 @@
 
   window.g_capabilities = {
     projectinviterequired: false
-  }
+  };
 
   window.testData = {
     actionFilter: function(args) {
@@ -2488,7 +2488,7 @@
           "isextractable": false
         },
         {
-          "id": 0259,
+          "id": 259,
           "name": "RightImage_CentOS_5.4_x64_v5.6.32.1_CDC_XEN",
           desc: 'XenServer image by RightImage',
           "displaytext": "RightImage CentOS 5.4 x64 v5.6 CDC XEN",

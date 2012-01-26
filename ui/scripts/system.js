@@ -6290,7 +6290,7 @@
                   },
                   {
                     id: { label: 'ID' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
+                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 

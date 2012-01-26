@@ -21,7 +21,7 @@
             accountType: 'user',
             accountDomainID: 12
           }
-        })
+        });
       }
     },
 

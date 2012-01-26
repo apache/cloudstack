@@ -1111,7 +1111,7 @@
                     args.complete({
                       data: {
                         isstaticnat: true
-                      },
+                      }
                     });
 
                     ipChangeNotice();
