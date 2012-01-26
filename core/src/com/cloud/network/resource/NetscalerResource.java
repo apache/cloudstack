@@ -459,7 +459,6 @@ public class NetscalerResource implements ServerResource {
                                 newService.set_servername(nsServerName);
                                 newService.set_state("ENABLED");
                                 newService.set_servicetype(lbProtocol);
-                                newService.set_usip("ON");
 
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.add(_netscalerService, newService);
                                 if (apiCallResult.errorcode != 0) {
