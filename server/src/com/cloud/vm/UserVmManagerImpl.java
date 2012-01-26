@@ -2427,8 +2427,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        
+        String uuidName = UUID.randomUUID().toString();
         if (hostName == null) {
-            hostName = instanceName;
+            hostName = uuidName;
         } else {
             // verify hostName (hostname doesn't have to be unique)
             if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
@@ -2436,6 +2438,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
             }
         }
+        if(displayName == null)
+            displayName = uuidName;
 
         HypervisorType hypervisorType = null;
         if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
@@ -2447,7 +2451,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         txn.start();
         UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(), offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(),
                 offering.getId(), userData, hostName);
-
+        vm.setUuid(uuidName);
+        
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
         }

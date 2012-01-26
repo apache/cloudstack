@@ -147,7 +147,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     Map<String, String> details;
 
     @Column(name="uuid")
-    protected String uuid;
+    protected String uuid = UUID.randomUUID().toString();
+;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,
@@ -161,7 +162,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         long accountId,
                         boolean haEnabled) {
         this.id = id;
-        this.hostName = name != null ? name : instanceName;
+        this.hostName = name != null ? name : this.uuid;
         if (vmTemplateId != null) {
             this.templateId = vmTemplateId;
         }
@@ -176,7 +177,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         this.limitCpuUse = false;
-        this.uuid = UUID.randomUUID().toString();
     }
 
     public VMInstanceVO(long id,
