@@ -13,10 +13,11 @@
         listView: {
           id: 'templates',
           label: 'Templates',          
-          filters: {            
+          filters: {     
+            all: { label: 'All' },
+						mine: { label: 'Mine' },		
             featured: { label: 'Featured' },
-            community: { label: 'Community' },
-            mine: { label: 'Mine' }
+            community: { label: 'Community' }            
           },          
           fields: {
             name: { label: 'Name' },           
@@ -292,16 +293,19 @@
         	  var array1 = [];          	
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
-                switch(args.filterBy.kind) {   
+                switch(args.filterBy.kind) {  
+                case "all":
+                  array1.push("&templatefilter=all");
+                  break; 
+                case "mine":
+                  array1.push("&templatefilter=self");
+                  break;                  								
                 case "featured":
                   array1.push("&templatefilter=featured");
                   break;
                 case "community":
                   array1.push("&templatefilter=community");
-                  break;   
-                case "mine":
-                  array1.push("&templatefilter=self");
-                  break;                  
+                  break;                   
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
@@ -667,9 +671,10 @@
         listView: {
           label: 'ISOs',
           filters: {            
+					  all: { label: 'All' },
+					  mine: { label: 'Mine' },					
             featured: { label: 'Featured' },
-            community: { label: 'Community' },
-            mine: { label: 'Mine' }
+            community: { label: 'Community' }            
           },      
           fields: {
             displaytext: { label: 'Name' },            
@@ -838,15 +843,18 @@
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {   
+								case "all":
+                  array1.push("&isofilter=all");
+                  break;   
+								case "mine":
+                  array1.push("&isofilter=self");
+                  break; 								
                 case "featured":
                   array1.push("&isofilter=featured");
                   break;
                 case "community":
                   array1.push("&isofilter=community");
-                  break;    
-                case "mine":
-                  array1.push("&isofilter=self");
-                  break;                  
+                  break;      
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
