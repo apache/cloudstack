@@ -501,12 +501,12 @@
   var createHeader = function(fields, $table, actions, options) {
     if (!options) options = {};
 
-    var $thead = $('<thead>').appendTo($table);
+    var $thead = $('<thead>').prependTo($table).append($('<tr>'));
     var reorder = options.reorder;
 
     $.each(fields, function(key) {
       var field = this;
-      var $th = $('<th>').appendTo($thead);
+      var $th = $('<th>').appendTo($thead.find('tr'));
 
       if ($th.index()) $th.addClass('reduced-hide');
 
@@ -514,13 +514,13 @@
     });
 
     if (reorder) {
-      $thead.append(
+      $thead.find('tr').append(
         $('<th>').html('Order').addClass('reorder-actions reduced-hide')
       );
     }
 
     if (actions && renderActionCol(actions)) {
-      $thead.append(
+      $thead.find('tr').append(
         $('<th></th>')
           .html('Actions')
           .addClass('actions reduced-hide')
