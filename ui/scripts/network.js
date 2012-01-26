@@ -1298,23 +1298,33 @@
 										var disallowedActions = [];
 										if (args.context.ipAddresses[0].isstaticnat)  
 										  disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.									
-										                    
-										var networkHavingFirewallService = false;										
-										var networkHavingPortForwardingService = false;
-										var networkHavingLbService = false;																				
-										$(args.context.networks[0].service).each(function(){												 
-											if(this.name == "Firewall") 
-												networkHavingFirewallService = true;		
-											if(this.name == "PortForwarding")
-											  networkHavingPortForwardingService = true;
-											if(this.name == "Lb")
-											  networkHavingLbService = true;											
-										});		
-										if(networkHavingFirewallService == false) 
+										      
+													
+										var networkOfferingHavingFirewallService = false;
+										var networkOfferingHavingPortForwardingService = false;
+										var networkOfferingHavingLbService = false;
+										$.ajax({
+											url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
+											dataType: "json",
+											async: false,
+											success: function(json) {								  
+												var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];		
+												$(networkoffering.service).each(function(){								 
+													var thisService = this;																
+                          if(thisService.name == "Firewall") 
+														networkOfferingHavingFirewallService = true;				
+                          if(thisService.name == "PortForwarding") 
+														networkOfferingHavingPortForwardingService = true;																
+													if(thisService.name == "Lb") 
+														networkOfferingHavingLbService = true;	
+												});											
+											}
+										});										
+										if(networkOfferingHavingFirewallService == false) 
 										  disallowedActions.push("firewall"); 	
-										if(networkHavingPortForwardingService == false) 
+										if(networkOfferingHavingPortForwardingService == false) 
 										  disallowedActions.push("portForwarding");
-										if(networkHavingLbService == false) 
+										if(networkOfferingHavingLbService == false) 
 										  disallowedActions.push("loadBalancing");																					
 									
                     return disallowedActions;
