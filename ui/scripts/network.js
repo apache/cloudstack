@@ -444,22 +444,31 @@
             },
 						
 						tabFilter: function(args) {		
-							var showLbTab = false;
-							$(args.context.networks[0].service).each(function(){			
-								if(this.name == "Lb") {
-								  $(this.capability).each(function() {									  
-										if(this.name == "ElasticLb") {										  
-											showLbTab = true;
-											return false; //break $.each loop
-										}										
-									});		
-									return false; //break $.each loop
-                }									
-							});		
-							
+							var networkOfferingHavingELB = false;
+							$.ajax({
+							  url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
+								dataType: "json",
+								async: false,
+								success: function(json) {								  
+								  var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];									
+									$(networkoffering.service).each(function(){								 
+										var thisService = this;												
+										if(thisService.name == "Lb") {
+											$(thisService.capability).each(function(){		
+												if(this.name == "ElasticLb" && this.value == "true") {
+													networkOfferingHavingELB = true;
+													return false; //break $.each() loop
+												}											
+											});			
+											return false; //break $.each() loop
+										}
+									});											
+								}
+							});
+																								
               var hiddenTabs = [];  							
-							if(showLbTab == false)
-							  hiddenTabs.push("loadBalancer"); 							
+							if(networkOfferingHavingELB == false)
+							  hiddenTabs.push("addloadBalancer"); 					
               return hiddenTabs;
             },
 
@@ -592,7 +601,7 @@
                 }
               },
 
-              loadBalancer: {
+              addloadBalancer: {
                 title: 'Add load balancer',
                 custom: function(args) {
                   var context = args.context;
