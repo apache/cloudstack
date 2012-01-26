@@ -85,7 +85,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     String name) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled, limitCpuUse);
         this.userData = userData;
-        this.displayName = displayName != null ? displayName : getUuid();
+        this.displayName = displayName;
     	this.details = new HashMap<String, String>();
     }
     

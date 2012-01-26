@@ -2438,8 +2438,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
             }
         }
-        if(displayName == null)
-            displayName = "";
 
         HypervisorType hypervisorType = null;
         if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
