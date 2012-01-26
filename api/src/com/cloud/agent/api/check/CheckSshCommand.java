@@ -30,12 +30,12 @@ public class CheckSshCommand extends Command {
         super();
     }
     
-    public CheckSshCommand(String instanceName, String ip, int port, int interval, int retries) {
+    public CheckSshCommand(String instanceName, String ip, int port) {
         super();
         this.ip = ip;
         this.port = port;
-        this.interval = interval;
-        this.retries = retries;
+        this.interval = 6;
+        this.retries = 100;
         this.name = instanceName;
     }
     

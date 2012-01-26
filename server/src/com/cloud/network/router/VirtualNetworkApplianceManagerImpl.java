@@ -1758,7 +1758,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
 
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
 
         // Update router template/scripts version
         final GetDomRVersionCmd command = new GetDomRVersionCmd();
@@ -1934,7 +1934,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } else {
             result = false;
         }
-
+        if (result == false) {
+            return false;
+        }
         answer = cmds.getAnswer("getDomRVersion");
         if (answer != null && answer instanceof GetDomRVersionAnswer) {
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
