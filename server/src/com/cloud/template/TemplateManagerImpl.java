@@ -1132,7 +1132,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	
     	//check permissions
-    	_accountMgr.checkAccess(caller, null, true, iso, vm);
+    	//check if caller has access to VM and ISO 
+    	//and also check if the VM's owner has access to the ISO.
+    	
+    	_accountMgr.checkAccess(caller, null, false, iso, vm);
+    	
+    	Account vmOwner = _accountDao.findById(vm.getAccountId());
+    	_accountMgr.checkAccess(vmOwner, null, false, iso, vm);
     	
         State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
