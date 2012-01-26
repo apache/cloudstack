@@ -112,10 +112,13 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -236,6 +239,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     SwiftManager _swiftMgr;
+    @Inject
+    PhysicalNetworkTrafficTypeDao _trafficTypeDao;
     
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -1456,13 +1461,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if(allocationState == Grouping.AllocationState.Enabled){
                 //check if zone has necessary trafficTypes before enabling
                 try{
+                	PhysicalNetwork mgmtPhyNetwork;
                     if(NetworkType.Advanced == zone.getNetworkType()){
                         //zone should have a physical network with public and management traffiType
                         _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
-                        _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                        mgmtPhyNetwork = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
                     }else{
                         //zone should have a physical network with management traffiType
-                        _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    	mgmtPhyNetwork = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    }
+                    
+                    try {
+                    	_networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Storage);
+                    } catch (InvalidParameterValueException noStorage) {
+                    	PhysicalNetworkTrafficTypeVO mgmtTraffic = _trafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Management);
+                    	_networkMgr.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(), TrafficType.Storage.toString(), mgmtTraffic.getXenNetworkLabel(), mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(), mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan());
+                    	s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network " + mgmtPhyNetwork.getId() + " with same configure of management traffic type");
                     }
                 }catch(InvalidParameterValueException ex){
                     throw new InvalidParameterValueException("Cannot enable this Zone since: "+ ex.getMessage());
