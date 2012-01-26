@@ -1094,7 +1094,7 @@ div.list-view td.state.off span {
 .ui-tabs ul.ui-tabs-nav {
   margin-top: 42px;
   display: block;
-  width: 95%;
+  width: 100%;
   height: 41px;
   border: none;
   overflow: hidden;
