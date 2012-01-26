@@ -1382,13 +1382,14 @@ function showVpnUsers(presharedkey, publicip) {
 				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));					    
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
 				if (!isValid) return;	
-				
+			
+				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+					
 				var username = todb($thisDialog.find("#username").val());
 				var password = todb($thisDialog.find("#password").val());
-				
-				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+							
 				$.ajax({
-					data: createURL("command=addVpnUser&username="+username+"&password="+password),
+					data: createURL("command=addVpnUser&username=" + username + "&password=" + password + "&domainid=" + ipObj.domainid + '&account=' + ipObj.account),
 					dataType: "json",
 					success: function(json) {
 						var jobId = json.addvpnuserresponse.jobid;
