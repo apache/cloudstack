@@ -412,6 +412,7 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
+            cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
             cfo.save()
             
             filename = "/etc/sysconfig/libvirt-guests"
