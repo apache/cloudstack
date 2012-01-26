@@ -2439,7 +2439,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         if(displayName == null)
-            displayName = uuidName;
+            displayName = "";
 
         HypervisorType hypervisorType = null;
         if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
