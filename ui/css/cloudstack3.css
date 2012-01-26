@@ -6912,7 +6912,6 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .system-dashboard .status_box li {
-  width: 180px;
   height: 178px;
   padding: 0;
   background: url(../images/bg-gradients.png) repeat-x 0px -1003px;
@@ -7517,8 +7516,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .project-dashboard-view .users .system-dashboard {
-  width: 510px;
+  width: 509px;
   height: 100%;
+  clear: both;
 }
 
 .project-dashboard-view .users .system-dashboard ul {
@@ -7526,10 +7526,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .project-dashboard-view .users .system-dashboard li {
-  width: 91px;
+  width: 86px;
   height: 138px;
   margin-bottom: 24px;
-  margin-left: 9px;
+  margin-left: 6px;
 }
 
 .project-dashboard-view .users .system-dashboard li .icon {
