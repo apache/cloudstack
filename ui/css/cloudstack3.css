@@ -7573,12 +7573,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .info-boxes .info-box.events {
   margin-top: 4px;
-  min-height: 100px;
+  height: 323px;
   width: 228px;
 }
 
 .info-boxes .info-box.events ul {
-  max-height: 205px;
+  max-height: 295px;
   overflow: auto;
   overflow-x: hidden;
 }
@@ -7684,16 +7684,23 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .info-boxes .info-box ul li .date {
   font-size: 13px;
   text-align: center;
-  margin: 13px 0 0;
+  margin: 0;
+}
+
+.info-boxes .info-box ul li .date span {
+  /*+placement:shift 0px 11px;*/
+  position: relative;
+  left: 0px;
+  top: 11px;
 }
 
 .info-boxes .info-box ul li .desc {
   color: #606060;
   font-size: 12px;
-  /*+placement:shift 10px 11px;*/
+  /*+placement:shift 5px 8px;*/
   position: relative;
-  left: 10px;
-  top: 11px;
+  left: 5px;
+  top: 8px;
 }
 
 .info-boxes .info-box ul li .total span {
