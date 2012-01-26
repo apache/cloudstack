@@ -81,9 +81,6 @@
             if (data.zones) {
               $.ajax({
                 url: createURL('listCapacity'),
-                data: {
-                  zoneid: data.zones[0].id // Temporary hack to keep dashboard working
-                },
                 success: function(json) {
                   var capacities = json.listcapacityresponse.capacity;
 
