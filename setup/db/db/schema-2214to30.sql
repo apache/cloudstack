@@ -609,3 +609,5 @@ ALTER TABLE  `cloud`.`event` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
 UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from account acc where acc.id = e.account_id) where e.domain_id = 0;
 
 update vm_template set removed=now() where id=2;
+
+DELETE from `cloud`.`configuration` where name='firewall.rule.ui.enabled';
