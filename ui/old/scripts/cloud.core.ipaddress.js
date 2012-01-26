@@ -213,10 +213,7 @@ function afterLoadIpJSP() {
     
     //****** Advanced Zone (begin) *******************************************************************************************************************
     else {  
-    	if(g_firewallRuleUiEnabled == "true")
-    	    $("#tab_firewall").show();
-    	else
-    		$("#tab_firewall").hide();
+    	$("#tab_firewall").show();    	
     	
     	$("#tab_details,#tab_content_details").show();
     	    	
@@ -469,10 +466,8 @@ function afterLoadIpJSP() {
 	        array1.push("&ipaddressid="+ipObj.id);           
 	        array1.push("&startPort="+startPort);
 	        array1.push("&endPort="+endPort);
-	        array1.push("&protocol="+protocol);
-	           
-	        if(g_firewallRuleUiEnabled == "true")
-	        	array1.push("&openfirewall=false");
+	        array1.push("&protocol="+protocol);	           
+	        array1.push("&openfirewall=false");
 	        
 	        $.ajax({
 	            data: createURL("command=createIpForwardingRule"+array1.join("")),
@@ -612,8 +607,7 @@ function afterLoadIpJSP() {
 		    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
 	        array1.push("&virtualmachineid=" + virtualMachineId);
 	        
-	        if(g_firewallRuleUiEnabled == "true")
-	        	array1.push("&openfirewall=false");
+	        array1.push("&openfirewall=false");
 	        
 	        $.ajax({
 	            data: createURL("command=createPortForwardingRule"+array1.join("")),
@@ -718,8 +712,7 @@ function afterLoadIpJSP() {
         var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
         array1.push("&algorithm="+algorithm);
         
-        if(g_firewallRuleUiEnabled == "true")
-        	array1.push("&openfirewall=false");
+        array1.push("&openfirewall=false");
         
         $.ajax({
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
@@ -846,25 +839,17 @@ function ipToRightPanel($midmenuItem1) {
     else
         $("#tab_details").click();        
    
-    if(ipObj.isstaticnat == true) {
-    	if(g_firewallRuleUiEnabled == "true") {
-    		$("#tab_firewall").show();
-            $("#tab_port_range").hide();	
-    	} 
-    	else {
-    		$("#tab_firewall").hide();
-    		$("#tab_port_range").show();
-    	}
+    if(ipObj.isstaticnat == true) {    	
+    	$("#tab_firewall").show();
+        $("#tab_port_range").hide();    	
         $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
     }
     else { //ipObj.isstaticnat == false  
         $("#tab_port_range").hide();
         if(ipObj.forvirtualnetwork == true) {  // Public network            
             if(isIpManageable(ipObj.domainid, ipObj.account) == true) { // IP is managable     
-            	if(g_firewallRuleUiEnabled == "true")
-            	    $("#tab_firewall").show();
-            	else
-            		$("#tab_firewall").hide();
+            	$("#tab_firewall").show();
+            	
 	            //Port Forwarding tab
 	            if(networkObj != null) {
 	                var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
@@ -1178,8 +1163,7 @@ function showEnableVPNDialog($thisTab) {
 			array1.push("&account="+ipObj.account);
 			array1.push("&domainid="+ipObj.domainid);
 			array1.push("&zoneid="+ipObj.zoneid);	
-			if(g_firewallRuleUiEnabled == "true")
-		        array1.push("&openfirewall=true");
+			array1.push("&openfirewall=true");
 			
 			$.ajax({
 				data: createURL("command=createRemoteAccessVpn"+array1.join("")),

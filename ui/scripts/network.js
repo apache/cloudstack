@@ -662,7 +662,7 @@
                       add: {
                         label: 'Add VMs',
                         action: function(args) {
-                          var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+                          var openFirewall = false;
                           var data = {
                             algorithm: args.data.algorithm,
                             name: args.data.name,
@@ -1645,7 +1645,7 @@
                     add: {
                       label: 'Add VMs',
                       action: function(args) {
-                        var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+                        var openFirewall = false;
                         var data = {
                           algorithm: args.data.algorithm,
                           name: args.data.name,
@@ -1915,7 +1915,7 @@
                     add: {
                       label: 'Add VM',
                       action: function(args) {
-                        var openFirewall = g_firewallRuleUiEnabled == "true" ? false : true;
+                        var openFirewall = false;
 
                         $.ajax({
                           url: createURL('createPortForwardingRule'),

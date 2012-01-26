@@ -83,10 +83,7 @@
           g_userPublicTemplateEnabled = "true";
 
         if(g_supportELB == null)
-          g_supportELB = $.cookie("supportELB");
-
-        if(g_firewallRuleUiEnabled == null)
-          g_firewallRuleUiEnabled = $.cookie("firewallRuleUiEnabled");
+          g_supportELB = $.cookie("supportELB");      
 
         var userValid = false;
 
@@ -98,10 +95,7 @@
             g_capabilities = json.listcapabilitiesresponse.capability;
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
             $.cookie('supportELB', g_supportELB, { expires: 1});
-
-            g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
-            $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
-
+          
             g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
             $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 
@@ -204,9 +198,6 @@
                 g_capabilities = json.listcapabilitiesresponse.capability;
                 g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
                 $.cookie('supportELB', g_supportELB, { expires: 1});
-
-                g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
-                $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
 
                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                   g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean

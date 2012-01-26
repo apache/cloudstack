@@ -8,7 +8,6 @@ var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
-var g_firewallRuleUiEnabled = null; //true or false
 var g_directAttachSecurityGroupsEnabled = "false";
 var g_userPublicTemplateEnabled = "true";
 

@@ -597,8 +597,7 @@ $(document).ready(function() {
 		g_timezoneoffset = null;
 		g_timezone = null;
 		g_supportELB = null;
-		g_firewallRuleUiEnabled = null;
-		
+				
 		$.cookie('JSESSIONID', null);
 		$.cookie('sessionKey', null);
 		$.cookie('username', null);
@@ -609,8 +608,7 @@ $(document).ready(function() {
 		$.cookie('timezoneoffset', null);
 		$.cookie('timezone', null);
 		$.cookie('supportELB', null);
-		$.cookie('firewallRuleUiEnabled', null);
-		
+				
 		$("body").stopTime();
 		
 		// default is to redisplay the login page
@@ -709,10 +707,7 @@ $(document).ready(function() {
 					     */
 					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
 					    $.cookie('supportELB', g_supportELB, { expires: 1}); 
-					    					    
-					    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
-					    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
-					    			    
+					  		    
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
@@ -808,10 +803,7 @@ $(document).ready(function() {
 	}
 	
 	if(g_supportELB == null)
-		g_supportELB = $.cookie("supportELB");
-		
-	if(g_firewallRuleUiEnabled == null)
-		g_firewallRuleUiEnabled = $.cookie("firewallRuleUiEnabled");
+		g_supportELB = $.cookie("supportELB");		
 	
 	$.ajax({
 	    data: createURL("command=listCapabilities"),
@@ -824,9 +816,6 @@ $(document).ready(function() {
 		     */
 		    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
 		    $.cookie('supportELB', g_supportELB, { expires: 1}); 
-		    					    
-		    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
-		    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
 		    			    
 			if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 				g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
