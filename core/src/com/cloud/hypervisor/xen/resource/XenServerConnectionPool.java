@@ -218,7 +218,6 @@ public class XenServerConnectionPool {
             int wait) throws XmlRpcException, XenAPIException {
         synchronized (poolUuid.intern()) {
             String masterIp = host.getAddress(conn);
-            PoolSyncDB(conn);
             s_logger.debug("Designating the new master to " + masterIp);
             Pool.designateNewMaster(conn, host);
             Connection slaveConn = null;
@@ -253,7 +252,6 @@ public class XenServerConnectionPool {
                     loginWithPassword(masterConn, username, password, APIVersion.latest().toString());
                     removeConnect(poolUuid);
                     ensurePoolIntegrity(masterConn, masterIp, username, password, wait);
-                    PoolSyncDB(masterConn);
                     return;
                 } catch (Types.HostIsSlave e) {
                     s_logger.debug("HostIsSlaveException: Still waiting for the conversion to the master"); 
@@ -350,27 +348,6 @@ public class XenServerConnectionPool {
         throw new RuntimeException("can not get master ip");
     }
 
-
-    static void PoolSyncDB(Connection conn) {
-        try {
-            Set<Host> hosts = Host.getAll(conn);
-            for (Host host : hosts) {
-                try {
-                    host.enable(conn);
-                } catch (Exception e) {
-                }
-            }
-        } catch (Exception e) {
-            s_logger.debug("Enbale host failed due to " + e.getMessage()
-                    + e.toString());
-        }
-        try {
-            Pool.syncDatabase(conn);
-        } catch (Exception e) {
-            s_logger.debug("Sync Database failed due to " + e.getMessage()
-                    + e.toString());
-        }
-    }
 
     void PoolEmergencyTransitionToMaster(String slaveIp, String username, Queue<String> password) {
         if (!s_managePool) {
@@ -663,7 +640,8 @@ public class XenServerConnectionPool {
         if ( mConn != null ) {
             if (s_managePool) {
                 try {
-                    host.enable(mConn);
+                    Map<String, String> args = new HashMap<String, String>();
+                    host.callPlugin(mConn, "vmops", "pingxenserver", args);
                 } catch (Types.CannotContactHost e ) {
                     if (s_logger.isDebugEnabled()) {
                         String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
