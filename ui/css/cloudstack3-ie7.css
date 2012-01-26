@@ -5,10 +5,61 @@ div.panel div.list-view {
 }
 
 div.toolbar {
-  top: expression(this.offsetParent.scrollTop);;
+  top: expression(this.offsetParent.scrollTop);
 }
 
 div.panel div.list-view div.fixed-header {
-  top: expression(this.offsetParent.scrollTop + 30);;
+  top: expression(this.offsetParent.scrollTop + 30);
+}
+
+.detail-view .main-groups {
+  width: 554px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.detail-view .ui-widget-content {
+  overflow-x: hidden !important;
+}
+
+.detail-view .button.done {
+  /*+placement:shift 0px 459px;*/
+  position: relative;
+  left: 0px;
+  top: 459px;
+}
+
+.detail-view ul {
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+.ui-tabs ul.ui-tabs-nav {
+  margin-top: 20px;
+}
+
+.dashboard.admin .dashboard-container.sub.alerts ul {
+  top: expression(this.offsetParent.scrollTop);
+}
+
+#user-options a:hover {
+  background: #ADADAD;
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 2px #383838;*/
+  -moz-text-shadow: 0px 1px 2px #383838;
+  -webkit-text-shadow: 0px 1px 2px #383838;
+  -o-text-shadow: 0px 1px 2px #383838;
+  text-shadow: 0px 1px 2px #383838;
+}
+
+.multi-wizard .progress ul li span.arrow {
+  display: none;
+  border-right: 0px solid #000000;
+}
+
+.tree-view ul li .name {
+  float: right;
 }
 
