@@ -74,6 +74,12 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ASSOCIATED_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses associated to the network specified")
     private Long associatedNetworkId;
+    
+    @Parameter(name=ApiConstants.IS_SOURCE_NAT, type=CommandType.BOOLEAN, description="list only source nat ip addresses")
+    private Boolean isSourceNat;
+    
+    @Parameter(name=ApiConstants.IS_STATIC_NAT, type=CommandType.BOOLEAN, description="list only static nat ip addresses")
+    private Boolean isStaticNat;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,7 +116,15 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
 		return associatedNetworkId;
 	}
 
-    /////////////////////////////////////////////////////
+    public Boolean getIsSourceNat() {
+		return isSourceNat;
+	}
+
+	public Boolean getIsStaticNat() {
+		return isStaticNat;
+	}
+
+	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 	@Override

@@ -141,7 +141,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -1600,6 +1599,8 @@ public class ManagementServerImpl implements ManagementServer {
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Boolean forLoadBalancing = cmd.isForLoadBalancing();
         Long ipId = cmd.getId();
+        Boolean sourceNat = cmd.getIsSourceNat();
+        Boolean staticNat = cmd.getIsStaticNat();
         
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1625,6 +1626,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
         sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
+        sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
        
         
         if (forLoadBalancing != null && (Boolean)forLoadBalancing) {
@@ -1671,6 +1674,15 @@ public class ManagementServerImpl implements ManagementServer {
         if (ipId != null) {
             sc.setParameters("id", ipId);
         }
+        
+        if (sourceNat != null) {
+            sc.setParameters("isSourceNat", sourceNat);
+        }
+        
+        if (staticNat != null) {
+            sc.setParameters("isStaticNat", staticNat);
+        }
+        
 
         if (address == null && keyword != null) {
             sc.setParameters("addressLIKE", "%" + keyword + "%");
