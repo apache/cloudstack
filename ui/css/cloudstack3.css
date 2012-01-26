@@ -6913,6 +6913,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .system-dashboard .status_box li {
   height: 178px;
+  width: 180px;
   padding: 0;
   background: url(../images/bg-gradients.png) repeat-x 0px -1003px;
   margin: 0 0 0 8px;
