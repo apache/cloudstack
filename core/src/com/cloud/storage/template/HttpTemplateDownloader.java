@@ -45,6 +45,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
@@ -77,7 +78,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 
 	private final HttpMethodRetryHandler myretryhandler;
 
-	public HttpTemplateDownloader (StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password) {
+	public HttpTemplateDownloader (StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy) {
 		this._storage = storageLayer;
 		this.downloadUrl = downloadUrl;
 		this.setToDir(toDir);
@@ -125,7 +126,14 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 			
 			toFile = f.getAbsolutePath();
 			Pair<String, Integer> hostAndPort = validateUrl(downloadUrl);
-			 
+			
+			if (proxy != null) {
+				client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
+				if (proxy.getUserName() != null) {
+					Credentials proxyCreds = new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPassword());
+					client.getState().setProxyCredentials(AuthScope.ANY, proxyCreds);
+				}
+			}
 			if ((user != null) && (password != null)) {
 				client.getParams().setAuthenticationPreemptive(true);
 				Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
@@ -425,7 +433,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		TemplateDownloader td = new HttpTemplateDownloader(null, url,"/tmp/mysql", null, TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null, null);
+		TemplateDownloader td = new HttpTemplateDownloader(null, url,"/tmp/mysql", null, TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null, null, null);
 		long bytes = td.download(true, null);
 		if (bytes > 0) {
 			System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime()/1000 + " secs");

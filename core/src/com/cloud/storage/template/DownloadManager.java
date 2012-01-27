@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.SecondaryStorageResource;
@@ -49,7 +50,7 @@ public interface DownloadManager extends Manager {
 	 * @param maxDownloadSizeInBytes (optional) max download size for the template, in bytes. 
 	 * @return job-id that can be used to interrogate the status of the download.
 	 */
-	public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String userName, String passwd, long maxDownloadSizeInBytes);
+	public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String userName, String passwd, long maxDownloadSizeInBytes, Proxy proxy);
 	
 	
 	/**

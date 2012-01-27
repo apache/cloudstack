@@ -17,6 +17,8 @@
  */
 package com.cloud.agent.api.storage;
 
+import java.net.URI;
+
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -43,10 +45,61 @@ public class DownloadCommand extends AbstractDownloadCommand {
 			return password;
 		}
 	}
+	
+	public static class Proxy {
+		private String _host;
+		private int _port;
+		private String _userName;
+		private String _password;
+		
+		public Proxy() {
+			
+		}
+		
+		public Proxy(String host, int port, String userName, String password) {
+			this._host = host;
+			this._port = port;
+			this._userName = userName;
+			this._password = password;
+		}
+		
+		public Proxy(URI uri) {
+			this._host = uri.getHost();
+			this._port = uri.getPort() == -1 ? 3128 : uri.getPort();
+			String userInfo = uri.getUserInfo();
+			if (userInfo != null) {
+				String[] tokens = userInfo.split(":");
+				if (tokens.length == 1) {
+					this._userName = userInfo;
+					this._password = "";
+				} else if (tokens.length == 2) {
+					this._userName = tokens[0];
+					this._password = tokens[1];
+				}
+			}
+		}
+		
+		public String getHost() {
+			return _host;
+		}
+		
+		public int getPort() {
+			return _port;
+		}
+		
+		public String getUserName() {
+			return _userName;
+		}
+		
+		public String getPassword() {
+			return _password;
+		}
+	}
 	private boolean hvm;
 	private String description;
 	private String checksum;
 	private PasswordAuth auth;
+	private Proxy _proxy;
 	private Long maxDownloadSizeInBytes = null;
 	private long id;
 	
@@ -126,6 +179,14 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	
 	public void setCreds(String userName, String passwd) {
 		auth = new PasswordAuth(userName, passwd);
+	}
+	
+	public Proxy getProxy() {
+		return _proxy;
+	}
+	
+	public void setProxy(Proxy proxy) {
+		_proxy = proxy;
 	}
 	
 	public Long getMaxDownloadSizeInBytes() {

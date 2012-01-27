@@ -17,6 +17,8 @@
  */
 package com.cloud.storage.download;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -36,12 +38,14 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -146,6 +150,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
+	private String _proxy = null;
     protected SearchBuilder<VMTemplateHostVO> ReadyTemplateStatesSearch;
 
 	Timer _timer;
@@ -162,6 +167,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
+        _proxy = configs.get(Config.SecStorageProxy.key());
         
         String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
@@ -250,7 +256,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             String sourceChecksum = _vmMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
 			DownloadCommand dcmd =  
               new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
-			
+			dcmd.setProxy(getHttpProxy());
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
 	 		}
@@ -335,6 +341,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		    start();
 			DownloadCommand dcmd =
              new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
+			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 	        }
@@ -746,6 +753,19 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		try {
 			return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
 		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	private Proxy getHttpProxy() {
+		if (_proxy == null) {
+			return null;
+		}
+		try {
+			URI uri = new URI(_proxy);
+			Proxy prx = new Proxy(uri);
+			return prx;
+		} catch (URISyntaxException e) {
 			return null;
 		}
 	}

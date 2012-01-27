@@ -47,6 +47,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.InternalErrorException;
@@ -421,7 +422,7 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
@@ -452,7 +453,7 @@ public class DownloadManagerImpl implements DownloadManager {
             TemplateDownloader td;
             if ((uri != null) && (uri.getScheme() != null)) {
                 if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password);
+                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy);
                 } else if (uri.getScheme().equalsIgnoreCase("file")) {
                     td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
                 } else if (uri.getScheme().equalsIgnoreCase("scp")) {
@@ -582,7 +583,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         long maxDownloadSizeInBytes = (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd.getMaxDownloadSizeInBytes());
-        String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes);
+        String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy());
         sleep();
         if (jobId == null) {
             return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
