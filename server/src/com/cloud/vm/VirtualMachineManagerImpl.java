@@ -1636,11 +1636,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     if (host != null){
                         Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
                         if (!answer.getResult()) {
-                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                            s_logger.warn("Failed to update state of the VM due to  " + answer.getDetails());
                         }
                     }
                 } catch (Exception e) {
-                    s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
                 }
             }
         }
@@ -1831,15 +1831,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if(trackExternalChange) {
         	if(serverState == State.Starting) {
         		if(vm.getHostId() != null && vm.getHostId() != hostId) {
-        			s_logger.info("CloudStack is starting VM on host " + vm.getHostId() + ", but status report comes from a different host " + hostId + ", skip status sync for vm: " + vm.getInstanceName());
-                     if (vm.getHypervisorType() == HypervisorType.XenServer){ // for xenserver (bug 12875) a starting VM can be discovered as running if a disconnected host connects back
-                        try {
-                            stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
-                        } catch (NoTransitionException e) {
-                             s_logger.warn(e.getMessage());
-                        }
-                     }
-                     return null;
+                    s_logger.info("CloudStack is starting VM on host " + vm.getHostId() + ", but status report comes from a different host " + hostId + ", skip status sync for vm: " + vm.getInstanceName());
+                    return null;
         		}
         	}
         	
