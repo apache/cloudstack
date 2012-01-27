@@ -34,3 +34,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'direct.network.stats.interval', '86400', 'Interval (in seconds) to collect stats from Traffic Monitor');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.aggregation.timezone', 'GMT', 'The timezone to use for usage stats aggregation');
+INSERT IGNORE INTO `cloud`.`guest_os` (category_id, name, display_name) VALUES (6, NULL, "Windows PV");
