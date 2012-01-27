@@ -775,15 +775,11 @@
                           scope: {
                             label: 'Scope',
                             select: function(args) {
-                              var array1 = [];
-                              if(selectedZoneObj.securitygroupsenabled) {
-                                array1.push({id: 'account-specific', description: 'Account'});
-                              }
-                              else {
-                                array1.push({id: 'zone-wide', description: 'All'});
-                                array1.push({id: 'domain-specific', description: 'Domain'});
-                                array1.push({id: 'account-specific', description: 'Account'});
-                              }
+                              var array1 = [];															
+															array1.push({id: 'zone-wide', description: 'All'});
+															array1.push({id: 'domain-specific', description: 'Domain'});
+															array1.push({id: 'account-specific', description: 'Account'});
+														
                               args.response.success({data: array1});
 
                               args.$select.change(function() {
@@ -857,10 +853,10 @@
                               var array1 = [];
                               var apiCmd = "listNetworkOfferings&state=Enabled";
                               if(selectedZoneObj.networktype == "Advanced") {  //Advanced zone
-                                if(args.scope == "zone-wide" || args.scope == "domain-specific")
+                                if(args.scope == "zone-wide" || args.scope == "domain-specific") {
                                   apiCmd += "&guestiptype=Shared";
-                                else  //args.scope == "account-specific"
-                                  apiCmd += "&guestiptype=Isolated&sourcenatsupported=false";
+																}
+                                //args.scope == "account-specific" displays all network offerings                               
                               }
                               else {  //Basic zone
                                 apiCmd += "&guestiptype=Shared";
