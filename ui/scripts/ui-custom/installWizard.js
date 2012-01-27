@@ -320,8 +320,8 @@
         var $form = $('<form></form>').appendTo($changeUser);
 
         // Fields
-        var $password = $('<input>').addClass('required').attr({ type: 'password', name: 'password' });
-        var $passwordConfirm = $('<input>').addClass('required').attr({ type: 'password', name: 'password-confirm' });
+        var $password = $('<input>').addClass('required').attr({ id: 'password', type: 'password', name: 'password' });
+        var $passwordConfirm = $('<input>').addClass('required').attr({ id: 'password-confirm', type: 'password', name: 'password-confirm' });
         var $save = elems.nextButton('Save and continue', { type: 'submit' });
 
         $form.append(
@@ -335,7 +335,18 @@
           $save
         );
 
-        $form.validate();
+        $form.validate({
+          rules: {
+            'password-confirm': {
+              equalTo: '#password'
+            }
+          },
+          messages: {
+            'password-confirm': {
+              equalTo: 'The password fields do not match.'
+            }
+          }
+        });
 
         // Save event
         $form.submit(function() {
