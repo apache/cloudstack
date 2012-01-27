@@ -4,7 +4,8 @@
 	var selectedNetworkOfferingHavingSG = false;
 	var selectedNetworkOfferingHavingEIP = false;
 	var selectedNetworkOfferingHavingELB = false;
-	
+	var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
+				
   cloudStack.zoneWizard = {
     customUI: {
       publicTrafficIPRange: function(args) {
@@ -879,6 +880,7 @@
     action: function(args) {    
 		  //debugger;
 			var advZoneConfiguredPhysicalNetworkCount = 0; //for multiple physical networks in advanced zone
+			
       var success = args.response.success;
       var error = args.response.error;
       var message = args.response.message;
@@ -1863,9 +1865,25 @@
 					 ||(args.data.zone.networkType == "Advanced")) {	
 					 
 						message('Configuring public traffic');
-
-						var returnedPublicTraffic = [];
-            $(args.data.publicTraffic).each(function(){						  			
+           
+					  var stopNow = false;
+												
+            $(args.data.publicTraffic).each(function(){		
+						  var thisPublicVlanIpRange = this;
+						  
+              //check whether the VlanIpRange exists or not (begin)
+							var isExisting = false;
+							$(returnedPublicVlanIpRanges).each(function() {							 
+							  if(this.vlan == thisPublicVlanIpRange.vlanid && this.startip == thisPublicVlanIpRange.startip && this.netmask == thisPublicVlanIpRange.netmask && this.gateway == thisPublicVlanIpRange.gateway) {
+								  isExisting = true;
+									return false; //break each loop									
+								}
+							});
+						  if(isExisting == true)
+							  return; //skip current item to next item (continue each loop)
+						
+						  //check whether the VlanIpRange exists or not (end)
+						
 							var array1 = [];
 							array1.push("&zoneId=" + args.data.returnedZone.id);
 
@@ -1886,22 +1904,30 @@
 								url: createURL("createVlanIpRange" + array1.join("")),
 								dataType: "json",
 								async: false,
-								success: function(json) {								 
+								success: function(json) {	
 									var item = json.createvlaniprangeresponse.vlan;
-									returnedPublicTraffic.push(item);
-                  stepFns.configureGuestTraffic({
-							      data: $.extend(args.data, {
-								      returnedPublicTraffic: returnedPublicTraffic
-							      })
-						      });		
+									returnedPublicVlanIpRanges.push(item);                  
 								},
-								error: function(XMLHttpResponse) {								  
+								error: function(XMLHttpResponse) {	                 				  
 									var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
 									error('configurePublicTraffic', errorMsg, { fn: 'configurePublicTraffic', args: args });
+									stopNow = true;
 								}
-							});							
+							});		
+
+							if(stopNow == true) 
+							  return false; //break each loop, don't create next VlanIpRange	
+								
 						});				
+												
+            if(stopNow == true)
+						  return; //stop the whole process
 						
+						stepFns.configureGuestTraffic({
+							data: $.extend(args.data, {
+								returnedPublicTraffic: returnedPublicVlanIpRanges
+							})
+						});								
 					}
 					else { //basic zone without public traffic type , skip to next step
 					  stepFns.configureGuestTraffic({
