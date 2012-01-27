@@ -87,7 +87,7 @@
     sectionSelect: {
       preFilter: function(args) {       
         $.ajax({
-          url: createURL('listNetworks'),
+          url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
 						listAll: true

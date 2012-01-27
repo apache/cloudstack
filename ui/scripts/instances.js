@@ -288,10 +288,16 @@
 
                   else if(step5ContainerType == 'select-security-group') {
                     var securityGroupArray = [];
+                    var data = {
+                      domainid: g_domainid,
+                      account: g_account
+                    };
+                    
                     $.ajax({
-                      url: createURL("listSecurityGroups"+"&domainid="+g_domainid+"&account="+g_account),
+                      url: createURL("listSecurityGroups"),
                       dataType: "json",
                       async: false,
+                      data: cloudStack.context.projects ? {} : data,
                       success: function(json) {
                         var items = json.listsecuritygroupsresponse.securitygroup;
                         if (items != null && items.length > 0) {
