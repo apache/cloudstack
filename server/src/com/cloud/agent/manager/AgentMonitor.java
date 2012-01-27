@@ -121,8 +121,7 @@ public class AgentMonitor extends Thread implements Listener {
     }
 
     public void pingBy(long agentId) {
-        Long previousTime = _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
-        assert (previousTime != null) : "How does agent not have a previous time? " + agentId;
+        _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
     }
 
     // TODO : use host machine time is not safe in clustering environment
