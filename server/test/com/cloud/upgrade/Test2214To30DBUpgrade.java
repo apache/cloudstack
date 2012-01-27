@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -32,6 +34,7 @@ import org.junit.Before;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Test2214To30DBUpgrade extends TestCase {
     private static final Logger s_logger = Logger.getLogger(Test2214To30DBUpgrade.class);
@@ -47,38 +50,92 @@ public class Test2214To30DBUpgrade extends TestCase {
     public void tearDown() throws Exception {
     }
     
-    public void test2213to30Upgrade() throws SQLException {
+    public void test2213to30Upgrade() throws SQLException{
         s_logger.debug("Finding sample data from 2.2.14");
         DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.14/advance_zone_2.2.14.sql", false, true);
-        
-        Connection conn;
-        PreparedStatement pstmt;
         
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
         
         checker.upgrade("2.2.14", "3.0.0");
         
-        conn = Transaction.getStandaloneConnection();
+        Connection conn = Transaction.getStandaloneConnection();
+        
         try {
-            pstmt = conn.prepareStatement("SELECT version FROM version ORDER BY id DESC LIMIT 1");
-            ResultSet rs = pstmt.executeQuery();
-            assert rs.next() : "No version selected";
-            assert rs.getString(1).equals("3.0.0") : "VERSION stored is not 3.0.0: " + rs.getString(1);
-            rs.close();
-            pstmt.close();
+        	checkPhysicalNetworks(conn);
             
-            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM physical_network");
-            rs = pstmt.executeQuery();
-            assert rs.next() : "No physical networks setup.";
-            rs.close();
-            pstmt.close();
-            
+            checkNetworkOfferings(conn);
         } finally {
             try {
                 conn.close();
             } catch (SQLException e) {
             }
         }
+        
+    }
+
+	protected void checkPhysicalNetworks(Connection conn) throws SQLException {
+        PreparedStatement pstmt;
+
+        pstmt = conn.prepareStatement("SELECT version FROM version ORDER BY id DESC LIMIT 1");
+        ResultSet rs = pstmt.executeQuery();
+        assert rs.next() : "No version selected";
+        assert rs.getString(1).equals("3.0.0") : "VERSION stored is not 3.0.0: " + rs.getString(1);
+        rs.close();
+        pstmt.close();
+        
+        pstmt = conn.prepareStatement("SELECT COUNT(*) FROM physical_network");
+        rs = pstmt.executeQuery();
+        assert rs.next() : "No physical networks setup.";
+        rs.close();
+        pstmt.close();
+            
+      
+	}
+    
+    protected void checkNetworkOfferings(Connection conn) throws SQLException {
+    	//1) verify that all fields are present
+    	List<String> fields = new ArrayList<String>();
+    	fields.add("id");
+    	fields.add("name");
+    	fields.add("unique_name");
+    	fields.add("display_text");
+    	fields.add("nw_rate");
+    	fields.add("mc_rate");
+    	fields.add("traffic_type");
+    	fields.add("specify_vlan");
+    	fields.add("system_only");
+    	fields.add("service_offering_id");
+    	fields.add("tags");
+    	fields.add("default");
+    	fields.add("availability");
+    	fields.add("state");
+    	fields.add("removed");
+    	fields.add("created");
+    	fields.add("guest_type");
+    	fields.add("dedicated_lb_service");
+    	fields.add("shared_source_nat_service");
+    	fields.add("specify_ip_ranges");
+    	fields.add("sort_key");
+    	fields.add("uuid");
+    	fields.add("redundant_router_service");
+    	fields.add("conserve_mode");
+    	fields.add("elastic_ip_service");
+    	fields.add("elastic_lb_service");
+        
+        PreparedStatement pstmt;        
+        for (String field : fields) {
+             pstmt = conn.prepareStatement("SHOW COLUMNS FROM network_offerings LIKE ?");
+             pstmt.setString(1, field);
+             ResultSet rs = pstmt.executeQuery();
+             if (!rs.next()) {
+            	throw new CloudRuntimeException("Field " + field + " is missing in upgraded network_offerings table"); 
+             }
+             rs.close();
+             pstmt.close();
+             
+        }
+        
+    	//2) compare default network offerings
     }
     
 }

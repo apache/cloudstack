@@ -72,6 +72,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         dropKeysIfExist(conn);
         //physical network setup
         setupPhysicalNetworks(conn);
+        //network offering
+    	createNetworkOfferingServices(conn);
     }
 
     @Override
@@ -170,7 +172,7 @@ public class Upgrade2214to30 implements DbUpgrade {
                 values += ",'" + domainId + "'";
                 values += ",'" + broadcastDomainRange + "'";
                 values += ",'Enabled'";
-                values += ",'" + zoneName + "-pNtwk";
+                values += ",'" + zoneName + "-pNtwk'";
                 values += ")";
                 
                 s_logger.debug("Adding PhysicalNetwork "+physicalNetworkId+" for Zone id "+ zoneId);
@@ -179,7 +181,6 @@ public class Upgrade2214to30 implements DbUpgrade {
                 pstmtUpdate = conn.prepareStatement(sql);
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
-                
                 
                 //add traffic types
                 s_logger.debug("Adding PhysicalNetwork traffic types");
@@ -321,7 +322,6 @@ public class Upgrade2214to30 implements DbUpgrade {
     	encryptHostDetails(conn);
     	encryptVNCPassword(conn);
     	encryptUserCredentials(conn);
-    	createNetworkOfferingServices(conn);
     }
     
     private void encryptConfigValues(Connection conn) {

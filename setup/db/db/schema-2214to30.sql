@@ -287,19 +287,18 @@ UPDATE configuration SET description = '[''random'', ''firstfit'', ''userdispers
 --;
 -- Usage db upgrade from 2.2.14 to 3.0;
 --;
-
+update `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received + current_bytes_received, agg_bytes_sent = net_bytes_sent + current_bytes_sent;
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
-
 ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
-
-update `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received + current_bytes_received, agg_bytes_sent = net_bytes_sent + current_bytes_sent;
-
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_sent`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
 
 CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
  `zone_id` bigint unsigned NOT NULL,
@@ -311,13 +310,12 @@ CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 DELETE FROM configuration WHERE name='host.capacity.checker.wait';
 DELETE FROM configuration WHERE name='host.capacity.checker.interval'; 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'disable.extraction' , 'false', 'Flag for disabling extraction of template, isos and volumes');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.check.interval' , '30', 'Interval (in seconds) to report redundant router status.');
-ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
-ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
-ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
+
 ALTER TABLE `cloud`.`security_ingress_rule` RENAME TO `security_group_rule`;
 
 ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `type` varchar(10) default 'ingress' AFTER security_group_id;
@@ -561,8 +559,15 @@ UPDATE `cloud`.`network_offerings` SET `guest_type`='Shared' where `guest_type`=
 UPDATE `cloud`.`network_offerings` SET `guest_type`='Isolated' where `guest_type`='Virtual';
 UPDATE `cloud`.`network_offerings` SET `availability`='Optional' where `availability`='Required' and `guest_type`='Shared';
 
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `elastic_ip_service` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides elastic ip service';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides elastic lb service';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides an ability to define ip ranges';
 
-insert into network_offerings (`name`, `unique_name`, `display_text`, `traffic_type`, `system_only`, `specify_vlan`, `default`, `availability`, `state`, `guest_type`, `created`, `userdata_service`, `dns_service`, `dhcp_service`) values ('DefaultIsolatedNetworkOffering', 'DefaultIsolatedNetworkOffering', 'Offering for Isolated networks with no Source Nat service', 'Guest', 0, 1, 1, 'Optional', 'Enabled', 'Isolated', now(), 1, 1, 1);
+
+insert into `cloud`.`network_offerings` (`name`, `unique_name`, `display_text`, `traffic_type`, `system_only`, `specify_vlan`, `default`, `availability`, `state`, `guest_type`, `created`, `userdata_service`, `dns_service`, `dhcp_service`) values ('DefaultIsolatedNetworkOffering', 'DefaultIsolatedNetworkOffering', 'Offering for Isolated networks with no Source Nat service', 'Guest', 0, 1, 1, 'Optional', 'Enabled', 'Isolated', now(), 1, 1, 1);
+
+
+UPDATE `cloud`.`network_offerings` set specify_ip_ranges=1 where name in ('System-Public-Network', 'System-Storage-Network', 'DefaultSharedNetworkOfferingWithSGService', 'DefaultSharedNetworkOffering', 'DefaultIsolatedNetworkOffering');
 
 
 CREATE TABLE  `ntwk_offering_service_map` (
