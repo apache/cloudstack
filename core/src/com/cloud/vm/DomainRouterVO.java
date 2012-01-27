@@ -95,7 +95,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             boolean isPriorityBumpUp,
             RedundantState redundantState,
             boolean haEnabled, boolean stopPending) {
-        super(id, serviceOfferingId, null, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
