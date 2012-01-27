@@ -113,6 +113,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
+    String _recycleHungWorker = "false";
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
     int _maxHostsPerCluster;
@@ -252,6 +253,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         _reserveMem = configDao.getValue(Config.VmwareReserveMem.key());
         if(_reserveMem == null || _reserveMem.isEmpty())
         	_reserveMem = "false";
+        
+        _recycleHungWorker = configDao.getValue(Config.VmwareRecycleHungWorker.key());
+        if(_recycleHungWorker == null || _recycleHungWorker.isEmpty())
+            _recycleHungWorker = "false";
         
         _rootDiskController = configDao.getValue(Config.VmwareRootDiskControllerType.key());
         if(_rootDiskController == null || _rootDiskController.isEmpty())
@@ -476,6 +481,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         params.put("mem.overprovisioning.factor", _memOverprovisioningFactor);
         params.put("vmware.reserve.mem", _reserveMem);
         params.put("vmware.root.disk.controller", _rootDiskController);
+        params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
     }
 
     @Override
