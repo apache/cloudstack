@@ -13,6 +13,7 @@ import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
@@ -21,10 +22,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddress.AllocatedBy;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -54,12 +55,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public IpAddress allocateIP(long networkId, Account ipOwner, AllocatedBy allocatedBy) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -378,12 +373,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public IPAddressVO markIpAsUnavailable(long addrId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, AllocatedBy allocatedBy) throws InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -778,5 +767,64 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         
     }
+
+	@Override
+	public IpAddress allocateIP(long networkId, Account ipOwner,
+			boolean isElastic) throws ResourceAllocationException,
+			InsufficientAddressCapacityException, ConcurrentOperationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner,
+			VlanType type, Long networkId, String requestedIp, boolean isElastic)
+			throws InsufficientAddressCapacityException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void checkCapabilityForProvider(Set<Provider> providers,
+			Service service, Capability cap, String capValue) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Provider getDefaultUniqueProviderForService(String serviceName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IpAddress assignElasticIp(long networkId, Account owner,
+			boolean forElasticLb, boolean forElasticIp)
+			throws InsufficientAddressCapacityException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean handleElasticIpRelease(IpAddress ip) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void checkNetworkPermissions(Account owner, Network network) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void allocateDirectIp(NicProfile nic, DataCenter dc,
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			Network network, String requestedIp)
+			throws InsufficientVirtualNetworkCapcityException,
+			InsufficientAddressCapacityException {
+		// TODO Auto-generated method stub
+		
+	}
 
 }
