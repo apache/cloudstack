@@ -1059,7 +1059,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             controlNic = managementNic;
         }
 
-        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
+        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 
         return true;
