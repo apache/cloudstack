@@ -1076,9 +1076,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
                
 	        synchronized (_cluster.intern()) {
-	                s_logger.debug("1. The VM " + vmName + " is in Starting state.");
 	                s_vms.put(_cluster, _name, vmName, State.Starting);
 	        }
+            s_logger.debug("1. The VM " + vmName + " is in Starting state.");
 
             Host host = Host.getByUuid(conn, _host.uuid);
             vm = createVmFromTemplate(conn, vmSpec, host);
@@ -1160,11 +1160,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } finally {
             synchronized (_cluster.intern()) {
                if (state != State.Stopped) {
-                   s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
                    s_vms.put(_cluster, _name, vmName, state);
+                   s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
                } else {
-                   s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
                    s_vms.remove(_cluster, _name, vmName);
+                   s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
                }
             }
         }
@@ -2142,9 +2142,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Integer vncPort = null;
         if (state == State.Running) {
             synchronized (_cluster.intern()) {
-                s_logger.debug("3. The VM " + vmName + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, vmName, State.Running);
             }
+            s_logger.debug("3. The VM " + vmName + " is in " + State.Running + " state");
         }
 
         return new CheckVirtualMachineAnswer(cmd, state, vncPort);
@@ -2166,9 +2166,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 getNetwork(conn, nic);
             }
             synchronized (_cluster.intern()) {
-                s_logger.debug("4. The VM " +  vm.getName() + " is in " + State.Migrating + " state");
                 s_vms.put(_cluster, _name, vm.getName(), State.Migrating);
             }
+            s_logger.debug("4. The VM " +  vm.getName() + " is in " + State.Migrating + " state");
             
             return new PrepareForMigrationAnswer(cmd);
         } catch (Exception e) {
@@ -2446,9 +2446,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         state = s_vms.getState(_cluster, vmName);
         
         synchronized (_cluster.intern()) {
-            s_logger.debug("5. The VM " + vmName + " is in " + State.Stopping + " state");
             s_vms.put(_cluster, _name, vmName, State.Stopping);
         }
+        s_logger.debug("5. The VM " + vmName + " is in " + State.Stopping + " state");
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
@@ -2512,9 +2512,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
         	synchronized (_cluster.intern()) {
-	            s_logger.debug("6. The VM " + vmName + " is in " + State.Stopping + " state");
 	            s_vms.put(_cluster, _name, vmName, state);
         	}
+            s_logger.debug("6. The VM " + vmName + " is in " + State.Stopping + " state");
         }
 
     }
@@ -2637,9 +2637,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
         synchronized (_cluster.intern()) {
-            s_logger.debug("7. The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
             s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
         }
+        s_logger.debug("7. The VM " + cmd.getVmName() + " is in " + State.Starting + " state");
+        
         try {
             Set<VM> vms = null;
             try {
@@ -2663,8 +2664,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new RebootAnswer(cmd, "reboot succeeded", null, null);
         } finally {
             synchronized (_cluster.intern()) {
-                s_logger.debug("8. The VM " + cmd.getVmName() + " is in " + State.Running + " state");
                 s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
+                s_logger.debug("8. The VM " + cmd.getVmName() + " is in " + State.Running + " state");
             }
         }
     }
@@ -3132,9 +3133,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (vms.size() == 0) {
                 synchronized (_cluster.intern()) {
-                    s_logger.info("VM does not exist on XenServer" + _host.uuid);
                     s_vms.remove(_cluster, _name, vmName);
                 }
+                s_logger.info("VM does not exist on XenServer" + _host.uuid);
                 return new StopAnswer(cmd, "VM does not exist", 0 , 0L, 0L);
             }
             Long bytesSent = 0L;
@@ -3157,9 +3158,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 State state = s_vms.getState(_cluster, vmName);
 
                 synchronized (_cluster.intern()) {
-                        s_logger.debug("9. The VM " + vmName + " is in " + State.Stopping + " state");
                         s_vms.put(_cluster, _name, vmName, State.Stopping);
                 }
+                s_logger.debug("9. The VM " + vmName + " is in " + State.Stopping + " state");
 
                 try {
                     if (vmr.powerState == VmPowerState.RUNNING) {
@@ -3221,9 +3222,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         s_logger.warn(msg, e);
                     } finally {
                         synchronized (_cluster.intern()) {
-                            s_logger.debug("10. The VM " + vmName + " is in " + state + " state");
                             s_vms.put(_cluster, _name, vmName, state);
                         }
+                        s_logger.debug("10. The VM " + vmName + " is in " + state + " state");
                     }
                 }
             }
