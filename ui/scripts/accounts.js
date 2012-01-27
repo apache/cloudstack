@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack) {
 
   var rootDomainId = 1;
 
@@ -1005,4 +1005,4 @@
     return allowedActions;
   }
 
-})(cloudStack, testData);
+})(cloudStack);

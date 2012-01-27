@@ -1,4 +1,4 @@
-(function(cloudStack, $, testData) {
+(function(cloudStack, $) {
   var ipChangeNotice = function() {
     cloudStack.dialog.confirm({
       message: 'Your IP addresses may have changed; would you like to refresh the listing? Note that in this case the details pane will close.',
@@ -1237,7 +1237,6 @@
                   }
                 ],
 
-                //dataProvider: testData.dataProvider.detailView('network')
                 dataProvider: function(args) {
                   var items = args.context.ipAddresses;
 
@@ -2666,4 +2665,4 @@
       }
     }
   };
-})(cloudStack, jQuery, testData);
+})(cloudStack, jQuery);

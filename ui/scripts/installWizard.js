@@ -1,4 +1,4 @@
-(function($, cloudStack, testData) {
+(function($, cloudStack) {
   cloudStack.installWizard = {
     // Check if install wizard should be invoked
     check: function(args) {
@@ -308,4 +308,4 @@
       }));
     }
   };
-}(jQuery, cloudStack, testData));
+}(jQuery, cloudStack));

@@ -1,4 +1,4 @@
-(function($, cloudStack, testData) {
+(function($, cloudStack) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
@@ -7279,4 +7279,4 @@
     }
   };
 
-})($, cloudStack, testData);
+})($, cloudStack);

@@ -1,4 +1,4 @@
-(function(cloudStack, $, testData) {
+(function(cloudStack, $) {
 
   cloudStack.sections.templates = {
     title: 'Templates',
@@ -1304,4 +1304,4 @@
     return allowedActions;
   }
 
-})(cloudStack, jQuery, testData);
+})(cloudStack, jQuery);

@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack) {
   cloudStack.projects = {
     requireInvitation: function(args) {
       return window.g_projectsInviteRequired;
@@ -578,10 +578,6 @@
                     notification: function(args) {
                       return 'Removed project';
                     }
-                  },
-
-                  notification: {
-                    poll: testData.notifications.testPoll
                   }
                 },
 
@@ -855,4 +851,4 @@
 
     return ['accept', 'decline'];
   };
-} (cloudStack, testData));
+} (cloudStack));

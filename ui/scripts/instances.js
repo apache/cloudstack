@@ -1,4 +1,4 @@
-(function($, cloudStack, testData) {
+(function($, cloudStack) {
 
   var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, isoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
@@ -1639,7 +1639,6 @@
               networkkbsread: { label: 'Network Read' },
               networkkbswrite: { label: 'Network Write' }
             },
-            //dataProvider: testData.dataProvider.detailView('instances')
             dataProvider: function(args) {
               var jsonObj = args.context.instances[0];                          
               args.response.success({
@@ -1717,4 +1716,4 @@
     return allowedActions;
   }
 
-})(jQuery, cloudStack, testData);
+})(jQuery, cloudStack);

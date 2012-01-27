@@ -1536,8 +1536,6 @@
     <script src="scripts/ui/widgets/treeView.js" type="text/javascript"></script>
     <script src="scripts/ui/widgets/notifications.js" type="text/javascript"></script>
 
-    <script src="scripts-test/test-data.js" type="text/javascript"></script>
-
     <!-- Common libraries -->
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>

@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack) {
   cloudStack.sections.domains = {
     title: 'Domains',
     id: 'domains',
@@ -181,10 +181,6 @@
                   validation: { required: false }
                 }
               }
-            },
-
-            notification: {
-              poll: testData.notifications.testPoll
             }
           }
         },
@@ -361,4 +357,4 @@
     return allowedActions;
   }
 
-})(cloudStack, testData);
+})(cloudStack);

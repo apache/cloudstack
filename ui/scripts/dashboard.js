@@ -1,4 +1,4 @@
-(function($, cloudStack, testData) {
+(function($, cloudStack) {
   // Admin dashboard
   cloudStack.sections.dashboard = {
     title: 'Dashboard',
@@ -265,4 +265,4 @@
       }
     }
   };
-})(jQuery, cloudStack, testData);
+})(jQuery, cloudStack);

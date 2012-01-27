@@ -1,4 +1,4 @@
-(function(cloudStack, testData, $) {
+(function(cloudStack, $) {
   cloudStack.sections.configuration = {
     title: 'Configuration',
     id: 'configuration',
@@ -1652,4 +1652,4 @@
     return allowedActions;
   };
 
-})(cloudStack, testData, jQuery);
+})(cloudStack, jQuery);

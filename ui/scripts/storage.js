@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack) {
 
   var diskofferingObjs, selectedDiskOfferingObj;
 
@@ -469,9 +469,6 @@
 									notification: function(args) {
 										return 'Setup recurring snapshot';
 									}
-								},
-								notification: {
-									poll: testData.notifications.testPoll
 								}
 							},            
 													
@@ -1191,4 +1188,4 @@
     return allowedActions;
   }
 
-})(cloudStack, testData);
+})(cloudStack);

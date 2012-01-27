@@ -1,5 +1,5 @@
-(function(cloudStack, $, testData) {
-  $.extend(window.cloudStack, testData, {
+(function(cloudStack, $) {
+  $.extend(cloudStack, {
     home: 'dashboard',
 
     sectionPreFilter: function(args) {
@@ -308,4 +308,4 @@
 
     cloudStack.uiCustom.login(loginArgs);
   });
-})(cloudStack, jQuery, testData);
+})(cloudStack, jQuery);

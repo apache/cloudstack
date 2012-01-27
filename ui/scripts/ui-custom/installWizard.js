@@ -1,4 +1,4 @@
-(function($, cloudStack, testData) {
+(function($, cloudStack) {
   var installWizard = function(args) {
     var context = args.context;
     var $installWizard = $('<div>').addClass('install-wizard');
@@ -767,4 +767,4 @@
   };
 
   cloudStack.uiCustom.installWizard = installWizard;
-}(jQuery, cloudStack, testData));
+}(jQuery, cloudStack));
