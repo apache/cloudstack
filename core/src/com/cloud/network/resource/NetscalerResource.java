@@ -1223,17 +1223,19 @@ public class NetscalerResource implements ServerResource {
             for (lbvserver_stats stat_entry : stats) {
                 String lbvserverName = stat_entry.get_name();
                 lbvserver vserver = lbvserver.get(_netscalerService, lbvserverName);
-                String lbVirtualServerIp = vserver.get_ipv46();
-
-                long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
-                if (bytesSentAndReceived == null) {
-                    bytesSentAndReceived = new long[]{0, 0};
-                }
-                bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
-                bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
-
-                if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-                    answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);
+                if(vserver != null){
+                    String lbVirtualServerIp = vserver.get_ipv46();
+    
+                    long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
+                    if (bytesSentAndReceived == null) {
+                        bytesSentAndReceived = new long[]{0, 0};
+                    }
+                    bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
+                    bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
+    
+                    if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
+                        answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);
+                    }
                 }
             }
         } catch (Exception e) {

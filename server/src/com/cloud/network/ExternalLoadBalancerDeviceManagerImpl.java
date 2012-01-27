@@ -1055,6 +1055,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                 String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
                                 String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
                                 s_logger.error(msg);
+                                continue;
                             }
                         }
 
