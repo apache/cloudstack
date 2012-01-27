@@ -43,6 +43,9 @@ public class DomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
 
+    @SerializedName(ApiConstants.PATH) @Param(description="the path of the domain")
+    private String path;
+    
     public Long getId() {
         return id;
     }
@@ -94,5 +97,13 @@ public class DomainResponse extends BaseResponse {
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
     
 }
