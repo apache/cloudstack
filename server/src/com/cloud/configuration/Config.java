@@ -259,6 +259,7 @@ public enum Config {
     VmwareReserveMem("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.mem", "false", "Specify whether or not to reserve memory based on memory overprovisioning factor", null),
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
+    VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
     
     // KVM
     KvmPublicNetwork("Advanced", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),

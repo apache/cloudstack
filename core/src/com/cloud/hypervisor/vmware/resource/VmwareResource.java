@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,6 +255,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     
     protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
+    protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
@@ -3121,7 +3123,55 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             
             if(hyperHost.isHyperHostConnected()) {
-            	mgr.gcLeftOverVMs(context);
+                mgr.gcLeftOverVMs(context);
+                
+                if(_recycleHungWorker) {
+                    s_logger.info("Scan hung worker VM to recycle");
+                    
+                    // GC worker that has been running for too long
+                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime"});
+                    if(ocs != null) {
+                        for(ObjectContent oc : ocs) {
+                            DynamicProperty[] props = oc.getPropSet();
+                            if(props != null) {
+                                String name = null;
+                                boolean template = false;
+                                VirtualMachinePowerState powerState = VirtualMachinePowerState.poweredOff;
+                                GregorianCalendar bootTime = null;
+                                
+                                for(DynamicProperty prop : props) {
+                                    if(prop.getName().equals("name"))
+                                        name = prop.getVal().toString();
+                                    else if(prop.getName().equals("config.template"))
+                                        template = (Boolean)prop.getVal();
+                                    else if(prop.getName().equals("runtime.powerState"))
+                                        powerState = (VirtualMachinePowerState)prop.getVal();
+                                    else if(prop.getName().equals("runtime.bootTime")) 
+                                        bootTime = (GregorianCalendar)prop.getVal();
+                                }
+                                
+                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+                                    boolean recycle = false;
+    
+                                    // recycle stopped worker VM and VM that has been running for too long (hard-coded 10 hours for now)
+                                    if(powerState == VirtualMachinePowerState.poweredOff)
+                                        recycle = true;
+                                    else if(bootTime != null && (new Date().getTime() - bootTime.getTimeInMillis() > 10*3600*1000))
+                                        recycle = true;
+                                    
+                                    if(recycle) {
+                                        s_logger.info("Recycle pending worker VM: " + name);
+                                        
+                                        VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                                        vmMo.powerOff();
+                                        vmMo.destroy();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 s_logger.error("Host is no longer connected.");
             	return null;
@@ -3826,24 +3876,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _dcId = (String) params.get("zone");
         _pod = (String) params.get("pod");
         _cluster = (String) params.get("cluster");
+        
         _guid = (String) params.get("guid");
-        
-        String value = (String) params.get("cpu.overprovisioning.factor");
-        if(value != null)
-        	_cpuOverprovisioningFactor = Float.parseFloat(value);
-        
-        value = (String) params.get("vmware.reserve.cpu");
-        if(value != null && value.equalsIgnoreCase("true"))
-        	_reserveCpu = true;
-        
-        value = (String) params.get("mem.overprovisioning.factor");
-        if(value != null)
-        	_memOverprovisioningFactor = Float.parseFloat(value);
-        
-        value = (String) params.get("vmware.reserve.mem");
-        if(value != null && value.equalsIgnoreCase("true"))
-        	_reserveMem = true;
-        
         String[] tokens = _guid.split("@");
         _vCenterAddress = tokens[1];
         _morHyperHost = new ManagedObjectReference();
@@ -3871,6 +3905,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
         _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
         _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
+
+        String value = (String) params.get("cpu.overprovisioning.factor");
+        if(value != null)
+            _cpuOverprovisioningFactor = Float.parseFloat(value);
+
+        value = (String) params.get("vmware.reserve.cpu");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _reserveCpu = true;
+        
+        value = (String) params.get("vmware.recycle.hung.wokervm");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _recycleHungWorker = true;
+
+        value = (String) params.get("mem.overprovisioning.factor");
+        if(value != null)
+            _memOverprovisioningFactor = Float.parseFloat(value);
+
+        value = (String) params.get("vmware.reserve.mem");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _reserveMem = true;
         
         value = (String)params.get("vmware.root.disk.controller");
         if(value != null && value.equalsIgnoreCase("scsi"))
