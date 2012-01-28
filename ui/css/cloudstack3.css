@@ -777,6 +777,10 @@ div.notification-box .container ul li {
   cursor: pointer;
 }
 
+div.notification-box .container ul li.error {
+  background: url(../images/icons.png) no-repeat 10px -179px;
+}
+
 div.notification-box .container ul li span {
   float: left;
   /*+placement:shift 48px 16px;*/
@@ -6198,6 +6202,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item {
   margin-bottom: 14px;
   border: 1px solid #CDCCCC;
+  position: relative;
+}
+
+.multi-edit .data .data-body .data-item .loading-overlay {
+  background-position: 50% 50%;
 }
 
 .multi-edit .data .data-body .data-item.loading {
@@ -6225,8 +6234,6 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item tr {
   background: #EFEFEF;
   border: none;
-  display: block;
-  width: 115%;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td {
@@ -6234,10 +6241,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-left: none;
   border-right: 1px solid #CFC9C9;
   height: 15px;
-  float: left;
   overflow: hidden;
   padding-right: 0;
-  padding-bottom: 4px;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.blank {
@@ -6292,7 +6297,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .data .data-body .data-item tr td .custom-action {
-  margin: -6px 0 0 -1px;
+  margin: -2px 0 0 0px;
 }
 
 .multi-edit .data .data-body .data-item tr td.add-vm:hover {
@@ -6301,10 +6306,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .data .data-body .data-item tr td.multi-actions .icon {
-  /*+placement:shift -3px -8px;*/
+  /*+placement:shift -3px -2px;*/
   position: relative;
   left: -3px;
-  top: -8px;
+  top: -2px;
 }
 
 .multi-edit .data .data-body .data-item .expandable-listing {
@@ -6324,7 +6329,6 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit .data .data-body .data-item .expandable-listing tr td {
   background: #DDE0E2;
   border: none;
-  width: 100%;
   margin: 0;
   text-indent: 37px;
 }

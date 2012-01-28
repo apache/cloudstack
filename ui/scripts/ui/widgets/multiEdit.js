@@ -6,10 +6,12 @@
     addItem: function(data, fields, $multi, itemData, actions, options) {
       if (!options) options = {};
 
-      var $item = $('<div>').addClass('data-item').append(
-        $('<table>').append($('<tbody>'))
-      );
-      var $tr = $('<tr>').appendTo($item.find('tbody'));
+      var $tr;
+      var $item = $('<div>').addClass('data-item');
+      var multiRule = data;
+      
+      $item.append($('<table>').append($('<tbody>')));
+      $tr = $('<tr>').appendTo($item.find('tbody'));
 
       if (itemData) {
         $tr.data('multi-edit-data', itemData);
@@ -20,9 +22,63 @@
         if (options.ignoreEmptyFields && !data[fieldName]) {
           return true;
         }
-
         var $td = $('<td>').addClass(fieldName).appendTo($tr);
         var $input, val;
+        var $addButton = $multi.find('form .button.add-vm:not(.custom-action)').clone();
+        var newItemRows = [];
+        var addItemAction = function(data) {
+          var $loading = $('<div>').addClass('loading-overlay');
+          var complete = function(args) {
+            var $tbody = $item.find('.expandable-listing tbody');
+            
+            $loading.remove();
+            $(data).each(function() {
+              var item = this;
+              var $itemRow = _medit.multiItem.itemRow(item, options.itemActions, multiRule, $tbody);
+
+              $itemRow.appendTo($tbody);
+              newItemRows.push($itemRow);
+              
+              cloudStack.evenOdd($tbody, 'tr:visible', {
+                even: function($elem) {
+                  $elem.removeClass('odd');
+                  $elem.addClass('even');
+                },
+                odd: function($elem) {
+                  $elem.removeClass('even');
+                  $elem.addClass('odd');
+                }
+              });
+            });
+          };
+          var error = function() {
+            $(newItemRows).each(function() {
+              var $itemRow = this;
+              
+              $itemRow.remove();
+            });
+            $loading.remove();
+          };
+
+          $loading.prependTo($item);
+          options.itemActions.add.action({
+            context: options.context,
+            data: data,
+            multiRule: multiRule,
+            response: {
+              success: function(args) {
+                var notificationError = function(args) {
+                  error();
+                };
+                
+                cloudStack.ui.notifications.add(args.notification,
+                                                complete, {},
+                                                notificationError, {});
+              },
+              error: error
+            }
+          });
+        };
 
         if ($multi.find('th,td').filter(function() {
           return $(this).attr('rel') == fieldName;
@@ -35,33 +91,36 @@
               var start = data[field.range[0]];
               var end = data[field.range[1]];
 
-              $td.append(
-                $('<span>').html(start + ' - ' + end)
-              );
+              $td.append($('<span>').html(start + ' - ' + end));
             } else {
-              $td.append(
-                $('<span>').html(data[fieldName])
-              );
+              $td.append($('<span>').html(data[fieldName]));
             }
           } else if (field.select) {
-            $td.append(
-              $('<span>').html(
-                // Get matching option text
-                $multi.find('select').filter(function() {
-                  return $(this).attr('name') == fieldName;
-                }).find('option').filter(function() {
-                  return $(this).val() == data[fieldName];
-                }).html()
-              )
-            );
+            $td.append($('<span>').html(
+              // Get matching option text
+              $multi.find('select').filter(function() {
+                return $(this).attr('name') == fieldName;
+              }).find('option').filter(function() {
+                return $(this).val() == data[fieldName];
+              }).html()));
           } else if (field.addButton && $.isArray(itemData) && !options.noSelect) {
-            // Show VM data
-            $td
-              .html(
-                options.multipleAdd ?
-                  itemData.length + ' VMs' : itemData[0].name
-              )
-              .click(function() {
+            if (options.multipleAdd) {              
+              $addButton.click(function() {
+                _medit.vmList($multi,
+                              options.listView,
+                              options.context,
+                              options.multipleAdd, 'Add VMs',
+                              addItemAction,
+                              {
+                                multiRule: multiRule
+                              });
+              });
+              $td.append($addButton);
+            } else {
+              // Show VM data
+              $td.html(options.multipleAdd ?
+                       itemData.length + ' VMs' : itemData[0].name);
+              $td.click(function() {
                 var $browser = $(this).closest('.detail-view').data('view-args').$browser;
 
                 if (options.multipleAdd) {
@@ -70,30 +129,33 @@
                   _medit.details(itemData[0], $browser, { context: options.context });
                 }
               });
+            }
           } else if (field.custom) {
-            $td.data('multi-custom-data', data[fieldName]);
-            $('<div>').addClass('button add-vm custom-action')
-              .html(data && data[fieldName] && data[fieldName]['_buttonLabel'] ?
-                    data[fieldName]['_buttonLabel'] : field.custom.buttonLabel)
-              .click(function() {
-                var $button = $(this);
-                field.custom.action({
-                  context: options.context ? options.context : cloudStack.context,
-                  data: $td.data('multi-custom-data'),
-                  $item: $td,
-                  response: {
-                    success: function(args) {
-                      if (args.data['_buttonLabel']) {
-                        $button.html(args.data['_buttonLabel']);
-                      }
-                      $td.data('multi-custom-data', args.data)
+            var $button = $('<div>').addClass('button add-vm custom-action');
+            
+            $td.data('multi-custom-data', data[fieldName]);            
+            $button.html(data && data[fieldName] && data[fieldName]['_buttonLabel'] ?
+                         data[fieldName]['_buttonLabel'] : field.custom.buttonLabel);
+            $button.click(function() {
+              var $button = $(this);
+              
+              field.custom.action({
+                context: options.context ? options.context : cloudStack.context,
+                data: $td.data('multi-custom-data'),
+                $item: $td,
+                response: {
+                  success: function(args) {
+                    if (args.data['_buttonLabel']) {
+                      $button.html(args.data['_buttonLabel']);
                     }
+                    $td.data('multi-custom-data', args.data);
                   }
-                })
-              })
-              .appendTo($td);
+                }
+              });
+            });
+            $button.appendTo($td);
           }
-        };
+        }
 
         // Add blank styling for empty fields
         if ($td.html() == '') {
@@ -108,14 +170,10 @@
       });
 
       // Actions column
-      var $actions = $('<td>').addClass('multi-actions').appendTo(
-        $item.find('tr')
-      );
+      var $actions = $('<td>').addClass('multi-actions').appendTo($item.find('tr'));
 
       // Align action column width
-      $actions.width(
-        $multi.find('th.multi-actions').width() + 4
-      );
+      $actions.width($multi.find('th.multi-actions').width() + 4);
 
       // Action filter
       var allowedActions = options.preFilter ? options.preFilter({
@@ -130,8 +188,7 @@
         if (allowedActions && $.inArray(actionID, allowedActions) == -1) return true;
 
         $actions.append(
-          $('<div>')
-            .addClass('action')
+          $('<div>').addClass('action')
             .addClass(actionID)
             .append($('<span>').addClass('icon'))
             .attr({ title: action.label })
@@ -213,21 +270,109 @@
       // Add expandable listing, for multiple-item
       if (options.multipleAdd) {
         // Create expandable box
-        _medit.multiItem.expandable(
-          $item.find('tr').data('multi-edit-data')
-        ).appendTo($item);
-
+        _medit.multiItem.expandable($item.find('tr').data('multi-edit-data'),
+                                    options.itemActions,
+                                    multiRule).appendTo($item);
+        
         // Expandable icon/action
         $item.find('td:first').prepend(
-          $('<div>')
-            .addClass('expand')
-            .click(function() {
-              $item.closest('.data-item').find('.expandable-listing').slideToggle();
-            })
-        );
+          $('<div>').addClass('expand').click(function() {
+            $item.closest('.data-item').find('.expandable-listing').slideToggle();
+          }));
       }
 
       return $item;
+    },
+
+    vmList: function($multi, listView, context, isMultipleAdd, label, complete, options) {
+      if (!options) options = {};
+      
+      // Create a listing of instances, based on limited information
+      // from main instances list view
+      var $listView;
+      var instances = $.extend(true, {}, listView, {
+        context: $.extend(true, {}, context, {
+          multiRule: options.multiRule ? [options.multiRule] : null
+        }),
+        uiCustom: true
+      });
+
+      instances.listView.actions = {
+        select: {
+          label: 'Select instance',
+          type: isMultipleAdd ? 'checkbox' : 'radio',
+          action: {
+            uiCustom: function(args) {
+              var $item = args.$item;
+              var $input = $item.find('td.actions input:visible');
+
+              if ($input.attr('type') == 'checkbox') {
+                if ($input.is(':checked'))
+                  $item.addClass('multi-edit-selected');
+                else
+                  $item.removeClass('multi-edit-selected');
+              } else {
+                $item.siblings().removeClass('multi-edit-selected');
+                $item.addClass('multi-edit-selected');
+              }
+            }
+          }
+        }
+      };
+
+      $listView = $('<div>').listView(instances);
+
+      // Change action label
+      $listView.find('th.actions').html('Select');
+
+      var $dataList = $listView.dialog({
+        dialogClass: 'multi-edit-add-list panel',
+        width: 825,
+        title: label,
+        buttons: [
+          {
+            text: 'Apply',
+            'class': 'ok',
+            click: function() {
+              if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').size()) {
+                cloudStack.dialog.notice({ message: 'Please select an instance '});
+
+                return false;
+              }
+
+              $dataList.fadeOut(function() {
+                complete($.map(
+                  $listView.find('tr.multi-edit-selected'),
+
+                  // Attach VM data to row
+                  function(elem) {
+                    return $(elem).data('json-obj');
+                  }
+                ));
+                $dataList.remove();
+              });
+
+              $('div.overlay').fadeOut(function() {
+                $('div.overlay').remove();
+              });
+
+              return true;
+            }
+          },
+          {
+            text: 'Cancel',
+            'class': 'cancel',
+            click: function() {
+              $dataList.fadeOut(function() {
+                $dataList.remove();
+              });
+              $('div.overlay').fadeOut(function() {
+                $('div.overlay').remove();
+              });
+            }
+          }
+        ]
+      }).parent('.ui-dialog').overlay();
     },
 
     /**
@@ -241,13 +386,7 @@
         $tr.find('td').each(function() {
           var $td = $(this);
 
-          $td.width(
-            $(
-              $multi.find('th:visible')[
-                $td.index()
-              ]
-            ).width() + 5
-          );
+          $td.width($($multi.find('th:visible')[$td.index()]).width() + 5);
         });
       });
     },
@@ -325,28 +464,96 @@
         });
       },
 
-      expandable: function(data) {
+      itemRow: function(item, itemActions, multiRule, $tbody) {
+        var $tr = $('<tr>');
+
+        $tr.append($('<td></td>').appendTo($tr).html(item.name));
+
+        if (itemActions) {
+          var $itemActions = $('<td>').addClass('actions item-actions');
+
+          $.each(itemActions, function(itemActionID, itemAction) {
+            if (itemActionID == 'add') return true;
+            
+            var $itemAction = $('<div>').addClass('action').addClass(itemActionID);
+
+            $itemAction.click(function() {
+              itemAction.action({
+                item: item,
+                multiRule: multiRule,
+                response: {
+                  success: function(args) {
+                    if (itemActionID == 'destroy') {
+                      var notification = args.notification;
+                      var success = function(args) { $tr.remove(); };
+                      var successArgs = {};
+                      var error = function(args) {
+                        $tr.show();
+                        cloudStack.evenOdd($tbody, 'tr:visible', {
+                          even: function($elem) {
+                            $elem.removeClass('odd');
+                            $elem.addClass('even');
+                          },
+                          odd: function($elem) {
+                            $elem.removeClass('even');
+                            $elem.addClass('odd');
+                          }
+                        });
+                      };
+                      var errorArgs = {};
+
+                      $tr.hide();
+                      cloudStack.evenOdd($tbody, 'tr:visible', {
+                        even: function($elem) {
+                          $elem.removeClass('odd');
+                          $elem.addClass('even');
+                        },
+                        odd: function($elem) {
+                          $elem.removeClass('even');
+                          $elem.addClass('odd');
+                        }
+                      });
+                      cloudStack.ui.notifications.add(notification,
+                                                      success, successArgs,
+                                                      error, errorArgs);
+                    }
+                  },
+                  error: function(message) {
+                    if (message) {
+                      cloudStack.dialog.notice({ message: message });
+                    }
+                  }
+                }
+              });
+            });
+            $itemAction.append($('<span>').addClass('icon'));
+            $itemAction.appendTo($itemActions);
+
+            return true;
+          });
+
+          $itemActions.appendTo($tr);
+        }
+
+        return $tr;
+      },
+
+      expandable: function(data, itemActions, multiRule) {
         var $expandable = $('<div>').addClass('expandable-listing');
-        var $tbody = $('<tbody>').appendTo(
-          $('<table>').appendTo($expandable)
-        );
+        var $tbody = $('<tbody>').appendTo($('<table>').appendTo($expandable));
 
         $(data).each(function() {
           var field = this;
-          var $tr = $('<tr>').appendTo($tbody);
+          var $tr = _medit.multiItem.itemRow(field, itemActions, multiRule, $tbody).appendTo($tbody);
 
-          $tr.append(
-            $('<td></td>').appendTo($tr).html(field.name)
-          );
-        });
-
-        cloudStack.evenOdd($tbody, 'tr', {
-          even: function($elem) {
-            $elem.addClass('even');
-          },
-          odd: function($elem) {
-            $elem.addClass('odd');
-          }
+          cloudStack.evenOdd($tbody, 'tr', {
+            even: function($elem) {
+              $elem.addClass('even');
+            },
+            odd: function($elem) {
+              $elem.addClass('odd');
+            }
+          });          
         });
 
         return $expandable.hide();
@@ -364,6 +571,7 @@
     var $addVM;
     var fields = args.fields;
     var actions = args.actions;
+    var itemActions = multipleAdd ? args.itemActions : null;
     var noSelect = args.noSelect;
     var context = args.context;
     var ignoreEmptyFields = args.ignoreEmptyFields;
@@ -379,12 +587,12 @@
 
     // Setup input table headers
     $.each(args.fields, function(fieldName, field) {
-      var $th = $('<th>').addClass(fieldName).html(field.label.toString())
-            .attr('rel', fieldName)
-            .appendTo($thead);
-      var $td = $('<td>').addClass(fieldName)
-            .attr('rel', fieldName)
-            .appendTo($inputForm);
+      var $th = $('<th>').addClass(fieldName).html(field.label.toString());
+      $th.attr('rel', fieldName);
+      $th.appendTo($thead);
+      var $td = $('<td>').addClass(fieldName);
+      $td.attr('rel', fieldName);
+      $td.appendTo($inputForm);
 
       if (field.isHidden) {
         $th.hide();
@@ -392,12 +600,12 @@
       }
 
       if (field.select) {
-        var $select = $('<select>')
-              .attr({
-                name: fieldName
-              })
-              .appendTo($td);
-
+        var $select = $('<select>');
+        
+        $select.attr({
+          name: fieldName
+        });
+        $select.appendTo($td);
         field.select({
           $select: $select,
           $form: $multiForm,
@@ -407,7 +615,6 @@
                 $('<option>').val(this.name).html(this.description)
                   .appendTo($select);
               });
-
               _medit.refreshItemWidths($multi);
             },
 
@@ -465,46 +672,6 @@
       $thead.append($('<th>Actions</th>').addClass('multi-actions'));
       $inputForm.append($('<td></td>').addClass('multi-actions'));
     }
-
-    var vmList = function() {
-      // Create a listing of instances, based on limited information
-      // from main instances list view
-      var $listView;
-      var instances = $.extend(true, {}, args.listView, {
-        context: context,
-        uiCustom: true
-      });
-
-      instances.listView.actions = {
-        select: {
-          label: 'Select instance',
-          type: multipleAdd ? 'checkbox' : 'radio',
-          action: {
-            uiCustom: function(args) {
-              var $item = args.$item;
-              var $input = $item.find('td.actions input:visible');
-
-              if ($input.attr('type') == 'checkbox') {
-                if ($input.is(':checked'))
-                  $item.addClass('multi-edit-selected');
-                else
-                  $item.removeClass('multi-edit-selected');
-              } else {
-                $item.siblings().removeClass('multi-edit-selected');
-                $item.addClass('multi-edit-selected');
-              }
-            }
-          }
-        }
-      };
-
-      $listView = $('<div>').listView(instances);
-
-      // Change action label
-      $listView.find('th.actions').html('Select');
-
-      return $listView;
-    };
 
     $addVM.bind('click', function() {
       // Validate form first
@@ -599,60 +766,16 @@
         return true;
       }
 
-      $dataList = vmList($multi).dialog({
-        dialogClass: 'multi-edit-add-list panel',
-        width: 825,
-        title: args.add.label,
-        buttons: [
-          {
-            text: 'Apply',
-            'class': 'ok',
-            click: function() {
-              if (!$dataList.find(
-                'input[type=radio]:checked, input[type=checkbox]:checked'
-              ).size()) {
-                cloudStack.dialog.notice({ message: 'Please select an instance '});
-
-                return false;
-              }
-
-              $dataList.fadeOut(function() {
-                addItem($.map(
-                  $dataList.find('tr.multi-edit-selected'),
-
-                  // Attach VM data to row
-                  function(elem) {
-                    return $(elem).data('json-obj');
-                  }
-                ));
-                $dataList.remove();
-              });
-
-              $('div.overlay').fadeOut(function() {
-                $('div.overlay').remove();
-              });
-
-              return true;
-            }
-          },
-          {
-            text: 'Cancel',
-            'class': 'cancel',
-            click: function() {
-              $dataList.fadeOut(function() {
-                $dataList.remove();
-              });
-              $('div.overlay').fadeOut(function() {
-                $('div.overlay').remove();
-              });
-            }
-          }
-        ]
-      }).parent('.ui-dialog').overlay();
+      _medit.vmList($multi,
+                    args.listView,
+                    args.context,
+                    multipleAdd, 'Add VMs',
+                    addItem);
 
       return true;
     });
 
+    var listView = args.listView;
     var getData = function() {
       dataProvider({
         context: context,
@@ -662,6 +785,7 @@
             $(args.data).each(function() {
               var data = this;
               var itemData = this._itemData;
+              
               _medit.addItem(
                 data,
                 fields,
@@ -670,10 +794,12 @@
                 actions,
                 {
                   multipleAdd: multipleAdd,
+                  itemActions: itemActions,
                   noSelect: noSelect,
                   context: $.extend(true, {}, context, this._context),
                   ignoreEmptyFields: ignoreEmptyFields,
-                  preFilter: actionPreFilter
+                  preFilter: actionPreFilter,
+                  listView: listView
                 }
               ).appendTo($dataBody);
             });

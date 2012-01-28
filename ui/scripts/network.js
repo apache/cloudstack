@@ -1604,6 +1604,9 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
+                          var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
+                            args.context.multiRule[0]['_itemData'] : [];
+                          
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
@@ -1612,16 +1615,21 @@
                             dataType: 'json',
                             async: true,
                             success: function(data) {
+                              var vmData = $.grep(
+                                data.listvirtualmachinesresponse.virtualmachine ?
+                                  data.listvirtualmachinesresponse.virtualmachine : [],
+                                function(instance) {
+                                  var isActiveState = $.inArray(instance.state, ['Destroyed']) == -1;
+                                  var notExisting = !$.grep(itemData, function(item) {
+                                    return item.id == instance.id;
+                                  }).length;
+                                  
+                                  return isActiveState && notExisting;
+                                }
+                              );
+                              
                               args.response.success({
-                                data: $.grep(
-                                  data.listvirtualmachinesresponse.virtualmachine ?
-                                    data.listvirtualmachinesresponse.virtualmachine : [],
-                                  function(instance) {
-                                    return $.inArray(instance.state, [
-                                      'Destroyed'
-                                    ]) == -1;
-                                  }
-                                )
+                                data: vmData
                               });
                             },
                             error: function(data) {
@@ -1702,6 +1710,7 @@
                               async: true,
                               success: function(data) {
                                 var lbCreationComplete = false;
+                                var jobID = data.assigntoloadbalancerruleresponse.jobid;
                                 
                                 args.response.success({																  
                                   _custom: {
@@ -1779,6 +1788,64 @@
                             },
                             error: function(data) {
                               args.response.error(parseXMLHttpResponse(data));
+                            }
+                          });
+                        }
+                      }
+                    },
+                    itemActions: {
+                      add: {
+                        label: 'Add VM(s) to load balancer rule',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('assignToLoadBalancerRule'),
+                            data: {
+                              id: args.multiRule.id,
+                              virtualmachineids: $.map(args.data, function(elem) {
+                                return elem.id;
+                              }).join(',')
+                            },
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  _custom: {
+                                    jobId: json.assigntoloadbalancerruleresponse.jobid
+                                  },
+                                  desc: 'Add VM(s) to load balancer rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error();
+                              cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
+                            }
+                          });
+                        }
+                      },
+                      destroy: {
+                        label: 'Remove VM from load balancer',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('removeFromLoadBalancerRule'),
+                            data: {
+                              id: args.multiRule.id,
+                              virtualmachineids: args.item.id
+                            },
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  _custom: {
+                                    jobId: json.removefromloadbalancerruleresponse.jobid
+                                  },
+                                  desc: 'Remove VM from load balancer rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error();
+                              cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
                             }
                           });
                         }

@@ -63,3 +63,13 @@ div.panel div.list-view div.fixed-header {
   float: right;
 }
 
+.multi-edit .data .data-body .data-item .expandable-listing {
+  width: 99.8%;
+  border: 1px solid #CFC9C9;
+  max-height: 161px;
+  position: relative;
+  overflow: auto;
+  overflow-x: hidden;
+  top: expression(this.offsetParent.scrollTop);
+}
+
