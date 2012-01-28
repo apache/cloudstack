@@ -739,26 +739,7 @@
 
                       createForm: {
                         title: 'Create network',
-                        preFilter: function(args) {
-                          if(selectedZoneObj.networktype == "Basic") {    
-                            args.$form.find('.form-item[rel=vlanId]').hide();
-                            args.$form.find('.form-item[rel=scope]').hide();
-                            args.$form.find('.form-item[rel=domainId]').hide();
-                            args.$form.find('.form-item[rel=account]').hide();
-                            args.$form.find('.form-item[rel=networkdomain]').hide();
-
-                            args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
-                          }
-                          else {  //"Advanced"                           
-                            args.$form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=scope]').css('display', 'inline-block');
-                            //args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //depends on scope field
-                            //args.$form.find('.form-item[rel=account]').css('display', 'inline-block');  //depends on scope field
-                            args.$form.find('.form-item[rel=networkdomain]').css('display', 'inline-block');
-
-                            args.$form.find('.form-item[rel=podId]').hide();
-                          }
-                        },
+                        
                         fields: {
                           name: {
                             label: 'Name',
@@ -852,15 +833,13 @@
                             select: function(args) {
                               var array1 = [];
                               var apiCmd = "listNetworkOfferings&state=Enabled";
-                              if(selectedZoneObj.networktype == "Advanced") {  //Advanced zone
-                                if(args.scope == "zone-wide" || args.scope == "domain-specific") {
-                                  apiCmd += "&guestiptype=Shared";
-																}
-                                //args.scope == "account-specific" displays all network offerings                               
-                              }
-                              else {  //Basic zone
-                                apiCmd += "&guestiptype=Shared";
-                              }
+															
+                              //this tab (Network tab in guest network) only shows when it's under an Advanced zone
+															if(args.scope == "zone-wide" || args.scope == "domain-specific") {
+																apiCmd += "&guestiptype=Shared";
+															}
+                              //else, args.scope == "account-specific", displays all network offerings    
+                              
                               $.ajax({
                                 url: createURL(apiCmd),
                                 dataType: "json",
@@ -891,70 +870,6 @@
                             }
                           },
 
-                          podId: {
-                            label: 'Pod',
-                            validation: { required: true },
-                            select: function(args) {
-                              var items = [];
-                              if(selectedZoneObj.networktype == "Basic") {
-                                $.ajax({
-                                  url: createURL("listPods&zoneid=" + selectedZoneObj.id),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var podObjs = json.listpodsresponse.pod;
-                                    $(podObjs).each(function(){
-                                      items.push({id: this.id, description: this.name});
-                                    });
-                                  }
-                                });
-                                items.push({id: 0, description: "(create new pod)"});
-                              }
-                              args.response.success({data: items});
-
-                              args.$select.change(function() {
-                                var $form = $(this).closest('form');
-                                if($(this).val() == "0") {
-                                  $form.find('.form-item[rel=podname]').css('display', 'inline-block');
-                                  $form.find('.form-item[rel=reservedSystemGateway]').css('display', 'inline-block');
-                                  $form.find('.form-item[rel=reservedSystemNetmask]').css('display', 'inline-block');
-                                  $form.find('.form-item[rel=reservedSystemStartIp]').css('display', 'inline-block');
-                                  $form.find('.form-item[rel=reservedSystemEndIp]').css('display', 'inline-block');
-                                }
-                                else {
-                                  $form.find('.form-item[rel=podname]').hide();
-                                  $form.find('.form-item[rel=reservedSystemGateway]').hide();
-                                  $form.find('.form-item[rel=reservedSystemNetmask]').hide();
-                                  $form.find('.form-item[rel=reservedSystemStartIp]').hide();
-                                  $form.find('.form-item[rel=reservedSystemEndIp]').hide();
-                                }
-                              });
-                            }
-                          },
-
-                          //create new pod fields start here
-                          podname: {
-                            label: 'Pod name',
-                            validation: { required: true }
-                          },
-                          reservedSystemGateway: {
-                            label: 'Reserved system gateway',
-                            validation: { required: true }
-                          },
-                          reservedSystemNetmask: {
-                            label: 'Reserved system netmask',
-                            validation: { required: true }
-                          },
-                          reservedSystemStartIp: {
-                            label: 'Start Reserved system IP',
-                            validation: { required: true }
-                          },
-                          reservedSystemEndIp: {
-                            label: 'End Reserved system IP',
-                            validation: { required: false }
-                          },
-                          //create new pod fields ends here
-                          
                           guestGateway: { label: 'Guest gateway' },
                           guestNetmask: { label: 'Guest netmask' },
                           guestStartIp: { label: 'Guest start IP' },
