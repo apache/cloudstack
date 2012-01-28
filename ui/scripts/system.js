@@ -737,8 +737,8 @@
                         }
                       },
 
-                      createForm: {
-                        title: 'Create network',
+                      createForm: {  
+                        title: 'Create network', //create guest network (only shown in advanced zone)
                         
                         fields: {
                           name: {
@@ -844,14 +844,14 @@
                                 url: createURL(apiCmd),
                                 dataType: "json",
                                 async: false,
-                                success: function(json) {
-                                  var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-                                  if (networkOfferings != null && networkOfferings.length > 0) {
-                                    //for (var i = 0; i < networkOfferings.length; i++) {
-                                    for (var i = (networkOfferings.length-1); i >= 0; i--) {
+                                success: function(json) {																  
+                                  networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                  if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
+                                    //for (var i = 0; i < networkOfferingObjs.length; i++) {
+                                    for (var i = (networkOfferingObjs.length-1); i >= 0; i--) {
                                       if(nspMap["securityGroups"].state == "Disabled"){ //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
                                         var includingSGP = false;
-                                        var serviceObjArray = networkOfferings[i].service;
+                                        var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
                                           if(serviceObjArray[k].name == "SecurityGroup") {
                                             includingSGP = true;
@@ -861,12 +861,38 @@
                                         if(includingSGP == true)
                                           continue; //skip to next network offering
                                       }
-                                      array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
+                                      array1.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
                                   }
                                 }
                               });
+															
                               args.response.success({data: array1});
+                              												
+															
+															args.$select.change(function(){															 
+															  var $form = $(this).closest("form");																                                
+																var selectedNetworkOfferingId = $(this).val();													
+																$(networkOfferingObjs).each(function(){																 
+																  if(this.id == selectedNetworkOfferingId) {	
+																		if(this.guestiptype == "Isolated") {
+																			if(this.specifyipranges == false) {
+																				$form.find('.form-item[rel=guestStartIp]').hide();
+																				$form.find('.form-item[rel=guestEndIp]').hide();
+																			}
+																			else {
+																				$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
+																				$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
+																			}
+																		}
+																		else {  //this.guestiptype == "Shared"
+																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
+																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
+																		}													
+																		return false; //break each loop
+																	}
+																});                                													
+															});															
                             }
                           },
 
