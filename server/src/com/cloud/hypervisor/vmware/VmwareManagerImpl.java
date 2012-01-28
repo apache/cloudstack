@@ -700,6 +700,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         Script command = new Script(true, "mount", _timeout, s_logger);
         command.add("-t", "nfs");
         // command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
+        if ("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
+            command.add("-o", "resvport");
+        }
         command.add(path);
         command.add(mountPoint);
         result = command.execute();
