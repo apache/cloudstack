@@ -225,7 +225,7 @@
                       $('.notifications').notifications('add', {
                         section: 'network',
                         desc: notification.label,
-                        interval: 500,
+                        interval: 3000,
                         _custom: _custom,
                         poll: function(args) {
                           var complete = args.complete;
@@ -730,7 +730,7 @@
                 $('.notifications').notifications('add', {
                   section: 'network',
                   desc: notification.label,
-                  interval: 500,
+                  interval: 3000,
                   _custom: successArgs._custom,
                   poll: function(pollArgs) {
                     var complete = pollArgs.complete;
