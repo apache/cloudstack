@@ -615,7 +615,8 @@
                             $.ajax({
                               url: createURL('listVirtualMachines'),
                               data: {
-                                networkid: args.context.networks[0].id
+                                networkid: args.context.networks[0].id,
+                                listAll: true
                               },
                               dataType: 'json',
                               async: true,
@@ -1058,7 +1059,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
-                              networkid: args.context.networks[0].id
+                              networkid: args.context.networks[0].id,
+                              listAll: true
                             },
                             dataType: 'json',
                             async: true,
@@ -1483,7 +1485,8 @@
                     $.ajax({
                       url: createURL('listVirtualMachines'),
                       data: {
-                        id: args.context.ipAddresses[0].virtualmachineid
+                        id: args.context.ipAddresses[0].virtualmachineid,
+                        listAll: true
                       },
                       dataType: 'json',
                       async: true,
@@ -1610,7 +1613,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
-                              networkid: args.context.ipAddresses[0].associatednetworkid
+                              networkid: args.context.ipAddresses[0].associatednetworkid,
+                              listAll: true
                             },
                             dataType: 'json',
                             async: true,
@@ -1946,6 +1950,7 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
+                              listAll: true,
                               networkid: args.context.ipAddresses[0].associatednetworkid
                             },
                             dataType: 'json',
@@ -2083,6 +2088,7 @@
                               dataType: 'json',
                               async: true,
                               data: {
+                                listAll: true,
                                 id: item.virtualmachineid
                               },
                               success: function(data) {
