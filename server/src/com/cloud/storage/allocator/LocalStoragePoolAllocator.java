@@ -17,6 +17,7 @@
  */
 package com.cloud.storage.allocator;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -271,7 +272,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        _storageOverprovisioningFactor = 1;
+        _storageOverprovisioningFactor = new BigDecimal(1);
         _extraBytesPerVolume = NumbersUtil.parseLong((String) params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);

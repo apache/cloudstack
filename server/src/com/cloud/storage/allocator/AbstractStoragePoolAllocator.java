@@ -18,6 +18,7 @@
 
 package com.cloud.storage.allocator;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -79,7 +80,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject ClusterDao _clusterDao;
     @Inject
     SwiftManager _swiftMgr;
-    float _storageOverprovisioningFactor;
+    protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);    
     long _extraBytesPerVolume = 0;
     Random _rand;
     boolean _dontMatter;
@@ -93,7 +94,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Map<String, String> configs = _configDao.getConfiguration(null, params);
         
         String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
-        _storageOverprovisioningFactor = NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f);
+        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
         
         _extraBytesPerVolume = 0;
         
@@ -263,16 +264,18 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		long askingSize = dskCh.getSize();
 		
-		float storageOverprovisioningFactor = 1.0f;
-		if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-			storageOverprovisioningFactor = _storageOverprovisioningFactor;
-		}
+		long totalOverProvCapacity;
+        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+            totalOverProvCapacity = _storageOverprovisioningFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+        }else {
+            totalOverProvCapacity = pool.getCapacityBytes();
+        }
 
 		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize + ", allocated disable threshold: " + _storageAllocatedThreshold);
+			s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + totalAllocatedSize + ", askingSize : " + askingSize + ", allocated disable threshold: " + _storageAllocatedThreshold);
 		}
 
-		double usedPercentage = (totalAllocatedSize + askingSize) / (double)(pool.getCapacityBytes() * storageOverprovisioningFactor);
+		double usedPercentage = (totalAllocatedSize + askingSize) / (double)(totalOverProvCapacity);
 		if (usedPercentage > _storageAllocatedThreshold){
 			if (s_logger.isDebugEnabled()) {
 				s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage since its allocated percentage: " +usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + _storageAllocatedThreshold + ", skipping this pool");
@@ -280,9 +283,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 			return false;
 		}
 
-		if ((pool.getCapacityBytes() * storageOverprovisioningFactor) < (totalAllocatedSize + askingSize)) {
+		if (totalOverProvCapacity < (totalAllocatedSize + askingSize)) {
 			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage, not enough storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
+				s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage, not enough storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
 			}
 
 			return false;

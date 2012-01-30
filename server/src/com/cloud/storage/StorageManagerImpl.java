@@ -17,6 +17,7 @@
  */
 package com.cloud.storage;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -326,7 +327,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected int _retry = 2;
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
-    protected float _overProvisioningFactor = 1;
+    protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _maxVolumeSizeInGb;
     private long _serverId;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
@@ -861,7 +862,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
         if (overProvisioningFactorStr != null) {
-            _overProvisioningFactor = Float.parseFloat(overProvisioningFactorStr);
+            _overProvisioningFactor = new BigDecimal(overProvisioningFactorStr);
         }
         
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
@@ -1869,21 +1870,22 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
         capacities = _capacityDao.search(capacitySC, null);
-
-        float provFactor = 1;
+        
+        long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            provFactor = _overProvisioningFactor;
+            totalOverProvCapacity = _overProvisioningFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+        }else {
+            totalOverProvCapacity = storagePool.getCapacityBytes();
         }
+         
         if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, (long)(storagePool.getCapacityBytes()
-                    * provFactor), capacityType);
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
             _capacityDao.persist(capacity);
         } else {
-            CapacityVO capacity = capacities.get(0);
-            long currCapacity = (long)(provFactor * storagePool.getCapacityBytes());
+            CapacityVO capacity = capacities.get(0);            
             boolean update = false;
-            if (capacity.getTotalCapacity() != currCapacity) {
-                capacity.setTotalCapacity(currCapacity);
+            if (capacity.getTotalCapacity() != totalOverProvCapacity) {
+                capacity.setTotalCapacity(totalOverProvCapacity);
                 update = true;
             }
             if (allocated != 0) {
@@ -1894,7 +1896,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 _capacityDao.update(capacity.getId(), capacity);
             }
         }
-        s_logger.debug("Successfully set Capacity - " + storagePool.getCapacityBytes() * _overProvisioningFactor + " for capacity type - " +capacityType+ " , DataCenterId - "
+        s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " +capacityType+ " , DataCenterId - "
                 + storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
 
