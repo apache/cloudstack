@@ -2513,6 +2513,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             permittedAccounts.add(caller.getId());
             domainId = caller.getDomainId();
         }
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        	domainId = caller.getDomainId();
+        }
 
         //set project information
         boolean skipProjectNetworks = true;
@@ -2576,7 +2580,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             if (!permittedAccounts.isEmpty()) {
                 networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, permittedAccounts));
-            } else if (domainId == null){
+            } else if (domainId == null || listAll){
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, path, isRecursive));
             } 
         } else {
