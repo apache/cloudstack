@@ -175,7 +175,9 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             m_sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
 
-        m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+        if(aggreagationTimeZone != null && !aggreagationTimeZone.isEmpty()){  
+        	m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+        }
         s_logger.debug("Usage stats aggregation time zone: "+aggreagationTimeZone);
         
         try {
@@ -196,7 +198,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             m_jobExecTime.set(Calendar.MINUTE, minutes);
             m_jobExecTime.set(Calendar.SECOND, 0);
             m_jobExecTime.set(Calendar.MILLISECOND, 0);
-            if(execTimeZone != null){
+            if(execTimeZone != null && !execTimeZone.isEmpty()){
                 m_jobExecTime.setTimeZone(TimeZone.getTimeZone(execTimeZone));
             }
 
