@@ -738,7 +738,7 @@
                       },
 
                       createForm: {  
-                        title: 'Create network', //create guest network (only shown in advanced zone)
+                        title: 'Create network',  //create guest network in advanced zone
                         
                         fields: {
                           name: {
@@ -904,43 +904,42 @@
                         }
                       },
 
-                      action: function(args) {
+                      action: function(args) { //create guest network in advanced zone
                         var array1 = [];
                         array1.push("&zoneId=" + selectedZoneObj.id);
                         array1.push("&name=" + todb(args.data.name));
                         array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);
+                      
+												array1.push("&vlan=" + todb(args.data.vlanId));                        
 
-                        if(selectedZoneObj.networktype == "Basic") {
-                          array1.push("&vlan=untagged");
-                        }
-                        else {  //"Advanced"
-                          array1.push("&vlan=" + todb(args.data.vlanId));                        
+												var $form = args.$form;
+												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+														array1.push("&acltype=account");
+														array1.push("&domainId=" + args.data.domainId);
+														array1.push("&account=" + args.data.account);
+													}
+													else {  //domain-specific
+														array1.push("&acltype=domain");
+														array1.push("&domainId=" + args.data.domainId);
+													}
+												}
+												else { //zone-wide
+													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
+												}
+											 
+												array1.push("&gateway=" + args.data.guestGateway);
+												array1.push("&netmask=" + args.data.guestNetmask);
+																								
+												if($form.find('.form-item[rel=guestStartIp]').css("display") != "none") 
+												  array1.push("&startip=" + args.data.guestStartIp);
+												if($form.find('.form-item[rel=guestEndIp]').css("display") != "none") 
+												  array1.push("&endip=" + args.data.guestEndIp);
 
-                          var $form = args.$form;
-                          if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-                            if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
-                              array1.push("&acltype=account");
-                              array1.push("&domainId=" + args.data.domainId);
-                              array1.push("&account=" + args.data.account);
-                            }
-                            else {  //domain-specific
-                              array1.push("&acltype=domain");
-                              array1.push("&domainId=" + args.data.domainId);
-                            }
-                          }
-                          else { //zone-wide
-                            array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
-                          }
-                         
-                          array1.push("&gateway=" + args.data.guestGateway);
-                          array1.push("&netmask=" + args.data.guestNetmask);
-                          array1.push("&startip=" + args.data.guestStartIp);
-                          array1.push("&endip=" + args.data.guestEndIp);
-
-                          if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                            array1.push("&networkdomain=" + todb(args.data.networkdomain));
-                        }
+												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+													array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                        
 
                         $.ajax({
                           url: createURL("createNetwork" + array1.join("")),
