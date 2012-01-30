@@ -290,20 +290,24 @@
           },
 
           dataProvider: function(args) {        	
-        	  var array1 = [];          	
+        	  var array1 = [];
+            var ignoreProject = false;
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {  
                 case "all":
+                  ignoreProject = true;
                   array1.push("&templatefilter=all");
                   break; 
                 case "mine":
                   array1.push("&templatefilter=self");
                   break;                  								
                 case "featured":
+                  ignoreProject = true;
                   array1.push("&templatefilter=featured");
                   break;
                 case "community":
+                  ignoreProject = true;
                   array1.push("&templatefilter=community");
                   break;                   
                 }
@@ -318,7 +322,8 @@
               }
             }                	  
             $.ajax({
-              url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join(""),
+                             { ignoreProject: ignoreProject }),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -839,20 +844,24 @@
           },
 
           dataProvider: function(args) {           
-            var array1 = [];          	
+            var array1 = [];
+	          var ignoreProject = false;
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {   
 								case "all":
+                  ignoreProject = true;
                   array1.push("&isofilter=all");
                   break;   
 								case "mine":
                   array1.push("&isofilter=self");
                   break; 								
                 case "featured":
+                  ignoreProject = true;
                   array1.push("&isofilter=featured");
                   break;
                 case "community":
+                  ignoreProject = true;
                   array1.push("&isofilter=community");
                   break;      
                 }
@@ -868,7 +877,7 @@
             }                
                       
             $.ajax({
-              url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join(""), { ignoreProject: ignoreProject }),
               dataType: "json",
               async: true,
               success: function(json) {
