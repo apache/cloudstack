@@ -1942,6 +1942,9 @@
 
                             $.extend(item, {
                               _itemData: lbInstances,
+                              _maxLength: {
+                                name: 8
+                              },
                               sticky: stickyData
                             });
                           });

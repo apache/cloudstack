@@ -93,7 +93,13 @@
 
               $td.append($('<span>').html(start + ' - ' + end));
             } else {
-              $td.append($('<span>').html(data[fieldName]));
+              if (data['_maxLength'] &&
+                  data['_maxLength'][fieldName]) {
+                $td.append($('<span>').html(data[fieldName].toString().substr(0, data['_maxLength'][fieldName]).concat('...')));
+              } else {
+                $td.append($('<span>').html(data[fieldName]));
+              }
+              $td.attr('title', data[fieldName]);
             }
           } else if (field.select) {
             $td.append($('<span>').html(
