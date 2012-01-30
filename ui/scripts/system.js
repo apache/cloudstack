@@ -726,19 +726,19 @@
                   },
                   actions: {
                     add: {
-                      label: 'Create network',
+                      label: 'Add guest network',
 
                       messages: {
                         confirm: function(args) {
-                          return 'Are you sure you want to create a network?';
+                          return 'Please confirm that you want to add a guest network';
                         },
                         notification: function(args) {
-                          return 'Creating new network';
+                          return 'Adding guest network';
                         }
                       },
 
                       createForm: {  
-                        title: 'Create network',  //create guest network in advanced zone
+                        title: 'Add guest network',  //Add guest network in advanced zone
                         
                         fields: {
                           name: {
@@ -927,7 +927,7 @@
                         }
                       },
 
-                      action: function(args) { //create guest network in advanced zone
+                      action: function(args) { //Add guest network in advanced zone
                         var $form = args.$form;
 												
 												var array1 = [];
@@ -936,7 +936,7 @@
                         array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);
                       											 
-											  if($form.find('.form-item[rel=vlanId]').css("display") != "none") 
+											  if(($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0)) 
 												  array1.push("&vlan=" + todb(args.data.vlanId));                        
 												
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
@@ -953,19 +953,20 @@
 												else { //zone-wide
 													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
 												}
-											 
-												array1.push("&gateway=" + args.data.guestGateway);
-												array1.push("&netmask=" + args.data.guestNetmask);
+											 											  
+											  if(args.data.guestGateway != null && args.data.guestGateway.length > 0) 
+												  array1.push("&gateway=" + args.data.guestGateway);
+												if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0) 
+												  array1.push("&netmask=" + args.data.guestNetmask);
 																								
-												if($form.find('.form-item[rel=guestStartIp]').css("display") != "none") 
+												if(($form.find('.form-item[rel=guestStartIp]').css("display") != "none") && (args.data.guestStartIp != null && args.data.guestStartIp.length > 0)) 
 												  array1.push("&startip=" + args.data.guestStartIp);
-												if($form.find('.form-item[rel=guestEndIp]').css("display") != "none") 
+												if(($form.find('.form-item[rel=guestEndIp]').css("display") != "none") && (args.data.guestEndIp != null && args.data.guestEndIp.length > 0)) 
 												  array1.push("&endip=" + args.data.guestEndIp);
 
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
 													array1.push("&networkdomain=" + todb(args.data.networkdomain));
                         
-
                         $.ajax({
                           url: createURL("createNetwork" + array1.join("")),
                           dataType: "json",

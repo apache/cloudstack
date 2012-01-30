@@ -210,13 +210,25 @@
                         }
                       });
                     }
-                  }
+                  },																		
+									guestGateway: { label: 'Guest gateway' },
+                  guestNetmask: { label: 'Guest netmask' }	
                 }
               },
-              action: function(args) {
+              action: function(args) {							  
+								var array1 = [];
+								array1.push("&zoneId=" + args.data.zoneId);
+								array1.push("&name=" + todb(args.data.name));
+								array1.push("&displayText=" + todb(args.data.displayText));
+								array1.push("&networkOfferingId=" + args.data.networkOfferingId);
+								
+								if(args.data.guestGateway != null && args.data.guestGateway.length > 0) 
+									array1.push("&gateway=" + args.data.guestGateway);
+								if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0) 
+									array1.push("&netmask=" + args.data.guestNetmask);												
+																
                 $.ajax({
-                  url: createURL('createNetwork'),
-                  data: args.data,
+                  url: createURL('createNetwork' + array1.join("")),                  
                   success: function(json) {
                     args.response.success({
                       data: json.createnetworkresponse.network
