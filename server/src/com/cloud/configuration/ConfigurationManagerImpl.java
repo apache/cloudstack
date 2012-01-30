@@ -150,7 +150,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -2253,11 +2252,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
-        PhysicalNetworkVO pNtwk;
-        if (physicalNetworkId == null || ((pNtwk = _physicalNetworkDao.findById(physicalNetworkId)) == null)) {
+        if (physicalNetworkId == null || ((_physicalNetworkDao.findById(physicalNetworkId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid physical network.");
         }
-        
 
         // Allow adding untagged direct vlan only for Basic zone
         if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && (!forVirtualNetwork || zone.isSecurityGroupEnabled())) {
@@ -3154,6 +3151,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
+        
+        //specifyIpRanges should always be true for Shared network offerings
+        if (!specifyIpRanges && type == GuestType.Shared) {
+        	throw new InvalidParameterValueException("SpecifyIpRanges should be true if network offering's type is " + type);
+        }
+        
+        //specifyVlan should always be true for Shared network offerings and Isolated network offerings with specifyIpRanges = true
+        if (!specifyVlan) {
+        	if (type == GuestType.Shared) {
+            	throw new InvalidParameterValueException("SpecifyVlan should be true if network offering's type is " + type);
+            } else if (specifyIpRanges) {
+            	throw new InvalidParameterValueException("SpecifyVlan should be true if network offering has specifyIpRanges=true");
+            }
+        }
         
         //validate availability value
         if (availability == NetworkOffering.Availability.Required) {
