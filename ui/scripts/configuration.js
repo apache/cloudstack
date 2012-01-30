@@ -1238,6 +1238,21 @@
                           $(networkServices).each(function() {
                             var name = this.name;
                             var providers = this.provider;
+                            var displayName;
+
+                            // Sanitize names
+                            switch (name) {
+                            case 'Vpn': displayName = 'VPN'; break;
+                            case 'Dhcp': displayName = 'DHCP'; break;
+                            case 'Dns': displayName = 'DNS'; break;
+                            case 'Lb': displayName = 'Load Balancer'; break;
+                            case 'SourceNat': displayName = 'Source NAT'; break;
+                            case 'StaticNat': displayName = 'Source NAT'; break;
+                            case 'PortForwarding': displayName = 'Port Forwarding'; break;
+                            case 'SecurityGroup': displayName = 'Security Groups'; break;
+                            case 'UserData': displayName = 'User Data'; break;
+                            default: displayName = name; break;
+                            }
 
                             var id = {
                               isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
@@ -1245,9 +1260,9 @@
                               provider: 'service' + '.' + name + '.' + 'provider'
                             };
 
-                            fields[id.isEnabled] = { label: name, isBoolean: true };
+                            fields[id.isEnabled] = { label: displayName, isBoolean: true };
                             fields[id.provider] = {
-                              label: name + ' Provider',
+                              label: displayName + ' Provider',
                               isHidden: true,
                               dependsOn: id.isEnabled,
                               select: function(args) {

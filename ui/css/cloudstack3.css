@@ -2993,15 +2993,16 @@ Dialogs*/
 }
 
 .ui-dialog div.form-container div.value .dynamic-input .name {
-  width: 86px;
+  width: 99px;
 }
 
 .ui-dialog div.form-container div.value .dynamic-input .name label {
   width: inherit;
+  font-size: 12px;
 }
 
 .ui-dialog div.form-container div.value .dynamic-input .value {
-  width: 50%;
+  width: 40%;
 }
 
 /*User options*/
