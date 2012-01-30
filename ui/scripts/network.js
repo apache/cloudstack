@@ -234,7 +234,7 @@
           id: 'networks',
           fields: {
             name: { label: 'Name' },
-            accounts: { label: 'Account' },
+            account: { label: 'Account' },
             zonename: { label: 'Zone' },
             type: { label: 'Type' },
             vlan: { label: 'VLAN' },
