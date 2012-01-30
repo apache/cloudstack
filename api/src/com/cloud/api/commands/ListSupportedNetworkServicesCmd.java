@@ -35,7 +35,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.user.Account;
 
 
-@Implementation(description="Lists all network services provided by CloudStack or for the given Provider.", responseObject=ServiceResponse.class)
+@Implementation(description="Lists all network services provided by CloudStack or for the given Provider.", responseObject=ServiceResponse.class, since="3.0.0")
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
     private static final String _name = "listsupportednetworkservicesresponse";

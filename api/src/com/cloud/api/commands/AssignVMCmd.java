@@ -39,7 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class)
+@Implementation(description="Move a user VM to another user under same domain.", responseObject=UserVmResponse.class, since="3.0.0")
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 

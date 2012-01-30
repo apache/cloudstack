@@ -32,7 +32,7 @@ import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class)
+@Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class, since="3.0.0")
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 

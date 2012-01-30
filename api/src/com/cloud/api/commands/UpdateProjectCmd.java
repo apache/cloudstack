@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Updates a project", responseObject=ProjectResponse.class)
+@Implementation(description="Updates a project", responseObject=ProjectResponse.class, since="3.0.0")
 public class UpdateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 

@@ -18,7 +18,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a Storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class)
+@Implementation(description="Creates a Storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 	

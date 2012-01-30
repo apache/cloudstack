@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Configure the LDAP context for this site.", responseObject=LDAPConfigResponse.class)
+@Implementation(description="Configure the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.0")
 public class LDAPConfigCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(LDAPConfigCmd.class.getName());
 

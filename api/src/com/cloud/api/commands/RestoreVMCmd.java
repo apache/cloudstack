@@ -19,7 +19,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Restore a VM to original template or specific snapshot", responseObject=UserVmResponse.class)
+@Implementation(description="Restore a VM to original template or specific snapshot", responseObject=UserVmResponse.class, since="3.0.0")
 public class RestoreVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
 	private static final String s_name = "restorevmresponse";

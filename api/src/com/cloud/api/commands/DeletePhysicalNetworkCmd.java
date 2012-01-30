@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a Physical Network.", responseObject=SuccessResponse.class)
+@Implementation(description="Deletes a Physical Network.", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePhysicalNetworkCmd.class.getName());
 

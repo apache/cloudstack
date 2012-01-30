@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a physical network", responseObject=PhysicalNetworkResponse.class)
+@Implementation(description="Updates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 

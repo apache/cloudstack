@@ -14,7 +14,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 
-@Implementation(description="Migrate volume", responseObject=VolumeResponse.class)
+@Implementation(description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
 public class MigrateVolumeCmd extends BaseAsyncCmd {
 	private static final String s_name = "migratevolumeresponse";
 	

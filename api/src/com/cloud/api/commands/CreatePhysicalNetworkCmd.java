@@ -37,7 +37,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a physical network", responseObject=PhysicalNetworkResponse.class)
+@Implementation(description="Creates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePhysicalNetworkCmd.class.getName());
 

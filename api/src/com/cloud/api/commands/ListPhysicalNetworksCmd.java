@@ -35,7 +35,7 @@ import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@Implementation(description="Lists physical networks", responseObject=PhysicalNetworkResponse.class)
+@Implementation(description="Lists physical networks", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class ListPhysicalNetworksCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPhysicalNetworksCmd.class.getName());
 

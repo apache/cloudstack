@@ -33,7 +33,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes a Network Service Provider.", responseObject=SuccessResponse.class)
+@Implementation(description="Deletes a Network Service Provider.", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkServiceProviderCmd.class.getName());
 

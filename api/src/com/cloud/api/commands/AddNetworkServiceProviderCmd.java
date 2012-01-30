@@ -36,7 +36,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds a network serviceProvider to a physical network", responseObject=ProviderResponse.class)
+@Implementation(description="Adds a network serviceProvider to a physical network", responseObject=ProviderResponse.class, since="3.0.0")
 public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkServiceProviderCmd.class.getName());
 

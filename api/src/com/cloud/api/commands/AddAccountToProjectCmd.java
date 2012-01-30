@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class)
+@Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 

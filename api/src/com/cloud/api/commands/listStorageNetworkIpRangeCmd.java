@@ -21,7 +21,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="List a storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class)
+@Implementation(description="List a storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
 public class listStorageNetworkIpRangeCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(listStorageNetworkIpRangeCmd.class);
 	

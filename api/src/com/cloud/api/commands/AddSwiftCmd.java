@@ -31,7 +31,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
 
-@Implementation(description = "Adds Swift.", responseObject = HostResponse.class)
+@Implementation(description = "Adds Swift.", responseObject = HostResponse.class, since="3.0.0")
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
     private static final String s_name = "addswiftresponse";

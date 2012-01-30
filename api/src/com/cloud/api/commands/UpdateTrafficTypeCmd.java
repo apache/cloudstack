@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class)
+@Implementation(description="Updates traffic type of a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
 

@@ -32,7 +32,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 
-@Implementation(description="Lists all hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class)
+@Implementation(description="Lists all hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class, since="3.0.0")
 public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHypervisorCapabilitiesCmd.class.getName());
 

@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Activates a project", responseObject=ProjectResponse.class)
+@Implementation(description="Activates a project", responseObject=ProjectResponse.class, since="3.0.0")
 public class ActivateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ActivateProjectCmd.class.getName());
 

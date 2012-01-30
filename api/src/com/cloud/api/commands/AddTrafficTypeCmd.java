@@ -34,7 +34,7 @@ import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds traffic type to a physical network", responseObject=TrafficTypeResponse.class)
+@Implementation(description="Adds traffic type to a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
 public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddTrafficTypeCmd.class.getName());
 

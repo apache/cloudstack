@@ -31,7 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.projects.ProjectInvitation;
 
-@Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectInvitationResponse.class)
+@Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectInvitationResponse.class, since="3.0.0")
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectInvitationsCmd.class.getName());
     private static final String s_name = "listprojectinvitationsresponse";
