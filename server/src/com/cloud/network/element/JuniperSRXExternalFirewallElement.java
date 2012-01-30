@@ -253,10 +253,11 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         capabilities.put(Service.Firewall, firewallCapabilities);
         
-        // Set VPN capabilities
-        Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
-        vpnCapabilities.put(Capability.SupportedVpnTypes, "ipsec");
-        capabilities.put(Service.Vpn, vpnCapabilities);
+        //Disabling VPN for Juniper in Acton as it 1) Was never tested 2) probably just doesn't work
+//        // Set VPN capabilities
+//        Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
+//        vpnCapabilities.put(Capability.SupportedVpnTypes, "ipsec");
+//        capabilities.put(Service.Vpn, vpnCapabilities);
         
         capabilities.put(Service.Gateway, null);
         

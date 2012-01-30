@@ -72,8 +72,9 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	}
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
+    	//No external dhcp support for Acton release
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-        capabilities.put(Service.Dhcp, null);
+//        capabilities.put(Service.Dhcp, null);
         return capabilities;
     }
     

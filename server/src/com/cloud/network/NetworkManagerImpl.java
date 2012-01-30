@@ -5781,6 +5781,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 	Set<Network.Service> requiredServices = element.getCapabilities().keySet();
                 	if (requiredServices.contains(Network.Service.Gateway)) {
                 		requiredServices.remove(Network.Service.Gateway);
+                	} 
+                	
+                	//Remove firewall from the list of services-to-compare
+                	if (requiredServices.contains(Network.Service.Firewall)) {
+                		requiredServices.remove(Network.Service.Firewall);
+                	}
+                	
+                	if (enabledServices.contains(Network.Service.Firewall)) {
+                		enabledServices.remove(Network.Service.Firewall);
                 	}
                 	
                 	//exclude gateway service
