@@ -1062,7 +1062,7 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="alerts">
-            <li class="error" concat-value="true">
+            <li class="error" concat-value="50">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
@@ -1078,7 +1078,7 @@
             <div class="button view-all">view all</div>
           </div>
           <ul data-item="hostAlerts">
-            <li class="error" concat-value="true">
+            <li class="error" concat-value="50">
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
@@ -1109,7 +1109,7 @@
           <!-- Zone stat charts -->
           <div class="zone-stats">
             <ul data-item="zoneCapacities">
-              <li>
+              <li concat-value="25">
                 <div class="label">
                   Zone: <span data-list-item="zoneName"></span>
                 </div>

@@ -59,11 +59,17 @@
                           { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
                         ]);
                       } else {
-                        if ($li.attr('concat-value') == 'true') {
-                          $arrayElem.html(arrayValue.substring(0, 50).concat('...'));
+                        if ($li.attr('concat-value')) {
+                          $arrayElem.html(arrayValue.toString().split('<br/>').map(function(val) {
+                            var concatValue = parseInt($li.attr('concat-value'));
+                            
+                            return val.length >= concatValue ? val.substring(0, concatValue).concat('...') : val;
+                          }).join('<br/>'));
                         } else {
                           $arrayElem.html(arrayValue);
                         }
+
+                        $arrayElem.attr('title', arrayValue.toString().replace('<br/>', ', '));
                       }
                     });
                   });
