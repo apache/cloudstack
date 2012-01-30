@@ -710,6 +710,13 @@
 
         // Clear out fields
         $multi.find('input').val('');
+        $multi.find('tbody td').each(function() {
+          var $item = $(this);
+
+          if ($item.data('multi-custom-data')) {
+            $item.data('multi-custom-data', null);
+          }
+        });
 
         // Apply action
         args.add.action({
