@@ -43,7 +43,6 @@ import org.apache.log4j.Logger;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiConstants.LDAPParams;
-import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
@@ -2829,28 +2828,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
         }
         return ipRanges;
-    }
-
-    @Override
-    public Configuration addConfig(CreateCfgCmd cmd) {
-        String category = cmd.getCategory();
-        String instance = cmd.getInstance();
-        String component = cmd.getComponent();
-        String name = cmd.getConfigPropName();
-        String value = cmd.getValue();
-        String description = cmd.getDescription();
-        try {
-        	if("Hidden".equals(category)){
-        		value = DBEncryptionUtil.encrypt(value);
-        	}
-            ConfigurationVO entity = new ConfigurationVO(category, instance, component, name, value, description);
-            _configDao.persist(entity);
-            s_logger.info("Successfully added configuration value into db: category:" + category + " instance:" + instance + " component:" + component + " name:" + name + " value:" + value);
-            return _configDao.findByName(name);
-        } catch (Exception ex) {
-            s_logger.error("Unable to add the new config entry:", ex);
-            throw new CloudRuntimeException("Unable to add configuration parameter " + name);
-        }
     }
 
     @Override

@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.naming.NamingException;
 
-import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
@@ -64,13 +63,6 @@ public interface ConfigurationService {
      * @return updated configuration object if successful
      */
     Configuration updateConfiguration(UpdateCfgCmd cmd);
-
-    /**
-     * Persists a config value via the API call
-     * 
-     * @return newly created Config object
-     */
-    Configuration addConfig(CreateCfgCmd cmd);
 
     /**
      * Create a service offering through the API
