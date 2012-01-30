@@ -1231,10 +1231,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             if (userVm.getDisplayName() != null) {
                 userVmResponse.setDisplayName(userVm.getDisplayName());
-            } else {
-                userVmResponse.setDisplayName(userVm.getHostName());
             }
-            
 
             if (userVm.getPassword() != null) {
                 userVmResponse.setPassword(userVm.getPassword());
@@ -2858,8 +2855,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (userVm.getDisplayName() != null) {
             userVmData.setDisplayName(userVm.getDisplayName());
-        } else {
-            userVmData.setDisplayName(userVm.getHostName());
         } 
         userVmData.setDomainId(userVm.getDomainId());
 
