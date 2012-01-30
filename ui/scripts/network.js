@@ -1445,6 +1445,7 @@
                       $.ajax({
                         url: createURL('listFirewallRules'),
                         data: {
+                          listAll: true,
                           ipaddressid: args.context.ipAddresses[0].id
                         },
                         dataType: 'json',
@@ -1702,6 +1703,7 @@
                           success: function(data) {
                             var itemData = args.itemData;
                             var jobID = data.createloadbalancerruleresponse.jobid;
+                            var lbID = data.createloadbalancerruleresponse.id;
 
                             $.ajax({
                               url: createURL('assignToLoadBalancerRule'),
@@ -1714,8 +1716,8 @@
                               dataType: 'json',
                               async: true,
                               success: function(data) {
-                                var lbCreationComplete = false;
                                 var jobID = data.assigntoloadbalancerruleresponse.jobid;
+                                var lbStickyCreated = false;
                                 
                                 args.response.success({																  
                                   _custom: {
@@ -1728,24 +1730,19 @@
                                       var error = args.error;
                                       
                                       pollAsyncJobResult({
-                                        _custom: args._custom,
+                                        _custom: { jobId: jobID },
                                         complete: function(args) {
-                                          if (lbCreationComplete) {
-                                            return;
-                                          }
+                                          if (lbStickyCreated) return;
                                           
-                                          lbCreationComplete = true;
+                                          lbStickyCreated = true;
                                           
                                           // Create stickiness policy
                                           if (stickyData &&
                                               stickyData.methodname &&
                                               stickyData.methodname != 'None') {
-                                            cloudStack.lbStickyPolicy.actions.add(
-                                              args.data.loadbalancer.id,
-                                              stickyData,
-                                              complete, // Complete
-                                              complete // Error
-                                            );
+                                            cloudStack.lbStickyPolicy.actions.add(lbID,
+                                                                                  stickyData,
+                                                                                  complete, error);
                                           } else {
                                             complete();
                                           }
@@ -1857,7 +1854,7 @@
                       }
                     },
                     dataProvider: function(args) {
-										  var apiCmd = "listLoadBalancerRules";												  									
+										  var apiCmd = "listLoadBalancerRules&listAll=true";												  									
 											//if(args.context.networks[0].type == "Shared") 
 											//	apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
 											//else //args.context.networks[0].type == "Isolated"
@@ -1883,6 +1880,7 @@
                               url: createURL('listLBStickinessPolicies'),
                               async: false,
                               data: {
+                                listAll: true,
                                 lbruleid: item.id
                               },
                               success: function(json) {
@@ -1919,6 +1917,7 @@
                               dataType: 'json',
                               async: false,
                               data: {
+                                listAll: true,
                                 id: item.id
                               },
                               success: function(data) {
@@ -2070,7 +2069,8 @@
                       $.ajax({
                         url: createURL('listPortForwardingRules'),
                         data: {
-                          ipaddressid: args.context.ipAddresses[0].id
+                          ipaddressid: args.context.ipAddresses[0].id,
+                          listAll: true
                         },
                         dataType: 'json',
                         async: true,
