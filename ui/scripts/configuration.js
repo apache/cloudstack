@@ -1085,17 +1085,22 @@
                   return key;
                 }).join(',');
 
-                if (inputData['specifyVlan'] == 'on') {
-                  inputData['specifyVlan'] = true;
-                } else {
-                  inputData['specifyVlan'] = false;
-                }
 								
-								if (inputData['specifyIpRanges'] == 'on') {
-                  inputData['specifyIpRanges'] = true;
-                } else {
-                  inputData['specifyIpRanges'] = false;
-                }
+								if(inputData['guestIpType'] == "Shared"){ //specifyVlan checkbox is hidden
+								  inputData['specifyVlan'] = true;
+									inputData['specifyIpRanges'] = true;
+								}
+								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
+									if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
+										inputData['specifyVlan'] = true;	
+                    inputData['specifyIpRanges'] = true;										
+									}
+									else { //specifyVlan checkbox is unchecked
+										inputData['specifyVlan'] = false;
+										inputData['specifyIpRanges'] = false;
+									}					
+								}			
+								
 																
 								if (inputData['conservemode'] == 'on') {
                   inputData['conservemode'] = true;
@@ -1159,6 +1164,16 @@
                           { id: 'Shared', description: 'Shared' }
                         ]
                       });
+																						
+											args.$select.change(function() {											  
+												var $form = $(this).closest("form");
+												if($(this).val() == "Shared") {												   
+                          $form.find('.form-item[rel=specifyVlan]').hide();
+												}
+												else {  //$(this).val() == "Isolated"
+												  $form.find('.form-item[rel=specifyVlan]').css('display', 'inline-block');
+												}												
+											});																			
                     }
                   },
 
@@ -1207,9 +1222,7 @@
                     }
                   },
 
-                  specifyVlan: { label: 'Specify VLAN', isBoolean: true },
-								
-									specifyIpRanges: { label: 'Specify IP ranges', isBoolean: true },
+                  specifyVlan: { label: 'Specify VLAN', isBoolean: true },																
 								
                   supportedServices: {
                     label: 'Supported Services',
