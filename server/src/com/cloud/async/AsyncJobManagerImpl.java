@@ -392,7 +392,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                     try {
                     	JmxUtil.registerMBean("AsyncJobManager", "Active Job " + job.getId(), new AsyncJobMBeanImpl(job));
                     } catch(Exception e) {
-                    	s_logger.warn("Unable to register active job " + job.getId() + " to JMX minotoring due to exception " + ExceptionUtil.toString(e));
+                    	s_logger.warn("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     }
     
                     BaseAsyncCmd cmdObj = null;
@@ -490,7 +490,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                         try {
                         	JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
                         } catch(Exception e) {
-                        	s_logger.warn("Unable to unregister active job " + job.getId() + " from JMX minotoring");
+                        	s_logger.warn("Unable to unregister active job " + job.getId() + " from JMX monitoring");
                         }
                     	
                         StackMaid.current().exitCleanup();
