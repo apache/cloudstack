@@ -721,7 +721,7 @@
 						  array1.push("&listAll=true");
               break;            
             case "mine":
-              array1.push("&domainid=" + g_domainid + "&account=" + g_account);
+              if (!args.context.projects) array1.push("&domainid=" + g_domainid + "&account=" + g_account);
               break;
             case "running":
               array1.push("&listAll=true&state=Running");
