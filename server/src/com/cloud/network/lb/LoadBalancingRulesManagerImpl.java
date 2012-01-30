@@ -750,12 +750,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         if (updateRulesInDB) {
             for (LoadBalancerVO lb : lbs) {
             	boolean checkForReleaseElasticIp = false;
-                if (lb.getState() == FirewallRule.State.Revoke) {	
             	txn.start();
-        		_lbDao.remove(lb.getId());
-                s_logger.debug("LB " + lb.getId() + " is successfully removed");
-                checkForReleaseElasticIp = true;
-                	
+                if (lb.getState() == FirewallRule.State.Revoke) {	
+	        		_lbDao.remove(lb.getId());
+	                s_logger.debug("LB " + lb.getId() + " is successfully removed");
+	                checkForReleaseElasticIp = true;
                 } else if (lb.getState() == FirewallRule.State.Add) {
                     lb.setState(FirewallRule.State.Active);
                     s_logger.debug("LB rule " + lb.getId() + " state is set to Active");
