@@ -875,6 +875,7 @@
 																var selectedNetworkOfferingId = $(this).val();													
 																$(networkOfferingObjs).each(function(){																 
 																  if(this.id == selectedNetworkOfferingId) {	
+																	  //networkoffering.specifyipranges
 																		if(this.guestiptype == "Isolated") {
 																			if(this.specifyipranges == false) {
 																				$form.find('.form-item[rel=guestStartIp]').hide();
@@ -888,7 +889,15 @@
 																		else {  //this.guestiptype == "Shared"
 																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
 																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
-																		}													
+																		}			
+
+																		//networkoffering.specifyvlan
+																		if(this.specifyvlan == false) {
+																		  $form.find('.form-item[rel=vlanId]').hide();
+																		}
+																		else {
+																		  $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
+																		}				
 																		return false; //break each loop
 																	}
 																});                                													
@@ -905,15 +914,17 @@
                       },
 
                       action: function(args) { //create guest network in advanced zone
-                        var array1 = [];
+                        var $form = args.$form;
+												
+												var array1 = [];
                         array1.push("&zoneId=" + selectedZoneObj.id);
                         array1.push("&name=" + todb(args.data.name));
                         array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);
-                      
-												array1.push("&vlan=" + todb(args.data.vlanId));                        
-
-												var $form = args.$form;
+                      											 
+											  if($form.find('.form-item[rel=vlanId]').css("display") != "none") 
+												  array1.push("&vlan=" + todb(args.data.vlanId));                        
+												
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
 													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
 														array1.push("&acltype=account");
