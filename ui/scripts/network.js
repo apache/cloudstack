@@ -154,7 +154,7 @@
             add: {
               label: 'Add guest network',
               createForm: {
-                title: 'Add new guest network',
+                title: 'Add guest network',
                 desc: 'Please specify name and zone for this network; note that network will be isolated and source NAT-enabled.',
                 fields: {
                   name: { label: 'Name', validation: { required: true } },
@@ -191,10 +191,11 @@
                     select: function(args) {
                       $.ajax({
                         url: createURL('listNetworkOfferings'),
-                        data: {
-                          supportedServices: 'SourceNat',
-                          type: 'isolated',
-                          state: 'Enabled'
+                        data: {                          
+                          type: 'Isolated',
+													supportedServices: 'SourceNat',
+													specifyvlan: false,
+                          state: 'Enabled'													
                         },
                         success: function(json) {
                           var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
