@@ -837,8 +837,7 @@
                               //this tab (Network tab in guest network) only shows when it's under an Advanced zone
 															if(args.scope == "zone-wide" || args.scope == "domain-specific") {
 																apiCmd += "&guestiptype=Shared";
-															}
-                              //else, args.scope == "account-specific", displays all network offerings    
+															}                               
                               
                               $.ajax({
                                 url: createURL(apiCmd),
@@ -847,9 +846,9 @@
                                 success: function(json) {																  
                                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
-                                    //for (var i = 0; i < networkOfferingObjs.length; i++) {
-                                    for (var i = (networkOfferingObjs.length-1); i >= 0; i--) {
-                                      if(nspMap["securityGroups"].state == "Disabled"){ //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
+                                    for (var i = 0; i < networkOfferingObjs.length; i++) {
+                                      //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
+                                      if(nspMap["securityGroups"].state == "Disabled"){ 
                                         var includingSGP = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -861,6 +860,21 @@
                                         if(includingSGP == true)
                                           continue; //skip to next network offering
                                       }
+																																						
+																			//if args.scope == "account-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
+																			if(args.scope == "account-specific") {
+																			  var includingSourceNat = false;
+                                        var serviceObjArray = networkOfferingObjs[i].service;
+                                        for(var k = 0; k < serviceObjArray.length; k++) {
+                                          if(serviceObjArray[k].name == "SourceNat") {
+                                            includingSourceNat = true;
+                                            break;
+                                          }
+                                        }
+                                        if(includingSourceNat == true)
+                                          continue; //skip to next network offering
+																			}		
+																			
                                       array1.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
                                   }
