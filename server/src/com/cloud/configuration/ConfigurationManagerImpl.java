@@ -3014,6 +3014,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
+                        
+                        //Only VirtualRouter can be specified as a firewall provider
+                        if (service == Service.Firewall && provider != Provider.VirtualRouter) {
+                        	throw new InvalidParameterValueException("Only Virtual router can be specified as a provider for the Firewall service");
+                        }
+                        
                         providers.add(provider);
                         
                         Set<Service> serviceSet = null;
