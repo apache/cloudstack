@@ -46,6 +46,7 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image file")
     private String templateName;
 
+    @IdentityMapper(entityTableName="guest_os")
     @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
     
