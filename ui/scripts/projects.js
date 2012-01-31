@@ -486,7 +486,7 @@
         url: createURL('listProjects', { ignoreProject: true }),
         data: {
           accountId: user.userid,
-          listAll: isAdmin()
+          listAll: true
         },
         dataType: 'json',
         async: true,
@@ -539,7 +539,7 @@
 							}
 						}
 					
-					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=' + isAdmin();					
+					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true';					
             $.ajax({
               url: createURL(apiCmd, { ignoreProject: true }),
               dataType: 'json',
@@ -829,7 +829,8 @@
   var projectsActionFilter = function(args) {
     var allowedActions = ['destroy'];
 
-    if (args.context.item.account == cloudStack.context.users[0].account || isAdmin()) {
+    if (args.context.item.account == cloudStack.context.users[0].account ||
+        isAdmin() || isDomainAdmin()) {
       if (args.context.item.state == 'Suspended') {
         allowedActions.push('enable');
       } else if (args.context.item.state == 'Active') {

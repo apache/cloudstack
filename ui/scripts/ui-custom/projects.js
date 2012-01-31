@@ -160,7 +160,7 @@
       };
 
       // Only show management tabs to owner of project
-      if (isAdmin() || (
+      if (isAdmin() || isDomainAdmin() || (
         cloudStack.context.projects &&
           (cloudStack.context.projects[0].account == cloudStack.context.users[0].account)
       )) {
@@ -170,7 +170,7 @@
           tabs.invitations = pageElems.dashboardTabs.invitations;
         }
 
-        if (isAdmin()) {
+        if (isAdmin() || isDomainAdmin()) {
           tabs.resources = pageElems.dashboardTabs.resources;          
         }
       }
@@ -333,7 +333,7 @@
                                 )
                               );
                         
-                        if (isAdmin()) {
+                        if (isAdmin() || isDomainAdmin()) {
                           $ul.append(
                             // Resources tab
                             $('<li>').addClass('last').append(
@@ -346,7 +346,7 @@
                         cloudStack.context.projects = [project];
 
                         var $resources;
-                        if (isAdmin()) {
+                        if (isAdmin() || isDomainAdmin()) {
                           $resouces = $('<div>')
                             .attr({ id: 'new-project-review-tabs-resouces' })
                             .appendTo($tabs)
@@ -544,7 +544,7 @@
       loadData(function() {
         if (!$list.find('li').size()) {
           cloudStack.dialog.notice({
-            message: isAdmin() || g_userProjectsEnabled ?
+            message: isAdmin() || isDomainAdmin() || g_userProjectsEnabled ?
               'You do not have any projects.<br/>Please create a new one from the projects section.' :
               'You do not have any projects.<br/>Please ask your administrator to create a new project.'
           }).closest('.ui-dialog');
