@@ -1632,22 +1632,21 @@
   var networkOfferingActionfilter = function(args) {
     var jsonObj = args.context.item;
 
-    if (jsonObj.state == 'Destroyed') {
+    if (jsonObj.state == 'Destroyed') 
       return [];
-    }
-
+    
     var allowedActions = [];
-    allowedActions.push("edit");		
-		if(jsonObj.isdefault == false) {
-			allowedActions.push("destroy");
-			if(jsonObj.state == "Enabled")
-				allowedActions.push("disable");
-			else if(jsonObj.state == "Disabled")
-				allowedActions.push("enable");
-		}
-			
-    return allowedActions;
+    allowedActions.push("edit");	
+
+    if(jsonObj.state == "Enabled")
+			allowedActions.push("disable");
+		else if(jsonObj.state == "Disabled")
+			allowedActions.push("enable");
 		
+		if(jsonObj.isdefault == false) 
+			allowedActions.push("destroy");		
+			
+    return allowedActions;		
   };
 
 })(cloudStack, jQuery);
