@@ -128,6 +128,7 @@ class sysConfigAgentUbuntu(sysConfigAgent):
                          networkConfigUbuntu(self),
                          libvirtConfigUbuntu(self),
                          firewallConfigUbuntu(self),
+                         nfsConfig(self),
                          cloudAgentConfig(self)]
 
 #it covers RHEL6/Fedora13/Fedora14
@@ -139,6 +140,7 @@ class sysConfigRedhat6(sysConfigAgentRedhatBase):
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
+                         nfsConfig(self),
                          cloudAgentConfig(self)]
 
 #It covers RHEL5/CentOS5, the mainly difference is that there is no cgroup
