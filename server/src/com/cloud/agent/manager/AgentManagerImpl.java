@@ -1110,8 +1110,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextState);
         }
-        _hostDao.disconnect(host, event, _nodeId);
         removeAgent(attache, nextState, event, investigate);
+        _hostDao.disconnect(host, event, _nodeId);
 
         return true;
     }
