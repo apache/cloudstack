@@ -93,9 +93,12 @@
 
               $td.append($('<span>').html(start + ' - ' + end));
             } else {
-              if (data['_maxLength'] &&
-                  data['_maxLength'][fieldName]) {
-                $td.append($('<span>').html(data[fieldName].toString().substr(0, data['_maxLength'][fieldName]).concat('...')));
+              var maxLengths = data['_maxLength'];
+              
+              if (maxLengths &&
+                  maxLengths[fieldName] &&
+                  data[fieldName].length >= maxLengths[fieldName]) {
+                $td.append($('<span>').html(data[fieldName].toString().substr(0, maxLengths[fieldName] - 3).concat('...')));
               } else {
                 $td.append($('<span>').html(data[fieldName]));
               }

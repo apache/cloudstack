@@ -1943,7 +1943,7 @@
                             $.extend(item, {
                               _itemData: lbInstances,
                               _maxLength: {
-                                name: 8
+                                name: 7
                               },
                               sticky: stickyData
                             });
