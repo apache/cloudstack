@@ -283,8 +283,6 @@
               var poll = setInterval(function() {
                 $.ajax({
                   url: createURL('listSystemVms'),
-                  dataType: 'json',
-                  async: true,
                   success: function(data) {
                     var systemVMs = data.listsystemvmsresponse.systemvm;
 
@@ -293,9 +291,35 @@
                         return vm.state == 'Running';
                       }).length) {
                         clearInterval(poll);
-                        message('Installation completed!');
-                        setTimeout(success, 2000);
+                        message('System VMs ready.');
+                        setTimeout(pollBuiltinTemplates, 500);
                       }
+                    }
+                  }
+                });
+              }, 5000);
+            };
+
+            // Wait for builtin template to be present -- otherwise VMs cannot launch
+            var pollBuiltinTemplates = function() {
+              message('Waiting for builtin templates to load...');
+              var poll = setInterval(function() {
+                $.ajax({
+                  url: createURL('listTemplates'),
+                  data: {
+                    templatefilter: 'all'
+                  },
+                  success: function(data) {
+                    var templates = data.listtemplatesresponse.template ?
+                      data.listtemplatesresponse.template : [];
+                    var builtinTemplates = $.grep(templates, function(template) {
+                      return template.templatetype == 'BUILTIN';
+                    });
+
+                    if (builtinTemplates.length) {
+                      clearInterval(poll);
+                      message('Your CloudStack is ready!');
+                      setTimeout(success, 1000);
                     }
                   }
                 });
