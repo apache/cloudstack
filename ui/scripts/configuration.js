@@ -1385,7 +1385,28 @@
 
           detailView: {
             name: 'Network offering details',
-            actions: {
+            actions: {						
+							edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));
+									array1.push("&availability=" + args.data.availability);								
+                  $.ajax({
+                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var item = json.updatenetworkofferingresponse.networkoffering;											
+                      args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                }
+              },
+												
               enable: {
                 label: 'Enable network offering',
                 messages: {
@@ -1492,7 +1513,8 @@
                 fields: [
                   {
                     name: {
-                      label: 'Name'
+                      label: 'Name',
+                      isEditable: true
                     }
                   },
                   {
@@ -1610,17 +1632,22 @@
   var networkOfferingActionfilter = function(args) {
     var jsonObj = args.context.item;
 
-    if (jsonObj.state == 'Destroyed' || jsonObj.isdefault) {
+    if (jsonObj.state == 'Destroyed') {
       return [];
     }
 
-    var allowedActions = ['destroy'];
-    allowedActions.push("edit");
-    if(jsonObj.state == "Enabled")
-      allowedActions.push("disable");
-    else if(jsonObj.state == "Disabled")
-      allowedActions.push("enable");
+    var allowedActions = [];
+    allowedActions.push("edit");		
+		if(jsonObj.isdefault == false) {
+			allowedActions.push("destroy");
+			if(jsonObj.state == "Enabled")
+				allowedActions.push("disable");
+			else if(jsonObj.state == "Disabled")
+				allowedActions.push("enable");
+		}
+			
     return allowedActions;
+		
   };
 
 })(cloudStack, jQuery);
