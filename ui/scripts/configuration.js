@@ -1,4 +1,7 @@
 (function(cloudStack, $) {
+
+  var requiredNetworkOfferingExists = false;
+
   cloudStack.sections.configuration = {
     title: 'Configuration',
     id: 'configuration',
@@ -1011,6 +1014,14 @@
               async: true,
               success: function(json) {
                 var items = json.listnetworkofferingsresponse.networkoffering;
+																
+								$(items).each(function(){
+								  if(this.availability == "Required") {
+									  requiredNetworkOfferingExists = true;
+										return false; //break each loop
+									}
+								});								
+													
                 args.response.success({
                   actionFilter: networkOfferingActionfilter,
                   data:items
@@ -1115,15 +1126,23 @@
                   inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                   serviceProviderIndex++;
                 });      
-
+												
+								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
+                  inputData['availability'] = 'Optional';								
+														
                 $.ajax({
                   url: createURL('createNetworkOffering'),
                   data: inputData,
                   dataType: 'json',
                   async: true,
                   success: function(data) {
+									  var item = data.createnetworkofferingresponse.networkoffering;
+								
+										if(inputData['availability'] == "Required")
+										  requiredNetworkOfferingExists = true;
+																			
                     args.response.success({
-                      data: data.createnetworkofferingresponse.networkoffering,
+                      data: item,
                       actionFilter: networkOfferingActionfilter
                     });
                   },
@@ -1133,10 +1152,16 @@
                   }
                 });
               },
-
+							
               createForm: {
                 title: 'Add network offering',
-                desc: 'Please specify the network offering',
+                desc: 'Please specify the network offering',																
+								preFilter: function(args) {									
+									if(requiredNetworkOfferingExists == true) 
+										args.$form.find('.form-item[rel=availability]').hide();
+									else
+										args.$form.find('.form-item[rel=availability]').css('display', 'inline-block');								
+								},				
                 fields: {
                   name: { label: 'Name', validation: { required: true } },
 
@@ -1183,8 +1208,7 @@
                       args.response.success({
                         data: [
                           { id: 'Optional', description: 'Optional' },
-                          { id: 'Required', description: 'Required' },
-                          { id: 'Unavailable', description: 'Unavailable' }
+                          { id: 'Required', description: 'Required' }                          
                         ]
                       });
                     }
@@ -1428,7 +1452,10 @@
                   data: {
                     id: args.context.networkOfferings[0].id
                   },
-                  success: function(json) {
+                  success: function(json) {								
+										if(args.context.networkOfferings[0].availability == "Required") 
+										  requiredNetworkOfferingExists = false; //since only one or zero Required network offering can exist
+																		
                     args.response.success();
                   },
                   error: function(data) {
@@ -1530,7 +1557,10 @@
                     data: {
                       id: args.context.networkOfferings[0].id
                     },
-                    success: function(json) {
+                    success: function(json) {			
+											if(args.context.networkOfferings[0].availability == "Required") 
+												requiredNetworkOfferingExists = false; //since only one or zero Required network offering can exist
+																				
                       args.response.success();
                     },
                     error: function(data) {
