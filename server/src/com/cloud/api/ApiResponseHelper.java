@@ -3130,6 +3130,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (Network.Provider serviceProvider : serviceProviders) {
+        	//return only Virtual Router as a provider for the firewall
+        	if (service == Service.Firewall && !(serviceProvider == Provider.VirtualRouter)) {
+        		continue;
+        	} 
+        	
             ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
             serviceProvidersResponses.add(serviceProviderResponse);
         }
