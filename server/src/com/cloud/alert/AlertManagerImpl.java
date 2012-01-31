@@ -300,9 +300,7 @@ public class AlertManagerImpl implements AlertManager {
 	        // Calculate storage pool capacity
 	        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
 	        for (StoragePoolVO pool : storagePools) {
-	            long disk = 0l;
-	            Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
-	            disk = sizes.second();
+	            long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
 	            if (pool.isShared()){
 	            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
 	            }else {
@@ -312,7 +310,7 @@ public class AlertManagerImpl implements AlertManager {
 	        
 	        if (s_logger.isDebugEnabled()) {
 	        	s_logger.debug("Done executing storage capacity update");
-	        	s_logger.debug("Executing capacity updates public ip and Vlans");
+	        	s_logger.debug("Executing capacity updates for public ip and Vlans");
 	        }
 
         	List<DataCenterVO> datacenters = _dcDao.listAll();

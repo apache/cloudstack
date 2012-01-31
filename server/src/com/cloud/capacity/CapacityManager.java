@@ -19,6 +19,8 @@
 package com.cloud.capacity;
 
 import com.cloud.host.HostVO;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
@@ -43,4 +45,12 @@ public interface CapacityManager extends Manager {
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, boolean considerReservedCapacity);
     
 	void updateCapacityForHost(HostVO host);
+    
+	/**
+     * Returns the allocated capacity for the storage pool. If template is passed in it will include its size if its not already present on the pool
+     * @param pool storage pool
+     * @param templateForVmCreation template that will be used for vm creation 
+     * @return total allocated capacity for the storage pool
+     */
+    long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation);
 }

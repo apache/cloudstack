@@ -50,6 +50,15 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateSwiftVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -79,14 +88,23 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     HostDao _hostDao;
     @Inject
     VMInstanceDao _vmDao;
+    @Inject 
+    VolumeDao _volumeDao;
+    @Inject 
+    VMTemplatePoolDao _templatePoolDao;
     @Inject
     AgentManager _agentManager;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    StorageManager _storageMgr;
+    @Inject
+    SwiftManager _swiftMgr;    
 
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
     private boolean _stopped;
+    long _extraBytesPerVolume = 0;
     private float _storageOverProvisioningFactor = 1.0f;
     private float _cpuOverProvisioningFactor = 1.0f;
 
@@ -414,6 +432,54 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
         return hasCapacity;
 
     }
+    
+    @Override
+    public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation){
+      
+        // Get size for all the volumes
+        Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
+        long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
+
+        // Iterate through all templates on this storage pool
+        boolean tmpinstalled = false;
+        List<VMTemplateStoragePoolVO> templatePoolVOs;
+        templatePoolVOs = _templatePoolDao.listByPoolId(pool.getId());
+        
+        for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {            
+            if ((templateForVmCreation != null) && !tmpinstalled && (templatePoolVO.getTemplateId() == templateForVmCreation.getId())) {
+                tmpinstalled = true;
+            }
+            long templateSize = templatePoolVO.getTemplateSize();
+            totalAllocatedSize += templateSize + _extraBytesPerVolume;
+        }
+        
+        // Add the size for the templateForVmCreation if its not already present
+        if ((templateForVmCreation != null) && !tmpinstalled) {
+            // If the template that was passed into this allocator is not installed in the storage pool,
+            // add 3 * (template size on secondary storage) to the running total
+            VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), pool);
+
+            if (templateHostVO == null) {
+                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(templateForVmCreation.getId());
+                if (templateSwiftVO != null) {                                    
+                    long templateSize = templateSwiftVO.getPhysicalSize();
+                    if (templateSize == 0) {
+                        templateSize = templateSwiftVO.getSize();
+                    }
+                    totalAllocatedSize += (templateSize + _extraBytesPerVolume);
+                }
+            } else {
+                long templateSize = templateHostVO.getPhysicalSize();
+                if ( templateSize == 0 ){
+                    templateSize = templateHostVO.getSize();
+                }
+                totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
+            }
+        }
+        
+        return totalAllocatedSize;
+    }
+    
     
     @DB
     @Override
