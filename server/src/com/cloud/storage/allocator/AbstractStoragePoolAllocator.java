@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
@@ -78,8 +79,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject ConfigurationDao _configDao;
     @Inject ClusterDao _clusterDao;
-    @Inject
-    SwiftManager _swiftMgr;
+    @Inject SwiftManager _swiftMgr;
+    @Inject CapacityManager _capacityMgr;
     protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);    
     long _extraBytesPerVolume = 0;
     Random _rand;
@@ -214,54 +215,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 				}
 			}
 		}
-
-		Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
 		
-		long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
-
-		// Iterate through all templates on this storage pool
-		boolean tmpinstalled = false;
-		List<VMTemplateStoragePoolVO> templatePoolVOs;
-		if (templatesInPool != null) {
-			templatePoolVOs = templatesInPool;
-		} else {
-			templatePoolVOs = _templatePoolDao.listByPoolId(pool.getId());
-		}
-
-		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
-			if ((template != null) && !tmpinstalled && (templatePoolVO.getTemplateId() == template.getId())) {
-				tmpinstalled = true;
-			}
-			
-			long templateSize = templatePoolVO.getTemplateSize();
-			totalAllocatedSize += templateSize + _extraBytesPerVolume;
-		}
-
-		if ((template != null) && !tmpinstalled) {
-		    // If the template that was passed into this allocator is not installed in the storage pool,
-		    // add 3 * (template size on secondary storage) to the running total
-		    VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(template.getId(), pool);
-
-		    if (templateHostVO == null) {
-                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(template.getId());
-                if (templateSwiftVO == null) {
-                    s_logger.error("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
-                    return false;
-                }
-                long templateSize = templateSwiftVO.getPhysicalSize();
-                if (templateSize == 0) {
-                    templateSize = templateSwiftVO.getSize();
-                }
-                totalAllocatedSize += (templateSize + _extraBytesPerVolume);
-		    } else {
-		        long templateSize = templateHostVO.getPhysicalSize();
-		        if ( templateSize == 0 ){
-		            templateSize = templateHostVO.getSize();
-		        }
-		        totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
-		    }
-		}
-
+		long totalAllocatedSize  = _capacityMgr.getAllocatedPoolCapacity(pool, null);
 		long askingSize = dskCh.getSize();
 		
 		long totalOverProvCapacity;
