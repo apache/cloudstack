@@ -230,7 +230,11 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     @Override
     public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type) {
         long max = Resource.RESOURCE_UNLIMITED;
-
+        
+        //no limits on ROOT domain
+        if(domain.getId() == Domain.ROOT_DOMAIN){
+            return Resource.RESOURCE_UNLIMITED;
+        }
         // Check account
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(domain.getId(), ResourceOwnerType.Domain, type);
 
@@ -240,6 +244,10 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             // check domain hierarchy
             Long domainId = domain.getParent();
             while ((domainId != null) && (limit == null)) {
+                
+                if(domainId == Domain.ROOT_DOMAIN){
+                    return Resource.RESOURCE_UNLIMITED;
+                }
                 limit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
                 DomainVO tmpDomain = _domainDao.findById(domainId);
                 domainId = tmpDomain.getParent();
@@ -299,14 +307,16 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
 
             while (domainId != null) {
                 DomainVO domain = _domainDao.findById(domainId);
-                ResourceLimitVO domainLimit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
-                if (domainLimit != null && domainLimit.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
-                    long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
-                    if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                        throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId + " has been exceeded.", type);
+                //no limit check if it is ROOT domain
+                if(domainId != Domain.ROOT_DOMAIN){
+                    ResourceLimitVO domainLimit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
+                    if (domainLimit != null && domainLimit.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
+                        long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
+                        if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
+                            throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId + " has been exceeded.", type);
+                        }
                     }
                 }
-                
                 domainId = domain.getParent();
             }
         } finally {
@@ -502,6 +512,12 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             Domain domain = _entityMgr.findById(Domain.class, domainId);
            
             _accountMgr.checkAccess(caller, domain);
+
+            if (Domain.ROOT_DOMAIN == domainId.longValue()) {
+                // no one can add limits on ROOT domain, disallow...
+                throw new PermissionDeniedException("Cannot update resource limit for ROOT domain " + domainId + ", permission denied");
+            }
+
             
             if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...

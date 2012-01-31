@@ -616,3 +616,5 @@ UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from account ac
 update vm_template set removed=now() where id=2;
 
 DELETE from `cloud`.`configuration` where name='firewall.rule.ui.enabled';
+
+DELETE FROM `cloud`.`resource_limit` WHERE domain_id = 1 AND account_id IS NULL;
