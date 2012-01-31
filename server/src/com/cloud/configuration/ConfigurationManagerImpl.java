@@ -3526,14 +3526,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
             } else {
             	if (availability == NetworkOffering.Availability.Required) {
-	            	boolean canOffBeRequired = (offering.getGuestType() == GuestType.Isolated && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat));
+	            	boolean canOffBeRequired = (offeringToUpdate.getGuestType() == GuestType.Isolated && _networkMgr.areServicesSupportedByNetworkOffering(offeringToUpdate.getId(), Service.SourceNat));
 	                if (!canOffBeRequired) {
 	                	throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with " + Service.SourceNat.getName() + " enabled");
 	                }
 	                
 	                //only one network offering in the system can be Required
 	                List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-	                if (!offerings.isEmpty() || offerings.get(0).getId() != offering.getId()) {
+	                if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
 	                	throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
 	                }
             	}
