@@ -608,19 +608,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
+                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithInvestigation(attache, Event.ShutdownRequested);
+                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                    	handleDisconnectWithInvestigation(attache, Event.ShutdownRequested);
+                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -634,7 +634,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-        	handleDisconnectWithInvestigation(attache, Event.AgentDisconnected);
+            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+            throw new CloudRuntimeException("ReadyCommand failed for host " + attache.getId());
         }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
