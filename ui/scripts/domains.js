@@ -347,8 +347,8 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
     if(isAdmin()) {
-      allowedActions.push("create");
-      if(jsonObj.id != 1) { //"ROOT" domain is not allowed to edit or delete
+      allowedActions.push("create");     
+			if(jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to edit or delete
         allowedActions.push("edit"); //merge updateResourceCount into edit
         allowedActions.push("delete");
       }
