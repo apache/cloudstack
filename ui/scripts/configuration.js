@@ -1296,21 +1296,31 @@
                             };
 
                             fields[id.isEnabled] = { label: displayName, isBoolean: true };
-                            fields[id.provider] = {
-                              label: displayName + ' Provider',
-                              isHidden: true,
-                              dependsOn: id.isEnabled,
-                              select: function(args) {
-                                args.response.success({
-                                  data: $.map(providers, function(provider) {
-                                    return {
-                                      id: provider.name,
-                                      description: provider.name
-                                    };
-                                  })
-                                });
-                              }
-                            };
+																												
+														if(providers != null && providers.length > 1) {	//present provider dropdown when there are multiple providers for a service												
+															fields[id.provider] = {
+																label: displayName + ' Provider',
+																isHidden: true,
+																dependsOn: id.isEnabled,
+																select: function(args) {
+																	args.response.success({
+																		data: $.map(providers, function(provider) {
+																			return {
+																				id: provider.name,
+																				description: provider.name
+																			};
+																		})
+																	});
+																}
+															};
+														}
+														else if(providers != null && providers.length == 1){ //present hidden field when there is only one provider for a service		
+														  fields[id.provider] = {
+															  label: displayName + ' Provider',
+																isHidden: true,
+																defaultValue: providers[0].name
+															};
+														}														
                           });
 
                           args.response.success({
