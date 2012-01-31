@@ -118,6 +118,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Column(name="template_tag")
     private String templateTag;
+    
+    @Transient
     Map details;
 
     @Override
