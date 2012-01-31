@@ -1615,8 +1615,8 @@
                         args.response.success({data: items});
                       }
                     },
-                    isdefault: {
-                      label: 'Default',
+                    isdefault: { //created by system by default
+                      label: 'Created by system',
                       converter: cloudStack.converters.toBooleanText
                     },
                     specifyvlan: {
