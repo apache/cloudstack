@@ -283,17 +283,31 @@
      * Layout/behavior for each step in wizard
      */
     var steps = {
+      eula: function(args) {
+        var $intro = $('<div></div>').addClass('intro eula');
+        var $title = $('<div></div>').addClass('title').html('License Agreement');
+        var $subtitle = $('<div></div>').addClass('subtitle').html('Please accept the CloudStack&#8482 EULA before installing.');
+        var $copy = getCopy('eula', $('<div></div>').addClass('eula-copy'));
+        var $continue = elems.nextButton('Agree');
+
+        $continue.click(function() {
+          goTo('intro');
+
+          return false;
+        });
+        
+        return $intro.append($title, $subtitle,
+                             $copy,
+                             $continue);
+      },
+      
       intro: function(args) {
         var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
-        var $title = $('<div></div>').addClass('title')
-              .html('What is CloudStack&#8482?');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('Introduction to CloudStack&#8482');
+        var $title = $('<div></div>').addClass('title').html('What is CloudStack&#8482?');
+        var $subtitle = $('<div></div>').addClass('subtitle').html('Introduction to CloudStack&#8482');
         var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
         var $continue = elems.nextButton('Continue with basic installation');
-        var $advanced = elems.nextButton(
-          'I have used Cloudstack before, skip this guide'
-        ).addClass('advanced-installation');
+        var $advanced = elems.nextButton('I have used Cloudstack before, skip this guide').addClass('advanced-installation');
 
         $continue.click(function() {
           goTo('changeUser');
@@ -307,12 +321,10 @@
           return false;
         });
 
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $advanced,
-          $continue
-        );
+        return $intro.append($title, $subtitle,
+                             $copy,
+                             $advanced,
+                             $continue);
       },
 
       changeUser: function(args) {
@@ -755,7 +767,7 @@
       }
     };
 
-    var initialStep = steps.intro().addClass('step');
+    var initialStep = steps.eula().addClass('step');
     showDiagram('');
     $('html body').addClass('install-wizard');
 

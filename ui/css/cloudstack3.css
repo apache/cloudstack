@@ -492,6 +492,31 @@ body.login {
   position: absolute;
 }
 
+/*** EULA*/
+.install-wizard .eula-copy {
+  width: 645px;
+  height: 480px;
+  overflow: auto;
+  background: #FFFFFF;
+  border: 1px solid #BCBCBC;
+  /*+box-shadow:0px 4px 10px #B9B9B9;*/
+  -moz-box-shadow: 0px 4px 10px #B9B9B9;
+  -webkit-box-shadow: 0px 4px 10px #B9B9B9;
+  -o-box-shadow: 0px 4px 10px #B9B9B9;
+  box-shadow: 0px 4px 10px #B9B9B9;
+  padding: 8px 20px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.install-wizard .eula-copy p {
+  font-size: 12px;
+  margin-top: 21px;
+}
+
 /*** Intro*/
 .install-wizard .step.intro.what-is-cloudstack p {
   background: url(../images/bg-what-is-cloudstack.png) no-repeat 50% 237px;
