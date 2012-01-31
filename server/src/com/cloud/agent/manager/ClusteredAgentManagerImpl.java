@@ -169,7 +169,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             if (s_logger.isInfoEnabled()) {
                                 s_logger.info(host + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
                             }
-                            removeAgent(agentattache, Status.Disconnected);
+                            removeAgent(agentattache, Status.Disconnected, null, null, false);
                         } else {
                             continue;
                         }
@@ -286,16 +286,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected boolean handleDisconnect(AgentAttache attache, Status.Event event, boolean investigate) {
-        return handleDisconnect(attache, event, investigate, true);
+    protected boolean handleDisconnect(AgentAttache attache, Status.Event event, boolean investigate, boolean ha) {
+        return handleDisconnect(attache, event, investigate, true, ha);
     }
 
-    protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
+    protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast, boolean ha) {
         if (agent == null) {
             return true;
         }
 
-        if (super.handleDisconnect(agent, event, investigate)) {
+        if (super.handleDisconnect(agent, event, investigate, ha)) {
             if (broadcast) {
                 notifyNodesInCluster(agent);
             }
@@ -709,22 +709,22 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public void removeAgent(AgentAttache attache, Status nextState) {
+    public void removeAgent(AgentAttache attache, Status nextState, Event event, Boolean investigate, boolean ha) {
         if (attache == null) {
             return;
         }
 
-        super.removeAgent(attache, nextState);
+        super.removeAgent(attache, nextState, event, investigate, ha);
     }
 
     @Override
     public boolean executeRebalanceRequest(long agentId, long currentOwnerId, long futureOwnerId, Event event) throws AgentUnavailableException, OperationTimedoutException {
-    	boolean result = false;
+        boolean result = false;
         if (event == Event.RequestAgentRebalance) {
             return setToWaitForRebalance(agentId, currentOwnerId, futureOwnerId);
         } else if (event == Event.StartAgentRebalance) {
             try {
-            	result = rebalanceHost(agentId, currentOwnerId, futureOwnerId);
+                result = rebalanceHost(agentId, currentOwnerId, futureOwnerId);
             } catch (Exception e) {
                 s_logger.warn("Unable to rebalance host id=" + agentId, e);
             }
@@ -1042,7 +1042,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         try {
             s_logger.debug("Management server " + _nodeId + " failed to rebalance agent " + hostId);
             _hostTransferDao.completeAgentTransfer(hostId);
-            handleDisconnect(findAttache(hostId), Event.RebalanceFailed, false);
+            handleDisconnect(findAttache(hostId), Event.RebalanceFailed, false, false);
         } catch (Exception ex) {
             s_logger.warn("Failed to reconnect host id=" + hostId + " as a part of failed rebalance task cleanup");
         }
@@ -1059,7 +1059,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         synchronized (_agents) {
             ClusteredDirectAgentAttache attache = (ClusteredDirectAgentAttache)_agents.get(hostId);
             if (attache != null && attache.getQueueSize() == 0 && attache.getNonRecurringListenersSize() == 0) {
-            	handleDisconnect(attache, Event.StartAgentRebalance, false);
+                handleDisconnect(attache, Event.StartAgentRebalance, false, false);
                 ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)createAttache(hostId);
                 if (forwardAttache == null) {
                     s_logger.warn("Unable to create a forward attache for the host " + hostId + " as a part of rebalance process");

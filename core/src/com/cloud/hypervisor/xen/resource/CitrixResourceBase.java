@@ -4098,9 +4098,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
     
     protected SetupAnswer execute(SetupCommand cmd) {
-        Connection conn = getConnection();
-        setupServer(conn);
         try {
+            Connection conn = getConnection();
+            setupServer(conn);
             if (!setIptables(conn)) {
                 s_logger.warn("set xenserver Iptable failed");
                 return null;
