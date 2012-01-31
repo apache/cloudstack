@@ -64,7 +64,7 @@
 
     securityGroups: function(args) {
       var allowedActions = [];
-      var isSecurityGroupOwner = isAdmin() ||
+      var isSecurityGroupOwner = isAdmin() || isDomainAdmin() ||
         args.context.item.account == args.context.users[0].account;
 
       if (isSecurityGroupOwner &&
