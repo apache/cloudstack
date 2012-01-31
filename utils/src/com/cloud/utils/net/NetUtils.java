@@ -42,7 +42,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 
@@ -58,7 +57,7 @@ public class NetUtils {
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     public final static String ALL_PROTO = "all";
-    
+
     public final static String ALL_CIDRS = "0.0.0.0/0";
 
     private final static Random _rand = new Random(System.currentTimeMillis());
@@ -120,8 +119,8 @@ public class NetUtils {
     }
 
     public static String[] getLocalCidrs() {
-    	String defaultHostIp = getDefaultHostIp();
-    	
+        String defaultHostIp = getDefaultHostIp();
+
         List<String> cidrList = new ArrayList<String>();
         try {
             for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
@@ -132,7 +131,7 @@ public class NetUtils {
                         if (prefixLength < 32 && prefixLength > 0) {
                             String ip = ipFromInetAddress(addr);
                             if(ip.equalsIgnoreCase(defaultHostIp))
-                            	cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
+                                cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
                         }
                     }
                 }
@@ -145,67 +144,67 @@ public class NetUtils {
     }
 
     private static boolean isWindows() {
-    	String os = System.getProperty("os.name");
-    	if(os != null && os.startsWith("Windows"))
-    		return true;
-    	
-    	return false;
-    }
-    
-	public static String getDefaultHostIp() {
-		if(isWindows()) {
-	        Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
-	    	try {
-	    	    Process result = Runtime.getRuntime().exec("route print -4");
-	    	    BufferedReader output = new BufferedReader
-	    	        (new InputStreamReader(result.getInputStream()));
+        String os = System.getProperty("os.name");
+        if(os != null && os.startsWith("Windows"))
+            return true;
 
-	    	    String line = output.readLine();
-	    	    while(line != null){
-	    	    	Matcher matcher = pattern.matcher(line);
-	    	        if (matcher.find()) {
-	    	        	return matcher.group(2);
-	    	        }
-	    	        line = output.readLine();
-	    	    }
-	    	} catch( Exception e ) { 
-	    	}    	
-	    	return null;
-		} else {
-			NetworkInterface nic = null;
-			String pubNic = getDefaultEthDevice();
-			
-			if (pubNic == null) {
-				return null;
-			}
-			
-			try {
-				nic = NetworkInterface.getByName(pubNic);
-			} catch (final SocketException e) {
-				return null;
-			}
-			
-			String[] info = NetUtils.getNetworkParams(nic);
-			return info[0];
-		}
-	}
-	
-	public static String getDefaultEthDevice() {
-		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
-		
-		if (defaultRoute == null) {
-			return null;
-		}
-		
-		String[] defaultRouteList = defaultRoute.split("\\s+");
-		
-		if (defaultRouteList.length != 8) {
-			return null;
-		}
-		
-		return defaultRouteList[7];
-	}
-    
+        return false;
+    }
+
+    public static String getDefaultHostIp() {
+        if(isWindows()) {
+            Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
+            try {
+                Process result = Runtime.getRuntime().exec("route print -4");
+                BufferedReader output = new BufferedReader
+                        (new InputStreamReader(result.getInputStream()));
+
+                String line = output.readLine();
+                while(line != null){
+                    Matcher matcher = pattern.matcher(line);
+                    if (matcher.find()) {
+                        return matcher.group(2);
+                    }
+                    line = output.readLine();
+                }
+            } catch( Exception e ) { 
+            }    	
+            return null;
+        } else {
+            NetworkInterface nic = null;
+            String pubNic = getDefaultEthDevice();
+
+            if (pubNic == null) {
+                return null;
+            }
+
+            try {
+                nic = NetworkInterface.getByName(pubNic);
+            } catch (final SocketException e) {
+                return null;
+            }
+
+            String[] info = NetUtils.getNetworkParams(nic);
+            return info[0];
+        }
+    }
+
+    public static String getDefaultEthDevice() {
+        String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
+
+        if (defaultRoute == null) {
+            return null;
+        }
+
+        String[] defaultRouteList = defaultRoute.split("\\s+");
+
+        if (defaultRouteList.length != 8) {
+            return null;
+        }
+
+        return defaultRouteList[7];
+    }
+
     public static InetAddress getFirstNonLoopbackLocalInetAddress() {
         InetAddress[] addrs = getAllLocalInetAddresses();
         if (addrs != null) {
@@ -645,6 +644,50 @@ public class NetUtils {
         return result;
     }
 
+    /**
+     * Given a cidr, this method returns an ip address within the range but
+     * is not in the avoid list.
+     * 
+     * @param startIp ip that the cidr starts with
+     * @param size size of the cidr
+     * @param avoid set of ips to avoid
+     * @return ip that is within the cidr range but not in the avoid set.  -1 if unable to find one.
+     */
+    public static long getRandomIpFromCidr(String startIp, int size, Set<Long> avoid) {
+        return getRandomIpFromCidr(ip2Long(startIp), size, avoid);
+
+    }
+
+    /**
+     * Given a cidr, this method returns an ip address within the range but
+     * is not in the avoid list.
+     * 
+     * @param startIp ip that the cidr starts with
+     * @param size size of the cidr
+     * @param avoid set of ips to avoid
+     * @return ip that is within the cidr range but not in the avoid set.  -1 if unable to find one.
+     */
+    public static long getRandomIpFromCidr(long cidr, int size, Set<Long> avoid) {
+        assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+
+        long startNetMask = ip2Long(getCidrNetmask(size));
+        long startIp = (cidr & startNetMask) + 2;
+        int range = 1 << (32 - size);
+
+        if (avoid.size() > range) {
+            return -1;
+        }
+
+        for (int i = 0; i < range; i++) {
+            int next = _rand.nextInt(range);
+            if (!avoid.contains(startIp + next)) {
+                return startIp + next;
+            }
+        }
+
+        return -1;
+    }
+
     public static String getIpRangeStartIpFromCidr(String cidr, long size) {
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
@@ -921,67 +964,6 @@ public class NetUtils {
         }
     }
 
-    public static void main(String[] args) {
-        configLog4j();
-        
-        if (args.length == 0) {
-            System.out.println("Must specify at least one parameter");
-        }
-        if (args[0].equals("m2l")) {
-            System.out.println(mac2Long(args[1]));
-        } else if (args[0].equals("l2m")) {
-            System.out.println(long2Mac(NumbersUtil.parseLong(args[1], 0)));
-        } else if (args[0].equals("i2l")) {
-            System.out.println(ip2Long(args[1]));
-        } else if (args[0].equals("nic")) {
-            if (args.length < 2) {
-                System.out.println("Needs the nic information");
-                System.exit(1);
-            }
-            String[] result = getNicParams(args[1]);
-            if (result == null) {
-                System.out.println("Unable to get information for " + args[1]);
-            } else {
-                if (result[0] != null) {
-                    System.out.println("Ip Address: " + result[0]);
-                }
-                if (result[1] != null) {
-                    System.out.println("Mac Address: " + result[1]);
-                }
-                if (result[2] != null) {
-                    System.out.println("Netmask: " + result[2]);
-                }
-            }
-        } else if (args[0].equals("range")) {
-            if (args.length < 4) {
-                String[] result = getIpRangeFromCidr(args[1], Long.parseLong(args[2]));
-                System.out.println("Range is " + result[0] + "-" + result[1]);
-            } else {
-                System.err.println("Needs 3 parameters: " + args.length);
-            }
-        } else if (args[0].equals("ip2")) {
-            Set<Long> result = getAllIpsFromCidr("10.1.1.192", 24);
-            System.out.println("Number of ips: " + result.size());
-
-        } else if (args[0].equals("within")) {
-            String cidrA = args[1];
-            String cidrB = args[2];
-            System.out.println(NetUtils.isNetworkAWithinNetworkB(cidrA, cidrB));
-
-        } else if (args[0].equals("tocidr")) {
-            String ip = args[1];
-            String mask = args[2];
-            System.out.println(NetUtils.ipAndNetMaskToCidr(ip, mask));
-        } else if (args[0].equals("ipmasktorange")) {
-            String ip = args[1];
-            String mask = args[2];
-            String[] range = NetUtils.ipAndNetMaskToRange(ip, mask);
-
-            System.out.println(range[0] + " : " + range[1]);
-        } else {
-            System.out.println(long2Ip(NumbersUtil.parseLong(args[1], 0)));
-        }
-    }
 
     public static boolean verifyDomainNameLabel(String hostName, boolean isHostName) {
         // must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a
@@ -1060,10 +1042,10 @@ public class NetUtils {
             return false;
         }
     }
-    
+
     public static boolean verifyInstanceName(String instanceName) {
         //instance name for cloudstack vms shouldn't contain - and spaces
-       if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
+        if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
             s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
         } 

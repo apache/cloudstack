@@ -17,7 +17,10 @@
  */
 package com.cloud.network.guru;
 
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.ejb.Local;
 
@@ -55,6 +58,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -81,29 +85,29 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     Random _rand = new Random(System.currentTimeMillis());
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
-    
+
     String _defaultGateway;
     String _defaultCidr;
 
     protected GuestNetworkGuru() {
         super();
     }
-    
+
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-    	for (TrafficType t : _trafficTypes) {
-    		if (t == type) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (TrafficType t : _trafficTypes) {
+            if (t == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-    	return _trafficTypes;
+        return _trafficTypes;
     }
-    
+
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // This guru handles only Guest Isolated network that supports Source nat service
         if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated) {
@@ -145,11 +149,11 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
-    	if (network.getSpecifyIpRanges()) {
-    		if (s_logger.isDebugEnabled()) {
+        if (network.getSpecifyIpRanges()) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
             }
-        	
+
             IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
             if (ip != null) {
                 Transaction txn = Transaction.currentTxn();
@@ -159,7 +163,97 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 txn.commit();
             }
             nic.deallocate();
-    	}
+        }
+    }
+
+//    @Override
+//    @DB
+//    public Ip4Address acquireIp4Address(Network network, Ip4Address requestedIp, String reservationId) {
+//        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+//        String[] cidr = network.getCidr().split("/");
+//        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
+//        Set<Long> usedIps = new TreeSet<Long>();
+//
+//        if (requestedIp != null && requestedIp.equals(network.getGateway())) {
+//            s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
+//            return null;
+//        }
+//
+//        for (String ip : ips) {
+//            if (requestedIp != null && requestedIp.equals(ip)) {
+//                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network " + network);
+//                return null;
+//            }
+//
+//            usedIps.add(NetUtils.ip2Long(ip));
+//        }
+//        if (usedIps.size() != 0) {
+//            allPossibleIps.removeAll(usedIps);
+//        }
+//        if (allPossibleIps.isEmpty()) {
+//            return null;
+//        }
+//
+//        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
+//
+//        if (requestedIp != null) {
+//            //check that requested ip has the same cidr
+//            boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp, NetUtils.long2Ip(array[0]), Integer.parseInt(cidr[1]));
+//            if (!isSameCidr) {
+//                s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
+//                return null;
+//            } else {
+//                return requestedIp;
+//            }
+//        }
+//
+//        String result;
+//        do {
+//            result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
+//        } while (result.split("\\.")[3].equals("1"));
+//        return result;
+//    }
+
+    public Ip4Address acquireIp4Address(Network network, Ip4Address requestedIp, String reservationId) {
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        String[] cidr = network.getCidr().split("/");
+        Set<Long> usedIps = new TreeSet<Long>();
+
+        if (requestedIp != null && requestedIp.equals(network.getGateway())) {
+            s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
+            return null;
+        }
+
+        for (String ip : ips) {
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+
+        if (network.getGateway() != null) {
+            usedIps.add(NetUtils.ip2Long(network.getGateway()));
+        }
+
+        if (requestedIp != null) {
+            if (usedIps.contains(requestedIp.toLong())) {
+                s_logger.warn("Requested ip address " + requestedIp + " is already in used in " + network);
+                return null;
+            }
+            //check that requested ip has the same cidr
+            boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp.ip4(), cidr[0], Integer.parseInt(cidr[1]));
+            if (!isSameCidr) {
+                s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
+                return null;
+            }
+
+            return requestedIp;
+        }
+
+        long ip = NetUtils.getRandomIpFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+        if (ip == -1) {
+            s_logger.warn("Unable to allocate any more ip address in " + network);
+            return null;
+        }
+
+        return new Ip4Address(ip);
     }
 
     @Override
@@ -167,7 +261,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
-        
+
         //get physical network id
         long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags());
 
@@ -197,7 +291,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    InsufficientAddressCapacityException {
 
         assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling me when the traffic type is : " + network.getTrafficType();
 
@@ -215,7 +309,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
                 String guestIp = null;
                 if (network.getSpecifyIpRanges()) {
-                	_networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
+                    _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
                 } else {
                     guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
                     if (guestIp == null) {

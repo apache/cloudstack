@@ -118,7 +118,7 @@ public interface NetworkGuru extends Adapter {
      * allocate more resources before any more guest network can be implemented.
      */
     Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException;
-    
+
     /**
      * Once a guest network has been designed, virtual machines can be 
      * created.  allocated() is called for the NetworkGuru to design a nic 
@@ -136,7 +136,7 @@ public interface NetworkGuru extends Adapter {
      *         to be assigned.
      */
     NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
-    
+
     /**
      * Once a guest network is implemented, then the virtual machine must
      * be allocated its resources in order for it to participate within the
@@ -210,8 +210,9 @@ public interface NetworkGuru extends Adapter {
     boolean trash(Network network, NetworkOffering offering, Account owner);
 
     void updateNetworkProfile(NetworkProfile networkProfile);
-    
+
     TrafficType[] getSupportedTrafficType();
-    
+
     boolean isMyTrafficType(TrafficType type);
+
 }
