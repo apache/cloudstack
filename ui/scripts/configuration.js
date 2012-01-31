@@ -1192,18 +1192,25 @@
 																						
 											args.$select.change(function() {											  
 												var $form = $(this).closest("form");
-												if($(this).val() == "Shared") {												   
+												if($(this).val() == "Shared") {
+                          $form.find('[rel=availability]').hide();
                           $form.find('.form-item[rel=specifyVlan]').hide();
 												}
 												else {  //$(this).val() == "Isolated"
+                          if ($form.find('input[name=\"service.SourceNat.isEnabled\"]').is(':checked')) {
+                            $form.find('[rel=availability]').css('display', 'inline-block');
+                          }
+                              
 												  $form.find('.form-item[rel=specifyVlan]').css('display', 'inline-block');
 												}												
-											});																			
+											});
                     }
                   },
 
                   availability: {
                     label: 'Availability',
+                    isHidden: true,
+                    dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1211,6 +1218,10 @@
                           { id: 'Required', description: 'Required' }                          
                         ]
                       });
+
+                      setTimeout(function() {
+                        args.$select.closest('.form-item').hide();
+                      }, 10);
                     }
                   },
 
@@ -1271,7 +1282,7 @@
                             case 'Dns': displayName = 'DNS'; break;
                             case 'Lb': displayName = 'Load Balancer'; break;
                             case 'SourceNat': displayName = 'Source NAT'; break;
-                            case 'StaticNat': displayName = 'Source NAT'; break;
+                            case 'StaticNat': displayName = 'Static NAT'; break;
                             case 'PortForwarding': displayName = 'Port Forwarding'; break;
                             case 'SecurityGroup': displayName = 'Security Groups'; break;
                             case 'UserData': displayName = 'User Data'; break;
