@@ -1302,14 +1302,18 @@
 																label: displayName + ' Provider',
 																isHidden: true,
 																dependsOn: id.isEnabled,
-																select: function(args) {
+																select: function(args) {																
+																	//Virtual Router needs to be the first choice in provider dropdown (Bug 12509)																	
+																	var items = [];
+																	$(providers).each(function(){
+																	  if(this.name == "VirtualRouter")
+																		  items.unshift({id: this.name, description: this.name});
+																		else
+																		  items.push({id: this.name, description: this.name});
+																	});
+																																		
 																	args.response.success({
-																		data: $.map(providers, function(provider) {
-																			return {
-																				id: provider.name,
-																				description: provider.name
-																			};
-																		})
+																		data: items
 																	});
 																}
 															};
