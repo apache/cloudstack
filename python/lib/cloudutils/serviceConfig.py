@@ -321,6 +321,33 @@ class cgroupConfig(serviceCfgBase):
             logging.debug(formatExceptionInfo())
             return False
         
+class nfsConfig(serviceCfgBase):
+    def __init__(self, syscfg):
+        super(nfsConfig, self).__init__(syscfg)
+        self.serviceName = "Nfs"
+
+    def config(self):
+        try:
+            if not os.path.exists("/etc/nfsmount.conf"):
+                return True
+            
+            cfo = configFileOps("/etc/nfsmount.conf")
+            cfo.addEntry("AC", "False")
+            cfo.save()
+            
+            self.syscfg.svo.enableService("rpcbind")
+            self.syscfg.svo.stopService("rpcbind")
+            self.syscfg.svo.startService("rpcbind")
+            
+            self.syscfg.svo.enableService("nfs")
+            self.syscfg.svo.stopService("nfs")
+            self.syscfg.svo.startService("nfs")
+            
+            return True
+        except:
+            logging.debug(formatExceptionInfo())
+            return False
+            
 class securityPolicyConfigUbuntu(serviceCfgBase):
     def __init__(self, syscfg):
         super(securityPolicyConfigUbuntu, self).__init__(syscfg)
