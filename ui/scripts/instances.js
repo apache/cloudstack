@@ -527,7 +527,8 @@
           }
         },
         stop: {
-          label: 'Stop instance',					
+          label: 'Stop instance',
+          addRow: 'false',
 					createForm: {
 						title: 'Stop instance',
 						desc: 'Please confirm that you want to stop this instance',
