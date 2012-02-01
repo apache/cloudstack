@@ -1278,7 +1278,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         host = ApiDBUtils.findHostById(userVm.getHostId());
                         hosts.put(host.getId(), host);
                     }
-                    if (host.getStatus() == com.cloud.host.Status.Alert) {
+                    if (host.getStatus() != com.cloud.host.Status.Up) {
                     	userVmResponse.setState(VirtualMachine.State.Unknown.toString());
                     } else {
                     	userVmResponse.setState(userVm.getState().toString());
