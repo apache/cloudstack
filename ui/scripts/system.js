@@ -1129,8 +1129,9 @@
 											}
 										}
 										
+										//passing projectid=-1 will return all (includeing project-specific and non-project-specific), but passing listAll=true won't return all (won't return project-specific)
                     $.ajax({
-                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
@@ -1411,7 +1412,11 @@
                             networkdomain: {
                               label: 'Network domain',
                               isEditable: true
-                            }
+                            },
+														
+														domain: { label: 'Domain' },
+														account: { label: 'Account' },
+														project: { label: 'Project' }														
                           }
                         ],
                         dataProvider: function(args) {    
