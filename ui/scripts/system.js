@@ -2917,10 +2917,6 @@
                     success: function(json) {
                       swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingSwift ?
                         true : false;
-
-                      cloudStack.dialog.notice({
-                        message: 'Swift configured. Note: When you leave this page, you will not be able to re-configure Swift again.'
-                      });
                     },
 
                     error: function(json) {
@@ -2956,6 +2952,10 @@
                     success: function(json) {
 										  havingSwift = true;
                       args.response.success();
+                      
+                      cloudStack.dialog.notice({
+                        message: 'Swift configured. Note: When you leave this page, you will not be able to re-configure Swift again.'
+                      });
                     },
                     error: function(json) {
                       args.response.error(parseXMLHttpResponse(json));
