@@ -539,7 +539,10 @@
     var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
 
     if (filters)
-      $.each(filters, function(key) {
+      $.each(filters, function(key) {			  
+				if(this.preFilter != null && this.preFilter() == false) {
+				  return true; //skip to next item in each loop
+				}				
         var $option = $('<option>').attr({
           value: key
         }).html(this.label);

@@ -10,11 +10,19 @@
     listView: {
       section: 'instances',
       filters: {
-	    all: { label: 'All' },
+	      all: { label: 'All' },
         mine: { label: 'Mine' },
         running: { label: 'Running' },
         stopped: { label: 'Stopped' },
-        destroyed: { label: 'Destroyed' }
+        destroyed: { 				  
+					preFilter: function(args) {					  
+						if (isAdmin() || isDomainAdmin())
+						  return true;
+						else						
+						  return false;
+					},
+					label: 'Destroyed',
+				}
       },
       fields: {
         name: { label: 'Name', editable: true },
