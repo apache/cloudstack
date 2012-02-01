@@ -1426,7 +1426,14 @@
                   $.ajax({
                     url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + array1.join("")),
                     dataType: "json",
-                    success: function(json) {
+                    success: function(json) {										 									
+											//if availability is being updated from Required to Optional
+										  if(args.context.networkOfferings[0].availability == "Required" && args.data.availability == "Optional") 
+										    requiredNetworkOfferingExists = false;											
+											//if availability is being updated from Optional to Required
+										  if(args.context.networkOfferings[0].availability == "Optional" && args.data.availability == "Required") 
+										    requiredNetworkOfferingExists = true;
+																							
                       var item = json.updatenetworkofferingresponse.networkoffering;											
                       args.response.success({data: item});
                     },
