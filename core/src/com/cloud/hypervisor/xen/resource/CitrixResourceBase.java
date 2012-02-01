@@ -1625,10 +1625,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
             if (sourceNat) {
-                args += " -f";
-                args += " -l ";
-                args += publicIpAddress + "/" + cidrSize;
-            } else if (firstIP) {
+                args += " -s";
+            } 
+            if (firstIP) {
                 args += " -f";
                 args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;

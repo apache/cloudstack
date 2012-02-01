@@ -204,10 +204,33 @@ add_routing() {
   fi
   return 0;
 }
+add_snat() {
+  if [ "$sflag" == "0" ]
+  then
+    return 0;
+  fi
 
-add_nat_entry() {
   local pubIp=$1
-  logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+  sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+  return $?
+}
+remove_snat() {
+  if [ "$sflag" == "0" ]
+  then
+    return 0;
+  fi
+
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Removing SourceNAT $pubIp on interface $ethDev"
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
+  return $?
+}
+add_first_ip() {
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Adding first ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   local mask=$(echo $1 | awk -F'/' '{print $2}')
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
@@ -220,18 +243,20 @@ add_nat_entry() {
     # remove if duplicat ip with 32 mask, this happens when we are promting the ip to primary
        sudo ip addr del dev $ethDev $ipNoMask/32 > /dev/null
   fi
+
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
   sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
-  sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+
+  add_snat $1
   if [ $? -gt 0  -a $? -ne 2 ]
   then
-     logger -t cloud "$(basename $0):Failed adding nat entry for ip $pubIp on interface $ethDev"
+     logger -t cloud "$(basename $0):Failed adding source nat entry for ip $pubIp on interface $ethDev"
      return 1
   fi
-  logger -t cloud "$(basename $0):Added nat entry for ip $pubIp on interface $ethDev"
+
+  logger -t cloud "$(basename $0):Added first ip $pubIp on interface $ethDev"
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
@@ -242,22 +267,24 @@ add_nat_entry() {
   return 0
 }
 
-del_nat_entry() {
+remove_first_ip() {
   local pubIp=$1
-  logger -t cloud "$(basename $0):Deleting nat entry for ip $pubIp on interface $ethDev"
+  logger -t cloud "$(basename $0):Removing first ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   local mask=$(echo $1 | awk -F'/' '{print $2}')
   [ "$mask" == "" ] && mask="32"
+
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
+  remove_snat $1
+  
   sudo ip addr del dev $ethDev "$ipNoMask/$mask"
- 
-  remove_routing $1
   if [ $? -gt 0  -a $? -ne 2 ]
   then
+     remove_routing $1
      return 1
   fi
+  remove_routing $1
 
   return $?
 }
@@ -271,7 +298,7 @@ add_an_ip () {
   local old_state=$?
 
   sudo ip addr add dev $ethDev $pubIp ;
-
+  add_snat $1
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
@@ -289,12 +316,14 @@ remove_an_ip () {
   local mask=$(echo $1 | awk -F'/' '{print $2}')
   local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
   [ "$existingIpMask" == "" ] && return 0
+  remove_snat $1
   local existingMask=$(echo $existingIpMask | awk -F'/' '{print $2}')
   if [ "$existingMask" == "32" ] 
   then
     sudo ip addr del dev $ethDev $existingIpMask
     result=$?
   fi
+
   if [ "$existingMask" != "32" ] 
   then
         replaceIpMask=`sudo ip addr show dev $ethDev | grep inet | grep -v $existingIpMask | awk '{print $2}' | sort -t/ -k2 -n|tail -1`
@@ -303,21 +332,21 @@ remove_an_ip () {
           sudo ip addr del dev $ethDev $replaceIpMask;
           replaceIp=`echo $replaceIpMask | awk -F/ '{print $1}'`;
           sudo ip addr add dev $ethDev $replaceIp/$existingMask;
-          sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-          sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $replaceIp ;
         fi
     result=$?
   fi
-  remove_routing $1
+
   if [ $result -gt 0  -a $result -ne 2 ]
   then
+     remove_routing $1
      return 1
   fi
+  remove_routing $1
   return 0
 }
 
 #set -x
-
+sflag=0
 lflag=
 fflag=
 cflag=
@@ -341,7 +370,7 @@ then
     if_keep_state=1
 fi
 
-while getopts 'fADa:l:c:g:' OPTION
+while getopts 'sfADa:l:c:g:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -351,6 +380,8 @@ do
 		op="-D"
 		;;
   f)	fflag=1
+		;;
+  s)	sflag=1
 		;;
   l)	lflag=1
 		publicIp="$OPTARG"
@@ -383,7 +414,7 @@ fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then
-  add_nat_entry  $publicIp  &&
+  add_first_ip  $publicIp  &&
   add_vpn_chain_for_ip $publicIp &&
   add_fw_chain_for_ip $publicIp 
   unlock_exit $? $lock $locked
@@ -398,7 +429,7 @@ fi
 
 if [ "$fflag" == "1" ] && [ "$Dflag" == "1" ]
 then
-  del_nat_entry  $publicIp &&
+  remove_first_ip  $publicIp &&
   del_fw_chain_for_ip $publicIp &&
   del_vpn_chain_for_ip $publicIp
   unlock_exit $? $lock $locked

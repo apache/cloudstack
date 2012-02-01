@@ -2502,10 +2502,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
             boolean firstIP = true;
-            /* If the first IP is not source NAT, then don't treat it as first IP. It would happen if it's the first IP for public nic other than first one */
-            if (!ipAddrList.get(0).isSourceNat()) {
-                firstIP = false;
-            }
+
             for (final PublicIpAddress ipAddr : ipAddrList) {
 
                 boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
