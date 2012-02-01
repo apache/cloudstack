@@ -248,7 +248,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			}		
 			//if account is normal user
 			//check if account's domain is a child of zone's domain
-			else if(account.getType() == Account.ACCOUNT_TYPE_NORMAL){
+			else if(account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_PROJECT){
 				if(account.getDomainId() == zone.getDomainId()){
 					return true; //zone and account at exact node
 				}else{
