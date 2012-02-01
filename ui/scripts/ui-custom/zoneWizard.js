@@ -560,6 +560,8 @@
             .attr({ id: networkID })
             .append($form)
         );
+
+        $form.validate();
       });
 
       $tabs.find('li:first').addClass('first');
@@ -937,7 +939,7 @@
         if ($target.closest('div.button.next').size()) {
           var $step = $steps.filter(':visible');
           // Validation
-          var $form = $step.find('form').filter(function() {
+          var $form = $('form:visible').filter(function() {
             // Don't include multi-edit (validation happens separately)
             return !$(this).closest('.multi-edit').size();
           });

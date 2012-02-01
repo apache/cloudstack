@@ -353,7 +353,7 @@
           vlanRange: {
             label: 'VLAN Range',
             range: ['vlanRangeStart', 'vlanRangeEnd'],
-            validation: { required: true }
+            validation: { required: true, digits: true }
           }
 					//Advanced (end)
         }
