@@ -2889,7 +2889,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 return;
             } else {
-                throw new PermissionDeniedException("Access denied to " + caller + " by " + checker.getName());
+                throw new PermissionDeniedException("Access denied to " + caller + " by " + checker.getName() + " for zone " + zone.getId());
             }
         }
 
