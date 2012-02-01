@@ -13,12 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
-DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
+
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_sent`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
+
+ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
+DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `private_netmask`; 
 
 ALTER TABLE `cloud`.`security_group_rule` drop foreign key `fk_security_ingress_rule___security_group_id`;

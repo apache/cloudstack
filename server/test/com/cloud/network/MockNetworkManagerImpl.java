@@ -827,4 +827,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		
 	}
 
+	@Override
+	public boolean validateRule(FirewallRule rule) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

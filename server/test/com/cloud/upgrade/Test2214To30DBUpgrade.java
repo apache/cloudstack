@@ -52,6 +52,7 @@ public class Test2214To30DBUpgrade extends TestCase {
     
     public void test2213to30Upgrade() throws SQLException{
         s_logger.debug("Finding sample data from 2.2.14");
+        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.14/cloud_usage_2214.sql", false, true);
         DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.14/advance_zone_2.2.14.sql", false, true);
         
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
