@@ -183,8 +183,7 @@
             <div class="network" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">
-                <p>Either you select a basic zone whose guest network does not include security group service or your selected hypervisor does not have any additional network features or you don't have any zone that has security group enabled.</p>
-                <p>Thus, no additional network features.</p>
+                <p>The zone you selected does not have any choices for network selection</p>               
                 <p>Please proceed to the next step.</p>
               </div>
 
