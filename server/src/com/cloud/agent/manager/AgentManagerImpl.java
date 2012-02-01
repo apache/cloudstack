@@ -1158,7 +1158,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
             handleDisconnect(attache, Event.AgentDisconnected, false, false);
-            throw new CloudRuntimeException("ReadyCommand failed " + attache.getId());
         }
 
         _hostDao.updateStatus(host, Event.Ready, _nodeId);
