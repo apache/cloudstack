@@ -866,8 +866,8 @@
                             dependsOn: 'scope',
                             select: function(args) {
                               var array1 = [];
-                              var apiCmd = "listNetworkOfferings&state=Enabled";
-															
+                              var apiCmd = "listNetworkOfferings&state=Enabled&zoneid=" + selectedZoneObj.id; 
+																														
                               //this tab (Network tab in guest network) only shows when it's under an Advanced zone
 															if(args.scope == "zone-wide" || args.scope == "domain-specific") {
 																apiCmd += "&guestiptype=Shared";
@@ -1401,9 +1401,9 @@
                               label: 'Network offering',
                               isEditable: true,
                               select: function(args){
-                                var items = [];
+                                var items = [];															
                                 $.ajax({
-                                  url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),
+                                  url: createURL("listNetworkOfferings&state=Enabled&networkid=" + selectedGuestNetworkObj.id + "&zoneid=" + selectedGuestNetworkObj.zoneid),
                                   dataType: "json",
                                   async: false,
                                   success: function(json) {
