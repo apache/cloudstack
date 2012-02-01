@@ -101,14 +101,14 @@ create_snapshot() {
       [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
 
   elif [ -f "${disk}" ]; then
-     $qemu_img snapshot -c $snapshotname $disk
+     $qemu_img snapshot -c "$snapshotname" $disk
 
   
      if [ $? -gt 0 ]
      then
        failed=2
        printf "***Failed to create snapshot $snapshotname for path $disk\n" >&2
-       $qemu_img snapshot -d $snapshotname $disk
+       $qemu_img snapshot -d "$snapshotname" $disk
     
        if [ $? -gt 0 ]
        then
@@ -145,7 +145,7 @@ destroy_snapshot() {
      lvm lvremove -f "${vgname}/${snapshotname}-cow" >&2
 
   elif [ -f $disk ]; then
-     $qemu_img snapshot -d $snapshotname $disk
+     $qemu_img snapshot -d "$snapshotname" $disk
      if [ $? -gt 0 ]
      then
        failed=2
