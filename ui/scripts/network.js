@@ -979,7 +979,8 @@
                     url: createURL('createRemoteAccessVpn'),
                     data: {
                       publicipid: args.context.ipAddresses[0].id,
-                      domainid: args.context.ipAddresses[0].domainid
+                      domainid: args.context.ipAddresses[0].domainid,
+											account: args.context.ipAddresses[0].account
                     },
                     dataType: 'json',
                     async: true,
@@ -2136,8 +2137,10 @@
               vpn: {
                 title: 'VPN',
                 custom: function(args) {
-                  var ipAddress = args.context.ipAddresses[0].ipaddress;
-                  var psk = args.context.ipAddresses[0].remoteaccessvpn.presharedkey;
+                  var ipAddress = args.context.ipAddresses[0].ipaddress;									
+									var psk = "";
+									if(args.context.ipAddresses[0].remoteaccessvpn != null)
+                    psk = args.context.ipAddresses[0].remoteaccessvpn.presharedkey;
 
                   return $('<div>')
                     .append(
@@ -2213,11 +2216,12 @@
                           }
                         }
                       },
-                      dataProvider: function(args) {
+                      dataProvider: function(args) {										
                         $.ajax({
                           url: createURL('listVpnUsers'),
                           data: {
-                            domainid: args.context.ipAddresses[0].domainid
+                            domainid: args.context.ipAddresses[0].domainid,
+														account: args.context.ipAddresses[0].account
                           },
                           dataType: 'json',
                           async: true,
