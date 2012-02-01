@@ -46,13 +46,13 @@
               .addClass('text-search')
               .append(
                 $('<div>')
-                  .addClass('search-bar')
+                  .addClass('search-bar').attr('style', 'display:none') //no place to show search result in a tree, so hide it for now
                   .append(
                     $('<input>').attr('type', 'text')
                   )
               )
               .append(
-                $('<div>').addClass('button search')
+                $('<div>').addClass('button search').attr('style', 'display:none')  //no place to show search result in a tree, so hide it for now
               )
           )
           .prependTo($treeView);
