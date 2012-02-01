@@ -760,6 +760,7 @@
 															array1.push({id: 'zone-wide', description: 'All'});
 															array1.push({id: 'domain-specific', description: 'Domain'});
 															array1.push({id: 'account-specific', description: 'Account'});
+															array1.push({id: 'project-specific', description: 'Project'});
 														
                               args.response.success({data: array1});
 
@@ -768,14 +769,22 @@
                                 if($(this).val() == "zone-wide") {
                                   $form.find('.form-item[rel=domainId]').hide();
                                   $form.find('.form-item[rel=account]').hide();
+																	$form.find('.form-item[rel=projectId]').hide();
                                 }
                                 else if ($(this).val() == "domain-specific") {
                                   $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
                                   $form.find('.form-item[rel=account]').hide();
+																	$form.find('.form-item[rel=projectId]').hide();
                                 }
                                 else if($(this).val() == "account-specific") {
                                   $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
                                   $form.find('.form-item[rel=account]').css('display', 'inline-block');
+																	$form.find('.form-item[rel=projectId]').hide();
+                                }																
+																else if($(this).val() == "project-specific") {
+                                  $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=account]').hide();
+																	$form.find('.form-item[rel=projectId]').css('display', 'inline-block');
                                 }
                               });
                             }
@@ -827,6 +836,26 @@
                           },
                           account: { label: 'Account' },
                           
+													projectId: {
+                            label: 'Project',
+                            validation: { required: true },
+                            select: function(args) {
+                              var items = [];
+                              $.ajax({
+															  url: createURL("listProjects&listAll=true"),
+																dataType: "json",
+																async: false,
+																success: function(json) {	
+																  projectObjs = json.listprojectsresponse.project;
+																  $(projectObjs).each(function() {
+                                    items.push({id: this.id, description: this.name});
+                                  });
+																}
+															});															
+                              args.response.success({data: items});
+                            }
+                          },
+													
                           networkOfferingId: {
                             label: 'Network offering',
                             dependsOn: 'scope',
@@ -861,8 +890,8 @@
                                           continue; //skip to next network offering
                                       }
 																																						
-																			//if args.scope == "account-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
-																			if(args.scope == "account-specific") {
+																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
+																			if(args.scope == "account-specific" || args.scope == "project-specific") {
 																			  var includingSourceNat = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -940,14 +969,17 @@
 												  array1.push("&vlan=" + todb(args.data.vlanId));                        
 												
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
-														array1.push("&acltype=account");
-														array1.push("&domainId=" + args.data.domainId);
+												  array1.push("&domainId=" + args.data.domainId);												 													
+													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific																											
 														array1.push("&account=" + args.data.account);
-													}
+														array1.push("&acltype=account");	
+													}												
+													else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific																											
+														array1.push("&projectid=" + args.data.projectId);
+														array1.push("&acltype=account");	
+													}													
 													else {  //domain-specific
-														array1.push("&acltype=domain");
-														array1.push("&domainId=" + args.data.domainId);
+														array1.push("&acltype=domain");														
 													}
 												}
 												else { //zone-wide
@@ -1113,8 +1145,11 @@
                             else 
                               this.scope = "Domain (" + this.domain + ")";                            
                           } 
-                          else if (this.acltype == "Account"){
-                            this.scope = "Account (" + this.domain + ", " + this.account + ")";      
+                          else if (this.acltype == "Account"){		                           
+                            if(this.project != null)
+                              this.scope = "Account (" + this.domain + ", " + this.project + ")";     
+                            else 														
+                              this.scope = "Account (" + this.domain + ", " + this.account + ")";      
                           }
 
                           if(this.vlan == null && this.broadcasturi != null)
