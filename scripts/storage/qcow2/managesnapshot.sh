@@ -54,13 +54,13 @@ create_snapshot() {
      return $failed
   fi
 
-  $qemu_img snapshot -c $snapshotname $disk
+  $qemu_img snapshot -c "$snapshotname" $disk
   
   if [ $? -gt 0 ]
   then
     failed=2
     printf "***Failed to create snapshot $snapshotname for path $disk\n" >&2
-    $qemu_img snapshot -d $snapshotname $disk
+    $qemu_img snapshot -d "$snapshotname" $disk
     
     if [ $? -gt 0 ]
     then
