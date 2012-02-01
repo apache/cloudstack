@@ -1129,37 +1129,60 @@
 											}
 										}
 										
-										//passing projectid=-1 will return all (includeing project-specific and non-project-specific), but passing listAll=true won't return all (won't return project-specific)
-                    $.ajax({
-                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+										//need to make 2 listNetworks API call to get all networks
+										var items = [];
+										$.ajax({
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
+											async: false,
                       success: function(json) {
-                        var items = json.listnetworksresponse.network;
-                                                                      
-                        $(items).each(function(){                          
-                          this.networkdomaintext = this.networkdomain;
-                          this.networkofferingidText = this.networkofferingid;
-                                                    
-                          if(this.acltype == "Domain") {
-                            if(this.domainid == rootAccountId) 
-                              this.scope = "All";                            
-                            else 
-                              this.scope = "Domain (" + this.domain + ")";                            
-                          } 
-                          else if (this.acltype == "Account"){		                           
-                            if(this.project != null)
-                              this.scope = "Account (" + this.domain + ", " + this.project + ")";     
-                            else 														
-                              this.scope = "Account (" + this.domain + ", " + this.account + ")";      
-                          }
-
-                          if(this.vlan == null && this.broadcasturi != null)
-                            this.vlan = this.broadcasturi.replace("vlan://", "");                          
-                        });                        
-                        
-                        args.response.success({data: items});
+											  if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0)
+												  items = json.listnetworksresponse.network;                                          
                       }
                     });
+										
+										$.ajax({
+                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      dataType: "json",
+											async: false,
+                      success: function(json) {
+											  $(json.listnetworksresponse.network).each(function() {
+												  var thisNetwork = this;
+												  var hasMatch = false;													
+													$(items).each(function() {													  
+													  if(this.id == thisNetwork.id) {
+														  hasMatch = true;
+															return false; //break each loop
+														}
+													});													
+													if(hasMatch == false)
+													  items.push(thisNetwork);													
+												});											       
+                      }
+                    });
+										                                            
+										$(items).each(function(){                          
+											this.networkdomaintext = this.networkdomain;
+											this.networkofferingidText = this.networkofferingid;
+																								
+											if(this.acltype == "Domain") {
+												if(this.domainid == rootAccountId) 
+													this.scope = "All";                            
+												else 
+													this.scope = "Domain (" + this.domain + ")";                            
+											} 
+											else if (this.acltype == "Account"){		                           
+												if(this.project != null)
+													this.scope = "Account (" + this.domain + ", " + this.project + ")";     
+												else 														
+													this.scope = "Account (" + this.domain + ", " + this.account + ")";      
+											}
+
+											if(this.vlan == null && this.broadcasturi != null)
+												this.vlan = this.broadcasturi.replace("vlan://", "");                          
+										});                        
+										
+										args.response.success({data: items});
                   },
 
                   detailView: {
