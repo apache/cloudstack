@@ -2434,8 +2434,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else {
 	            String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
 	            s_logger.warn(msg, e);
-	            s_logger.warn("For detachment failure, we will eventually continue on to allow deassociating it from CloudStack DB");
-	            return new Answer(cmd);
+	            return new Answer(cmd, false, msg);
             }
         }
     }
