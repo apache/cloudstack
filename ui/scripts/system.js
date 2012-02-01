@@ -2905,9 +2905,9 @@
               enableSwift: {
                 label: 'Configure Swift',
                 isHeader: true,
+                addRow: false,
                 preFilter: function(args) {
                   var swiftEnabled = false;
-                  
                   $.ajax({
                     url: createURL('listConfigurations'),
                     data: {
@@ -2915,8 +2915,16 @@
                     },
                     async: false,
                     success: function(json) {
-                      swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' ?
+                      swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingSwift ?
                         true : false;
+
+                      cloudStack.dialog.notice({
+                        message: 'Swift configured. Note: When you leave this page, you will not be able to re-configure Swift again.'
+                      });
+                    },
+
+                    error: function(json) {
+                      cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
                     }
                   });
                   

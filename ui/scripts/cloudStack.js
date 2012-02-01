@@ -119,6 +119,21 @@
           }
         });
 
+        if (userValid && isAdmin()) {
+          $.ajax({
+            url: createURL("listSwifts"),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+              var items = json.listswiftsresponse.swift;
+              if(items != null && items.length > 0)
+                havingSwift = true;
+            }
+          });
+        } else {
+          havingSwift = false;
+        }
+
         return userValid ? {
           user: {
             userid: g_userid,
@@ -233,7 +248,7 @@
                 dataType: "json",
                 async: false,
                 success: function(json) {
-                  var items = json.ListSwiftresponse.swift;
+                  var items = json.listswiftsresponse.swift;
                   if(items != null && items.length > 0)
                     havingSwift = true;
                 }
