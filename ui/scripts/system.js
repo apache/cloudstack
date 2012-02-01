@@ -1141,23 +1141,20 @@
                       }
                     });
 										
+										var networkCollectionMap = {};										
+										$(items).each(function() {										 
+										  networkCollectionMap[this.id] = this.name;
+										});
+																			
 										$.ajax({
                       url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
-											  $(json.listnetworksresponse.network).each(function() {
-												  var thisNetwork = this;
-												  var hasMatch = false;													
-													$(items).each(function() {													  
-													  if(this.id == thisNetwork.id) {
-														  hasMatch = true;
-															return false; //break each loop
-														}
-													});													
-													if(hasMatch == false)
-													  items.push(thisNetwork);													
-												});											       
+											  $(json.listnetworksresponse.network).each(function() {														  
+													if((this.id in networkCollectionMap) == false)
+													  items.push(this);													
+												});							
                       }
                     });
 										                                            
