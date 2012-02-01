@@ -2149,6 +2149,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String vmName = vm.getName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
@@ -2162,6 +2163,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nic : nics) {
                 // prepare network on the host
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic);
+            }
+
+            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            if(secStoreUrl == null) {
+                String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                throw new Exception(msg);
+            }
+            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            
+            ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
+            if (morSecDs == null) {
+                String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                throw new Exception(msg);
             }
 
             synchronized (_vms) {
