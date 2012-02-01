@@ -119,11 +119,11 @@
           },
           dns1: {
             label: 'DNS 1', validation: { required: true },
-            desc: 'Name of a DNS server for use for use by VMs in the zone. The public IP addresses for the zone must hav a route to this server.'
+            desc: 'Name of a DNS server for use by VMs in the zone. The public IP addresses for the zone must have a route to this server.'
           },
           dns2: {
             label: 'DNS 2',
-            desc: 'A second DNS server name for use by VMs in the zone. The public IP addresses for the zone must hav a route to this server.'
+            desc: 'A second DNS server name for use by VMs in the zone. The public IP addresses for the zone must have a route to this server.'
           },
           internaldns1: {
             label: 'Internal DNS 1', validation: { required: true },
