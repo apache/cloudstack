@@ -41,6 +41,7 @@
         if (!options) options = {};
 
         var $form = options.$form;
+        var isHeader = options.isHeader;
 
         $instanceRow = options.$item ? options.$item : $instanceRow;
         var $item = options.$item;
@@ -66,7 +67,7 @@
               cloudStack.ui.notifications.add(
                 notification,
                 function(args) {
-                  if ($item.is(':visible')) {
+                  if ($item.is(':visible') && !isHeader) {
                     replaceItem(
                       $item,
                       args.data,
@@ -106,7 +107,7 @@
                 $prevRow.data($instanceRow.data());
 
                 // Set loading appearance
-                if (args.data) {
+                if (args.data && !isHeader) {
                   $instanceRow = replaceItem(
                     $instanceRow,
                     $.extend($instanceRow.data('json-obj'), args.data),
@@ -137,21 +138,19 @@
                     var actionFilter = args.actionFilter ?
                       args.actionFilter : $instanceRow.data('list-view-action-filter');
 
-                    if ($instanceRow.is(':visible')) {
-                      if (args.data) {
-                        $newRow = replaceItem(
-                          $instanceRow,
-                          $.extend($instanceRow.data('json-obj'), args.data),
-                          actionFilter
-                        );
-                      }
-                      else {
-                        // Nothing new, so just put in existing data
-                        $newRow = replaceItem(
-                          $instanceRow,
-                          $instanceRow.data('json-obj'),
-                          actionFilter
-                        );
+                    if (!isHeader) {
+                      if ($instanceRow.is(':visible')) {
+                        if (args.data) {
+                          $newRow = replaceItem($instanceRow,
+                                                $.extend($instanceRow.data('json-obj'), args.data),
+                                                actionFilter);
+                        }
+                        else {
+                          // Nothing new, so just put in existing data
+                          $newRow = replaceItem($instanceRow,
+                                                $instanceRow.data('json-obj'),
+                                                actionFilter);
+                        }
                       }
 
                       if (additional && additional.complete)
@@ -266,7 +265,8 @@
                 performAction(args.data, {
                   ref: args.ref,
                   context: createFormContext,
-                  $form: args.$form
+                  $form: args.$form,
+                  isHeader: isHeader
                 });
               }
             },
@@ -278,7 +278,7 @@
             message: messages.confirm(messageArgs),
             action: function() {
               var $newItem;
-              if (addRow != false && !action.isHeader) {
+              if (addRow && !action.isHeader) {
                 $newItem = $listView.listView('prependItem', {
                   data: [
                     $.extend(args.data, {
@@ -1417,7 +1417,6 @@
     )[0];
 
     $newRow.data('json-obj', data);
-
     $row.replaceWith($newRow);
     $table.dataTable('refresh');
 
