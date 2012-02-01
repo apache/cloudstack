@@ -3427,9 +3427,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _networkMgr.allocate(vmProfile, networks);
 
             _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
+            
+            s_logger.debug("AssignVM: Basic zone, adding security groups no " +  securityGroupIdList.size() + " to " + vm.getInstanceName() );
         } else {
             if (zone.isSecurityGroupEnabled())  {
-            	throw new InvalidParameterValueException("not yet tested for SecurityGroupEnabled advanced networks.");
+            	throw new InvalidParameterValueException("Not yet implemented for SecurityGroupEnabled advanced networks.");
             } else {
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
                     throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
@@ -3501,8 +3503,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
                 VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
                 _networkMgr.allocate(vmProfile, networks);
+                s_logger.debug("AssignVM: Advance virtual, adding networks no " +  networks.size() + " to " + vm.getInstanceName() );
             } //END IF NON SEC GRP ENABLED
         } // END IF ADVANCED
+        s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + cmd.getAccountName());
         return vm;
     }
 
