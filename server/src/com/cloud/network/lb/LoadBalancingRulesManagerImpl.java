@@ -181,23 +181,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return null;
     }
     
-    @SuppressWarnings("rawtypes")
-    @Override
-    @DB
-    @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_CREATE, eventDescription = "create lb stickinesspolicy to load balancer", create = true)
-    public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException {
-        UserContext caller = UserContext.current();
-
-        /* Validation : check corresponding load balancer rule exist */
+    private boolean genericValidator(CreateLBStickinessPolicyCmd cmd) throws InvalidParameterValueException {
         LoadBalancerVO loadBalancer = _lbDao.findById(cmd.getLbRuleId());
-        if (loadBalancer == null) {
-            throw new InvalidParameterValueException("Failed: LB rule id: " + cmd.getLbRuleId() + " not present ");       
-        }
-
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
-        if (loadBalancer.getState() == FirewallRule.State.Revoke) {
-            throw new InvalidParameterValueException("Failed:  LB rule id:"  + cmd.getLbRuleId() + " is in deleting state: ");              
-        }
         /* Validation : check for valid Method name and params */
         List<LbStickinessMethod> stickinessMethodList = getStickinessMethods(loadBalancer
                 .getNetworkId());
@@ -258,15 +243,48 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         if (methodMatch == false) {
             throw new InvalidParameterValueException("Failed to match Stickiness method name for LB rule:" + cmd.getLbRuleId());
         }
-
+        
         /* Validation : check for the multiple policies to the rule id */
         List<LBStickinessPolicyVO> stickinessPolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(cmd.getLbRuleId(), false);               
         if (stickinessPolicies.size() > 0) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Already policy attached " + cmd.getLbRuleId());
         }
+        return true;
+    }
+    
+    @SuppressWarnings("rawtypes")
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_CREATE, eventDescription = "create lb stickinesspolicy to load balancer", create = true)
+    public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException {
+        UserContext caller = UserContext.current();
+
+        /* Validation : check corresponding load balancer rule exist */
+        LoadBalancerVO loadBalancer = _lbDao.findById(cmd.getLbRuleId());
+        if (loadBalancer == null) {
+            throw new InvalidParameterValueException("Failed: LB rule id: " + cmd.getLbRuleId() + " not present ");       
+        }
+
+        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        if (loadBalancer.getState() == FirewallRule.State.Revoke) {
+            throw new InvalidParameterValueException("Failed:  LB rule id:"  + cmd.getLbRuleId() + " is in deleting state: ");              
+        }
+
+        /* Generic validations */
+        if (!genericValidator(cmd)) {
+            throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed " + cmd.getLbRuleId());
+        }
+        
+        /* Specific validations using network element validator for specific validations*/
+        LBStickinessPolicyVO lbpolicy = new LBStickinessPolicyVO(loadBalancer.getId(), cmd.getLBStickinessPolicyName(), cmd.getStickinessMethodName(), cmd.getparamList(), cmd.getDescription());
+        List<LbStickinessPolicy> policyList = new ArrayList<LbStickinessPolicy>();
+        policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
+        LoadBalancingRule lbRule = new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()), policyList);
+        if (!_networkMgr.validateRule(lbRule)) {
+            throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed " + cmd.getLbRuleId());
+        }
 
         /* Finally Insert into DB */
-  
         LBStickinessPolicyVO policy = new LBStickinessPolicyVO(loadBalancer.getId(), cmd.getLBStickinessPolicyName(), cmd.getStickinessMethodName(), cmd.getparamList(), cmd.getDescription());
         policy = _lb2stickinesspoliciesDao.persist(policy);
 

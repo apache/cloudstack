@@ -151,37 +151,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.add(getBlankLine());
         return result;
     }
-    /*
-     *   This function detects numbers like 12 ,32h ,42m .. etc,. 
-     *     1) plain  number  like 12  
-     *     2) time or tablesize like 12h, 34m, 45k, 54m , here last character is non-digit but from known characters .  
-     * 
-     */
-    private boolean containsOnlyNumbers(String str, String endChar) {
-        if (str == null) return false;
-        
-        String number = str;
-        if (endChar != null){
-            boolean matchedEndChar = false;
-            if (str.length() < 2) return false; // atleast one numeric and one char.  example: 3h
-            char strEnd = str.toCharArray()[str.length()-1];
-            for (char c: endChar.toCharArray()){
-                if (strEnd == c){
-                   number = str.substring(0, str.length()-1);
-                   matchedEndChar = true;
-                   break;
-                }
-            }
-            if (!matchedEndChar) return false;
-        }
-        try {
-            int i = Integer.parseInt(number);
-        }
-        catch (NumberFormatException e){
-            return false;
-        }
-        return true;
-    }
+ 
   /*
   cookie <name> [ rewrite | insert | prefix ] [ indirect ] [ nocache ]
               [ postonly ] [ domain <domain> ]*
@@ -378,7 +348,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 for(Pair<String,String> paramKV :paramsList){
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("name".equalsIgnoreCase(key)) name = value;
+                    if ("cookie-name".equalsIgnoreCase(key)) name = value;
                     if ("mode".equalsIgnoreCase(key)) mode = value;
                     if ("domain".equalsIgnoreCase(key)) {
                         if (domainSb == null) {
@@ -417,14 +387,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     if ("tablesize".equalsIgnoreCase(key)) tablesize = value;
                     if ("expire".equalsIgnoreCase(key)) expire = value;             
                 }
-                if ((expire != null) && !containsOnlyNumbers(expire, timeEndChar)) {
-                    s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: expire is not in timeformat:" + expire);
-                    return null;
-                } 
-                if ((tablesize != null) && !containsOnlyNumbers(tablesize, "kmg")) {
-                    s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: tablesize is not in size format:" + tablesize);
-                    return null;
-                } 
                 sb.append("\t").append("stick-table type ip size ")
                         .append(tablesize).append(" expire ").append(expire);
                 sb.append("\n\t").append("stick on src");
@@ -445,7 +407,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 for(Pair<String,String> paramKV :paramsList){
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("name".equalsIgnoreCase(key))   name = value;
+                    if ("cookie-name".equalsIgnoreCase(key))   name = value;
                     if ("length".equalsIgnoreCase(key)) length = value;                
                     if ("holdtime".equalsIgnoreCase(key))  holdtime = value;
                     if ("mode".equalsIgnoreCase(key))  mode = value;
@@ -461,14 +423,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: length,holdtime or name is null");
                     return null;
                 }
-                if (!containsOnlyNumbers(length, null)) {
-                    s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: length is not a number:" + length);
-                    return null;
-                }
-                if (!containsOnlyNumbers(holdtime, timeEndChar)) {
-                    s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: holdtime is not in timeformat:" + holdtime);
-                    return null;
-                }   
+ 
                 sb.append("\t").append("appsession ").append(name)
                         .append(" len ").append(length).append(" timeout ")
                         .append(holdtime).append(" ");

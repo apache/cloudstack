@@ -32,6 +32,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -130,7 +131,12 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         // TODO  kill all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }
-
+    
+    @Override
+    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+        return true;
+    }
+    
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(network)) {

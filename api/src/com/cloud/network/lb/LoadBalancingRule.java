@@ -139,13 +139,18 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         private List<Pair<String, String>> _params;
         private boolean _revoke;
 
-        public LbStickinessPolicy(String methodName, List<Pair<String, String>> params,
-                boolean revoke) {
+        public LbStickinessPolicy(String methodName, List<Pair<String, String>> params, boolean revoke) {
             this._methodName = methodName;
             this._params = params;
             this._revoke = revoke;
         }
 
+        public LbStickinessPolicy(String methodName, List<Pair<String, String>> params) {
+            this._methodName = methodName;
+            this._params = params;
+            this._revoke = false;
+        }
+        
         public String getMethodName() {
             return _methodName;
         }

@@ -2948,6 +2948,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    public boolean validateRule(FirewallRule rule) {
+        Network network = _networksDao.findById(rule.getNetworkId());
+        Purpose purpose = rule.getPurpose();
+        for (NetworkElement ne : _networkElements) {
+            boolean validated;
+            switch (purpose) {
+            case LoadBalancing:
+                if (!(ne instanceof LoadBalancingServiceProvider)) {
+                    continue;
+                }
+                validated = ((LoadBalancingServiceProvider) ne).validateLBRule(network, (LoadBalancingRule) rule);
+                if (!validated)
+                    return false;
+                break;
+            default:
+                s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
+                validated = false;
+            }
+        }
+        return true;
+    }
+    @Override
     /* The rules here is only the same kind of rule, e.g. all load balancing rules or all port forwarding rules */
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {

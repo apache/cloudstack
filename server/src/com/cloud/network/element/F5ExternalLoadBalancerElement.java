@@ -159,6 +159,11 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
     
     @Override
+    public boolean validateLBRule(Network network, LoadBalancingRule rule) {    
+        return true;
+    }
+    
+    @Override
     public boolean applyLBRules(Network config, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
