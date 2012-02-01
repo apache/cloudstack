@@ -1040,11 +1040,21 @@
 							createForm: {
                 title: 'Add network offering',
                 desc: 'Please specify the network offering',																
-								preFilter: function(args) {									
-									if(requiredNetworkOfferingExists == true) 
-										args.$form.find('.form-item[rel=availability]').hide();
-									else
-										args.$form.find('.form-item[rel=availability]').css('display', 'inline-block');								
+								preFilter: function(args) {
+                  var $availability = args.$form.find('.form-item[rel=availability]');
+                  
+                  args.$form.bind('change', function() {
+                    var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
+                    var $guestTypeField = args.$form.find('select[name=guestIpType]');
+
+                    if (!requiredNetworkOfferingExists &&
+                        $sourceNATField.is(':checked') &&
+                        $guestTypeField.val() == 'Isolated') {
+                      $availability.css('display', 'inline-block');
+                    } else {
+                      $availability.hide();
+                    }
+                  });
 								},				
                 fields: {
                   name: { label: 'Name', validation: { required: true } },
@@ -1076,15 +1086,10 @@
 																						
 											args.$select.change(function() {											  
 												var $form = $(this).closest("form");
-												if($(this).val() == "Shared") {
-                          $form.find('[rel=availability]').hide();
+                        
+												if ($(this).val() == "Shared") {
                           $form.find('.form-item[rel=specifyVlan]').hide();
-												}
-												else {  //$(this).val() == "Isolated"
-                          if ($form.find('input[name=\"service.SourceNat.isEnabled\"]').is(':checked')) {
-                            $form.find('[rel=availability]').css('display', 'inline-block');
-                          }
-                              
+												} else {  //$(this).val() == "Isolated"   
 												  $form.find('.form-item[rel=specifyVlan]').css('display', 'inline-block');
 												}												
 											});
@@ -1259,8 +1264,7 @@
 									
 									availability: {
                     label: 'Availability',
-                    //isHidden: true,  
-                    //dependsOn: 'service.SourceNat.isEnabled', //Brian, availability field depends on not only 'service.SourceNat.isEnabled', but also requiredNetworkOfferingExists variable. This line will make the dependency between availability field and requiredNetworkOfferingExists variable disappear (incorrectly)
+                    isHidden: true,  
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1268,14 +1272,8 @@
                           { id: 'Required', description: 'Required' }                          
                         ]
                       });
-                      /*
-                      setTimeout(function() {
-                        args.$select.closest('.form-item').hide();
-                      }, 10);
-											*/
                     }
                   }
-									
                 }
               },
 							
