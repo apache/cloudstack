@@ -1024,9 +1024,19 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 if (domainRoutersInZone == null) {
                     continue;
                 }
-
+                Map<Long, ExternalNetworkResourceUsageAnswer> lbDeviceUsageAnswerMap = new HashMap<Long, ExternalNetworkResourceUsageAnswer>();
+                List<Long> accountsProcessed = new ArrayList<Long>();
+                
                 for (DomainRouterVO domainRouter : domainRoutersInZone) {
                     long accountId = domainRouter.getAccountId();
+                    
+                    if(accountsProcessed.contains(new Long(accountId))){
+                        if(s_logger.isTraceEnabled()){
+                            s_logger.trace("Networks for Account " + accountId + " are already processed for external network usage, so skipping usage check.");
+                        }
+                        continue;
+                    }
+                    
                     long zoneId = zone.getId();
 
                     List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestType.Isolated);
@@ -1046,16 +1056,25 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         }
 
                         // Get network stats from the external load balancer
-                        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
-                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
                         ExternalNetworkResourceUsageAnswer lbAnswer = null;
+                        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
                         if (externalLoadBalancer != null) {
-                            lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
-                            if (lbAnswer == null || !lbAnswer.getResult()) {
-                                String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
-                                String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
-                                s_logger.error(msg);
-                                continue;
+                            Long lbDeviceId = new Long(externalLoadBalancer.getId());
+                            if(!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)){
+                                ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+                                lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                                if (lbAnswer == null || !lbAnswer.getResult()) {
+                                    String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
+                                    String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
+                                    s_logger.error(msg);
+                                    continue;
+                                }
+                                lbDeviceUsageAnswerMap.put(lbDeviceId, lbAnswer);
+                            }else{
+                                if(s_logger.isTraceEnabled()){
+                                    s_logger.trace("Reusing usage Answer for device id "+ lbDeviceId + "for Network " + network.getId());
+                                }
+                                lbAnswer = lbDeviceUsageAnswerMap.get(lbDeviceId);
                             }
                         }
 
@@ -1071,6 +1090,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                         manageStatsEntries(false, accountId, zoneId, network, externalLoadBalancer, lbAnswer);
                     }
+                    
+                    accountsProcessed.add(new Long(accountId));
                 }
             }
         }
