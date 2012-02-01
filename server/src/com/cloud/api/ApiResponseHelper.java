@@ -893,8 +893,17 @@ public class ApiResponseHelper implements ResponseGenerator {
         	zoneResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
         
+        //set network domain info
         zoneResponse.setDomain(dataCenter.getDomain());
-        zoneResponse.setDomainId(dataCenter.getDomainId());
+        
+        //set domain info
+        Long domainId = dataCenter.getDomainId();
+        if (domainId != null) {
+        	 Domain domain = ApiDBUtils.findDomainById(domainId);
+             zoneResponse.setDomainId(domain.getId());
+             zoneResponse.setDomainName(domain.getName());
+        }
+       
         zoneResponse.setType(dataCenter.getNetworkType().toString());
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
@@ -3003,7 +3012,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setDomainId(domain.getId());
         response.setDomainName(domain.getName());
-        
     }
     
     @Override 

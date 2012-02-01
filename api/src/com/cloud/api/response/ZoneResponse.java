@@ -24,6 +24,7 @@ import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="Zone id")
     private IdentityProxy id = new IdentityProxy("data_center");
@@ -62,6 +63,9 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
     private Long domainId;
     
+    @SerializedName("domainname") @Param(description="the name of the containing domain, null for public zones")
+    private String domainName;
+    
     @SerializedName(ApiConstants.NETWORK_TYPE) @Param(description="the network type of the zone; can be Basic or Advanced")
     private String networkType;
     
@@ -80,147 +84,79 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName("capacity")  @Param(description="the capacity of the Zone", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
-    public Long getId() {
-        return id.getValue();
-    }
-
     public void setId(Long id) {
         this.id.setValue(id);
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getDns1() {
-        return dns1;
     }
 
     public void setDns1(String dns1) {
         this.dns1 = dns1;
     }
 
-    public String getDns2() {
-        return dns2;
-    }
-
     public void setDns2(String dns2) {
         this.dns2 = dns2;
-    }
-
-    public String getInternalDns1() {
-        return internalDns1;
     }
 
     public void setInternalDns1(String internalDns1) {
         this.internalDns1 = internalDns1;
     }
 
-    public String getInternalDns2() {
-        return internalDns2;
-    }
-
     public void setInternalDns2(String internalDns2) {
         this.internalDns2 = internalDns2;
-    }
-
-    public String getVlan() {
-        return vlan;
     }
 
     public void setVlan(String vlan) {
         this.vlan = vlan;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getDisplayText() {
-        return displayText;
     }
 
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
     }
 
-    public String getDomain() {
-        return domain;
-    }
-
     public void setDomain(String domain) {
         this.domain = domain;
     }
-    
-    public Long getDomainId() {
-		return domainId;
-	}
 
 	public void setDomainId(Long domainId) {
 		this.domainId = domainId;
 	}
 	
-    public String getNetworkType() {
-        return networkType;
-    }
-
     public void setType(String networkType) {
         this.networkType = networkType;
-    }
-
-    public boolean getSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
     }
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
     
-    public String getAllocationState() {
-    	return allocationState;
-    }
-    
     public void setAllocationState(String allocationState) {
     	this.allocationState = allocationState;
     }
-    
-    public String getZoneToken() {
-	    return zoneToken;
-	}
 	
 	public void setZoneToken(String zoneToken) {
 		this.zoneToken = zoneToken;
 	}
-	
-    public String getDhcpProvider() {
-        return dhcpProvider;
-    } 
- 	
+
  	public void setDhcpProvider(String dhcpProvider) {
  		this.dhcpProvider = dhcpProvider;
  	}
 
-	public List<CapacityResponse> getCapacitites() {
-		return capacitites;
-	}
-
 	public void setCapacitites(List<CapacityResponse> capacitites) {
 		this.capacitites = capacitites;
-	}	
+	}
+
+	public void setDomainName(String domainName) {
+		this.domainName = domainName;
+	}
 }
