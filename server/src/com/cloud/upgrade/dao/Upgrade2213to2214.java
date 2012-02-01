@@ -81,6 +81,18 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	    throw new CloudRuntimeException("Unable to execute usage_event table update", e);
     	}
     	
+    	//In cloud_usage DB, drop i_usage_event__created key (if exists) and re-add it again
+    	keys = new ArrayList<String>();
+    	keys.add("i_usage_event__created");
+    	DbUpgradeUtils.dropKeysIfExist(conn, "cloud_usage.usage_event", keys, false);
+    	try {
+    	    PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud_usage`.`usage_event` ADD INDEX `i_usage_event__created`(`created`)");
+    	    pstmt.executeUpdate();
+    	    pstmt.close();
+    	} catch (SQLException e) {
+    	    throw new CloudRuntimeException("Unable to execute cloud_usage usage_event table update", e);
+    	}
+    	
     	//Drop netapp_volume primary key and add it again
     	DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud.netapp_volume");
     	try {
