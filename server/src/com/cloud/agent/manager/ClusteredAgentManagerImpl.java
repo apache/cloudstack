@@ -169,7 +169,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             if (s_logger.isInfoEnabled()) {
                                 s_logger.info(host + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
                             }
-                            removeAgent(agentattache, Status.Disconnected, null, null, false);
+                            removeAgent(agentattache, Status.Disconnected);
                         } else {
                             continue;
                         }
@@ -709,12 +709,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public void removeAgent(AgentAttache attache, Status nextState, Event event, Boolean investigate, boolean ha) {
+    public void removeAgent(AgentAttache attache, Status nextState) {
         if (attache == null) {
             return;
         }
 
-        super.removeAgent(attache, nextState, event, investigate, ha);
+        super.removeAgent(attache, nextState);
     }
 
     @Override
