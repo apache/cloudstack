@@ -768,21 +768,25 @@
                                 var $form = $(this).closest('form');
                                 if($(this).val() == "zone-wide") {
                                   $form.find('.form-item[rel=domainId]').hide();
+                                  $form.find('.form-item[rel=subdomainaccess]').hide();
                                   $form.find('.form-item[rel=account]').hide();
 																	$form.find('.form-item[rel=projectId]').hide();
                                 }
                                 else if ($(this).val() == "domain-specific") {
                                   $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=subdomainaccess]').css('display', 'inline-block');
                                   $form.find('.form-item[rel=account]').hide();
 																	$form.find('.form-item[rel=projectId]').hide();
                                 }
                                 else if($(this).val() == "account-specific") {
                                   $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=subdomainaccess]').hide();
                                   $form.find('.form-item[rel=account]').css('display', 'inline-block');
 																	$form.find('.form-item[rel=projectId]').hide();
                                 }																
 																else if($(this).val() == "project-specific") {
                                   $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=subdomainaccess]').hide();
                                   $form.find('.form-item[rel=account]').hide();
 																	$form.find('.form-item[rel=projectId]').css('display', 'inline-block');
                                 }
@@ -834,6 +838,7 @@
                               args.response.success({data: items});
                             }
                           },
+                          subdomainaccess: { label: 'Subdomain Access', isBoolean: true, isHidden: true },
                           account: { label: 'Account' },
                           
 													projectId: {
@@ -969,7 +974,11 @@
 												  array1.push("&vlan=" + todb(args.data.vlanId));                        
 												
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-												  array1.push("&domainId=" + args.data.domainId);												 													
+												  array1.push("&domainId=" + args.data.domainId);
+
+                          if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size()) {
+                            array1.push("&subdomainaccess=true");
+                          }
 													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific																											
 														array1.push("&account=" + args.data.account);
 														array1.push("&acltype=account");	
@@ -1435,6 +1444,9 @@
                             },
 														
 														domain: { label: 'Domain' },
+                            subdomainaccess: { label: 'Subdomain Access?', converter: function(data) {
+                              return data ? 'Yes' : 'No';
+                            } },
 														account: { label: 'Account' },
 														project: { label: 'Project' }														
                           }
