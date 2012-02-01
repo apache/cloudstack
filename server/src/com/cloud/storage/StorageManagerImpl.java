@@ -1534,10 +1534,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             _storagePoolDao.expunge(pool.getId());
             String msg = "";
             if (answer != null) {
-                msg = "Can not create strorage pool through host " + hostId + " due to " + answer.getDetails();
+                msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
                 s_logger.warn(msg);
             } else {
-                msg = "Can not create strorage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
                 s_logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
