@@ -3140,7 +3140,8 @@
                       dns2: { label: 'DNS 2', isEditable: true },
                       internaldns1: { label: 'Internal DNS 1', isEditable: true },
                       internaldns2: { label: 'Internal DNS 2', isEditable: true },
-                      networktype: { label: 'Network Type' },
+                      domainname: { label: 'Domain' },
+											networktype: { label: 'Network Type' },
                       securitygroupsenabled: {
                         label: 'Security Groups Enabled',
                         converter:cloudStack.converters.toBooleanText
