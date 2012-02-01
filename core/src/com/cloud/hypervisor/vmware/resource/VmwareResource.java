@@ -3597,6 +3597,73 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return VirtualMachineGuestOsIdentifier.otherGuest;
     }
 
+    private void prepareNetworkForVmTargetHost(HostMO hostMo, VirtualMachineMO vmMo) throws Exception {
+        assert (vmMo != null);
+        assert (hostMo != null);
+
+        String[] networks = vmMo.getNetworks();
+        for (String networkName : networks) {
+            HostPortGroupSpec portGroupSpec = hostMo.getHostPortGroupSpec(networkName);
+            HostNetworkTrafficShapingPolicy shapingPolicy = null;
+            if (portGroupSpec != null) {
+                shapingPolicy = portGroupSpec.getPolicy().getShapingPolicy();
+            }
+
+            if (networkName.startsWith("cloud.private")) {
+                String[] tokens = networkName.split("\\.");
+                if (tokens.length == 3) {
+                    Integer networkRateMbps = null;
+                    if (shapingPolicy != null && shapingPolicy.getEnabled() != null && shapingPolicy.getEnabled().booleanValue()) {
+                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
+                    }
+                    String vlanId = null;
+                    if(!"untagged".equalsIgnoreCase(tokens[2]))
+                        vlanId = tokens[2];
+
+                    HypervisorHostHelper.prepareNetwork(this._privateNetworkVSwitchName, "cloud.private",
+                        hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                } else {
+                    s_logger.info("Skip suspecious cloud network " + networkName);
+                }
+            } else if (networkName.startsWith("cloud.public")) {
+                String[] tokens = networkName.split("\\.");
+                if (tokens.length == 3) {
+                    Integer networkRateMbps = null;
+                    if (shapingPolicy != null && shapingPolicy.getEnabled() != null && shapingPolicy.getEnabled().booleanValue()) {
+                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
+                    }
+                    String vlanId = null;
+                    if(!"untagged".equalsIgnoreCase(tokens[2]))
+                        vlanId = tokens[2];
+
+                    HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                        hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                } else {
+                    s_logger.info("Skip suspecious cloud network " + networkName);
+                }
+            } else if (networkName.startsWith("cloud.guest")) {
+                String[] tokens = networkName.split("\\.");
+                if (tokens.length >= 3) {
+                    Integer networkRateMbps = null;
+                    if (shapingPolicy != null && shapingPolicy.getEnabled() != null && shapingPolicy.getEnabled().booleanValue()) {
+                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
+                    }
+
+                    String vlanId = null;
+                    if(!"untagged".equalsIgnoreCase(tokens[2]))
+                        vlanId = tokens[2];
+
+                    HypervisorHostHelper.prepareNetwork(this._guestNetworkVSwitchName, "cloud.guest",
+                        hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                } else {
+                    s_logger.info("Skip suspecious cloud network " + networkName);
+                }
+            } else {
+                s_logger.info("Skip non-cloud network " + networkName + " when preparing target host");
+            }
+        }
+    }
+    
     private HashMap<String, State> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] { "name", "runtime.powerState", "config.template" });
