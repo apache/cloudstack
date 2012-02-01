@@ -672,11 +672,6 @@
                 args.response.success({data:item});
               }
             });
-          },
-          notification: {
-            poll: function(args) {
-              args.complete();
-            }
           }
         }
       },
@@ -921,7 +916,7 @@
             },
             notification: {
               poll: function(args) {
-                args.complete();
+                args.complete({ data: { state: 'Stopped' }});
               }
             }
           },
