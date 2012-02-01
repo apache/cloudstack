@@ -199,7 +199,8 @@
           ispublic: {
             isReverse: true,
             isBoolean: true,
-            label: 'Public'
+            label: 'Public',
+						isChecked: true //checked by default (public zone)
           },
           domain: {
             label: 'Domain',
