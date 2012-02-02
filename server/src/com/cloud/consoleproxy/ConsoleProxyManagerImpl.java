@@ -252,6 +252,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
 
+/*    
     private final String keyContent = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n"
             + "hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" + "uv68U9G8Gfi/qvRSY336hibw0J5bZ4vn1QqmyHDB+Czea9AjFUV7AEVG15+vED7why+/AgMBAAEC\n"
             + "gYBmFBPnNKYYMKDmUdUNA+WNWJK/ADzzWe8WlzR6TACTcbLDthl289WFC/YVG42mcHRpbxDKiEQU\n" + "MnIR0rHTO34Qb/2HcuyweStU2gqR6omxBvMnFpJr90nD1HcOMJzeLHsphau0/EmKKey+gk4PyieD\n"
@@ -273,7 +274,68 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             + "7m90JhSVH0ycoIGjgdaIkcExQGP08MCilbUsPcbhLheSFdgn/cR4e1MP083lacoj\n" + "OGauY7b8f/cuquGkT49Ns14awPlEzRjjycQEjjLxFEuL5CFWa2t2gKRE1dSfhDQ+\n"
             + "fJ6GBCs1XgZLuhkKS8fPf+YmG2ZjHzYDjYoSx7paDXgEm+kbYIZdCK51lA0BUAjP\n" + "9ZMGhsu/PpAbh5U/DtcIqxY0xeqD4TeGsBzXg6uLhv+jKHDtXg5fYPe+z0n5DCEL\n"
             + "k0fLF4+i/pt9hVCz0QrZ28RUhXf825+EOL0Gw+Uzt+7RV2cCaJrlu4cDrDom2FRy\n" + "E8I=\n" + "-----END CERTIFICATE-----\n";
-
+*/
+    private final String keyContent = 
+        "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCGu5REMZSFQ6wD\n" +
+        "Fr7NPp9iibCYHZ6d1IV7s6Yvs6yvXmYw46c9JaJ8FN0NoHVzzDD2dELfpBxXRN7e\n" +
+        "q1rcP3ISDdDkhjngJoXEd2xaqgp0UxOS+AaamGG6sOleACn0XBF+XXaaD5vnFw7Y\n" +
+        "nDUyJioWR5KdTzVajLVkdEP3uPmJbRdveEu8HMZpwhZyY4uAcH5nHxMJEj/mkZtF\n" +
+        "ZJDi26ZjeonVOwnGm0NTbGCrfCneQEZC/SENua3BklHXc07zl3TrWu8xhrVWGRbc\n" +
+        "knw0VmGaPmehtuzL9WsieWGG4KH9G1LC2w2mbib64nSluBEcHRCKOT2aMzo2FonK\n" +
+        "AZkkIE53AgMBAAECggEAXLH3awd1eE47rRBcC1d3TtMOVUmjlFDf2WCbCJykRS88\n" +
+        "PYySxgX7iUTNZQ+tXxLv6M/KJpWBDiWK9EWOSJO6BmPNATy72tSGGcpUGPh+ItP5\n" +
+        "Vpcf7ALE0i3fENYqBz3Ep1zkOVBd4ZrCkxK9opgRQqzRWTtiqL7AGbHIBUoVHI+b\n" +
+        "Dk0bfl0936JpEMiFcI88KqckdFbY/cw+Uq7pRHPfUM5pB1AeMGqFVlqZbiDgMJm4\n" +
+        "GJRqXU8Qrue9UB6YypS9q7x9Q7sB/W3ghTLefYLrWVyeX417xcdKpaI7jo/KqT9F\n" +
+        "3m5uIphLe64HPLX50iWj9mIQ1vclsae3nIk/TObMcQKBgQC7FSgZdLdhxfPAC450\n" +
+        "EVM4Wmhiq0LmI63IbdIO+exsOQmOsCaGDNgWD8/YFSO+71dXRCB2WFUWg5G0Fl6w\n" +
+        "LKkQiSaNenJzT2NhL61+O4G2PPM3Sq1rlY0eB+8yq8tHxS1vO+zOcSdsUO+ES3FV\n" +
+        "E36cQMXixVnfvAdp+wUbkNZxyQKBgQC4XY9ZpSWnhIma/4HLF34tAZKCoVJAvHYk\n" +
+        "UpVIu9pixjQsmsEliTERvsWIfJQTpdsgkjkFHB3LzOsF2Wd2pXhBcMokLe8H9VNY\n" +
+        "MTi0i9zeZMV4V9UzRhgs9n41MAN3bgg0Pgt6W5qNvguEl5aQp9inwqyVmFS4NGit\n" +
+        "LNa8Kj7ePwKBgQCJ6LupoD96pMjdfediKk9VkFe4vJTRP+XghQw/G/8rfBROig2r\n" +
+        "7ZXxFXDa0iKKoraYztC7TLxUn2JuBbuBVTq/xMqVqnjqBdC1mMbk8grZgy6rSLJ0\n" +
+        "R0dCpwiuKrPsUS7/+4XCXOl50GPv+wktdPR1TM5TL7Xj1yEEABYwzuE1+QKBgHxy\n" +
+        "uybZ8VbogjJcMnKywvsCSrFez7TfAih2jkpwc3OlMubA94us1bCSw6fj39h7ZjTQ\n" +
+        "PykR15MQGbzzCYHvJAOYbPqK/wSyNrYbU5mbp1V/VERtlX5s3DjNkle4tz5Qybzp\n" +
+        "/Ll1SBhRpli0MnAmvHpRUEoSb22AAwCSeci+A33lAoGBAJNAVW8kE9ocXw3I4aac\n" +
+        "GI19ihoXr+8tRJilMCRQp4iFdi7acnek3/u0MaZ0ct8cVh9oMO+zVmTrpxJNTL6H\n" +
+        "He0z1VA4w/j4J5Z2P0KNLnKvRpayGWcf86YgSEmgU/ScwWzGL+cNgEKih74lSL4Z\n" +
+        "OK2Ayxxw3vbRyxQg6r1JUIKS\n";
+    
+    private final String certContent = 
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIIFZTCCBE2gAwIBAgIHK35JiCqLMjANBgkqhkiG9w0BAQUFADCByjELMAkGA1UE\n" +
+        "BhMCVVMxEDAOBgNVBAgTB0FyaXpvbmExEzARBgNVBAcTClNjb3R0c2RhbGUxGjAY\n" +
+        "BgNVBAoTEUdvRGFkZHkuY29tLCBJbmMuMTMwMQYDVQQLEypodHRwOi8vY2VydGlm\n" +
+        "aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkxMDAuBgNVBAMTJ0dvIERhZGR5\n" +
+        "IFNlY3VyZSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTERMA8GA1UEBRMIMDc5Njky\n" +
+        "ODcwHhcNMTIwMjAyMDExMDE5WhcNMTcwMjA3MDUxMTIzWjBZMRkwFwYDVQQKDBAq\n" +
+        "LnJlYWxob3N0aXAuY29tMSEwHwYDVQQLDBhEb21haW4gQ29udHJvbCBWYWxpZGF0\n" +
+        "ZWQxGTAXBgNVBAMMECoucmVhbGhvc3RpcC5jb20wggEiMA0GCSqGSIb3DQEBAQUA\n" +
+        "A4IBDwAwggEKAoIBAQCGu5REMZSFQ6wDFr7NPp9iibCYHZ6d1IV7s6Yvs6yvXmYw\n" +
+        "46c9JaJ8FN0NoHVzzDD2dELfpBxXRN7eq1rcP3ISDdDkhjngJoXEd2xaqgp0UxOS\n" +
+        "+AaamGG6sOleACn0XBF+XXaaD5vnFw7YnDUyJioWR5KdTzVajLVkdEP3uPmJbRdv\n" +
+        "eEu8HMZpwhZyY4uAcH5nHxMJEj/mkZtFZJDi26ZjeonVOwnGm0NTbGCrfCneQEZC\n" +
+        "/SENua3BklHXc07zl3TrWu8xhrVWGRbcknw0VmGaPmehtuzL9WsieWGG4KH9G1LC\n" +
+        "2w2mbib64nSluBEcHRCKOT2aMzo2FonKAZkkIE53AgMBAAGjggG+MIIBujAPBgNV\n" +
+        "HRMBAf8EBTADAQEAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAOBgNV\n" +
+        "HQ8BAf8EBAMCBaAwMwYDVR0fBCwwKjAooCagJIYiaHR0cDovL2NybC5nb2RhZGR5\n" +
+        "LmNvbS9nZHMxLTYzLmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0BBxcBMDkwNwYI\n" +
+        "KwYBBQUHAgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5jb20vcmVwb3Np\n" +
+        "dG9yeS8wgYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au\n" +
+        "Z29kYWRkeS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlmaWNhdGVzLmdv\n" +
+        "ZGFkZHkuY29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNydDAfBgNVHSME\n" +
+        "GDAWgBT9rGEyk2xF1uLuhV+auud2mWjM5zArBgNVHREEJDAighAqLnJlYWxob3N0\n" +
+        "aXAuY29tgg5yZWFsaG9zdGlwLmNvbTAdBgNVHQ4EFgQUwjwYIABbqSlCbCDr9E6F\n" +
+        "htB12TAwDQYJKoZIhvcNAQEFBQADggEBALxCXsUGaxTwWIvQEJu6D4lIMrkYyQuy\n" +
+        "Z2Cfd1/RLyX87ZkBR4iCO9MTezVFgDQj2rfSQGhnVLxD/1cGoivHKm3hmRX8gWh1\n" +
+        "d3vPco55XF8wWtQee822RB55h015kmrcv68yUIllrjDDuGfMc+QdIkxjIzDRWlEF\n" +
+        "mq8xEGIfabuflT2C58OU1ZHgQvBvK2iWGNgXSE9h0Bf8xwu/uYHgoWi5dBFm+woo\n" +
+        "GVNHaLNZBjwvKGvJN8zcmjjpYuYEfGVezm+kgGTBLpKthx5HV8vTrKnkmt0h/4pf\n" +
+        "ZumhNAbOBj753mNCMnNLo/+OAQNPR5QIGhjd4zMgUJT0e9GnQok7V98=\n" +
+        "-----END CERTIFICATE-----\n";
+    
     @Inject
     private KeystoreDao _ksDao;
     @Inject
