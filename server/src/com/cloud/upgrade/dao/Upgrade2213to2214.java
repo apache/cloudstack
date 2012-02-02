@@ -96,7 +96,7 @@ public class Upgrade2213to2214 implements DbUpgrade {
         //Drop i_snapshots__removed key (if exists) and re-add it again
         keys = new ArrayList<String>();
         keys.add("i_snapshots__removed");
-        DbUpgradeUtils.dropKeysIfExist(conn, "snapshots.removed", keys, false);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.snapshots", keys, false);
         try {
             PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
             pstmt.executeUpdate();
