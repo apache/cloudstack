@@ -22,6 +22,10 @@ CREATE TABLE  `cloud`.`mshost_peer` (
 INSERT IGNORE INTO configuration (category, instance, component, name, value, description) VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.systemvm.nic.device.type', 'E1000', 'Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3');
 INSERT IGNORE INTO configuration (category, instance, component, name, value, description) VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.recycle.hung.wokervm', 'false', 'Specify whether or not to recycle hung worker VMs');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'migratewait', '3600', 'Time (in seconds) to wait for VM migrate finish');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'sync.interval', '60', 'Cluster Delta sync interval in seconds');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'skip.steps', '60', 'Cluster full sync skip steps count');
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'backup.snapshot.wait', '10800', 'In second, timeout for BackupSnapshotCommand');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'copy.volume.wait', '10800', 'In second, timeout for copy volume command');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'UserVmManager', 'create.private.template.from.snapshot.wait', '10800', 'In second, timeout for CreatePrivateTemplateFromSnapshotCommand');
