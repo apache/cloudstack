@@ -34,13 +34,58 @@
 
           account: function(data) {
             var user = cloudStack.context.users[0];
-            complete($.extend(data, {
+            dataFns.events($.extend(data, {
               accountID: user.userid,
               accountName: user.account,
               userName: user.username,
               accountType: cloudStack.converters.toRole(user.type),
               accountDomainID: user.domainid
             }));
+          },
+
+          events: function(data) {
+            $.ajax({
+              url: createURL('listEvents'),
+              data: {
+                listAll: true,
+                page: 1,
+                pageSize: 4
+              },
+              success: function(json) {
+                dataFns.ipAddresses($.extend(data, {
+                  events: json.listeventsresponse.event ?
+                    json.listeventsresponse.event : []
+                }));
+              }
+            });
+          },
+
+          ipAddresses: function(data) {
+            $.ajax({
+              url: createURL('listNetworks'),
+              data: {
+                listAll: true,
+                type: 'isolated',
+                supportedServices: 'SourceNat'
+              },
+              success: function(json) {
+                var netTotal = json.listnetworksresponse.count ?
+                  json.listnetworksresponse.count : 0;
+
+                 $.ajax({
+                  url: createURL('listPublicIpAddresses'),
+                  success: function(json) {
+                    var ipTotal = json.listpublicipaddressesresponse.count ?
+                      json.listpublicipaddressesresponse.count : 0;
+
+                    complete($.extend(data, {
+                      netTotal: netTotal,
+                      ipTotal: ipTotal
+                    }));
+                  }
+                });                
+              }
+            });
           }
         };
 

@@ -3469,6 +3469,35 @@ Dialogs*/
   position: relative;
 }
 
+.dashboard.user .button.view-all {
+  float: right;
+  border: 1px solid #4B5B6B;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  color: #FFFFFF;
+  /*+text-shadow:0px -1px 2px #13293E;*/
+  -moz-text-shadow: 0px -1px 2px #13293E;
+  -webkit-text-shadow: 0px -1px 2px #13293E;
+  -o-text-shadow: 0px -1px 2px #13293E;
+  text-shadow: 0px -1px 2px #13293E;
+  padding: 2px 3px 3px;
+  margin: -4px 4px -4px 0;
+  text-indent: 0;
+  background: url(../images/bg-gradients.png) 0px -147px;
+}
+
+.dashboard.user .button.view-all:hover {
+  background-position: 0px 0px;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+}
+
 /**** Actions*/
 .dashboard.user .dashboard-actions {
 }
@@ -3634,6 +3663,42 @@ Dialogs*/
   margin: 15px 0 0 8px;
 }
 
+.dashboard.user .status-lists ul li.events {
+  width: 512px;
+}
+
+.dashboard.user .status-lists ul li.events .content li {
+  width: 97%;
+  cursor: pointer;
+  margin: 6px 11px 0 0;
+  font-size: 11px;
+  padding: 13px 0 12px 16px;
+  color: #495A76;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+  border: 1px solid #DBDBDB;
+  /*+box-shadow:0px 2px 4px #C0C0C0;*/
+  -moz-box-shadow: 0px 2px 4px #C0C0C0;
+  -webkit-box-shadow: 0px 2px 4px #C0C0C0;
+  -o-box-shadow: 0px 2px 4px #C0C0C0;
+  box-shadow: 0px 2px 4px #C0C0C0;
+  background: #EFEFEF url(../images/bg-gradients.png) repeat-x 0px -29px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.dashboard.user .status-lists ul li.events .content li .title {
+  font-weight: bold;
+  color: #4A5A6A;
+  margin-bottom: 9px;
+}
+
 .dashboard.user .status-lists ul li {
   float: left;
   margin: 0 10px 0 0;
@@ -3649,8 +3714,12 @@ Dialogs*/
   padding: 8px 0px 6px;
 }
 
+.dashboard.user .status-lists .events table {
+  width: 515px;
+}
+
 .dashboard.user .status-lists table tbody {
-  height: 150px;
+  height: 256px;
   display: block;
   overflow: auto;
   padding: 0 0px;
@@ -3664,6 +3733,14 @@ Dialogs*/
   width: 151px;
   overflow: hidden;
   cursor: default;
+}
+
+.dashboard.user .status-lists .my-account table tbody tr {
+}
+
+.dashboard.user .status-lists .my-account table tbody tr td {
+  padding-top: 19px;
+  padding-bottom: 19px;
 }
 
 .dashboard.user .status-lists table thead {
@@ -3684,8 +3761,8 @@ Dialogs*/
 }
 
 .dashboard.user .status-lists li.ip-addresses td {
-  padding: 13px 0;
   width: 250px;
+  padding: 28px 0 51px;
 }
 
 .dashboard.user .status-lists li.ip-addresses .desc {

@@ -1155,47 +1155,28 @@
 
         <div class="status-lists">
           <ul>
-            <li class="recent-errors">
+            <li class="events">
               <table>
                 <thead>
                   <tr>
-                    <th>My Projects</th>
+                    <th>Latest events <div class="button view-all events">view all</div></th>
                   </tr>
                 </thead>
               </table>
               <div class="content">
-                <table>
-                  <tbody>
-                    <tr><td class="desc"></td><td class="value"></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </li>
-            <li class="my-account">
-              <table>
-                <thead>
-                  <tr>
-                    <th>My Account</th>
-                  </tr>
-                </thead>
-              </table>
-              <div class="content">
-                <table>
-                  <tbody>
-                    <tr class="odd"><td class="desc">Account</td><td class="value" data-item="accountName"></td></tr>
-                    <tr><td class="desc">User</td><td class="value" data-item="userName"></td></tr>
-                    <tr class="odd"><td class="desc">Role</td><td class="value" data-item="accountType"></td></tr>
-                    <tr><td class="desc">Account ID</td><td class="value" data-item="accountID"></td></tr>
-                    <tr class="odd"><td class="desc">Domain ID</td><td class="value" data-item="accountDomainID"></td></tr>
-                  </tbody>
-                </table>
+                <ul data-item="events">
+                  <li data-list-item="description">
+                    <div class="title" data-list-item="type"></div>
+                    <span data-list-item="description"></span>
+                  </li>
+                </ul>
               </div>
             </li>
             <li class="ip-addresses">
               <table>
                 <thead>
                   <tr>
-                    <th>IP Addresses</th>
+                    <th>Network <div class="button view-all network">view all</div></th>
                   </tr>
                 </thead>
               </table>
@@ -1203,14 +1184,14 @@
                 <tbody>
                   <tr>
                     <td>
-                      <div class="desc"><span>Available public IP addresses:</span></div>
-                      <div class="value"><span>18</span></div>
+                      <div class="desc"><span>Owned isolated networks:</span></div>
+                      <div class="value"><span data-item="netTotal"></span></div>
                     </td>
                   </tr>
                   <tr class="odd">
                     <td>
                       <div class="desc"><span>Owned public IP addresses:</span></div>
-                      <div class="value"><span>03</span></div>
+                      <div class="value"><span data-item="ipTotal"></span></div>
                     </td>
                   </tr>
                 </tbody>

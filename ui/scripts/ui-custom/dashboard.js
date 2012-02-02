@@ -127,7 +127,8 @@
 
     // View all action
     $dashboard.find('.view-all').click(function() {
-      $('#navigation li.events').click();
+      if ($(this).hasClass('network')) $('#navigation li.network').click();
+      else $('#navigation li.events').click();
     });
 
 
