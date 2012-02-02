@@ -78,7 +78,7 @@ public class IPAddressUsageParser {
             String key = ""+IpId;
 
             // store the info in the IP map
-            IPMap.put(key, new IpInfo(usageIp.getZoneId(), IpId, usageIp.getAddress(), usageIp.isSourceNat()));
+            IPMap.put(key, new IpInfo(usageIp.getZoneId(), IpId, usageIp.getAddress(), usageIp.isSourceNat(), usageIp.isElastic()));
 
             Date IpAssignDate = usageIp.getAssigned();
             Date IpReleaseDeleteDate = usageIp.getReleased();
@@ -104,7 +104,7 @@ public class IPAddressUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 IpInfo info = IPMap.get(ipIdKey);
-                createUsageRecord(info.getZoneId(), useTime, startDate, endDate, account, info.getIpId(), info.getIPAddress(), info.isSourceNat());
+                createUsageRecord(info.getZoneId(), useTime, startDate, endDate, account, info.getIpId(), info.getIPAddress(), info.isSourceNat(), info.isElastic);
             }
         }
 
@@ -123,7 +123,7 @@ public class IPAddressUsageParser {
         usageDataMap.put(key, ipUsageInfo);
     }
 
-    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long IpId, String IPAddress, boolean isSourceNat) {
+    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long IpId, String IPAddress, boolean isSourceNat, boolean isElastic) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total usage time " + runningTime + "ms");
         }
@@ -141,8 +141,8 @@ public class IPAddressUsageParser {
 
         // Create the usage record
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", 
-                UsageTypes.IP_ADDRESS, new Double(usage), null, null, null, null, IpId, startDate, endDate, (isSourceNat?"SourceNat":""));
+        UsageVO usageRecord = new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), IpId, 
+        		(isElastic?1:0), (isSourceNat?"SourceNat":""), startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 
@@ -151,12 +151,14 @@ public class IPAddressUsageParser {
         private long IpId;
         private String IPAddress;
         private boolean isSourceNat;
+        private boolean isElastic;
 
-        public IpInfo(long zoneId,long IpId, String IPAddress, boolean isSourceNat) {
+        public IpInfo(long zoneId,long IpId, String IPAddress, boolean isSourceNat, boolean isElastic) {
             this.zoneId = zoneId;
             this.IpId = IpId;
             this.IPAddress = IPAddress;
             this.isSourceNat = isSourceNat;
+            this.isElastic = isElastic;
         }
 
         public long getZoneId() {
@@ -173,6 +175,10 @@ public class IPAddressUsageParser {
 
         public boolean isSourceNat() {
             return isSourceNat;
+        }
+        
+        public boolean isElastic() {
+            return isElastic;
         }
     }
 

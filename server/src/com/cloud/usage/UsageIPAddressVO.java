@@ -48,6 +48,9 @@ public class UsageIPAddressVO {
 	@Column(name="is_source_nat")
 	private boolean isSourceNat = false;
 
+	@Column(name="is_elastic")
+	private boolean isElastic = false;
+	
 	@Column(name="assigned")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date assigned = null;
@@ -59,13 +62,14 @@ public class UsageIPAddressVO {
 	protected UsageIPAddressVO() {
 	}
 
-	public UsageIPAddressVO(long id, long accountId, long domainId, long zoneId, String address, boolean isSourceNat, Date assigned, Date released) {
+	public UsageIPAddressVO(long id, long accountId, long domainId, long zoneId, String address, boolean isSourceNat, boolean isElastic, Date assigned, Date released) {
 	    this.id = id;
 		this.accountId = accountId;
 		this.domainId = domainId;
 		this.zoneId = zoneId;
 		this.address = address;
 		this.isSourceNat = isSourceNat;
+		this.isElastic = isElastic;
 		this.assigned = assigned;
 		this.released = released;
 	}
@@ -99,6 +103,10 @@ public class UsageIPAddressVO {
 	
 	public boolean isSourceNat() {
 	    return isSourceNat;
+	}
+	
+	public boolean isElastic() {
+	    return isElastic;
 	}
 
 	public Date getAssigned() {

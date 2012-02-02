@@ -151,6 +151,23 @@ public class UsageVO {
 	    this.endDate = endDate;
 	}
 
+	//IPAddress Usage
+	public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, 
+	        int usageType, Double rawUsage, Long usageId, long size, String type, Date startDate, Date endDate) {
+	    this.zoneId = zoneId;
+	    this.accountId = accountId;
+	    this.domainId = domainId;
+	    this.description = description;
+	    this.usageDisplay = usageDisplay;
+	    this.usageType = usageType;
+	    this.rawUsage = rawUsage;
+	    this.usageId = usageId;
+	    this.size = size;
+	    this.type = type;
+	    this.startDate = startDate;
+	    this.endDate = endDate;
+	}
+	
 	public Long getId() {
 		return id;
 	}
