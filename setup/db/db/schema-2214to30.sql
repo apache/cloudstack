@@ -558,6 +558,8 @@ UPDATE `cloud`.`network_offerings` SET `availability`='Optional' where `availabi
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `elastic_ip_service` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides elastic ip service';
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides elastic lb service';
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering provides an ability to define ip ranges';
+ALTER TABLE `cloud`.`networks` ADD COLUMN `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network provides an ability to define ip ranges';
+UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges from `cloud`.`network_offerings` no where no.id=network_offering_id);
 
 
 insert into `cloud`.`network_offerings` (`name`, `unique_name`, `display_text`, `traffic_type`, `system_only`, `specify_vlan`, `default`, `availability`, `state`, `guest_type`, `created`, `userdata_service`, `dns_service`, `dhcp_service`) values ('DefaultIsolatedNetworkOffering', 'DefaultIsolatedNetworkOffering', 'Offering for Isolated networks with no Source Nat service', 'Guest', 0, 1, 1, 'Optional', 'Enabled', 'Isolated', now(), 1, 1, 1);
@@ -614,3 +616,13 @@ update `cloud`.`vm_template` set removed=now() where id=2;
 DELETE from `cloud`.`configuration` where name='firewall.rule.ui.enabled';
 
 DELETE FROM `cloud`.`resource_limit` WHERE domain_id = 1 AND account_id IS NULL;
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `acl_type` varchar(15) COMMENT 'ACL access type. Null for system networks, can be Account/Domain for Guest networks';
+UPDATE `cloud`.`networks` SET acl_type='Domain' where guest_type is not null and shared=1;
+UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Virtual';
+UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Direct' and shared=0;
+ALTER TABLE `cloud`.`domain_network_ref` ADD COLUMN `subdomain_access` int(1) unsigned COMMENT '1 if network can be accessible from the subdomain';
+UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM network_offerings no where no.id=network_offering_id);
+
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `specified_cidr` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if the CIDR/gateway/vlan are specified in this network';

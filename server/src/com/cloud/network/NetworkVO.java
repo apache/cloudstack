@@ -210,8 +210,6 @@ public class NetworkVO implements Network, Identity {
      * @param guestType TODO
      * @param aclType TODO
      * @param specifyIpRanges TODO
-     * @param isShared TODO
-     * @param isShared
      * @param dataCenterId
      */
     public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {

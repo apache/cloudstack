@@ -38,3 +38,12 @@ ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `lb_service`;
 ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `userdata_service`;
 ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `vpn_service`;
 ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `dhcp_service`;
+
+
+ALTER TABLE `cloud`.`networks` DROP COLUMN `shared`;
+ALTER TABLE `cloud`.`networks` DROP COLUMN `is_domain_specific`;
+ALTER TABLE `cloud`.`networks` DROP COLUMN `is_security_group_enabled`;
+ALTER TABLE `cloud`.`networks` DROP COLUMN `is_default`;
+
+UPDATE `cloud`.`networks` SET guest_type=(SELECT guest_type FROM network_offerings no where no.id=network_offering_id);
+UPDATE `cloud`.`networks` SET guru_name='ExternalGuestNetworkGuru' where guest_type='Isolated';

@@ -62,9 +62,9 @@ public class Test2214To30DBUpgrade extends TestCase {
         Connection conn = Transaction.getStandaloneConnection();
         
         try {
-        	checkPhysicalNetworks(conn);
-            
+        	checkPhysicalNetworks(conn);   
             checkNetworkOfferings(conn);
+            checkNetworks(conn);
         } finally {
             try {
                 conn.close();
@@ -122,7 +122,7 @@ public class Test2214To30DBUpgrade extends TestCase {
     	fields.add("conserve_mode");
     	fields.add("elastic_ip_service");
     	fields.add("elastic_lb_service");
-        
+    	
         PreparedStatement pstmt;        
         for (String field : fields) {
              pstmt = conn.prepareStatement("SHOW COLUMNS FROM network_offerings LIKE ?");
@@ -138,5 +138,58 @@ public class Test2214To30DBUpgrade extends TestCase {
         
     	//2) compare default network offerings
     }
+    
+    protected void checkNetworks(Connection conn) throws SQLException {
+    	
+    	//1) verify that all fields are present
+    	List<String> fields = new ArrayList<String>();
+    	fields.add("id");
+    	fields.add("name");
+    	fields.add("mode");
+    	fields.add("broadcast_domain_type");
+    	fields.add("traffic_type");
+    	fields.add("display_text");
+    	fields.add("broadcast_uri");
+    	fields.add("gateway");
+    	fields.add("cidr");
+    	fields.add("network_offering_id");
+    	fields.add("physical_network_id");
+    	fields.add("data_center_id");
+    	fields.add("related");
+    	fields.add("guru_name");
+    	fields.add("state");
+    	fields.add("dns1");
+    	fields.add("domain_id");
+    	fields.add("account_id");
+    	fields.add("set_fields");
+    	fields.add("guru_data");
+    	fields.add("dns2");
+    	fields.add("network_domain");
+    	fields.add("created");
+    	fields.add("removed");
+    	fields.add("reservation_id");
+    	fields.add("uuid");
+    	fields.add("guest_type");
+    	fields.add("restart_required");
+    	fields.add("specify_ip_ranges");
+    	fields.add("acl_type");
+    	fields.add("specified_cidr");
+    	
+        PreparedStatement pstmt;        
+        for (String field : fields) {
+             pstmt = conn.prepareStatement("SHOW COLUMNS FROM networks LIKE ?");
+             pstmt.setString(1, field);
+             ResultSet rs = pstmt.executeQuery();
+             if (!rs.next()) {
+            	throw new CloudRuntimeException("Field " + field + " is missing in upgraded networks table"); 
+             }
+             rs.close();
+             pstmt.close();
+             
+        }
+        
+        
+    }
+    
     
 }
