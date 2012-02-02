@@ -74,6 +74,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         setupPhysicalNetworks(conn);
     	//update domain network ref
     	updateDomainNetworkRef(conn);
+    	//update redundant routers
+    	updateReduntantRouters(conn);
         //network offering
     	createNetworkOfferingServices(conn);
     	//create service/provider map for networks
@@ -608,7 +610,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         }
     }
     
-    private void createNetworkServices(Connection conn) {
+    protected void createNetworkServices(Connection conn) {
     	PreparedStatement pstmt = null;
         ResultSet rs = null;
         ResultSet rs1 = null;
@@ -651,4 +653,97 @@ public class Upgrade2214to30 implements DbUpgrade {
             }
         }
     }
-}
+    
+    
+    protected void updateReduntantRouters(Connection conn) {
+    	PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        ResultSet rs1 = null;
+        try {
+        	//get all networks that need to be updated to the redundant network offerings
+            pstmt = conn.prepareStatement("select ni.network_id, n.network_offering_id from nics ni, networks n where ni.instance_id in (select id from domain_router where is_redundant_router=1) and n.id=ni.network_id and n.traffic_type='Guest'");
+            rs = pstmt.executeQuery();
+            pstmt = conn.prepareStatement("select count(*) from network_offerings");
+            rs1 = pstmt.executeQuery();
+            long ntwkOffCount = 0;
+            while (rs1.next()) {
+                ntwkOffCount = rs1.getLong(1);
+            }
+
+            s_logger.debug("Have " + ntwkOffCount + " networkOfferings");
+            pstmt = conn.prepareStatement("CREATE TEMPORARY TABLE network_offerings2 ENGINE=MEMORY SELECT * FROM network_offerings WHERE id=1");
+            pstmt.executeUpdate();
+            
+            HashMap<Long,Long> newNetworkOfferingMap = new HashMap<Long, Long>();
+            
+            while (rs.next()) {
+                long networkId = rs.getLong(1);
+                long networkOfferingId = rs.getLong(2);
+                s_logger.debug("Updating network offering for the network id=" + networkId + " as it has redundant routers");
+                Long newNetworkOfferingId = null;
+                
+                if (!newNetworkOfferingMap.containsKey(networkOfferingId)) {
+                    //clone the record to 
+                    pstmt = conn.prepareStatement("INSERT INTO network_offerings2 SELECT * FROM network_offerings WHERE id=?");
+                    pstmt.setLong(1, networkOfferingId);
+                    pstmt.executeUpdate();
+                    
+                    pstmt = conn.prepareStatement("SELECT unique_name FROM network_offerings WHERE id=?");
+                    pstmt.setLong(1, networkOfferingId);
+                    rs1 = pstmt.executeQuery();
+                    String uniqueName = null;
+                    while (rs1.next()) {
+                    	uniqueName = rs1.getString(1) + "-redundant";
+                    }
+                    
+                    pstmt = conn.prepareStatement("UPDATE network_offerings2 SET id=?, redundant_router_service=1, unique_name=?, name=? WHERE id=?");
+                    ntwkOffCount = ntwkOffCount + 1;
+                    newNetworkOfferingId = ntwkOffCount;
+                    pstmt.setLong(1, newNetworkOfferingId);
+                    pstmt.setString(2, uniqueName);
+                    pstmt.setString(3, uniqueName);
+                    pstmt.setLong(4, networkOfferingId);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("INSERT INTO network_offerings SELECT * from network_offerings2 WHERE id=" + newNetworkOfferingId);
+                    pstmt.executeUpdate();
+                    
+                    pstmt = conn.prepareStatement("UPDATE networks SET network_offering_id=? where id=?");
+                    pstmt.setLong(1, newNetworkOfferingId);
+                    pstmt.setLong(2, networkId);
+                    pstmt.executeUpdate();
+                    
+                    newNetworkOfferingMap.put(networkOfferingId, ntwkOffCount);
+                } else {
+                	pstmt = conn.prepareStatement("UPDATE networks SET network_offering_id=? where id=?");
+                	newNetworkOfferingId = newNetworkOfferingMap.get(networkOfferingId);
+                    pstmt.setLong(1, newNetworkOfferingId);
+                    pstmt.setLong(2, networkId);
+                    pstmt.executeUpdate();
+                }
+                 
+                s_logger.debug("Successfully updated network offering id=" + networkId + " with new network offering id " + newNetworkOfferingId);
+            }
+            
+            pstmt = conn.prepareStatement("DROP TABLE network_offerings2");
+            pstmt.executeUpdate();  
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to redundant router networks", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close(); 
+                }
+                
+                if (rs1 != null) {
+                    rs1.close(); 
+                }
+               
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+ }

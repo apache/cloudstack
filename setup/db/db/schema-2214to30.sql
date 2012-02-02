@@ -626,3 +626,4 @@ UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM n
 
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `specified_cidr` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if the CIDR/gateway/vlan are specified in this network';
+DELETE FROM `cloud`.`configuration` WHERE name='network.redundantrouter';
