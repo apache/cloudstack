@@ -52,10 +52,7 @@
         disallowedActions.push('enableStaticNAT');
         disallowedActions.push('disableStaticNAT');
         disallowedActions.push('destroy');
-      } else {
-        disallowedActions.push('enableVPN');
-        disallowedActions.push('disableVPN');
-      }
+      } 
 
       allowedActions = $.grep(allowedActions, function(item) {
         return $.inArray(item, disallowedActions) == -1;
