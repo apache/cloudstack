@@ -61,7 +61,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject StorageNetworkManager _sNwMgr;
     Random _rand = new Random(System.currentTimeMillis());
     
-    private static final TrafficType[] _trafficTypes = {TrafficType.Management, TrafficType.Storage};
+    private static final TrafficType[] _trafficTypes = {TrafficType.Management};
     
     @Override
     public boolean isMyTrafficType(TrafficType type) {
@@ -85,12 +85,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         if (!isMyTrafficType(type)) {
             return null;
         }
-        
-        if (type == TrafficType.Storage && _sNwMgr.isStorageIpRangeAvailable()) {
-        	s_logger.debug("There is an storage network ip range, let StorageNetworkGuru to handle TrafficType.Storage");
-        	return null;
-        }
-                
+                        
         NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         return config;
     }

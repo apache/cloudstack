@@ -71,11 +71,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 		if (!canHandle(offering)) {
 			return null;
 		}
-		
-		if (!_sNwMgr.isStorageIpRangeAvailable()) {
-			return super.design(offering, plan, userSpecified, owner);
-		}
-		
+				
 		NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup,
 		        plan.getDataCenterId(), plan.getPhysicalNetworkId());
 		return config;
