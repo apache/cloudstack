@@ -315,7 +315,7 @@
                 var notificationArgs = {
                   section: id,
                   desc: 'Changed item properties',
-                  _custom: args._custom
+                  _custom: args ? args._custom : null
                 };
 
                 if (!action.notification) {
