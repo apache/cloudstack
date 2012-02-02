@@ -498,7 +498,8 @@
             label: 'Hypervisor',
             select: function(args) {
               args.response.success({ data: [
-                { id: 'XenServer', description: 'XenServer' }
+                { id: 'XenServer', description: 'XenServer' },
+								{ id: 'KVM', description: 'KVM'}
               ]});
             }
           },
