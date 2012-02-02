@@ -1121,6 +1121,12 @@ public class NetscalerResource implements ServerResource {
             vserver.set_servicetype(lbProtocol);
             vserver.set_lbmethod(lbMethod);
 
+            // netmask can only be set for source IP load balancer algorithm
+            if (!lbMethod.equalsIgnoreCase("SOURCEIPHASH")) {
+                vserver.set_netmask(null);
+                vserver.set_v6netmasklen(null);
+            }
+
             if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
                 long timeout = 2;// netscaler default 2 min
                 String cookieName = null;
