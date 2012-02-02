@@ -3901,10 +3901,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         //2) Only after all the elements and rules are shutdown properly, update the network VO
     	//get updated network
-        network = _networksDao.findById(networkId);
-    	boolean validStateToImplement = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
+        Network.State networkState = _networksDao.findById(networkId).getState();
+    	boolean validStateToImplement = (networkState == Network.State.Implemented || networkState == Network.State.Setup || networkState == Network.State.Allocated);
     	if (restartNetwork && !validStateToImplement) {
-            throw new CloudRuntimeException("Failed to implement the network elements and resources as a part of network update: " + network + "; network is in wrong state: " + network.getState());
+            throw new CloudRuntimeException("Failed to implement the network elements and resources as a part of network update: " + network + "; network is in wrong state: " + networkState);
     	}
     	
         if (networkOfferingId != null) {
