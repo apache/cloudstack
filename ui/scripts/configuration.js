@@ -1,7 +1,8 @@
 (function(cloudStack, $) {
 
   var requiredNetworkOfferingExists = false;
-
+  var networkServiceObjs = [];
+	
   cloudStack.sections.configuration = {
     title: 'Configuration',
     id: 'configuration',
@@ -1107,61 +1108,81 @@
                         dataType: 'json',
                         async: true,
                         success: function(data) {
-                          var networkServices = data.listsupportednetworkservicesresponse.networkservice;
-                          var fields = {};
-                          $(networkServices).each(function() {
-                            var name = this.name;
-                            var providers = this.provider;
-                            var displayName;
+                          networkServiceObjs = data.listsupportednetworkservicesresponse.networkservice;
+                          var fields = {}, providerCanenableindividualserviceMap = {}, providerServicesMap = {};
+                          $(networkServiceObjs).each(function() {
+                            var serviceName = this.name;
+                            var providerObjs = this.provider;
+                            var serviceDisplayName;
 
                             // Sanitize names
-                            switch (name) {
-                            case 'Vpn': displayName = 'VPN'; break;
-                            case 'Dhcp': displayName = 'DHCP'; break;
-                            case 'Dns': displayName = 'DNS'; break;
-                            case 'Lb': displayName = 'Load Balancer'; break;
-                            case 'SourceNat': displayName = 'Source NAT'; break;
-                            case 'StaticNat': displayName = 'Static NAT'; break;
-                            case 'PortForwarding': displayName = 'Port Forwarding'; break;
-                            case 'SecurityGroup': displayName = 'Security Groups'; break;
-                            case 'UserData': displayName = 'User Data'; break;
-                            default: displayName = name; break;
+                            switch (serviceName) {
+                            case 'Vpn': serviceDisplayName = 'VPN'; break;
+                            case 'Dhcp': serviceDisplayName = 'DHCP'; break;
+                            case 'Dns': serviceDisplayName = 'DNS'; break;
+                            case 'Lb': serviceDisplayName = 'Load Balancer'; break;
+                            case 'SourceNat': serviceDisplayName = 'Source NAT'; break;
+                            case 'StaticNat': serviceDisplayName = 'Static NAT'; break;
+                            case 'PortForwarding': serviceDisplayName = 'Port Forwarding'; break;
+                            case 'SecurityGroup': serviceDisplayName = 'Security Groups'; break;
+                            case 'UserData': serviceDisplayName = 'User Data'; break;
+                            default: serviceDisplayName = serviceName; break;
                             }
 
                             var id = {
-                              isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
-                              capabilities: 'service' + '.' + name + '.' + 'capabilities',
-                              provider: 'service' + '.' + name + '.' + 'provider'
+                              isEnabled: 'service' + '.' + serviceName + '.' + 'isEnabled',
+                              capabilities: 'service' + '.' + serviceName + '.' + 'capabilities',
+                              provider: 'service' + '.' + serviceName + '.' + 'provider'
                             };
 
-                            fields[id.isEnabled] = { label: displayName, isBoolean: true };
+                            fields[id.isEnabled] = { label: serviceDisplayName, isBoolean: true };
 																												
-														if(providers != null && providers.length > 1) {	//present provider dropdown when there are multiple providers for a service												
+														if(providerObjs != null && providerObjs.length > 1) {	//present provider dropdown when there are multiple providers for a service												
 															fields[id.provider] = {
-																label: displayName + ' Provider',
+																label: serviceDisplayName + ' Provider',
 																isHidden: true,
 																dependsOn: id.isEnabled,
 																select: function(args) {																
 																	//Virtual Router needs to be the first choice in provider dropdown (Bug 12509)																	
 																	var items = [];
-																	$(providers).each(function(){
+																	$(providerObjs).each(function(){
 																	  if(this.name == "VirtualRouter")
 																		  items.unshift({id: this.name, description: this.name});
 																		else
 																		  items.push({id: this.name, description: this.name});
+																																				
+																		if(!(this.name in providerCanenableindividualserviceMap))
+																		  providerCanenableindividualserviceMap[this.name] = this.canenableindividualservice;
+																																				
+                                    if(!(this.name in providerServicesMap))													
+                                      providerServicesMap[this.name] = [serviceName];
+                                    else																			
+																		  providerServicesMap[this.name].push(serviceName);																		
 																	});
-																																		
+																															
 																	args.response.success({
 																		data: items
 																	});
+																																																	
+																	args.$select.change(function() {																	  			
+                                    var providerName = $(this).val();																	
+																		var canenableindividualservice = providerCanenableindividualserviceMap[providerName];																	  
+																		if(canenableindividualservice == false) { //This provider can NOT enable individual service, therefore, make all services supported by this provider have this provider selected in provider dropdown
+																		  var serviceNames = providerServicesMap[providerName];																		 
+																			$(serviceNames).each(function(){																			 
+																				var providerDropdownId = 'service' + '.' + this + '.' + 'provider';																				
+																				$("select[name='" + providerDropdownId + "']").val(providerName);																				
+																			});																			
+																		}																		
+																	});		
 																}
 															};
 														}
-														else if(providers != null && providers.length == 1){ //present hidden field when there is only one provider for a service		
+														else if(providerObjs != null && providerObjs.length == 1){ //present hidden field when there is only one provider for a service		
 														  fields[id.provider] = {
-															  label: displayName + ' Provider',
+															  label: serviceDisplayName + ' Provider',
 																isHidden: true,
-																defaultValue: providers[0].name
+																defaultValue: providerObjs[0].name
 															};
 														}														
                           });
