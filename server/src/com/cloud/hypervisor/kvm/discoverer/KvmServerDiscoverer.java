@@ -173,6 +173,8 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			    _clusterDao.update(clusterId, cluster);
 			}
 			
+			
+			
 			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 			
 			if (_kvmPublicNic != null) {
@@ -203,6 +205,13 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guidWithTail);
 			if (connectedHost == null)
 				return null;
+			
+			//save user name and password
+			_hostDao.loadDetails(connectedHost);
+			Map<String, String> hostDetails = connectedHost.getDetails();
+			hostDetails.put("password", password);
+			hostDetails.put("username", username);
+			_hostDao.saveDetails(connectedHost);
 			
 			details.put("guid", guidWithTail);
 			return resources;
