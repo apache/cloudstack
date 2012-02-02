@@ -490,29 +490,39 @@
                     virtualMachineId: {
                       label: 'Instance',
                       select: function(args) {
+                        var zoneid = args.context.volumes[0].zoneid;
                         var items = [];
-                        $.ajax({
-                          url: createURL("listVirtualMachines&state=Running&zoneid=" + args.context.volumes[0].zoneid + "&domainid=" + args.context.volumes[0].domainid + "&account=" + args.context.volumes[0].account),
-                          dataType: "json",
-                          async: false,
-                          success: function(json) {
-                            var instanceObjs= json.listvirtualmachinesresponse.virtualmachine;
-                            $(instanceObjs).each(function() {
-                              items.push({id: this.id, description: this.displayname});
-                            });
-                          }
+                        var data;
+
+                        if (!args.context.projects) {
+                          data = {
+                            zoneid: zoneid,
+                            domainid: args.context.volumes[0].domainid,
+                            account: args.context.volumes[0].account
+                          };                          
+                        } else {
+                          data = {
+                            zoneid: zoneid,
+                            projectid: args.context.projects[0].id
+                          };
+                        }
+
+                        $(['Running', 'Stopped']).each(function() {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: $.extend(data, {
+                              state: this.toString()
+                            }),
+                            async: false,
+                            success: function(json) {
+                              var instanceObjs= json.listvirtualmachinesresponse.virtualmachine;
+                              $(instanceObjs).each(function() {
+                                items.push({id: this.id, description: this.displayname});
+                              });
+                            }
+                          });
                         });
-                        $.ajax({
-                          url: createURL("listVirtualMachines&state=Stopped&zoneid=" + args.context.volumes[0].zoneid + "&domainid=" + args.context.volumes[0].domainid + "&account=" + args.context.volumes[0].account),
-                          dataType: "json",
-                          async: false,
-                          success: function(json) {
-                            var instanceObjs= json.listvirtualmachinesresponse.virtualmachine;
-                            $(instanceObjs).each(function() {
-                              items.push({id: this.id, description: this.displayname});
-                            });
-                          }
-                        });
+                        
                         args.response.success({data: items});
                       }
                     }
