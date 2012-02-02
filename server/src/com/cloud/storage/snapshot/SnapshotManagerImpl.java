@@ -56,6 +56,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -724,7 +726,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             SnapshotVO oldestSnapshot = snaps.get(0);
             long oldSnapId = oldestSnapshot.getId();
             s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
-            deleteSnapshotInternal(oldSnapId);
+            if(deleteSnapshotInternal(oldSnapId)){
+            	//log Snapshot delete event
+            	EventUtils.saveEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
+            }
             snaps.remove(oldestSnapshot);
         }
     }
