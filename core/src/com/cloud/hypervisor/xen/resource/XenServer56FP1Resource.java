@@ -95,6 +95,10 @@ public class XenServer56FP1Resource extends XenServer56Resource {
                         vdis.add(vdi);
                     }
                 }
+                synchronized (_cluster.intern()) {
+                    s_vms.remove(_cluster, _name, vm.getNameLabel(conn));
+                }
+                s_logger.info("Fence command for VM " + cmd.getVmName());
                 vm.powerStateReset(conn);
                 vm.destroy(conn);
                 for (VDI vdi : vdis) {
