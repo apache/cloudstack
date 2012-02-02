@@ -2428,6 +2428,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             rae.setResourceType("vm");
             throw rae;
         }
+        // check if the volume can be created for the user
+        // Check that the resource limit for volumes won't be exceeded
+        if (_accountMgr.resourceLimitExceeded(owner, ResourceType.volume)) {
+            UserContext.current().setEventDetails("Maximum number of volumes for account: " + owner.getAccountName() + " has been exceeded.");
+            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + owner.getAccountName() + " has been exceeded.");
+            rae.setResourceType("volume");
+            throw rae;
+        }
 
         //verify security group ids
         if (securityGroupIdList != null) {
