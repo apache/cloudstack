@@ -13,6 +13,8 @@
     });
   };
   
+	var zoneObjs = [];
+	
   var actionFilters = {
     ipAddress: function(args) {
       var allowedActions = args.context.actions;
@@ -153,6 +155,28 @@
           actions: {
             add: {
               label: 'Add guest network',
+														
+							preFilter: function(args) {
+							  var basicZoneExists = false;
+							  $.ajax({
+								  url: createURL("listZones"),
+									dataType: "json",
+									async: false,
+									success: function(json) {									  						
+										if(json.listzonesresponse.zone != null && json.listzonesresponse.zone.length > 0) {										
+										  zoneObjs = json.listzonesresponse.zone;
+											$(zoneObjs).each(function() {										
+												if(this.networktype == "Basic") {
+												  basicZoneExists = true;
+													return false; //break each loop
+												}
+											});
+										}										
+									}
+								})
+								return !basicZoneExists; //hide Add guest network button if any basic zone exists
+							},
+														
               createForm: {
                 title: 'Add guest network',
                 desc: 'Please specify name and zone for this network; note that network will be isolated and source NAT-enabled.',
@@ -162,12 +186,11 @@
                   zoneId: {
                     label: 'Zone',
                     validation: { required: true },
+										
+										
                     select: function(args) {
                       $.ajax({
-                        url: createURL('listZones'),
-                        data: {
-                          type: 'Advanced'
-                        },
+                        url: createURL('listZones'),                        
                         success: function(json) {
                           var zones = $.grep(json.listzonesresponse.zone, function(zone) {
                             return zone.networktype == 'Advanced';
@@ -184,6 +207,8 @@
                         }
                       });
                     }
+										
+										
                   },
                   networkOfferingId: {
                     label: 'Network Offering',
