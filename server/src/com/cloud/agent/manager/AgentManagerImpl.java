@@ -154,6 +154,8 @@ import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.sshException;
 import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -1569,10 +1571,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
         
+        //for kvm, need to log into kvm host, restart cloud-agent
         if (host.getHypervisorType() == HypervisorType.KVM) {
-        	MaintainCommand cmd = new MaintainCommand();
-        	cmd.setMaintain(false);
-        	easySend(hostId, cmd);
+        	_hostDao.loadDetails(host);
+        	String password = host.getDetail("password");
+        	String username = host.getDetail("username");
+        	if (password == null || username == null) {
+        		s_logger.debug("Can't find password/username");
+        		return false;
+        	}
+        	com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
+        	if (connection == null) {
+        		s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
+        		return false;
+        	}
+
+        	try {
+        		SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloud-agent restart");
+        	} catch (sshException e) {
+        		return false;
+        	}
         }
         disconnect(hostId, Event.ResetRequested, false);
         return true;
