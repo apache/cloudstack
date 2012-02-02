@@ -211,7 +211,9 @@
                           var capacity = this;
 
                           zoneCapacities.push($.extend(capacity, {
-                            zoneName: zone.name + '<br/>Cluster: ' + cluster.name
+                            zoneName: zone.name +
+                              '<br/>Pod: ' + cluster.podname +
+                              '<br/>Cluster: ' + cluster.name
                           }));
                         });
                       });
