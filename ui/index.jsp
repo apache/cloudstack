@@ -484,7 +484,7 @@
                 <li class="management">
                   <ul class="container">
                     <li traffic-type-id="management"
-                        title="Traffic between the internet and virtual machines in the cloud."
+                        title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
                         class="traffic-type-draggable management"></li>
                   </ul>
                   <div class="info">
@@ -495,7 +495,7 @@
                 <li class="public">
                   <ul class="container">
                     <li traffic-type-id="public"
-                        title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
+                        title="Traffic between the internet and virtual machines in the cloud."
                         class="traffic-type-draggable public"></li>
                   </ul>
                   <div class="info">
