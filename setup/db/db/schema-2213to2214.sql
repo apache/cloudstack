@@ -53,5 +53,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.stats.job.exec.time', '00:15', 'The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'enable.usage.server', 'true', 'Flag for enabling usage');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'direct.network.stats.interval', '86400', 'Interval (in seconds) to collect stats from Traffic Monitor');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.aggregation.timezone', 'GMT', 'The timezone to use for usage stats aggregation');
