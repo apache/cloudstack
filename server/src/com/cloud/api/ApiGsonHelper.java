@@ -13,8 +13,8 @@
 package com.cloud.api;
 
 import java.util.Map;
-
 import com.google.gson.GsonBuilder;
+import com.cloud.utils.IdentityProxy;
 
 public class ApiGsonHelper {
     private static final GsonBuilder s_gBuilder;

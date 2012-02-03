@@ -17,6 +17,8 @@ import com.google.gson.GsonBuilder;
 /**
  * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
  */
+import com.cloud.utils.IdentityProxy;
+
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
     
