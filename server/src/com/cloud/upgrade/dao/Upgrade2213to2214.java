@@ -80,7 +80,31 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	} catch (SQLException e) {
     	    throw new CloudRuntimeException("Unable to execute usage_event table update", e);
     	}
-    	
+
+		if (DbUpgradeUtils.dropKeysIfExistAndReturnValue(conn, "ssh_keypairs", "fk_ssh_keypair__account_id", false)) {
+			PreparedStatement pstmt;
+            try {
+	            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD KEY `fk_ssh_keypairs__account_id`(`account_id`)");
+	            pstmt.executeUpdate();
+				pstmt.close();
+            } catch (SQLException e) {
+            	throw new CloudRuntimeException("Unable to execute ssh_keypairs table update", e);
+            }
+			
+		}
+		
+		if (DbUpgradeUtils.dropKeysIfExistAndReturnValue(conn, "ssh_keypairs", "fk_ssh_keypair__domain_id", false)) {
+			PreparedStatement pstmt;
+            try {
+	            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD KEY `fk_ssh_keypairs__domain_id`(`domain_id`)");
+	            pstmt.executeUpdate();
+				pstmt.close();
+            } catch (SQLException e) {
+            	throw new CloudRuntimeException("Unable to execute ssh_keypairs table update", e);
+            }
+			
+		}
+		
     	//In cloud_usage DB, drop i_usage_event__created key (if exists) and re-add it again
     	keys = new ArrayList<String>();
     	keys.add("i_usage_event__created");
@@ -92,18 +116,6 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	} catch (SQLException e) {
     	    throw new CloudRuntimeException("Unable to execute cloud_usage usage_event table update", e);
     	}
-    	
-        //Drop i_snapshots__removed key (if exists) and re-add it again
-        keys = new ArrayList<String>();
-        keys.add("i_snapshots__removed");
-        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.snapshots", keys, false);
-        try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
-            pstmt.executeUpdate();
-            pstmt.close();
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to insert index for removed column in snapshots", e);
-        }
     	
     	//Drop netapp_volume primary key and add it again
     	DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud.netapp_volume");

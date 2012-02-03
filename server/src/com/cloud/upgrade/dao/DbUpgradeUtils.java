@@ -12,6 +12,29 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DbUpgradeUtils {
     final static Logger s_logger = Logger.getLogger(DbUpgradeUtils.class);
 
+    public static boolean dropKeysIfExistAndReturnValue(Connection conn, String tableName, String key, boolean isForeignKey) {
+    	PreparedStatement pstmt = null;
+    	try {
+            if (isForeignKey) {
+                pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key);
+            } else {
+                pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP KEY " + key);
+            }
+            pstmt.executeUpdate();
+            s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
+        } catch (SQLException e) {            
+            return true;
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    	return false;
+    }
+    
     public static void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
         for (String key : keys) {
             PreparedStatement pstmt = null;
