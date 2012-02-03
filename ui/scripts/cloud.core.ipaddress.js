@@ -33,12 +33,12 @@ function ipGetSearchParams() {
 				        
         if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none"
 	        && $advancedSearchPopup.find("#domain").hasClass("textwatermark") == false) {
-	        var domainName = $advancedSearchPopup.find("#domain").val();
-	        if (domainName != null && domainName.length > 0) { 	
+	        var domainPath = $advancedSearchPopup.find("#domain").val();
+	        if (domainPath != null && domainPath.length > 0) { 	
 				var domainId;							    
 			    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 				    for(var i=0; i < autoCompleteDomains.length; i++) {					        
-				      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				      if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 				          domainId = autoCompleteDomains[i].id;
 				          break;	
 				      }

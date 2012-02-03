@@ -152,12 +152,12 @@ function bindAddAccountButton() {
 				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);         //optional
 				
 				isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
-				var domainName = $thisDialog.find("#domain").val();
+				var domainPath = $thisDialog.find("#domain").val();
 				var domainId;
-				if(domainName != null && domainName.length > 0) { 				    
+				if(domainPath != null && domainPath.length > 0) { 				    
 				    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 					    for(var i=0; i < autoCompleteDomains.length; i++) {					        
-					      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					      if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 					          domainId = autoCompleteDomains[i].id;
 					          break;	
 					      }
