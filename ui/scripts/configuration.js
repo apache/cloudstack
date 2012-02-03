@@ -1168,11 +1168,13 @@
                                     var providerName = $(this).val();																	
 																		var canenableindividualservice = providerCanenableindividualserviceMap[providerName];																	  
 																		if(canenableindividualservice == false) { //This provider can NOT enable individual service, therefore, make all services supported by this provider have this provider selected in provider dropdown
-																		  var serviceNames = providerServicesMap[providerName];																		 
-																			$(serviceNames).each(function(){																			 
-																				var providerDropdownId = 'service' + '.' + this + '.' + 'provider';																				
-																				$("select[name='" + providerDropdownId + "']").val(providerName);																				
-																			});																			
+																		  var serviceNames = providerServicesMap[providerName];			
+																			if(serviceNames != null && serviceNames.length > 1) {																			  	
+																				$(serviceNames).each(function(){																			 
+																					var providerDropdownId = 'service' + '.' + this + '.' + 'provider';																				
+																					$("select[name='" + providerDropdownId + "']").val(providerName);																				
+																				});	
+                                      }
 																		}																		
 																	});		
 																}
