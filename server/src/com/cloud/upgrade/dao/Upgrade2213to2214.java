@@ -128,7 +128,22 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	} catch (SQLException e) {
     	    throw new CloudRuntimeException("Unable to insert index for removed column in snapshots", e);
     	}
-
+        //Drop i_op_vm_ruleset_log__instance_id, u_op_vm_ruleset_log__instance_id key (if exists) and re-add u_op_vm_ruleset_log__instance_id again
+        keys = new ArrayList<String>();
+        keys.add("i_op_vm_ruleset_log__instance_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.op_vm_ruleset_log", keys, false);
+        
+        keys = new ArrayList<String>();
+        keys.add("u_op_vm_ruleset_log__instance_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.op_vm_ruleset_log", keys, false);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_vm_ruleset_log` ADD CONSTRAINT `u_op_vm_ruleset_log__instance_id` UNIQUE (`instance_id`)");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute changes for op_vm_ruleset_log", e);
+        }  
+        
     	//Drop netapp_volume primary key and add it again
     	DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud.netapp_volume");
     	try {
