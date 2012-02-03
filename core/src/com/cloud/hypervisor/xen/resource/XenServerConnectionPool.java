@@ -641,7 +641,13 @@ public class XenServerConnectionPool {
             if (s_managePool) {
                 try {
                     Map<String, String> args = new HashMap<String, String>();
-                    host.callPlugin(mConn, "vmops", "pingxenserver", args);
+                    host.callPlugin(mConn, "echo", "main", args);
+                } catch (Types.SessionInvalid e) {
+                    if (s_logger.isDebugEnabled()) {
+                        String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
+                        s_logger.debug(msg);
+                    }
+                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
                 } catch (Types.CannotContactHost e ) {
                     if (s_logger.isDebugEnabled()) {
                         String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
