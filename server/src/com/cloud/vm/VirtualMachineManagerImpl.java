@@ -1648,36 +1648,40 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
 
     public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates, boolean init) {
+    	if (newStates==null)return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
         Set<VMInstanceVO> set_vms = Collections.synchronizedSet(new HashSet<VMInstanceVO>());
         set_vms.addAll(_vmDao.listByClusterId(clusterId));
-        set_vms.addAll(_vmDao.listStartingByClusterId(clusterId));
+        set_vms.addAll(_vmDao.listLHByClusterId(clusterId));
 
         for (VMInstanceVO vm : set_vms) {
             if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
             if (init){ // mark the VMs real state on initial sync
                 VMInstanceVO castedVm = null;
-                if (info == null){
-                	if (vm.getState() == State.Running || vm.getState() == State.Starting) { // only work on VMs which were supposed to be starting/running earlier
-                        info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                        castedVm = info.guru.findById(vm.getId());
-                        try {
-                            Host host = _hostDao.findByGuid(info.getHostUuid());
-                            long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
-                            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-                            Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
-                            if (command != null){
-                                Answer answer = _agentMgr.send(hostId, command);
-                                if (!answer.getResult()) {
-                                    s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
-                                }
+                if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
+                		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+                {
+                	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
+                    info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+               		vm.setState(State.Running); // set it as running and let HA take care of it
+               		_vmDao.persist(vm);
+                    castedVm = info.guru.findById(vm.getId());
+                    try {
+                        Host host = _hostDao.findByGuid(info.getHostUuid());
+                        long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+                        Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
+                        if (command != null){
+                            Answer answer = _agentMgr.send(hostId, command);
+                            if (!answer.getResult()) {
+                                s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
                             }
-                        } catch (Exception e) {
-                            s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
-                            e.printStackTrace();
                         }
-                	}
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 }
            }
 
