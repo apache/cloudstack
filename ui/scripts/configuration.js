@@ -1109,7 +1109,7 @@
                         async: true,
                         success: function(data) {
                           networkServiceObjs = data.listsupportednetworkservicesresponse.networkservice;
-                          var fields = {}, providerCanenableindividualserviceMap = {}, providerServicesMap = {};
+                          var fields = {}, providerCanenableindividualserviceMap = {}, providerServicesMap = {}, providerDropdownsForciblyChangedTogether = {};													
                           $(networkServiceObjs).each(function() {
                             var serviceName = this.name;
                             var providerObjs = this.provider;
@@ -1164,17 +1164,31 @@
 																		data: items
 																	});
 																																																	
-																	args.$select.change(function() {																	  			
+																	args.$select.change(function() {		
+                                    var $thisProviderDropdown = $(this);																	
                                     var providerName = $(this).val();																	
 																		var canenableindividualservice = providerCanenableindividualserviceMap[providerName];																	  
-																		if(canenableindividualservice == false) { //This provider can NOT enable individual service, therefore, make all services supported by this provider have this provider selected in provider dropdown
+																		if(canenableindividualservice == false) { //This provider can NOT enable individual service, therefore, force all services supported by this provider have this provider selected in provider dropdown
 																		  var serviceNames = providerServicesMap[providerName];			
-																			if(serviceNames != null && serviceNames.length > 1) {																			  	
+																			if(serviceNames != null && serviceNames.length > 1) {			
+                                        providerDropdownsForciblyChangedTogether = {};  //reset																			
 																				$(serviceNames).each(function(){																			 
-																					var providerDropdownId = 'service' + '.' + this + '.' + 'provider';																				
+																					var providerDropdownId = 'service' + '.' + this + '.' + 'provider';		
+                                          providerDropdownsForciblyChangedTogether[providerDropdownId] = 1;																					
 																					$("select[name='" + providerDropdownId + "']").val(providerName);																				
 																				});	
                                       }
+																		}		
+                                    else { //canenableindividualservice == true
+																		  if($thisProviderDropdown.context.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
+																			  for(var key in providerDropdownsForciblyChangedTogether) {																				  
+																					if(key == $thisProviderDropdown.context.name)
+																					  continue; //skip to next item in for loop
+																					else
+																					  $("select[name='" + key + "']").val(""); //no "" option in dropdown, so will force it to select 1st option in dropdown
+																				}																			 																																	
+																				providerDropdownsForciblyChangedTogether = {};  //reset			
+                                      }																				
 																		}																		
 																	});		
 																}
