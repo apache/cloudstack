@@ -270,7 +270,7 @@
                       dataType: "json",
                       async: false,
                       success: function(json) {
-                        networkObjs = json.listnetworksresponse.network;                        
+                        networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];                        
                       }
                     });                                      
                     
