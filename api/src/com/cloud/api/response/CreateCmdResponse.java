@@ -19,7 +19,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 public class CreateCmdResponse extends BaseResponse {

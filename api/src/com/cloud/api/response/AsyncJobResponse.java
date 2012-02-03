@@ -22,7 +22,7 @@ import java.util.Date;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;

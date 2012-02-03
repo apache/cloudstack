@@ -20,7 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;

@@ -19,6 +19,7 @@
 package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
+import com.cloud.utils.IdentityProxy;
 
 public class ApiGsonHelper {
     private static final GsonBuilder s_gBuilder;

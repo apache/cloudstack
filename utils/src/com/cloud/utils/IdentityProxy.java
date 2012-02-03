@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.api;
+package com.cloud.utils;
 
 public class IdentityProxy {
     private String _tableName;

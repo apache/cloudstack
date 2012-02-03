@@ -20,7 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;

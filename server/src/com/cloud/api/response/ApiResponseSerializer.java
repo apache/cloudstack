@@ -35,7 +35,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
