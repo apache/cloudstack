@@ -1010,7 +1010,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             long id = event.getResourceId();
             long sourceNat = event.getSize();
             boolean isSourceNat = (sourceNat == 1) ? true : false ;
-            boolean isElastic = (event.getTemplateId() == 1) ? true : false ;
+            boolean isElastic = (event.getTemplateId() == null || event.getTemplateId() == 0) ? false : true ;
             UsageIPAddressVO ipAddressVO = new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isElastic, event.getCreateDate(), null);
             m_usageIPAddressDao.persist(ipAddressVO);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {

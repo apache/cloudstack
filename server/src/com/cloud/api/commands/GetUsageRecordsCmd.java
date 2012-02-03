@@ -250,10 +250,11 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 usageRecResponse.setUsageId(usageRecord.getUsageId());
                 if(usageRecord.getUsageType() == UsageTypes.IP_ADDRESS){
                     usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat"))?true:false);
+                    usageRecResponse.setElastic((usageRecord.getSize() == 1)?true:false);
                 } else {
                     usageRecResponse.setType(usageRecord.getType());
+                    usageRecResponse.setSize(usageRecord.getSize());
                 }
-                usageRecResponse.setSize(usageRecord.getSize());
 
                 if (usageRecord.getRawUsage() != null) {
                     DecimalFormat decimalFormat = new DecimalFormat("###########.######");

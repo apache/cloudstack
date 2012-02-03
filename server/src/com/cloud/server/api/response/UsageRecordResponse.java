@@ -100,6 +100,9 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @SerializedName("issourcenat") @Param(description="source Nat flag for IPAddress")
     private Boolean isSourceNat;
 
+    @SerializedName("iselastic") @Param(description="Elastic flag for IPAddress")
+    private Boolean isElastic;
+    
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -184,6 +187,10 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     public void setSourceNat(Boolean isSourceNat) {
         this.isSourceNat = isSourceNat;
+    }
+
+    public void setElastic(Boolean isElastic) {
+        this.isElastic = isElastic;
     }
     
     @Override
