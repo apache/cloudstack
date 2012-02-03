@@ -16,7 +16,7 @@ import com.cloud.utils.SerialVersionUID;
 
 /**
  */
-public class UnsupportedVersionException extends Exception {
+public class UnsupportedVersionException extends CloudException {
 
     private static final long serialVersionUID = SerialVersionUID.UnsupportedVersionException;
     

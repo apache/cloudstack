@@ -18,7 +18,7 @@ import com.cloud.utils.SerialVersionUID;
 /**
  * wait timeout.
  */
-public class OperationTimedoutException extends Exception {
+public class OperationTimedoutException extends CloudException {
     private static final long serialVersionUID = SerialVersionUID.OperationTimedoutException;
     
     long _agentId;

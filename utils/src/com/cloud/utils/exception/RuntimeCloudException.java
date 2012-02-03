@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.exception;
+package com.cloud.utils.exception;
 
 import com.cloud.utils.IdentityProxy;
 
 /**
- * CloudException is a generic exception class that has an IdentityProxy
+ * RuntimeCloudException is a generic exception class that has an IdentityProxy
  * object in it to enable on the fly conversion of database ids to uuids
  * by the API response serializer. Any exceptions that are thrown by
- * command invocations must extend this class, or the RuntimeCloudException
- * class, which extends RuntimeException instead of Exception like this
+ * command invocations must extend this class, or the CloudException
+ * class, which extends Exception instead of RuntimeException like this
  * class does. 
  */
 
@@ -42,9 +42,14 @@ public class RuntimeCloudException extends RuntimeException {
 		super(message);		
 	}
 	
+    public RuntimeCloudException(String message, Throwable cause) {
+        super(message, cause);        
+    }
+    	
 	public RuntimeCloudException() {
 		//this.id = new IdentityProxy(); ??
 		//this.id = NULL; ??
+		super();
 	}
 	
 }

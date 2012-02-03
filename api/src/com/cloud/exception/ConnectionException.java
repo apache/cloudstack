@@ -26,7 +26,7 @@ import com.cloud.utils.SerialVersionUID;
  *      on the agent and decided it is best to flush connection and reconnect.
  *      situation where it keeps throwing ConnectionException.
  */
-public class ConnectionException extends Exception {
+public class ConnectionException extends CloudException {
     
     private static final long serialVersionUID = SerialVersionUID.ConnectionException;
     boolean _error;

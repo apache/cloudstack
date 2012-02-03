@@ -41,10 +41,15 @@ public class CloudException extends Exception {
 	public CloudException(String message) {
 		super(message);		
 	}
-	
+
+    public CloudException(String message, Throwable cause) {
+        super(message, cause);        
+    }
+    
 	public CloudException() {
 		//this.id = new IdentityProxy(); ??
 		//this.id = NULL; ??
+		super();
 	}
 	
 }
