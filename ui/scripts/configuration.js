@@ -1184,8 +1184,8 @@
 																			  for(var key in providerDropdownsForciblyChangedTogether) {																				  
 																					if(key == $thisProviderDropdown.context.name)
 																					  continue; //skip to next item in for loop
-																					else
-																					  $("select[name='" + key + "']").val(""); //no "" option in dropdown, so will force it to select 1st option in dropdown
+																					else 															
+																						$("select[name='" + key + "'] option:first").attr("selected", "selected");																					
 																				}																			 																																	
 																				providerDropdownsForciblyChangedTogether = {};  //reset			
                                       }																				
