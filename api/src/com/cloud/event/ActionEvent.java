@@ -24,11 +24,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Target({TYPE, METHOD})
+@Target({ TYPE, METHOD })
 @Retention(RUNTIME)
 public @interface ActionEvent {
     boolean create() default false;
+
     boolean async() default false;
+
     String eventType();
+
     String eventDescription();
 }

@@ -28,11 +28,11 @@ public class DataCenterDeployment implements DeploymentPlan {
     Long _physicalNetworkId;
     ExcludeList _avoids = null;
     boolean _recreateDisks;
-    
+
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
     }
-    
+
     public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId, Long physicalNetworkId) {
         _dcId = dataCenterId;
         _podId = podId;
@@ -41,7 +41,7 @@ public class DataCenterDeployment implements DeploymentPlan {
         _poolId = poolId;
         _physicalNetworkId = physicalNetworkId;
     }
-    
+
     @Override
     public long getDataCenterId() {
         return _dcId;
@@ -58,10 +58,10 @@ public class DataCenterDeployment implements DeploymentPlan {
     }
 
     @Override
-    public Long getHostId(){
-    	return _hostId;
+    public Long getHostId() {
+        return _hostId;
     }
-    
+
     @Override
     public Long getPoolId() {
         return _poolId;
@@ -76,7 +76,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     public void setAvoids(ExcludeList avoids) {
         _avoids = avoids;
     }
-    
+
     @Override
     public Long getPhysicalNetworkId() {
         return _physicalNetworkId;

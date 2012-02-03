@@ -20,13 +20,10 @@ package com.cloud.exception;
 
 public class InternalErrorException extends ManagementServerException {
 
+    private static final long serialVersionUID = -3070582946175427902L;
 
-	private static final long serialVersionUID = -3070582946175427902L;
-
-	public InternalErrorException(String message) {
-		super(message);
-	}
-	
-	
+    public InternalErrorException(String message) {
+        super(message);
+    }
 
 }

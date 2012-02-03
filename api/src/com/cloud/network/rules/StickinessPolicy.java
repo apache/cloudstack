@@ -21,9 +21,8 @@ import java.util.List;
 
 import com.cloud.utils.Pair;
 
-
 /**
- * Definition for a StickinessPolicy 
+ * Definition for a StickinessPolicy
  */
 public interface StickinessPolicy {
 
@@ -38,8 +37,8 @@ public interface StickinessPolicy {
     public String getMethodName();
 
     public boolean isRevoke();
-    
+
     public List<Pair<String, String>> getParams(); /* get params in Map <string,String> format */
-    
+
     public String getUuid();
 }

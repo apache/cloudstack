@@ -19,9 +19,11 @@
 package com.cloud.vm;
 
 public interface VmStats {
-	//vm related stats
-	public double getCPUUtilization();
+    // vm related stats
+    public double getCPUUtilization();
+
     public double getNetworkReadKBs();
+
     public double getNetworkWriteKBs();
 
 }

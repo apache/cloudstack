@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({FIELD})
+@Target({ FIELD })
 public @interface IdentityMapper {
-	String entityTableName();
+    String entityTableName();
 }

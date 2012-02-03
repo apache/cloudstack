@@ -18,16 +18,16 @@
 package com.cloud.configuration;
 
 public interface Resource {
-	
-	public static final short RESOURCE_UNLIMITED = -1;
-    
-    public enum ResourceType{
-        user_vm ("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        public_ip ("public_ip", 1, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        volume ("volume", 2, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        snapshot ("snapshot", 3, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        template ("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        project ("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+
+    public static final short RESOURCE_UNLIMITED = -1;
+
+    public enum ResourceType {
+        user_vm("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        public_ip("public_ip", 1, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        volume("volume", 2, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        snapshot("snapshot", 3, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        template("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain);
 
         private String name;
         private ResourceOwnerType[] supportedOwners;
@@ -37,7 +37,7 @@ public interface Resource {
             this.name = name;
             this.supportedOwners = supportedOwners;
             this.ordinal = ordinal;
-        }  
+        }
 
         public String getName() {
             return name;
@@ -51,22 +51,22 @@ public interface Resource {
             boolean success = false;
             if (supportedOwners != null) {
                 int length = supportedOwners.length;
-                for (int i = 0; i< length; i++) {
+                for (int i = 0; i < length; i++) {
                     if (supportedOwners[i].getName().equalsIgnoreCase(ownerType.getName())) {
                         success = true;
                         break;
                     }
                 }
-            } 
+            }
 
             return success;
         }
-        
+
         public int getOrdinal() {
             return ordinal;
         }
     }
-    
+
     public static class ResourceOwnerType {
 
         public static final ResourceOwnerType Account = new ResourceOwnerType("Account");
@@ -82,11 +82,11 @@ public interface Resource {
             return name;
         }
     }
-    
+
     ResourceType getType();
-    
+
     long getOwnerId();
-    
+
     ResourceOwnerType getResourceOwnerType();
 
 }

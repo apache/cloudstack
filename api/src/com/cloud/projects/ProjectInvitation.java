@@ -4,8 +4,10 @@ import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
 
-public interface ProjectInvitation extends ControlledEntity{
-    public enum State {Pending, Completed, Expired, Declined}
+public interface ProjectInvitation extends ControlledEntity {
+    public enum State {
+        Pending, Completed, Expired, Declined
+    }
 
     long getId();
 

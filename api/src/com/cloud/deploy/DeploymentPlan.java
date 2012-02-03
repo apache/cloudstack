@@ -20,47 +20,47 @@ package com.cloud.deploy;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 
 /**
- * Describes how a VM should be deployed.  
+ * Describes how a VM should be deployed.
  */
 public interface DeploymentPlan {
-    // TODO: This interface is not fully developed.  It really
-    //  should be more complicated than this and allow a 
-    //  number of parameters to be specified.
-    
+    // TODO: This interface is not fully developed. It really
+    // should be more complicated than this and allow a
+    // number of parameters to be specified.
+
     /**
      * @return data center the VM should deploy in.
      */
     public long getDataCenterId();
-    
+
     /**
      * @return pod the Vm should deploy in; null if no preference.
      */
     public Long getPodId();
-    
+
     /**
      * @return cluster the VM should deploy in; null if no preference.
      */
     public Long getClusterId();
-    
+
     /**
      * @return host the VM should deploy in; null if no preference.
      */
     public Long getHostId();
-    
+
     /**
      * @return pool the VM should be created in; null if no preference.
      */
     public Long getPoolId();
-    
+
     /**
      * @param avoids
-     * Set the ExcludeList to avoid for deployment
+     *            Set the ExcludeList to avoid for deployment
      */
     public void setAvoids(ExcludeList avoids);
 
     /**
      * @return
-     * the ExcludeList to avoid for deployment
+     *         the ExcludeList to avoid for deployment
      */
     public ExcludeList getAvoids();
 

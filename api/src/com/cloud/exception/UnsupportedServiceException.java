@@ -20,8 +20,8 @@ package com.cloud.exception;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class UnsupportedServiceException extends CloudRuntimeException{
-    
+public class UnsupportedServiceException extends CloudRuntimeException {
+
     public UnsupportedServiceException(String message) {
         super(message);
     }

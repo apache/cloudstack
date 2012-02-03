@@ -25,14 +25,14 @@ import com.cloud.utils.SerialVersionUID;
  */
 public class InsufficientAddressCapacityException extends InsufficientNetworkCapacityException {
 
-	private static final long serialVersionUID = SerialVersionUID.InsufficientAddressCapacityException;
-	
-	public InsufficientAddressCapacityException(String msg, Class<?> scope, Long id) {
-	    super(msg, scope, id);
-	}
-	
-	protected InsufficientAddressCapacityException() {
-	    super();
-	}
+    private static final long serialVersionUID = SerialVersionUID.InsufficientAddressCapacityException;
+
+    public InsufficientAddressCapacityException(String msg, Class<?> scope, Long id) {
+        super(msg, scope, id);
+    }
+
+    protected InsufficientAddressCapacityException() {
+        super();
+    }
 
 }

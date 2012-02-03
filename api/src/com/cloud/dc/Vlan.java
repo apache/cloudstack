@@ -19,29 +19,29 @@
 package com.cloud.dc;
 
 public interface Vlan {
-	public enum VlanType {
-		DirectAttached,
-		VirtualNetwork
-	}
-	
-	public final static String UNTAGGED = "untagged";
+    public enum VlanType {
+        DirectAttached,
+        VirtualNetwork
+    }
 
-	public long getId();
+    public final static String UNTAGGED = "untagged";
 
-	public String getVlanTag();
+    public long getId();
 
-	public String getVlanGateway();
+    public String getVlanTag();
 
-	public String getVlanNetmask();
+    public String getVlanGateway();
 
-	public long getDataCenterId();
+    public String getVlanNetmask();
 
-	public String getIpRange();
+    public long getDataCenterId();
 
-	public VlanType getVlanType();
-	
-	public Long getNetworkId();
-	
-	public Long getPhysicalNetworkId();
+    public String getIpRange();
+
+    public VlanType getVlanType();
+
+    public Long getNetworkId();
+
+    public Long getPhysicalNetworkId();
 
 }

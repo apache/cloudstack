@@ -30,13 +30,13 @@ public interface Account extends ControlledEntity {
         CustomerCare,
         Project
     }
-    
+
     public enum State {
         disabled,
         enabled,
         locked
     }
-    
+
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
     public static final short ACCOUNT_TYPE_DOMAIN_ADMIN = 2;
@@ -48,12 +48,17 @@ public interface Account extends ControlledEntity {
     public static final String ACCOUNT_STATE_ENABLED = "enabled";
     public static final String ACCOUNT_STATE_LOCKED = "locked";
 
-    public static final long ACCOUNT_ID_SYSTEM = 1; 
+    public static final long ACCOUNT_ID_SYSTEM = 1;
 
     public long getId();
+
     public String getAccountName();
+
     public short getType();
+
     public State getState();
+
     public Date getRemoved();
+
     public String getNetworkDomain();
 }

@@ -23,8 +23,12 @@ public interface VirtualRouterProvider {
         VirtualRouter,
         ElasticLoadBalancerVm
     }
+
     public VirtualRouterProviderType getType();
+
     public long getId();
+
     public boolean isEnabled();
+
     public long getNspId();
 }

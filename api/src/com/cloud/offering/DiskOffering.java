@@ -19,35 +19,34 @@ package com.cloud.offering;
 
 import java.util.Date;
 
-
 /**
  * Represents a disk offering that specifies what the end user needs in
  * the disk offering.
- *
+ * 
  */
 public interface DiskOffering {
     long getId();
-    
+
     String getUniqueName();
-    
+
     boolean getUseLocalStorage();
-    
+
     Long getDomainId();
-    
+
     String getName();
-    
+
     boolean getSystemUse();
-    
+
     String getDisplayText();
-       
+
     public String getTags();
-    
+
     public String[] getTagsArray();
-    
+
     Date getCreated();
-    
+
     long getDiskSize();
-    
+
     boolean isCustomized();
 
     void setDiskSize(long diskSize);

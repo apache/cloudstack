@@ -25,11 +25,9 @@ import java.util.List;
 
 import com.cloud.network.Network.Service;
 
-
-
 /**
  * This defines the specifics of a physical network service provider
- *  
+ * 
  */
 public interface PhysicalNetworkServiceProvider {
 
@@ -38,13 +36,13 @@ public interface PhysicalNetworkServiceProvider {
         Enabled,
         Shutdown;
     }
-    
+
     long getId();
 
     State getState();
 
     long getPhysicalNetworkId();
-    
+
     String getProviderName();
 
     long getDestinationPhysicalNetworkId();

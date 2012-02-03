@@ -17,23 +17,22 @@
  */
 package com.cloud.network;
 
-
 /**
- *  PhysicalNetworkNames provides the labels to identify per traffic type
- *  the physical networks available to the host .
+ * PhysicalNetworkNames provides the labels to identify per traffic type
+ * the physical networks available to the host .
  */
 public class PhysicalNetworkSetupInfo {
-    
-    //physical network ID as seen by Mgmt server
-    Long physicalNetworkId; 
+
+    // physical network ID as seen by Mgmt server
+    Long physicalNetworkId;
     String privateNetworkName;
     String publicNetworkName;
     String guestNetworkName;
     String storageNetworkName;
-    //this is used by VmWare to identify the vlan to use for management traffic
+    // this is used by VmWare to identify the vlan to use for management traffic
     String mgmtVlan;
-    
-    public PhysicalNetworkSetupInfo(){
+
+    public PhysicalNetworkSetupInfo() {
     }
 
     public String getPrivateNetworkName() {
@@ -51,7 +50,7 @@ public class PhysicalNetworkSetupInfo {
     public String getStorageNetworkName() {
         return storageNetworkName;
     }
-    
+
     public void setPrivateNetworkName(String privateNetworkName) {
         this.privateNetworkName = privateNetworkName;
     }
@@ -66,8 +65,8 @@ public class PhysicalNetworkSetupInfo {
 
     public void setStorageNetworkName(String storageNetworkName) {
         this.storageNetworkName = storageNetworkName;
-    }    
-    
+    }
+
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
@@ -83,6 +82,5 @@ public class PhysicalNetworkSetupInfo {
     public void setMgmtVlan(String mgmtVlan) {
         this.mgmtVlan = mgmtVlan;
     }
-
 
 }

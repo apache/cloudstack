@@ -18,12 +18,12 @@
 
 package com.cloud.configuration;
 
-public interface ResourceCount extends Resource{
-    
-	public Long getId();
-	
-	public long getCount();
-	
-	public void setCount(long count);
+public interface ResourceCount extends Resource {
+
+    public Long getId();
+
+    public long getCount();
+
+    public void setCount(long count);
 
 }

@@ -18,10 +18,10 @@
 
 package com.cloud.api;
 
-public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd{
-	
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd {
+
+    @IdentityMapper(entityTableName = "projects")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "list firewall rules by project")
     private Long projectId;
 
     public Long getProjectId() {

@@ -27,15 +27,19 @@ import com.cloud.storage.Storage.TemplateType;
 
 public interface VirtualMachineTemplate extends ControlledEntity {
 
-    public static enum BootloaderType { PyGrub, HVM, External, CD };
+    public static enum BootloaderType {
+        PyGrub, HVM, External, CD
+    };
+
     public enum TemplateFilter {
-        featured,           // returns templates that have been marked as featured and public
-        self,               // returns templates that have been registered or created by the calling user
-        selfexecutable,     // same as self, but only returns templates that are ready to be deployed with
-        sharedexecutable,   // ready templates that have been granted to the calling user by another user
-        executable,         // templates that are owned by the calling user, or public templates, that can be used to deploy a new VM
-        community,          // returns templates that have been marked as public but not featured
-        all                 // all templates (only usable by admins)
+        featured, // returns templates that have been marked as featured and public
+        self, // returns templates that have been registered or created by the calling user
+        selfexecutable, // same as self, but only returns templates that are ready to be deployed with
+        sharedexecutable, // ready templates that have been granted to the calling user by another user
+        executable, // templates that are owned by the calling user, or public templates, that can be used to deploy a
+// new VM
+        community, // returns templates that have been marked as public but not featured
+        all // all templates (only usable by admins)
     }
 
     /**
@@ -64,7 +68,7 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     String getDisplayText();
 
     boolean getEnablePassword();
-    
+
     boolean getEnableSshKey();
 
     boolean isCrossZones();
@@ -90,6 +94,6 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     Long getSourceTemplateId();
 
     String getTemplateTag();
-    
+
     Map getDetails();
 }

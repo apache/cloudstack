@@ -100,7 +100,8 @@ public interface ManagementService {
     static final String Name = "management-server";
 
     /**
-     * Retrieves the list of data centers with search criteria. Currently the only search criteria is "available" zones for the
+     * Retrieves the list of data centers with search criteria. Currently the only search criteria is "available" zones
+     * for the
      * account that invokes the API. By specifying available=true all zones which the account can access. By specifying
      * available=false the zones where the account has virtual machine instances will be returned.
      * 
@@ -140,7 +141,8 @@ public interface ManagementService {
     List<? extends Pod> searchForPods(ListPodsByCmd cmd);
 
     /**
-     * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId", "podId"
+     * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
+     * "podId"
      * 
      * @param cmd
      * @return List of Hosts
@@ -158,7 +160,8 @@ public interface ManagementService {
     VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
 
     /**
-     * Obtains a list of events by the specified search criteria. Can search by: "username", "type", "level", "startDate",
+     * Obtains a list of events by the specified search criteria. Can search by: "username", "type", "level",
+     * "startDate",
      * "endDate"
      * 
      * @param c
@@ -167,7 +170,8 @@ public interface ManagementService {
     List<? extends Event> searchForEvents(ListEventsCmd c);
 
     /**
-     * Obtains a list of routers by the specified search criteria. Can search by: "userId", "name", "state", "dataCenterId",
+     * Obtains a list of routers by the specified search criteria. Can search by: "userId", "name", "state",
+     * "dataCenterId",
      * "podId", "hostId"
      * 
      * @param cmd
@@ -175,9 +179,9 @@ public interface ManagementService {
      */
     List<? extends VirtualRouter> searchForRouters(ListRoutersCmd cmd);
 
-
     /**
-     * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId", "address"
+     * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",
+     * "address"
      * 
      * @param cmd
      *            the command that wraps the search criteria
@@ -236,7 +240,8 @@ public interface ManagementService {
      * List ISOs that match the specified criteria.
      * 
      * @param cmd
-     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId
+     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
+     *            and zoneId
      *            parameters.
      * @return list of ISOs
      */
@@ -246,7 +251,8 @@ public interface ManagementService {
      * List templates that match the specified criteria.
      * 
      * @param cmd
-     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId
+     *            The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account,
+     *            and zoneId
      *            parameters.
      * @return list of ISOs
      */
@@ -300,7 +306,8 @@ public interface ManagementService {
      * Extracts the volume to a particular location.
      * 
      * @param cmd
-     *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume exists),
+     *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
+     *            exists),
      *            id (the id of the volume)
      * @throws URISyntaxException
      * @throws InternalErrorException
@@ -311,7 +318,9 @@ public interface ManagementService {
 
     /**
      * return an array of available hypervisors
-     * @param zoneId TODO
+     * 
+     * @param zoneId
+     *            TODO
      * 
      * @return an array of available hypervisors in the cloud
      */
@@ -381,7 +390,8 @@ public interface ManagementService {
      * 
      * @param cmd
      *            The api command class.
-     * @return A VO containing the key pair name, finger print for the public key and the private key material of the key pair.
+     * @return A VO containing the key pair name, finger print for the public key and the private key material of the
+     *         key pair.
      */
     SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd);
 
@@ -406,12 +416,15 @@ public interface ManagementService {
     Type findSystemVMTypeById(long instanceId);
 
     /**
-     * List hosts for migrating the given VM. The API returns list of all hosts in the VM's cluster minus the current host and
+     * List hosts for migrating the given VM. The API returns list of all hosts in the VM's cluster minus the current
+     * host and
      * also a list of hosts that seem to have enough CPU and RAM capacity to host this VM.
      * 
-     * @param Long vmId
+     * @param Long
+     *            vmId
      *            Id of The VM to migrate
-     * @return Pair<List<? extends Host>, List<? extends Host>> List of all Hosts in VM's cluster and list of Hosts with enough capacity
+     * @return Pair<List<? extends Host>, List<? extends Host>> List of all Hosts in VM's cluster and list of Hosts with
+     *         enough capacity
      */
     Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
 

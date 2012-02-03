@@ -21,24 +21,18 @@ import com.cloud.utils.SerialVersionUID;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 public class ManagementServerException extends Exception {
 
+    private static final long serialVersionUID = SerialVersionUID.ManagementServerException;
 
-	private static final long serialVersionUID = SerialVersionUID.ManagementServerException;
+    public ManagementServerException() {
 
+    }
 
-	public ManagementServerException() {
-		
-	}
-
-
-	public ManagementServerException(String message) {
-		super(message);
-	}
-
-
-	
+    public ManagementServerException(String message) {
+        super(message);
+    }
 
 }

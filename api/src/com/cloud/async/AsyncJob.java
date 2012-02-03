@@ -21,10 +21,10 @@ import java.util.Date;
 
 import com.cloud.api.Identity;
 
-public interface AsyncJob extends Identity{
-	public enum Type {
+public interface AsyncJob extends Identity {
+    public enum Type {
         None,
-		VirtualMachine,
+        VirtualMachine,
         DomainRouter,
         Volume,
         ConsoleProxy,
@@ -38,29 +38,52 @@ public interface AsyncJob extends Identity{
         SecurityGroup,
         PhysicalNetwork
     }
-	
+
     Long getId();
+
     long getUserId();
+
     long getAccountId();
+
     String getCmd();
+
     int getCmdVersion();
+
     String getCmdInfo();
+
     int getCallbackType();
+
     String getCallbackAddress();
+
     int getStatus();
+
     int getProcessStatus();
+
     int getResultCode();
+
     String getResult();
+
     Long getInitMsid();
+
     Long getCompleteMsid();
+
     Date getCreated();
+
     Date getLastUpdated();
+
     Date getLastPolled();
+
     Date getRemoved();
+
     Type getInstanceType();
+
     Long getInstanceId();
+
     String getSessionKey();
+
     String getCmdOriginator();
+
     boolean isFromPreviousSession();
+
     SyncQueueItem getSyncSource();
 }

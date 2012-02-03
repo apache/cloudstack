@@ -55,7 +55,7 @@ public interface UserAccount {
 
     String getTimezone();
 
-	String getRegistrationToken();
+    String getRegistrationToken();
 
-	boolean isRegistered();
+    boolean isRegistered();
 }

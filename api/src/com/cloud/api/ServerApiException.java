@@ -36,6 +36,7 @@ public class ServerApiException extends RuntimeException {
     public int getErrorCode() {
         return _errorCode;
     }
+
     public void setErrorCode(int errorCode) {
         _errorCode = errorCode;
     }
@@ -43,6 +44,7 @@ public class ServerApiException extends RuntimeException {
     public String getDescription() {
         return _description;
     }
+
     public void setDescription(String description) {
         _description = description;
     }

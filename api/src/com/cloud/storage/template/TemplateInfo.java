@@ -17,8 +17,6 @@
  */
 package com.cloud.storage.template;
 
-
-
 public class TemplateInfo {
     String templateName;
     String installPath;
@@ -27,11 +25,11 @@ public class TemplateInfo {
     long id;
     boolean isPublic;
     boolean isCorrupted;
-  
+
     protected TemplateInfo() {
-        
+
     }
-    
+
     public TemplateInfo(String templateName, String installPath, long size, long physicalSize, boolean isPublic, boolean isCorrupted) {
         this.templateName = templateName;
         this.installPath = installPath;
@@ -44,40 +42,41 @@ public class TemplateInfo {
     public TemplateInfo(String templateName, String installPath, boolean isPublic, boolean isCorrupted) {
         this(templateName, installPath, 0, 0, isPublic, isCorrupted);
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public String getTemplateName() {
         return templateName;
     }
-    
+
     public String getInstallPath() {
         return installPath;
     }
-    
+
     public boolean isPublic() {
         return isPublic;
     }
-    
+
     public boolean isCorrupted() {
         return isCorrupted;
     }
-    
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
-    
+
     public long getSize() {
         return size;
     }
-    
+
     public long getPhysicalSize() {
         return physicalSize;
     }
-    
+
     public void setSize(long size) {
         this.size = size;
     }
+
 }

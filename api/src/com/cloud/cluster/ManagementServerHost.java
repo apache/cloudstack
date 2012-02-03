@@ -16,18 +16,17 @@
  * 
  */
 
-
 package com.cloud.cluster;
 
-
 public interface ManagementServerHost {
-    
-    public static enum State { Up, Starting, Down };
+
+    public static enum State {
+        Up, Starting, Down
+    };
 
     long getMsid();
 
     State getState();
 
     String getVersion();
-
 }

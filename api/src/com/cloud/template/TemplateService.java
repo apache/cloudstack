@@ -40,8 +40,8 @@ public interface TemplateService {
     VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;
 
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
-    
-    VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) ;
+
+    VirtualMachineTemplate prepareTemplate(long templateId, long zoneId);
 
     boolean detachIso(long vmId);
 
@@ -84,7 +84,7 @@ public interface TemplateService {
 
     VirtualMachineTemplate getTemplate(long templateId);
 
-	List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
+    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
 
-	boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd);
+    boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd);
 }

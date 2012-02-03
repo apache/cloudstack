@@ -18,7 +18,6 @@
 
 package com.cloud.vm;
 
-import com.cloud.exception.ResourceAllocationException;
 
 public interface BareMetalVmService extends UserVmService {
 }

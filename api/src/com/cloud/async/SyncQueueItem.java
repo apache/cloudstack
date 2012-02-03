@@ -19,8 +19,8 @@
 package com.cloud.async;
 
 public interface SyncQueueItem {
-    
-    String getContentType();
-    Long getContentId();
 
+    String getContentType();
+
+    Long getContentId();
 }

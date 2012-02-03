@@ -22,7 +22,7 @@
 package com.cloud.domain;
 
 /**
- * PartOf must be implemented by all objects that belongs 
+ * PartOf must be implemented by all objects that belongs
  * in a domain.
  */
 public interface PartOf {

@@ -10,11 +10,11 @@ import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
 import com.cloud.dc.StorageNetworkIpRange;
 
 public interface StorageNetworkService {
-	StorageNetworkIpRange createIpRange(CreateStorageNetworkIpRangeCmd cmd) throws SQLException;
+    StorageNetworkIpRange createIpRange(CreateStorageNetworkIpRangeCmd cmd) throws SQLException;
 
-	void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd);
+    void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd);
 
-	List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd);
-	
-	StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd);
+    List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd);
+
+    StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd);
 }

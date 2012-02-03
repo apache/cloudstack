@@ -25,29 +25,29 @@ import com.cloud.user.User;
 import com.cloud.utils.Journal;
 
 /**
- * Specifies the entity that is calling the api.  
+ * Specifies the entity that is calling the api.
  */
 public interface ReservationContext extends PartOf, OwnedBy {
     /**
      * @return the user making the call.
      */
     User getCaller();
-    
+
     /**
      * @return the account
      */
     Account getAccount();
-    
+
     /**
      * @return the domain.
      */
     Domain getDomain();
-    
+
     /**
      * @return the journal
      */
     Journal getJournal();
-    
+
     /**
      * @return the reservation id.
      */

@@ -22,9 +22,9 @@ import com.cloud.api.response.CreateCmdResponse;
 import com.cloud.exception.ResourceAllocationException;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name = "id", type = CommandType.LONG)
     private Long id;
-    
+
     public abstract void create() throws ResourceAllocationException;
 
     public Long getEntityId() {
@@ -34,7 +34,7 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     public void setEntityId(Long id) {
         this.id = id;
     }
-    
+
     public abstract String getEntityTable();
 
     public String getResponse(long jobId, long objectId, String objectEntityTable) {
@@ -53,4 +53,5 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     public String getCreateEventDescription() {
         return null;
     }
+
 }

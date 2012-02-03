@@ -26,43 +26,43 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 public class PermissionDeniedException extends CloudRuntimeException {
 
-	private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
+    private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
 
-	public PermissionDeniedException(String message) {
-		super(message);
-	}
-	
-	protected PermissionDeniedException() {
-	    super();
-	}
-	
-	List<? extends ControlledEntity> violations;
-	Account account;
-	
-	public PermissionDeniedException(String message, Account account, List<? extends ControlledEntity> violations) {
-	    super(message);
-	    this.violations = violations;
-	    this.account = account;
-	}
-	
-	public Account getAccount() {
-	    return account;
-	}
-	
-	public List<? extends ControlledEntity> getEntitiesInViolation() {
-	    return violations;
-	}
-	
-	public void addDetails(Account account, List<? extends ControlledEntity> violations) {
-	    this.account = account;
-	    this.violations = violations;
-	}
-	
-	public void addViolations(List<? extends ControlledEntity> violations) {
-	    this.violations = violations;
-	}
+    public PermissionDeniedException(String message) {
+        super(message);
+    }
+
+    protected PermissionDeniedException() {
+        super();
+    }
+
+    List<? extends ControlledEntity> violations;
+    Account account;
+
+    public PermissionDeniedException(String message, Account account, List<? extends ControlledEntity> violations) {
+        super(message);
+        this.violations = violations;
+        this.account = account;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public List<? extends ControlledEntity> getEntitiesInViolation() {
+        return violations;
+    }
+
+    public void addDetails(Account account, List<? extends ControlledEntity> violations) {
+        this.account = account;
+        this.violations = violations;
+    }
+
+    public void addViolations(List<? extends ControlledEntity> violations) {
+        this.violations = violations;
+    }
 }

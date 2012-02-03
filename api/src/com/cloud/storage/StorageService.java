@@ -38,7 +38,8 @@ public interface StorageService {
      * Create StoragePool based on uri
      * 
      * @param cmd
-     *            the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
+     *            the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the
+     *            storage pool.
      * @return
      * @throws ResourceInUseException
      * @throws IllegalArgumentException
@@ -52,7 +53,8 @@ public interface StorageService {
      * Creates the database object for a volume based on the given criteria
      * 
      * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
+     *            name)
      * @return the volume object
      * @throws PermissionDeniedException
      */
@@ -62,7 +64,8 @@ public interface StorageService {
      * Creates the volume based on the given criteria
      * 
      * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
+     *            name)
      * @return the volume object
      */
     Volume createVolume(CreateVolumeCmd cmd);
@@ -106,8 +109,8 @@ public interface StorageService {
 
     public StoragePool getStoragePool(long id);
 
-	Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
+    Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
 
-	List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
+    List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
 
 }

@@ -22,14 +22,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 public class InvalidParameterValueException extends CloudRuntimeException {
 
-	private static final long serialVersionUID = -2232066904895010203L;
+    private static final long serialVersionUID = -2232066904895010203L;
 
-	public InvalidParameterValueException(String message) {
-		super(message);
-	}
+    public InvalidParameterValueException(String message) {
+        super(message);
+    }
 
 }

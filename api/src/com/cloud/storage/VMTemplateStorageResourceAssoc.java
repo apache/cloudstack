@@ -21,47 +21,49 @@ import java.util.Date;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 public interface VMTemplateStorageResourceAssoc {
-	public static enum Status  {UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS}
+    public static enum Status {
+        UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS
+    }
 
-	String getInstallPath();
+    String getInstallPath();
 
-	long getTemplateId();
+    long getTemplateId();
 
-	void setTemplateId(long templateId);
+    void setTemplateId(long templateId);
 
-	int getDownloadPercent();
+    int getDownloadPercent();
 
-	void setDownloadPercent(int downloadPercent);
+    void setDownloadPercent(int downloadPercent);
 
-	void setDownloadState(Status downloadState);
+    void setDownloadState(Status downloadState);
 
-	long getId();
+    long getId();
 
-	Date getCreated();
+    Date getCreated();
 
-	Date getLastUpdated();
+    Date getLastUpdated();
 
-	void setLastUpdated(Date date);
+    void setLastUpdated(Date date);
 
-	void setInstallPath(String installPath);
+    void setInstallPath(String installPath);
 
-	Status getDownloadState();
+    Status getDownloadState();
 
-	void setLocalDownloadPath(String localPath);
+    void setLocalDownloadPath(String localPath);
 
-	String getLocalDownloadPath();
+    String getLocalDownloadPath();
 
-	void setErrorString(String errorString);
+    void setErrorString(String errorString);
 
-	String getErrorString();
+    String getErrorString();
 
-	void setJobId(String jobId);
+    void setJobId(String jobId);
 
-	String getJobId();;
-	
-	long getTemplateSize();
+    String getJobId();;
+
+    long getTemplateSize();
 
 }

@@ -19,38 +19,38 @@ package com.cloud.exception;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 public class ResourceInUseException extends ManagementServerException {
-	 
-	private static final long serialVersionUID = 1383416910411639324L;
-	private String resourceType;
-	private String resourceName;
 
-	public ResourceInUseException(String message) {
-		super(message);
-	}
-	
-	public ResourceInUseException(String message, String resourceType,
-			String resourceName) {
-		super(message);
-		this.resourceType = resourceType;
-		this.resourceName = resourceName;
-	}
+    private static final long serialVersionUID = 1383416910411639324L;
+    private String resourceType;
+    private String resourceName;
 
-	public void setResourceType(String resourceType) {
-		this.resourceType = resourceType;
-	}
-	
-	public String getResourceType() {
-		return this.resourceType;
-	}
+    public ResourceInUseException(String message) {
+        super(message);
+    }
 
-	public void setResourceName(String resourceName) {
-		this.resourceName = resourceName;
-	}
+    public ResourceInUseException(String message, String resourceType,
+            String resourceName) {
+        super(message);
+        this.resourceType = resourceType;
+        this.resourceName = resourceName;
+    }
 
-	public String getResourceName() {
-		return resourceName;
-	}
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public String getResourceType() {
+        return this.resourceType;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    public String getResourceName() {
+        return resourceName;
+    }
 }
