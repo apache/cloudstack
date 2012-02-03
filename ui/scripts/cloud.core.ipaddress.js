@@ -1258,6 +1258,7 @@ function ipJsonToVPNTab() {
 	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
 	$thisTab.find("#tab_spinning_wheel").show();    
     $thisTab.find("#tab_container").hide();   
+		$thisTab.find("#tab_container").find("#grid_content").empty();
 		
 	$.ajax({
         data: createURL("command=listRemoteAccessVpns&publicipid="+ipObj.id),
