@@ -5,6 +5,57 @@
   var naasStatusMap = {};
   var nspMap = {};
 
+  var getTrafficType = function(physicalNetwork, typeID) {
+    var trafficType = {};
+
+    $.ajax({
+      url: createURL('listTrafficTypes'),
+      data: {
+        physicalnetworkid: physicalNetwork.id
+      },
+      async: false,
+      success: function(json) {
+        trafficType = $.grep(
+          json.listtraffictypesresponse.traffictype,
+          function(trafficType) {
+            return trafficType.traffictype == typeID;
+          }
+        )[0];
+      }
+    });
+
+    return trafficType;
+  };
+
+  var updateTrafficLabels = function(trafficType, labels, complete) {
+    $.ajax({
+      url: createURL('updateTrafficType'),
+      data: {
+        id: trafficType.id,
+        xennetworklabel: labels.xennetworklabel,
+        kvmnetworklabel: labels.kvmnetworklabel,
+        vmwarenetworklabel: labels.vmwarenetworklabel
+      },
+      success: function(json) {
+        var jobID = json.updatetraffictyperesponse.jobid;
+
+        cloudStack.ui.notifications.add(
+          {
+            desc: 'Update traffic labels',
+            poll: pollAsyncJobResult,
+            section: 'System',
+            _custom: { jobId: jobID }
+          },
+          complete ? complete : function() {}, {},
+          function(data) {
+            // Error
+            cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
+          }, {}
+        );
+      }
+    })
+  };
+
   function virtualRouterProviderActionFilter(args) {
     var allowedActions = [];
     var jsonObj = nspMap["virtualRouter"];
@@ -204,7 +255,21 @@
       mainNetworks: {
         'public': {
           detailView: {
-            actions: {},
+            actions: {
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Public');
+
+                  updateTrafficLabels(trafficType, args.data, function () {
+                    args.response.success();
+                  });
+                },
+                messages: {
+                  notification: 'Updated public traffic type'
+                }
+              }
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -212,6 +277,11 @@
                   {
                     traffictype: { label: 'Traffic type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
+                  },
+                  {
+                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
                   }
                 ],
 
@@ -221,8 +291,16 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Public');
                       var items = json.listnetworksresponse.network;
+
                       selectedPublicNetworkObj = items[0];
+
+                      // Include traffic labels
+                      selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
+                      selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
+                      selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
+
                       args.response.success({data: selectedPublicNetworkObj});
                     }
                   });
@@ -328,7 +406,21 @@
 
         'storage': {
           detailView: {
-            actions: {},
+            actions: {
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Storage');
+
+                  updateTrafficLabels(trafficType, args.data, function () {
+                    args.response.success();
+                  });
+                },
+                messages: {
+                  notification: 'Updated storage traffic type'
+                }
+              }
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -336,6 +428,11 @@
                   {
                     traffictype: { label: 'Traffic type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
+                  },
+                  {
+                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
                   }
                 ],
 
@@ -346,7 +443,13 @@
                     async: false,
                     success: function(json) {
                       var items = json.listnetworksresponse.network;
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Storage');
                       selectedPublicNetworkObj = items[0];
+
+                      selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
+                      selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
+                      selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
+
                       args.response.success({data: selectedPublicNetworkObj});
                     }
                   });
@@ -451,7 +554,22 @@
         },
 
         'management': {
-          detailView: {  
+          detailView: {
+            actions: {
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Management');
+
+                  updateTrafficLabels(trafficType, args.data, function () {
+                    args.response.success();
+                  });
+                },
+                messages: {
+                  notification: 'Updated management traffic type'
+                }
+              }
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -459,6 +577,11 @@
                   {
                     traffictype: { label: 'Traffic type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
+                  },
+                  {
+                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -467,6 +590,13 @@
                     dataType: "json",
                     success: function(json) {                      
                       selectedManagementNetworkObj =json.listnetworksresponse.network[0];
+
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Management');
+
+                      selectedManagementNetworkObj.xennetworklabel = trafficType.xennetworklabel;
+                      selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
+                      selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
+
                       args.response.success({ data: selectedManagementNetworkObj });                      
                     }
                   });                
@@ -522,11 +652,20 @@
                   else
                     vlan = args.data.startVlan + "-" + args.data.endVlan;
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(vlan)),
+                    url: createURL("updatePhysicalNetwork"),
+                    data: {
+                      id: selectedPhysicalNetworkObj.id,
+                      vlan: todb(vlan)
+                    },
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
-                      args.response.success({ _custom: { jobId: jobId }});
+
+                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+
+                      updateTrafficLabels(trafficType, args.data, function() {
+                        args.response.success({ _custom: { jobId: jobId }});
+                      });
                     }
                   });
                 },
@@ -566,11 +705,20 @@
                       isEditable: true
                     },
                     broadcastdomainrange: { label: 'Broadcast domain range' }                    
+                  },
+                  {
+                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
                   var startVlan, endVlan;
                   var vlan = selectedPhysicalNetworkObj.vlan;
+                  var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
+
+                  // Get traffic label data
+                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
 
                   if(vlan != null && vlan.length > 0) {
                     if(vlan.indexOf("-") != -1) {
@@ -583,6 +731,9 @@
                     }
                     selectedPhysicalNetworkObj["startVlan"] = startVlan;
                     selectedPhysicalNetworkObj["endVlan"] = endVlan;
+                    selectedPhysicalNetworkObj["xennetworklabel"] = trafficType.xennetworklabel;
+                    selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
+                    selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
                   }
 
                   args.response.success({
