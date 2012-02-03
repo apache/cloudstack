@@ -37,7 +37,9 @@ import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListSrxFirewallNetworksCmd;
 import com.cloud.api.commands.ListSrxFirewallsCmd;
 import com.cloud.api.response.SrxFirewallResponse;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -80,6 +82,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -107,7 +110,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Inject NetworkDao _networkDao;
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
     @Inject HostDetailsDao _hostDetailDao;
-
+    @Inject ConfigurationDao _configDao;
+ 
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
@@ -490,7 +494,12 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         response.setId(fwDeviceVO.getId());
         response.setPhysicalNetworkId(fwDeviceVO.getPhysicalNetworkId());
         response.setDeviceName(fwDeviceVO.getDeviceName());
-        response.setDeviceCapacity(fwDeviceVO.getCapacity());
+        if (fwDeviceVO.getCapacity() == 0) {
+            long defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);
+            response.setDeviceCapacity(defaultFwCapacity);
+        } else {
+            response.setDeviceCapacity(fwDeviceVO.getCapacity());
+        }
         response.setProvider(fwDeviceVO.getProviderName());
         response.setDeviceState(fwDeviceVO.getDeviceState().name());
         response.setIpAddress(fwHost.getPrivateIpAddress());

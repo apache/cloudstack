@@ -47,7 +47,9 @@ import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -94,6 +96,7 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -122,6 +125,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Inject PhysicalNetworkDao _physicalNetworkDao;
     @Inject NetworkDao _networkDao;
     @Inject HostDetailsDao _detailsDao;
+    @Inject ConfigurationDao _configDao;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -462,7 +466,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         response.setPublicInterface(lbDetails.get("publicInterface"));
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
-        response.setDeviceCapacity(lbDeviceVO.getCapacity());
+        if (lbDeviceVO.getCapacity() == 0) {
+            long defaultLbCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalLoadBalancerCapacity.key()), 50);
+            response.setDeviceCapacity(defaultLbCapacity);
+        } else {
+            response.setDeviceCapacity(lbDeviceVO.getCapacity());
+        }
         response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
