@@ -102,5 +102,37 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	} catch (SQLException e) {
     	    throw new CloudRuntimeException("Unable to update primary key for netapp_volume", e);
     	}
+    	
+
+        //Drop i_snapshots__removed key (if exists) and re-add it again
+            keys = new ArrayList<String>();
+            keys.add("i_snapshots__removed");
+            DbUpgradeUtils.dropKeysIfExist(conn, "cloud.snapshots", keys, false);
+            try {
+                PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
+                pstmt.executeUpdate();
+                pstmt.close();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to insert index for removed column in snapshots", e);
+            }
+            //Drop i_op_vm_ruleset_log__instance_id, u_op_vm_ruleset_log__instance_id key (if exists) and re-add u_op_vm_ruleset_log__instance_id again
+            keys = new ArrayList<String>();
+            keys.add("i_op_vm_ruleset_log__instance_id");
+            DbUpgradeUtils.dropKeysIfExist(conn, "cloud.op_vm_ruleset_log", keys, false);
+            
+            keys = new ArrayList<String>();
+            keys.add("u_op_vm_ruleset_log__instance_id");
+            DbUpgradeUtils.dropKeysIfExist(conn, "cloud.op_vm_ruleset_log", keys, false);
+            try {
+                PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_vm_ruleset_log` ADD CONSTRAINT `u_op_vm_ruleset_log__instance_id` UNIQUE (`instance_id`)");
+                pstmt.executeUpdate();
+                pstmt.close();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to execute changes for op_vm_ruleset_log", e);
+            }  
+            
+
+
+
     }
 }
