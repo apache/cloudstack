@@ -138,5 +138,19 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	} catch (SQLException e) {
     	    throw new CloudRuntimeException("Unable to update primary key for netapp_volume", e);
     	}
+
+    	//Drop i_async__removed, i_async_job__removed  (if exists) and add i_async_job__removed 
+    	keys = new ArrayList<String>();
+    	keys.add("i_async__removed");
+    	keys.add("i_async_job__removed");
+    	DbUpgradeUtils.dropKeysIfExist(conn, "cloud.async_job", keys, false);
+    	try {
+    	    PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async_job__removed`(`removed`)");
+    	    pstmt.executeUpdate();
+    	    pstmt.close();
+    	} catch (SQLException e) {
+    	    throw new CloudRuntimeException("Unable to insert index for removed column in async_job", e);
+    	}
+    
     }
 }
