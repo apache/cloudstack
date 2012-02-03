@@ -1317,12 +1317,12 @@ function addZoneWizardValidateZond($thisWizard) {
 	}		
 	if($thisStep.find("#domain_container").css("display") != "none") {
 	    isValid &= validateString("Domain", $thisStep.find("#domain"), $thisStep.find("#domain_errormsg"), false);                             //required	
-	    var domainName = $thisStep.find("#domain").val();
+	    var domainPath = $thisStep.find("#domain").val();
 	    var domainId;
-	    if(domainName != null && domainName.length > 0) { 				    
+	    if(domainPath != null && domainPath.length > 0) { 				    
 	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
-		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		          if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 		              domainId = autoCompleteDomains[i].id;
 		              $thisStep.find("#domain").data("domainId", domainId);
 		              break;	
@@ -1381,12 +1381,12 @@ function addZoneWizardValidateVirtualVLAN($thisWizard) {
 		   
     if($createVirtualVlan.find("#vlan_domain_container").css("display") != "none") {
 	    isValid &= validateString("Domain", $createVirtualVlan.find("#vlan_domain"), $createVirtualVlan.find("#vlan_domain_errormsg"), false);                             //required	
-	    var domainName = $createVirtualVlan.find("#vlan_domain").val();
+	    var domainPath = $createVirtualVlan.find("#vlan_domain").val();
 	    var domainId;
-	    if(domainName != null && domainName.length > 0) { 				    
+	    if(domainPath != null && domainPath.length > 0) { 				    
 	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
-		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		          if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 		              domainId = autoCompleteDomains[i].id;
 		              $createVirtualVlan.find("#vlan_domain").data("domainId", domainId);
 		              break;	
