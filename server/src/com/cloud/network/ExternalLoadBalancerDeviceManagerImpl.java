@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -59,7 +60,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -128,7 +128,7 @@ import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-
+@Local(value = { ExternalLoadBalancerDeviceManager.class })
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
     @Inject
@@ -1239,6 +1239,130 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 return false;
             } finally {
                 txn.close();
+            }
+        }
+    }
+    
+    @Override
+    public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId){
+        
+        LoadBalancerVO lb = _loadBalancerDao.findById(loadBalancerRuleId);
+        if(lb == null){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Cannot update usage stats, LB rule is not found");
+            }
+            return;
+        }
+        long networkId = lb.getNetworkId();
+        Network network = _networkDao.findById(networkId);
+        if(network == null){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Cannot update usage stats, Network is not found");
+            }
+            return;
+        }
+        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network); 
+        if (lbDeviceVO == null) {
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Cannot update usage stats,  No external LB device found");
+            }
+            return;
+        }
+
+        // Get network stats from the external load balancer
+        ExternalNetworkResourceUsageAnswer lbAnswer = null;
+        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+        if (externalLoadBalancer != null) {
+            ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+            lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+            if (lbAnswer == null || !lbAnswer.getResult()) {
+                String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
+                String msg = "Unable to get external load balancer stats for network" + networkId + " due to: " + details + ".";
+                s_logger.error(msg);
+                return;
+            }
+        }
+
+        long accountId = lb.getAccountId();
+        AccountVO account = _accountDao.findById(accountId);
+        if (account == null) {
+            s_logger.debug("Skipping stats update for external LB for account with ID " + accountId);
+            return;
+        }
+
+        String publicIp = _networkMgr.getIp(lb.getSourceIpAddressId()).getAddress().addr();
+        DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();            
+        
+        long newCurrentBytesSent = 0;
+        long newCurrentBytesReceived = 0;
+        
+        if (publicIp != null) {
+            long[] bytesSentAndReceived = null;
+            statsEntryIdentifier += ", public IP: " + publicIp;
+            
+            if (externalLoadBalancer.getType().equals(Host.Type.ExternalLoadBalancer) && externalLoadBalancerIsInline(externalLoadBalancer)) {
+                // Look up stats for the guest IP address that's mapped to the public IP address
+                InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(publicIp);
+                
+                if (mapping != null) {
+                    NicVO nic = _nicDao.findById(mapping.getNicId());
+                    String loadBalancingIpAddress = nic.getIp4Address();
+                    bytesSentAndReceived = lbAnswer.ipBytes.get(loadBalancingIpAddress);
+                    
+                    if (bytesSentAndReceived != null) {
+                        bytesSentAndReceived[0] = 0;
+                    }
+                }
+            } else {
+                bytesSentAndReceived = lbAnswer.ipBytes.get(publicIp);
+            }
+            
+            if (bytesSentAndReceived == null) {
+                s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
+            } else {
+                newCurrentBytesSent += bytesSentAndReceived[0];
+                newCurrentBytesReceived += bytesSentAndReceived[1];
+            }
+            
+            UserStatisticsVO userStats;
+            final Transaction txn = Transaction.currentTxn();
+            try {
+                txn.start();            
+                userStats = _userStatsDao.lock(accountId, zone.getId(), networkId, publicIp, externalLoadBalancer.getId(), externalLoadBalancer.getType().toString());
+            
+                if(userStats != null){
+                    long oldNetBytesSent = userStats.getNetBytesSent();
+                    long oldNetBytesReceived = userStats.getNetBytesReceived();
+                    long oldCurrentBytesSent = userStats.getCurrentBytesSent();
+                    long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
+                    String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " + userStats.getAccountId() + ".";
+                                
+                    userStats.setCurrentBytesSent(newCurrentBytesSent);
+                    if (oldCurrentBytesSent > newCurrentBytesSent) {
+                        s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");            
+                        userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
+                    } 
+                    
+                    userStats.setCurrentBytesReceived(newCurrentBytesReceived);
+                    if (oldCurrentBytesReceived > newCurrentBytesReceived) {
+                        s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");                        
+                        userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
+                    } 
+                            
+                    if (_userStatsDao.update(userStats.getId(), userStats)) {
+                        s_logger.debug("Successfully updated stats for " + statsEntryIdentifier);
+                    } else {
+                        s_logger.debug("Failed to update stats for " + statsEntryIdentifier);
+                    }
+                }else {
+                    s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
+                }
+                
+                txn.commit();
+            }catch (final Exception e) {
+                txn.rollback();
+                throw new CloudRuntimeException("Problem getting stats after reboot/stop ", e);
             }
         }
     }

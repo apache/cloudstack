@@ -72,6 +72,7 @@ import com.cloud.keystore.KeystoreDaoImpl;
 import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
+import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
@@ -388,6 +389,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
         addManager("SwiftManager", SwiftManagerImpl.class);
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
+        addManager("ExternalLoadBalancerDeviceManager", ExternalLoadBalancerDeviceManagerImpl.class);
     }
 
     @Override

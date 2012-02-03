@@ -52,6 +52,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LBStickinessPolicyVO;
@@ -156,6 +157,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     DomainService _domainMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ExternalLoadBalancerDeviceManager _externalLBMgr;
 
     private String getLBStickinessCapability(long networkid) {
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = _networkMgr.getNetworkCapabilities(networkid);
@@ -557,9 +560,17 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), 0, lb.getId(), null);
             _usageEventDao.persist(usageEvent);
         }
-
-        txn.commit();
         
+        txn.commit();
+
+        //gather external network usage stats for this lb rule
+        NetworkVO network = _networkDao.findById(lb.getNetworkId());
+        if(network != null){
+            if (_networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
+                _externalLBMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
+            }
+        }
+
         if (apply) {
             try {
                 if (!applyLoadBalancerConfig(loadBalancerId)) {
@@ -588,6 +599,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         return success;
     }
+
 
     @Override 
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
