@@ -35,7 +35,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
@@ -73,11 +72,14 @@ public interface NetworkManager extends NetworkService {
      * @param owner
      * @param type
      * @param networkId
-     * @param requestedIp TODO
-     * @param allocatedBy TODO
+     * @param requestedIp
+     *            TODO
+     * @param allocatedBy
+     *            TODO
      * @return
      * @throws InsufficientAddressCapacityException
      */
+
     PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isElastic) throws InsufficientAddressCapacityException;
 
     /**
@@ -129,7 +131,7 @@ public interface NetworkManager extends NetworkService {
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
-    ResourceUnavailableException;
+            ResourceUnavailableException;
 
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced);
 
@@ -144,7 +146,7 @@ public interface NetworkManager extends NetworkService {
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
-    
+
     public boolean validateRule(FirewallRule rule);
 
     List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements();
@@ -154,7 +156,7 @@ public interface NetworkManager extends NetworkService {
     List<? extends Vlan> listPodVlans(long podId);
 
     Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException;
+            InsufficientCapacityException;
 
     List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
 
@@ -169,7 +171,8 @@ public interface NetworkManager extends NetworkService {
 
     /**
      * @throws InsufficientCapacityException
-     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated with the
+     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated
+     *             with the
      *             given vlan id.
      * @param userId
      * @param accountId
@@ -179,7 +182,7 @@ public interface NetworkManager extends NetworkService {
      * @throws
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException, ConcurrentOperationException,
-    ResourceUnavailableException;
+            ResourceUnavailableException;
 
     Nic getNicInNetwork(long vmId, long networkId);
 
@@ -252,50 +255,50 @@ public interface NetworkManager extends NetworkService {
 
     Long getPhysicalNetworkId(Network network);
 
-	boolean getAllowSubdomainAccessGlobal();
-	
-	boolean isProviderForNetwork(Provider provider, long networkId);
-	
-	boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId);
+    boolean getAllowSubdomainAccessGlobal();
 
-	void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
+    boolean isProviderForNetwork(Provider provider, long networkId);
 
-	PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(
-			long physicalNetworkId);
+    boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId);
 
-	List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId,
-			HypervisorType hypervisorType);
-	
-	boolean canAddDefaultSecurityGroup();
-		
-	List<Service> listNetworkOfferingServices(long networkOfferingId);
-	
-	boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services);
-	
+    void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
+
+    PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(
+            long physicalNetworkId);
+
+    List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId,
+            HypervisorType hypervisorType);
+
+    boolean canAddDefaultSecurityGroup();
+
+    List<Service> listNetworkOfferingServices(long networkOfferingId);
+
+    boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services);
+
     public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall);
-    
+
     public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
-    
+
     public boolean checkIpForService(IPAddressVO ip, Service service);
 
     void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr);
 
-	void checkCapabilityForProvider(Set<Provider> providers, Service service,
-			Capability cap, String capValue);
+    void checkCapabilityForProvider(Set<Provider> providers, Service service,
+            Capability cap, String capValue);
 
-	Provider getDefaultUniqueProviderForService(String serviceName);
+    Provider getDefaultUniqueProviderForService(String serviceName);
 
-	IpAddress assignElasticIp(long networkId, Account owner,
-			boolean forElasticLb, boolean forElasticIp)
-			throws InsufficientAddressCapacityException;
+    IpAddress assignElasticIp(long networkId, Account owner,
+            boolean forElasticLb, boolean forElasticIp)
+            throws InsufficientAddressCapacityException;
 
-	boolean handleElasticIpRelease(IpAddress ip);
+    boolean handleElasticIpRelease(IpAddress ip);
 
-	void checkNetworkPermissions(Account owner, Network network);
+    void checkNetworkPermissions(Account owner, Network network);
 
-	void allocateDirectIp(NicProfile nic, DataCenter dc,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			Network network, String requestedIp)
-			throws InsufficientVirtualNetworkCapcityException,
-			InsufficientAddressCapacityException;
+    void allocateDirectIp(NicProfile nic, DataCenter dc,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            Network network, String requestedIp)
+            throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException;
 }

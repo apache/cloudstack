@@ -48,66 +48,75 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
 /**
- * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing configuration values
- *
+ * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing
+ * configuration values
+ * 
  */
 public interface ConfigurationManager extends ConfigurationService, Manager {
-	
-	/**
-	 * Updates a configuration entry with a new value
-	 * @param userId
-	 * @param name
-	 * @param value
-	 */
-	void updateConfiguration(long userId, String name, String category, String value);
 
-	/**
-	 * Creates a new service offering
-	 * @param name
-	 * @param cpu
-	 * @param ramSize
-	 * @param speed
-	 * @param displayText
-	 * @param localStorageRequired
-	 * @param offerHA
-	 * @param domainId
-	 * @param hostTag
-	 * @param networkRate TODO
-	 * @param id
-	 * @param useVirtualNetwork
-	 * @return ID
-	 */
-	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate);
-	
-	/**
-	 * Creates a new disk offering
-	 * @param domainId
-	 * @param name
-	 * @param description
-	 * @param numGibibytes
-	 * @param tags
-	 * @param isCustomized
-	 * @return newly created disk offering
-	 */
-	DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized);
-    
-	/**
-	 * Creates a new pod
-	 * @param userId
-	 * @param podName
-	 * @param zoneId
-	 * @param gateway
-	 * @param cidr
-	 * @param startIp
-	 * @param endIp
-	 * @param allocationState
-	 * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
-	 * @return Pod
-	 */
-	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState, boolean skipGatewayOverlapCheck);
+    /**
+     * Updates a configuration entry with a new value
+     * 
+     * @param userId
+     * @param name
+     * @param value
+     */
+    void updateConfiguration(long userId, String name, String category, String value);
+
+    /**
+     * Creates a new service offering
+     * 
+     * @param name
+     * @param cpu
+     * @param ramSize
+     * @param speed
+     * @param displayText
+     * @param localStorageRequired
+     * @param offerHA
+     * @param domainId
+     * @param hostTag
+     * @param networkRate
+     *            TODO
+     * @param id
+     * @param useVirtualNetwork
+     * @return ID
+     */
+    ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
+            boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate);
+
+    /**
+     * Creates a new disk offering
+     * 
+     * @param domainId
+     * @param name
+     * @param description
+     * @param numGibibytes
+     * @param tags
+     * @param isCustomized
+     * @return newly created disk offering
+     */
+    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized);
+
+    /**
+     * Creates a new pod
+     * 
+     * @param userId
+     * @param podName
+     * @param zoneId
+     * @param gateway
+     * @param cidr
+     * @param startIp
+     * @param endIp
+     * @param allocationState
+     * @param skipGatewayOverlapCheck
+     *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @return Pod
+     */
+    HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState, boolean skipGatewayOverlapCheck);
 
     /**
      * Creates a new zone
+     * 
      * @param userId
      * @param zoneName
      * @param dns1
@@ -116,108 +125,129 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param internalDns2
      * @param zoneType
      * @param allocationState
-     * @param networkDomain TODO
-     * @param isSecurityGroupEnabled TODO
+     * @param networkDomain
+     *            TODO
+     * @param isSecurityGroupEnabled
+     *            TODO
      * @return
-     * @throws 
-     * @throws 
+     * @throws
+     * @throws
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String domain, Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String domain, Long domainId, NetworkType zoneType, String allocationState,
+            String networkDomain, boolean isSecurityGroupEnabled);
 
-	/**
-	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
-	 * @param userId
-	 * @param vlanDbId
-	 * @return success/failure
-	 */
-	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId);
+    /**
+     * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
+     * IP addresses.
+     * 
+     * @param userId
+     * @param vlanDbId
+     * @return success/failure
+     */
+    boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId);
 
-	
-	/**
-	 * Adds/deletes private IPs
-	 * @param add - either true or false
-	 * @param podId
-	 * @param startIP
-	 * @param endIP
-	 * @return Message to display to user
-	 * @throws  if unable to add private ip range
-	 */
-	String changePrivateIPRange(boolean add, long podId, String startIP, String endIP);
-	
-	/**
-	 * Converts a comma separated list of tags to a List
-	 * @param tags
-	 * @return List of tags
-	 */
-	List<String> csvTagsToList(String tags);
-	
-	/**
-	 * Converts a List of tags to a comma separated list
-	 * @param tags
-	 * @return String containing a comma separated list of tags
-	 */
-	String listToCsvTags(List<String> tags);
+    /**
+     * Adds/deletes private IPs
+     * 
+     * @param add
+     *            - either true or false
+     * @param podId
+     * @param startIP
+     * @param endIP
+     * @return Message to display to user
+     * @throws if
+     *             unable to add private ip range
+     */
+    String changePrivateIPRange(boolean add, long podId, String startIP, String endIP);
 
-	void checkAccess(Account caller, DataCenter zone)
-			throws PermissionDeniedException;
+    /**
+     * Converts a comma separated list of tags to a List
+     * 
+     * @param tags
+     * @return List of tags
+     */
+    List<String> csvTagsToList(String tags);
 
-	void checkServiceOfferingAccess(Account caller, ServiceOffering so)
-	throws PermissionDeniedException;
+    /**
+     * Converts a List of tags to a comma separated list
+     * 
+     * @param tags
+     * @return String containing a comma separated list of tags
+     */
+    String listToCsvTags(List<String> tags);
 
-	void checkDiskOfferingAccess(Account caller, DiskOffering dof)
-			throws PermissionDeniedException;
-	
-	
-	   /**
+    void checkAccess(Account caller, DataCenter zone)
+            throws PermissionDeniedException;
+
+    void checkServiceOfferingAccess(Account caller, ServiceOffering so)
+            throws PermissionDeniedException;
+
+    void checkDiskOfferingAccess(Account caller, DiskOffering dof)
+            throws PermissionDeniedException;
+
+    /**
      * Creates a new network offering
-	 * @param name
-	 * @param displayText
-	 * @param trafficType
-	 * @param tags
-	 * @param networkRate TODO
-	 * @param serviceProviderMap TODO
-	 * @param isDefault TODO
-	 * @param type TODO
-	 * @param systemOnly TODO
-	 * @param serviceOfferingId
-	 * @param specifyIpRanges TODO
-	 * @param id
-	 * @param specifyVlan;
-	 * @param conserveMode;
-	 * @return network offering object
+     * 
+     * @param name
+     * @param displayText
+     * @param trafficType
+     * @param tags
+     * @param networkRate
+     *            TODO
+     * @param serviceProviderMap
+     *            TODO
+     * @param isDefault
+     *            TODO
+     * @param type
+     *            TODO
+     * @param systemOnly
+     *            TODO
+     * @param serviceOfferingId
+     * @param specifyIpRanges
+     *            TODO
+     * @param id
+     * @param specifyVlan
+     *            ;
+     * @param conserveMode
+     *            ;
+     * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
+            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
+            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges);
 
-    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, long networkId, Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
-    
+    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, long networkId,
+            Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
-    
+
     HostPodVO getPod(long id);
-    
+
     ClusterVO getCluster(long id);
-    
+
     boolean deleteAccountSpecificVirtualRanges(long accountId);
-    
+
     DataCenterVO getZone(long id);
-    
+
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
+     * 
      * @param id
      * @param name
      * @param startIp
      * @param endIp
      * @param gateway
      * @param netmask
-     * @param allocationState 
+     * @param allocationState
      * @return Pod
-     * @throws  
-     * @throws  
+     * @throws
+     * @throws
      */
     Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
 
     void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
 
     void checkCidrVlanOverlap(long zoneId, String cidr);
-    
+
 }

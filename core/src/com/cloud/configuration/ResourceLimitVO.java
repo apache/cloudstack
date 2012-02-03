@@ -28,100 +28,101 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="resource_limit")
+@Table(name = "resource_limit")
 public class ResourceLimitVO implements ResourceLimit {
-	
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id = null;
-	
-	@Column(name="type")
-	@Enumerated(EnumType.STRING)
-	private ResourceCount.ResourceType type;
-	
-	@Column(name="domain_id")
+
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private ResourceCount.ResourceType type;
+
+    @Column(name = "domain_id")
     private Long domainId;
-	
-	@Column(name="account_id")
+
+    @Column(name = "account_id")
     private Long accountId;
-	
-	@Column(name="max")
-	private Long max;
-    
-    public ResourceLimitVO() {}
-	
-	public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType) {
-		this.type = type;
-		this.max = max;
-		
-		if (ownerType == ResourceOwnerType.Account) {
+
+    @Column(name = "max")
+    private Long max;
+
+    public ResourceLimitVO() {
+    }
+
+    public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType) {
+        this.type = type;
+        this.max = max;
+
+        if (ownerType == ResourceOwnerType.Account) {
             this.accountId = ownerId;
         } else if (ownerType == ResourceOwnerType.Domain) {
             this.domainId = ownerId;
         }
-	}
-	
-	@Override
-	public Long getId() {
-		return id;
-	}
-	
-	public void setId(Long id) {
-		this.id = id;
-	}
-	
-	@Override
-	public ResourceType getType() {
-		return type;
-	}
-	
-	public void setType(ResourceCount.ResourceType type) {
-		this.type = type;
-	}
-	
-	public Long getDomainId() {
-		return domainId;
-	}
-	
-	public Long getAccountId() {
-		return accountId;
-	}
-	
-	@Override
-	public Long getMax() {
-		return max;
-	}
-	
-	@Override
-	public void setMax(Long max) {
-		this.max = max;
-	}
-	
-   @Override
+    }
+
+    @Override
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    @Override
+    public ResourceType getType() {
+        return type;
+    }
+
+    public void setType(ResourceCount.ResourceType type) {
+        this.type = type;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public Long getMax() {
+        return max;
+    }
+
+    @Override
+    public void setMax(Long max) {
+        this.max = max;
+    }
+
+    @Override
     public long getOwnerId() {
         if (accountId != null) {
             return accountId;
-        } 
-        
+        }
+
         return domainId;
     }
-   
-   @Override
-   public ResourceOwnerType getResourceOwnerType() {
-       if (accountId != null) {
-           return ResourceOwnerType.Account;
-       } else {
-           return ResourceOwnerType.Domain;
-       }
-   }
 
-   public void setDomainId(Long domainId) {
-       this.domainId = domainId;
+    @Override
+    public ResourceOwnerType getResourceOwnerType() {
+        if (accountId != null) {
+            return ResourceOwnerType.Account;
+        } else {
+            return ResourceOwnerType.Domain;
+        }
     }
 
-   public void setAccountId(Long accountId) {
-       this.accountId = accountId;
-   }
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
 
 }

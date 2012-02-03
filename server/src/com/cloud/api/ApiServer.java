@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -142,7 +143,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_allCommands = null;
     private static List<String> s_pluggableServiceCommands = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    
+
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     static {
@@ -172,45 +173,45 @@ public class ApiServer implements HttpRequestHandler {
     public Properties get_apiCommands() {
         return _apiCommands;
     }
-    
-    public static boolean isPluggableServiceCommand(String cmdClassName){
-        if(s_pluggableServiceCommands != null){
-            if(s_pluggableServiceCommands.contains(cmdClassName)){
+
+    public static boolean isPluggableServiceCommand(String cmdClassName) {
+        if (s_pluggableServiceCommands != null) {
+            if (s_pluggableServiceCommands.contains(cmdClassName)) {
                 return true;
             }
         }
         return false;
     }
 
-    private String[] getPluggableServicesApiConfigs(){
+    private String[] getPluggableServicesApiConfigs() {
         List<String> pluggableServicesApiConfigs = new ArrayList<String>();
-        
+
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         List<PluggableService> services = locator.getAllPluggableServices();
-        for(PluggableService service : services){
+        for (PluggableService service : services) {
             pluggableServicesApiConfigs.add(service.getPropertiesFile());
         }
         return pluggableServicesApiConfigs.toArray(new String[0]);
     }
-    
-    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig){
-        try{
-            if(_apiCommands == null){
+
+    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig) {
+        try {
+            if (_apiCommands == null) {
                 _apiCommands = new Properties();
             }
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
                 for (String configFile : apiConfig) {
                     File commandsFile = PropertiesUtil.findConfigFile(configFile);
-                    if(commandsFile != null){
-                        try{
+                    if (commandsFile != null) {
+                        try {
                             preProcessedCommands.load(new FileInputStream(commandsFile));
-                        }catch (FileNotFoundException fnfex) {
-                            //in case of a file within a jar in classpath, try to open stream using url
+                        } catch (FileNotFoundException fnfex) {
+                            // in case of a file within a jar in classpath, try to open stream using url
                             InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                            if(stream != null){
+                            if (stream != null) {
                                 preProcessedCommands.load(stream);
-                            }else{
+                            } else {
                                 s_logger.error("Unable to find properites file", fnfex);
                             }
                         }
@@ -220,11 +221,11 @@ public class ApiServer implements HttpRequestHandler {
                     String preProcessedCommand = preProcessedCommands.getProperty((String) key);
                     String[] commandParts = preProcessedCommand.split(";");
                     _apiCommands.put(key, commandParts[0]);
-                    
-                    if(pluggableServicesConfig){
+
+                    if (pluggableServicesConfig) {
                         s_pluggableServiceCommands.add(commandParts[0]);
                     }
-                    
+
                     if (commandParts.length > 1) {
                         try {
                             short cmdPermissions = Short.parseShort(commandParts[1]);
@@ -245,7 +246,7 @@ public class ApiServer implements HttpRequestHandler {
                         }
                     }
                 }
-    
+
                 s_allCommands.addAll(s_adminCommands);
                 s_allCommands.addAll(s_resourceDomainAdminCommands);
                 s_allCommands.addAll(s_userCommands);
@@ -257,13 +258,13 @@ public class ApiServer implements HttpRequestHandler {
             s_logger.error("Exception loading properties file", ioex);
         }
     }
-    
+
     public void init(String[] apiConfig) {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
         processConfigFiles(apiConfig, false);
-        
-        //get commands for all pluggable services
+
+        // get commands for all pluggable services
         String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
         processConfigFiles(pluggableServicesApiConfigs, true);
 
@@ -284,9 +285,9 @@ public class ApiServer implements HttpRequestHandler {
             ConfigurationVO apiPortConfig = values.get(0);
             apiPort = Integer.parseInt(apiPortConfig.getValue());
         }
-        
+
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
-        
+
         String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
@@ -333,7 +334,8 @@ public class ApiServer implements HttpRequestHandler {
                 if ("response".equalsIgnoreCase(paramValue[0])) {
                     responseType = paramValue[1];
                 } else {
-                    // according to the servlet spec, the parameter map should be in the form (name=String, value=String[]), so
+                    // according to the servlet spec, the parameter map should be in the form (name=String,
+// value=String[]), so
                     // parameter values will be stored in an array
                     parameterMap.put(/* name */paramValue[0], /* value */new String[] { paramValue[1] });
                 }
@@ -501,7 +503,7 @@ public class ApiServer implements HttpRequestHandler {
                 SerializationContext.current().setUuidTranslation(true);
                 return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
             }
-            
+
             SerializationContext.current().setUuidTranslation(true);
             return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
         } else {
@@ -512,9 +514,9 @@ public class ApiServer implements HttpRequestHandler {
             if (cmdObj instanceof BaseListCmd) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
-            
+
             SerializationContext.current().setUuidTranslation(true);
-        	return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
+            return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
         }
     }
 
@@ -557,10 +559,13 @@ public class ApiServer implements HttpRequestHandler {
         auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
         auditTrailSb.append(result);
         /*
-         * if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job resultcode for
+         * if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job
+         * resultcode for
          * (Pair<String,Object> pair : resultValues){ String key = pair.first(); if (key.equals("jobstatus")){
-         * auditTrailSb.append(" "); auditTrailSb.append(key); auditTrailSb.append("="); auditTrailSb.append(pair.second());
-         * }else if (key.equals("jobresultcode")){ auditTrailSb.append(" "); auditTrailSb.append(key); auditTrailSb.append("=");
+         * auditTrailSb.append(" "); auditTrailSb.append(key); auditTrailSb.append("=");
+         * auditTrailSb.append(pair.second());
+         * }else if (key.equals("jobresultcode")){ auditTrailSb.append(" "); auditTrailSb.append(key);
+         * auditTrailSb.append("=");
          * auditTrailSb.append(pair.second()); } } }else { for (Pair<String,Object> pair : resultValues){ if
          * (pair.first().equals("jobid")){ // Its an async job so report the jobid auditTrailSb.append(" ");
          * auditTrailSb.append(pair.first()); auditTrailSb.append("="); auditTrailSb.append(pair.second()); } } }
@@ -619,7 +624,7 @@ public class ApiServer implements HttpRequestHandler {
 
             String signatureVersion = null;
             String expires = null;
-            
+
             for (String paramName : parameterNames) {
                 // parameters come as name/value pairs in the form String/String[]
                 String paramValue = ((String[]) requestParameters.get(paramName))[0];
@@ -631,11 +636,11 @@ public class ApiServer implements HttpRequestHandler {
                         apiKey = paramValue;
                     }
                     else if ("signatureversion".equalsIgnoreCase(paramName)) {
-                    	signatureVersion = paramValue;
+                        signatureVersion = paramValue;
                     } else if ("expires".equalsIgnoreCase(paramName)) {
-                    	expires = paramValue;
+                        expires = paramValue;
                     }
-                    
+
                     if (unsignedRequest == null) {
                         unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
                     } else {
@@ -653,27 +658,27 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             Date expiresTS = null;
-            if("3".equals(signatureVersion)){
-            	// New signature authentication. Check for expire parameter and its validity
-            	if(expires == null){
-            		s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-            		return false;
-            	}
-            	synchronized (_dateFormat) {
-            		try{
-            			expiresTS = _dateFormat.parse(expires);
-            		} catch (ParseException pe){
-            			s_logger.info("Incorrect date format for Expires parameter", pe);
-                		return false;
-            		}
-            	}
-            	Date now = new Date(System.currentTimeMillis());
-            	if(expiresTS.before(now)){
-            		s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
-            		return false;
-            	}
+            if ("3".equals(signatureVersion)) {
+                // New signature authentication. Check for expire parameter and its validity
+                if (expires == null) {
+                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    return false;
+                }
+                synchronized (_dateFormat) {
+                    try {
+                        expiresTS = _dateFormat.parse(expires);
+                    } catch (ParseException pe) {
+                        s_logger.info("Incorrect date format for Expires parameter", pe);
+                        return false;
+                    }
+                }
+                Date now = new Date(System.currentTimeMillis());
+                if (expiresTS.before(now)) {
+                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    return false;
+                }
             }
-            
+
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
             User user = null;
@@ -861,7 +866,8 @@ public class ApiServer implements HttpRequestHandler {
 
     // FIXME: the following two threads are copied from
     // http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java
-    // we have to cite a license if we are using this code directly, so we need to add the appropriate citation or modify the
+    // we have to cite a license if we are using this code directly, so we need to add the appropriate citation or
+// modify the
     // code to be very specific to our needs
     static class ListenerThread extends Thread {
         private HttpService _httpService = null;
@@ -970,25 +976,25 @@ public class ApiServer implements HttpRequestHandler {
             if (errorCode == BaseCmd.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
                 responseName = "errorresponse";
             } else {
-            	Object cmdObj = apiCommandParams.get("command");
-            	//cmd name can be null when "command" parameter is missing in the request
-            	if (cmdObj != null) {
-            		String cmdName = ((String[])cmdObj) [0];
-                	cmdClassName = _apiCommands.getProperty(cmdName);
+                Object cmdObj = apiCommandParams.get("command");
+                // cmd name can be null when "command" parameter is missing in the request
+                if (cmdObj != null) {
+                    String cmdName = ((String[]) cmdObj)[0];
+                    cmdClassName = _apiCommands.getProperty(cmdName);
                     if (cmdClassName != null) {
                         Class<?> claz = Class.forName(cmdClassName);
                         responseName = ((BaseCmd) claz.newInstance()).getCommandName();
                     } else {
                         responseName = "errorresponse";
                     }
-            	}
+                }
             }
 
             ExceptionResponse apiResponse = new ExceptionResponse();
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
             apiResponse.setResponseName(responseName);
-            
+
             SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 

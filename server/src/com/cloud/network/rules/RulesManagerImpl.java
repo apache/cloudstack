@@ -155,7 +155,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-    @Override @DB
+    @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean openFirewall) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
@@ -164,30 +165,30 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
-        
+
         // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isOneToOneNat()) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
-        } 
-        
+        }
+
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
-        
+
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAllocatedToAccountId();
         Long domainId = ipAddress.getAllocatedInDomainId();
-        
+
         // start port can't be bigger than end port
         if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
-        
+
         // check that the port ranges are of equal size
         if ((rule.getDestinationPortEnd() - rule.getDestinationPortStart()) != (rule.getSourcePortEnd() - rule.getSourcePortStart())) {
             throw new InvalidParameterValueException("Source port and destination port ranges should be of equal sizes.");
         }
-        
+
         // validate user VM exists
         UserVm vm = _vmDao.findById(vmId);
         if (vm == null) {
@@ -195,7 +196,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else {
             checkRuleAndUserVm(rule, vm, caller);
         }
-            
+
         _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
 
         // Verify that vm has nic in the network
@@ -209,12 +210,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
+
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
                 rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
         newRule = _portForwardingDao.persist(newRule);
-        
-        //create firewallRule for 0.0.0.0/0 cidr
+
+        // create firewallRule for 0.0.0.0/0 cidr
         if (openFirewall) {
             _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId());
         }
@@ -230,18 +231,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             txn.commit();
             return newRule;
         } catch (Exception e) {
-            
-           
+
             if (newRule != null) {
-                
+
                 txn.start();
-                //no need to apply the rule as it wasn't programmed on the backend yet
+                // no need to apply the rule as it wasn't programmed on the backend yet
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
                 _portForwardingDao.remove(newRule.getId());
-                
+
                 txn.commit();
             }
-            
+
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
@@ -249,7 +249,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-    @Override @DB
+    @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating static nat rule", create = true)
     public StaticNatRule createStaticNatRule(StaticNatRule rule, boolean openFirewall) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
@@ -257,44 +258,42 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
-        
+
         // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create static nat rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null) {
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
-        } 
-        
+        }
+
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User);
-        
+
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAllocatedToAccountId();
         Long domainId = ipAddress.getAllocatedInDomainId();
 
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
-        
+
         Network network = _networkMgr.getNetwork(networkId);
         NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         if (off.getElasticIp()) {
-        	throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
+            throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
         }
 
         String dstIp = _networkMgr.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
 
-        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
+        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(),
                 networkId, accountId, domainId, rule.getPurpose(), null, null, null, null);
 
         newRule = _firewallDao.persist(newRule);
-        
-        //create firewallRule for 0.0.0.0/0 cidr
+
+        // create firewallRule for 0.0.0.0/0 cidr
         if (openFirewall) {
             _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId());
         }
-        
 
         try {
             _firewallMgr.detectRulesConflict(newRule, ipAddress);
@@ -310,15 +309,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
             return staticNatRule;
         } catch (Exception e) {
-            
+
             if (newRule != null) {
                 txn.start();
-                //no need to apply the rule as it wasn't programmed on the backend yet
+                // no need to apply the rule as it wasn't programmed on the backend yet
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _portForwardingDao.remove(newRule.getId()); 
+                _portForwardingDao.remove(newRule.getId());
                 txn.commit();
             }
-           
+
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
@@ -329,7 +328,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     public boolean enableStaticNat(long ipId, long vmId) throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
-    	Account caller = ctx.getCaller();
+        Account caller = ctx.getCaller();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -364,14 +363,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         // Verify ip address parameter
         isIpReadyForStaticNat(vmId, ipAddress, caller, ctx.getCallerUserId());
-        
+
         _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
 
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
 
         if (_ipAddressDao.update(ipAddress.getId(), ipAddress)) {
-            //enable static nat on the backend
+            // enable static nat on the backend
             s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
             if (applyStaticNatForIp(ipId, false, caller, false)) {
                 return true;
@@ -388,8 +387,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-	protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, Account caller, long callerUserId) throws NetworkRuleConflictException, ResourceUnavailableException {
-		if (ipAddress.isSourceNat()) {
+    protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, Account caller, long callerUserId) throws NetworkRuleConflictException, ResourceUnavailableException {
+        if (ipAddress.isSourceNat()) {
             throw new InvalidParameterValueException("Can't enable static, ip address " + ipAddress + " is a sourceNat ip address");
         }
 
@@ -398,7 +397,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (portForwardingRules != null && !portForwardingRules.isEmpty()) {
                 throw new NetworkRuleConflictException("Failed to enable static nat for the ip address " + ipAddress + " as it already has PortForwarding rules assigned");
             }
-            
+
             List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipAddress.getId(), Purpose.LoadBalancing);
             if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
                 throw new NetworkRuleConflictException("Failed to enable static nat for the ip address " + ipAddress + " as it already has LoadBalancing rules assigned");
@@ -406,33 +405,33 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
             throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId + " as it's already assigned to antoher vm");
         }
-          
-        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vmId);
-        
-        if (oldIP != null) {
-        	//If elasticIP functionality is supported in the network, we always have to disable static nat on the old ip in order to re-enable it on the new one
-            Long networkId = oldIP.getAssociatedWithNetworkId();
-        	boolean reassignStaticNat = false;
-    		if (networkId != null) {
-    		    Network guestNetwork = _networkMgr.getNetwork(networkId);
-    			NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-    			if (offering.getElasticIp()) {
-    				reassignStaticNat = true;
-    			}
-    		}
-    		
-    		// If there is public ip address already associated with the vm, throw an exception
-    		if (!reassignStaticNat) {
-                throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId + " is already associated with ip id=" + oldIP.getId());
-    		}
-    		//unassign old static nat rule
-    		s_logger.debug("Disassociating static nat for ip " + oldIP);
-    		if (!disableStaticNat(oldIP.getId(), caller, callerUserId, true)) {
-    			throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
-    		}
-        }
-	}
 
+        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vmId);
+
+        if (oldIP != null) {
+            // If elasticIP functionality is supported in the network, we always have to disable static nat on the old
+// ip in order to re-enable it on the new one
+            Long networkId = oldIP.getAssociatedWithNetworkId();
+            boolean reassignStaticNat = false;
+            if (networkId != null) {
+                Network guestNetwork = _networkMgr.getNetwork(networkId);
+                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                if (offering.getElasticIp()) {
+                    reassignStaticNat = true;
+                }
+            }
+
+            // If there is public ip address already associated with the vm, throw an exception
+            if (!reassignStaticNat) {
+                throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId + " is already associated with ip id=" + oldIP.getId());
+            }
+            // unassign old static nat rule
+            s_logger.debug("Disassociating static nat for ip " + oldIP);
+            if (!disableStaticNat(oldIP.getId(), caller, callerUserId, true)) {
+                throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
+            }
+        }
+    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_DELETE, eventDescription = "revoking forwarding rule", async = true)
@@ -447,8 +446,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         _accountMgr.checkAccess(caller, null, true, rule);
 
-        if(!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)){
-        	throw new CloudRuntimeException("Failed to delete port forwarding rule");
+        if (!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)) {
+            throw new CloudRuntimeException("Failed to delete port forwarding rule");
         }
         return true;
     }
@@ -482,8 +481,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         _accountMgr.checkAccess(caller, null, true, rule);
 
-        if(!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)){
-        	throw new CloudRuntimeException("Failed to revoke forwarding rule");
+        if (!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)) {
+            throw new CloudRuntimeException("Failed to revoke forwarding rule");
         }
         return true;
     }
@@ -537,7 +536,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return success;
     }
-    
+
     @Override
     public boolean revokeStaticNatRulesForVm(long vmId) {
         boolean success = true;
@@ -598,12 +597,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll());
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<PortForwardingRuleVO> sb = _portForwardingDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        
+
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
@@ -623,21 +622,20 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return _portForwardingDao.search(sc, filter);
     }
-    
+
     @Override
-    public List<String> getSourceCidrs(long ruleId){
+    public List<String> getSourceCidrs(long ruleId) {
         return _firewallCidrsDao.getSourceCidrs(ruleId);
     }
 
     @Override
     public boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller) {
         List<PortForwardingRuleVO> rules = _portForwardingDao.listForApplication(ipId);
-        
+
         if (rules.size() == 0) {
             s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
             return true;
         }
-        
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
@@ -739,7 +737,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return true;
     }
 
-
     @Override
     public boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller) {
         List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(networkId);
@@ -747,11 +744,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("There are no static nat to apply for network id=" + networkId);
             return true;
         }
-        
+
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, ips.toArray(new IPAddressVO[ips.size()]));
         }
-        
+
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         for (IPAddressVO ip : ips) {
             // Get nic IP4 address
@@ -759,7 +756,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             StaticNatImpl staticNat = new StaticNatImpl(ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), networkId, ip.getId(), dstIp, false);
             staticNats.add(staticNat);
         }
-        
+
         try {
             if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
                 return false;
@@ -774,7 +771,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll) {
-    	Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
@@ -790,15 +787,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        
+
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, start, size);
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        
+
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("id", sb.entity().getId(), Op.EQ);
-
 
         if (vmId != null) {
             SearchBuilder<IPAddressVO> ipSearch = _ipAddressDao.createSearchBuilder();
@@ -809,7 +805,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         SearchCriteria<FirewallRuleVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sc.setParameters("purpose", Purpose.StaticNat);
-        
+
         if (id != null) {
             sc.setParameters("id", id);
         }
@@ -828,8 +824,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "applying port forwarding rule", async = true)
     public boolean applyPortForwardingRules(long ipId, Account caller) throws ResourceUnavailableException {
-        if(!applyPortForwardingRules(ipId, false, caller)){
-        	throw new CloudRuntimeException("Failed to apply port forwarding rule");
+        if (!applyPortForwardingRules(ipId, false, caller)) {
+            throw new CloudRuntimeException("Failed to apply port forwarding rule");
         }
         return true;
     }
@@ -837,8 +833,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "applying static nat rule", async = true)
     public boolean applyStaticNatRules(long ipId, Account caller) throws ResourceUnavailableException {
-        if(!applyStaticNatRules(ipId, false, caller)){
-        	throw new CloudRuntimeException("Failed to apply static nat rule");
+        if (!applyStaticNatRules(ipId, false, caller)) {
+            throw new CloudRuntimeException("Failed to apply static nat rule");
         }
         return true;
     }
@@ -862,20 +858,19 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("Releasing " + staticNatRules.size() + " static nat rules for ip id=" + ipId);
         }
 
-        
         for (FirewallRuleVO rule : staticNatRules) {
             // Mark all static nat rules as Revoke, but don't revoke them yet
             revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
 
-        //revoke static nat for the ip address
+        // revoke static nat for the ip address
         boolean success = applyStaticNatForIp(ipId, false, caller, true);
 
         // revoke all port forwarding rules
         success = success && applyPortForwardingRules(ipId, true, caller);
 
         // revoke all all static nat rules
-        success  = success && applyStaticNatRules(ipId, true, caller);
+        success = success && applyStaticNatRules(ipId, true, caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_portForwardingDao.listByIpAndNotRevoked(ipId));
@@ -969,10 +964,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         for (int i = 0; i < ports.length; i++) {
-            
+
             rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null, null);
             rules[i] = _firewallDao.persist(rules[i]);
-            
+
             if (openFirewall) {
                 _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null, rules[i].getId());
             }
@@ -1023,36 +1018,38 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
         return _portForwardingDao.listByNetwork(networkId);
     }
-    
+
     @Override
-    public boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException{
-    	UserContext ctx = UserContext.current();
-    	Account caller = ctx.getCaller();
-    	IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+    public boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException {
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+        IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
-                
+
         if (ipAddress.getElastic()) {
-        	throw new InvalidParameterValueException("Can't disable static nat for elastic IP address " + ipAddress);
+            throw new InvalidParameterValueException("Can't disable static nat for elastic IP address " + ipAddress);
         }
-        
+
         Long vmId = ipAddress.getAssociatedWithVmId();
         if (vmId == null) {
-        	throw new InvalidParameterValueException("IP address " + ipAddress + " is not associated with any vm Id");
+            throw new InvalidParameterValueException("IP address " + ipAddress + " is not associated with any vm Id");
         }
-        
-        //if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to re-enable it on the new one
-        //enable static nat takes care of that
-	    Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
-		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-		if (offering.getElasticIp())  {
-			enableElasticIpAndStaticNatForVm(_vmDao.findById(vmId), true);
-			return true;
-		} else {
-	    	return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
-		}
+
+        // if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to
+// re-enable it on the new one
+        // enable static nat takes care of that
+        Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
+        NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        if (offering.getElasticIp()) {
+            enableElasticIpAndStaticNatForVm(_vmDao.findById(vmId), true);
+            return true;
+        } else {
+            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
+        }
     }
 
-    @Override @DB
+    @Override
+    @DB
     public boolean disableStaticNat(long ipId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException {
         boolean success = true;
 
@@ -1062,8 +1059,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (!ipAddress.isOneToOneNat()) {
             throw new InvalidParameterValueException("One to one nat is not enabled for the ip id=" + ipId);
         }
-        
-        //Revoke all firewall rules for the ip
+
+        // Revoke all firewall rules for the ip
         try {
             s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of disabling static nat for public IP id=" + ipId);
             if (!_firewallMgr.revokeFirewallRulesForIp(ipId, callerUserId, caller)) {
@@ -1079,22 +1076,22 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
             success = false;
         }
-        
+
         if (success) {
-        	boolean isIpElastic = ipAddress.getElastic();
-        	
+            boolean isIpElastic = ipAddress.getElastic();
+
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
             if (isIpElastic && !releaseIpIfElastic) {
-            	ipAddress.setElastic(false);
+                ipAddress.setElastic(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
 
-        	if (isIpElastic && releaseIpIfElastic && !_networkMgr.handleElasticIpRelease(ipAddress)) {
-            	s_logger.warn("Failed to release elastic ip address " + ipAddress);
-            	success = false;
+            if (isIpElastic && releaseIpIfElastic && !_networkMgr.handleElasticIpRelease(ipAddress)) {
+                s_logger.warn("Failed to release elastic ip address " + ipAddress);
+                success = false;
             }
-            
+
             return true;
         } else {
             s_logger.warn("Failed to disable one to one nat for the ip address id" + ipId);
@@ -1125,13 +1122,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return new StaticNatRuleImpl(ruleVO, dstIp);
     }
-    
+
     @Override
     public boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
-        
+
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
-        
+
         if (!sourceIp.isOneToOneNat()) {
             s_logger.debug("Source ip id=" + sourceIpId + " is not one to one nat");
             return true;
@@ -1141,30 +1138,30 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (networkId == null) {
             throw new CloudRuntimeException("Ip address is not associated with any network");
         }
-        
+
         UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
         Network network = _networkMgr.getNetwork(networkId);
         if (network == null) {
             throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
         }
-        
+
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, sourceIp);
         }
 
-        //create new static nat rule
+        // create new static nat rule
         // Get nic IP4 address
-        
+
         String dstIp;
         if (forRevoke) {
             dstIp = _networkMgr.getIpInNetworkIncludingRemoved(sourceIp.getAssociatedWithVmId(), networkId);
         } else {
             dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
         }
-        
+
         StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAllocatedToAccountId(), sourceIp.getAllocatedInDomainId(), networkId, sourceIpId, dstIp, forRevoke);
         staticNats.add(staticNat);
-        
+
         try {
             if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
                 return false;
@@ -1176,52 +1173,51 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return true;
     }
-    
-    
-	@Override
-    public void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException{
-    	boolean success = true;
-    	
-    	//enable static nat if eIp capability is supported
-    	List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
-    	for (Nic nic : nics) {
-    		Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
-    		NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-    		if (offering.getElasticIp()) {
-    			
-				//check if there is already static nat enabled
-				if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
-					s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
-					continue;
-				}
-				
-				s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
-				IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
-				if (ip == null) {
-					throw new CloudRuntimeException("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
-				}
-				
-				s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
-				
-				try {
-					success = enableStaticNat(ip.getId(), vm.getId());
-				} catch (NetworkRuleConflictException ex) {
-					s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
-					success = false;
-				} catch (ResourceUnavailableException ex) {
-					s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
-					success = false;
-				}
-				
-				if (!success) {
-					s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
-					_networkMgr.handleElasticIpRelease(ip);
-					throw new CloudRuntimeException("Failed to enable static nat on elastic ip for the vm " + vm);
-				} else {
-					s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
-				}
-    		}
-    	}
+
+    @Override
+    public void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException {
+        boolean success = true;
+
+        // enable static nat if eIp capability is supported
+        List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
+        for (Nic nic : nics) {
+            Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
+            NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+            if (offering.getElasticIp()) {
+
+                // check if there is already static nat enabled
+                if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
+                    s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
+                    continue;
+                }
+
+                s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
+                IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
+                if (ip == null) {
+                    throw new CloudRuntimeException("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
+                }
+
+                s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
+
+                try {
+                    success = enableStaticNat(ip.getId(), vm.getId());
+                } catch (NetworkRuleConflictException ex) {
+                    s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
+                    success = false;
+                } catch (ResourceUnavailableException ex) {
+                    s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
+                    success = false;
+                }
+
+                if (!success) {
+                    s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
+                    _networkMgr.handleElasticIpRelease(ip);
+                    throw new CloudRuntimeException("Failed to enable static nat on elastic ip for the vm " + vm);
+                } else {
+                    s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
+                }
+            }
+        }
     }
-	
+
 }

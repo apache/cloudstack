@@ -18,12 +18,12 @@
 
 package com.cloud.configuration;
 
-public interface ResourceLimit extends Resource{
-	
-	public Long getId();
-	
-	public Long getMax();
-	
-	public void setMax(Long max);
-	
+public interface ResourceLimit extends Resource {
+
+    public Long getId();
+
+    public Long getMax();
+
+    public void setMax(Long max);
+
 }

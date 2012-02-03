@@ -108,7 +108,7 @@ import com.cloud.uuididentity.dao.IdentityDao;
 
 public class ConfigurationServerImpl implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
-    
+
     private final ConfigurationDao _configDao;
     private final DataCenterDao _zoneDao;
     private final HostPodDao _podDao;
@@ -124,7 +124,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final ResourceCountDao _resourceCountDao;
     private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     private final IdentityDao _identityDao;
-    
+
     public ConfigurationServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
@@ -143,21 +143,22 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _identityDao = locator.getDao(IdentityDao.class);
     }
 
-    @Override @DB
+    @Override
+    @DB
     public void persistDefaultValues() throws InternalErrorException {
-        
+
         // Create system user and admin user
         saveUser();
-        
+
         // Get init
         String init = _configDao.getValue("init");
-        
+
         // Get domain suffix - needed for network creation
         _domainSuffix = _configDao.getValue("guest.domain.suffix");
-        
+
         if (init == null || init.equals("false")) {
             s_logger.debug("ConfigurationServer is saving default values to the database.");
-            
+
             // Save default Configuration Table values
             List<String> categories = Config.getCategories();
             for (String category : categories) {
@@ -165,16 +166,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 if (!_configDao.isPremium() && category.equals("Premium")) {
                     continue;
                 }
-                
+
                 List<Config> configs = Config.getConfigs(category);
                 for (Config c : configs) {
                     String name = c.key();
-                    
-                    //if the config value already present in the db, don't insert it again
-                    if (_configDao.findByName(name) != null) { 
+
+                    // if the config value already present in the db, don't insert it again
+                    if (_configDao.findByName(name) != null) {
                         continue;
-                    } 
-                    
+                    }
+
                     String instance = "DEFAULT";
                     String component = c.getComponent();
                     String value = c.getDefaultValue();
@@ -184,7 +185,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     _configDao.persist(configVO);
                 }
             }
-            
+
             _configDao.update(Config.UseSecondaryStorageVm.key(), Config.UseSecondaryStorageVm.getCategory(), "true");
             s_logger.debug("ConfigurationServer made secondary storage vm required.");
 
@@ -192,17 +193,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 
             _configDao.update("secstorage.secure.copy.cert", "realhostip");
-            s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");          
+            s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");
 
-            
             // Save default service offerings
-            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", false, false, null);            
+            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", false, false, null);
             createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", false, false, null);
             // Save default disk offerings
             createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
             createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
             createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
-            
+
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
             if (mountParent != null) {
@@ -220,32 +220,31 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             // generate a single sign-on key
             updateSSOKey();
-            
-            //Create default network offerings
+
+            // Create default network offerings
             createDefaultNetworkOfferings();
-            
-            //Create default networks
+
+            // Create default networks
             createDefaultNetworks();
-            
-            //Create userIpAddress ranges
-            
-            
-            //Update existing vlans with networkId
+
+            // Create userIpAddress ranges
+
+            // Update existing vlans with networkId
             Transaction txn = Transaction.currentTxn();
-            
+
             List<VlanVO> vlans = _vlanDao.listAll();
             if (vlans != null && !vlans.isEmpty()) {
                 for (VlanVO vlan : vlans) {
                     if (vlan.getNetworkId().longValue() == 0) {
                         updateVlanWithNetworkId(vlan);
                     }
-                    
-                    //Create vlan user_ip_address range
+
+                    // Create vlan user_ip_address range
                     String ipPange = vlan.getIpRange();
                     String[] range = ipPange.split("-");
                     String startIp = range[0];
                     String endIp = range[1];
-                    
+
                     txn.start();
                     IPRangeConfig config = new IPRangeConfig();
                     long startIPLong = NetUtils.ip2Long(startIp);
@@ -255,9 +254,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 }
             }
         }
-        //Update resource count if needed
+        // Update resource count if needed
         updateResourceCount();
-        
+
         // keystore for SSL/TLS connection
         updateSSLKeystore();
 
@@ -269,14 +268,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // Update the cloud identifier
         updateCloudIdentifier();
-        
+
         updateUuids();
-        
-        
+
         // Set init to true
         _configDao.update("init", "Hidden", "true");
     }
-    
+
     private void updateUuids() {
         _identityDao.initializeDefaultUuid("disk_offering");
         _identityDao.initializeDefaultUuid("network_offerings");
@@ -297,15 +295,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _identityDao.initializeDefaultUuid("networks");
         _identityDao.initializeDefaultUuid("user_ip_address");
     }
-    
+
     private String getMountParent() {
         return getEnvironmentProperty("mount.parent");
     }
-    
+
     private String getEnvironmentProperty(String name) {
         try {
             final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
-            
+
             if (propsFile == null) {
                 return null;
             } else {
@@ -319,8 +317,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             return null;
         }
     }
-    
-    
+
     @DB
     protected void saveUser() {
         // insert system account
@@ -339,21 +336,21 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
-        
+
         // insert admin user
         long id = 2;
         String username = "admin";
         String firstname = "admin";
         String lastname = "cloud";
         String password = "password";
-        
+
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
             return;
         }
-        
+
         md5.reset();
         BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
         String pwStr = pwInt.toString(16);
@@ -376,7 +373,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // now insert the user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
                 "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
-        
 
         txn = Transaction.currentTxn();
         try {
@@ -384,8 +380,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             stmt.executeUpdate();
         } catch (SQLException ex) {
         }
-        
-
 
         try {
             String tableName = "security_group";
@@ -396,19 +390,19 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 tableName = "network_group";
             } catch (Exception ex) {
                 // if network_groups table exists, create the default security group there
-            }  
-            
+            }
+
             insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) {
-                //save default security group
+                // save default security group
                 if (tableName.equals("security_group")) {
-                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1)";
+                    insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id) " +
+                            "VALUES ('default', 'Default Security Group', 2, 1)";
                 } else {
-                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id, account_name) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+                    insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id, account_name) " +
+                            "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
                 }
 
                 txn = Transaction.currentTxn();
@@ -430,7 +424,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update(Config.CloudIdentifier.key(),Config.CloudIdentifier.getCategory(), uuid);
+            _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
         }
     }
 
@@ -459,10 +453,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         try {
             ou = InetAddress.getLocalHost().getCanonicalHostName();
-            String[] group = ou.split("\\."); 
+            String[] group = ou.split("\\.");
 
             // Simple check to see if we got IP Address...
-            boolean isIPAddress =  Pattern.matches("[0-9]$", group[group.length - 1]);
+            boolean isIPAddress = Pattern.matches("[0-9]$", group[group.length - 1]);
             if (isIPAddress) {
                 ou = "cloud.com";
             } else {
@@ -477,7 +471,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         String o = ou;
         String c = "Unknown";
-        String dname = "cn=\"" + cn + "\",ou=\"" + ou +"\",o=\"" + o + "\",c=\"" + c + "\"";
+        String dname = "cn=\"" + cn + "\",ou=\"" + ou + "\",o=\"" + o + "\",c=\"" + c + "\"";
         Script script = new Script(true, "keytool", 5000, null);
         script.add("-genkey");
         script.add("-keystore", keystorePath);
@@ -498,7 +492,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         String dbString = _configDao.getValue("ssl.keystore");
-        File confFile= PropertiesUtil.findConfigFile("db.properties");
+        File confFile = PropertiesUtil.findConfigFile("db.properties");
         /* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
         String confPath = confFile.getParent();
         String keystorePath = confPath + "/cloud.keystore";
@@ -508,13 +502,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         s_logger.info("SSL keystore located at " + keystorePath);
         try {
             if (!dbExisted) {
-                if  (!keystoreFile.exists()) {
+                if (!keystoreFile.exists()) {
                     generateDefaultKeystore(keystorePath);
                     s_logger.info("Generated SSL keystore.");
                 }
                 String base64Keystore = getBase64Keystore(keystorePath);
                 ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", DBEncryptionUtil.encrypt(base64Keystore), "SSL Keystore for the management servers");
-            	_configDao.persist(configVO);
+                _configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
             } else if (keystoreFile.exists()) { // and dbExisted
                 // Check if they are the same one, otherwise override with local keystore
@@ -553,7 +547,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // Grab the SSH key pair and insert it into the database, if it is not present
 
         String userid = System.getProperty("user.name");
-        if (!userid.startsWith("cloud")){
+        if (!userid.startsWith("cloud")) {
             return;
         }
         String already = _configDao.getValue("ssh.privatekey");
@@ -567,13 +561,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
-        File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
+        File pubkeyfile = new File(homeDir + "/.ssh/id_rsa.pub");
 
         if (already == null || already.isEmpty()) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
-            //FIXME: take a global database lock here for safety. 
+            // FIXME: take a global database lock here for safety.
             Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then rm -f ~/.ssh/id_rsa ; fi; ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -q");
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
@@ -581,24 +575,24 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 new DataInputStream(new FileInputStream(privkeyfile)).readFully(arr1);
             } catch (EOFException e) {
             } catch (Exception e) {
-                s_logger.error("Cannot read the private key file",e);
+                s_logger.error("Cannot read the private key file", e);
                 throw new CloudRuntimeException("Cannot read the private key file");
             }
             String privateKey = new String(arr1).trim();
             byte[] arr2 = new byte[4094]; // configuration table column value size
             try {
                 new DataInputStream(new FileInputStream(pubkeyfile)).readFully(arr2);
-            } catch (EOFException e) {              
+            } catch (EOFException e) {
             } catch (Exception e) {
-                s_logger.warn("Cannot read the public key file",e);
+                s_logger.warn("Cannot read the public key file", e);
                 throw new CloudRuntimeException("Cannot read the public key file");
             }
-            String publicKey  = new String(arr2).trim();
+            String publicKey = new String(arr2).trim();
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '"+DBEncryptionUtil.encrypt(privateKey)+"','Private key for the entire CloudStack')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '" + DBEncryptionUtil.encrypt(privateKey) + "','Private key for the entire CloudStack')";
             String insertSql2 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '"+DBEncryptionUtil.encrypt(publicKey)+"','Public key for the entire CloudStack')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '" + DBEncryptionUtil.encrypt(publicKey) + "','Public key for the entire CloudStack')";
 
             Transaction txn = Transaction.currentTxn();
             try {
@@ -608,7 +602,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Private key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.error("SQL of the private key failed",ex);
+                s_logger.error("SQL of the private key failed", ex);
                 throw new CloudRuntimeException("SQL of the private key failed");
             }
 
@@ -619,10 +613,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Public key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.error("SQL of the public key failed",ex);
+                s_logger.error("SQL of the public key failed", ex);
                 throw new CloudRuntimeException("SQL of the public key failed");
             }
-        
+
         } else {
             s_logger.info("Keypairs already in database");
             if (userid.startsWith("cloud")) {
@@ -635,10 +629,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
     }
-    
+
     private void writeKeyToDisk(String key, String keyPath) {
         Script.runSimpleBashScript("mkdir -p ~/.ssh");
-        File keyfile = new File( keyPath);
+        File keyfile = new File(keyPath);
         if (!keyfile.exists()) {
             try {
                 keyfile.createNewFile();
@@ -647,7 +641,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 throw new CloudRuntimeException("Failed to update keypairs on disk: cannot create  key file " + keyPath);
             }
         }
-        
+
         if (keyfile.exists()) {
             try {
                 FileOutputStream kStream = new FileOutputStream(keyfile);
@@ -663,9 +657,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
     }
-    
-    private void updateKeyPairsOnDisk(String homeDir ) {
-        
+
+    private void updateKeyPairsOnDisk(String homeDir) {
+
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
         writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
@@ -673,20 +667,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
 
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
-        String injectScript = "scripts/vm/systemvm/injectkeys.sh";    
-        String scriptPath = Script.findScript("" , injectScript);
+        String injectScript = "scripts/vm/systemvm/injectkeys.sh";
+        String scriptPath = Script.findScript("", injectScript);
         String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
-        if ( scriptPath == null ) {
+        if (scriptPath == null) {
             throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
         }
         if (systemVmIsoPath == null) {
             throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
         }
-        final Script command  = new Script(scriptPath,  s_logger);
+        final Script command = new Script(scriptPath, s_logger);
         command.add(publicKeyPath);
         command.add(privKeyPath);
         command.add(systemVmIsoPath);
-       
+
         final String result = command.execute();
         if (result != null) {
             s_logger.warn("Failed to inject generated public key into systemvm iso " + result);
@@ -697,14 +691,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @DB
     protected void generateSecStorageVmCopyPassword() {
         String already = _configDao.getValue("secstorage.copy.password");
-        
+
         if (already == null) {
-        
+
             s_logger.info("Need to store secondary storage vm copy password in the database");
             String password = PasswordGenerator.generateRandomPassword(12);
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
 
             Transaction txn = Transaction.currentTxn();
             try {
@@ -712,9 +706,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 stmt1.executeUpdate();
                 s_logger.debug("secondary storage vm copy password inserted into database");
             } catch (SQLException ex) {
-                s_logger.warn("Failed to insert secondary storage vm copy password",ex);
+                s_logger.warn("Failed to insert secondary storage vm copy password", ex);
             }
-        
+
         }
     }
 
@@ -738,13 +732,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         int cidrSize = Integer.parseInt(cidrPair[1]);
-        
+
         if (startIp != null) {
             if (endIp == null) {
                 endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
             }
         }
-        
+
         // Create the new pod in the database
         String ipRange;
         if (startIp != null) {
@@ -755,17 +749,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } else {
             ipRange = "";
         }
-        
+
         HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            
+
             if (_podDao.persist(pod) == null) {
                 txn.rollback();
                 throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
             }
-            
+
             if (startIp != null) {
                 _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
             }
@@ -775,7 +769,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             if (nums > 16 || nums <= 0) {
                 throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
             }
-            /*local link ip address starts from 169.254.0.2 - 169.254.(nums)*/
+            /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
             String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
             if (linkLocalIpRanges == null) {
                 throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
@@ -785,12 +779,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             txn.commit();
 
-        } catch(Exception e) {
+        } catch (Exception e) {
             txn.rollback();
             s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
             throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
         }
-        
+
         return pod;
     }
 
@@ -799,7 +793,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags,false);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, false);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
         return newDiskOffering;
@@ -823,10 +817,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             t.delete(t.length() - 1, t.length());
             tags = t.toString();
         }
-        
+
         return tags;
     }
-    
+
     @DB
     protected void createDefaultNetworkOfferings() {
 
@@ -838,21 +832,21 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        
-        //populate providers
+
+        // populate providers
         Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
-        
+
         Map<Network.Service, Network.Provider> defaultIsolatedNetworkOfferingProviders = defaultSharedNetworkOfferingProviders;
-        
+
         Map<Network.Service, Network.Provider> defaultSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
-        
+
         Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -864,7 +858,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.StaticNat, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
-        
+
         Map<Network.Service, Network.Provider> netscalerServiceProviders = new HashMap<Network.Service, Network.Provider>();
         netscalerServiceProviders.put(Service.Dhcp, Provider.VirtualRouter);
         netscalerServiceProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -873,132 +867,131 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         netscalerServiceProviders.put(Service.StaticNat, Provider.Netscaler);
         netscalerServiceProviders.put(Service.Lb, Provider.Netscaler);
 
-        
-        //The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only first network offering has to be enabled, in Advance zone - the second one
+        // The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only
+// first network offering has to be enabled, in Advance zone - the second one
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
-        //Offering #1
+
+        // Offering #1
         NetworkOfferingVO deafultSharedSGNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedNetworkOfferingWithSGService, 
-                "Offering for Shared Security group enabled networks", 
-                TrafficType.Guest, 
-                false, true, null, null, true, Availability.Optional, 
+                NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
+                "Offering for Shared Security group enabled networks",
+                TrafficType.Guest,
+                false, true, null, null, true, Availability.Optional,
                 null, Network.GuestType.Shared, true, true);
-        
+
         deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
-        
+
         for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(deafultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
-        //Offering #2
+
+        // Offering #2
         NetworkOfferingVO defaultSharedNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedNetworkOffering, 
-                "Offering for Shared networks", 
-                TrafficType.Guest, 
-                false, true, null, null, true, Availability.Optional, 
+                NetworkOffering.DefaultSharedNetworkOffering,
+                "Offering for Shared networks",
+                TrafficType.Guest,
+                false, true, null, null, true, Availability.Optional,
                 null, Network.GuestType.Shared, true, true);
-        
+
         defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
-        
+
         for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
-        //Offering #3
+
+        // Offering #3
         NetworkOfferingVO defaultIsolatedSourceNatEnabledNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, 
-                "Offering for Isolated networks with Source Nat service enabled", 
-                TrafficType.Guest, 
-                false, false, null, null, true, Availability.Required, 
+                NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
+                "Offering for Isolated networks with Source Nat service enabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Required,
                 null, Network.GuestType.Isolated, true, false);
-        
+
         defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
-        
-        
+
         for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
-        //Offering #4
+
+        // Offering #4
         NetworkOfferingVO defaultIsolatedEnabledNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOffering, 
-                "Offering for Isolated networks with no Source Nat service", 
-                TrafficType.Guest, 
-                false, true, null, null, true, Availability.Optional, 
+                NetworkOffering.DefaultIsolatedNetworkOffering,
+                "Offering for Isolated networks with no Source Nat service",
+                TrafficType.Guest,
+                false, true, null, null, true, Availability.Optional,
                 null, Network.GuestType.Isolated, true, true);
-        
+
         defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
-        
+
         for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedEnabledNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
-        //Offering #5
+
+        // Offering #5
         NetworkOfferingVO defaultNetscalerNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedEIPandELBNetworkOffering, 
-                "Offering for Shared networks with Elastic IP and Elastic LB capabilities", 
-                TrafficType.Guest, 
-                false, true, null, null, true, Availability.Optional, 
+                NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
+                "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
+                TrafficType.Guest,
+                false, true, null, null, true, Availability.Optional,
                 null, Network.GuestType.Shared, true, false, false, false, true, true, true);
-        		        
+
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
-        
+
         for (Service service : netscalerServiceProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultNetscalerNetworkOffering.getId(), service, netscalerServiceProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
-        
+
         txn.commit();
     }
-    
+
     private void createDefaultNetworks() {
         List<DataCenterVO> zones = _dataCenterDao.listAll();
         long id = 1;
-        
+
         HashMap<TrafficType, String> guruNames = new HashMap<TrafficType, String>();
         guruNames.put(TrafficType.Public, PublicNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Management, PodBasedNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Control, ControlNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Storage, StorageNetworkGuru.class.getSimpleName());
         guruNames.put(TrafficType.Guest, DirectPodBasedNetworkGuru.class.getSimpleName());
-        
+
         for (DataCenterVO zone : zones) {
             long zoneId = zone.getId();
             long accountId = 1L;
             Long domainId = zone.getDomainId();
-            
+
             if (domainId == null) {
                 domainId = 1L;
             }
-            //Create default networks - system only
+            // Create default networks - system only
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
-            
+
             for (NetworkOfferingVO offering : ntwkOff) {
                 if (offering.isSystemOnly()) {
                     long related = id;
                     long networkOfferingId = offering.getId();
                     Mode mode = Mode.Static;
                     String networkDomain = null;
-                    
+
                     BroadcastDomainType broadcastDomainType = null;
-                    TrafficType trafficType= offering.getTrafficType();
-                    
+                    TrafficType trafficType = offering.getTrafficType();
+
                     boolean specifyIpRanges = false;
 
                     if (trafficType == TrafficType.Management) {
@@ -1010,15 +1003,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         broadcastDomainType = BroadcastDomainType.LinkLocal;
                     } else if (offering.getTrafficType() == TrafficType.Public) {
                         if ((zone.getNetworkType() == NetworkType.Advanced && !zone.isSecurityGroupEnabled()) || zone.getNetworkType() == NetworkType.Basic) {
-                        	specifyIpRanges = true;
+                            specifyIpRanges = true;
                             broadcastDomainType = BroadcastDomainType.Vlan;
                         } else {
                             continue;
                         }
                     }
-                    
+
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null, null, specifyIpRanges);
+                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null,
+                                null, specifyIpRanges);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());
@@ -1026,50 +1020,48 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         _networkDao.persist(network, false, getServicesAndProvidersForNetwork(networkOfferingId));
                         id++;
                     }
-                } 
+                }
             }
         }
     }
-    
-    
+
     private void updateVlanWithNetworkId(VlanVO vlan) {
         long zoneId = vlan.getDataCenterId();
         long networkId = 0L;
         DataCenterVO zone = _zoneDao.findById(zoneId);
-        
+
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            networkId = getSystemNetworkIdByZoneAndTrafficType(zoneId, TrafficType.Public); 
+            networkId = getSystemNetworkIdByZoneAndTrafficType(zoneId, TrafficType.Public);
         } else {
             networkId = getSystemNetworkIdByZoneAndTrafficType(zoneId, TrafficType.Guest);
         }
-        
+
         vlan.setNetworkId(networkId);
         _vlanDao.update(vlan.getId(), vlan);
     }
-    
+
     private long getSystemNetworkIdByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
-        //find system public network offering
+        // find system public network offering
         Long networkOfferingId = null;
         List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
-        for (NetworkOfferingVO offering: offerings) {
+        for (NetworkOfferingVO offering : offerings) {
             if (offering.getTrafficType() == trafficType) {
                 networkOfferingId = offering.getId();
                 break;
             }
         }
-        
+
         if (networkOfferingId == null) {
             throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType);
         }
-        
+
         List<NetworkVO> networks = _networkDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
         if (networks == null || networks.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
         }
         return networks.get(0).getId();
     }
-    
-    
+
     @DB
     public void updateResourceCount() {
         ResourceType[] resourceTypes = Resource.ResourceType.values();
@@ -1077,10 +1069,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
         List<ResourceCountVO> domainResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Domain);
         List<ResourceCountVO> accountResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Account);
-        
+
         List<ResourceType> accountSupportedResourceTypes = new ArrayList<ResourceType>();
         List<ResourceType> domainSupportedResourceTypes = new ArrayList<ResourceType>();
-        
+
         for (ResourceType resourceType : resourceTypes) {
             if (resourceType.supportsOwner(ResourceOwnerType.Account)) {
                 accountSupportedResourceTypes.add(resourceType);
@@ -1089,15 +1081,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 domainSupportedResourceTypes.add(resourceType);
             }
         }
-        
-        
+
         int accountExpectedCount = accountSupportedResourceTypes.size();
         int domainExpectedCount = domainSupportedResourceTypes.size();
-        
+
         if ((domainResourceCount.size() < domainExpectedCount * domains.size())) {
             s_logger.debug("resource_count table has records missing for some domains...going to insert them");
             for (DomainVO domain : domains) {
-                //Lock domain
+                // Lock domain
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 _domainDao.lockRow(domain.getId(), true);
@@ -1119,11 +1110,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 txn.commit();
             }
         }
-        
+
         if ((accountResourceCount.size() < accountExpectedCount * accounts.size())) {
             s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
             for (AccountVO account : accounts) {
-                //lock account
+                // lock account
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 _accountDao.lockRow(account.getId(), true);
@@ -1132,7 +1123,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 for (ResourceCountVO accountCount : accountCounts) {
                     accountCountStr.add(accountCount.getType().toString());
                 }
-                
+
                 if (accountCountStr.size() < accountExpectedCount) {
                     for (ResourceType resourceType : accountSupportedResourceTypes) {
                         if (!accountCountStr.contains(resourceType.toString())) {
@@ -1142,23 +1133,23 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         }
                     }
                 }
-                
+
                 txn.commit();
             }
         }
     }
-    
+
     public Map<String, String> getServicesAndProvidersForNetwork(long networkOfferingId) {
         Map<String, String> svcProviders = new HashMap<String, String>();
         List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingServiceMapDao.listByNetworkOfferingId(networkOfferingId);
-        
+
         for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
             if (svcProviders.containsKey(serviceMap.getService())) {
                 continue;
-            } 
-            svcProviders.put(serviceMap.getService(), serviceMap.getProvider());  
+            }
+            svcProviders.put(serviceMap.getService(), serviceMap.getProvider());
         }
-        
+
         return svcProviders;
     }
 

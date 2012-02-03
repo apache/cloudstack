@@ -1,6 +1,6 @@
 /**
  * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -52,73 +52,73 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=NetworkElement.class)
+@Local(value = NetworkElement.class)
 public class ExternalDhcpElement extends AdapterBase implements NetworkElement, DhcpServiceProvider {
-	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
-	@Inject ExternalDhcpManager _dhcpMgr;
-	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-	
-	private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
-		DataCenter dc = dest.getDataCenter();
-		Pod pod = dest.getPod();
-		
-		if ((pod != null && pod.getExternalDhcp()) && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
-				&& networkType == Network.GuestType.Shared) {
-			s_logger.debug("External DHCP can handle");
-			return true;
-		}
+    private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
+    @Inject
+    ExternalDhcpManager _dhcpMgr;
+    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
-		return false;
-	}
+    private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
+        DataCenter dc = dest.getDataCenter();
+        Pod pod = dest.getPod();
+
+        if ((pod != null && pod.getExternalDhcp()) && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
+                && networkType == Network.GuestType.Shared) {
+            s_logger.debug("External DHCP can handle");
+            return true;
+        }
+
+        return false;
+    }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
-    	//No external dhcp support for Acton release
+        // No external dhcp support for Acton release
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-//        capabilities.put(Service.Dhcp, null);
+// capabilities.put(Service.Dhcp, null);
         return capabilities;
     }
-    
-	@Override
-	public Map<Service, Map<Capability, String>> getCapabilities() {
-		return capabilities;
-	}
 
-	@Override
-	public Provider getProvider() {
-		return Provider.ExternalDhcpServer;
-	}
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+        return capabilities;
+    }
 
-	@Override
-	public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-		if (!canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
-			return false;
-		}
-		return true;
-	}
+    @Override
+    public Provider getProvider() {
+        return Provider.ExternalDhcpServer;
+    }
 
-	@Override
-	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
-			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-	    return true;
-	}
+    @Override
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        if (!canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
+            return false;
+        }
+        return true;
+    }
 
-	@Override
-	public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
+    @Override
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return true;
+    }
 
-	@Override
-	public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
-	
-	
-	@Override
-	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
+    @Override
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -142,12 +142,12 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         Host host = dest.getHost();
         if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
-            //BareMetalElement or DhcpElement handle this
+            // BareMetalElement or DhcpElement handle this
             return false;
         }
         return _dhcpMgr.addVirtualMachineIntoNetwork(network, nic, vm, dest, context);
     }
-    
+
     @Override
     public boolean verifyServicesCombination(List<String> services) {
         return true;

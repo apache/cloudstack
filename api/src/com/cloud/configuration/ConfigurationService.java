@@ -68,7 +68,8 @@ public interface ConfigurationService {
      * Create a service offering through the API
      * 
      * @param cmd
-     *            the command object that specifies the name, number of cpu cores, amount of RAM, etc. for the service offering
+     *            the command object that specifies the name, number of cpu cores, amount of RAM, etc. for the service
+     *            offering
      * @return the newly created service offering if successful, null otherwise
      */
     ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd);
@@ -130,13 +131,21 @@ public interface ConfigurationService {
 
     /**
      * Creates a new pod based on the parameters specified in the command object
-     * @param zoneId TODO
-     * @param name TODO
-     * @param startIp TODO
-     * @param endIp TODO
-     * @param gateway TODO
-     * @param netmask TODO
-     * @param allocationState TODO
+     * 
+     * @param zoneId
+     *            TODO
+     * @param name
+     *            TODO
+     * @param startIp
+     *            TODO
+     * @param endIp
+     *            TODO
+     * @param gateway
+     *            TODO
+     * @param netmask
+     *            TODO
+     * @param allocationState
+     *            TODO
      * @return the new pod if successful, null otherwise
      * @throws
      * @throws
@@ -188,12 +197,14 @@ public interface ConfigurationService {
     boolean deleteZone(DeleteZoneCmd cmd);
 
     /**
-     * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on the
+     * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on
+     * the
      * virtual public network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs
      * 
      * @param userId
      * @param vlanType
-     *            - either "DomR" (VLAN for a virtual public network) or "DirectAttached" (VLAN for IPs that will be directly
+     *            - either "DomR" (VLAN for a virtual public network) or "DirectAttached" (VLAN for IPs that will be
+     *            directly
      *            attached to UserVMs)
      * @param zoneId
      * @param accountId

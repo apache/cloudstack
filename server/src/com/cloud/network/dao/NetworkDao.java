@@ -46,7 +46,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     @Override
     @Deprecated
     NetworkVO persist(NetworkVO vo);
-    
+
     /**
      * Retrieves the next available mac address in this network configuration.
      * 
@@ -86,9 +86,10 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName);
 
-	void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap);
-	
-	boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
-	
-	List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+    void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap);
+
+    boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
+
+    List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
 }

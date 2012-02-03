@@ -26,54 +26,56 @@ import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-
 /**
  * Rules Manager manages the network rules created for different networks.
  */
 public interface RulesManager extends RulesService {
-    
+
     boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError, Account caller);
-    
+
     boolean applyStaticNatRules(long sourceIpId, boolean continueOnError, Account caller);
-    
+
     boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
-    
+
     boolean applyStaticNatRulesForNetwork(long networkId, boolean continueOnError, Account caller);
-    
+
     void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller);
+
     void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller);
-    
+
     boolean revokeAllPFAndStaticNatRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
-    
+
     boolean revokeAllPFStaticNatRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
-    
+
     List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
-    
+
     /**
      * Returns a list of port forwarding rules that are ready for application
      * to the network elements for this ip.
+     * 
      * @param ip
      * @return List of PortForwardingRule
      */
     List<? extends PortForwardingRule> listPortForwardingRulesForApplication(long ipId);
-    
+
     List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
 
-	boolean revokePortForwardingRulesForVm(long vmId);
-	
-	boolean revokeStaticNatRulesForVm(long vmId);
-	
-	FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException;
-	boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
-	
-	List<PortForwardingRuleVO> listByNetworkId(long networkId);
+    boolean revokePortForwardingRulesForVm(long vmId);
+
+    boolean revokeStaticNatRulesForVm(long vmId);
+
+    FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException;
+
+    boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
+
+    List<PortForwardingRuleVO> listByNetworkId(long networkId);
 
     boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
-    
+
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
-	void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
-	
+    void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
+
     boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 
 }

@@ -21,7 +21,6 @@
  */
 package com.cloud.offerings.dao;
 
-
 import java.util.List;
 
 import javax.ejb.Local;
@@ -40,31 +39,32 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-@Local(value=NetworkOfferingDao.class) @DB(txn=false)
+@Local(value = NetworkOfferingDao.class)
+@DB(txn = false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
-    
+
     protected NetworkOfferingDaoImpl() {
         super();
-        
+
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.and("uniqueName", NameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         NameSearch.done();
-        
+
         SystemOfferingSearch = createSearchBuilder();
         SystemOfferingSearch.and("system", SystemOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         SystemOfferingSearch.done();
-        
+
         AvailabilitySearch = createSearchBuilder();
         AvailabilitySearch.and("availability", AvailabilitySearch.entity().getAvailability(), SearchCriteria.Op.EQ);
         AvailabilitySearch.and("isSystem", AvailabilitySearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         AvailabilitySearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
@@ -81,17 +81,17 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         UpgradeSearch.and("state", UpgradeSearch.entity().getState(), Op.EQ);
         UpgradeSearch.done();
     }
-    
+
     @Override
     public NetworkOfferingVO findByUniqueName(String uniqueName) {
         SearchCriteria<NetworkOfferingVO> sc = NameSearch.create();
-        
+
         sc.setParameters("uniqueName", uniqueName);
-        
+
         return findOneBy(sc);
-        
+
     }
-    
+
     @Override
     public NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering) {
         assert offering.getUniqueName() != null : "how are you going to find this later if you don't set it?";
@@ -107,14 +107,14 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
             return findByUniqueName(offering.getName());
         }
     }
-    
+
     @Override
     public List<NetworkOfferingVO> listSystemNetworkOfferings() {
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", true);
         return this.listIncludingRemovedBy(sc, null);
     }
-    
+
     @Override
     public List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem) {
         SearchCriteria<NetworkOfferingVO> sc = AvailabilitySearch.create();
@@ -122,11 +122,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.setParameters("isSystem", isSystem);
         return listBy(sc, null);
     }
-    
-    @Override @DB
-    public boolean remove(Long networkOfferingId){
-    	Transaction txn = Transaction.currentTxn();
-    	txn.start();
+
+    @Override
+    @DB
+    public boolean remove(Long networkOfferingId) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         NetworkOfferingVO offering = findById(networkOfferingId);
         offering.setUniqueName(null);
         update(networkOfferingId, offering);
@@ -134,27 +135,27 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         txn.commit();
         return result;
     }
-    
+
     @Override
     public List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering) {
         SearchCriteria<Long> sc = UpgradeSearch.create();
-        //exclude original offering
+        // exclude original offering
         sc.addAnd("id", SearchCriteria.Op.NEQ, originalOffering.getId());
-        
-        //list only non-system offerings
+
+        // list only non-system offerings
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
-        
-        //Type of the network should be the same
+
+        // Type of the network should be the same
         sc.addAnd("guestType", SearchCriteria.Op.EQ, originalOffering.getGuestType());
-        
-        //Traffic types should be the same 
+
+        // Traffic types should be the same
         sc.addAnd("trafficType", SearchCriteria.Op.EQ, originalOffering.getTrafficType());
-        
+
         sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
-        
+
         return customSearch(sc, null);
     }
-    
+
     @Override
     public List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type) {
         SearchCriteria<NetworkOfferingVO> sc = AllFieldsSearch.create();
@@ -163,4 +164,5 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.setParameters("state", state);
         return listBy(sc, null);
     }
+
 }

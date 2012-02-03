@@ -84,7 +84,7 @@ public interface NetworkService {
     Integer getNetworkRate(long networkId, Long vmId);
 
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-    
+
     Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
@@ -114,7 +114,7 @@ public interface NetworkService {
     PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId);
 
     PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
-    
+
     long findPhysicalNetworkId(long zoneId, String tag);
 
     PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan);
@@ -128,8 +128,9 @@ public interface NetworkService {
     List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
 
     PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-    
+
     Network getExclusiveGuestNetwork(long zoneId);
-    
+
     List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd);
+
 }

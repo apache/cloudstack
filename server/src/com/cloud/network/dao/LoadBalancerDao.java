@@ -25,9 +25,15 @@ import com.cloud.utils.db.GenericDao;
 
 public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
     List<Long> listInstancesByLoadBalancer(long loadBalancerId);
+
     List<LoadBalancerVO> listByIpAddress(long ipAddressId);
+
     LoadBalancerVO findByIpAddressAndPublicPort(long ipAddressId, String publicPort);
+
     LoadBalancerVO findByAccountAndName(Long accountId, String name);
+
     List<LoadBalancerVO> listByNetworkId(long networkId);
+
     List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId);
+
 }

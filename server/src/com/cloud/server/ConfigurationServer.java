@@ -25,11 +25,13 @@ import com.cloud.exception.InternalErrorException;
  * This is the Server that is run right before the Management Server.
  */
 public interface ConfigurationServer {
-	public static final String Name = "configuration-server";
-	
-	/**
+    public static final String Name = "configuration-server";
+
+    /**
      * Persists default values for the configuration table, pods/zones, and VLANs
-     * @return 
+     * 
+     * @return
      */
     public void persistDefaultValues() throws InternalErrorException;
+
 }

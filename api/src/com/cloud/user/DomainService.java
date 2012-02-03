@@ -27,9 +27,9 @@ import com.cloud.exception.PermissionDeniedException;
 public interface DomainService {
 
     Domain createDomain(String name, Long parentId, String networkDomain);
-    
+
     Domain getDomain(long id);
-    
+
     /**
      * Return whether a domain is a child domain of a given domain.
      * 
@@ -41,9 +41,10 @@ public interface DomainService {
 
     boolean deleteDomain(long domainId, Boolean cleanup);
 
-	List<? extends Domain> searchForDomains(ListDomainsCmd cmd)
-			throws PermissionDeniedException;
+    List<? extends Domain> searchForDomains(ListDomainsCmd cmd)
+            throws PermissionDeniedException;
 
-	List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd)
-			throws PermissionDeniedException;
+    List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd)
+            throws PermissionDeniedException;
+
 }

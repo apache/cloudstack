@@ -23,11 +23,11 @@ import java.util.Set;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 
-public interface DomainManager extends DomainService{
+public interface DomainManager extends DomainService {
     Set<Long> getDomainChildrenIds(String parentDomainPath);
 
     Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain);
-    
+
     /**
      * find the domain by its path
      * 
@@ -36,11 +36,11 @@ public interface DomainManager extends DomainService{
      * @return domainVO the domain with the matching path, or null if no domain with the given path exists
      */
     DomainVO findDomainByPath(String domainPath);
-        
+
     Set<Long> getDomainParentIds(long domainId);
-    
+
     boolean removeDomain(long domainId);
-    
+
     List<? extends Domain> findInactiveDomains();
 
     boolean deleteDomain(DomainVO domain, Boolean cleanup);
