@@ -22,7 +22,7 @@ import com.cloud.utils.SerialVersionUID;
 /**
  * Version of the protocol is no longer supported.
  */
-public class UnsupportedVersionException extends Exception {
+public class UnsupportedVersionException extends CloudException {
 
     private static final long serialVersionUID = SerialVersionUID.UnsupportedVersionException;
     

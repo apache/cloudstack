@@ -17,7 +17,7 @@
  */
 package com.cloud.exception;
 
-public class UsageServerException extends Exception {
+public class UsageServerException extends CloudException {
 
 	public UsageServerException() {
 		

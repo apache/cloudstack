@@ -34,7 +34,7 @@ import com.cloud.utils.SerialVersionUID;
  *      It is important that the Listener does not fall into a loop in this
  *      situation where it keeps throwing ConnectionException.
  */
-public class ConnectionException extends Exception {
+public class ConnectionException extends CloudException {
     
     private static final long serialVersionUID = SerialVersionUID.ConnectionException;
     boolean _error;

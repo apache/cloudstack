@@ -18,7 +18,9 @@
 
 package com.cloud.network.ovs;
 
-public class OvsVlanExhaustedException extends Exception {
+import com.cloud.exception.CloudException;
+
+public class OvsVlanExhaustedException extends CloudException {
 	public OvsVlanExhaustedException(String msg) {
 		super(msg);
 	}

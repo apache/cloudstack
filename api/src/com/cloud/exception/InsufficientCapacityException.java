@@ -23,7 +23,7 @@ import com.cloud.utils.SerialVersionUID;
  * Generic parent exception class for capacity being reached.
  *
  */
-public abstract class InsufficientCapacityException extends Exception {
+public abstract class InsufficientCapacityException extends CloudException {
     private static final long serialVersionUID = SerialVersionUID.InsufficientCapacityException;
 
     Long id;

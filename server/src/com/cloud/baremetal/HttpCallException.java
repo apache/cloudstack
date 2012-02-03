@@ -21,7 +21,9 @@ package com.cloud.baremetal;
 
 import com.cloud.utils.SerialVersionUID;
 
-public class HttpCallException extends Exception {
+import com.cloud.exception.CloudException;
+
+public class HttpCallException extends CloudException {
 	private static final long serialVersionUID= SerialVersionUID.HttpCallException;
 	public HttpCallException(String msg) {
 		super(msg);

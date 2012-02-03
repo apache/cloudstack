@@ -17,11 +17,13 @@
  */
 package com.cloud.agent.manager.authn;
 
+import com.cloud.exception.CloudException;
+
 /**
  * Exception indicates authentication and/OR authorization problem
  *
  */
-public class AgentAuthnException extends Exception{
+public class AgentAuthnException extends CloudException{
 
     private static final long serialVersionUID = 3303508953403051189L;
 

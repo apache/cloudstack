@@ -17,9 +17,10 @@
  */
 
 package com.cloud.api;
+import com.cloud.utils.exception.RuntimeCloudException;
 
 @SuppressWarnings("serial")
-public class ServerApiException extends RuntimeException {
+public class ServerApiException extends RuntimeCloudException {
     private int _errorCode;
     private String _description;
 

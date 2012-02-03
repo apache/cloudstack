@@ -18,7 +18,9 @@
 
 package com.cloud.network.ovs;
 
-public class GreTunnelException extends Exception {
+import com.cloud.exception.CloudException;
+
+public class GreTunnelException extends CloudException {
 	public GreTunnelException(String msg) {
 		super(msg);
 	}

@@ -24,7 +24,7 @@ import com.cloud.utils.SerialVersionUID;
  * This exception is thrown when the operation couldn't complete due to a
  * wait timeout.
  */
-public class OperationTimedoutException extends Exception {
+public class OperationTimedoutException extends CloudException {
     private static final long serialVersionUID = SerialVersionUID.OperationTimedoutException;
     
     long _agentId;

@@ -19,7 +19,7 @@ package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
 
-public class ConcurrentOperationException extends Exception {
+public class ConcurrentOperationException extends CloudException {
     
     private static final long serialVersionUID = SerialVersionUID.ConcurrentOperationException;
     
