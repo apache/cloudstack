@@ -412,9 +412,9 @@ public class NetscalerResource implements ServerResource {
             for (LoadBalancerTO loadBalancer : loadBalancers) {
                 String srcIp = loadBalancer.getSrcIp();
                 int srcPort = loadBalancer.getSrcPort();
-                String lbProtocol = loadBalancer.getProtocol();
+                String lbProtocol = getNetScalerProtocol(loadBalancer);
                 String lbAlgorithm = loadBalancer.getAlgorithm();
-                String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort, lbProtocol);
+                String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
 
                 boolean destinationsToAdd = false;
                 for (DestinationTO destination : loadBalancer.getDestinations()) {
@@ -1085,27 +1085,43 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private void addLBVirtualServer(String virtualServerName, String srcIp, int srcPort, String lbMethod, String lbProtocol, StickinessPolicyTO[] stickyPolicies) throws ExecutionException {
-        try {
+    private String getNetScalerProtocol(LoadBalancerTO loadBalancer) throws ExecutionException {
+        String port = Integer.toString(loadBalancer.getSrcPort());
+        String lbProtocol = loadBalancer.getProtocol();
+        StickinessPolicyTO[] stickyPolicies = loadBalancer.getStickinessPolicies();
+        String nsProtocol = "TCP";
 
-            if (lbProtocol == null) {
-                lbProtocol = "TCP";
-            } else if (NetUtils.TCP_PROTO.equalsIgnoreCase(lbProtocol)) {
-                lbProtocol = "TCP";
-            } else if (NetUtils.UDP_PROTO.equalsIgnoreCase(lbProtocol)) {
-                lbProtocol = "UDP";
-            } else {
-                throw new ExecutionException("Got invalid protocol: " + lbProtocol + " in the  load balancer rule");
+        if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
+            StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
+            if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()) ||
+                    (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()))) {
+                nsProtocol = "HTTP";
+                return nsProtocol;
             }
+        }
 
-            if ("roundrobin".equalsIgnoreCase(lbMethod)) {
+        if (port.equals(NetUtils.HTTP_PORT)) {
+            nsProtocol = "HTTP";
+        } else if (NetUtils.TCP_PROTO.equalsIgnoreCase(lbProtocol)) {
+            nsProtocol = "TCP";
+        } else if (NetUtils.UDP_PROTO.equalsIgnoreCase(lbProtocol)) {
+            nsProtocol = "UDP";
+        }
+
+        return nsProtocol;
+    }
+
+    private void addLBVirtualServer(String virtualServerName, String publicIp, int publicPort, String lbAlgorithm, String protocol, StickinessPolicyTO[] stickyPolicies) throws ExecutionException {
+        try {
+            String lbMethod;
+            if ("roundrobin".equalsIgnoreCase(lbAlgorithm)) {
                 lbMethod = "ROUNDROBIN";
-            } else if ("leastconn".equalsIgnoreCase(lbMethod)) {
+            } else if ("leastconn".equalsIgnoreCase(lbAlgorithm)) {
                 lbMethod = "LEASTCONNECTION";
-            } else if ("source".equalsIgnoreCase(lbMethod)) {
+            } else if ("source".equalsIgnoreCase(lbAlgorithm)) {
                 lbMethod = "SOURCEIPHASH";
             } else {
-                throw new ExecutionException("Got invalid load balancing algorithm: " + lbMethod + " in the load balancing rule");
+                throw new ExecutionException("Got invalid load balancing algorithm: " + lbAlgorithm + " in the load balancing rule");
             }
 
             boolean vserverExisis = false;
@@ -1113,12 +1129,16 @@ public class NetscalerResource implements ServerResource {
             if (vserver == null) {
                 vserver = new lbvserver();
             } else {
+                if (!vserver.get_servicetype().equalsIgnoreCase(protocol)) {
+                    throw new ExecutionException("Can not update virtual server:" + virtualServerName + " as current protocol:" + vserver.get_servicetype() + " of virtual server is different from the "
+                            + " intended protocol:" + protocol);
+                }
                 vserverExisis = true;
             }
             vserver.set_name(virtualServerName);
-            vserver.set_ipv46(srcIp);
-            vserver.set_port(srcPort);
-            vserver.set_servicetype(lbProtocol);
+            vserver.set_ipv46(publicIp);
+            vserver.set_port(publicPort);
+            vserver.set_servicetype(protocol);
             vserver.set_lbmethod(lbMethod);
 
             // netmask can only be set for source IP load balancer algorithm
@@ -1145,7 +1165,6 @@ public class NetscalerResource implements ServerResource {
                 // configure virtual server based on the persistence method
                 if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                     vserver.set_persistencetype("COOKIEINSERT");
-                    vserver.set_servicetype("HTTP");
                 } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                     vserver.set_persistencetype("SOURCEIP");
                 } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
@@ -1276,8 +1295,8 @@ public class NetscalerResource implements ServerResource {
         return genObjectName("Cloud-Inat", srcIp);
     }
 
-    private String generateNSVirtualServerName(String srcIp, long srcPort, String protocol) {
-        return genObjectName("Cloud-VirtualServer", protocol, srcIp, srcPort);
+    private String generateNSVirtualServerName(String srcIp, long srcPort) {
+        return genObjectName("Cloud-VirtualServer", srcIp, srcPort);
     }
 
     private String generateNSServerName(String serverIP) {
