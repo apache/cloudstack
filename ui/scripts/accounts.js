@@ -91,7 +91,7 @@
                           var items = [];
                           var domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function() {
-                            items.push({id: this.id, description: this.name});
+                            items.push({id: this.id, description: this.path});
                           });
                           args.response.success({data: items});
                         }

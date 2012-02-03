@@ -208,7 +208,7 @@
             isHidden: true,
             select: function(args) {
               $.ajax({
-                url: createURL("listDomains"),
+                url: createURL("listDomains&listAll=true"),
                 data: { viewAll: true },
                 dataType: "json",
                 async: false,
@@ -218,7 +218,7 @@
                     data: $.map(domainObjs, function(domain) {
                       return {
                         id: domain.id,
-                        description: domain.name
+                        description: domain.path
                       };
                     })
                   });
