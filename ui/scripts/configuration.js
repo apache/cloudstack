@@ -1427,8 +1427,11 @@
                 });      
 												
 								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
-                  inputData['availability'] = 'Optional';								
-														
+                  inputData['availability'] = 'Optional';		
+								
+                if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
+									delete inputData.serviceOfferingId;
+																
                 $.ajax({
                   url: createURL('createNetworkOffering'),
                   data: inputData,
