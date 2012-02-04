@@ -43,11 +43,11 @@ class xml_to_python(object):
                 # this could be handled much cleaner
                 try:
                     itemValue = item.getElementsByTagName("value")[0].childNodes[0].nodeValue.strip()
-                except Exception:
+                except:
                     itemValue = None
                 try:
                     itemParam = item.getElementsByTagName("param")[0].childNodes[0].nodeValue.strip()
-                except Exception:
+                except:
                     itemParam = None
 
                 # handle getparam and setparam and random attributes here...
@@ -64,7 +64,7 @@ class xml_to_python(object):
                 else:
                     try:
                         val = int(itemValue)
-                    except Exception:
+                    except:
                         val = "'%s'" % itemValue
                     self._write("%s%s.%s = %s" % (INDENT, self.cmd_name_var, itemName, val))
 
@@ -78,7 +78,11 @@ class xml_to_python(object):
                 #if item.getAttribute("list") == "true":
 
                 itemName = item.getElementsByTagName("name")[0].childNodes[0].nodeValue.strip()
-                itemParam = item.getElementsByTagName("param")[0].childNodes[0].nodeValue.strip()
+                try:
+                    itemParam = item.getElementsByTagName("param")[0].childNodes[0].nodeValue.strip()
+                except:
+                    print "parse_returnvalue: No 'param' found in : '" + item.toprettyxml() + "'"
+                    itemParam = None
 
                 if item.getAttribute("setparam") == "true":
                     self._write("%s%s = %s.%s" % (INDENT, itemParam, self.cmd_name_resp, itemName))
@@ -97,7 +101,11 @@ class xml_to_python(object):
             self.cmd_name_var = "_%s" % self.cmd_name
             self.cmd_name_resp = "resp_%s" % self.cmd_name
 
-            testCaseName = cmd.getElementsByTagName("testcase")[0].childNodes[0].nodeValue.strip()
+            try:
+                testCaseName = cmd.getElementsByTagName("testcase")[0].childNodes[0].nodeValue.strip()
+            except:
+                print "parse_command: No 'testcase' found in: " + cmd.toprettyxml()
+                testCaseName = None
             self._write("\n%s# %s" % (INDENT, testCaseName))
 
             self._write("%s%s = %s.%sCmd()" % (INDENT, self.cmd_name_var, self.cmd_name, self.cmd_name))
