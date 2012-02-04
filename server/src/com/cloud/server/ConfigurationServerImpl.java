@@ -262,6 +262,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // store the public and private keys in the database
         updateKeyPairs();
+        
+        // generate a random password for system vm
+        updateSystemvmPassword();
 
         // generate a random password used to authenticate zone-to-zone copy
         generateSecStorageVmCopyPassword();
@@ -542,6 +545,35 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
     }
 
+    @DB
+    protected void updateSystemvmPassword() {
+        String userid = System.getProperty("user.name");
+        if (!userid.startsWith("cloud")) {
+            return;
+        }
+        
+        if (!Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
+        	return;
+        }
+
+		String already = _configDao.getValue("system.vm.password");
+		if (already == null) {
+			Transaction txn = Transaction.currentTxn();
+			try {
+				String rpassword = PasswordGenerator.generatePresharedKey(8);
+				String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
+				        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
+				        + "','randmon password generated each management server starts for system vm')";
+				PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
+				stmt.executeUpdate(wSql);
+				s_logger.info("Updated systemvm password in database");
+			} catch (SQLException e) {
+				s_logger.error("Cannot retrieve systemvm password", e);
+			}
+		}
+
+	}
+    
     @DB
     protected void updateKeyPairs() {
         // Grab the SSH key pair and insert it into the database, if it is not present
