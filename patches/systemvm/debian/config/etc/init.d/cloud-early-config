@@ -695,6 +695,13 @@ iface eth0 inet dhcp
 EOF
 }
 
+change_password() {
+	if [ x"$VM_PASSWORD" != x"" ]
+	then
+		echo "root:$VM_PASSWORD" | chpasswd
+	fi
+}
+
 start() {
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
@@ -702,6 +709,7 @@ start() {
   get_boot_params
   patch
   parse_cmd_line
+  change_password
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
@@ -741,6 +749,7 @@ DISABLE_RP_FILTER="false"
 STORAGE_IP=""
 STORAGE_NETMASK=""
 STORAGE_CIDR=""
+VM_PASSWORD=""
 
 for i in $CMDLINE
   do
@@ -855,6 +864,9 @@ for i in $CMDLINE
         ;;
       storagecidr)
         STORAGE_CIDR=$VALUE
+        ;;
+      vmpassword)
+        VM_PASSWORD=$VALUE
         ;;
     esac
 done

@@ -1571,6 +1571,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" template=domP type=" + type+rpFilter);
         buf.append(" name=").append(profile.getHostName());
 
+        if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
+        	buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        }
+        
         boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");

@@ -29,6 +29,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -78,7 +79,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -87,6 +87,9 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.xensource.xenapi.Connection;
@@ -124,6 +127,26 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected XcpServerDiscoverer() {
     }
     
+    void setClusterGuid(ClusterVO cluster, String guid) {
+        cluster.setGuid(guid);
+        try {
+            _clusterDao.update(cluster.getId(), cluster);
+        } catch (EntityExistsException e) {
+            SearchCriteriaService<ClusterVO, ClusterVO> sc = SearchCriteria2.create(ClusterVO.class);
+            sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+            List<ClusterVO> clusters = sc.list();
+            ClusterVO clu = clusters.get(0);
+            List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());
+            if (clusterHosts == null || clusterHosts.size() == 0) {
+                clu.setGuid(null);
+                _clusterDao.update(clu.getId(), clu);
+                _clusterDao.update(cluster.getId(), cluster);
+                return;
+            }
+            throw e;
+        }
+    }
+
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
         Map<CitrixResourceBase, Map<String, String>> resources = new HashMap<CitrixResourceBase, Map<String, String>>();
@@ -180,7 +203,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
             if ( clu.getGuid()== null ) {
-            	clu.setGuid(poolUuid);
+                setClusterGuid(clu, poolUuid);
             } else {
                 List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
                 if( clusterHosts != null && clusterHosts.size() > 0) {
@@ -198,7 +221,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                         }
                     }
                 } else {
-                    clu.setGuid(poolUuid);
+                    setClusterGuid(clu, poolUuid);
                 }
             }
             // can not use this conn after this point, because this host may join a pool, this conn is retired

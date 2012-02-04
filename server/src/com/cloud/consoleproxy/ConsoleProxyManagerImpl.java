@@ -1407,6 +1407,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
             externalDhcp = true;
         }
+        
+        if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
+        	buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        }
 
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
