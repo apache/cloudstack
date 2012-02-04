@@ -158,7 +158,7 @@
         if (md5HashedLogin)
           password = $.md5(args.data.password);
         else
-          password = args.data.password;
+          password = todb(args.data.password);
         array1.push("&password=" + password);
 
         var domain;

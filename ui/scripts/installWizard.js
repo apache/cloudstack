@@ -19,7 +19,7 @@
         url: createURL('updateUser'),
         data: {
           id: cloudStack.context.users[0].userid,
-          password: md5Hashed ? $.md5(args.data.password) : args.data.password
+          password: md5Hashed ? $.md5(args.data.password) : todb(args.data.password)
         },
         dataType: 'json',
         async: true,
