@@ -260,14 +260,13 @@
 	</target>
 	
 	<target name="xmltest-automated" description="Used to run the daily tests using tools/testClient/automated.xml as the source of tests">
-	  <property name="xmltest" value="automated.xml"/>
+	  <property name="xmltest" value="automated/automated.xml"/>
 	  <echo message="Running daily test run with ${xmltest}.py"/>
 	  <antcall target="xmltest-execute"/>
 	</target>
 
 	<target name="automated-test-run" description="Run the automated tests in tools/testClient/testcases/automated.xml using the debug server">
 	  <property name="env.CATALINA_HOME" value="/usr/share/cloud"/>
-	  <echo message="CATALINA_HOME = ${env.CATALINA_HOME}"/>
 	  <antcall target="build-all"/>
 	  <antcall target="deploy-server"/>
 	  <antcall target="deploydb"/>
