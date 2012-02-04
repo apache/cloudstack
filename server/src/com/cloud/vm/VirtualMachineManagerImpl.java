@@ -1685,10 +1685,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             } // END INIT
             // host id can change
-	         if (info != null && vm.getState() == State.Running){
-	            // check for host id changed
-	        	Host host = _hostDao.findByGuid(info.getHostUuid());
-        		if (host.getId() != vm.getHostId()){
+	        if (info != null && vm.getState() == State.Running){
+	           // check for host id changes
+	           Host host = _hostDao.findByGuid(info.getHostUuid());
+	            if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
+    	        	s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
         			try {
 						stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
 					} catch (NoTransitionException e) {
@@ -1700,6 +1701,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         for (final AgentVmInfo left : infos.values()) {
+        	if (VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm follows cloudstack naming ignore it for stopping
             try {
                 Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){
