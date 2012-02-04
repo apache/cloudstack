@@ -1683,8 +1683,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         e.printStackTrace();
                     }
                 }
-           }
-
+            } // END INIT
+            // host id can change
+	         if (info != null && vm.getState() == State.Running){
+	            // check for host id changed
+	        	Host host = _hostDao.findByGuid(info.getHostUuid());
+        		if (host.getId() != vm.getHostId()){
+        			try {
+						stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
+					} catch (NoTransitionException e) {
+						s_logger.warn(e.getMessage());
+					}
+        		}
+            }
+            
         }
 
         for (final AgentVmInfo left : infos.values()) {

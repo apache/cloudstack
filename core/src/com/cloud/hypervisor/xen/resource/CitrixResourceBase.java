@@ -6646,6 +6646,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	  synchronized (_cluster.intern()) {
 		  s_vms.clear(_cluster);
 	  }
+	  boolean success=false;
       try {
           Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
           for (VM.Record record: vm_map.values()) {
@@ -6661,6 +6662,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                   host_uuid = host.getUuid(conn);
                   synchronized (_cluster.intern()) {
                 	  s_vms.put(_cluster, host_uuid, vm_name, state);
+                	  success=true;
                   }
               }
               if (s_logger.isTraceEnabled()) {
@@ -6672,7 +6674,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
           s_logger.warn(msg, e);
           throw new CloudRuntimeException(msg);
       }
-      return s_vms.getClusterVmState(_cluster);
+      return success ? s_vms.getClusterVmState(_cluster) : null;
   }
 
 
