@@ -19,37 +19,36 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.host.Status;
 import com.cloud.storage.Storage.StoragePoolType;
 
 /**
  * @author chiradeep
- *
+ * 
  */
 
-public interface StoragePool  {
-    
+public interface StoragePool {
+
     /**
      * @return id of the pool.
      */
-	long getId();
-    
+    long getId();
+
     /**
      * @return name of the pool.
      */
     String getName();
-    
+
     /***
      * 
      * @return unique identifier
      */
     String getUuid();
-    
+
     /**
      * @return the type of pool.
      */
     StoragePoolType getPoolType();
-    
+
     /**
      * @return the date the pool first registered
      */
@@ -59,42 +58,39 @@ public interface StoragePool  {
      * @return the last time the state of this pool was modified.
      */
     Date getUpdateTime();
-    
-    
+
     /**
      * @return availability zone.
      */
     long getDataCenterId();
-    
+
     /**
      * @return capacity of storage poolin bytes
      */
     long getCapacityBytes();
-    
 
     /**
      * @return available storage in bytes
      */
     long getAvailableBytes();
-    
-    
+
     Long getClusterId();
 
     /**
      * @return the fqdn or ip address of the storage host
      */
     String getHostAddress();
-    
+
     /**
      * @return the filesystem path of the pool on the storage host (server)
      */
     String getPath();
-    
+
     /**
      * @return the storage pool represents a shared storage resource
      */
     boolean isShared();
-    
+
     /**
      * @return the storage pool represents a local storage resource
      */
@@ -103,9 +99,9 @@ public interface StoragePool  {
     /**
      * @return the storage pool status
      */
-	StoragePoolStatus getStatus();
-	
-	int getPort();
-	
-	Long getPodId();
+    StoragePoolStatus getStatus();
+
+    int getPort();
+
+    Long getPodId();
 }

@@ -19,13 +19,13 @@ package com.cloud.storage;
 
 /**
  * @author ahuang
- *
+ * 
  */
 public interface GuestOsCategory {
     long getId();
-    
+
     String getName();
-    
+
     void setName(String name);
 
 }

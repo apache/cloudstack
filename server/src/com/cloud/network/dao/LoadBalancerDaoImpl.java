@@ -36,26 +36,26 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-@Local(value={LoadBalancerDao.class})
+@Local(value = { LoadBalancerDao.class })
 public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> implements LoadBalancerDao {
     private static final Logger s_logger = Logger.getLogger(LoadBalancerDaoImpl.class);
     private static final String LIST_INSTANCES_BY_LOAD_BALANCER = "SELECT vm.id " +
-                                                                  "    FROM vm_instance vm, load_balancer lb, ip_forwarding fwd, user_ip_address ip " +
-                                                                  "    WHERE lb.id = ? AND " +
-                                                                  "          fwd.group_id = lb.id AND " +
-                                                                  "          fwd.forwarding = 0 AND " +
-                                                                  "          fwd.private_ip_address = vm.private_ip_address AND " +
-                                                                  "          lb.ip_address = ip.public_ip_address AND " +
-                                                                  "          ip.data_center_id = vm.data_center_id ";
+            "    FROM vm_instance vm, load_balancer lb, ip_forwarding fwd, user_ip_address ip " +
+            "    WHERE lb.id = ? AND " +
+            "          fwd.group_id = lb.id AND " +
+            "          fwd.forwarding = 0 AND " +
+            "          fwd.private_ip_address = vm.private_ip_address AND " +
+            "          lb.ip_address = ip.public_ip_address AND " +
+            "          ip.data_center_id = vm.data_center_id ";
     private final SearchBuilder<LoadBalancerVO> ListByIp;
     private final SearchBuilder<LoadBalancerVO> IpAndPublicPortSearch;
     private final SearchBuilder<LoadBalancerVO> AccountAndNameSearch;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
-    
+
     protected final FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
 
     protected LoadBalancerDaoImpl() {
-        ListByIp  = createSearchBuilder();
+        ListByIp = createSearchBuilder();
         ListByIp.and("ipAddressId", ListByIp.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         ListByIp.and("networkId", ListByIp.entity().getNetworkId(), SearchCriteria.Op.EQ);
         ListByIp.done();
@@ -69,7 +69,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         AccountAndNameSearch.and("accountId", AccountAndNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountAndNameSearch.and("name", AccountAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         AccountAndNameSearch.done();
-        
+
         TransitionStateSearch = createSearchBuilder();
         TransitionStateSearch.and("networkId", TransitionStateSearch.entity().getNetworkId(), Op.EQ);
         TransitionStateSearch.and("state", TransitionStateSearch.entity().getState(), Op.IN);
@@ -103,7 +103,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("ipAddressId", ipAddressId);
         return listBy(sc);
     }
-    
+
     @Override
     public List<LoadBalancerVO> listByNetworkId(long networkId) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
@@ -126,12 +126,13 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("name", name);
         return findOneBy(sc);
     }
-    
+
     @Override
     public List<LoadBalancerVO> listInTransitionStateByNetworkId(long networkId) {
-    	 SearchCriteria<LoadBalancerVO> sc = TransitionStateSearch.create();
-         sc.setParameters("networkId", networkId);
-         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
-         return listBy(sc);
+        SearchCriteria<LoadBalancerVO> sc = TransitionStateSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
+        return listBy(sc);
     }
+
 }

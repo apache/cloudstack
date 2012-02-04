@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.response.TrafficTypeImplementorResponse;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
@@ -66,10 +65,10 @@ import com.cloud.vm.UserVmService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
-    
+
     public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
     public static final int PROGRESS_INSTANCE_CREATED = 1;
-    
+
     public static final String RESPONSE_TYPE_XML = "xml";
     public static final String RESPONSE_TYPE_JSON = "json";
 
@@ -77,17 +76,17 @@ public abstract class BaseCmd {
         BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE
     }
 
-    // FIXME:  Extract these out into a separate file
+    // FIXME: Extract these out into a separate file
     // Client error codes
     public static final int MALFORMED_PARAMETER_ERROR = 430;
     public static final int PARAM_ERROR = 431;
     public static final int UNSUPPORTED_ACTION_ERROR = 432;
     public static final int PAGE_LIMIT_EXCEED = 433;
-    
+
     // Server error codes
     public static final int INTERNAL_ERROR = 530;
     public static final int ACCOUNT_ERROR = 531;
-    public static final int ACCOUNT_RESOURCE_LIMIT_ERROR= 532;
+    public static final int ACCOUNT_RESOURCE_LIMIT_ERROR = 532;
     public static final int INSUFFICIENT_CAPACITY_ERROR = 533;
     public static final int RESOURCE_UNAVAILABLE_ERROR = 534;
     public static final int RESOURCE_ALLOCATION_ERROR = 534;
@@ -98,11 +97,11 @@ public abstract class BaseCmd {
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    
+
     private Object _responseObject = null;
     private Map<String, String> fullUrlParams;
-    
-    @Parameter(name="response", type=CommandType.STRING)
+
+    @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
     public static ComponentLocator s_locator;
@@ -130,10 +129,10 @@ public abstract class BaseCmd {
     public static ResourceLimitService _resourceLimitService;
     public static IdentityService _identityService;
     public static StorageNetworkService _storageNetworkService;
-    
+
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        _mgr = (ManagementService)ComponentLocator.getComponent(ManagementService.Name);
+        _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
         _accountService = locator.getManager(AccountService.class);
         _configService = locator.getManager(ConfigurationService.class);
         _userVmService = locator.getManager(UserVmService.class);
@@ -158,9 +157,9 @@ public abstract class BaseCmd {
         _identityService = locator.getManager(IdentityService.class);
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
     }
-    
+
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
-    
+
     public String getResponseType() {
         if (responseType == null) {
             return RESPONSE_TYPE_XML;
@@ -173,10 +172,11 @@ public abstract class BaseCmd {
     }
 
     public abstract String getCommandName();
-    
+
     /**
-     * For commands the API framework needs to know the owner of the object being acted upon.  This method is
+     * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.
+     * 
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
@@ -194,21 +194,22 @@ public abstract class BaseCmd {
             return "";
         }
         String formattedString = null;
-        synchronized(_outputFormat) {
+        synchronized (_outputFormat) {
             formattedString = _outputFormat.format(date);
         }
         return formattedString;
     }
 
-    // FIXME:  move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    // FIXME: move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Map<String, Object> unpackParams(Map<String, String> params) {
         Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         for (String key : params.keySet()) {
             int arrayStartIndex = key.indexOf('[');
             int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
-                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                        + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
             }
 
             if (arrayStartIndex > 0) {
@@ -216,14 +217,16 @@ public abstract class BaseCmd {
                 int arrayEndLastIndex = key.lastIndexOf(']');
                 if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
                     // malformed parameter
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 // Now that we have an array object, check for a field name in the case of a complex object
                 int fieldIndex = key.indexOf('.');
                 String fieldName = null;
                 if (fieldIndex < arrayEndIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 } else {
                     fieldName = key.substring(fieldIndex + 1);
                 }
@@ -234,7 +237,7 @@ public abstract class BaseCmd {
 
                 Map<Integer, Map> mapArray = null;
                 Map<String, Object> mapValue = null;
-                String indexStr = key.substring(arrayStartIndex+1, arrayEndIndex);
+                String indexStr = key.substring(arrayStartIndex + 1, arrayEndIndex);
                 int index = 0;
                 boolean parsedIndex = false;
                 try {
@@ -247,7 +250,8 @@ public abstract class BaseCmd {
                 }
 
                 if (!parsedIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 Object value = lowercaseParams.get(paramName);
@@ -257,7 +261,7 @@ public abstract class BaseCmd {
                     mapValue = new HashMap<String, Object>();
                     mapArray.put(Integer.valueOf(index), mapValue);
                 } else if (value instanceof Map) {
-                    mapArray = (HashMap)value;
+                    mapArray = (HashMap) value;
                     mapValue = mapArray.get(Integer.valueOf(index));
                     if (mapValue == null) {
                         mapValue = new HashMap<String, Object>();
@@ -280,14 +284,14 @@ public abstract class BaseCmd {
         StringBuffer sb = new StringBuffer();
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             // JSON response
-            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\""+_mgr.getVersion()+"\"},");
+            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
             sb.append("\"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
             sb.append("<" + getCommandName() + ">");
             sb.append("<errorcode>" + apiException.getErrorCode() + "</errorcode>");
             sb.append("<description>" + escapeXml(apiException.getDescription()) + "</description>");
-            sb.append("</" + getCommandName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
+            sb.append("</" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
         }
         return sb.toString();
     }
@@ -298,10 +302,10 @@ public abstract class BaseCmd {
 
         // set up the return value with the name of the response
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\""+ _mgr.getVersion()+"\"},");
+            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
         } else {
             prefixSb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            prefixSb.append("<" + getCommandName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
+            prefixSb.append("<" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
         }
 
         int i = 0;
@@ -309,7 +313,7 @@ public abstract class BaseCmd {
             String tagName = tagData.first();
             Object tagValue = tagData.second();
             if (tagValue instanceof Object[]) {
-                Object[] subObjects = (Object[])tagValue;
+                Object[] subObjects = (Object[]) tagValue;
                 if (subObjects.length < 1) {
                     continue;
                 }
@@ -318,9 +322,10 @@ public abstract class BaseCmd {
                 writeNameValuePair(suffixSb, tagName, tagValue, responseType, i++);
             }
         }
-        
-        if(suffixSb.length() > 0){
-            if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)){ // append comma only if we have some suffix else not as per strict Json syntax.
+
+        if (suffixSb.length() > 0) {
+            if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) { // append comma only if we have some suffix else
+// not as per strict Json syntax.
                 prefixSb.append(",");
             }
             prefixSb.append(suffixSb);
@@ -340,7 +345,7 @@ public abstract class BaseCmd {
         }
 
         if (tagValue instanceof Object[]) {
-            Object[] subObjects = (Object[])tagValue;
+            Object[] subObjects = (Object[]) tagValue;
             if (subObjects.length < 1) {
                 return;
             }
@@ -364,7 +369,7 @@ public abstract class BaseCmd {
         int j = 0;
         for (Object subObject : subObjects) {
             if (subObject instanceof List) {
-                List subObjList = (List)subObject;
+                List subObjList = (List) subObject;
                 writeSubObject(sb, tagName, subObjList, responseType, j++);
             }
         }
@@ -385,8 +390,8 @@ public abstract class BaseCmd {
         int i = 0;
         for (Object tag : tagList) {
             if (tag instanceof Pair) {
-                Pair nameValuePair = (Pair)tag;
-                writeNameValuePair(sb, (String)nameValuePair.first(), nameValuePair.second(), responseType, i++);
+                Pair nameValuePair = (Pair) tag;
+                writeNameValuePair(sb, (String) nameValuePair.first(), nameValuePair.second(), responseType, i++);
             }
         }
 
@@ -396,27 +401,27 @@ public abstract class BaseCmd {
             sb.append("</" + tagName + ">");
         }
     }
-    
+
     /**
      * Escape xml response set to false by default. API commands to override this method to allow escaping
      */
     public boolean requireXmlEscape() {
-		return true;
-	}
-    
-	private String escapeXml(String xml){
-		if(!requireXmlEscape()){
-			return xml;
-		}
-		int iLen = xml.length();
-		if (iLen == 0) {
+        return true;
+    }
+
+    private String escapeXml(String xml) {
+        if (!requireXmlEscape()) {
             return xml;
         }
-		StringBuffer sOUT = new StringBuffer(iLen + 256);
-		int i = 0;
-		for (; i < iLen; i++) {
-			char c = xml.charAt(i);
-			if (c == '<') {
+        int iLen = xml.length();
+        if (iLen == 0) {
+            return xml;
+        }
+        StringBuffer sOUT = new StringBuffer(iLen + 256);
+        int i = 0;
+        for (; i < iLen; i++) {
+            char c = xml.charAt(i);
+            if (c == '<') {
                 sOUT.append("&lt;");
             } else if (c == '>') {
                 sOUT.append("&gt;");
@@ -429,65 +434,64 @@ public abstract class BaseCmd {
             } else {
                 sOUT.append(c);
             }
-		}
-		return sOUT.toString();
-	}
+        }
+        return sOUT.toString();
+    }
 
-	private static String escapeJSON(String str) {
-	    if (str == null) {
-	        return str;
-	    }
+    private static String escapeJSON(String str) {
+        if (str == null) {
+            return str;
+        }
 
-	    return str.replace("\"", "\\\"");
-	}
+        return str.replace("\"", "\\\"");
+    }
 
-	protected long getInstanceIdFromJobSuccessResult(String result) {
-		s_logger.debug("getInstanceIdFromJobSuccessResult not overridden in subclass " + this.getClass().getName());
-		return 0;
-	}
+    protected long getInstanceIdFromJobSuccessResult(String result) {
+        s_logger.debug("getInstanceIdFromJobSuccessResult not overridden in subclass " + this.getClass().getName());
+        return 0;
+    }
 
     public static boolean isAdmin(short accountType) {
-	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-	    		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-	}
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+                (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
+                (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+    }
 
     public static boolean isRootAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN));
     }
-    
+
     public void setFullUrlParams(Map<String, String> map) {
-    	this.fullUrlParams = map;
+        this.fullUrlParams = map;
     }
-    
+
     public Map<String, String> getFullUrlParams() {
-    	return this.fullUrlParams;
+        return this.fullUrlParams;
     }
-    
+
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
             }
-            
+
             Domain domain = _domainService.getDomain(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
             }
-            
+
             Account account = _accountService.getActiveAccountByName(accountName, domainId);
             if (account != null && account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
-            	if (!enabledOnly || account.getState() == Account.State.enabled) {
+                if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
-            	} else {
-            		throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
-            	}
+                } else {
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                }
             } else {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
             }
         }
-        
+
         if (projectId != null) {
             Project project = _projectService.getProject(projectId);
             if (project != null) {

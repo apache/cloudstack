@@ -23,26 +23,24 @@ package com.cloud.network;
 
 import com.cloud.network.Networks.TrafficType;
 
-
-
 /**
  * This defines the specifics of a physical network traffic type
- *  
+ * 
  */
 public interface PhysicalNetworkTrafficType {
 
     long getId();
 
     long getPhysicalNetworkId();
-    
+
     TrafficType getTrafficType();
 
     String getXenNetworkLabel();
 
     String getKvmNetworkLabel();
-    
+
     String getVmwareNetworkLabel();
-    
+
     String getSimulatorNetworkLabel();
 
     String getUuid();

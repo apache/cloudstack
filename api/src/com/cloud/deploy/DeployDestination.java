@@ -41,19 +41,19 @@ public class DeployDestination {
     public DataCenter getDataCenter() {
         return _dc;
     }
-    
+
     public Pod getPod() {
         return _pod;
     }
-    
+
     public Cluster getCluster() {
         return _cluster;
     }
-    
+
     public Host getHost() {
         return _host;
     }
-    
+
     public Map<Volume, StoragePool> getStorageForDisks() {
         return _storage;
     }
@@ -64,23 +64,23 @@ public class DeployDestination {
         _cluster = cluster;
         _host = host;
     }
-    
+
     public DeployDestination(DataCenter dc, Pod pod, Cluster cluster, Host host, Map<Volume, StoragePool> storage) {
-        this(dc,pod,cluster,host);
+        this(dc, pod, cluster, host);
         _storage = storage;
     }
 
     public DeployDestination() {
     }
-    
+
     @Override
     public int hashCode() {
         return NumbersUtil.hash(_host.getId());
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-        DeployDestination that = (DeployDestination)obj;
+        DeployDestination that = (DeployDestination) obj;
         if (this._dc == null || that._dc == null) {
             return false;
         }
@@ -104,47 +104,47 @@ public class DeployDestination {
         }
         return this._host.getId() == that._host.getId();
     }
-    
+
     @Override
     public String toString() {
-        
+
         Long dcId = null;
         Long podId = null;
         Long clusterId = null;
         Long hostId = null;
-        
+
         if (_dc != null) {
             dcId = _dc.getId();
-        } 
-        
+        }
+
         if (_pod != null) {
             podId = _pod.getId();
         }
-        
+
         if (_cluster != null) {
             clusterId = _cluster.getId();
         }
-        
+
         if (_host != null) {
             hostId = _host.getId();
         }
-        
-    	StringBuilder destination = new StringBuilder("Dest[Zone(Id)-Pod(Id)-Cluster(Id)-Host(Id)-Storage(Volume(Id|Type-->Pool(Id))] : Dest[");
-    	destination.append("Zone(").append(dcId).append(")").append("-");
-    	destination.append("Pod(").append(podId).append(")").append("-");
-    	destination.append("Cluster(").append(clusterId).append(")").append("-");
-    	destination.append("Host(").append(hostId).append(")").append("-");
-    	destination.append("Storage(");
-    	if(_storage != null){
-    		String storageStr = "";
-    		for(Volume vol : _storage.keySet()){
-    			if(!storageStr.equals("")){
-    				storageStr = storageStr + ", ";
-    			}
-    			storageStr = storageStr + "Volume(" + vol.getId() + "|"+ vol.getVolumeType().name() + "-->Pool("+_storage.get(vol).getId()+")";
-    		}
-    		destination.append(storageStr);
-    	}
+
+        StringBuilder destination = new StringBuilder("Dest[Zone(Id)-Pod(Id)-Cluster(Id)-Host(Id)-Storage(Volume(Id|Type-->Pool(Id))] : Dest[");
+        destination.append("Zone(").append(dcId).append(")").append("-");
+        destination.append("Pod(").append(podId).append(")").append("-");
+        destination.append("Cluster(").append(clusterId).append(")").append("-");
+        destination.append("Host(").append(hostId).append(")").append("-");
+        destination.append("Storage(");
+        if (_storage != null) {
+            String storageStr = "";
+            for (Volume vol : _storage.keySet()) {
+                if (!storageStr.equals("")) {
+                    storageStr = storageStr + ", ";
+                }
+                storageStr = storageStr + "Volume(" + vol.getId() + "|" + vol.getVolumeType().name() + "-->Pool(" + _storage.get(vol).getId() + ")";
+            }
+            destination.append(storageStr);
+        }
         return destination.append(")]").toString();
     }
 }

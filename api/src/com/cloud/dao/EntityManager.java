@@ -72,3 +72,4 @@ public interface EntityManager {
     
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
 }
+

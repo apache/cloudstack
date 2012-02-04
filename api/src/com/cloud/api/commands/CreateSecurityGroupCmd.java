@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -25,43 +26,41 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(responseObject=SecurityGroupResponse.class, description="Creates a security group")
+@Implementation(responseObject = SecurityGroupResponse.class, description = "Creates a security group")
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 
     private static final String s_name = "createsecuritygroupresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
     private String accountName;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
+
+    @IdentityMapper(entityTableName = "domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the security group")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the security group")
     private String description;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the security group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the security group")
     private String securityGroupName;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
+
+    @IdentityMapper(entityTableName = "projects")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "Deploy vm for the project")
     private Long projectId;
 
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getAccountName() {
         return accountName;
@@ -78,21 +77,20 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     public String getSecurityGroupName() {
         return securityGroupName;
     }
-    
+
     public Long getProjectId() {
         return projectId;
     }
 
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -109,11 +107,12 @@ public class CreateSecurityGroupCmd extends BaseCmd {
             return account.getId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
+// tracked
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         SecurityGroup group = _securityGroupService.createSecurityGroup(this);
         if (group != null) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponse(group);

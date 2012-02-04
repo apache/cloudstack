@@ -24,19 +24,19 @@ import com.cloud.vm.VirtualMachine;
  * This represents one running virtual machine instance.
  */
 public interface UserVm extends VirtualMachine, ControlledEntity {
-    
+
     Long getIsoId();
-    
+
     String getDisplayName();
-    
+
     String getUserData();
-    
+
     String getPassword();
-    
+
     void setUserData(String userData);
 
-	String getDetail(String name);
-	
-	void setAccountId(long accountId);
+    String getDetail(String name);
+
+    void setAccountId(long accountId);
 
 }

@@ -118,7 +118,7 @@
                           var items = [];
                           var domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function(){
-                            items.push({id: this.id, description: this.name});
+                            items.push({id: this.id, description: this.path});
                           });
                           args.response.success({data: items});
                         }
@@ -429,7 +429,7 @@
                           var items = [];
                           var domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function(){
-                            items.push({id: this.id, description: this.name});
+                            items.push({id: this.id, description: this.path});
                           });
                           args.response.success({data: items});
                         }
@@ -738,7 +738,7 @@
                           var items = [];
                           var domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function(){
-                            items.push({id: this.id, description: this.name});
+                            items.push({id: this.id, description: this.path});
                           });
                           args.response.success({data: items});
                         }
@@ -1184,8 +1184,8 @@
 																			  for(var key in providerDropdownsForciblyChangedTogether) {																				  
 																					if(key == $thisProviderDropdown.context.name)
 																					  continue; //skip to next item in for loop
-																					else
-																					  $("select[name='" + key + "']").val(""); //no "" option in dropdown, so will force it to select 1st option in dropdown
+																					else 															
+																						$("select[name='" + key + "'] option:first").attr("selected", "selected");																					
 																				}																			 																																	
 																				providerDropdownsForciblyChangedTogether = {};  //reset			
                                       }																				

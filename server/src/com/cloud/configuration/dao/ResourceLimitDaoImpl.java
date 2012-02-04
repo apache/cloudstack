@@ -32,23 +32,23 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value={ResourceLimitDao.class})
+@Local(value = { ResourceLimitDao.class })
 public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> implements ResourceLimitDao {
-	private SearchBuilder<ResourceLimitVO> IdTypeSearch;
+    private SearchBuilder<ResourceLimitVO> IdTypeSearch;
 
-	public ResourceLimitDaoImpl () {
-		IdTypeSearch = createSearchBuilder();
-		IdTypeSearch.and("type", IdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-	    IdTypeSearch.and("domainId", IdTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-	    IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-	    IdTypeSearch.done();
-	}
-	
-	@Override
-	public List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType) {
-	    SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
-	    
-	    if (ownerType == ResourceOwnerType.Account) {
+    public ResourceLimitDaoImpl() {
+        IdTypeSearch = createSearchBuilder();
+        IdTypeSearch.and("type", IdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        IdTypeSearch.and("domainId", IdTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        IdTypeSearch.done();
+    }
+
+    @Override
+    public List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType) {
+        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+
+        if (ownerType == ResourceOwnerType.Account) {
             sc.setParameters("accountId", ownerId);
             return listBy(sc);
         } else if (ownerType == ResourceOwnerType.Domain) {
@@ -57,44 +57,43 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
         } else {
             return new ArrayList<ResourceLimitVO>();
         }
-	}
-	
-	
-	@Override
-	public boolean update(Long id, Long max) {
+    }
+
+    @Override
+    public boolean update(Long id, Long max) {
         ResourceLimitVO limit = findById(id);
         if (max != null)
-        	limit.setMax(max);
+            limit.setMax(max);
         else
-        	limit.setMax(new Long(-1));
+            limit.setMax(new Long(-1));
         return update(id, limit);
     }
-	
-	@Override
-	public ResourceCount.ResourceType getLimitType(String type) {
-	    ResourceType[] validTypes = Resource.ResourceType.values();
-		
-		for (ResourceType validType : validTypes) {
-			if (validType.getName().equals(type)) {
-				return validType;
-			}
-		}
-		return null;
-	}
-	
-	@Override
-	public ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type) {
-	    SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+
+    @Override
+    public ResourceCount.ResourceType getLimitType(String type) {
+        ResourceType[] validTypes = Resource.ResourceType.values();
+
+        for (ResourceType validType : validTypes) {
+            if (validType.getName().equals(type)) {
+                return validType;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type) {
+        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
         sc.setParameters("type", type);
-	    
-	    if (ownerType == ResourceOwnerType.Account) {
-	        sc.setParameters("accountId", ownerId);
-	        return findOneBy(sc);
+
+        if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerId);
+            return findOneBy(sc);
         } else if (ownerType == ResourceOwnerType.Domain) {
             sc.setParameters("domainId", ownerId);
             return findOneBy(sc);
         } else {
             return null;
         }
-	}
+    }
 }

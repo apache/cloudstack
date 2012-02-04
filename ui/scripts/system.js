@@ -957,7 +957,7 @@
                                   success: function(json) {
                                     var domainObjs = json.listdomainchildrenresponse.domain;
                                     $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: this.path});
                                     });
                                   }
                                 });
@@ -968,7 +968,7 @@
                                   success: function(json) {
                                     var domainObjs = json.listdomainsresponse.domain;
                                     $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: this.path});
                                     });
                                   }
                                 });
@@ -981,7 +981,7 @@
                                   success: function(json) {
                                     var domainObjs = json.listdomainsresponse.domain;
                                     $(domainObjs).each(function() {
-                                      items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: this.path});
                                     });
                                   }
                                 });

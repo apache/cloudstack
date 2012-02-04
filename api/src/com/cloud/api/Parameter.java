@@ -27,16 +27,23 @@ import java.lang.annotation.Target;
 import com.cloud.api.BaseCmd.CommandType;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({FIELD})
+@Target({ FIELD })
 public @interface Parameter {
     String name() default "";
+
     String description() default "";
+
     boolean required() default false;
+
     CommandType type() default CommandType.OBJECT;
+
     CommandType collectionType() default CommandType.OBJECT;
+
     boolean expose() default true;
+
     boolean includeInApiDoc() default true;
+
     int length() default 255;
+
     String since() default "";
 }
-

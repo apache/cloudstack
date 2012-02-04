@@ -193,6 +193,9 @@
               },
               {
                 id: { label: 'ID' },
+								
+								path: { label: 'Full path'},
+								
                 networkdomain: { 
                   label: 'Network domain',
                   isEditable: true

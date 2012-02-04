@@ -1,6 +1,6 @@
 /**
  * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -31,15 +31,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
@@ -51,7 +48,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -67,9 +63,9 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.IpAddress;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -90,8 +86,8 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetscalerResource;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -108,37 +104,50 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
-@Local(value=NetworkElement.class)
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider {
+@Local(value = NetworkElement.class)
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
+        StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
-    @Inject NetworkManager _networkManager;
-    @Inject ConfigurationManager _configMgr;
-    @Inject NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject AgentManager _agentMgr;
-    @Inject NetworkManager _networkMgr;
-    @Inject HostDao _hostDao;
-    @Inject DataCenterDao _dcDao;
-    @Inject ExternalLoadBalancerDeviceDao _lbDeviceDao;
-    @Inject NetworkExternalLoadBalancerDao _networkLBDao;
-    @Inject PhysicalNetworkDao _physicalNetworkDao;
-    @Inject NetworkDao _networkDao;
-    @Inject HostDetailsDao _detailsDao;
-    @Inject ConfigurationDao _configDao;
+    @Inject
+    NetworkManager _networkManager;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    NetworkServiceMapDao _ntwkSrvcDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    NetworkManager _networkMgr;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    ExternalLoadBalancerDeviceDao _lbDeviceDao;
+    @Inject
+    NetworkExternalLoadBalancerDao _networkLBDao;
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    HostDetailsDao _detailsDao;
+    @Inject
+    ConfigurationDao _configDao;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
         boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
-        
+
         if (!(handleInAdvanceZone || handleInBasicZone)) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType() + " in zone of type " + zone.getNetworkType());
             return false;
         }
-        
-        return  (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
-                _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
+
+        return (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
     }
 
     private boolean isBasicZoneNetwok(Network config) {
@@ -147,8 +156,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientNetworkCapacityException {
-        
+    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
+            InsufficientNetworkCapacityException {
+
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
         }
@@ -158,16 +168,17 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception gracefully in case of multple providers available
             return false;
-        }        
+        }
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+            InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
     @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {    
+    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         return true;
     }
 
@@ -189,12 +200,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     public boolean destroy(Network config) {
         return true;
     }
-    
+
     @Override
-    public boolean validateLBRule(Network network, LoadBalancingRule rule) {    
+    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
         return true;
     }
-    
+
     @Override
     public boolean applyLBRules(Network config, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config, Service.Lb)) {
@@ -210,62 +221,61 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
-         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-         
-         // Set capabilities for LB service
-         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
-         
-         // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
-         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
-         // specifies that Netscaler network element can provided both shared and isolation modes
-         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
+        // Set capabilities for LB service
+        Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
 
-         // Specifies that load balancing rules can be made for either TCP or UDP traffic
-         lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
-         
-         // Specifies that this element can measure network usage on a per public IP basis
-         lbCapabilities.put(Capability.TrafficStatistics, "per public ip");
+        // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
+        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
 
-         // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
-         lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
- 
-         LbStickinessMethod method;
-         List <LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
-         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased,"This is cookie based sticky method, can be used only for http");
-         methodList.add(method);
-         method.addParam("holdtime", false, "time period in minutes for which persistence is in effect.",false);
+        // specifies that Netscaler network element can provided both shared and isolation modes
+        lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
 
-         method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,"This is app session based sticky method, can be used only for http");
-         methodList.add(method);
-         method.addParam("name", true,  "cookie name passed in http header by apllication to the client",false);
+        // Specifies that load balancing rules can be made for either TCP or UDP traffic
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
 
-         method = new LbStickinessMethod(StickinessMethodType.SourceBased,"This is source based sticky method, can be used for any type of protocol.");
-         methodList.add(method);
-         method.addParam("holdtime", false, "time period for which persistence is in effect.",false);
+        // Specifies that this element can measure network usage on a per public IP basis
+        lbCapabilities.put(Capability.TrafficStatistics, "per public ip");
 
-         Gson gson = new Gson();
-         String stickyMethodList = gson.toJson(methodList);
-         lbCapabilities.put(Capability.SupportedStickinessMethods,stickyMethodList);
-         
-         lbCapabilities.put(Capability.ElasticLb, "true");
-         
-         capabilities.put(Service.Lb, lbCapabilities);
-         
-         Map<Capability, String> staticNatCapabilities = new HashMap<Capability, String>();
-         staticNatCapabilities.put(Capability.ElasticIp, "true");
-         capabilities.put(Service.StaticNat, staticNatCapabilities);
-         
-         
-         //TODO - Murali, please put correct capabilities here
-         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
-         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
-         firewallCapabilities.put(Capability.MultipleIps, "true");
-         
-         capabilities.put(Service.Firewall, firewallCapabilities);
-                  
-         return capabilities;
+        // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
+        lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
+
+        LbStickinessMethod method;
+        List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
+        method = new LbStickinessMethod(StickinessMethodType.LBCookieBased, "This is cookie based sticky method, can be used only for http");
+        methodList.add(method);
+        method.addParam("holdtime", false, "time period in minutes for which persistence is in effect.", false);
+
+        method = new LbStickinessMethod(StickinessMethodType.AppCookieBased, "This is app session based sticky method, can be used only for http");
+        methodList.add(method);
+        method.addParam("name", true, "cookie name passed in http header by apllication to the client", false);
+
+        method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based sticky method, can be used for any type of protocol.");
+        methodList.add(method);
+        method.addParam("holdtime", false, "time period for which persistence is in effect.", false);
+
+        Gson gson = new Gson();
+        String stickyMethodList = gson.toJson(methodList);
+        lbCapabilities.put(Capability.SupportedStickinessMethods, stickyMethodList);
+
+        lbCapabilities.put(Capability.ElasticLb, "true");
+
+        capabilities.put(Service.Lb, lbCapabilities);
+
+        Map<Capability, String> staticNatCapabilities = new HashMap<Capability, String>();
+        staticNatCapabilities.put(Capability.ElasticIp, "true");
+        capabilities.put(Service.StaticNat, staticNatCapabilities);
+
+        // TODO - Murali, please put correct capabilities here
+        Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
+        firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.MultipleIps, "true");
+
+        capabilities.put(Service.Firewall, firewallCapabilities);
+
+        return capabilities;
     }
 
     @Override
@@ -349,7 +359,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                     throw new CloudRuntimeException("There are more number of networks already using this netscaler device than configured capacity");
                 }
 
-                if (dedicatedUse !=null && dedicatedUse == true) {
+                if (dedicatedUse != null && dedicatedUse == true) {
                     throw new CloudRuntimeException("There are networks already using this netscaler device to make device dedicated");
                 }
 
@@ -370,7 +380,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             // FIXME how to interpret configured capacity of the SDX device
         }
 
-        if(dedicatedUse != null) {
+        if (dedicatedUse != null) {
             lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
         }
 
@@ -427,7 +437,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         Long physcialNetworkId = cmd.getPhysicalNetworkId();
         Long lbDeviceId = cmd.getLoadBalancerDeviceId();
         PhysicalNetworkVO pNetwork = null;
-        List<ExternalLoadBalancerDeviceVO> lbDevices = new ArrayList<ExternalLoadBalancerDeviceVO> ();
+        List<ExternalLoadBalancerDeviceVO> lbDevices = new ArrayList<ExternalLoadBalancerDeviceVO>();
 
         if (physcialNetworkId == null && lbDeviceId == null) {
             throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
@@ -489,7 +499,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
         List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.Netscaler.getName());
 
-        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state) state
+        // true if at-least one Netscaler device is added in to physical network and is in configured (in enabled state)
+// state
         if (lbDevices != null && !lbDevices.isEmpty()) {
             for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
                 if (lbDevice.getState() == LBDeviceState.Enabled) {
@@ -503,7 +514,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
-        // TODO reset the configuration on all of the netscaler devices in this physical network 
+        // TODO reset the configuration on all of the netscaler devices in this physical network
         return true;
     }
 
@@ -513,7 +524,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     private boolean isNetscalerDevice(String deviceName) {
-        if ((deviceName == null) || ((!deviceName.equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName())) && 
+        if ((deviceName == null) || ((!deviceName.equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName())) &&
                 (!deviceName.equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName())) &&
                 (!deviceName.equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName())))) {
             return false;
@@ -521,7 +532,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return true;
         }
     }
-    
+
     @Override
     public boolean verifyServicesCombination(List<String> services) {
         return true;
@@ -552,7 +563,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
 
         String errMsg = null;
-        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network); 
+        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
         if (lbDeviceVO == null) {
             try {
                 lbDeviceVO = allocateLoadBalancerForNetwork(network);
@@ -586,7 +597,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
 
         if (loadBalancersToApply.size() > 0) {
-            int numLoadBalancersForCommand = loadBalancersToApply.size(); 
+            int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
             LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
 
@@ -641,7 +652,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             }
 
             SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
-            answer = (SetStaticNatRulesAnswer )_agentMgr.send(lbDevice.getHostId(), cmd);
+            answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
             if (answer == null) {
                 return false;
             } else {
@@ -652,4 +663,5 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return false;
         }
     }
+
 }

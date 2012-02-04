@@ -23,8 +23,13 @@ import com.cloud.api.Identity;
 import com.cloud.domain.PartOf;
 
 public interface Project extends PartOf, Identity {
-    public enum State {Active, Disabled, Suspended}
-    public enum ListProjectResourcesCriteria {ListProjectResourcesOnly, SkipProjectResources}
+    public enum State {
+        Active, Disabled, Suspended
+    }
+
+    public enum ListProjectResourcesCriteria {
+        ListProjectResourcesOnly, SkipProjectResources
+    }
 
     String getDisplayText();
 
@@ -37,7 +42,7 @@ public interface Project extends PartOf, Identity {
     Date getRemoved();
 
     String getName();
-    
+
     long getProjectAccountId();
 
     State getState();

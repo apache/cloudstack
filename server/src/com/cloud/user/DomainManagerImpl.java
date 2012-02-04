@@ -57,9 +57,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { DomainManager.class, DomainService.class })
-public class DomainManagerImpl implements DomainManager, DomainService, Manager{
+public class DomainManagerImpl implements DomainManager, DomainService, Manager {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
-    
+
     private String _name;
     @Inject
     private DomainDao _domainDao;
@@ -71,14 +71,14 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     private AccountDao _accountDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
-    @Inject 
+    @Inject
     private ServiceOfferingDao _offeringsDao;
-    
+
     @Override
     public Domain getDomain(long domainId) {
         return _domainDao.findById(domainId);
     }
-    
+
     @Override
     public String getName() {
         return _name;
@@ -93,34 +93,34 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     public boolean stop() {
         return true;
     }
-    
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
         return true;
     }
-    
+
     @Override
     public Set<Long> getDomainChildrenIds(String parentDomainPath) {
         Set<Long> childDomains = new HashSet<Long>();
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("path", SearchCriteria.Op.LIKE, parentDomainPath + "%");
-        
+
         List<DomainVO> domains = _domainDao.search(sc, null);
-        
+
         for (DomainVO domain : domains) {
             childDomains.add(domain.getId());
         }
-        
+
         return childDomains;
     }
-    
+
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);
     }
-    
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     public Domain createDomain(String name, Long parentId, String networkDomain) {
@@ -134,27 +134,26 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         if (parentDomain == null) {
             throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
         }
-        
+
         if (parentDomain.getState().equals(Domain.State.Inactive)) {
             throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
         }
-        
+
         _accountMgr.checkAccess(caller, parentDomain);
 
-       
         return createDomain(name, parentId, caller.getId(), networkDomain);
-       
+
     }
-    
+
     @Override
     @DB
     public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
-        //Verify network domain
+        // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -162,64 +161,63 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
         List<DomainVO> domains = _domainDao.search(sc, null);
-        
+
         if (!domains.isEmpty()) {
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
+
         DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-        
+
         txn.commit();
-        
+
         return domain;
     }
-    
-    
+
     @Override
     public DomainVO findDomainByPath(String domainPath) {
         return _domainDao.findDomainByPath(domainPath);
     }
-    
+
     @Override
     public Set<Long> getDomainParentIds(long domainId) {
-       return _domainDao.getDomainParentIds(domainId);
+        return _domainDao.getDomainParentIds(domainId);
     }
-    
+
     @Override
     public boolean removeDomain(long domainId) {
         return _domainDao.remove(domainId);
     }
-    
+
     @Override
     public List<? extends Domain> findInactiveDomains() {
         return _domainDao.findInactiveDomains();
     }
-    
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_DELETE, eventDescription = "deleting Domain", async = true)
     public boolean deleteDomain(long domainId, Boolean cleanup) {
         Account caller = UserContext.current().getCaller();
-        
+
         DomainVO domain = _domainDao.findById(domainId);
-        
+
         if (domain == null) {
             throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
         } else if (domainId == DomainVO.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
-        
+
         _accountMgr.checkAccess(caller, domain);
-        
-       return deleteDomain(domain, cleanup);
+
+        return deleteDomain(domain, cleanup);
     }
-    
+
     @Override
     public boolean deleteDomain(DomainVO domain, Boolean cleanup) {
-        //mark domain as inactive
+        // mark domain as inactive
         s_logger.debug("Marking domain id=" + domain.getId() + " as " + Domain.State.Inactive + " before actually deleting it");
         domain.setState(Domain.State.Inactive);
         _domainDao.update(domain.getId(), domain);
@@ -231,20 +229,20 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
                     s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
                     return false;
                 }
-            } else { 
+            } else {
                 List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domain.getId());
                 if (accountsForCleanup.isEmpty()) {
                     if (!_domainDao.remove(domain.getId())) {
                         s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domain.getId()
                                 + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         return false;
-                    } 
+                    }
                 } else {
                     s_logger.warn("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
                     return false;
                 }
             }
-            
+
             cleanupDomainOfferings(domain.getId());
             return true;
         } catch (Exception ex) {
@@ -252,7 +250,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             return false;
         }
     }
-    
+
     private void cleanupDomainOfferings(Long domainId) {
         // delete the service and disk offerings associated with this domain
         List<DiskOfferingVO> diskOfferingsForThisDomain = _diskOfferingDao.listByDomainId(domainId);
@@ -306,8 +304,8 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
                 s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
             }
         }
-      
-        //don't remove the domain if there are accounts required cleanup
+
+        // don't remove the domain if there are accounts required cleanup
         boolean deleteDomainSuccess = true;
         List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
         if (accountsForCleanup.isEmpty()) {
@@ -318,14 +316,14 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
 
         return success && deleteDomainSuccess;
     }
-    
+
     @Override
-    public List<DomainVO> searchForDomains(ListDomainsCmd cmd){
+    public List<DomainVO> searchForDomains(ListDomainsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
-        
+
         if (domainId != null) {
             Domain domain = getDomain(domainId);
             if (domain == null) {
@@ -333,10 +331,10 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             }
             _accountMgr.checkAccess(caller, domain);
         } else {
-    		domainId = caller.getDomainId();
-    		if (listAll) {
-    			isRecursive = true;
-    		}
+            domainId = caller.getDomainId();
+            if (listAll) {
+                isRecursive = true;
+            }
         }
 
         Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -368,31 +366,31 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         }
 
         if (domainId != null) {
-        	if (isRecursive) {
-        		sc.setParameters("path", getDomain(domainId).getPath() + "%");
-        	} else {
-        		sc.setParameters("id", domainId);
-        	}
+            if (isRecursive) {
+                sc.setParameters("path", getDomain(domainId).getPath() + "%");
+            } else {
+                sc.setParameters("id", domainId);
+            }
         }
-        
-        //return only Active domains to the API
+
+        // return only Active domains to the API
         sc.setParameters("state", Domain.State.Active);
 
         return _domainDao.search(sc, searchFilter);
     }
-    
+
     @Override
-    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {   
+    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
         Boolean isRecursive = cmd.isRecursive();
         Object keyword = cmd.getKeyword();
         boolean listAll = cmd.listAll();
         String path = null;
-        
+
         Account caller = UserContext.current().getCaller();
         if (domainId != null) {
-        	_accountMgr.checkAccess(caller, getDomain(domainId));
+            _accountMgr.checkAccess(caller, getDomain(domainId));
         } else {
             domainId = caller.getDomainId();
         }
@@ -408,7 +406,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
 
         return domainList;
     }
-    
+
     private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
@@ -431,11 +429,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             sc.addAnd("path", SearchCriteria.Op.NEQ, path);
             sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
         }
-         
+
         if (listActiveOnly) {
-        	sc.addAnd("state", SearchCriteria.Op.EQ, Domain.State.Active);
+            sc.addAnd("state", SearchCriteria.Op.EQ, Domain.State.Active);
         }
-        
+
         return _domainDao.search(sc, searchFilter);
     }
+
 }

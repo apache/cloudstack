@@ -19,19 +19,19 @@ package com.cloud.storage.snapshot;
 
 public interface SnapshotPolicy {
     long getId();
-    
+
     long getVolumeId();
 
     void setSchedule(String schedule);
 
     String getSchedule();
-    
+
     void setInterval(short interval);
 
     void setTimezone(String timezone);
-    
+
     String getTimezone();
-    
+
     short getInterval();
 
     void setMaxSnaps(int maxSnaps);

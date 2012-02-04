@@ -20,28 +20,28 @@ package com.cloud.network.rules;
 
 import com.cloud.acl.ControlledEntity;
 
-public interface StaticNatRule extends ControlledEntity, FirewallRule{
-    
+public interface StaticNatRule extends ControlledEntity, FirewallRule {
+
     long getId();
-    
+
     String getXid();
-    
+
     String getProtocol();
 
     Integer getSourcePortStart();
 
     Integer getSourcePortEnd();
-    
+
     Purpose getPurpose();
 
     State getState();
-    
+
     long getAccountId();
-    
+
     long getDomainId();
-    
+
     long getNetworkId();
-    
+
     long getSourceIpAddressId();
 
     String getDestIpAddress();

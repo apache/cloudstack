@@ -18,30 +18,29 @@
 package com.cloud.api;
 
 public class IdentityProxy {
-	private String _tableName;
-	private Long _value;
+    private String _tableName;
+    private Long _value;
 
-	public IdentityProxy() {
-	}
-	
-	public IdentityProxy(String tableName) {
-		_tableName = tableName;
-	}
-	
-	public String getTableName() {
-		return _tableName;
-	}
-	
-	public void setTableName(String tableName) {
-		_tableName = tableName;
-	}
-	
-	public Long getValue() {
-		return _value;
-	}
-	
-	public void setValue(Long value) {
-		_value = value;
-	}
+    public IdentityProxy() {
+    }
+
+    public IdentityProxy(String tableName) {
+        _tableName = tableName;
+    }
+
+    public String getTableName() {
+        return _tableName;
+    }
+
+    public void setTableName(String tableName) {
+        _tableName = tableName;
+    }
+
+    public Long getValue() {
+        return _value;
+    }
+
+    public void setValue(Long value) {
+        _value = value;
+    }
 }
-

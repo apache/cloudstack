@@ -27,111 +27,111 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 
-
 /**
- * VirtualMachineProfile describes one virtual machine.  This object
- * is passed to various adapters to be processed.  Anything that is 
- * set in this object is transitional.  It does not get persisted 
- * back to the database.  This allows the adapters to process
+ * VirtualMachineProfile describes one virtual machine. This object
+ * is passed to various adapters to be processed. Anything that is
+ * set in this object is transitional. It does not get persisted
+ * back to the database. This allows the adapters to process
  * the information in the virtual machine and make determinations
  * on what the virtual machine profile should look like before it is
  * actually started on the hypervisor.
- *
- * @param <T> a VirtualMachine
+ * 
+ * @param <T>
+ *            a VirtualMachine
  */
 public interface VirtualMachineProfile<T extends VirtualMachine> {
-  
-    
+
     public static class Param {
-        
+
         public static final Param VmPassword = new Param("VmPassword");
         public static final Param ControlNic = new Param("ControlNic");
         public static final Param ReProgramNetwork = new Param("RestartNetwork");
         public static final Param PxeSeverType = new Param("PxeSeverType");
-        
+
         private String name;
-        
+
         public Param(String name) {
-            synchronized(Param.class) {
+            synchronized (Param.class) {
                 this.name = name;
             }
         }
-        
+
         public String getName() {
             return name;
         }
-     }
-    
+    }
+
     String getHostName();
-    
+
     String getInstanceName();
-    
+
     Account getOwner();
-    
+
     /**
      * @return the virtual machine that backs up this profile.
      */
     T getVirtualMachine();
-    
+
     /**
      * @return service offering for this virtual machine.
      */
     ServiceOffering getServiceOffering();
-    
+
     /**
      * @return parameter specific for this type of virtual machine.
      */
     Object getParameter(Param name);
-    
+
     /**
      * @return the hypervisor type needed for this virtual machine.
      */
     HypervisorType getHypervisorType();
-    
+
     /**
      * @return template the virtual machine is based on.
      */
     VirtualMachineTemplate getTemplate();
-    
+
     /**
      * @return the template id
      */
     long getTemplateId();
-    
+
     /**
      * @return the service offering id
      */
     long getServiceOfferingId();
-    
+
     /**
      * @return virtual machine id.
      */
     long getId();
-    
+
     List<NicProfile> getNics();
-    
+
     List<VolumeTO> getDisks();
-    
+
     void addNic(int index, NicProfile nic);
-    
+
     void addDisk(int index, VolumeTO disk);
-    
+
     StringBuilder getBootArgsBuilder();
-    
+
     void addBootArgs(String... args);
-    
+
     String getBootArgs();
-    
+
     void addNic(NicProfile nic);
-    
+
     void addDisk(VolumeTO disk);
-    
+
     VirtualMachine.Type getType();
-    
+
     void setParameter(Param name, Object value);
 
-	void setBootLoaderType(BootloaderType bootLoader);
-	BootloaderType getBootLoaderType();
-	
-	Map<Param, Object> getParameters();
+    void setBootLoaderType(BootloaderType bootLoader);
+
+    BootloaderType getBootLoaderType();
+
+    Map<Param, Object> getParameters();
 }

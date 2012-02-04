@@ -74,9 +74,9 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
     }
 
     enum Event {
-        CreateRequested, 
-        OperationFailed, 
-        OperationSucceeded, 
+        CreateRequested,
+        OperationFailed,
+        OperationSucceeded,
         OperationRetry,
         MigrationRequested,
         SnapshotRequested,
@@ -132,10 +132,10 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
     String getChainInfo();
 
     boolean isRecreatable();
-    
+
     public long getUpdatedCount();
-    
+
     public void incrUpdatedCount();
-    
+
     public Date getUpdated();
 }

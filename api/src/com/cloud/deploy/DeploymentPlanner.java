@@ -43,67 +43,79 @@ public interface DeploymentPlanner extends Adapter {
     /**
      * plan is called to determine where a virtual machine should be running.
      * 
-     * @param vm virtual machine.
-     * @param plan deployment plan that tells you where it's being deployed to.
-     * @param avoid avoid these data centers, pods, clusters, or hosts.
+     * @param vm
+     *            virtual machine.
+     * @param plan
+     *            deployment plan that tells you where it's being deployed to.
+     * @param avoid
+     *            avoid these data centers, pods, clusters, or hosts.
      * @return DeployDestination for that virtual machine.
      */
     DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
-    
+
     /**
      * check() is called right before the virtual machine starts to make sure
      * the host has enough capacity.
      * 
-     * @param vm virtual machine in question.
-     * @param plan deployment plan used to determined the deploy destination.
-     * @param dest destination returned by plan.
-     * @param avoid what to avoid.
-     * @return true if it's okay to start; false if not.  If false, the exclude list will include what should be excluded.
+     * @param vm
+     *            virtual machine in question.
+     * @param plan
+     *            deployment plan used to determined the deploy destination.
+     * @param dest
+     *            destination returned by plan.
+     * @param avoid
+     *            what to avoid.
+     * @return true if it's okay to start; false if not. If false, the exclude list will include what should be
+     *         excluded.
      */
     boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
-    
+
     /**
-     * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so planner writer must
+     * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so
+     * planner writer must
      * make sure only one planer->canHandle return true in the planner list
      * 
-     * @param vm virtual machine.
-     * @param plan deployment plan that tells you where it's being deployed to.
-     * @param avoid avoid these data centers, pods, clusters, or hosts.
+     * @param vm
+     *            virtual machine.
+     * @param plan
+     *            deployment plan that tells you where it's being deployed to.
+     * @param avoid
+     *            avoid these data centers, pods, clusters, or hosts.
      * @return true if it's okay to allocate; false or not
      */
     boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid);
-    
+
     public enum AllocationAlgorithm {
         random,
         firstfit,
         userdispersing,
         userconcentratedpod;
     }
-    
+
     public static class ExcludeList {
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;
         private Set<Long> _hostIds;
         private Set<Long> _poolIds;
-        
-        public ExcludeList(){        
+
+        public ExcludeList() {
         }
-        
-        public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds){
-        	this._dcIds = _dcIds;
-        	this._podIds = _podIds;
-        	this._clusterIds = _clusterIds;
-        	this._poolIds = _poolIds;
+
+        public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds) {
+            this._dcIds = _dcIds;
+            this._podIds = _podIds;
+            this._clusterIds = _clusterIds;
+            this._poolIds = _poolIds;
         }
-        
+
         public boolean add(InsufficientCapacityException e) {
             Class<?> scope = e.getScope();
-            
+
             if (scope == null) {
                 return false;
             }
-            
+
             if (Host.class.isAssignableFrom(scope)) {
                 addHost(e.getId());
             } else if (Pod.class.isAssignableFrom(scope)) {
@@ -117,17 +129,17 @@ public interface DeploymentPlanner extends Adapter {
             } else {
                 return false;
             }
-            
+
             return true;
         }
-        
+
         public boolean add(ResourceUnavailableException e) {
             Class<?> scope = e.getScope();
-            
+
             if (scope == null) {
                 return false;
             }
-            
+
             if (Host.class.isAssignableFrom(scope)) {
                 addHost(e.getResourceId());
             } else if (Pod.class.isAssignableFrom(scope)) {
@@ -141,109 +153,109 @@ public interface DeploymentPlanner extends Adapter {
             } else {
                 return false;
             }
-            
+
             return true;
         }
-        
+
         public void addPool(long poolId) {
-        	if (_poolIds == null) {
-        		_poolIds = new HashSet<Long>();
-        	}
+            if (_poolIds == null) {
+                _poolIds = new HashSet<Long>();
+            }
             _poolIds.add(poolId);
         }
-        
+
         public void addDataCenter(long dataCenterId) {
             if (_dcIds == null) {
                 _dcIds = new HashSet<Long>();
             }
             _dcIds.add(dataCenterId);
         }
-        
+
         public void addPod(long podId) {
             if (_podIds == null) {
                 _podIds = new HashSet<Long>();
             }
             _podIds.add(podId);
         }
-        
+
         public void addCluster(long clusterId) {
             if (_clusterIds == null) {
                 _clusterIds = new HashSet<Long>();
             }
             _clusterIds.add(clusterId);
         }
-        
+
         public void addHost(long hostId) {
             if (_hostIds == null) {
                 _hostIds = new HashSet<Long>();
             }
             _hostIds.add(hostId);
         }
-        
+
         public boolean shouldAvoid(Host host) {
             if (_dcIds != null && _dcIds.contains(host.getDataCenterId())) {
                 return true;
             }
-            
+
             if (_podIds != null && _podIds.contains(host.getPodId())) {
                 return true;
             }
-            
+
             if (_clusterIds != null && _clusterIds.contains(host.getClusterId())) {
                 return true;
             }
-            
+
             if (_hostIds != null && _hostIds.contains(host.getId())) {
                 return true;
             }
-            
+
             return false;
         }
-        
+
         public boolean shouldAvoid(Cluster cluster) {
             if (_dcIds != null && _dcIds.contains(cluster.getDataCenterId())) {
                 return true;
             }
-            
+
             if (_podIds != null && _podIds.contains(cluster.getPodId())) {
                 return true;
             }
-            
+
             if (_clusterIds != null && _clusterIds.contains(cluster.getId())) {
                 return true;
-            }                     
+            }
             return false;
         }
-        
+
         public boolean shouldAvoid(Pod pod) {
             if (_dcIds != null && _dcIds.contains(pod.getDataCenterId())) {
                 return true;
             }
-            
+
             if (_podIds != null && _podIds.contains(pod.getId())) {
                 return true;
             }
-                              
+
             return false;
         }
-        
+
         public boolean shouldAvoid(StoragePool pool) {
             if (_dcIds != null && _dcIds.contains(pool.getDataCenterId())) {
                 return true;
             }
-            
+
             if (_podIds != null && _podIds.contains(pool.getPodId())) {
                 return true;
             }
-            
+
             if (_clusterIds != null && _clusterIds.contains(pool.getClusterId())) {
                 return true;
             }
-            
+
             if (_poolIds != null && _poolIds.contains(pool.getId())) {
                 return true;
             }
-            
+
             return false;
         }
 
@@ -252,26 +264,26 @@ public interface DeploymentPlanner extends Adapter {
                 return true;
             }
             return false;
-        }        
+        }
 
-        public Set<Long> getDataCentersToAvoid(){
-        	return _dcIds;
+        public Set<Long> getDataCentersToAvoid() {
+            return _dcIds;
         }
-        
-        public Set<Long> getPodsToAvoid(){
-        	return _podIds;
+
+        public Set<Long> getPodsToAvoid() {
+            return _podIds;
         }
-        
-        public Set<Long> getClustersToAvoid(){
-        	return _clusterIds;
+
+        public Set<Long> getClustersToAvoid() {
+            return _clusterIds;
         }
-        
-        public Set<Long> getHostsToAvoid(){
-        	return _hostIds;
+
+        public Set<Long> getHostsToAvoid() {
+            return _hostIds;
         }
-        
-        public Set<Long> getPoolsToAvoid(){
-        	return _poolIds;
+
+        public Set<Long> getPoolsToAvoid() {
+            return _poolIds;
         }
     }
 }

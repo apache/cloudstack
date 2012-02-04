@@ -21,54 +21,54 @@ package com.cloud.user;
 import java.util.Date;
 
 public interface User extends OwnedBy {
-	public static final long UID_SYSTEM = 1; 
-	
-	public long getId();
-	
-    public Date getCreated();
-    
-    public Date getRemoved();
-    
-	public String getUsername();
-	
-	public void setUsername(String username);
-	
-	public String getPassword();
-	
-	public void setPassword(String password);
-	
-	public String getFirstname();
-	
-	public void setFirstname(String firstname);
-	
-	public String getLastname();
-	
-	public void setLastname(String lastname);
+    public static final long UID_SYSTEM = 1;
 
-	public void setAccountId(long accountId);
+    public long getId();
+
+    public Date getCreated();
+
+    public Date getRemoved();
+
+    public String getUsername();
+
+    public void setUsername(String username);
+
+    public String getPassword();
+
+    public void setPassword(String password);
+
+    public String getFirstname();
+
+    public void setFirstname(String firstname);
+
+    public String getLastname();
+
+    public void setLastname(String lastname);
+
+    public void setAccountId(long accountId);
 
     public String getEmail();
-    
+
     public void setEmail(String email);
 
     public Account.State getState();
 
     public void setState(Account.State state);
 
-	public String getApiKey();
-	
-	public void setApiKey(String apiKey);
-	
+    public String getApiKey();
+
+    public void setApiKey(String apiKey);
+
     public String getSecretKey();
-    
+
     public void setSecretKey(String secretKey);
-    
+
     public String getTimezone();
-    
+
     public void setTimezone(String timezone);
 
-	String getRegistrationToken();
+    String getRegistrationToken();
 
-	boolean isRegistered();
-    
+    boolean isRegistered();
+
 }

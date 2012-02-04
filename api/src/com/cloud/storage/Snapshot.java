@@ -23,7 +23,7 @@ import java.util.Date;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-public interface Snapshot extends ControlledEntity{
+public interface Snapshot extends ControlledEntity {
     public enum Type {
         MANUAL,
         RECURRING,
@@ -33,52 +33,62 @@ public interface Snapshot extends ControlledEntity{
         WEEKLY,
         MONTHLY;
         private int max = 8;
-        
+
         public void setMax(int max) {
             this.max = max;
         }
-        
+
         public int getMax() {
             return max;
         }
-        
+
         public String toString() {
             return this.name();
         }
-        
+
         public boolean equals(String snapshotType) {
             return this.toString().equalsIgnoreCase(snapshotType);
         }
     }
-    
+
     public enum Status {
         Creating,
         CreatedOnPrimary,
         BackingUp,
         BackedUp,
         Error;
-        
+
         public String toString() {
             return this.name();
         }
-        
+
         public boolean equals(String status) {
             return this.toString().equalsIgnoreCase(status);
         }
     }
-    
+
     public static final long MANUAL_POLICY_ID = 0L;
-    
+
     Long getId();
+
     long getAccountId();
+
     long getVolumeId();
+
     String getPath();
+
     String getName();
+
     Date getCreated();
+
     Type getType();
+
     Status getStatus();
+
     HypervisorType getHypervisorType();
+
     boolean isRecursive();
+
     short getsnapshotType();
-    
+
 }

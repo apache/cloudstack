@@ -19,12 +19,12 @@
 package com.cloud.exception;
 
 public class NetworkRuleConflictException extends
-		ManagementServerException {
+        ManagementServerException {
 
-	private static final long serialVersionUID = -294905017911859479L;
+    private static final long serialVersionUID = -294905017911859479L;
 
-	public NetworkRuleConflictException(String message) {
-		super(message);
-	}
+    public NetworkRuleConflictException(String message) {
+        super(message);
+    }
 
 }

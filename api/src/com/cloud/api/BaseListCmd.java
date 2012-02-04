@@ -39,8 +39,6 @@ public abstract class BaseListCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER)
     private Integer pageSize;
-    
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -58,18 +56,18 @@ public abstract class BaseListCmd extends BaseCmd {
         if (pageSize != null && MAX_PAGESIZE != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
             throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
         }
-        
+
         if (pageSize != null && pageSize.longValue() == PAGESIZE_UNLIMITED && page != null) {
             throw new InvalidParameterValueException("Can't specify page parameter when pagesize is -1 (Unlimited)");
         }
-        
+
         return pageSize;
     }
 
     static void configure() {
         if (_configService.getDefaultPageSize().longValue() != PAGESIZE_UNLIMITED) {
             MAX_PAGESIZE = _configService.getDefaultPageSize();
-        } 
+        }
     }
 
     @Override
@@ -82,11 +80,11 @@ public abstract class BaseListCmd extends BaseCmd {
         Long defaultPageSize = MAX_PAGESIZE;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
-        	if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
-        		defaultPageSize = null;
-        	} else {
+            if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
+                defaultPageSize = null;
+            } else {
                 defaultPageSize = pageSizeInt.longValue();
-        	}
+            }
         }
         return defaultPageSize;
     }

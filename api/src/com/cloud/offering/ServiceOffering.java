@@ -20,7 +20,7 @@ package com.cloud.offering;
 import java.util.Date;
 
 /**
- * ServiceOffering models the different types of service contracts to be 
+ * ServiceOffering models the different types of service contracts to be
  * offered.
  */
 public interface ServiceOffering {
@@ -28,36 +28,35 @@ public interface ServiceOffering {
         local,
         shared
     }
-    
+
     long getId();
-    
+
     String getDisplayText();
-    
+
     Date getCreated();
-    
+
     String getTags();
-    
-	/**
+
+    /**
      * @return user readable description
      */
     String getName();
-    
-    
+
     /**
      * @return is this a system service offering
      */
     boolean getSystemUse();
-    
+
     /**
      * @return # of cpu.
      */
     int getCpu();
-    
+
     /**
      * @return speed in mhz
      */
     int getSpeed();
-    
+
     /**
      * @return ram size in megabytes
      */
@@ -72,30 +71,30 @@ public interface ServiceOffering {
      * @return Does this service plan offer VM to use CPU resources beyond the service offering limits?
      */
     boolean getLimitCpuUse();
-    
+
     /**
      * @return the rate in megabits per sec to which a VM's network interface is throttled to
      */
     Integer getRateMbps();
-    
+
     /**
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
     Integer getMulticastRateMbps();
-    
+
     /**
      * @return whether or not the service offering requires local storage
      */
     boolean getUseLocalStorage();
-    
-    Long getDomainId();    
-    
+
+    Long getDomainId();
+
     /**
      * @return tag that should be present on the host needed, optional parameter
      */
     String getHostTag();
 
     boolean getDefaultUse();
-    
+
     String getSystemVmType();
 }

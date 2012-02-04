@@ -19,7 +19,7 @@ package com.cloud.capacity;
 
 /**
  * @author ahuang
- *
+ * 
  */
 public interface Capacity {
     public static final short CAPACITY_TYPE_MEMORY = 0;
@@ -32,18 +32,23 @@ public interface Capacity {
     public static final short CAPACITY_TYPE_VLAN = 7;
     public static final short CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8;
     public static final short CAPACITY_TYPE_LOCAL_STORAGE = 9;
-    
+
     public long getId();
-    
+
     public Long getHostOrPoolId();
+
     public long getDataCenterId();
+
     public Long getPodId();
+
     public Long getClusterId();
+
     public long getUsedCapacity();
+
     public long getTotalCapacity();
+
     public short getCapacityType();
 
-	long getReservedCapacity();
-
+    long getReservedCapacity();
 
 }

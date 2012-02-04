@@ -26,58 +26,58 @@ import com.cloud.utils.net.Ip;
  * IpAddress represents the public ip address to be allocated in the CloudStack.
  * 
  * When it is not allocated, it should have
- *   - State = Free
- *   - Allocated = null
- *   - AccountId = null
- *   - DomainId = null
- *   
+ * - State = Free
+ * - Allocated = null
+ * - AccountId = null
+ * - DomainId = null
+ * 
  * When it is allocated, it should have
- *   - State = Allocated
- *   - AccountId = account owner.
- *   - DomainId = domain of the account owner.
- *   - Allocated = time it was allocated.
+ * - State = Allocated
+ * - AccountId = account owner.
+ * - DomainId = domain of the account owner.
+ * - Allocated = time it was allocated.
  */
-public interface IpAddress extends ControlledEntity{
+public interface IpAddress extends ControlledEntity {
     enum State {
-        Allocating,  // The IP Address is being propagated to other network elements and is not ready for use yet.
-        Allocated,   // The IP address is in used.
-        Releasing,   // The IP address is being released for other network elements and is not ready for allocation.
-        Free         // The IP address is ready to be allocated. 
+        Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
+        Allocated, // The IP address is in used.
+        Releasing, // The IP address is being released for other network elements and is not ready for allocation.
+        Free // The IP address is ready to be allocated.
     }
-    
+
     long getDataCenterId();
 
     Ip getAddress();
-    
+
     Date getAllocatedTime();
-    
+
     boolean isSourceNat();
 
     long getVlanId();
 
     boolean isOneToOneNat();
-    
+
     State getState();
-    
+
     boolean readyToUse();
-    
+
     Long getAssociatedWithNetworkId();
-    
+
     Long getAssociatedWithVmId();
-    
+
     public Long getPhysicalNetworkId();
-    
+
     /**
      * @return database id.
      */
     long getId();
-    
+
     void setState(IpAddress.State state);
 
-	Long getAllocatedToAccountId();
+    Long getAllocatedToAccountId();
 
-	Long getAllocatedInDomainId();
+    Long getAllocatedInDomainId();
 
-	boolean getElastic();
+    boolean getElastic();
 
 }

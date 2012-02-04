@@ -60,7 +60,7 @@
         <form>
           <div class="steps">
             <!-- Step 1: Setup -->
-            <div class="setup" wizard-step-id="setup">
+            <div class="step setup" wizard-step-id="setup">
               <div class="content">
                 <!-- Select a zone -->
                 <div class="section select-zone">
@@ -93,7 +93,7 @@
             </div>
 
             <!-- Step 2: Select ISO -->
-            <div class="select-iso" wizard-step-id="select-iso">
+            <div class="step select-iso" wizard-step-id="select-iso">
               <!-- Select template -->
               <div class="wizard-step-conditional select-template">
                 <div class="main-desc">
@@ -145,7 +145,7 @@
             </div>
 
             <!-- Step 3: Service Offering -->
-            <div class="service-offering" wizard-step-id="service-offering">
+            <div class="step service-offering" wizard-step-id="service-offering">
               <div class="content">
                 <div class="select-container">
                 </div>
@@ -153,7 +153,7 @@
             </div>
 
             <!-- Step 4: Data Disk Offering -->
-            <div class="data-disk-offering" wizard-step-id="data-disk-offering">
+            <div class="step data-disk-offering" wizard-step-id="data-disk-offering">
               <div class="content">
                 <div class="section no-thanks">
                   <input type="radio" name="diskofferingid" value="0" />
@@ -180,7 +180,7 @@
             </div>
 
             <!-- Step 5: Network -->
-            <div class="network" wizard-step-id="network">
+            <div class="step network" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">
                 <p>The zone you selected does not have any choices for network selection</p>               
@@ -275,7 +275,7 @@
             </div>
 
             <!-- Step 6: Review -->
-            <div class="review" wizard-step-id="review">
+            <div class="step review" wizard-step-id="review">
               <div class="main-desc">
                 Please review the following information and confirm that your virtual instance is correct before launch
               </div>

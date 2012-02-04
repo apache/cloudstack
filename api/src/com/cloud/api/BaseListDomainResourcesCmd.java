@@ -18,26 +18,26 @@
 
 package com.cloud.api;
 
-public abstract class BaseListDomainResourcesCmd extends BaseListCmd{
-	
-    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
+public abstract class BaseListDomainResourcesCmd extends BaseListCmd {
+
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list only resources belonging to the domain specified")
+
+    @IdentityMapper(entityTableName = "domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "list only resources belonging to the domain specified")
     private Long domainId;
-    
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all resources from the parent specified by the domainId till leaves.")
+
+    @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN, description = "defaults to false, but if true, lists all resources from the parent specified by the domainId till leaves.")
     private Boolean recursive;
 
     public boolean listAll() {
         return listAll == null ? false : listAll;
     }
-    
+
     public boolean isRecursive() {
         return recursive == null ? false : recursive;
     }
-    
+
     public Long getDomainId() {
         return domainId;
     }

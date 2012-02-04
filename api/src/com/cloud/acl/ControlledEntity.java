@@ -22,14 +22,14 @@ import com.cloud.user.OwnedBy;
 
 /**
  * ControlledEntity defines an object for which the access from an
- * account can be controlled.  Any object that must have limited
+ * account can be controlled. Any object that must have limited
  * access must inherit this interface.
- *
+ * 
  */
 public interface ControlledEntity extends OwnedBy, PartOf {
-	public enum ACLType {
-		Account,
-		Domain
-	}
-	
+    public enum ACLType {
+        Account,
+        Domain
+    }
+
 }

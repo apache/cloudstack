@@ -91,7 +91,7 @@
                           var items = [];
                           var domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function() {
-                            items.push({id: this.id, description: this.name});
+                            items.push({id: this.id, description: this.path});
                           });
                           args.response.success({data: items});
                         }
@@ -673,6 +673,8 @@
                 var password = args.data.password;
                 if (md5Hashed)
                   password = $.md5(password);
+								else
+								  password = todb(password);
                 array1.push("&password=" + password);
 
                 array1.push("&email=" + todb(args.data.email));
@@ -755,6 +757,8 @@
                   var password = args.data.newPassword;
                   if (md5Hashed)
                     password = $.md5(password);
+									else
+									  password = todb(password);
                   $.ajax({
                     url: createURL("updateUser&id=" + args.context.users[0].id + "&password=" + password),
                     dataType: "json",

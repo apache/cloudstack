@@ -34,28 +34,49 @@ public interface DataCenter extends Grouping {
         Basic,
         Advanced,
     }
+
     long getId();
+
     String getDns1();
+
     String getDns2();
+
     String getName();
+
     Long getDomainId();
+
     String getDescription();
+
     String getDomain();
-    
+
     NetworkType getNetworkType();
+
     String getInternalDns1();
+
     String getInternalDns2();
+
     String getDnsProvider();
+
     String getGatewayProvider();
+
     String getFirewallProvider();
+
     String getDhcpProvider();
+
     String getLoadBalancerProvider();
+
     String getUserDataProvider();
+
     String getVpnProvider();
+
     boolean isSecurityGroupEnabled();
+
     Map<String, String> getDetails();
+
     void setDetails(Map<String, String> details);
+
     AllocationState getAllocationState();
-    String getZoneToken();    
+
+    String getZoneToken();
 
 }

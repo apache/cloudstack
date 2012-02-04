@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * This defines the specifics of a physical network present in a data center
- *  
+ * 
  */
 public interface PhysicalNetwork {
 
@@ -33,30 +33,30 @@ public interface PhysicalNetwork {
         Disabled,
         Enabled;
     }
-    
+
     public enum IsolationMethod {
         VLAN,
         L3,
         GRE;
     }
-    
+
     public enum BroadcastDomainRange {
         POD,
         ZONE;
     }
-    
+
     long getId();
 
     BroadcastDomainRange getBroadcastDomainRange();
 
-    //TrafficType getTrafficType();
+    // TrafficType getTrafficType();
 
     long getDataCenterId();
 
     State getState();
 
     List<String> getTags();
-    
+
     List<String> getIsolationMethods();
 
     Long getDomainId();
@@ -67,6 +67,6 @@ public interface PhysicalNetwork {
 
     String getUuid();
 
-	String getName();
+    String getName();
 
 }

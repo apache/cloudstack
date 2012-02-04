@@ -23,33 +23,34 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
 /**
- * A base command for supporting asynchronous API calls.  When an API command is received, the command will be
+ * A base command for supporting asynchronous API calls. When an API command is received, the command will be
  * serialized to the queue (currently the async_job table) and a response will be immediately returned with the
- * id of the queue object.  The id can be used to query the status/progress of the command using the
+ * id of the queue object. The id can be used to query the status/progress of the command using the
  * queryAsyncJobResult API command.
  */
 public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String ipAddressSyncObject = "ipaddress";
     public static final String networkSyncObject = "network";
-    
-    
+
     private AsyncJob job;
 
-    @Parameter(name="starteventid", type=CommandType.LONG)
+    @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed.  Commands should specify the type of event so that when the scheduled,
+     * scheduled, started, and completed. Commands should specify the type of event so that when the scheduled,
      * started, and completed events are saved to the events table, they have the proper type information.
+     * 
      * @return a string representing the type of event, e.g. VM.START, VOLUME.CREATE.
      */
     public abstract String getEventType();
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed.  Commands should specify a description for these events so that when
+     * scheduled, started, and completed. Commands should specify a description for these events so that when
      * the scheduled, started, and completed events are saved to the events table, they have a meaningful description.
+     * 
      * @return a string representing a description of the event
      */
     public abstract String getEventDescription();
@@ -73,7 +74,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public void setStartEventId(Long startEventId) {
         this.startEventId = startEventId;
     }
-    
+
     /**
      * Async commands that want to be tracked as part of the listXXX commands need to
      * provide implementations of the two following methods, getInstanceId() and getInstanceType()
@@ -82,13 +83,13 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      * getObjectType() should return a type from the AsyncJob.Type enumeration
      */
     public Long getInstanceId() {
-    	return null;
+        return null;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.None;
+        return AsyncJob.Type.None;
     }
-    
+
     public String getSyncObjType() {
         return null;
     }
@@ -101,33 +102,34 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return job;
     }
 
-    protected long saveStartedEvent(){
-        return saveStartedEvent(getEventType(), "Executing job for "+getEventDescription(), getStartEventId());
+    protected long saveStartedEvent() {
+        return saveStartedEvent(getEventType(), "Executing job for " + getEventDescription(), getStartEventId());
     }
-    
-    protected long saveStartedEvent(String eventType, String description, Long startEventId){
+
+    protected long saveStartedEvent(String eventType, String description, Long startEventId) {
         UserContext ctx = UserContext.current();
         Long userId = ctx.getCallerUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
-        if(startEvent == null){
+        if (startEvent == null) {
             startEvent = 0L;
         }
         return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description, startEvent);
     }
-    
-    protected long saveCompletedEvent(String level, String description){
+
+    protected long saveCompletedEvent(String level, String description) {
         return saveCompletedEvent(level, getEventType(), description, getStartEventId());
     }
-    
-    protected long saveCompletedEvent(String level, String eventType,  String description, Long startEventId){
+
+    protected long saveCompletedEvent(String level, String eventType, String description, Long startEventId) {
         UserContext ctx = UserContext.current();
         Long userId = ctx.getCallerUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
-        if(startEvent == null){
+        if (startEvent == null) {
             startEvent = 0L;
         }
         return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
     }
+
 }

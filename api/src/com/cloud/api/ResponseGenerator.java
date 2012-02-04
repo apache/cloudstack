@@ -43,11 +43,9 @@ import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.LBStickinessResponse;
+import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.LBStickinessPolicyResponse;
-import com.cloud.network.rules.StickinessPolicy;
-import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
@@ -106,9 +104,10 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.security.SecurityRule;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
+import com.cloud.network.security.SecurityRule;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -149,7 +148,7 @@ public interface ResponseGenerator {
     SnapshotResponse createSnapshotResponse(Snapshot snapshot);
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
-    
+
     List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
@@ -159,7 +158,7 @@ public interface ResponseGenerator {
     DomainRouterResponse createDomainRouterResponse(VirtualRouter router);
 
     HostResponse createHostResponse(Host host, EnumSet<HostDetails> details);
-    
+
     HostResponse createHostResponse(Host host);
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
@@ -167,10 +166,10 @@ public interface ResponseGenerator {
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
-    
+
     LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
-    
-    LBStickinessResponse createLBStickinessPolicyResponse( StickinessPolicy stickinessPolicy, LoadBalancer lb);
+
+    LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
@@ -205,6 +204,7 @@ public interface ResponseGenerator {
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
+
     List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
@@ -252,7 +252,7 @@ public interface ResponseGenerator {
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
 
     HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities);
-    
+
     ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount);
 
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
@@ -268,7 +268,7 @@ public interface ResponseGenerator {
     ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result);
 
     TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
-    
+
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
     LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);

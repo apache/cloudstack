@@ -44,82 +44,83 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=NetworkElement.class)
+@Local(value = NetworkElement.class)
 public class OvsElement extends AdapterBase implements NetworkElement {
-	@Inject OvsNetworkManager _ovsVlanMgr;
-	@Inject OvsTunnelManager _ovsTunnelMgr;
-	
-	@Override
-	public boolean destroy(Network network)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
+    @Inject
+    OvsNetworkManager _ovsVlanMgr;
+    @Inject
+    OvsTunnelManager _ovsTunnelMgr;
 
-	@Override
-	public Map<Service, Map<Capability, String>> getCapabilities() {
-		return null;
-	}
+    @Override
+    public boolean destroy(Network network)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
 
-	@Override
-	public Provider getProvider() {
-		return null;
-	}
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+        return null;
+    }
 
-	@Override
-	public boolean implement(Network network, NetworkOffering offering,
-			DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		return true;
-	}
+    @Override
+    public Provider getProvider() {
+        return null;
+    }
 
-	@Override
-	public boolean prepare(Network network, NicProfile nic,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
-			return true;
-		}
-		
-		if (nic.getTrafficType() != Networks.TrafficType.Guest) {
-		    return true;
-		}
-		
-		_ovsVlanMgr.VmCheckAndCreateTunnel(vm, dest);
-		String command = _ovsVlanMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
-		if (command != null) {
-		    nic.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(command));
-		}
-		_ovsTunnelMgr.VmCheckAndCreateTunnel(vm, dest);
-		
-		return true;
-	}
+    @Override
+    public boolean implement(Network network, NetworkOffering offering,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        return true;
+    }
 
-	@Override
-	public boolean release(Network network, NicProfile nic,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			ReservationContext context) throws ConcurrentOperationException,
-			ResourceUnavailableException {
-	    if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+    @Override
+    public boolean prepare(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
             return true;
         }
-        
+
         if (nic.getTrafficType() != Networks.TrafficType.Guest) {
             return true;
         }
-        
-		_ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine());
-		return true;
-	}
-	
-	
-	@Override
-	public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
+
+        _ovsVlanMgr.VmCheckAndCreateTunnel(vm, dest);
+        String command = _ovsVlanMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
+        if (command != null) {
+            nic.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(command));
+        }
+        _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, dest);
+
+        return true;
+    }
+
+    @Override
+    public boolean release(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+            return true;
+        }
+
+        if (nic.getTrafficType() != Networks.TrafficType.Guest) {
+            return true;
+        }
+
+        _ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine());
+        return true;
+    }
+
+    @Override
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -127,8 +128,8 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
-    throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 
@@ -136,7 +137,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     public boolean canEnableIndividualServices() {
         return false;
     }
-    
+
     @Override
     public boolean verifyServicesCombination(List<String> services) {
         return true;

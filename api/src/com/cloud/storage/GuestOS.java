@@ -20,8 +20,11 @@ package com.cloud.storage;
 
 public interface GuestOS {
 
-	long getId();
-	String getName();
-	String getDisplayName();
-	long getCategoryId();
+    long getId();
+
+    String getName();
+
+    String getDisplayName();
+
+    long getCategoryId();
 }

@@ -18,13 +18,12 @@
 
 package com.cloud.configuration;
 
+public interface Configuration {
 
-public interface Configuration{
-    
-    public String getCategory();  
-    
+    public String getCategory();
+
     public String getInstance();
-    
+
     public String getComponent();
 
     public String getName();
@@ -33,5 +32,4 @@ public interface Configuration{
 
     public String getDescription();
 
-   
 }

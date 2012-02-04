@@ -1,6 +1,6 @@
 /**
  * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -79,49 +79,60 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
-
-@Local(value=NetworkElement.class)
+@Local(value = NetworkElement.class)
 public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
     private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);
-    
+
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-    
-    @Inject NetworkDao _networkConfigDao;
-    @Inject NetworkManager _networkMgr;
-    @Inject VirtualNetworkApplianceManager _routerMgr;
-    @Inject UserVmManager _userVmMgr;
-    @Inject UserVmDao _userVmDao;
-    @Inject DomainRouterDao _routerDao;
-    @Inject ConfigurationManager _configMgr;
-    @Inject DataCenterDao _dcDao;
-    @Inject AgentManager _agentManager;
-    @Inject ServiceOfferingDao _serviceOfferingDao;
-    
+
+    @Inject
+    NetworkDao _networkConfigDao;
+    @Inject
+    NetworkManager _networkMgr;
+    @Inject
+    VirtualNetworkApplianceManager _routerMgr;
+    @Inject
+    UserVmManager _userVmMgr;
+    @Inject
+    UserVmDao _userVmDao;
+    @Inject
+    DomainRouterDao _routerDao;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    AgentManager _agentManager;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
+
     private boolean canHandle(DeployDestination dest, TrafficType trafficType) {
-        DataCenterVO dc = (DataCenterVO)dest.getDataCenter();
-        
-        if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
+        DataCenterVO dc = (DataCenterVO) dest.getDataCenter();
+
+        if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())) {
             _dcDao.loadDetails(dc);
             String dhcpStrategy = dc.getDetail(ZoneConfig.DhcpStrategy.key());
             if ("external".equalsIgnoreCase(dhcpStrategy)) {
-               return true;
+                return true;
             }
-        } 
-        
+        }
+
         return false;
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
+            InsufficientCapacityException {
         if (!canHandle(dest, offering.getTrafficType())) {
             return false;
         }
-        
+
         return true;
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+            InsufficientCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -129,39 +140,39 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         return true;
     }
-    
+
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-       return false; //assume that the agent will remove userdata etc
+        return false; // assume that the agent will remove userdata etc
     }
-    
+
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException{
-        return false; //assume that the agent will remove userdata etc
+    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+        return false; // assume that the agent will remove userdata etc
     }
 
     @Override
     public Provider getProvider() {
         return Provider.ExternalDhcpServer;
     }
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }
-    
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-        
+
         capabilities.put(Service.UserData, null);
-        
+
         return capabilities;
     }
-    
-    private VmDataCommand generateVmDataCommand( String vmPrivateIpAddress,
+
+    private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
             String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
-        
+
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", serviceOffering);
         cmd.addVmData("metadata", "availability-zone", zoneName);
@@ -197,14 +208,14 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(dest, network.getTrafficType())) {
-            
+
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
             @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
             _userVmDao.loadDetails((UserVmVO) uservm.getVirtualMachine());
-            String password = (String)uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
+            String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
             String userData = uservm.getVirtualMachine().getUserData();
             String sshPublicKey = uservm.getVirtualMachine().getDetail("SSH.PublicKey");
 
@@ -219,7 +230,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
             cmds.addCommand(
                     "vmdata",
-                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(), uservm.getId(), sshPublicKey));
+                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(),
+                            uservm.getId(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {
@@ -242,9 +254,10 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         // TODO Auto-generated method stub
         return false;
     }
-    
+
     @Override
     public boolean verifyServicesCombination(List<String> services) {
         return true;
     }
+
 }

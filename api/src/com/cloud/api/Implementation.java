@@ -25,11 +25,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({TYPE})
+@Target({ TYPE })
 public @interface Implementation {
     Class<?> responseObject();
+
     String description() default "";
+
     String usage() default "";
+
     boolean includeInApiDoc() default true;
+
     String since() default "";
 }

@@ -42,19 +42,24 @@ public interface SnapshotService {
     List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
-     * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This will be
+     * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This
+     * will be
      * used for manual snapshots too.
-     * @param snapshotId TODO
+     * 
+     * @param snapshotId
+     *            TODO
      */
     boolean deleteSnapshot(long snapshotId);
 
     /**
-     * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.
+     * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be
+     * retained.
      * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted
      * 
      * @param cmd
      *            the command that
-     * @param policyOwner TODO
+     * @param policyOwner
+     *            TODO
      * @return the newly created snapshot policy if success, null otherwise
      */
     SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner);
@@ -84,7 +89,9 @@ public interface SnapshotService {
 
     /**
      * Create a snapshot of a volume
-     * @param snapshotOwner TODO
+     * 
+     * @param snapshotOwner
+     *            TODO
      * @param cmd
      *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
      * 

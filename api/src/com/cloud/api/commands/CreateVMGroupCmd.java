@@ -29,33 +29,33 @@ import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroup;
 
-@Implementation(description="Creates a vm group", responseObject=InstanceGroupResponse.class)
-public class CreateVMGroupCmd extends BaseCmd{
+@Implementation(description = "Creates a vm group", responseObject = InstanceGroupResponse.class)
+public class CreateVMGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVMGroupCmd.class.getName());
 
     private static final String s_name = "createinstancegroupresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the instance group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the instance group")
     private String groupName;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the instance group. The account parameter must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the instance group")
+    @IdentityMapper(entityTableName = "domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of account owning the instance group")
     private Long domainId;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="The project of the instance group")
+
+    @IdentityMapper(entityTableName = "projects")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "The project of the instance group")
     private Long projectId;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getGroupName() {
         return groupName;
@@ -68,32 +68,32 @@ public class CreateVMGroupCmd extends BaseCmd{
     public Long getDomainId() {
         return domainId;
     }
-    
+
     public Long getProjectId() {
         return projectId;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         InstanceGroup result = _userVmService.createVmGroup(this);
         if (result != null) {
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);

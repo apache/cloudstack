@@ -18,11 +18,10 @@
 
 package com.cloud.api;
 
-public abstract class BaseListAccountResourcesCmd extends BaseListDomainResourcesCmd{
-	
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List resources by account. Must be used with the domainId parameter.")
-    private String accountName;
+public abstract class BaseListAccountResourcesCmd extends BaseListDomainResourcesCmd {
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "List resources by account. Must be used with the domainId parameter.")
+    private String accountName;
 
     public String getAccountName() {
         return accountName;

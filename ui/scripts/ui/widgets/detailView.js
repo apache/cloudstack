@@ -235,9 +235,11 @@
           var $browser = $('#browser .container');
           var $panel = $detailView.closest('.panel');
 
-          $browser.cloudBrowser('selectPanel', {
-            panel: $panel.prev()
-          });
+          if ($detailView.is(':visible')) {
+            $browser.cloudBrowser('selectPanel', {
+              panel: $panel.prev()
+            });
+          }
         }
       });
     },

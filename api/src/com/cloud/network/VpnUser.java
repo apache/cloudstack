@@ -25,12 +25,12 @@ public interface VpnUser extends ControlledEntity {
         Revoke,
         Active
     }
-    
+
     long getId();
-    
+
     String getUsername();
 
     String getPassword();
-    
+
     State getState();
 }

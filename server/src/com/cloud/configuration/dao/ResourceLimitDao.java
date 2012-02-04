@@ -26,9 +26,12 @@ import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
-	
-	List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType);
-	boolean update(Long id, Long max);
-	ResourceCount.ResourceType getLimitType(String type);
-	ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
+
+    List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType);
+
+    boolean update(Long id, Long max);
+
+    ResourceCount.ResourceType getLimitType(String type);
+
+    ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
 }

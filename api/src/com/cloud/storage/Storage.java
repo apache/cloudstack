@@ -28,46 +28,46 @@ public class Storage {
         ISO(false, false, false),
         OVA(true, true, true, "ova"),
         BAREMETAL(false, false, false);
-        
+
         private final boolean thinProvisioned;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
         private final String fileExtension;
-        
+
         private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
             this.thinProvisioned = thinProvisioned;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             fileExtension = null;
         }
-        
+
         private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
             this.thinProvisioned = thinProvisioned;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             this.fileExtension = fileExtension;
         }
-        
+
         public boolean isThinProvisioned() {
             return thinProvisioned;
         }
-        
+
         public boolean supportsSparse() {
             return supportSparse;
         }
-        
+
         public boolean supportSnapshot() {
             return supportSnapshot;
         }
-        
+
         public String getFileExtension() {
-        	if(fileExtension == null)
-        		return toString().toLowerCase();
-        	
-        	return fileExtension;
+            if (fileExtension == null)
+                return toString().toLowerCase();
+
+            return fileExtension;
         }
     }
-    
+
     public static enum FileSystem {
         Unknown,
         ext3,
@@ -82,48 +82,51 @@ public class Storage {
         hfs,
         hfsp
     }
-    
+
     public static enum TemplateType {
-    	SYSTEM, /*routing, system vm template*/
-    	BUILTIN, /*buildin template*/
-    	PERHOST, /* every host has this template, don't need to install it in secondary storage */
-    	USER /* User supplied template/iso */
+        SYSTEM, /* routing, system vm template */
+        BUILTIN, /* buildin template */
+        PERHOST, /* every host has this template, don't need to install it in secondary storage */
+        USER /* User supplied template/iso */
     }
-    
+
     public static enum StoragePoolType {
-        Filesystem(false), //local directory
-        NetworkFilesystem(true), //NFS or CIFS
-        IscsiLUN(true), //shared LUN, with a clusterfs overlay
-        Iscsi(true), //for e.g., ZFS Comstar
-        ISO(false),    // for iso image
-        LVM(false),    // XenServer local LVM SR
+        Filesystem(false), // local directory
+        NetworkFilesystem(true), // NFS or CIFS
+        IscsiLUN(true), // shared LUN, with a clusterfs overlay
+        Iscsi(true), // for e.g., ZFS Comstar
+        ISO(false), // for iso image
+        LVM(false), // XenServer local LVM SR
         CLVM(true),
         SharedMountPoint(true),
-        VMFS(true),		// VMware VMFS storage
-        PreSetup(true),  // for XenServer, Storage Pool is set up by customers. 
-        EXT(false),    // XenServer local EXT SR
+        VMFS(true), // VMware VMFS storage
+        PreSetup(true), // for XenServer, Storage Pool is set up by customers.
+        EXT(false), // XenServer local EXT SR
         OCFS2(true);
-        
+
         boolean shared;
-        
+
         StoragePoolType(boolean shared) {
             this.shared = shared;
         }
-        
+
         public boolean isShared() {
             return shared;
         }
     }
-    public static List<StoragePoolType> getNonSharedStoragePoolTypes(){
-    	List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
-    	for(StoragePoolType storagePoolType : StoragePoolType.values()){
-    		if (!storagePoolType.isShared()){
-    			nonSharedStoragePoolTypes.add(storagePoolType);
-    		}
-    	}
-		return nonSharedStoragePoolTypes;
-    	
+
+    public static List<StoragePoolType> getNonSharedStoragePoolTypes() {
+        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
+        for (StoragePoolType storagePoolType : StoragePoolType.values()) {
+            if (!storagePoolType.isShared()) {
+                nonSharedStoragePoolTypes.add(storagePoolType);
+            }
+        }
+        return nonSharedStoragePoolTypes;
+
     }
 
-    public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE, LOCAL_SECONDARY_STORAGE}
+    public static enum StorageResourceType {
+        STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE, LOCAL_SECONDARY_STORAGE
+    }
 }
