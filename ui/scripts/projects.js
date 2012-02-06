@@ -10,7 +10,7 @@
         var updatedResources = 0;
 
         projectID = projectID ? projectID : cloudStack.context.projects[0].id;
-        
+
         $.each(args.data, function(key, value) {
           $.ajax({
             url: createURL('updateResourceLimit', { ignoreProject: true }),
@@ -31,7 +31,7 @@
 
       dataProvider: function(args, projectID) {
         projectID = projectID ? projectID : cloudStack.context.projects[0].id;
-        
+
         $.ajax({
           url: createURL('listResourceLimits', { ignoreProject: true }),
           data: {
@@ -299,9 +299,9 @@
         }
       },
       actionPreFilter: function(args) {
-        if (cloudStack.context.projects &&
-            cloudStack.context.projects[0] &&
-            !cloudStack.context.projects[0].isNew) {
+        if (args.context.projects &&
+            args.context.projects[0] &&
+            !args.context.projects[0].isNew) {
           return args.context.actions;
         }
 
@@ -393,7 +393,7 @@
         }
       },
       actionPreFilter: function(args) {
-        if (!cloudStack.context.projects &&
+        if (!args.context.projects &&
             args.context.multiRule[0].role != 'Admin') { // This is for the new project wizard
             return ['destroy'];
         }
@@ -440,7 +440,7 @@
             $.ajax({
               url: createURL('updateProject', { ignoreProject: true }),
               data: {
-                id: cloudStack.context.projects[0].id,
+                id: args.context.projects[0].id,
                 account: args.context.multiRule[0].username
               },
               dataType: 'json',
@@ -631,7 +631,7 @@
                   }
                 }
               }
-            }            
+            }
           },
 
           detailView: {
@@ -788,6 +788,23 @@
                 }
               },
 
+              accounts: {
+                title: 'Accounts',
+                custom: function(args) {
+                  var project = args.context.projects[0];
+                  var multiEditArgs = $.extend(
+                    true, {},
+                    cloudStack.projects.addUserForm,
+                    {
+                      context: { projects: [project] }
+                    }
+                  );
+                  var $users = $('<div>').multiEdit(multiEditArgs);
+                  
+                  return $users;
+                }
+              },
+
               resources: {
                 title: 'Resources',
                 custom: function(args) {
@@ -795,7 +812,7 @@
                     .projectsTabs.dashboardTabs.resources({
                       projectID: args.context.projects[0].id
                   });
-                  
+
                   return $('<div>').addClass('project-dashboard').append($resources);
                 }
               }
