@@ -631,109 +631,7 @@
                   }
                 }
               }
-            },
-
-            disable: {
-              label: 'Suspend project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('suspendProject'),
-                  data: {
-                    id: args.context.projects[0].id
-                  },
-                  success: function(json) {
-                    args.response.success({
-                      _custom: {
-                        jobId: json.suspendprojectresponse.jobid,
-                        getUpdatedItem: function() {
-                          return { state: 'Suspended' };
-                        }
-                      }
-                    });
-                  },
-                  error: function(json) {
-                    args.response.error(parseXMLHttpResponse(json));
-                  }
-                });
-              },
-              messages: {
-                confirm: function() { return 'Are you sure you want to suspend this project?'; },
-                notification: function() { return 'Suspended project'; }
-              },
-              notification: { poll: pollAsyncJobResult }
-            },
-
-            enable: {
-              label: 'Activate project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('activateProject'),
-                  data: {
-                    id: args.context.projects[0].id
-                  },
-                  success: function(json) {
-                    args.response.success({
-                      _custom: {
-                        jobId: json.activaterojectresponse.jobid, // NOTE: typo
-                        getUpdatedItem: function() {
-                          return { state: 'Active' };
-                        }
-                      }
-                    });
-                  },
-                  error: function(json) {
-                    args.response.error(parseXMLHttpResponse(json));
-                  }
-                });
-              },
-              messages: {
-                confirm: function() { return 'Are you sure you want to activate this project?'; },
-                notification: function() { return 'Activated project'; }
-              },
-              notification: { poll: pollAsyncJobResult }
-            },
-
-            destroy: {
-              label: 'Remove project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('deleteProject', { ignoreProject: true }),
-                  data: {
-                    id: args.data.id
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        getUpdatedItem: function(data) {
-                          return $.extend(data, { state: 'Destroyed' });
-                        },
-                        getActionFilter: function(args) {
-                          return function() {
-                            return [];
-                          };
-                        },
-                        jobId: data.deleteprojectresponse.jobid
-                      }
-                    });
-                  }
-                });
-              },
-
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to remove ' + args.name + '?';
-                },
-                notification: function(args) {
-                  return 'Removed project';
-                }
-              },
-
-              notification: {
-                poll: pollAsyncJobResult
-              }
-            }
+            }            
           },
 
           detailView: {
@@ -754,6 +652,107 @@
                 },
                 messages: {
                   notification: function(args) { return 'Edited project details'; }
+                }
+              },
+              disable: {
+                label: 'Suspend project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('suspendProject'),
+                    data: {
+                      id: args.context.projects[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.suspendprojectresponse.jobid,
+                          getUpdatedItem: function() {
+                            return { state: 'Suspended' };
+                          }
+                        }
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function() { return 'Are you sure you want to suspend this project?'; },
+                  notification: function() { return 'Suspended project'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              enable: {
+                label: 'Activate project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('activateProject'),
+                    data: {
+                      id: args.context.projects[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.activaterojectresponse.jobid, // NOTE: typo
+                          getUpdatedItem: function() {
+                            return { state: 'Active' };
+                          }
+                        }
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function() { return 'Are you sure you want to activate this project?'; },
+                  notification: function() { return 'Activated project'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              destroy: {
+                label: 'Remove project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('deleteProject', { ignoreProject: true }),
+                    data: {
+                      id: args.data.id
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {
+                      args.response.success({
+                        _custom: {
+                          getUpdatedItem: function(data) {
+                            return $.extend(data, { state: 'Destroyed' });
+                          },
+                          getActionFilter: function(args) {
+                            return function() {
+                              return [];
+                            };
+                          },
+                          jobId: data.deleteprojectresponse.jobid
+                        }
+                      });
+                    }
+                  });
+                },
+
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to remove ' + args.name + '?';
+                  },
+                  notification: function(args) {
+                    return 'Removed project';
+                  }
+                },
+
+                notification: {
+                  poll: pollAsyncJobResult
                 }
               }
             },
@@ -781,7 +780,8 @@
                     },
                     success: function(json) {
                       args.response.success({
-                        data: json.listprojectsresponse.project[0]
+                        data: json.listprojectsresponse.project[0],
+                        actionFilter: projectsActionFilter
                       });
                     }
                   });
