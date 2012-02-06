@@ -547,7 +547,7 @@
                         url: createURL("listStorageNetworkIpRange&zoneid=" + args.context.zones[0].id + "&networkId=" + selectedPublicNetworkObj.id),
                         dataType: "json",
                         success: function(json) {
-                          var items = json.liststoragenetworkiprangeresponse.storageiprange;
+                          var items = json.liststoragenetworkiprangeresponse.storagenetworkiprange;
                           args.response.success({data: items});
                         }
                       });
