@@ -49,3 +49,9 @@ CREATE TABLE `cloud`.`vm_template_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`domain_router` MODIFY `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode';
+ALTER TABLE `cloud`.`domain_router` MODIFY `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up';
+ALTER TABLE `cloud`.`domain_router` MODIFY `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router';
+ALTER TABLE `cloud`.`domain_router` MODIFY `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it';
