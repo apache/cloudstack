@@ -133,10 +133,10 @@
                 </div>
                 <div class="iso-select content tab-view">
                   <ul>
-                    <li class="first last"><a href="#instance-wizard-my-isos">My ISOs</a></li>
+                    <li class="first last"><a href="#instance-wizard-all-isos">All ISOs</a></li>
                   </ul>
 
-                  <div id="instance-wizard-my-isos">
+                  <div id="instance-wizard-all-isos">
                     <div class="select-container">
                     </div>
                   </div>

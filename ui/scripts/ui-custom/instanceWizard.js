@@ -251,7 +251,7 @@
                       ['featuredtemplates', 'instance-wizard-featured-templates'],
                       ['communitytemplates', 'instance-wizard-community-templates'],
                       ['mytemplates', 'instance-wizard-my-templates'],
-                      ['isos', 'instance-wizard-my-isos']
+                      ['isos', 'instance-wizard-all-isos']
                     ]
                   ).each(function() {
                     var item = this;
