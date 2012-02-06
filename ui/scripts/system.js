@@ -501,17 +501,16 @@
                         $.ajax({
                           url: createURL("createStorageNetworkIpRange" + array1.join("")),
                           dataType: "json",
-                          success: function(json) {
-                            var item = json.createstoragenetworkiprange.storageiprange; //???
-                            args.response.success({
-                              data: item,
-                              notification: {
-                                label: 'IP range is added',
-                                poll: function(args) {
-                                  args.complete();
-                                }
-                              }
-                            });
+                          success: function(json) {													 
+														args.response.success({
+															_custom: {
+																jobId: json.createstoragenetworkiprangeresponse.jobid
+															},
+															notification: {
+																label: 'Added IP range',
+																poll: pollAsyncJobResult
+															}
+														});
                           },
                           error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
