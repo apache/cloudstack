@@ -353,7 +353,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setLevel(domain.getLevel());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
         domainResponse.setParentDomainId(domain.getParent());
-        domainResponse.setPath(domain.getPath());
+        StringBuilder domainPath = new StringBuilder("ROOT");  
+        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+        domainResponse.setPath(domainPath.toString());
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
         }
