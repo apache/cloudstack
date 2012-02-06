@@ -336,6 +336,7 @@
               if (!complete($formContainer)) { return false; }
 
               $('div.overlay').remove();
+              $formContainer.remove();
               $(this).dialog('destroy');
 
               return true;
@@ -346,6 +347,7 @@
             'class': 'cancel',
             click: function() {
               $('div.overlay').remove();
+              $formContainer.remove();
               $(this).dialog('destroy');
             }
           }
