@@ -5,13 +5,17 @@
     },
 
     resourceManagement: {
-      update: function(args) {
+      update: function(args, projectID) {
         var totalResources = 5;
         var updatedResources = 0;
+
+        projectID = projectID ? projectID : cloudStack.context.projects[0].id;
+        
         $.each(args.data, function(key, value) {
           $.ajax({
-            url: createURL('updateResourceLimit'),
+            url: createURL('updateResourceLimit', { ignoreProject: true }),
             data: {
+              projectid: projectID,
               resourcetype: key,
               max: args.data[key]
             },
@@ -25,9 +29,14 @@
         });
       },
 
-      dataProvider: function(args) {
+      dataProvider: function(args, projectID) {
+        projectID = projectID ? projectID : cloudStack.context.projects[0].id;
+        
         $.ajax({
-          url: createURL('listResourceLimits'),
+          url: createURL('listResourceLimits', { ignoreProject: true }),
+          data: {
+            projectid: projectID
+          },
           success: function(json) {
             args.response.success({
               data: $.map(
@@ -70,7 +79,6 @@
             });
           }
         });
-
       }
     },
 
@@ -777,6 +785,18 @@
                       });
                     }
                   });
+                }
+              },
+
+              resources: {
+                title: 'Resources',
+                custom: function(args) {
+                  var $resources = cloudStack.uiCustom
+                    .projectsTabs.dashboardTabs.resources({
+                      projectID: args.context.projects[0].id
+                  });
+                  
+                  return $('<div>').addClass('project-dashboard').append($resources);
                 }
               }
             }

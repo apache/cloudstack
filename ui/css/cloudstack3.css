@@ -7512,6 +7512,15 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   clear: both;
 }
 
+.detail-view .project-dashboard .resources form {
+  width: 83%;
+  border-bottom: 1px solid #DBDBDB;
+}
+
+.detail-view .project-dashboard .resources form .field input {
+  margin-right: 105px;
+}
+
 /*** Dashboard*/
 .project-dashboard .toolbar {
   position: relative;

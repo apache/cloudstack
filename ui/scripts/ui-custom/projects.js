@@ -1,5 +1,5 @@
 (function(cloudStack, $) {
-  var pageElems = {
+  var pageElems = cloudStack.uiCustom.projectsTabs = {
     /**
      * User management multi-edit
      */
@@ -87,7 +87,9 @@
         return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
       },
 
-      resources: function() {
+      resources: function(options) {
+        if (!options) options = {};
+        
         var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
         var $form = $('<form>');
         var $submit = $('<input>').attr({
@@ -136,7 +138,7 @@
                       });
                     }
                   }
-                });
+                }, options.projectID);
 
                 return false;
               });
@@ -145,7 +147,7 @@
               $form.appendTo($resources);
             }
           }
-        });
+        }, options.projectID);
 
         return $resources;
       }
