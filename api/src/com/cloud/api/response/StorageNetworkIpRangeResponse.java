@@ -12,20 +12,23 @@ public class StorageNetworkIpRangeResponse extends BaseResponse {
     @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
     private Integer vlan;
     
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod uuid for the VLAN IP range")
+    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod uuid for the storage network IP range")
     private String podUuid;
 
-    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the VLAN IP range")
+    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the storage network IP range")
     private String startIp;
 
-    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the VLAN IP range")
+    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the storage network IP range")
     private String endIp;
     
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network uuid of vlan range")
+    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network uuid of storage network IP range")
     private String networkUuid;
     
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone uuid of the VLAN IP range")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone uuid of the storage network IP range")
     private String zoneUuid;
+    
+    @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the storage network IP range")
+    private String netmask;
      
 	public void setUuid(String uuId) {
 		this.uuid = uuid;
@@ -53,5 +56,9 @@ public class StorageNetworkIpRangeResponse extends BaseResponse {
 
     public void setNetworkUuid(String networkUuid) {
         this.networkUuid = networkUuid;
+    }
+    
+    public void setNetmask(String netmask) {
+    	this.netmask = netmask;
     }
 }
