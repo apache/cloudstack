@@ -47,8 +47,11 @@ public interface Capacity {
 
     public long getTotalCapacity();
 
-    public short getCapacityType();
+    public short getCapacityType();    
 
-    long getReservedCapacity();
+    public long getReservedCapacity();
+    
+    public Float getUsedPercentage();
+
 
 }

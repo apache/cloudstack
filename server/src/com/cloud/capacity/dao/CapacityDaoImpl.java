@@ -83,6 +83,32 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String ORDER_PODS_BY_AGGREGATE_CAPACITY = "SELECT pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) FROM `cloud`.`op_host_capacity` WHERE data_center_id = ? " +
                                                                    " AND capacity_type = ? GROUP BY pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) ASC";
     
+    private static final String LIST_CAPACITY_BY_RESOURCE_STATE = "SELECT capacity.data_center_id, sum(capacity.used_capacity), sum(capacity.reserved_quantity), sum(capacity.total_capacity), capacity_capacity_type "+
+                                                                  "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`data_center` dc ON (dc.id = capacity.data_center_id AND dc.removed is NULL)"+
+                                                                  "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`host_pod_ref` pod ON (pod.id = capacity.pod_id AND pod.removed is NULL)"+
+                                                                  "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster` cluster ON (cluster.id = capacity.cluster_id AND cluster.removed is NULL)"+
+                                                                  "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`host` host ON (host.id = capacity.host_id AND host.removed is NULL)"+
+                                                                  "WHERE dc.allocation_state = ? AND pod.allocation_state = ? AND cluster.allocation_state = ? AND host.resource_state = ? AND capacity_type not in (3,4) ";
+    
+    private static final String LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent," +
+                                                                         " capacity.capacity_type, capacity.data_center_id "+
+                                                                         "FROM `cloud`.`op_host_capacity` capacity "+
+                                                                         "WHERE  total_capacity > 0 AND data_center_id is not null ";
+    private static final String LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART2 = " GROUP BY data_center_id, capacity_type order by percent desc limit ";
+    private static final String LIST_CAPACITY_GROUP_BY_POD_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent," +
+                                                                        " capacity.capacity_type, capacity.data_center_id, pod_id "+
+                                                                        "FROM `cloud`.`op_host_capacity` capacity "+
+                                                                        "WHERE  total_capacity > 0 AND pod_id is not null ";
+    private static final String LIST_CAPACITY_GROUP_BY_POD_TYPE_PART2 = " GROUP BY pod_id, capacity_type order by percent desc limit ";
+    
+    private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent,"+
+                                                                            "capacity.capacity_type, capacity.data_center_id, pod_id, cluster_id "+
+                                                                            "FROM `cloud`.`op_host_capacity` capacity "+
+                                                                            "WHERE  total_capacity > 0 AND cluster_id is not null ";
+    private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
+    
+    
+    
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
     	_hostIdTypeSearch.and("hostId", _hostIdTypeSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
@@ -102,6 +128,126 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	_allFieldsSearch.and("capacityType", _allFieldsSearch.entity().getCapacityType(), SearchCriteria.Op.EQ);
     	
     	_allFieldsSearch.done();
+    }
+    
+    @Override
+    public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, String resource_state){
+        
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<SummedCapacity> result = new ArrayList<SummedCapacity>();
+
+        StringBuilder sql = new StringBuilder(LIST_CAPACITY_BY_RESOURCE_STATE);           
+        List<Long> resourceIdList = new ArrayList<Long>();
+        
+        if (zoneId != null){
+            sql.append(" AND capacity.data_center_id = ?");
+            resourceIdList.add(zoneId);
+        }
+        if (podId != null){
+            sql.append(" AND capacity.pod_id = ?");
+            resourceIdList.add(podId);
+        }
+        if (clusterId != null){
+            sql.append(" AND capacity.cluster_id = ?");
+            resourceIdList.add(clusterId);
+        }
+        if (capacityType != null){
+            sql.append(" AND capacity.capacity_type = ?");
+            resourceIdList.add(capacityType.longValue());
+        }   
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setString(1, resource_state);
+            pstmt.setString(2, resource_state);
+            pstmt.setString(3, resource_state);
+            pstmt.setString(4, resource_state);
+            for (int i = 0; i < resourceIdList.size(); i++){                
+                pstmt.setLong( 5+i, resourceIdList.get(i));
+            }            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                SummedCapacity summedCapacity = new SummedCapacity(rs.getLong(2), rs.getLong(3), rs.getLong(4), (short)rs.getLong(5), null, null, rs.getLong(1));
+                result.add(summedCapacity);
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }        
+    }
+    
+    @Override
+    public  List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Integer limit){
+        
+        StringBuilder finalQuery = new StringBuilder(); 
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<SummedCapacity> result = new ArrayList<SummedCapacity>();
+        
+        switch(level){
+            case 1: // List all the capacities grouped by zone, capacity Type
+                finalQuery.append(LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART1);
+                break;
+                
+            case 2: // List all the capacities grouped by pod, capacity Type
+                finalQuery.append(LIST_CAPACITY_GROUP_BY_POD_TYPE_PART1);
+                break;
+                
+            case 3: // List all the capacities grouped by cluster, capacity Type
+                finalQuery.append(LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART1);
+                break;
+        }
+        
+        if (zoneId != null){
+            finalQuery.append(" AND data_center_id="+zoneId);
+        }
+        if (podId != null){
+            finalQuery.append(" AND pod_id="+podId);
+        }
+        if (clusterId != null){
+            finalQuery.append(" AND cluster_id="+clusterId);
+        }
+        if (capacityType != null){
+            finalQuery.append(" AND capacity_type="+capacityType);   
+        }                
+        
+        switch(level){
+        case 1: // List all the capacities grouped by zone, capacity Type
+            finalQuery.append(LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART2);
+            break;
+            
+        case 2: // List all the capacities grouped by pod, capacity Type
+            finalQuery.append(LIST_CAPACITY_GROUP_BY_POD_TYPE_PART2);
+            break;
+            
+        case 3: // List all the capacities grouped by cluster, capacity Type
+            finalQuery.append(LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2);
+            break;
+        }
+        
+        finalQuery.append(limit.toString());
+        
+        try {
+            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());        
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {                
+                SummedCapacity summedCapacity = new SummedCapacity( rs.getFloat(1), (short)rs.getLong(2),
+                                                                   rs.getLong(3),
+                                                                   level == 3 ? rs.getLong(5): null,
+                                                                   level != 1 ? rs.getLong(4): null);
+                                                                   
+                result.add(summedCapacity);
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + finalQuery, e);
+        }                     
+        
     }
     
     @Override
@@ -264,6 +410,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	    public long sumUsed;
 	    public long sumReserved;
 	    public long sumTotal;
+	    public Float percentUsed;
 	    public short capacityType;
 	    public Long clusterId;
 	    public Long podId;
@@ -285,6 +432,16 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		    this(sumUsed, sumReserved, sumTotal, capacityType, clusterId, podId);
 	        this.dcId = zoneId;
 		}
+		
+		public SummedCapacity(float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {
+		    super();
+		    this.percentUsed = percentUsed;
+		    this.capacityType = capacityType;
+            this.clusterId = clusterId;
+            this.podId = podId;
+            this.dcId = zoneId;
+        }
+		
 		public Short getCapacityType() {				
 			return capacityType;
 		}
@@ -299,6 +456,15 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		}
 		public Long getDataCenterId() {
             return dcId;
+        }
+		public Long getClusterId() {
+            return clusterId;
+        }
+        public Long getPodId() {
+            return podId;
+        }
+        public Float getPercentUsed() {
+            return percentUsed;
         }
 	}
 	public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){

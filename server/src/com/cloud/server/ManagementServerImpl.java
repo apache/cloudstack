@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
@@ -83,6 +85,7 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListTopConsumedResources;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -243,6 +246,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
 
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -1933,6 +1937,94 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return _alertDao.search(sc, searchFilter);
+    }
+    
+    @Override
+    public List<CapacityVO> listTopConsumedResources(ListTopConsumedResources cmd) {
+        
+        Integer capacityType = cmd.getType();
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long clusterId = cmd.getClusterId();
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
+        
+        if (zoneId == null && podId == null){//Group by Zone, capacity type
+            List<SummedCapacity> summedCapacitiesAtZone = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 1, cmd.getPageSize());
+            if(summedCapacitiesAtZone != null){
+                summedCapacities.addAll(summedCapacitiesAtZone);
+            }
+        }
+        if (podId == null){//Group by Pod, capacity type
+            List<SummedCapacity> summedCapacitiesAtPod = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 2, cmd.getPageSize());
+            if(summedCapacitiesAtPod != null){
+                summedCapacities.addAll(summedCapacitiesAtPod);
+            }                           
+            List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
+            if (summedCapacitiesForSecStorage != null){
+                summedCapacities.addAll(summedCapacitiesForSecStorage);
+            }
+        }
+        
+        //Group by Cluster, capacity type
+        List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 3, cmd.getPageSize());
+        if(summedCapacitiesAtCluster != null){
+            summedCapacities.addAll(summedCapacitiesAtCluster);
+        }                       
+        
+        //Sort Capacities
+        Collections.sort(summedCapacities, new Comparator<SummedCapacity>() {
+            @Override
+            public int compare(SummedCapacity arg0, SummedCapacity arg1) {
+                if (arg0.getPercentUsed() < arg1.getPercentUsed()) {
+                    return 1;
+                } else if (arg0.getPercentUsed()== arg1.getPercentUsed()) {
+                    return 0;
+                }
+                return -1;
+            }
+        });
+        
+        List<CapacityVO> capacities = new ArrayList<CapacityVO>();
+        
+        summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSize() ? summedCapacities.size() : cmd.getPageSize());
+        for (SummedCapacity summedCapacity : summedCapacities){
+            CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId() , summedCapacity.getClusterId(),
+                                                 summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());            
+            capacities.add(capacity);       
+        }        
+        return capacities;
+    }
+    
+    List<SummedCapacity> getSecStorageUsed(Long zoneId, Integer capacityType){
+        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
+            List<SummedCapacity> list = new ArrayList<SummedCapacity>();
+            
+            if (zoneId != null){
+                CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
+                if (capacity.getTotalCapacity()!= 0){
+                    capacity.setUsedPercentage( capacity.getUsedCapacity() / capacity.getTotalCapacity() );    
+                }else {
+                    capacity.setUsedPercentage(0);
+                }
+                SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                list.add(summedCapacity) ;
+            }else {
+                List<DataCenterVO> dcList = ApiDBUtils.listZones();
+                for(DataCenterVO dc : dcList){
+                    CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());                    
+                    if (capacity.getTotalCapacity()!= 0){
+                        capacity.setUsedPercentage( capacity.getUsedCapacity() / capacity.getTotalCapacity() );    
+                    }else {
+                        capacity.setUsedPercentage(0);
+                    }
+                    SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                    list.add(summedCapacity);
+                }//End of for                
+            }
+            return list;
+        }
+        return null;
     }
     
     @Override

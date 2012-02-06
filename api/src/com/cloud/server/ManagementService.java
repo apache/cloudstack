@@ -50,6 +50,7 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListTopConsumedResources;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -433,5 +434,13 @@ public interface ManagementService {
     List<? extends HypervisorCapabilities> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal);
 
     HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
+
+    /**
+     * list all the top consumed resources across different capacity types
+     * 
+     * @param cmd
+     * @return List of capacities
+     */
+    List<? extends Capacity> listTopConsumedResources(ListTopConsumedResources cmd);
 
 }

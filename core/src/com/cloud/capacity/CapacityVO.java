@@ -18,6 +18,7 @@
 
 package com.cloud.capacity;
 
+import javax.persistence.Transient;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -70,7 +71,9 @@ public class CapacityVO implements Capacity {
     @Temporal(value=TemporalType.TIMESTAMP)
     protected Date updateTime;
     
-
+    @Transient
+    private float usedPercentage;
+    
     public CapacityVO() {}
 
     public CapacityVO(Long hostId, long dataCenterId, Long podId, Long clusterId, long usedCapacity, long totalCapacity, short capacityType) {
@@ -82,6 +85,14 @@ public class CapacityVO implements Capacity {
         this.totalCapacity = totalCapacity;
         this.capacityType = capacityType;
         this.updateTime = new Date();
+    }
+    
+    public CapacityVO(long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {        
+        this.dataCenterId = dataCenterId;
+        this.podId = podId;
+        this.clusterId = clusterId;
+        this.capacityType = capacityType;
+        this.usedPercentage = usedPercentage;
     }
 
     @Override
@@ -164,4 +175,13 @@ public class CapacityVO implements Capacity {
 	public void setUpdateTime(Date updateTime) {
 		this.updateTime = updateTime;
 	}
+
+	@Override
+    public Float getUsedPercentage() {
+        return usedPercentage;
+    }
+
+    public void setUsedPercentage(float usedPercentage) {
+        this.usedPercentage = usedPercentage;
+    }
 }

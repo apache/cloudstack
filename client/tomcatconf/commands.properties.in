@@ -177,6 +177,7 @@ listAlerts=com.cloud.api.commands.ListAlertsCmd;3
 
 #### system capacity commands
 listCapacity=com.cloud.api.commands.ListCapacityCmd;3
+listTopConsumedResources=com.cloud.api.commands.ListTopConsumedResources;3
 
 #### swift commands^M
 addSwift=com.cloud.api.commands.AddSwiftCmd;1

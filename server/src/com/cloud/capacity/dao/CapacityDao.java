@@ -38,4 +38,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 	
     List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType, float cpuOverprovisioningFactor);
     Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType, float cpuOverprovisioningFactor);
+    List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId,
+            Long podId, Long clusterId, String resourceState);
+    List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Integer limit);
 }
