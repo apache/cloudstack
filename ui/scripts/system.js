@@ -338,10 +338,7 @@
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
 
-                        if(args.context.zones[0].securitygroupsenabled == false)
-                          array1.push("&forVirtualNetwork=true");
-                        else
-                          array1.push("&forVirtualNetwork=false");
+                        array1.push("&forVirtualNetwork=true");  //indicates this new IP range is for public network, not guest network
 
                         $.ajax({
                           url: createURL("createVlanIpRange" + array1.join("")),
@@ -462,7 +459,24 @@
                   return $('<div></div>').multiEdit({
                     context: args.context,
                     noSelect: true,
-                    fields: {                      
+                    fields: {    
+											'podid': { 
+											  label: 'Pod',
+												select: function(args) {		
+												  $.ajax({
+													  url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+														dataType: "json",
+														success: function(json) {														  
+															var items = [];
+															var pods = json.listpodsresponse.pod;
+															$(pods).each(function(){
+															  items.push({name: this.id, description: this.name}); //should be "{id: this.id, description: this.name}" (to be consistent with dropdown in createFrom and edit mode) (Brian will fix widget later)
+															});
+															args.response.success({	data: items });
+														}
+													});
+												}											
+											},										
                       'netmask': { edit: true, label: 'Netmask' },
                       'vlan': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
@@ -473,28 +487,22 @@
                       label: 'Add',
                       action: function(args) {
                         var array1 = [];
-                        array1.push("&zoneId=" + args.context.zones[0].id);
+                        array1.push("&zoneId=" + args.context.zones[0].id);												
+												array1.push("&podid=" + args.data.podid);
 
                         if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
-                        else
-                          array1.push("&vlan=untagged");
-                        
+                                               
                         array1.push("&netmask=" + args.data.netmask);
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
 
-                        if(args.context.zones[0].securitygroupsenabled == false)
-                          array1.push("&forVirtualNetwork=true");
-                        else
-                          array1.push("&forVirtualNetwork=false");
-
                         $.ajax({
                           url: createURL("createStorageNetworkIpRange" + array1.join("")),
                           dataType: "json",
                           success: function(json) {
-                            var item = json.createstoragenetworkiprange.storageiprange;
+                            var item = json.createstoragenetworkiprange.storageiprange; //???
                             args.response.success({
                               data: item,
                               notification: {
