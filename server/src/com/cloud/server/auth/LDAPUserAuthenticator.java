@@ -42,6 +42,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 
 
 @Local(value={UserAuthenticator.class})
@@ -72,7 +73,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String searchBase = _configDao.getValue(LDAPParams.searchbase.toString());
         String useSSL = _configDao.getValue(LDAPParams.usessl.toString());
         String bindDN = _configDao.getValue(LDAPParams.dn.toString());
-        String bindPasswd = _configDao.getValue(LDAPParams.passwd.toString());
+        String bindPasswd = DBEncryptionUtil.decrypt(_configDao.getValue(LDAPParams.passwd.toString()));
         
         try {
             // get all params

@@ -150,6 +150,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -1316,7 +1317,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (cvo == null) {
                 cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.passwd.toString(), null, "Enter the password");
             }
-            cvo.setValue(bindPasswd);
+            cvo.setValue(DBEncryptionUtil.encrypt(bindPasswd));
             _configDao.persist(cvo);
         } catch (NamingException ne) {
             ne.printStackTrace();
