@@ -919,7 +919,7 @@
   };
 
   var projectsActionFilter = function(args) {
-    var allowedActions = ['destroy'];
+    var allowedActions = ['destroy', 'edit'];
 
     if (args.context.item.account == cloudStack.context.users[0].account ||
         isAdmin() || isDomainAdmin()) {
