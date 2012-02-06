@@ -776,6 +776,7 @@
                   $.ajax({
                     url: createURL('listProjects'),
                     data: {
+                      listAll: true,
                       id: projectID
                     },
                     success: function(json) {
