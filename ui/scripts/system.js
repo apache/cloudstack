@@ -462,8 +462,7 @@
                   return $('<div></div>').multiEdit({
                     context: args.context,
                     noSelect: true,
-                    fields: {
-                      'gateway': { edit: true, label: 'Gateway' },
+                    fields: {                      
                       'netmask': { edit: true, label: 'Netmask' },
                       'vlan': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
@@ -480,8 +479,7 @@
                           array1.push("&vlan=" + todb(args.data.vlan));
                         else
                           array1.push("&vlan=untagged");
-
-                        array1.push("&gateway=" + args.data.gateway);
+                        
                         array1.push("&netmask=" + args.data.netmask);
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
