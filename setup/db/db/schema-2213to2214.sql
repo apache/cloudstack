@@ -54,3 +54,21 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'enable.usage.server', 'true', 'Flag for enabling usage');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'direct.network.stats.interval', '86400', 'Interval (in seconds) to collect stats from Traffic Monitor');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.aggregation.timezone', 'GMT', 'The timezone to use for usage stats aggregation');
+
+
+INSERT IGNORE INTO `cloud`.`guest_os` (category_id, name, display_name) VALUES (6, NULL, "Windows PV");
+
+CREATE TABLE `cloud`.`vm_template_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`domain_router` MODIFY `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode';
+ALTER TABLE `cloud`.`domain_router` MODIFY `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up';
+ALTER TABLE `cloud`.`domain_router` MODIFY `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router';
+ALTER TABLE `cloud`.`domain_router` MODIFY `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it';
