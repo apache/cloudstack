@@ -50,7 +50,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
 
     protected final SearchBuilder<VMInstanceVO> VMClusterSearch;
-    protected final SearchBuilder<VMInstanceVO> StartingVMClusterSearch;
+    protected final SearchBuilder<VMInstanceVO> listLHByClusterId;
     protected final SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected final SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
@@ -80,11 +80,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         VMClusterSearch.done();
 
         
-        StartingVMClusterSearch = createSearchBuilder();
+        listLHByClusterId = createSearchBuilder();
         SearchBuilder<HostVO> hostSearch1 = _hostDao.createSearchBuilder();
-        StartingVMClusterSearch.join("hostSearch1", hostSearch1, hostSearch1.entity().getId(), StartingVMClusterSearch.entity().getHostId(), JoinType.INNER);
+        listLHByClusterId.join("hostSearch1", hostSearch1, hostSearch1.entity().getId(), listLHByClusterId.entity().getLastHostId(), JoinType.INNER);
         hostSearch1.and("clusterId", hostSearch1.entity().getClusterId(), SearchCriteria.Op.EQ);
-        StartingVMClusterSearch.done();
+        listLHByClusterId.done();
 
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
@@ -193,8 +193,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     
 
     @Override
-    public List<VMInstanceVO> listStartingByClusterId(long clusterId) {
-        SearchCriteria<VMInstanceVO> sc = StartingVMClusterSearch.create();
+    public List<VMInstanceVO> listLHByClusterId(long clusterId) {
+        SearchCriteria<VMInstanceVO> sc = listLHByClusterId.create();
         sc.setJoinParameters("hostSearch1", "clusterId", clusterId);
         return listBy(sc);
     }
