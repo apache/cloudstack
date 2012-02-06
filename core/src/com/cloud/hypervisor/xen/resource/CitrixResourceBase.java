@@ -6626,16 +6626,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return  new Answer(cmd);
         } 
         HashMap<String, Pair<String, State>> newStates = deltaClusterSync(conn);
-        cmd.incrStep();
-        if (cmd.isRightStep()){
-            // do full sync
-        	 HashMap<String, Pair<String, State>> allStates=fullClusterSync(conn);
-        	 return new ClusterSyncAnswer(cmd.getClusterId(), newStates, allStates);
-        }
-        else {
-            cmd.incrStep();
-            return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
-        }
+        return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
     }
 
 

@@ -319,6 +319,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<HostVO> hosts = listBy(sc);
         return hosts.size();
     }
+    
+
+    @Override
+    public HostVO findByGuid(String guid) {
+        SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
+        return findOneBy(sc);
+    }
+    
     @Override @DB
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();

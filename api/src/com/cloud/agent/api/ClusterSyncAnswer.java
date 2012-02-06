@@ -25,12 +25,7 @@ import com.cloud.vm.VirtualMachine.State;
 public class ClusterSyncAnswer extends Answer {
     private long _clusterId;
     private HashMap<String, Pair<String, State>> _newStates;
-    private HashMap<String, Pair<String, State>> _allStates;
-    private int _type = -1; // 0 for full, 1 for delta
     private boolean _isExecuted=false;
-    
-    public static final int FULL_SYNC=0;
-    public static final int DELTA_SYNC=1;
  
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
@@ -47,19 +42,9 @@ public class ClusterSyncAnswer extends Answer {
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates){
         _clusterId = clusterId;
         _newStates = newStates;
-        _allStates = null;
-        _type = DELTA_SYNC;
         result = true;
     }
     
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, HashMap<String, Pair<String, State>> allStates){
-        _clusterId = clusterId;
-        _newStates = newStates;
-        _allStates = allStates;
-        _type = FULL_SYNC;
-        result = true;
-    }
-
     public long getClusterId() {
         return _clusterId;
     }
@@ -68,15 +53,4 @@ public class ClusterSyncAnswer extends Answer {
         return _newStates;
     }   
 
-    public HashMap<String, Pair<String, State>> getAllStates() {
-        return _allStates;
-    }   
-    
-    public boolean isFull(){
-        return _type==0;
-    }
-
-    public boolean isDelta(){
-        return _type==1;
-    }
 }

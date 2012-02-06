@@ -67,4 +67,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
+
+	HostVO findByGuid(String guid);
 }

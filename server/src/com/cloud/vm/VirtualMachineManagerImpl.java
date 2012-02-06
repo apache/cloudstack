@@ -1706,43 +1706,62 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
 
-    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates, boolean init) {
+    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
+    	if (newStates==null)return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
         Set<VMInstanceVO> set_vms = Collections.synchronizedSet(new HashSet<VMInstanceVO>());
         set_vms.addAll(_vmDao.listByClusterId(clusterId));
-        set_vms.addAll(_vmDao.listStartingByClusterId(clusterId));
-        
+        set_vms.addAll(_vmDao.listLHByClusterId(clusterId));
+
         for (VMInstanceVO vm : set_vms) {
             if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
-            if (init){ // mark the VMs real state on initial sync
-                VMInstanceVO castedVm = null;
-                if (info == null && vm.getState() == State.Running) { // only work on VMs which were supposed to be running earlier
-                	info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                	castedVm = info.guru.findById(vm.getId());
-	                try {
-	                    Host host = _resourceMgr.findHostByGuid(info.getHostUuid()); 
-	                    long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
-	                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-	                    Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
-	                    if (command != null){
-	                        Answer answer = _agentMgr.send(hostId, command);
-	                        if (!answer.getResult()) {
-	                            s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
-	                        }
-	                    }
-	                } catch (Exception e) {
-	                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
-	                    e.printStackTrace();
-	                }
+            VMInstanceVO castedVm = null;
+            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
+            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+            {
+            	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
+                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+           		vm.setState(State.Running); // set it as running and let HA take care of it
+           		_vmDao.persist(vm);
+                castedVm = info.guru.findById(vm.getId());
+                try {
+                    Host host = _hostDao.findByGuid(info.getHostUuid());
+                    long hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+                    Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
+                    if (command != null){
+                        Answer answer = _agentMgr.send(hostId, command);
+                        if (!answer.getResult()) {
+                            s_logger.warn("Failed to update state of the VM due to " + answer.getDetails());
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.warn("Unable to update state of the VM due to exception " + e.getMessage());
+                    e.printStackTrace();
                 }
-           }
-           
-        }
+            }
+            else
+            // host id can change
+	        if (info != null && vm.getState() == State.Running){
+	           // check for host id changes
+	           Host host = _hostDao.findByGuid(info.getHostUuid());
+	            if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
+    	        	s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
+        			try {
+						stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
+					} catch (NoTransitionException e) {
+						s_logger.warn(e.getMessage());
+					}
+        		}
+            }
             
+        }
+
         for (final AgentVmInfo left : infos.values()) {
+        	if (VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm follows cloudstack naming ignore it for stopping
             try {
-                Host host = _resourceMgr.findHostByGuid(left.getHostUuid());
+                Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){
                     s_logger.warn("Stopping a VM which we do not have any record of " + left.name);
                     Answer answer = _agentMgr.send(host.getId(), cleanup(left.name));
@@ -1754,8 +1773,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 s_logger.warn("Unable to stop a VM due to " + e.getMessage());
             }
         }
-        
+
     }
+
 
 
     protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
@@ -2088,12 +2108,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
                 if (!hs.isExceuted()){
-                    if (hs.isFull()) {
-                        deltaSync(hs.getNewStates());
-                        fullSync(hs.getClusterId(), hs.getAllStates(), false);
-                    } else if (hs.isDelta()){
-                        deltaSync(hs.getNewStates());
-                    }
+                    deltaSync(hs.getNewStates());
                     hs.setExecuted();
                 }
             } else if (!answer.getResult()) {
@@ -2171,12 +2186,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         	StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
         	HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
         	if (allStates != null){
-        		this.fullSync(clusterId, allStates, true);
+        		this.fullSync(clusterId, allStates);
         	}
         	
         	// initiate the cron job
-            ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
-                    	Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
+            ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()), clusterId);
             try {
                 long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
                 s_logger.debug("Cluster VM sync started with jobid " + seq_no);
