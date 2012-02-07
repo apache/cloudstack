@@ -270,14 +270,21 @@
           fields: {
             name: { label: 'Name' },
             account: { label: 'Account' },
-            zonename: { label: 'Zone' },
+            //zonename: { label: 'Zone' },
             type: { label: 'Type' },
             vlan: { label: 'VLAN' },
             cidr: { label: 'CIDR' },
-            state: { label: 'State', indicator: {
-              'Implemented': 'on', 'Setup': 'on', 'Allocated': 'on',
-              'Destroyed': 'off'
-            } }
+            /*
+						state: { 
+						  label: 'State', 
+								indicator: {
+								'Implemented': 'on', 
+								'Setup': 'on', 
+								'Allocated': 'on',
+								'Destroyed': 'off'
+							} 
+						}
+						*/
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -553,6 +560,7 @@
                   },
                   {
                     id: { label: 'ID' },
+										zonename: { label: 'Zone' },
                     displaytext: {
                       label: 'Description',
                       isEditable: true
