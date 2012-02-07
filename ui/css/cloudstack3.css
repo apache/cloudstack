@@ -3316,7 +3316,7 @@ Dialogs*/
 .dashboard.admin .dashboard-container .stats ul li {
   display: block;
   width: 97%;
-  height: 49px;
+  height: 40px;
   background: url(../images/bg-gradients.png) 0px -29px;
   clear: both;
   border: 1px solid #C8C2C2;
@@ -3332,7 +3332,7 @@ Dialogs*/
 .dashboard.admin .dashboard-container .stats ul li .name {
   width: 135px;
   float: left;
-  margin: 19px 15px 0 0;
+  margin: 15px 15px 0 0;
 }
 
 .dashboard.admin .dashboard-container .stats ul li div.value {
@@ -3347,7 +3347,7 @@ Dialogs*/
 
 .dashboard.admin .dashboard-container .stats ul li .value .content {
   background: url(../images/bg-gradients.png) repeat-x 0px 0px;
-  margin: 9px;
+  margin: 6px 9px 9px;
   padding: 9px;
   color: #FFFFFF;
   font-size: 11px;
@@ -3372,7 +3372,7 @@ Dialogs*/
   height: 17px;
   padding: 0px 1px;
   background: url(../images/bg-gradients.png) 0px -130px;
-  margin: 14px 23px 0 0;
+  margin: 12px 23px 0 0;
   /*+border-radius:7px;*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;

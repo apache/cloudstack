@@ -317,29 +317,16 @@
 
         var chartItems = {
           // The keys are based on the internal type ID associated with each capacity
-          8: {
-            name: 'Public IPs'
-          },
-
-          5: {
-            name: 'Private IPs'
-          },
-
-          0: {
-            name: 'Memory Allocated'
-          },
-
-          1: {
-            name: 'CPU Allocated'
-          },
-
-          2: {
-            name: 'Primary Storage'
-          },
-
-          6: {
-            name: 'Secondary Storage'
-          }
+          0: { name: 'Memory' },
+          1: { name: 'CPU' },
+          2: { name: 'Storage' },
+          3: { name: 'Allocated Storage' },
+          4: { name: 'Public IP' },
+          5: { name: 'Private IP' },
+          6: { name: 'Secondary Storage' },
+          7: { name: 'VLAN' },
+          8: { name: 'Direct Public IP' },
+          9: { name: 'Local Storage' }
         };
 
         $top.append($title);
