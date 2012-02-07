@@ -1,17 +1,34 @@
 (function(cloudStack) {
   cloudStack.projects = {
     requireInvitation: function(args) {
-      return window.g_projectsInviteRequired;
+      return g_capabilities.projectinviterequired;
+    },
+
+    invitationCheck: function(args) {
+      $.ajax({
+        url: createURL('listProjectInvitations'),
+        data: { state: 'Pending' },
+        success: function(json) {
+          args.response.success({
+            data: json.listprojectinvitationsresponse.projectinvitation ?
+              json.listprojectinvitationsresponse.projectinvitation : []
+          });
+        }
+      });
     },
 
     resourceManagement: {
-      update: function(args) {
+      update: function(args, projectID) {
         var totalResources = 5;
         var updatedResources = 0;
+
+        projectID = projectID ? projectID : cloudStack.context.projects[0].id;
+
         $.each(args.data, function(key, value) {
           $.ajax({
-            url: createURL('updateResourceLimit'),
+            url: createURL('updateResourceLimit', { ignoreProject: true }),
             data: {
+              projectid: projectID,
               resourcetype: key,
               max: args.data[key]
             },
@@ -25,9 +42,14 @@
         });
       },
 
-      dataProvider: function(args) {
+      dataProvider: function(args, projectID) {
+        projectID = projectID ? projectID : cloudStack.context.projects[0].id;
+
         $.ajax({
-          url: createURL('listResourceLimits'),
+          url: createURL('listResourceLimits', { ignoreProject: true }),
+          data: {
+            projectid: projectID
+          },
           success: function(json) {
             args.response.success({
               data: $.map(
@@ -70,7 +92,6 @@
             });
           }
         });
-
       }
     },
 
@@ -254,14 +275,16 @@
     },
     inviteForm: {
       noSelect: true,
+      noHeaderActionsColumn: true,
+      ignoreEmptyFields: true,
       fields: {
         'email': { edit: true, label: 'E-mail' },
-        'account': { edit: 'ignore', label: 'Account' },
+        'account': { edit: true, label: 'Account' },
         'state': { edit: 'ignore', label: 'Status' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'E-mail invite',
+        label: 'Invite',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),
@@ -291,9 +314,9 @@
         }
       },
       actionPreFilter: function(args) {
-        if (cloudStack.context.projects &&
-            cloudStack.context.projects[0] &&
-            !cloudStack.context.projects[0].isNew) {
+        if (args.context.projects &&
+            args.context.projects[0] &&
+            !args.context.projects[0].isNew) {
           return args.context.actions;
         }
 
@@ -328,12 +351,15 @@
         $.ajax({
           url: createURL('listProjectInvitations', { ignoreProject: true }),
           data: {
+            state: 'Pending',
+            listAll: true,
             projectId: args.context.projects[0].id
           },
           dataType: 'json',
           async: true,
           success: function(data) {
-            var invites = data.listprojectinvitationsresponse.projectinvitation;
+            var invites = data.listprojectinvitationsresponse.projectinvitation ?
+              data.listprojectinvitationsresponse.projectinvitation : [];
             args.response.success({
               data: $.map(invites, function(elem) {
                 return {
@@ -350,6 +376,9 @@
     },
     addUserForm: {
       noSelect: true,
+      hideForm: function() {
+        return g_capabilities.projectinviterequired;
+      },
       fields: {
         'username': { edit: true, label: 'Account' },
         'role': { edit: 'ignore', label: 'Role' },
@@ -385,7 +414,7 @@
         }
       },
       actionPreFilter: function(args) {
-        if (!cloudStack.context.projects &&
+        if (!args.context.projects &&
             args.context.multiRule[0].role != 'Admin') { // This is for the new project wizard
             return ['destroy'];
         }
@@ -432,7 +461,7 @@
             $.ajax({
               url: createURL('updateProject', { ignoreProject: true }),
               data: {
-                id: cloudStack.context.projects[0].id,
+                id: args.context.projects[0].id,
                 account: args.context.multiRule[0].username
               },
               dataType: 'json',
@@ -526,20 +555,20 @@
             state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' } }
           },
 
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-					
-					  var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true';					
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }
+
+            var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true';
             $.ajax({
               url: createURL(apiCmd, { ignoreProject: true }),
               dataType: 'json',
@@ -623,107 +652,218 @@
                   }
                 }
               }
-            },
+            }
+          },
 
-            disable: {
-              label: 'Suspend project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('suspendProject'),
-                  data: {
-                    id: args.context.projects[0].id
-                  },
-                  success: function(json) {
-                    args.response.success({
-                      _custom: {
-                        jobId: json.suspendprojectresponse.jobid,
-                        getUpdatedItem: function() {
-                          return { state: 'Suspended' };
-                        }
-                      }
-                    });
-                  },
-                  error: function(json) {
-                    args.response.error(parseXMLHttpResponse(json));
-                  }
-                });
-              },
-              messages: {
-                confirm: function() { return 'Are you sure you want to suspend this project?'; },
-                notification: function() { return 'Suspended project'; }
-              },
-              notification: { poll: pollAsyncJobResult }
-            },
-
-            enable: {
-              label: 'Activate project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('activateProject'),
-                  data: {
-                    id: args.context.projects[0].id
-                  },
-                  success: function(json) {
-                    args.response.success({
-                      _custom: {
-                        jobId: json.activaterojectresponse.jobid, // NOTE: typo
-                        getUpdatedItem: function() {
-                          return { state: 'Active' };
-                        }
-                      }
-                    });
-                  },
-                  error: function(json) {
-                    args.response.error(parseXMLHttpResponse(json));
-                  }
-                });
-              },
-              messages: {
-                confirm: function() { return 'Are you sure you want to activate this project?'; },
-                notification: function() { return 'Activated project'; }
-              },
-              notification: { poll: pollAsyncJobResult }
-            },
-
-            destroy: {
-              label: 'Remove project',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('deleteProject', { ignoreProject: true }),
-                  data: {
-                    id: args.data.id
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        getUpdatedItem: function(data) {
-                          return $.extend(data, { state: 'Destroyed' });
-                        },
-                        getActionFilter: function(args) {
-                          return function() {
-                            return [];
-                          };
-                        },
-                        jobId: data.deleteprojectresponse.jobid
-                      }
-                    });
-                  }
-                });
-              },
-
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to remove ' + args.name + '?';
+          detailView: {
+            actions: {
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('updateProject'),
+                    data: $.extend(true, {}, args.context.projects[0], args.data),
+                    success: function(json) {
+                      args.response.success();
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
                 },
-                notification: function(args) {
-                  return 'Removed project';
+                messages: {
+                  notification: function(args) { return 'Edited project details'; }
+                }
+              },
+              disable: {
+                label: 'Suspend project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('suspendProject'),
+                    data: {
+                      id: args.context.projects[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.suspendprojectresponse.jobid,
+                          getUpdatedItem: function() {
+                            return { state: 'Suspended' };
+                          }
+                        }
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function() { return 'Are you sure you want to suspend this project?'; },
+                  notification: function() { return 'Suspended project'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              enable: {
+                label: 'Activate project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('activateProject'),
+                    data: {
+                      id: args.context.projects[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.activaterojectresponse.jobid, // NOTE: typo
+                          getUpdatedItem: function() {
+                            return { state: 'Active' };
+                          }
+                        }
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function() { return 'Are you sure you want to activate this project?'; },
+                  notification: function() { return 'Activated project'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              destroy: {
+                label: 'Remove project',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('deleteProject', { ignoreProject: true }),
+                    data: {
+                      id: args.data.id
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {
+                      args.response.success({
+                        _custom: {
+                          getUpdatedItem: function(data) {
+                            return $.extend(data, { state: 'Destroyed' });
+                          },
+                          getActionFilter: function(args) {
+                            return function() {
+                              return [];
+                            };
+                          },
+                          jobId: data.deleteprojectresponse.jobid
+                        }
+                      });
+                    }
+                  });
+                },
+
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to remove ' + args.name + '?';
+                  },
+                  notification: function(args) {
+                    return 'Removed project';
+                  }
+                },
+
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
+            tabFilter: function(args) {
+              var project = args.context.projects[0];
+              var projectOwner = project.account;
+              var currentAccount = args.context.users[0].account;
+
+              if ((!isAdmin() && !isDomainAdmin()) &&
+                  (currentAccount != projectOwner)) return ['accounts', 'invitations', 'resources'];
+
+              if (!cloudStack.projects.requireInvitation()) {
+                return ['invitations'];
+              }
+
+              return [];
+            },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    displaytext: { label: 'Display text', isEditable: true },
+                    domain: { label: 'Domain' },
+                    account: { label: 'Account'},
+                    state: { label: 'State' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  var projectID = args.context.projects[0].id;
+
+                  $.ajax({
+                    url: createURL('listProjects'),
+                    data: {
+                      listAll: true,
+                      id: projectID
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        data: json.listprojectsresponse.project[0],
+                        actionFilter: projectsActionFilter
+                      });
+                    }
+                  });
                 }
               },
 
-              notification: {
-                poll: pollAsyncJobResult
+              accounts: {
+                title: 'Accounts',
+                custom: function(args) {
+                  var project = args.context.projects[0];
+                  var multiEditArgs = $.extend(
+                    true, {},
+                    cloudStack.projects.addUserForm,
+                    {
+                      context: { projects: [project] }
+                    }
+                  );
+                  var $users = $('<div>').multiEdit(multiEditArgs);
+                  
+                  return $users;
+                }
+              },
+
+              invitations: {
+                title: 'Invitations',
+                custom: function(args) {
+                  var project = args.context.projects[0];
+                  var $invites = cloudStack.uiCustom.projectsTabs.userManagement({
+                    useInvites: true,
+                    context: { projects: [project] }
+                  });
+                  
+                  return $invites;
+                }
+              },
+
+              resources: {
+                title: 'Resources',
+                custom: function(args) {
+                  var $resources = cloudStack.uiCustom
+                    .projectsTabs.dashboardTabs.resources({
+                      projectID: args.context.projects[0].id
+                  });
+
+                  return $('<div>').addClass('project-dashboard').append($resources);
+                }
               }
             }
           }
@@ -751,20 +891,73 @@
             $.ajax({
               url: createURL('listProjectInvitations'),
               data: {
-                account: cloudStack.context.users[0].account,
-                domainid: cloudStack.context.users[0].domainid,
                 state: 'Pending'
               },
               success: function(data) {
                 args.response.success({
                   actionFilter: projectInvitationActionFilter,
-                  data: data.listprojectinvitationsresponse.projectinvitation
+                  data: data.listprojectinvitationsresponse.projectinvitation ?
+                    data.listprojectinvitationsresponse.projectinvitation : []
                 });
               }
             });
           },
 
           actions: {
+            enterToken: {
+              label: 'Enter Token',
+              isHeader: true,
+              addRow: false,
+              preFilter: function(args) {
+                var invitationsPresent = false;
+                
+                $.ajax({
+                  url: createURL('listProjectInvitations'),
+                  data: { state: 'Pending' },
+                  async: false,
+                  success: function(json) {
+                    if (json.listprojectinvitationsresponse.count) {
+                      invitationsPresent = true;
+                    }
+                  }
+                });
+
+                return !invitationsPresent;
+              },
+              createForm: {
+                desc: 'Please enter the token that you were given in your invite e-mail.',
+                fields: {
+                  projectid: { label: 'Project ID', validation: { required: true }},
+                  token: { label: 'Token', validation: { required: true }}
+                }
+              },
+              action: function(args) {
+                $.ajax({
+                  url: createURL('updateProjectInvitation'),
+                  data: args.data,
+                  success: function(json) {
+                    args.response.success({
+                      _custom: {
+                        jobId: json.updateprojectinvitationresponse.jobid
+                      }
+                    });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
+                  }
+                });
+              },
+              messages: {
+                notification: function() {
+                  return 'Accepted project invitation';
+                },
+                complete: function() {
+                  return 'You have now joined a project. Please switch to Project view to see the project.';
+                }
+              },
+              notification: { poll: pollAsyncJobResult }
+            },
+            
             accept: {
               label: 'Accept Invitation',
               action: function(args) {
@@ -827,7 +1020,7 @@
   };
 
   var projectsActionFilter = function(args) {
-    var allowedActions = ['destroy'];
+    var allowedActions = ['destroy', 'edit'];
 
     if (args.context.item.account == cloudStack.context.users[0].account ||
         isAdmin() || isDomainAdmin()) {

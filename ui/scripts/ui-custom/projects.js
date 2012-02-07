@@ -1,5 +1,5 @@
 (function(cloudStack, $) {
-  var pageElems = {
+  var pageElems = cloudStack.uiCustom.projectsTabs = {
     /**
      * User management multi-edit
      */
@@ -8,9 +8,56 @@
             cloudStack.projects.addUserForm :
             cloudStack.projects.inviteForm;
 
-      return $('<div>').multiEdit($.extend(true, {}, multiEdit, {
+      var $multi = $('<div>').multiEdit($.extend(true, {}, multiEdit, {
         context: args.context
       }));
+
+      if (args.useInvites) {
+        var $fields = $multi.find('form table').find('th, td');
+        var $accountFields = $fields.filter(function() {
+          return $(this).hasClass('account');
+        });
+        var $emailFields = $fields.filter(function() {
+          return $(this).hasClass('email');
+        });
+        
+        $multi.prepend(
+          $('<div>').addClass('add-by')
+            .append($('<span>').html('Add by:'))
+            .append(
+              $('<div>').addClass('selection')
+                .append(
+                  $('<input>').attr({
+                    type: 'radio',
+                    name: 'add-by',
+                    checked: 'checked'
+                  }).click(function() {
+                    $accountFields.show();
+                    $emailFields.hide();
+                    $emailFields.find('input').val('');
+
+                    return true;
+                  }).click()
+                )
+                .append($('<label>').html('Account'))
+                .append(
+                  $('<input>').attr({
+                    type: 'radio',
+                    name: 'add-by'
+                  }).click(function() {
+                    $accountFields.hide();
+                    $accountFields.find('input').val('');
+                    $emailFields.show();
+
+                    return true;
+                  })
+                )
+                .append($('<label>').html('E-mail'))
+            )
+        );
+      }
+
+      return $multi;
     },
 
     dashboardTabs: {
@@ -87,7 +134,9 @@
         return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
       },
 
-      resources: function() {
+      resources: function(options) {
+        if (!options) options = {};
+        
         var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
         var $form = $('<form>');
         var $submit = $('<input>').attr({
@@ -136,7 +185,7 @@
                       });
                     }
                   }
-                });
+                }, options.projectID);
 
                 return false;
               });
@@ -145,7 +194,7 @@
               $form.appendTo($resources);
             }
           }
-        });
+        }, options.projectID);
 
         return $resources;
       }
@@ -303,7 +352,11 @@
                     });
                     var $nextButton = $('<div>').addClass('button confirm next').html('Next');
 
-                    $newProject.find('.title').html('Add Accounts to ' + args.data.name);
+                    $newProject.find('.title').html(
+                      cloudStack.projects.requireInvitation() ?
+                        'Invite to ' + args.data.name :
+                        'Add Accounts to ' + args.data.name
+                    );
                     $nextButton.appendTo($userManagement).click(function() {
                       $newProject.find('.title').html('Review');
                       $userManagement.replaceWith(function() {
@@ -329,7 +382,10 @@
                               .append(
                                 // Users tab
                                 $('<li>').addClass('first').append(
-                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html('Accounts')
+                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html(
+                                    cloudStack.projects.requireInvitation() ?
+                                      'Invitations' : 'Accounts'
+                                  )
                                 )
                               );
                         
@@ -362,7 +418,7 @@
                             fields: !cloudStack.projects.requireInvitation() ? {
                               username: { label: 'Account' }
                             } : {
-                              email: { label: 'E-mail invite'}
+                              account: { label: 'Invited Accounts'}
                             },
                             actions: !cloudStack.projects.requireInvitation() ? {
                               destroy: {
@@ -398,7 +454,7 @@
                                     return !cloudStack.projects.requireInvitation() ? {
                                       username: $(elem).find('td.username span').html()
                                     } : {
-                                      email: $(elem).find('td.email span').html()
+                                      account: $(elem).find('td.account span').html()
                                     };
                                   })
                                 });
