@@ -1830,7 +1830,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove load balancer rule ' + args.context.multiRule[0].id,
+                                  label: 'Remove load balancer rule',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -2026,15 +2026,17 @@
                       }
                     }),
                     fields: {
-                      'private-ports': {
+                      //'private-ports': {
+											privateport: {
                         edit: true,
-                        label: 'Private Ports',
-                        range: ['privateport', 'privateendport']
+                        label: 'Private Port',
+                        //range: ['privateport', 'privateendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
                       },
-                      'public-ports': {
+                      //'public-ports': {
+											publicport: {
                         edit: true,
-                        label: 'Public Ports',
-                        range: ['publicport', 'publicendport']
+                        label: 'Public Port',
+                        //range: ['publicport', 'publicendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
                       },
                       'protocol': {
                         label: 'Protocol',
@@ -2103,7 +2105,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove port forwarding rule ' + args.context.multiRule[0].id,
+                                  label: 'Remove port forwarding rule',
                                   poll: pollAsyncJobResult
                                 }
                               });
