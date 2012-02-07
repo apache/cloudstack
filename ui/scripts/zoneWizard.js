@@ -611,6 +611,7 @@
                 var items = [];
                 items.push({id: "nfs", description: "nfs"});
                 items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+								items.push({id: "clvm", description: "CLVM"});
                 args.response.success({data: items});
               }
               else if(selectedClusterObj.hypervisortype == "XenServer") {
@@ -659,7 +660,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();
+									$form.find('[rel=volumegroup]').hide();
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
@@ -681,7 +682,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();
+									$form.find('[rel=volumegroup]').hide();
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
@@ -703,7 +704,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();													
+									$form.find('[rel=volumegroup]').hide();													
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
@@ -723,7 +724,7 @@
                   $form.find('[rel=lun]').css('display', 'block');
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();
+									$form.find('[rel=volumegroup]').hide();
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
@@ -731,23 +732,23 @@
                 }			
 								else if($(this).val() == "clvm") {
 									//$("#add_pool_server_container", $dialogAddPool).hide();
-									$form.find('.form-item[rel=server]').hide();
+									$form.find('[rel=server]').hide();
 									//$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
-									$form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
+									$form.find('[rel=server]').find(".value").find("input").val("localhost");
 									
 									//$('li[input_group="nfs"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=path]').hide();
+									$form.find('[rel=path]').hide();
 									
 									//$('li[input_group="iscsi"]', $dialogAddPool).hide();
-									 $form.find('.form-item[rel=iqn]').hide();
-									$form.find('.form-item[rel=lun]').hide();
+									 $form.find('[rel=iqn]').hide();
+									$form.find('[rel=lun]').hide();
 									
 									//$('li[input_group="clvm"]', $dialogAddPool).show();
-									$form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
+									$form.find('[rel=volumegroup]').css('display', 'inline-block');
 									
 									//$('li[input_group="vmfs"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=vCenterDataCenter]').hide();
-									$form.find('.form-item[rel=vCenterDataStore]').hide();
+									$form.find('[rel=vCenterDataCenter]').hide();
+									$form.find('[rel=vCenterDataStore]').hide();
 								}										
                 else if(protocol == "vmfs") {
                   //$dialogAddPool.find("#add_pool_server_container").show();
@@ -763,7 +764,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();
+									$form.find('[rel=volumegroup]').hide();
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).show();
                   $form.find('[rel=vCenterDataCenter]').css('display', 'block');
@@ -784,7 +785,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();													
+									$form.find('[rel=volumegroup]').hide();													
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
@@ -801,7 +802,7 @@
                   $form.find('[rel=lun]').hide();
 
 									//$('li[input_group="clvm"]', $dialogAddPool).hide();
-									$form.find('.form-item[rel=volumegroup]').hide();
+									$form.find('[rel=volumegroup]').hide();
 									
                   //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                   $form.find('[rel=vCenterDataCenter]').hide();
