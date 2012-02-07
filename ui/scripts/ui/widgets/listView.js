@@ -162,33 +162,47 @@
                         message: messages.complete(args.data)
                       });
                     }
+
+                    if (options.complete) {
+                      options.complete(args);
+                    }
                   },
 
                   {},
 
                   // Error
                   function(args) {
-                    if ($instanceRow.data('list-view-new-item')) {
-                      // For create forms
-                      $instanceRow.remove();
-                    } else {
-                      // For standard actions
-                      replaceItem(
-                        $instanceRow,
-                        $.extend($instanceRow.data('json-obj'), args.data),
-                        args.actionFilter ?
-                          args.actionFilter :
-                          $instanceRow.data('list-view-action-filter')
-                      );
+                    if (!isHeader) {
+                      if ($instanceRow.data('list-view-new-item')) {
+                        // For create forms
+                        $instanceRow.remove();
+                      } else {
+                        // For standard actions
+                        replaceItem(
+                          $instanceRow,
+                          $.extend($instanceRow.data('json-obj'), args.data),
+                          args.actionFilter ?
+                            args.actionFilter :
+                            $instanceRow.data('list-view-action-filter')
+                        );
+                      }
+                    }                 
+
+                    if (options.error) {
+                      options.error(args);
                     }
                   }
                 );
               },
               error: function(message) {
-                if (($.isPlainObject(args.action.createForm) && args.action.addRow != 'false') ||
-                    (!args.action.createForm && args.action.addRow == 'true')) {
-                  $instanceRow.remove();                  
+                if (!isHeader) {
+                  if (($.isPlainObject(args.action.createForm) && args.action.addRow != 'false') ||
+                      (!args.action.createForm && args.action.addRow == 'true')) {
+                    $instanceRow.remove();                  
+                  }
                 }
+
+                if (options.error) options.error(message);
 
                 if (message) cloudStack.dialog.notice({ message: message });
               }
@@ -262,11 +276,21 @@
                   $form: args.$form
                 });
               } else {
+                var $loading = $('<div>').addClass('loading-overlay');
+
+                $loading.appendTo($listView);
                 performAction(args.data, {
                   ref: args.ref,
                   context: createFormContext,
                   $form: args.$form,
-                  isHeader: isHeader
+                  isHeader: isHeader,
+                  complete: function(args) {
+                    $loading.remove();
+                    $listView.listView('refresh');
+                  },
+                  error: function(args) {
+                    $loading.remove();
+                  }
                 });
               }
             },
