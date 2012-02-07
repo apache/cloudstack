@@ -1,7 +1,7 @@
 (function(cloudStack) {
   cloudStack.projects = {
     requireInvitation: function(args) {
-      return window.g_projectsInviteRequired;
+      return g_capabilities.projectinviterequired;
     },
 
     resourceManagement: {
@@ -262,14 +262,16 @@
     },
     inviteForm: {
       noSelect: true,
+      noHeaderActionsColumn: true,
+      ignoreEmptyFields: true,
       fields: {
         'email': { edit: true, label: 'E-mail' },
-        'account': { edit: 'ignore', label: 'Account' },
+        'account': { edit: true, label: 'Account' },
         'state': { edit: 'ignore', label: 'Status' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'E-mail invite',
+        label: 'Invite',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),
@@ -284,7 +286,18 @@
               data: args.data,
               args.response.success({
                 _custom: {
-                  jobId: data.addaccounttoprojectresponse.jobid
+                  jobId: data.addaccounttoprojectresponse.jobid,
+                  onComplete: function(json) {
+                    if (args.data.email) {
+                      cloudStack.dialog.notice({
+                        message: 'Invitation sent to ' + args.data.email
+                      });
+                    } else {
+                      cloudStack.dialog.notice({
+                        message: 'Pending invitation added for account ' + args.data.account
+                      });                      
+                    }
+                  }
                 },
                 notification: {
                   label: 'Invited user to project',
@@ -336,12 +349,14 @@
         $.ajax({
           url: createURL('listProjectInvitations', { ignoreProject: true }),
           data: {
+            listAll: true,
             projectId: args.context.projects[0].id
           },
           dataType: 'json',
           async: true,
           success: function(data) {
-            var invites = data.listprojectinvitationsresponse.projectinvitation;
+            var invites = data.listprojectinvitationsresponse.projectinvitation ?
+              data.listprojectinvitationsresponse.projectinvitation : [];
             args.response.success({
               data: $.map(invites, function(elem) {
                 return {
@@ -358,6 +373,9 @@
     },
     addUserForm: {
       noSelect: true,
+      hideForm: function() {
+        return g_capabilities.projectinviterequired;
+      },
       fields: {
         'username': { edit: true, label: 'Account' },
         'role': { edit: 'ignore', label: 'Role' },
@@ -806,6 +824,19 @@
                 }
               },
 
+              invitations: {
+                title: 'Invitations',
+                custom: function(args) {
+                  var project = args.context.projects[0];
+                  var $invites = cloudStack.uiCustom.projectsTabs.userManagement({
+                    useInvites: true,
+                    context: { projects: [project] }
+                  });
+                  
+                  return $invites;
+                }
+              },
+
               resources: {
                 title: 'Resources',
                 custom: function(args) {
@@ -843,6 +874,7 @@
             $.ajax({
               url: createURL('listProjectInvitations'),
               data: {
+                listAll: true,
                 account: cloudStack.context.users[0].account,
                 domainid: cloudStack.context.users[0].domainid,
                 state: 'Pending'
@@ -850,7 +882,8 @@
               success: function(data) {
                 args.response.success({
                   actionFilter: projectInvitationActionFilter,
-                  data: data.listprojectinvitationsresponse.projectinvitation
+                  data: data.listprojectinvitationsresponse.projectinvitation ?
+                    data.listprojectinvitationsresponse.projectinvitation : []
                 });
               }
             });

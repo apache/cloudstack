@@ -6184,7 +6184,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .multi-edit label.error {
   font-size: 10px;
-  margin: 0 0 0 10px;
+  margin: 3px 0 0;
+  float: left;
 }
 
 .multi-edit .data-table td span {
@@ -6440,27 +6441,27 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #F2F0F0;
 }
 
-/*Security Rules*/
-.security-rules .add-by {
+.ui-tabs-panel .add-by {
   font-size: 12px;
   color: #536474;
   width: 94%;
   margin: 13px 0 0 14px;
 }
 
-.security-rules .add-by .selection {
+.ui-tabs-panel .add-by .selection {
   width: 236px;
   margin: 8px 0 0;
 }
 
-.security-rules .add-by .selection input {
+.ui-tabs-panel .add-by .selection input {
   margin: 0 6px 0 0;
 }
 
-.security-rules .add-by .selection label {
+.ui-tabs-panel .add-by .selection label {
   margin: 0 22px 0 0;
 }
 
+/*Security Rules*/
 .security-rules .multi-edit input {
   width: 69px;
   margin: 0 0 0 9px;

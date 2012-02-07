@@ -827,6 +827,10 @@
       });
     };
 
+    if (args.hideForm && args.hideForm()){
+      $multiForm.detach();
+    }
+
     // Get existing data
     getData();
 

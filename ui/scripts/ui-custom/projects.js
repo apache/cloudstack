@@ -8,9 +8,54 @@
             cloudStack.projects.addUserForm :
             cloudStack.projects.inviteForm;
 
-      return $('<div>').multiEdit($.extend(true, {}, multiEdit, {
+      var $multi = $('<div>').multiEdit($.extend(true, {}, multiEdit, {
         context: args.context
       }));
+
+      if (args.useInvites) {
+        var $fields = $multi.find('form table').find('th, td');
+        var $accountFields = $fields.filter(function() {
+          return $(this).hasClass('account');
+        });
+        var $emailFields = $fields.filter(function() {
+          return $(this).hasClass('email');
+        });
+        
+        $multi.prepend(
+          $('<div>').addClass('add-by')
+            .append($('<span>').html('Add by:'))
+            .append(
+              $('<div>').addClass('selection')
+                .append(
+                  $('<input>').attr({
+                    type: 'radio',
+                    name: 'add-by',
+                    checked: 'checked'
+                  }).click(function() {
+                    $accountFields.show();
+                    $emailFields.hide();
+
+                    return true;
+                  }).click()
+                )
+                .append($('<label>').html('Account'))
+                .append(
+                  $('<input>').attr({
+                    type: 'radio',
+                    name: 'add-by'
+                  }).click(function() {
+                    $accountFields.hide();
+                    $emailFields.show();
+
+                    return true;
+                  })
+                )
+                .append($('<label>').html('E-mail'))
+            )
+        );
+      }
+
+      return $multi;
     },
 
     dashboardTabs: {
@@ -305,7 +350,11 @@
                     });
                     var $nextButton = $('<div>').addClass('button confirm next').html('Next');
 
-                    $newProject.find('.title').html('Add Accounts to ' + args.data.name);
+                    $newProject.find('.title').html(
+                      cloudStack.projects.requireInvitation() ?
+                        'Invite to ' + args.data.name :
+                        'Add Accounts to ' + args.data.name
+                    );
                     $nextButton.appendTo($userManagement).click(function() {
                       $newProject.find('.title').html('Review');
                       $userManagement.replaceWith(function() {
