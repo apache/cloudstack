@@ -22,9 +22,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.ejb.Local;
 
@@ -32,14 +34,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -93,19 +99,20 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent," +
                                                                          " capacity.capacity_type, capacity.data_center_id "+
                                                                          "FROM `cloud`.`op_host_capacity` capacity "+
-                                                                         "WHERE  total_capacity > 0 AND data_center_id is not null ";
+                                                                         "WHERE  total_capacity > 0 AND data_center_id is not null AND capacity_state='Enabled'";
     private static final String LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART2 = " GROUP BY data_center_id, capacity_type order by percent desc limit ";
     private static final String LIST_CAPACITY_GROUP_BY_POD_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent," +
                                                                         " capacity.capacity_type, capacity.data_center_id, pod_id "+
                                                                         "FROM `cloud`.`op_host_capacity` capacity "+
-                                                                        "WHERE  total_capacity > 0 AND pod_id is not null ";
+                                                                        "WHERE  total_capacity > 0 AND pod_id is not null AND capacity_state='Enabled'";
     private static final String LIST_CAPACITY_GROUP_BY_POD_TYPE_PART2 = " GROUP BY pod_id, capacity_type order by percent desc limit ";
     
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART1 = "SELECT ((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / (case capacity_type when 1 then (sum(total_capacity) * (select value from `cloud`.`configuration` where name like 'cpu.overprovisioning.factor')) else sum(total_capacity) end)) percent,"+
                                                                             "capacity.capacity_type, capacity.data_center_id, pod_id, cluster_id "+
                                                                             "FROM `cloud`.`op_host_capacity` capacity "+
-                                                                            "WHERE  total_capacity > 0 AND cluster_id is not null ";
+                                                                            "WHERE  total_capacity > 0 AND cluster_id is not null AND capacity_state='Enabled'";
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
+    private static final String UPDATE_CAPACITY_STATE = "UPDATE `cloud`.`op_host_capacity` SET capacity_state = ? WHERE ";
     
     
     
@@ -126,6 +133,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	_allFieldsSearch.and("podId", _allFieldsSearch.entity().getPodId(), SearchCriteria.Op.EQ);
     	_allFieldsSearch.and("clusterId", _allFieldsSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
     	_allFieldsSearch.and("capacityType", _allFieldsSearch.entity().getCapacityType(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("capacityState", _allFieldsSearch.entity().getCapacityState(), SearchCriteria.Op.EQ);
     	
     	_allFieldsSearch.done();
     }
@@ -673,6 +681,47 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+    
+    @Override
+    public void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState) {
+        Transaction txn = Transaction.currentTxn();
+        StringBuilder sql = new StringBuilder(UPDATE_CAPACITY_STATE); 
+        List<Long> resourceIdList = new ArrayList<Long>();
+        
+        if (dcId != null){
+            sql.append(" data_center_id = ?");
+            resourceIdList.add(dcId);
+        }
+        if (podId != null){
+            sql.append(" pod_id = ?");
+            resourceIdList.add(podId);
+        }
+        if (clusterId != null){
+            sql.append(" cluster_id = ?");
+            resourceIdList.add(clusterId);
+        }
+        if (hostId != null){
+            sql.append(" host_id = ?");
+            resourceIdList.add(hostId);
+        }
+        
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();            
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setString(1, capacityState);
+            for (int i = 0; i < resourceIdList.size(); i++){                
+                pstmt.setLong( 2+i, resourceIdList.get(i));
+            }            
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Error updating CapacityVO", e);
+        } finally {
+            txn.close();
         }
     }
 }

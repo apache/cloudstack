@@ -611,6 +611,7 @@ CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
 update `cloud`.`networks` set guru_name='StorageNetworkGuru' where traffic_type='Storage';
 
 ALTER TABLE  `cloud`.`event` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
+ALTER TABLE  `cloud`.`op_host_capacity` ADD COLUMN `capacity_state` varchar(32) NOT NULL DEFAULT 'Enabled';
 UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from `cloud`.`account` acc where acc.id = e.account_id) where e.domain_id = 0;
 
 update `cloud`.`vm_template` set removed=now() where id=2;

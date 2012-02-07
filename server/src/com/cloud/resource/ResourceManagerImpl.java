@@ -899,6 +899,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
                 throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
             } else {
+                _capacityDao.updateCapacityState(null, null, cluster.getId(), null, allocationState);
                 cluster.setAllocationState(newAllocationState);
                 doUpdate = true;
             }
@@ -1036,6 +1037,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
         }
         
+        // TO DO - Make it more granular and have better conversion into capacity type
+        _capacityDao.updateCapacityState(null, null, null, host.getId(), nextState.toString());
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
     

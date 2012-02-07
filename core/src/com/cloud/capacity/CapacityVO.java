@@ -64,6 +64,9 @@ public class CapacityVO implements Capacity {
     @Column(name="capacity_type")
     private short capacityType;
     
+    @Column(name="capacity_state")
+    private CapacityState capacityState = CapacityState.Enabled;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     protected Date created;    
     
@@ -164,7 +167,15 @@ public class CapacityVO implements Capacity {
         this.capacityType = capacityType;
     }
 
-	public Date getCreated() {
+	public CapacityState getCapacityState() {
+        return capacityState;
+    }
+
+    public void setCapacityState(CapacityState capacityState) {
+        this.capacityState = capacityState;
+    }
+
+    public Date getCreated() {
 		return created;
 	}
 

@@ -1252,6 +1252,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `reserved_capacity` bigint signed NOT NULL,
   `total_capacity` bigint signed NOT NULL,
   `capacity_type` int(1) unsigned NOT NULL,
+  `capacity_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this capacity enabled for allocation for new resources',
   `update_time` datetime COMMENT 'time the capacity was last updated',
   `created` datetime COMMENT  'date created',
   PRIMARY KEY  (`id`),

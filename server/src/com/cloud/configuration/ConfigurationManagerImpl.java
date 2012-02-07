@@ -912,6 +912,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             Grouping.AllocationState allocationState = null;
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                _capacityDao.updateCapacityState(null, pod.getId(), null, null, allocationStateStr);
                 pod.setAllocationState(allocationState);
             }
 
@@ -1490,7 +1491,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     throw new InvalidParameterValueException("Cannot enable this Zone since: " + ex.getMessage());
                 }
             }
-
+            _capacityDao.updateCapacityState(zone.getId(), null, null, null, allocationStateStr);
             zone.setAllocationState(allocationState);
         }
 
