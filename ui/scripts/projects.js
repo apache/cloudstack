@@ -904,6 +904,22 @@
               label: 'Enter Token',
               isHeader: true,
               addRow: false,
+              preFilter: function(args) {
+                var invitationsPresent = false;
+                
+                $.ajax({
+                  url: createURL('listProjectInvitations'),
+                  data: { state: 'Pending' },
+                  async: false,
+                  success: function(json) {
+                    if (json.listprojectinvitationsresponse.count) {
+                      invitationsPresent = true;
+                    }
+                  }
+                });
+
+                return !invitationsPresent;
+              },
               createForm: {
                 desc: 'Please enter the token that you were given in your invite e-mail.',
                 fields: {
