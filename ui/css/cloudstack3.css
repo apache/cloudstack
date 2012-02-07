@@ -6825,9 +6825,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   left: 16px;
   top: 41px;
   cursor: pointer;
+  max-width: 98px;
+  max-height: 21px;
   padding: 7px;
   font-size: 14px;
   position: absolute;
+  overflow: hidden;
   color: #485563;
   font-weight: bold;
   /*+text-shadow:0px 1px 1px #000000;*/
@@ -6866,10 +6869,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .network-chart li.firewall {
-  /*+placement:shift 209px 174px;*/
+  /*+placement:shift 206px 211px;*/
   position: relative;
-  left: 209px;
-  top: 174px;
+  left: 206px;
+  top: 211px;
   position: absolute;
 }
 
