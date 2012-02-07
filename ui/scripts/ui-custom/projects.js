@@ -380,7 +380,10 @@
                               .append(
                                 // Users tab
                                 $('<li>').addClass('first').append(
-                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html('Accounts')
+                                  $('<a>').attr({ href: '#new-project-review-tabs-users'}).html(
+                                    cloudStack.projects.requireInvitation() ?
+                                      'Invitations' : 'Accounts'
+                                  )
                                 )
                               );
                         
@@ -413,7 +416,7 @@
                             fields: !cloudStack.projects.requireInvitation() ? {
                               username: { label: 'Account' }
                             } : {
-                              email: { label: 'E-mail invite'}
+                              account: { label: 'Invited Accounts'}
                             },
                             actions: !cloudStack.projects.requireInvitation() ? {
                               destroy: {
@@ -449,7 +452,7 @@
                                     return !cloudStack.projects.requireInvitation() ? {
                                       username: $(elem).find('td.username span').html()
                                     } : {
-                                      email: $(elem).find('td.email span').html()
+                                      account: $(elem).find('td.account span').html()
                                     };
                                   })
                                 });

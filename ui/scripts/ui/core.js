@@ -269,6 +269,26 @@
     // Validation
     $.extend($.validator.messages, { required: 'Required field' });
 
+    // Check for pending project invitations
+    cloudStack.projects.invitationCheck({
+      context: cloudStack.context,
+      response: {
+        success: function(args) {
+          if (!args.data.length) return;
+          
+          var projectList = $.map(args.data, function(invitation) {
+            return '<li>' + invitation.project + '</li>';
+          }).join('');
+
+          cloudStack.dialog.notice({
+            message: 'You have pending project invitations for:' +
+              '<ul>' + projectList + '</ul>' +
+              '<p>To view, please go to the projects section, then select invitations from the drop-down.</p>'
+          });
+        }
+      }
+    });
+    
     return this;
   };
 

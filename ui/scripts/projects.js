@@ -4,6 +4,19 @@
       return g_capabilities.projectinviterequired;
     },
 
+    invitationCheck: function(args) {
+      $.ajax({
+        url: createURL('listProjectInvitations'),
+        data: { state: 'Pending' },
+        success: function(json) {
+          args.response.success({
+            data: json.listprojectinvitationsresponse.projectinvitation ?
+              json.listprojectinvitationsresponse.projectinvitation : []
+          });
+        }
+      });
+    },
+
     resourceManagement: {
       update: function(args, projectID) {
         var totalResources = 5;
@@ -292,10 +305,6 @@
                       cloudStack.dialog.notice({
                         message: 'Invitation sent to ' + args.data.email
                       });
-                    } else {
-                      cloudStack.dialog.notice({
-                        message: 'Pending invitation added for account ' + args.data.account
-                      });                      
                     }
                   }
                 },

@@ -2769,6 +2769,22 @@ Dialogs*/
   text-shadow: 0px 1px 1px #FFFFFF;
 }
 
+.ui-dialog span.message ul {
+  margin-left: 30px;
+  margin-top: 14px;
+  text-align: left;
+  list-style: disc;
+}
+
+.ui-dialog span.message ul li {
+  margin-top: 3px;
+}
+
+.ui-dialog span.message p {
+  text-align: left;
+  margin-top: 20px;
+}
+
 .ui-dialog-titlebar {
   background: #4C5F70 url(../images/bg-dialog-header.png);
   color: #FFFFFF;
@@ -7859,6 +7875,20 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   text-align: left;
 }
 
+.ui-dialog .new-project .add-by {
+  font-size: 12px;
+  color: #5E6D7D;
+  margin-left: 11px;
+}
+
+.ui-dialog .new-project .add-by input {
+  margin-right: 8px;
+}
+
+.ui-dialog .new-project .add-by label {
+  margin-right: 12px;
+}
+
 .new-project .title {
   color: #3497E6;
   font-size: 26px;
@@ -7885,6 +7915,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 #new-project-review-tabs-resouces {
   background: #D2D2D2;
+  height: 225px;
 }
 
 .new-project .resources .ui-widget-content {
@@ -8057,10 +8088,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .new-project .review .ui-tabs ul {
   text-align: left;
-  /*+placement:shift -233px 1px;*/
+  /*+placement:shift 0px -2px;*/
   position: relative;
-  left: -233px;
-  top: 1px;
+  left: 0px;
+  top: -2px;
 }
 
 .new-project .review .ui-tabs .list-view {
