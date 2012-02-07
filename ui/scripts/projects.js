@@ -906,8 +906,8 @@
               createForm: {
                 desc: 'Please enter the token that you were given in your invite e-mail.',
                 fields: {
-                  projectid: { label: 'Project ID' },
-                  token: { label: 'Token' }
+                  projectid: { label: 'Project ID', validation: { required: true }},
+                  token: { label: 'Token', validation: { required: true }}
                 }
               },
               action: function(args) {
