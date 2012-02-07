@@ -208,6 +208,35 @@ public class Upgrade2213to2214 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to insert foreign key in security_group table ", e);
         }
         
+        //Drop securityGroup keys (if exists) and insert one with correct name
+        keys = new ArrayList<String>();
+        keys.add("i_vm_instance__host_id");
+        keys.add("fk_vm_instance__host_id");
+        
+        keys.add("fk_vm_instance__last_host_id");
+        keys.add("i_vm_instance__last_host_id");
+        
+        keys.add("fk_vm_instance__service_offering_id");
+        keys.add("i_vm_instance__service_offering_id");
+        
+        keys.add("fk_vm_instance__account_id");
+        keys.add("i_vm_instance__account_id");
+        
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, false);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`)");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY (`last_host_id`) REFERENCES `host` (`id`)");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering` (`id`)");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert foreign key in vm_instance table ", e);
+        }
         
 
     }
