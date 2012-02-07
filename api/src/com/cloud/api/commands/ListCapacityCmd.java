@@ -31,6 +31,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.Capacity;
+import com.cloud.exception.InvalidParameterValueException;
 
 @Implementation(description="Lists all the system wide capacities.", responseObject=CapacityResponse.class)
 public class ListCapacityCmd extends BaseListCmd {
@@ -75,6 +76,9 @@ public class ListCapacityCmd extends BaseListCmd {
     																		 "* CAPACITY_TYPE_LOCAL_STORAGE = 9.")
 
     private Integer type;
+    
+    @Parameter(name=ApiConstants.SORT_BY, type=CommandType.STRING, description="Sort the results. Available values: Usage")
+    private String sortBy;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -99,6 +103,18 @@ public class ListCapacityCmd extends BaseListCmd {
 	public Integer getType() {
         return type;
     }
+	
+    public String getSortBy() {
+        if (sortBy != null) {
+            if (sortBy.equalsIgnoreCase("usage")) {
+                return sortBy;
+            } else {
+                throw new InvalidParameterValueException("Only Usage value is supported for sortBy parameter in Acton release");
+            }
+        }
+        
+        return null;
+    }
 
     public Boolean getlistTopUsed() {
         return listTopUsed;
@@ -115,7 +131,13 @@ public class ListCapacityCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Capacity> result = _mgr.listCapacities(this);
+        List<? extends Capacity> result = null;
+        if (getSortBy() != null) {
+            result = _mgr.listTopConsumedResources(this);
+        } else {
+            result = _mgr.listCapacities(this);
+        }
+        
         ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = _responseGenerator.createCapacityResponse(result, s_percentFormat);
         response.setResponses(capacityResponses);
