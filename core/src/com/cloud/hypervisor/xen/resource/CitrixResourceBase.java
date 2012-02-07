@@ -339,6 +339,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public void disconnected() {
+      synchronized (_cluster.intern()) {
+         s_vms.clear(_cluster);
+      }
     }
 
     protected boolean pingdomr(Connection conn, String host, String port) {
