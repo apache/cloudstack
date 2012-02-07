@@ -266,7 +266,6 @@
 	</target>
 
 	<target name="automated-test-run" description="Run the automated tests in tools/testClient/testcases/automated.xml using the debug server">
-	  <property name="env.CATALINA_HOME" value="/usr/share/cloud"/>
 	  <antcall target="build-all"/>
 	  <antcall target="deploy-server"/>
 	  <antcall target="deploydb"/>
