@@ -52,7 +52,6 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
@@ -1950,13 +1949,13 @@ public class ManagementServerImpl implements ManagementServer {
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
         
         if (zoneId == null && podId == null){//Group by Zone, capacity type
-            List<SummedCapacity> summedCapacitiesAtZone = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 1, cmd.getPageSize());
+            List<SummedCapacity> summedCapacitiesAtZone = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 1, cmd.getPageSizeVal());
             if(summedCapacitiesAtZone != null){
                 summedCapacities.addAll(summedCapacitiesAtZone);
             }
         }
         if (podId == null){//Group by Pod, capacity type
-            List<SummedCapacity> summedCapacitiesAtPod = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 2, cmd.getPageSize());
+            List<SummedCapacity> summedCapacitiesAtPod = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 2, cmd.getPageSizeVal());
             if(summedCapacitiesAtPod != null){
                 summedCapacities.addAll(summedCapacitiesAtPod);
             }                           
@@ -1967,7 +1966,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //Group by Cluster, capacity type
-        List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 3, cmd.getPageSize());
+        List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 3, cmd.getPageSizeVal());
         if(summedCapacitiesAtCluster != null){
             summedCapacities.addAll(summedCapacitiesAtCluster);
         }                       
@@ -1987,7 +1986,15 @@ public class ManagementServerImpl implements ManagementServer {
         
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
         
-        summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSize() ? summedCapacities.size() : cmd.getPageSize());
+            
+        Integer pageSize = null;
+        try { 
+            pageSize = Integer.valueOf(cmd.getPageSizeVal().toString()); 
+        } catch(IllegalArgumentException e) { 
+               throw new InvalidParameterValueException("pageSize " + cmd.getPageSizeVal() + " is out of Integer range is not supported for this call");
+        }
+
+        summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSizeVal() ? summedCapacities.size() : pageSize);
         for (SummedCapacity summedCapacity : summedCapacities){
             CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId() , summedCapacity.getClusterId(),
                                                  summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());            

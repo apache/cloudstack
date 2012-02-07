@@ -188,7 +188,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
     
     @Override
-    public  List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Integer limit){
+    public  List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit){
         
         StringBuilder finalQuery = new StringBuilder(); 
         Transaction txn = Transaction.currentTxn();
