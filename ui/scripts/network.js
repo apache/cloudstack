@@ -581,8 +581,7 @@
                       }
                     },
                     vlan: { label: 'VLAN ID' },
-                    scope: { label: 'Scope' },
-                    //networkofferingdisplaytext: { label: 'Network offering' },
+                    
                     networkofferingid: {
                       label: 'Network offering',
                       isEditable: true,
@@ -620,15 +619,20 @@
                     },
 
                     gateway: { label: 'Gateway' },
+										
                     //netmask: { label: 'Netmask' },
                     cidr: { label: 'CIDR' },
+										
                     networkdomaintext: {
                       label: 'Network domain'
                     },
                     networkdomain: {
                       label: 'Network domain',
                       isEditable: true
-                    }
+                    },
+										
+										domain: { label: 'Domain' },
+										account: { label: 'Account' }			
                   }
                 ],
                 dataProvider: function(args) {
