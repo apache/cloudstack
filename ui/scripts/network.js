@@ -1475,7 +1475,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove firewall rule ' + args.context.multiRule[0].id,
+                                  label: 'Remove firewall rule',
                                   poll: pollAsyncJobResult
                                 }
                               });
