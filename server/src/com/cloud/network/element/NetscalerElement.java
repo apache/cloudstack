@@ -166,8 +166,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         try {
             return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
-            // TODO: handle out of capacity exception gracefully in case of multple providers available
-            return false;
+            throw new ResourceUnavailableException("There are no NetScaler load balancer devices with the free capacity for implementing this network", DataCenter.class, guestConfig.getDataCenterId());
         }
     }
 
