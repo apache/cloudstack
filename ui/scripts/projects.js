@@ -899,6 +899,44 @@
           },
 
           actions: {
+            enterToken: {
+              label: 'Enter Token',
+              isHeader: true,
+              addRow: false,
+              createForm: {
+                desc: 'Please enter the token that you were given in your invite e-mail.',
+                fields: {
+                  projectid: { label: 'Project ID' },
+                  token: { label: 'Token' }
+                }
+              },
+              action: function(args) {
+                $.ajax({
+                  url: createURL('updateProjectInvitation'),
+                  data: args.data,
+                  success: function(json) {
+                    args.response.success({
+                      _custom: {
+                        jobId: json.updateprojectinvitationresponse.jobid
+                      }
+                    });
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
+                  }
+                });
+              },
+              messages: {
+                notification: function() {
+                  return 'Accepted project invitation';
+                },
+                complete: function() {
+                  return 'You have now joined a project. Please switch to Project view to see the project.';
+                }
+              },
+              notification: { poll: pollAsyncJobResult }
+            },
+            
             accept: {
               label: 'Accept Invitation',
               action: function(args) {
