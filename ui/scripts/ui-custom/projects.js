@@ -34,6 +34,7 @@
                   }).click(function() {
                     $accountFields.show();
                     $emailFields.hide();
+                    $emailFields.find('input').val('');
 
                     return true;
                   }).click()
@@ -45,6 +46,7 @@
                     name: 'add-by'
                   }).click(function() {
                     $accountFields.hide();
+                    $accountFields.find('input').val('');
                     $emailFields.show();
 
                     return true;
