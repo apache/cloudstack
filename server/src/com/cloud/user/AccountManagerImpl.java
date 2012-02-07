@@ -2104,7 +2104,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
-            boolean listAll) {
+            boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
 
         if (domainId != null) {
@@ -2137,21 +2137,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // set project information
         if (projectId != null) {
-            if (projectId == -1) {
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+            if (!forProjectInvitation) {
+                if (projectId == -1) {
+                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                        permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                    } else {
+                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                    }
                 } else {
-                    domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                    Project project = _projectMgr.getProject(projectId);
+                    if (project == null) {
+                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                    }
+                    if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                        throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
+                    }
+                    permittedAccounts.add(project.getProjectAccountId());
                 }
-            } else {
-                Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-                }
-                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
-                }
-                permittedAccounts.add(project.getProjectAccountId());
             }
         } else {
             if (id == null) {
