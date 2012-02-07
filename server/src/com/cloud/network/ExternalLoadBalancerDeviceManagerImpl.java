@@ -492,6 +492,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             // we have provisioned load balancer so add the appliance as cloudstack provisioned external
 // load balancer
                             String dedicatedLb = offering.getDedicatedLB() ? "true" : "false";
+                            String capacity = Long.toString(lbProviderDevice.getCapacity());
 
                             // acquire a public IP to associate with lb appliance (used as subnet IP to make the
 // appliance part of private network)
@@ -502,7 +503,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             String publicIP = publicIp.getAddress().toString();
 
                             String url = "https://" + lbIP + "?publicinterface=" + publicIf + "&privateinterface=" + privateIf + "&lbdevicededicated=" + dedicatedLb +
-                                    "&cloudmanaged=true" + "&publicip=" + publicIP + "&publicipnetmask=" + publicIPNetmask + "&publicipvlan=" + publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
+                                    "&cloudmanaged=true" + "&publicip=" + publicIP + "&publicipnetmask=" + publicIPNetmask + "&lbdevicecapacity=" + capacity +
+                                    "&publicipvlan=" + publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
                             ExternalLoadBalancerDeviceVO lbAppliance = null;
                             try {
                                 lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(), createLbAnswer.getServerResource());
