@@ -208,7 +208,7 @@ public class Upgrade2213to2214 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to insert foreign key in security_group table ", e);
         }
         
-        //Drop securityGroup keys (if exists) and insert one with correct name
+        //Drop vmInstance keys (if exists) and insert one with correct name
         keys = new ArrayList<String>();
         keys.add("i_vm_instance__host_id");
         keys.add("fk_vm_instance__host_id");
@@ -238,6 +238,30 @@ public class Upgrade2213to2214 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to insert foreign key in vm_instance table ", e);
         }
         
+        //Drop user_ip_address keys (if exists) and insert one with correct name
+        keys = new ArrayList<String>();
+        keys.add("fk_user_ip_address__account_id");
+        keys.add("i_user_ip_address__account_id");
+        
+        keys.add("fk_user_ip_address__vlan_db_id");
+        keys.add("i_user_ip_address__vlan_db_id");
+        
+        keys.add("fk_user_ip_address__data_center_id");
+        keys.add("i_user_ip_address__data_center_id");
+        
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_ip_address", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_ip_address", keys, false);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`)");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__vlan_db_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert foreign key in vm_instance table ", e);
+        }
 
     }
 }
