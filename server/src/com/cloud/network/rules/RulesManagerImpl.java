@@ -863,14 +863,16 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
 
-        // revoke static nat for the ip address
-        boolean success = applyStaticNatForIp(ipId, false, caller, true);
+        boolean success = true;
 
         // revoke all port forwarding rules
         success = success && applyPortForwardingRules(ipId, true, caller);
 
         // revoke all all static nat rules
         success = success && applyStaticNatRules(ipId, true, caller);
+
+        // revoke static nat for the ip address
+        success = success && applyStaticNatForIp(ipId, false, caller, true);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_portForwardingDao.listByIpAndNotRevoked(ipId));

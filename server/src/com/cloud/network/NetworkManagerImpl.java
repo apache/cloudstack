@@ -670,9 +670,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         throw new CloudRuntimeException("Multiply generic source NAT IPs provided for network " + ip.getAssociatedWithNetworkId());
                     }
                 }
-                if (ip.isOneToOneNat()) {
-                    services.add(Service.StaticNat);
-                }
                 ipToServices.put(ip, services);
 
                 // if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service
@@ -683,10 +680,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 // check if any active rules are applied on the public IP
                 Set<Purpose> purposes = getPublicIpPurposeInRules(ip, false, includingFirewall);
+                // Firewall rules didn't cover static NAT
+                if (ip.isOneToOneNat() && ip.getAssociatedWithVmId() != null) {
+                    if (purposes == null) {
+                        purposes = new HashSet<Purpose>();
+                    }
+                    purposes.add(Purpose.StaticNat);
+                }
                 if (purposes == null || purposes.isEmpty()) {
                     // since no active rules are there check if any rules are applied on the public IP but are in
 // revoking state
                     purposes = getPublicIpPurposeInRules(ip, true, includingFirewall);
+                    if (ip.isOneToOneNat()) {
+                        if (purposes == null) {
+                            purposes = new HashSet<Purpose>();
+                        }
+                        purposes.add(Purpose.StaticNat);
+                    }
                     if (purposes == null || purposes.isEmpty()) {
                         // IP is not being used for any purpose so skip IPAssoc to network service provider
                         continue;
@@ -4185,6 +4195,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
+        // For revoked static nat IP, set the vm_id to null, indicate it should be revoked
+        for (StaticNat staticNat : staticNats) {
+            if (staticNat.isForRevoke()) {
+                for (PublicIp publicIp : publicIps) {
+                    if (publicIp.getId() == staticNat.getSourceIpAddressId()) {
+                        publicIps.remove(publicIp);
+                        IPAddressVO ip = _ipAddressDao.findByIdIncludingRemoved(staticNat.getSourceIpAddressId());
+                        // ip can't be null, otherwise something wrong happened
+                        ip.setAssociatedWithVmId(null);
+                        publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+                        publicIps.add(publicIp);
+                        break;
+                    }
+                }
+            }
+        }
+        
         // if all the rules configured on public IP are revoked then, dis-associate IP with network service provider
         applyIpAssociations(network, true, continueOnError, publicIps);
 
