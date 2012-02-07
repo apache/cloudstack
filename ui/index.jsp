@@ -1,3 +1,11 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -23,19 +31,19 @@
           <div class="fields">
             <!-- User name -->
             <div class="field username">
-              <label for="username">User Name</label>
+              <label for="username"><fmt:message key="label.username"/></label>
               <input type="text" name="username" class="required" />
             </div>
 
             <!-- Password -->
             <div class="field password">
-              <label for="password">Password</label>
+              <label for="password"><fmt:message key="label.password"/></label>
               <input type="password" name="password" class="required" />
             </div>
 
             <!-- Domain -->
             <div class="field domain">
-              <label for="domain">Domain</label>
+              <label for="domain"><fmt:message key="label.domain"/></label>
               <input type="text" name="domain" />
             </div>
 
