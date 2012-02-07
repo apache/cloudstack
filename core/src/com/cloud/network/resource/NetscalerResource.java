@@ -77,6 +77,7 @@ class NitroError {
     static final int NS_RESOURCE_NOT_EXISTS=258;
     static final int NS_NO_SERIVCE = 344;
     static final int NS_OPERATION_NOT_PERMITTED = 257;
+    static final int NS_INTERFACE_ALREADY_BOUND_TO_VLAN = 2080;
 }
 
 public class NetscalerResource implements ServerResource {
@@ -853,36 +854,54 @@ public class NetscalerResource implements ServerResource {
 
     private void addGuestVlanAndSubnet(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean guestVlan) throws ExecutionException {
         try {
+            // add vlan object for guest VLAN
             if (!nsVlanExists(vlanTag)) {
-                // add new vlan
-                vlan vlanObj = new vlan();
-                vlanObj.set_id(vlanTag);
-                apiCallResult = vlan.add(_netscalerService, vlanObj);
-                if (apiCallResult.errorcode != 0) {
-                    throw new ExecutionException("Failed to add new vlan with tag:" + vlanTag + "due to" + apiCallResult.message);
+                try {
+                    vlan vlanObj = new vlan();
+                    vlanObj.set_id(vlanTag);
+                    apiCallResult = vlan.add(_netscalerService, vlanObj);
+                    if (apiCallResult.errorcode != 0) {
+                        throw new ExecutionException("Failed to add new vlan with tag:" + vlanTag + "on the NetScaler device due to " +  apiCallResult.message);
+                    }
+                } catch (nitro_exception e) {
+                    throw new ExecutionException("Failed to add new vlan with tag:" + vlanTag + "on the NetScaler device due to " + e.getMessage());
                 }
-            
-                // add self-ip and subnet to the Netscaler
-                nsip selfIp = new nsip();
-                selfIp.set_ipaddress(vlanSelfIp);
-                selfIp.set_netmask(vlanNetmask);
-                selfIp.set_type("SNIP");
-                apiCallResult = nsip.add(_netscalerService, selfIp);
-                if (apiCallResult.errorcode != 0) {
-                    throw new ExecutionException("Failed to add new self-ip due to "+ apiCallResult.message);
-                }
+            }
 
-                //bind the vlan to guest subnet
-                vlan_nsip_binding ipVlanBinding = new vlan_nsip_binding();
-                ipVlanBinding.set_id(vlanTag);
-                ipVlanBinding.set_ipaddress(vlanSelfIp);
-                ipVlanBinding.set_netmask(vlanNetmask);
-                apiCallResult = vlan_nsip_binding.add(_netscalerService, ipVlanBinding);
-                if (apiCallResult.errorcode != 0) {
-                    throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " to the subnet due to" + apiCallResult.message);
+            // add subnet IP object for this guest network
+            if (!nsSnipExists(vlanSelfIp)) {
+                try {
+                    nsip selfIp = new nsip();
+                    selfIp.set_ipaddress(vlanSelfIp);
+                    selfIp.set_netmask(vlanNetmask);
+                    selfIp.set_type("SNIP");
+                    apiCallResult = nsip.add(_netscalerService, selfIp);
+                    if (apiCallResult.errorcode != 0) {
+                        throw new ExecutionException("Failed to add SNIP object for the guest network on the Netscaler device due to "+ apiCallResult.message);
+                    }
+                } catch (nitro_exception e) {
+                    throw new ExecutionException("Failed to add SNIP object for the guest network on the Netscaler device due to " + e.getMessage());
                 }
+            }
 
-                // bind vlan to the private interface
+            // bind the vlan object to subnet IP object
+            if (!nsVlanNsipBindingExists(vlanTag, vlanSelfIp)) {
+                try {
+                    vlan_nsip_binding ipVlanBinding = new vlan_nsip_binding();
+                    ipVlanBinding.set_id(vlanTag);
+                    ipVlanBinding.set_ipaddress(vlanSelfIp);
+                    ipVlanBinding.set_netmask(vlanNetmask);
+                    apiCallResult = vlan_nsip_binding.add(_netscalerService, ipVlanBinding);
+                    if (apiCallResult.errorcode != 0) {
+                        throw new ExecutionException("Failed to bind VLAN with tag:" + vlanTag + " to the subnet due to " + apiCallResult.message);
+                    }
+                } catch (nitro_exception e) {
+                    throw new ExecutionException("Failed to bind VLAN with tage:"+ vlanTag + " to the subnet due to " + e.getMessage());
+                }
+            }
+
+            // bind vlan object to the private interface
+            try {
                 vlan_interface_binding vlanBinding = new vlan_interface_binding();
                 if (guestVlan) {
                     vlanBinding.set_ifnum(_privateInterface);
@@ -891,25 +910,20 @@ public class NetscalerResource implements ServerResource {
                 }
                 vlanBinding.set_tagged(true);
                 vlanBinding.set_id(vlanTag);
-                try {
-                    apiCallResult = vlan_interface_binding.add(_netscalerService, vlanBinding);
-                } catch (nitro_exception e)  {
-                    // FIXME: Vlan binding (subsequent unbind) to an interfaces will fail on the VPX created on Xen server and on 
-                    // NetScaler SDX appliance till the VPX fix to handle VLAN's is released. Relaxing this restriction NetScaler until then
-                    if (!(_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && e.getErrorCode() == NitroError.NS_OPERATION_NOT_PERMITTED)) {
-                        throw new ExecutionException("Failed to bind vlan to the interface while implementing guest network on the Netscaler device due to " + e.getMessage());
-                    }
-                }
-
+                apiCallResult = vlan_interface_binding.add(_netscalerService, vlanBinding);
                 if (apiCallResult.errorcode != 0) {
                     String vlanInterface = guestVlan ? _privateInterface : _publicInterface;
                     throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + vlanInterface + " due to " + apiCallResult.message);
+                }
+            } catch (nitro_exception e)  {
+                if (!(e.getErrorCode() == NitroError.NS_INTERFACE_ALREADY_BOUND_TO_VLAN)) {
+                    throw new ExecutionException("Failed to bind VLAN "+ vlanTag + " with interface on the Netscaler device due to " + e.getMessage());
                 }
             }
         }  catch (nitro_exception e) {
             throw new ExecutionException("Failed to implement guest network on the Netscaler device due to " + e.getMessage());
         }  catch (Exception e) {
-            throw new ExecutionException("Failed to implement guest network on the Netscaler device " + e.getMessage());
+            throw new ExecutionException("Failed to implement guest network on the Netscaler device due to " + e.getMessage());
         }
     }
 
@@ -982,17 +996,39 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private boolean nsVlanExists(long vlanTag) {
+    private boolean nsVlanExists(long vlanTag) throws ExecutionException {
         try {
             if (vlan.get(_netscalerService, new Long(vlanTag)) != null) {
                 return true;
+            } else {
+                return false;
             }
-            return false;
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return false;
+            } else {
+                throw new ExecutionException("Failed to verify  VLAN exists on the NetScaler device due to " + e.getMessage());
+            }
         } catch (Exception e) {
-            return false;
+            throw new ExecutionException("Failed to verify  VLAN exists on the NetScaler device due to " + e.getMessage());
         }
     }
-    
+
+    private boolean nsSnipExists(String subnetIP) throws ExecutionException {
+        try {
+            nsip snip = nsip.get(_netscalerService, subnetIP);
+            return (snip != null);
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return false;
+            } else {
+                throw new ExecutionException("Failed to verify if SNIP exists on the NetScaler device due to " + e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify if SNIP exists on the NetScaler device due to " + e.getMessage());
+        }
+    }
+
     private boolean nsServerExists(String serverName) throws ExecutionException {
         try {
             if (com.citrix.netscaler.nitro.resource.config.basic.server.get(_netscalerService, serverName) != null) {
@@ -1004,10 +1040,29 @@ public class NetscalerResource implements ServerResource {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
                 return false;
             } else {
-                throw new ExecutionException(e.getMessage());
+                throw new ExecutionException("Failed to verify Server " + serverName + " exists on the NetScaler device due to " + e.getMessage());
             }
         } catch (Exception e) {
-            throw new ExecutionException(e.getMessage());
+            throw new ExecutionException("Failed to verify Server " + serverName + " exists on the NetScaler device due to " + e.getMessage());
+        }
+    }
+
+    private boolean nsVlanNsipBindingExists(long vlanTag, String vlanSelfIp) throws ExecutionException {
+        try {
+            vlan_nsip_binding[] vlanNsipBindings = vlan_nsip_binding.get(_netscalerService, vlanTag);
+            if (vlanNsipBindings != null && vlanNsipBindings[0] != null && vlanNsipBindings[0].get_ipaddress().equalsIgnoreCase(vlanSelfIp)) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return false;
+            } else {
+                throw new ExecutionException("Failed to verify Vlan " + vlanTag + " to SNIP " + vlanSelfIp + " binding exists due to " + e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify Vlan " + vlanTag + " to SNIP " + vlanSelfIp + " binding exists due to " + e.getMessage());
         }
     }
 
