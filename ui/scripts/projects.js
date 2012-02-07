@@ -785,6 +785,10 @@
               if ((!isAdmin() && !isDomainAdmin()) &&
                   (currentAccount != projectOwner)) return ['accounts', 'invitations', 'resources'];
 
+              if (!cloudStack.projects.requireInvitation()) {
+                return ['invitations'];
+              }
+
               return [];
             },
             tabs: {
