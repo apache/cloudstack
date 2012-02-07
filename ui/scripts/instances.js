@@ -218,10 +218,10 @@
                     }
                   }
 
-                  if (selectedZoneObj.securitygroupsenabled == false) {  //show network container                    
+                  if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.          
                     step5ContainerType = 'select-network';
                   }
-                  else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled  
+                  else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
                     var includingSecurityGroupService = false;
                     $.ajax({
                       url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
@@ -231,7 +231,7 @@
                         //basic zone should have only one guest network returned in this API call                        
                         var items = json.listnetworksresponse.network;
                         if(items != null && items.length > 0) {
-                          var networkObj = items[0];                          
+                          var networkObj = items[0];    //basic zone has only one guest network                      
                           var serviceObjArray = networkObj.service;
                           for(var k = 0; k < serviceObjArray.length; k++) {                            
                             if(serviceObjArray[k].name == "SecurityGroup") {
