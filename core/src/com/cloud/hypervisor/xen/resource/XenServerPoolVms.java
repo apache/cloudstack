@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.xen.resource;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -26,8 +28,8 @@ import com.cloud.vm.VirtualMachine.State;
  
 public class XenServerPoolVms {
     private static final Logger s_logger = Logger.getLogger(XenServerPoolVms.class);
-    private HashMap<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _cluster_vms = 
-        new HashMap<String, HashMap<String, Pair<String, State>>>();
+    private final Map<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _cluster_vms = 
+        new ConcurrentHashMap<String, HashMap<String, Pair<String, State>>>();
 
     public HashMap<String, Pair<String, State>> getClusterVmState(String clusterId){
         HashMap<String, Pair<String, State>> _vms= _cluster_vms.get(clusterId);
