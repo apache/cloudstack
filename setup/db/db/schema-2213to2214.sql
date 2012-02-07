@@ -57,4 +57,4 @@ ALTER TABLE `cloud`.`domain_router` MODIFY `redundant_state` varchar(64) NOT NUL
 ALTER TABLE `cloud`.`domain_router` MODIFY `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it';
 
 
-ALTER TABLE `cloud`.`storage_pool_details` MODIFY `limit_cpu_use` tinyint(1) unsigned NOT NULL default '0' COMMENT 'Limit the CPU usage to service offering';
+ALTER TABLE `cloud`.`service_offering` MODIFY `limit_cpu_use` tinyint(1) unsigned NOT NULL default '0' COMMENT 'Limit the CPU usage to service offering';
