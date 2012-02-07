@@ -56,5 +56,9 @@ ALTER TABLE `cloud`.`domain_router` MODIFY `is_priority_bumpup` int(1) unsigned 
 ALTER TABLE `cloud`.`domain_router` MODIFY `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router';
 ALTER TABLE `cloud`.`domain_router` MODIFY `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it';
 
-
 ALTER TABLE `cloud`.`service_offering` MODIFY `limit_cpu_use` tinyint(1) unsigned NOT NULL default '0' COMMENT 'Limit the CPU usage to service offering';
+ALTER TABLE `cloud`.`vm_instance` MODIFY `limit_cpu_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Limit the cpu usage to service offering';
+
+UPDATE `cloud`.`configuration` SET `value`='false' WHERE `name`='agent.lb.enabled';
+
+ALTER TABLE `cloud_usage`.`user_statistics` MODIFY `device_type` varchar(32) NOT NULL;
