@@ -73,9 +73,9 @@
                 <!-- Select a zone -->
                 <div class="section select-zone">
                   <h3>Select a zone</h3>
-                  <p>Descriptive text of what a zone is goes here.</p>
+                  <p>A zone typically corresponds to a single datacenter. Multiple zones help make the cloud more reliable by providing physical isolation and redundancy.</p>
                   <div class="select-area">
-                    <div class="desc">Description of this select area goes here.</div>
+                    <div class="desc"></div>
                     <select name="zoneid" class="required">
                       <option default="default" value="" >Select a zone</option>
                     </select>
@@ -85,14 +85,14 @@
                 <!-- Select template -->
                 <div class="section select-template">
                   <h3>Select ISO or template</h3>
-                  <p>Descriptive text goes here.</p>
+                  <p></p>
                   <div class="select-area">
-                    <div class="desc">Description of a template goes here.</div>
+                    <div class="desc">OS image that can be used to boot VMs</div>
                     <input type="radio" name="select-template" value="select-template" />
                     <label>Template</label>
                   </div>
                   <div class="select-area">
-                    <div class="desc">Description of a template goes here.</div>
+                    <div class="desc">Disc image containing data or bootable media for OS</div>
                     <input type="radio" name="select-template" value="select-iso" />
                     <label>ISO</label>
                   </div>
