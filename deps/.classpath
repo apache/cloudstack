@@ -44,5 +44,7 @@
 	<classpathentry exported="true" kind="lib" path="cloud-commons-httpclient-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-netscaler.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-netscaler-sdx.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-commons-configuration-1.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-commons-lang-2.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

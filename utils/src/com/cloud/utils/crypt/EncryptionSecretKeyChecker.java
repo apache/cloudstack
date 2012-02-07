@@ -136,4 +136,13 @@ public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
     public static boolean useEncryption(){
     	return s_useEncryption;
     }
+    
+    //Initialize encryptor for migration during secret key change
+    public static void initEncryptorForMigration(String secretKey){
+    	s_encryptor.setAlgorithm("PBEWithMD5AndDES");
+    	SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
+    	stringConfig.setPassword(secretKey);
+		s_encryptor.setConfig(stringConfig);
+		s_useEncryption = true;
+    }
 }
