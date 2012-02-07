@@ -828,7 +828,7 @@
     };
 
     if (args.hideForm && args.hideForm()){
-      $multiForm.detach();
+      $multiForm.find('tbody').detach();
     }
 
     // Get existing data
