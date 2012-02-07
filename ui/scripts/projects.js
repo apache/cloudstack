@@ -299,14 +299,7 @@
               data: args.data,
               args.response.success({
                 _custom: {
-                  jobId: data.addaccounttoprojectresponse.jobid,
-                  onComplete: function(json) {
-                    if (args.data.email) {
-                      cloudStack.dialog.notice({
-                        message: 'Invitation sent to ' + args.data.email
-                      });
-                    }
-                  }
+                  jobId: data.addaccounttoprojectresponse.jobid
                 },
                 notification: {
                   label: 'Invited user to project',
@@ -358,6 +351,7 @@
         $.ajax({
           url: createURL('listProjectInvitations', { ignoreProject: true }),
           data: {
+            state: 'Pending',
             listAll: true,
             projectId: args.context.projects[0].id
           },
@@ -783,6 +777,16 @@
                 }
               }
             },
+            tabFilter: function(args) {
+              var project = args.context.projects[0];
+              var projectOwner = project.account;
+              var currentAccount = args.context.users[0].account;
+
+              if ((!isAdmin() && !isDomainAdmin()) &&
+                  (currentAccount != projectOwner)) return ['accounts', 'invitations', 'resources'];
+
+              return [];
+            },
             tabs: {
               details: {
                 title: 'Details',
@@ -883,9 +887,6 @@
             $.ajax({
               url: createURL('listProjectInvitations'),
               data: {
-                listAll: true,
-                account: cloudStack.context.users[0].account,
-                domainid: cloudStack.context.users[0].domainid,
                 state: 'Pending'
               },
               success: function(data) {
