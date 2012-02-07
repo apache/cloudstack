@@ -925,9 +925,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   CONSTRAINT `fk_vm_instance__template_id` FOREIGN KEY `fk_vm_instance__template_id` (`vm_template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_vm_instance__template_id`(`vm_template_id`),
   CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`),
-  INDEX `i_vm_instance__account_id`(`account_id`),
-  CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`),
-  INDEX `i_vm_instance__service_offering_id`(`service_offering_id`)
+  CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`user_vm` (
