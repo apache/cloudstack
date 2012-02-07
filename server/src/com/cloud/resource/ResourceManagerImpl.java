@@ -17,7 +17,6 @@
  */
 package com.cloud.resource;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -468,7 +467,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
     }
 
-    private Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
+    @Override
+    public Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
         Enumeration<? extends Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();

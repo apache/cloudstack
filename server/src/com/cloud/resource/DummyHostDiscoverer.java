@@ -110,4 +110,10 @@ public class DummyHostDiscoverer implements Discoverer {
 		// TODO Auto-generated method stub
 		
 	}
+
+    @Override
+    public ServerResource reloadResource(HostVO host) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

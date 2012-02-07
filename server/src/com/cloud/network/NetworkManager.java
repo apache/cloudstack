@@ -301,4 +301,8 @@ public interface NetworkManager extends NetworkService {
             Network network, String requestedIp)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException;
+
+    String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType);
+
+    String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType);
 }

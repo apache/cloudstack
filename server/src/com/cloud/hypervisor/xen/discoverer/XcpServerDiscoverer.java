@@ -47,11 +47,9 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -63,7 +61,6 @@ import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
@@ -115,11 +112,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
     @Inject protected AlertManager _alertMgr;
     @Inject protected AgentManager _agentMgr;
-    @Inject protected HostDao _hostDao;
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
-    @Inject ClusterDao _clusterDao;
-    @Inject protected ConfigurationDao _configDao;
     @Inject ResourceManager _resourceMgr;
     @Inject HostPodDao _podDao;
     @Inject DataCenterDao _dcDao;
@@ -294,31 +288,21 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put(HostInfo.HOST_OS_VERSION, hostOSVer);
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
                 details.put(HostInfo.HYPERVISOR_VERSION, xenVersion);
+                
+                String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.XenServer);
+                String storageNetworkLabel = _networkMgr.getDefaultStorageTrafficLabel(dcId, HypervisorType.XenServer);
+                
+                if (!params.containsKey("private.network.device") && privateNetworkLabel != null) {
+                    params.put("private.network.device", privateNetworkLabel);
+                    details.put("private.network.device", privateNetworkLabel);
+                }
+                
+                if (!params.containsKey("storage.network.device1") && storageNetworkLabel != null) {
+                    params.put("storage.network.device1", storageNetworkLabel);
+                    details.put("storage.network.device1", storageNetworkLabel);
+                }
 
-                /*if (!params.containsKey("public.network.device") && _publicNic != null) {
-                    params.put("public.network.device", _publicNic);
-                    details.put("public.network.device", _publicNic);
-                }
                 
-                if (!params.containsKey("guest.network.device") && _guestNic != null) {
-                    params.put("guest.network.device", _guestNic);
-                    details.put("guest.network.device", _guestNic);
-                }
-                
-                if (!params.containsKey("private.network.device") && _privateNic != null) {
-                    params.put("private.network.device", _privateNic);
-                    details.put("private.network.device", _privateNic);
-                }
-                
-                if (!params.containsKey("storage.network.device1") && _storageNic1 != null) {
-                    params.put("storage.network.device1", _storageNic1);
-                    details.put("storage.network.device1", _storageNic1);
-                }
-                
-                if (!params.containsKey("storage.network.device2") && _storageNic2 != null) {
-                    params.put("storage.network.device2", _storageNic2);
-                    details.put("storage.network.device2", _storageNic2);
-                }*/                             
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));

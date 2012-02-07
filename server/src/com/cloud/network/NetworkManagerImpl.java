@@ -5406,12 +5406,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         if (xenLabel != null) {
+            if("".equals(xenLabel)){
+                xenLabel = null;
+            }
             trafficType.setXenNetworkLabel(xenLabel);
         }
         if (kvmLabel != null) {
+            if("".equals(kvmLabel)){
+                kvmLabel = null;
+            }
             trafficType.setKvmNetworkLabel(kvmLabel);
         }
         if (vmwareLabel != null) {
+            if("".equals(vmwareLabel)){
+                vmwareLabel = null;
+            }
             trafficType.setVmwareNetworkLabel(vmwareLabel);
         }
         _pNTrafficTypeDao.update(id, trafficType);
@@ -5467,6 +5476,57 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return networkList.get(0);
     }
+    
+    @Override
+    public String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType){
+        try{
+            PhysicalNetwork mgmtPhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+            PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Management);
+            if(mgmtTraffic != null){
+                String label = null;
+                switch(hypervisorType){
+                    case XenServer : label = mgmtTraffic.getXenNetworkLabel(); 
+                                     break;
+                    case KVM : label = mgmtTraffic.getKvmNetworkLabel();
+                               break;
+                    case VMware : label = mgmtTraffic.getVmwareNetworkLabel();
+                                  break;
+                }
+                return label;
+            }
+        }catch(Exception ex){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Failed to retrive the default label for management traffic:"+"zone: "+ zoneId +" hypervisor: "+hypervisorType +" due to:" + ex.getMessage());
+            }
+        }
+        return null;
+    }
+    
+    @Override
+    public String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType){
+        try{
+            PhysicalNetwork storagePhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Storage);
+            PhysicalNetworkTrafficTypeVO storageTraffic = _pNTrafficTypeDao.findBy(storagePhyNetwork.getId(), TrafficType.Storage);
+            if(storageTraffic != null){
+                String label = null;
+                switch(hypervisorType){
+                    case XenServer : label = storageTraffic.getXenNetworkLabel(); 
+                                     break;
+                    case KVM : label = storageTraffic.getKvmNetworkLabel();
+                               break;
+                    case VMware : label = storageTraffic.getVmwareNetworkLabel();
+                                  break;
+                }
+                return label;
+            }
+        }catch(Exception ex){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Failed to retrive the default label for storage traffic:"+"zone: "+ zoneId +" hypervisor: "+hypervisorType +" due to:" + ex.getMessage());
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {

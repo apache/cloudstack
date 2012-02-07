@@ -4896,12 +4896,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (_privateNetworkName != null) {
                 details.put("private.network.device", _privateNetworkName);
             }
-            if (_publicNetworkName != null) {
-                details.put("public.network.device", _publicNetworkName);
-            }
-            if (_guestNetworkName != null) {
-                details.put("guest.network.device", _guestNetworkName);
-            }
+
             details.put("can_bridge_firewall", Boolean.toString(_canBridgeFirewall));
             cmd.setHostDetails(details);
             cmd.setName(hr.nameLabel);

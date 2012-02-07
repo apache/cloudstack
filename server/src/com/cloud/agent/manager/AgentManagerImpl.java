@@ -17,12 +17,9 @@
  */
 package com.cloud.agent.manager;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -91,6 +88,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
@@ -223,7 +221,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     
     @Inject ResourceManager _resourceMgr;
-
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -677,80 +675,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             loadDirectlyConnectedHost(host, false);
         }
     }
+    
 
     @SuppressWarnings("rawtypes")
     protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
     	boolean initialized = false;
         ServerResource resource = null;
     	try {
-	        String resourceName = host.getResource();
-	        try {
-	            Class<?> clazz = Class.forName(resourceName);
-	            Constructor constructor = clazz.getConstructor();
-	            resource = (ServerResource) constructor.newInstance();
-	        } catch (ClassNotFoundException e) {
-	            s_logger.warn("Unable to find class " + host.getResource(), e);
-	            return false;
-	        } catch (InstantiationException e) {
-	            s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
-	            return false;
-	        } catch (IllegalAccessException e) {
-	            s_logger.warn("Illegal access " + host.getResource(), e);
-	            return false;
-	        } catch (SecurityException e) {
-	            s_logger.warn("Security error on " + host.getResource(), e);
-	            return false;
-	        } catch (NoSuchMethodException e) {
-	            s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
-	            return false;
-	        } catch (IllegalArgumentException e) {
-	            s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
-	            return false;
-	        } catch (InvocationTargetException e) {
-	            s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
-	            return false;
-	        }
-	
-	        _hostDao.loadDetails(host);
-	
-	        HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
-	        params.putAll(host.getDetails());
-	
-	        params.put("guid", host.getGuid());
-	        params.put("zone", Long.toString(host.getDataCenterId()));
-	        if (host.getPodId() != null) {
-	            params.put("pod", Long.toString(host.getPodId()));
-	        }
-	        if (host.getClusterId() != null) {
-	            params.put("cluster", Long.toString(host.getClusterId()));
-	            String guid = null;
-	            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-	            if (cluster.getGuid() == null) {
-	                guid = host.getDetail("pool");
-	            } else {
-	                guid = cluster.getGuid();
-	            }
-	            if (guid != null && !guid.isEmpty()) {
-	                params.put("pool", guid);
-	            }
-	        }
-	
-	        params.put("ipaddress", host.getPrivateIpAddress());
-	        params.put("secondary.storage.vm", "false");
-	        params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
-	        params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-	
-	        try {
-	            resource.configure(host.getName(), params);
-	        } catch (ConfigurationException e) {
-	            s_logger.warn("Unable to configure resource due to " + e.getMessage());
-	            return false;
-	        }
-	
-	        if (!resource.start()) {
-	            s_logger.warn("Unable to start the resource");
-	            return false;
-	        }
+            //load the respective discoverer
+            Discoverer discoverer = _resourceMgr.getMatchingDiscover(host.getHypervisorType());
+            if(discoverer == null){
+                s_logger.warn("Unable to find a Discoverer to load the resource: "+ host.getId() +" for hypervisor type: "+host.getHypervisorType());
+                return false;
+            }
+            
+            resource = discoverer.reloadResource(host);
+            
+            if(resource == null){
+                s_logger.warn("Discoverer is unable to load the resource: "+ host.getId());
+                return false;
+            }
         
 	        initialized = true;
     	} finally {

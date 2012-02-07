@@ -137,4 +137,6 @@ public interface ResourceManager extends ResourceService{
 	HypervisorType getDefaultHypervisor(long zoneId);
 
 	HypervisorType getAvailableHypervisor(long zoneId);
+
+    Discoverer getMatchingDiscover(HypervisorType hypervisorType);
 }

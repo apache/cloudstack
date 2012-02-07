@@ -46,4 +46,7 @@ public interface Discoverer extends Adapter {
 	boolean matchHypervisor(String hypervisor);
 	Hypervisor.HypervisorType getHypervisorType();
 	public void putParam(Map<String, String> params);
+	
+	ServerResource reloadResource(HostVO host);
+	
 }
