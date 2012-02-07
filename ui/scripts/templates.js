@@ -31,16 +31,16 @@
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to create a template?';
+                  return dictionary["create.template.confirm"];
                 },
                 success: function(args) {
-                  return 'Your new template is being created.';
+                  return dictionary["create.template.success"];
                 },
                 notification: function(args) {
-                  return 'Creating new template';
+                  return dictionary["create.template.notification"];
                 },
                 complete: function(args) {
-                  return 'Template has been created successfully!';
+                  return dictionary["create.template.complete"];
                 }
               },
 

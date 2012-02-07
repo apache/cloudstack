@@ -1577,3 +1577,12 @@
     -->
   </body>
 </html>
+
+<script language="javascript">
+dictionary = { 	
+	'create.template.confirm' : '<fmt:message key="create.template.confirm"/>',
+	'create.template.success' : '<fmt:message key="create.template.success"/>',
+	'create.template.notification' : '<fmt:message key="create.template.notification"/>',
+	'create.template.complete' : '<fmt:message key="create.template.complete"/>'	
+};	
+</script>
