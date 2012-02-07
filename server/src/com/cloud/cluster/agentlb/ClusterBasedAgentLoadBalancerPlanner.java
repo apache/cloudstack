@@ -101,7 +101,8 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
         int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
         
-        s_logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() + " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
+        s_logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() + 
+                " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
@@ -109,17 +110,10 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
                 s_logger.debug("Trying cluster id=" + cluster);
                 
                 if (hostsInCluster.size() > hostsLeftToGive) {
+                    s_logger.debug("Skipping cluster id=" + cluster + " as it has more hosts than we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
                     if (hostsLeft >= hostsLeftToGive) {
-                        s_logger.debug("Skipping cluster id=" + cluster + " as it has more hosts that we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
                         continue;
                     } else {
-                        //get all hosts that are needed from the cluster
-                        s_logger.debug("Taking " + hostsLeftToGive + " from cluster " + cluster);
-                        for (int i=0; i < hostsLeftToGive; i++) {
-                            s_logger.trace("Taking host id=" + hostsInCluster.get(i) + " from cluster " + cluster);
-                            hostsToReturn.add(hostsInCluster.get(i));
-                        } 
-                       
                         break;
                     }  
                 } else {
