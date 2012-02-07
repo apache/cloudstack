@@ -167,5 +167,48 @@ public class Upgrade2213to2214 implements DbUpgrade {
     		throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding domain_id foreign key", e);
     	}
 
-	}
+    	//Drop i_async__removed, i_async_job__removed  (if exists) and add i_async_job__removed 
+    	keys = new ArrayList<String>();
+    	keys.add("i_async__removed");
+    	keys.add("i_async_job__removed");
+    	DbUpgradeUtils.dropKeysIfExist(conn, "cloud.async_job", keys, false);
+    	try {
+    	    PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async_job__removed`(`removed`)");
+    	    pstmt.executeUpdate();
+    	    pstmt.close();
+    	} catch (SQLException e) {
+    	    throw new CloudRuntimeException("Unable to insert index for removed column in async_job", e);
+    	}
+    	
+    	//Drop storage pool details keys (if exists) and insert one with correct name
+    	keys = new ArrayList<String>();
+        keys.add("fk_storage_pool__pool_id");
+        keys.add("fk_storage_pool_details__pool_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.storage_pool_details", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.storage_pool_details", keys, false);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`storage_pool_details` ADD CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert foreign key in storage_pool_details ", e);
+        }
+        
+        //Drop securityGroup keys (if exists) and insert one with correct name
+        keys = new ArrayList<String>();
+        keys.add("fk_security_group___account_id");
+        keys.add("fk_security_group__account_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.security_group", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.security_group", keys, false);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert foreign key in security_group table ", e);
+        }
+        
+        
+
+    }
 }
