@@ -1149,7 +1149,7 @@
       return [];
     }
 
-    if(jsonObj.hypervisor != "Ovm") {
+    if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
     }
