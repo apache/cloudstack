@@ -1,4 +1,11 @@
 (function(cloudStack) {
+
+  var replaceNullValueWith = {	  
+	  'xennetworklabel': 'Use default gateway',
+		'xennetworklabel': 'Use default gateway',
+		'xennetworklabel': 'Use default gateway'
+	};
+
   cloudStack.sections['global-settings'] = {
     title: 'Global Settings',
     id: 'global-settings',
@@ -8,24 +15,29 @@
         edit: {
           label: 'Change value',
           action: function(args) {           
-            var name = args.data.jsonObj.name;
+            var name = args.context["global-settings"].name;
             var value = args.data.value;
-
-            $.ajax({
-              url: createURL(
-                'updateConfiguration&name=' + name + '&value=' + value
-              ),
-              dataType: 'json',
-              async: true,
-              success: function(json) {                
-                var item = json.updateconfigurationresponse.configuration;
-                cloudStack.dialog.notice({ message: 'Please restart your management server for your change to take effect.' });
-                args.response.success({data: item});
-              },
-              error: function(json) {                
-                args.response.error(parseXMLHttpResponse(json));
-              }
-            });
+						
+						if((name in replaceNullValueWith) && (value == replaceNullValueWith[name])) {						  
+							args.response.success({data: args.context["global-settings"]});														
+						}
+						else {
+							$.ajax({
+								url: createURL(
+									'updateConfiguration&name=' + todb(name) + '&value=' + todb(value)
+								),
+								dataType: 'json',
+								async: true,
+								success: function(json) {                
+									var item = json.updateconfigurationresponse.configuration;
+									cloudStack.dialog.notice({ message: 'Please restart your management server for your change to take effect.' });
+									args.response.success({data: item});
+								},
+								error: function(json) {                
+									args.response.error(parseXMLHttpResponse(json));
+								}
+							});
+						}
           }
         }
       },
@@ -50,7 +62,16 @@
           dataType: "json",
           async: true,
           success: function(json) {
-            var items = json.listconfigurationsresponse.configuration;
+            var configurationObjs = json.listconfigurationsresponse.configuration;
+												
+						var items = [];
+						$(configurationObjs).each(function(){						 
+							if((this.name in replaceNullValueWith) && (this.value == null)) {							  
+							  this.value = replaceNullValueWith[this.name];								
+							}							
+							items.push(this);
+						});
+												
             args.response.success({ data: items });
           }
         });
