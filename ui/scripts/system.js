@@ -1638,7 +1638,9 @@
 
           $.ajax({
             url: createURL('listPhysicalNetworks'),
-            zoneid: args.context.zones[0].id,
+						data: {
+              zoneid: args.context.zones[0].id
+						},
             success: function(json) {
               args.response.success({
                 data: json.listphysicalnetworksresponse.physicalnetwork
