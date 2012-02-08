@@ -275,6 +275,15 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     try {
                         txn.start();
                         _remoteAccessVpnDao.remove(ipId);
+                        // Stop billing of VPN users when VPN is removed. VPN_User_ADD events will be generated when VPN is created again 
+                        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
+                        for(VpnUserVO user : vpnUsers){
+                        	// VPN_USER_REMOVE event is already generated for users in Revoke state
+                        	if(user.getState() != VpnUser.State.Revoke){
+                        		UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
+                        		_usageEventDao.persist(usageEvent);
+                        	}
+                        }
                         if (vpnFwRules != null) {
                             for (FirewallRule vpnFwRule : vpnFwRules) {
                                 _rulesDao.remove(vpnFwRule.getId());
@@ -356,7 +365,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         return _vpnUsersDao.listByAccount(vpnOwnerId);
     }
 
-    @Override
+    @Override @DB
     public RemoteAccessVpnVO startRemoteAccessVpn(long vpnId, boolean openFirewall) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
 
@@ -391,8 +400,20 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             return vpn;
         } finally {
             if (started) {
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
                 vpn.setState(RemoteAccessVpn.State.Running);
                 _remoteAccessVpnDao.update(vpn.getServerAddressId(), vpn);
+                
+                // Start billing of existing VPN users in ADD and Active state 
+                List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
+                for(VpnUserVO user : vpnUsers){
+                	if(user.getState() != VpnUser.State.Revoke){
+                		UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
+                		_usageEventDao.persist(usageEvent);
+                	}
+                }
+                txn.commit();
             } 
         }
     }
