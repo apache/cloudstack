@@ -196,6 +196,11 @@
             label: 'Network Domain',
             desc: 'A DNS suffix that will create a custom domain name for the network that is accessed by guest VMs.'
           },
+					guestcidraddress: { 
+					  label: 'Guest CIDR', 
+						defaultValue: '10.1.1.0/24',
+						validation: { required: true }
+					},
           ispublic: {
             isReverse: true,
             isBoolean: true,
