@@ -121,7 +121,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getCidr() != null) {
                 config.setCidr(userSpecified.getCidr());
                 config.setGateway(userSpecified.getGateway());
-                config.setSpecifiedCidr(true);
             }
 
             if (userSpecified.getBroadcastUri() != null) {

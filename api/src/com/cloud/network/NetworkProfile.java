@@ -47,7 +47,6 @@ public class NetworkProfile implements Network {
     private Network.GuestType guestType;
     private Long physicalNetworkId;
     private ACLType aclType;
-    private boolean specifiedCidr;
     private boolean restartRequired;
     private boolean specifyIpRanges;
 
@@ -72,7 +71,6 @@ public class NetworkProfile implements Network {
         this.guestType = network.getGuestType();
         this.physicalNetworkId = network.getPhysicalNetworkId();
         this.aclType = network.getAclType();
-        this.specifiedCidr = network.isSpecifiedCidr();
         this.restartRequired = network.isRestartRequired();
         this.specifyIpRanges = network.getSpecifyIpRanges();
     }
@@ -200,15 +198,6 @@ public class NetworkProfile implements Network {
     @Override
     public ACLType getAclType() {
         return aclType;
-    }
-
-    @Override
-    public boolean isSpecifiedCidr() {
-        return specifiedCidr;
-    }
-
-    public void setSpecifiedCidr(boolean specifiedCidr) {
-        this.specifiedCidr = specifiedCidr;
     }
 
     @Override

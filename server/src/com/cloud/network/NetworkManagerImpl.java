@@ -3908,7 +3908,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {
-                if (network.isSpecifiedCidr() && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
+                if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
                     throw new InvalidParameterValueException("Network offering " + networkOffering + " contained external network elements, can't be upgraded from a CIDR specify network!");
                 }
                 // check if the network is upgradable

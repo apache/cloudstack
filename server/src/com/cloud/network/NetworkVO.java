@@ -142,9 +142,6 @@ public class NetworkVO implements Network, Identity {
     @Enumerated(value=EnumType.STRING)
     ControlledEntity.ACLType aclType;
 
-    @Column(name="specified_cidr")
-    boolean specifiedCidr;
-    
     @Column(name="restart_required")
     boolean restartRequired = false;
     
@@ -193,7 +190,6 @@ public class NetworkVO implements Network, Identity {
             state = State.Allocated;
         }
     	this.uuid = UUID.randomUUID().toString();
-    	this.specifiedCidr = that.isSpecifiedCidr();
     }
 
     /**
@@ -224,7 +220,6 @@ public class NetworkVO implements Network, Identity {
         this.networkDomain = networkDomain;
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
-        this.specifiedCidr = false;
         this.specifyIpRanges = specifyIpRanges;
     }
 
@@ -469,15 +464,6 @@ public class NetworkVO implements Network, Identity {
 	public ControlledEntity.ACLType getAclType() {
 		return aclType;
 	}
-
-	@Override
-    public boolean isSpecifiedCidr() {
-        return specifiedCidr;
-    }
-
-    public void setSpecifiedCidr(boolean specifiedCidr) {
-        this.specifiedCidr = specifiedCidr;
-    }
 
 	public void setRestartRequired(boolean restartRequired) {
 		this.restartRequired = restartRequired;

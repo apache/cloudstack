@@ -627,7 +627,6 @@ ALTER TABLE `cloud`.`domain_network_ref` ADD COLUMN `subdomain_access` int(1) un
 UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM network_offerings no where no.id=network_offering_id);
 
 
-ALTER TABLE `cloud`.`networks` ADD COLUMN `specified_cidr` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if the CIDR/gateway/vlan are specified in this network';
 DELETE FROM `cloud`.`configuration` WHERE name='network.redundantrouter';
 
 UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.public.network.device';

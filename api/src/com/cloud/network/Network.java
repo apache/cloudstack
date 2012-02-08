@@ -286,8 +286,6 @@ public interface Network extends ControlledEntity {
 
 	ACLType getAclType();
 	
-	boolean isSpecifiedCidr();
-
 	boolean isRestartRequired();
 
 	boolean getSpecifyIpRanges();
