@@ -188,9 +188,14 @@ static_nat() {
 
   local dev=$(ip_to_dev $publicIp)
   [ $? -ne 0 ] && echo "Could not find device associated with $publicIp" && return 1
+  local tableNo=$(echo $dev | awk -F'eth' '{print $2}')
 
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
+  (sudo iptables -t mangle $op PREROUTING -i $dev -d $publicIp \
+           -j MARK --set-mark $tableNo) && 
+  (sudo iptables -t mangle $op PREROUTING -i $dev -d $publicIp \
+           -m state --state NEW -j CONNMARK --save-mark) &&
   (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp -j DNAT \
            --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp  -m state \
