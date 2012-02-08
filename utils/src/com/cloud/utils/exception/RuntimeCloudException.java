@@ -30,7 +30,7 @@ import com.cloud.utils.IdentityProxy;
 
 public class RuntimeCloudException extends RuntimeException {
     
-	IdentityProxy id;
+	protected IdentityProxy id;
 	
 	public RuntimeCloudException(String table_name, Long id) {
 		this.id = new IdentityProxy();
@@ -51,5 +51,15 @@ public class RuntimeCloudException extends RuntimeException {
 		//this.id = NULL; ??
 		super();
 	}
+
+	public void setProxyObject(String table_name, Long id) {
+		this.id = new IdentityProxy();
+		this.id.setTableName(table_name);
+		this.id.setValue(id);
+		return;
+	}
 	
+	public IdentityProxy getProxyObject() {
+		return id;
+	}
 }
