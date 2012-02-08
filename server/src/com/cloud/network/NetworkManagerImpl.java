@@ -1754,6 +1754,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Changing active number of nics for network id=" + networkId + " on " + count);
             _networksDao.changeActiveNicsBy(networkId, count);
         }
+
+        if (nic.getVmType() == VirtualMachine.Type.User || (nic.getVmType() == VirtualMachine.Type.DomainRouter && getNetwork(networkId).getTrafficType() == TrafficType.Guest)) {
+            _networksDao.setCheckForGc(networkId);
+        }
+        
         txn.commit();
     }
 

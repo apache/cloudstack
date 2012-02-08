@@ -75,15 +75,21 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
     }
     
     public void changeActiveNicsBy(long networkId, int count) {
+        
         SearchCriteria<NetworkOpVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
-        
+
         NetworkOpVO vo = createForUpdate();
-        vo.setCheckForGc(true);
         UpdateBuilder builder = getUpdateBuilder(vo);
         builder.incr(_activeNicsAttribute, count);
         
         update(builder, sc, null);
+    }
+    
+    public void setCheckForGc(long networkId) {
+        NetworkOpVO vo = createForUpdate();
+        vo.setCheckForGc(true);
+        update(networkId, vo);
     }
     
     public void clearCheckForGc(long networkId) {
