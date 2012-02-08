@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -197,10 +198,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @DB
     public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource) {
 
-        String guid;
         PhysicalNetworkVO pNetwork = null;
         NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
-        Transaction txn = null;
         long zoneId;
 
         if ((ntwkDevice == null) || (url == null) || (username == null) || (resource == null) || (password == null)) {
@@ -233,9 +232,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         String ipAddress = uri.getHost();
         Map hostDetails = new HashMap<String, String>();
-        guid = getExternalLoadBalancerResourceGuid(pNetwork.getId(), deviceName, ipAddress);
-        hostDetails.put("name", guid);
-        hostDetails.put("guid", guid);
+        String hostName = getExternalLoadBalancerResourceGuid(pNetwork.getId(), deviceName, ipAddress);
+        hostDetails.put("name", hostName);
+        hostDetails.put("guid", UUID.randomUUID().toString());
         hostDetails.put("zoneId", String.valueOf(pNetwork.getDataCenterId()));
         hostDetails.put("ip", ipAddress);
         hostDetails.put("physicalNetworkId", String.valueOf(pNetwork.getId()));
@@ -248,21 +247,20 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
         hostDetails.putAll(configParams);
 
+        Transaction txn = Transaction.currentTxn();
         try {
-            resource.configure(guid, hostDetails);
+            resource.configure(hostName, hostDetails);
 
             Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
             if (host != null) {
-                txn = Transaction.currentTxn();
-                txn.start();
 
                 boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
                 boolean inline = (configParams.get(ApiConstants.INLINE) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.INLINE)) : false;
                 long capacity = NumbersUtil.parseLong((String) configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
 
+                txn.start();
                 ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
                         deviceName, capacity, dedicatedUse, inline);
-
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
 
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -274,6 +272,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 throw new CloudRuntimeException("Failed to add load balancer device due to internal error.");
             }
         } catch (ConfigurationException e) {
+            txn.rollback();
             throw new CloudRuntimeException(e.getMessage());
         }
     }
