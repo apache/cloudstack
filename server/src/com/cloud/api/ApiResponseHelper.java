@@ -861,6 +861,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
             zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
             // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());
+            zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
         }
 
         if (showCapacities != null && showCapacities) {

@@ -640,6 +640,7 @@ public class DatabaseConfig {
         String internalDns1 = _currentObjectParams.get("internalDns1");
         String internalDns2 = _currentObjectParams.get("internalDns2");
         //String vnetRange = _currentObjectParams.get("vnet");
+        String guestNetworkCidr = _currentObjectParams.get("guestNetworkCidr");
         String networkType = _currentObjectParams.get("networktype");
         
         // Check that all IPs are valid
@@ -656,9 +657,11 @@ public class DatabaseConfig {
         if (!IPRangeConfig.validOrBlankIP(internalDns2)) {
             printError(ipError + "internalDns2");
         }
+        if (!IPRangeConfig.validCIDR(guestNetworkCidr)) {
+            printError("Please enter a valid value for guestNetworkCidr");
+        }
     	
-    	pzc.saveZone(false, id, name, dns1, dns2, internalDns1, internalDns2, networkType);
-        
+    	pzc.saveZone(false, id, name, dns1, dns2, internalDns1, internalDns2, guestNetworkCidr, networkType);
     }
 	
     private void savePhysicalNetwork() {

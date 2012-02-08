@@ -123,6 +123,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param dns2
      * @param internalDns1
      * @param internalDns2
+     * @param guestCidr
      * @param zoneType
      * @param allocationState
      * @param networkDomain
@@ -133,7 +134,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @throws
      * @throws
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String domain, Long domainId, NetworkType zoneType, String allocationState,
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState,
             String networkDomain, boolean isSecurityGroupEnabled);
 
     /**

@@ -102,10 +102,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         
-        if (config.isSpecifiedCidr()) {
-            return super.implement(config, offering, dest, context);
-        }
-
         DataCenter zone = dest.getDataCenter();
         NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
                 config.getDataCenterId(), config.getPhysicalNetworkId());
@@ -132,6 +128,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         int offset = getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
 
         // Determine the new gateway and CIDR
+        String[] oldCidr = config.getCidr().split("/");
+        String oldCidrAddress = oldCidr[0];
         int cidrSize = getGloballyConfiguredCidrSize();
 
         // If the offset has more bits than there is room for, return null
@@ -140,8 +138,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             throw new CloudRuntimeException("The offset " + offset + " needs " + bitsInOffset + " bits, but only have " + (cidrSize - 8) + " bits to work with.");
         }
 
-        // Use 10.1.1.1 which is reserved for private address
-        long newCidrAddress = (NetUtils.ip2Long("10.1.1.1") & 0xff000000) | (offset << (32 - cidrSize));
+        long newCidrAddress = (NetUtils.ip2Long(oldCidrAddress) & 0xff000000) | (offset << (32 - cidrSize));
         implemented.setGateway(NetUtils.long2Ip(newCidrAddress + 1));
         implemented.setCidr(NetUtils.long2Ip(newCidrAddress) + "/" + cidrSize);
         implemented.setState(State.Implemented);
@@ -196,11 +193,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
-       
-        if (config.isSpecifiedCidr()) {
-            return super.allocate(config, nic, vm);
-        }
-        
+
         if (nic != null && nic.getRequestedIp() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
@@ -228,10 +221,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
         
-        if (config.isSpecifiedCidr()) {
-            return;
-        }
-
         nic.setIp4Address(null);
         nic.setGateway(null);
         nic.setNetmask(null);
@@ -244,10 +233,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
         if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
-            return;
-        }
-        if (config.isSpecifiedCidr()) {
-            super.reserve(nic, config, vm, dest, context);
             return;
         }
         

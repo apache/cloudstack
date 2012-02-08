@@ -20,6 +20,7 @@
       <internalDns2>4.2.2.2</internalDns2>
       <netmask>255.255.255.0</netmask>
       <vnet>560-579</vnet>      
+      <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
       <networktype>Advanced</networktype>
     </zone>
   </zones> 

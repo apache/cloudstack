@@ -50,6 +50,9 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
 
+    @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, description="the guest CIDR address for the Zone")
+    private String guestCidrAddress;
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Zone")
     private Long id;
@@ -91,6 +94,10 @@ public class UpdateZoneCmd extends BaseCmd {
 
     public String getDns2() {
         return dns2;
+    }
+
+    public String getGuestCidrAddress() {
+        return guestCidrAddress;
     }
 
     public Long getId() {
