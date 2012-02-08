@@ -1980,7 +1980,7 @@
 					else if(args.data.returnedZone.networktype == "Advanced") {	 //update VLAN in physical network(s) in advanced zone   	
 						var physicalNetworksHavingGuestIncludingVlan = [];
 						$(args.data.physicalNetworks).each(function(){		
-						  if(this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart == null && this.guestConfiguration.vlanRangeStart.length > 0) {		
+						  if(this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart != null && this.guestConfiguration.vlanRangeStart.length > 0) {		
 						    physicalNetworksHavingGuestIncludingVlan.push(this);
 						  }
 						});
