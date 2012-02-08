@@ -8,8 +8,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 
 class Services:
@@ -60,10 +61,10 @@ class TestCreateServiceOffering(cloudstackTestCase):
                                             )
         self.cleanup.append(service_offering)
 
-        cmd = listServiceOfferings.listServiceOfferingsCmd()
-        cmd.id = service_offering.id
-        list_service_response = self.apiclient.listServiceOfferings(cmd)
-
+        list_service_response = list_service_offering(
+                                                      self.apiclient,
+                                                      id=service_offering.id
+                                                      )
         self.assertNotEqual(
                         len(list_service_response),
                         0,
@@ -163,9 +164,10 @@ class TestServiceOfferings(cloudstackTestCase):
         cmd.name = random_name
         self.apiclient.updateServiceOffering(cmd)
 
-        cmd = listServiceOfferings.listServiceOfferingsCmd()
-        cmd.id = self.service_offering_1.id
-        list_service_response = self.apiclient.listServiceOfferings(cmd)
+        list_service_response = list_service_offering(
+                                            self.apiclient,
+                                            id=self.service_offering_1.id
+                                            )
 
         self.assertNotEqual(
                             len(list_service_response),
@@ -193,14 +195,12 @@ class TestServiceOfferings(cloudstackTestCase):
         # 1. deleteServiceOffering should return
         #    a valid information for newly created offering
 
-        cmd = deleteServiceOffering.deleteServiceOfferingCmd()
-        #Add the required parameters required to call for API
-        cmd.id = self.service_offering_2.id
-        self.apiclient.deleteServiceOffering(cmd)
+        self.service_offering_2.delete(self.apiclient)
 
-        cmd = listServiceOfferings.listServiceOfferingsCmd()
-        cmd.id = self.service_offering_2.id
-        list_service_response = self.apiclient.listServiceOfferings(cmd)
+        list_service_response = list_service_offering(
+                                            self.apiclient,
+                                            id=self.service_offering_2.id
+                                            )
 
         self.assertEqual(
                         list_service_response,

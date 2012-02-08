@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 import remoteSSHClient
 #Import System modules
 import os
@@ -36,8 +37,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 200, # in MHz
-                                    "memory": 256, # In MBs
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -50,19 +51,23 @@ class Services:
                                 "domainid": 1,
                             },
                         },
-                            "customdisksize": 1, # GBs
-                            "username": "root", # Creds for SSH to VM
-                            "password": "password",
-                            "ssh_port": 22,
-                            "diskname": "TestDiskServ",
-                            "hypervisor": 'XenServer',
-                            "domainid": 1,
-                            "privateport": 22,
-                            "publicport": 22,
-                            "protocol": 'TCP',
-                            "diskdevice": "/dev/sda",
-                            "ostypeid": 12,
-                        }
+                        "customdisksize": 1, # GBs
+                        "username": "root", # Creds for SSH to VM
+                        "password": "password",
+                        "ssh_port": 22,
+                        "diskname": "TestDiskServ",
+                        "hypervisor": 'XenServer',
+                        "domainid": 1,
+                        "privateport": 22,
+                        "publicport": 22,
+                        "protocol": 'TCP',
+                        "diskdevice": "/dev/xvda",
+                        "ostypeid": 12,
+                        "zoneid": 1,
+                        # Optional, if specified the mentioned zone will be
+                        # used for tests
+                        "mode": 'advanced',
+                    }
 
 
 class TestCreateVolume(cloudstackTestCase):
@@ -73,7 +78,7 @@ class TestCreateVolume(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -95,8 +100,7 @@ class TestCreateVolume(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
-                            admin=True
+                            cls.services["account"]
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -108,27 +112,11 @@ class TestCreateVolume(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services,
                                     accountid=cls.account.account.name,
-                                    serviceofferingid=cls.service_offering.id
-                                )
-
-        cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services
-                                           )
-        cls.nat_rule = NATRule.create(
-                                cls.api_client,
-                                cls.virtual_machine,
-                                cls.services,
-                                ipaddressid=cls.public_ip.ipaddress.id
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
                                 )
         cls._cleanup = [
-                        cls.nat_rule,
-                        cls.virtual_machine,
                         cls.service_offering,
-                        cls.public_ip,
                         cls.disk_offering,
                         cls.custom_disk_offering,
                         cls.account
@@ -162,30 +150,30 @@ class TestCreateVolume(cloudstackTestCase):
         #Attach a volume with different disk offerings
         #and check the memory allocated to each of them
         for volume in self.volumes:
-            cmd = listVolumes.listVolumesCmd()
-            cmd.id = volume.id
-            list_volume_response = self.apiClient.listVolumes(cmd)
-
+            list_volume_response = list_volumes(
+                                                self.apiClient,
+                                                id=volume.id
+                                                )
             self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
+
             attached_volume = self.virtual_machine.attach_volume(
                                                         self.apiClient,
                                                         volume
                                                         )
 
-            ssh = self.virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
+            ssh = self.virtual_machine.get_ssh_client()
 
             ssh.execute("reboot")
             #Sleep to ensure the machine is rebooted properly
             time.sleep(120)
             ssh = self.virtual_machine.get_ssh_client(
-                                                      self.nat_rule.ipaddress,
                                                       reconnect=True
                                                       )
-            c = "fdisk -l|grep %s|head -1" % self.services["diskdevice"]
+            c = "fdisk -l|grep %s1|head -1" % self.services["diskdevice"]
             res = ssh.execute(c)
             # Disk /dev/sda doesn't contain a valid partition table
             # Disk /dev/sda: 21.5 GB, 21474836480 bytes
@@ -224,7 +212,7 @@ class TestVolumes(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -241,8 +229,7 @@ class TestVolumes(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
-                            admin=True
+                            cls.services["account"]
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -254,30 +241,15 @@ class TestVolumes(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services,
                                     accountid=cls.account.account.name,
-                                    serviceofferingid=cls.service_offering.id
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
                                 )
 
-        cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services
-                                           )
-        cls.nat_rule = NATRule.create(
-                                      cls.api_client,
-                                      cls.virtual_machine,
-                                      cls.services,
-                                      ipaddressid=cls.public_ip.ipaddress.id
-                                    )
         cls.volume = Volume.create(
                                    cls.api_client,
                                    cls.services
                                    )
         cls._cleanup = [
-                        cls.nat_rule,
-                        cls.virtual_machine,
-                        cls.public_ip,
                         cls.service_offering,
                         cls.disk_offering,
                         cls.account
@@ -306,10 +278,11 @@ class TestVolumes(cloudstackTestCase):
 
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(60)
-        cmd = listVolumes.listVolumesCmd()
-        cmd.id = self.volume.id
-        list_volume_response = self.apiClient.listVolumes(cmd)
 
+        list_volume_response = list_volumes(
+                                                self.apiClient,
+                                                id=self.volume.id
+                                                )
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -323,10 +296,7 @@ class TestVolumes(cloudstackTestCase):
                             )
 
         #Format the attached volume to a known fs
-        format_volume_to_ext3(
-                        self.virtual_machine.get_ssh_client(
-                                                self.nat_rule.ipaddress
-                              ))
+        format_volume_to_ext3(self.virtual_machine.get_ssh_client())
 
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
@@ -372,10 +342,10 @@ class TestVolumes(cloudstackTestCase):
         self.virtual_machine.detach_volume(self.apiClient, self.volume)
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(60)
-        cmd = listVolumes.listVolumesCmd()
-        cmd.id = self.volume.id
-        list_volume_response = self.apiClient.listVolumes(cmd)
-
+        list_volume_response = list_volumes(
+                                                self.apiClient,
+                                                id=self.volume.id
+                                                )
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -433,11 +403,11 @@ class TestVolumes(cloudstackTestCase):
         self.apiClient.deleteVolume(cmd)
 
         time.sleep(60)
-        cmd = listVolumes.listVolumesCmd()
-        cmd.id = self.volume.id
-        cmd.type = 'DATADISK'
-
-        list_volume_response = self.apiClient.listVolumes(cmd)
+        list_volume_response = list_volumes(
+                                            self.apiClient,
+                                            id=self.volume.id,
+                                            type='DATADISK'
+                                            )
         self.assertEqual(
                         list_volume_response,
                         None,

@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 #Import System modules
 import time
@@ -24,19 +25,16 @@ class Services:
                                 "url": "nfs://192.168.100.131/Primary",
                                 # Format: File_System_Type/Location/Path
                                 "name": "Primary XEN",
-                                "clusterid": 1, # XEN Cluster
                                 "hypervisor": 'XEN',
                             },
                             1: {
                                 "url": "nfs://192.168.100.131/Primary",
                                 "name": "Primary KVM",
-                                "clusterid": 40, # KVM Cluster
                                 "hypervisor": 'KVM',
                             },
                             2: {
                                 "url": "nfs://192.168.100.131/Primary",
                                 "name": "Primary VMWare",
-                                "clusterid": 33, # VMWare Cluster
                                 "hypervisor": 'VMWare',
                             },
                         },
@@ -45,16 +43,12 @@ class Services:
                                 "url": "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
                                 # Format : iscsi://IP Address/IQN number/LUN#
                                 "name": "Primary iSCSI",
-                                "clusterid": 1, # XEN Cluster
                                 "hypervisor": 'XEN',
                             },
-                            1: {
-                                "url": "iscsi://192.168.100.21/export",
-                                "name": "Primary KVM",
-                                "clusterid": 1, # KVM Cluster
-                                "hypervisor": 'KVM',
-                            },
                         },
+                        "zoneid": 2,
+                        # Optional, if specified the mentioned zone will be
+                        # used for tests
                  }
 
 class TestPrimaryStorageServices(cloudstackTestCase):
@@ -65,7 +59,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.services = Services().services
         self.cleanup = []
         # Get Zone and pod
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id)
 
         self.services["nfs"][0]["zoneid"] = self.zone.id
@@ -77,11 +71,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.services["nfs"][2]["podid"] = self.pod.id
 
         self.services["iscsi"][0]["zoneid"] = self.zone.id
-        self.services["iscsi"][1]["zoneid"] = self.zone.id
-
         self.services["iscsi"][0]["podid"] = self.pod.id
-        self.services["iscsi"][1]["podid"] = self.pod.id
-
         return
 
     def tearDown(self):
@@ -106,18 +96,28 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         #Create NFS storage pools with on XEN/KVM/VMWare clusters
         for k, v in self.services["nfs"].items():
 
+            clusters = list_clusters(
+                                     self.apiclient,
+                                     zoneid=self.zone.id,
+                                     hypervisortype=v["hypervisor"]
+                                     )
+            cluster = clusters[0]
             #Host should be present before adding primary storage
-            cmd = listHosts.listHostsCmd()
-            cmd.clusterid = v["clusterid"]
-            list_hosts_response = self.apiclient.listHosts(cmd)
+            list_hosts_response = list_hosts(
+                                             self.apiclient,
+                                             clusterid=cluster.id
+                                             )
 
             self.assertNotEqual(
-                len(list_hosts_response),
-                0,
-                "Check list Hosts for hypervisor: " + v["hypervisor"]
-                )
+                        len(list_hosts_response),
+                        0,
+                        "Check list Hosts for hypervisor: " + v["hypervisor"]
+                        )
 
-            storage = StoragePool.create(self.apiclient, v)
+            storage = StoragePool.create(self.apiclient,
+                                         v,
+                                         clusterid=cluster.id
+                                         )
             self.cleanup.append(storage)
 
             self.assertEqual(
@@ -132,11 +132,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 "Check storage pool type for hypervisor : " + v["hypervisor"]
                 )
 
-           #Verify List Storage pool Response has newly added storage pool
-            cmd = listStoragePools.listStoragePoolsCmd()
-            cmd.id = storage.id
-            storage_pools_response = self.apiclient.listStoragePools(cmd)
-
+            #Verify List Storage pool Response has newly added storage pool
+            storage_pools_response = list_storage_pools(
+                                                        self.apiclient,
+                                                        id=storage.id,
+                                                        )
             self.assertNotEqual(
                             len(storage_pools_response),
                             0,
@@ -160,7 +160,17 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
         # Create iSCSI storage pools with on XEN/KVM clusters
         for k, v in self.services["iscsi"].items():
-            storage = StoragePool.create(self.apiclient, v)
+            clusters = list_clusters(
+                                     self.apiclient,
+                                     zoneid=self.zone.id,
+                                     hypervisortype=v["hypervisor"]
+                                     )
+            cluster = clusters[0]
+
+            storage = StoragePool.create(self.apiclient,
+                                         v,
+                                         clusterid=cluster.id
+                                         )
             self.cleanup.append(storage)
 
             self.assertEqual(
@@ -170,9 +180,10 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 )
 
             #Verify List Storage pool Response has newly added storage pool
-            cmd = listStoragePools.listStoragePoolsCmd()
-            cmd.id = storage.id
-            storage_pools_response = self.apiclient.listStoragePools(cmd)
+            storage_pools_response = list_storage_pools(
+                                                        self.apiclient,
+                                                        id=storage.id,
+                                                        )
 
             self.assertNotEqual(
                 len(storage_pools_response),

@@ -9,8 +9,9 @@
 from cloudstackTestCase import *
 from cloudstackAPI import *
 import remoteSSHClient
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 #Import System modules
 import time
 
@@ -23,6 +24,10 @@ class Services:
         self.services = {
                             "ostypeid": 12,
                             # Cent OS 5.3 (64 bit)
+                            "zoneid": 1,
+                            # Optional, if specified the mentioned zone will be
+                            # used for tests
+                            "mode": 'advanced', # Networking mode: Basic or advanced
                             "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -38,23 +43,23 @@ class Services:
                                     # In MBs
                                     },
                             "account": {
-                                            "email": "test@test.com",
-                                            "firstname": "Test",
-                                            "lastname": "User",
-                                            "username": "test",
-                                            "password": "password",
-                                        },
+                                    "email": "test@test.com",
+                                    "firstname": "Test",
+                                    "lastname": "User",
+                                    "username": "test",
+                                    "password": "password",
+                                    },
                             "server":
                                     {
-                                        "displayname": "Small Instance",
-                                        "username": "root",
-                                        "password": "password",
-                                        "hypervisor": 'XenServer',
-                                        "domainid": 1,
-                                        "privateport": 22,
-                                        "publicport": 22,
-                                        "ssh_port": 22,
-                                        "protocol": 'TCP',
+                                    "displayname": "Small Instance",
+                                    "username": "root",
+                                    "password": "password",
+                                    "hypervisor": 'XenServer',
+                                    "domainid": 1,
+                                    "privateport": 22,
+                                    "publicport": 22,
+                                    "ssh_port": 22,
+                                    "protocol": 'TCP',
                                 },
                         "natrule":
                                 {
@@ -84,7 +89,7 @@ class TestPublicIP(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
 
         # Create Accounts & networks
         cls.account = Account.create(
@@ -155,10 +160,10 @@ class TestPublicIP(cloudstackTestCase):
                                             self.zone.id,
                                             self.account.account.domainid
                                             )
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = ip_address.ipaddress.id
-
-        list_pub_ip_addr_resp = self.apiclient.listPublicIpAddresses(cmd)
+        list_pub_ip_addr_resp = list_publicIP(
+                                              self.apiclient,
+                                              id=ip_address.ipaddress.id
+                                              )
 
         #listPublicIpAddresses should return newly created public IP
         self.assertNotEqual(
@@ -176,11 +181,10 @@ class TestPublicIP(cloudstackTestCase):
 
         # Validate the following:
         # 1.listPublicIpAddresses should no more return the released address
-
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = ip_address.ipaddress.id
-        list_pub_ip_addr_resp = self.apiclient.listPublicIpAddresses(cmd)
-
+        list_pub_ip_addr_resp = list_publicIP(
+                                              self.apiclient,
+                                              id=ip_address.ipaddress.id
+                                              )
         self.assertEqual(
                     list_pub_ip_addr_resp,
                     None,
@@ -202,11 +206,12 @@ class TestPublicIP(cloudstackTestCase):
                                             self.zone.id,
                                             self.user.account.domainid
                                             )
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = ip_address.ipaddress.id
 
         #listPublicIpAddresses should return newly created public IP
-        list_pub_ip_addr_resp = self.apiclient.listPublicIpAddresses(cmd)
+        list_pub_ip_addr_resp = list_publicIP(
+                                              self.apiclient,
+                                              id=ip_address.ipaddress.id
+                                              )
 
         self.assertNotEqual(
                             len(list_pub_ip_addr_resp),
@@ -221,9 +226,10 @@ class TestPublicIP(cloudstackTestCase):
 
         ip_address.delete(self.apiclient)
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = ip_address.ipaddress.id
-        list_pub_ip_addr_resp = self.apiclient.listPublicIpAddresses(cmd)
+        list_pub_ip_addr_resp = list_publicIP(
+                                              self.apiclient,
+                                              id=ip_address.ipaddress.id
+                                              )
 
         self.assertEqual(
                     list_pub_ip_addr_resp,
@@ -242,7 +248,7 @@ class TestPortForwarding(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -296,11 +302,12 @@ class TestPortForwarding(cloudstackTestCase):
         #1. listPortForwarding rules API should return the added PF rule
         #2. attempt to do an ssh into the  user VM through the sourceNAT
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
-
+        src_nat_ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        src_nat_ip_addr = src_nat_ip_addrs[0]
         #Create NAT rule
         nat_rule = NATRule.create(
                         self.apiclient,
@@ -309,10 +316,10 @@ class TestPortForwarding(cloudstackTestCase):
                         src_nat_ip_addr.id
                         )
 
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.id = nat_rule.id
-        list_nat_rule_response = self.apiclient.listPortForwardingRules(cmd)
-
+        list_nat_rule_response = list_nat_rules(
+                                                self.apiclient,
+                                                id=nat_rule.id
+                                                )
         self.assertNotEqual(
                             len(list_nat_rule_response),
                             0,
@@ -334,9 +341,10 @@ class TestPortForwarding(cloudstackTestCase):
 
         nat_rule.delete(self.apiclient)
 
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.id = nat_rule.id
-        list_nat_rule_response = self.apiclient.listPortForwardingRules(cmd)
+        list_nat_rule_response = list_nat_rules(
+                                                self.apiclient,
+                                                id=nat_rule.id
+                                                )
 
         self.assertEqual(
                             list_nat_rule_response,
@@ -379,10 +387,10 @@ class TestPortForwarding(cloudstackTestCase):
         #1. listPortForwardingRules should not return the deleted rule anymore
         #2. attempt to do ssh should now fail
 
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.id = nat_rule.id
-        list_nat_rule_response = self.apiclient.listPortForwardingRules(cmd)
-
+        list_nat_rule_response = list_nat_rules(
+                                                self.apiclient,
+                                                id=nat_rule.id
+                                                )
         self.assertNotEqual(
                             len(list_nat_rule_response),
                             0,
@@ -399,17 +407,17 @@ class TestPortForwarding(cloudstackTestCase):
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.virtual_machine.ipaddress.ipaddress, e)
+                      (self.virtual_machine.ipaddress, e)
                       )
 
         nat_rule.delete(self.apiclient)
 
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.id = nat_rule.id
-        list_nat_rule_response = self.apiclient.listPortForwardingRules(cmd)
-
+        list_nat_rule_response = list_nat_rules(
+                                                self.apiclient,
+                                                id=nat_rule.id
+                                                )
         self.assertEqual(
-                            len(list_nat_rule_response),
+                            list_nat_rule_response,
                             None,
                             "Check Port Forwarding Rule is deleted"
                             )
@@ -432,7 +440,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -502,10 +510,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
         #3. verify using the hostname of the VM
         #   that round robin is indeed happening as expected
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
+        src_nat_ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        src_nat_ip_addr = src_nat_ip_addrs[0]
 
         #Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
@@ -517,10 +527,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
         self.cleanup.append(lb_rule)
 
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
-        cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        cmd.id = lb_rule.id
-        lb_rules = self.apiclient.listLoadBalancerRules(cmd)
 
+        lb_rules = list_lb_rules(
+                                 self.apiclient,
+                                 id=lb_rule.id
+                                 )
         #verify listLoadBalancerRules lists the added load balancing rule
         self.assertNotEqual(
                             len(lb_rules),
@@ -535,10 +546,10 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         # listLoadBalancerRuleInstances should list all
         # instances associated with that LB rule
-        cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
-        cmd.id = lb_rule.id
-        lb_instance_rules = self.apiclient.listLoadBalancerRuleInstances(cmd)
-
+        lb_instance_rules = list_lb_instances(
+                                              self.apiclient,
+                                              id=lb_rule.id
+                                              )
         self.assertNotEqual(
                             len(lb_instance_rules),
                             0,
@@ -559,7 +570,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
-                                        self.services['natrule']["publicport"],
+                                        self.services['lbrule']["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
                                         )
@@ -570,7 +581,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         time.sleep(20)
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
-                                        self.services['natrule']["publicport"],
+                                        self.services['lbrule']["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
                                         )
@@ -620,9 +631,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
         self.cleanup.append(lb_rule)
 
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
-        cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        cmd.id = lb_rule.id
-        lb_rules = self.apiclient.listLoadBalancerRules(cmd)
+
+        lb_rules = list_lb_rules(
+                                 self.apiclient,
+                                 id=lb_rule.id
+                                 )
 
         #verify listLoadBalancerRules lists the added load balancing rule
         self.assertNotEqual(
@@ -637,9 +650,10 @@ class TestLoadBalancingRule(cloudstackTestCase):
                         )
         # listLoadBalancerRuleInstances should list
         # all instances associated with that LB rule
-        cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
-        cmd.id = lb_rule.id
-        lb_instance_rules = self.apiclient.listLoadBalancerRuleInstances(cmd)
+        lb_instance_rules = list_lb_instances(
+                                              self.apiclient,
+                                              id=lb_rule.id
+                                              )
 
         self.assertNotEqual(
                             len(lb_instance_rules),
@@ -661,7 +675,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                     self.non_src_nat_ip.ipaddress.ipaddress,
-                                    self.services['natrule']["publicport"],
+                                    self.services['lbrule']["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
                                     )
@@ -672,7 +686,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         time.sleep(20)
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                     self.non_src_nat_ip.ipaddress.ipaddress,
-                                    self.services['natrule']["publicport"],
+                                    self.services['lbrule']["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
                                     )
@@ -712,7 +726,7 @@ class TestRebootRouter(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -738,10 +752,12 @@ class TestRebootRouter(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
+        src_nat_ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        src_nat_ip_addr = src_nat_ip_addrs[0]
 
         self.public_ip = PublicIPAddress.create(
                                            self.apiclient,
@@ -782,10 +798,12 @@ class TestRebootRouter(cloudstackTestCase):
         #   still works through the sourceNAT Ip
 
         #Retrieve router for the user account
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        routers = self.apiclient.listRouters(cmd)
+
+        routers = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
         router = routers[0]
 
         cmd = rebootRouter.rebootRouterCmd()
@@ -820,7 +838,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.services = Services().services
         # Get Zone, Domain and templates
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -883,10 +901,12 @@ class TestAssignRemoveLB(cloudstackTestCase):
         #3. verify ssh attempts should pass as long as there
         #   is at least one instance associated with the rule
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        self.non_src_nat_ip = self.apiclient.listPublicIpAddresses(cmd)[0]
+        src_nat_ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        self.non_src_nat_ip = src_nat_ip_addrs[0]
 
         lb_rule = LoadBalancerRule.create(
                                 self.apiclient,
@@ -899,20 +919,20 @@ class TestAssignRemoveLB(cloudstackTestCase):
         #Create SSH client for each VM
         ssh_1 = remoteSSHClient.remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
-                                        self.services["natrule"]["publicport"],
+                                        self.services["lbrule"]["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
                                         )
 
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
-                                        self.services["natrule"]["publicport"],
+                                        self.services["lbrule"]["publicport"],
                                         self.vm_2.username,
                                         self.vm_2.password
                                         )
         ssh_3 = remoteSSHClient.remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
-                                        self.services["natrule"]["publicport"],
+                                        self.services["lbrule"]["publicport"],
                                         self.vm_3.username,
                                         self.vm_3.password
                                         )
@@ -974,7 +994,7 @@ class TestReleaseIP(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -1009,10 +1029,12 @@ class TestReleaseIP(cloudstackTestCase):
                                             self.account.account.domainid
                                             )
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        self.ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
+        ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        self.ip_addr = ip_addrs[0]
 
         self.nat_rule = NATRule.create(
                                        self.apiclient,
@@ -1041,9 +1063,10 @@ class TestReleaseIP(cloudstackTestCase):
         self.ip_address.delete(self.apiclient)
 
         # ListPublicIpAddresses should not list deleted Public IP address
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.id = self.ip_addr.id
-        list_pub_ip_addr_resp = self.apiclient.listPublicIpAddresses(cmd)
+        list_pub_ip_addr_resp = list_publicIP(
+                                    self.apiclient,
+                                    id=self.ip_addr.id
+                                  )
 
         self.assertEqual(
                      list_pub_ip_addr_resp,
@@ -1053,24 +1076,24 @@ class TestReleaseIP(cloudstackTestCase):
 
         # ListPortForwardingRules should not list
         # associated rules with Public IP address
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.id = self.nat_rule.id
-        list_nat_rules = self.apiclient.listPortForwardingRules(cmd)
-
+        list_nat_rule = list_nat_rules(
+                                        self.apiclient,
+                                        id=self.nat_rule.id
+                                        )
         self.assertEqual(
-                list_nat_rules,
+                list_nat_rule,
                 None,
                 "Check if PF rules are no longer available for IP address"
             )
 
         # listLoadBalancerRules should not list
         # associated rules with Public IP address
-        cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        cmd.id = self.lb_rule.id
-        list_lb_rules = self.apiclient.listLoadBalancerRules(cmd)
-
+        list_lb_rule = list_lb_rules(
+                                     self.apiclient,
+                                     id=self.lb_rule.id
+                                     )
         self.assertEqual(
-            list_lb_rules,
+            list_lb_rule,
             None,
             "Check if LB rules for IP Address are no longer available"
             )
@@ -1094,7 +1117,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -1120,10 +1143,12 @@ class TestDeleteAccount(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
-        cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        src_nat_ip_addr = self.apiclient.listPublicIpAddresses(cmd)[0]
+        src_nat_ip_addrs = list_publicIP(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                  )
+        src_nat_ip_addr = src_nat_ip_addrs[0]
 
         self.lb_rule = LoadBalancerRule.create(
                                             self.apiclient,
@@ -1157,28 +1182,30 @@ class TestDeleteAccount(cloudstackTestCase):
 
         # ListLoadBalancerRules should not list
         # associated rules with deleted account
-        cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
         # Unable to find account testuser1 in domain 1 : Exception
         with self.assertRaises(Exception):
-            self.apiclient.listLoadBalancerRules(cmd)
+            list_lb_rules(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                        )
 
         # ListPortForwardingRules should not
         # list associated rules with deleted account
-        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-
         with self.assertRaises(Exception):
-            self.apiclient.listPortForwardingRules(cmd)
+            list_nat_rules(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                        )
 
         #Retrieve router for the user account
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
         with self.assertRaises(Exception):
-            routers = self.apiclient.listRouters(cmd)
+            list_routers(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                        )
         return
 
     def tearDown(self):

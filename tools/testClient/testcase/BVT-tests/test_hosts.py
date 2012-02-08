@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 #Import System modules
 import time
@@ -51,7 +52,6 @@ class Services:
                                  "xenserver": {
                                 # Must be name of corresponding Hypervisor type
                                 # in cluster in small letters
-                                          "clusterid": 16,
                                           "hypervisor": 'XenServer',
                                           # Hypervisor type
                                           "clustertype": 'ExternalManaged',
@@ -61,7 +61,6 @@ class Services:
                                           "password": "fr3sca",
                                           },
                                  "kvm": {
-                                          "clusterid": 35,
                                           "hypervisor": 'KVM',
                                           # Hypervisor type
                                           "clustertype": 'CloudManaged',
@@ -71,7 +70,6 @@ class Services:
                                           "password": "fr3sca",
                                           },
                                  "vmware": {
-                                          "clusterid": 16,
                                           "hypervisor": 'VMware',
                                           # Hypervisor type
                                           "clustertype": 'ExternalManaged',
@@ -80,7 +78,10 @@ class Services:
                                           "username": "administrator",
                                           "password": "fr3sca",
                                          },
-                                 }
+                                 },
+                         "zoneid": 2,
+                         # Optional, if specified the mentioned zone will be
+                         # used for tests
                        }
 
 class TestHosts(cloudstackTestCase):
@@ -93,7 +94,7 @@ class TestHosts(cloudstackTestCase):
         self.cleanup = []
 
         # Get Zone and pod
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id)
 
         self.services["clusters"][0]["zoneid"] = self.zone.id
@@ -150,9 +151,10 @@ class TestHosts(cloudstackTestCase):
                     )
 
             #If host is externally managed host is already added with cluster
-            cmd = listHosts.listHostsCmd()
-            cmd.clusterid = cluster.id
-            response = self.apiclient.listHosts(cmd)
+            response = list_hosts(
+                           self.apiclient,
+                           clusterid=cluster.id
+                           )
 
             if not response:
                 hypervisor_type = str(cluster.hypervisortype.lower())
@@ -166,9 +168,10 @@ class TestHosts(cloudstackTestCase):
             self.cleanup.append(host)
             self.cleanup.append(cluster)
 
-            cmd = listHosts.listHostsCmd()
-            cmd.clusterid = cluster.id
-            list_hosts_response = self.apiclient.listHosts(cmd)
+            list_hosts_response = list_hosts(
+                           self.apiclient,
+                           clusterid=cluster.id
+                           )
 
             self.assertNotEqual(
                             len(list_hosts_response),
@@ -184,9 +187,10 @@ class TestHosts(cloudstackTestCase):
                             "Check if state of host is Up or not"
                         )
             #Verify List Cluster Response has newly added cluster
-            cmd = listClusters.listClustersCmd()
-            cmd.id = cluster.id
-            list_cluster_response = self.apiclient.listClusters(cmd)
+            list_cluster_response = list_clusters(
+                                                  self.apiclient,
+                                                  id=cluster.id
+                                                  )
 
             self.assertNotEqual(
                             len(list_cluster_response),

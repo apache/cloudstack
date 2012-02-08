@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 import urllib
 from random import random
 #Import System modules
@@ -34,8 +35,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 200, # in MHz
-                                    "memory": 256, # In MBs
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -49,7 +50,9 @@ class Services:
                                     "protocol": 'TCP',
                                     "ssh_port": 22,
                                     "username": "root",
-                                    "password": "password"
+                                    "password": "password",
+                                    "privateport": 22,
+                                    "publicport": 22,
                          },
                         "volume": {
                                 "diskname": "Test Volume",
@@ -69,13 +72,17 @@ class Services:
                                 "mode": "HTTP_DOWNLOAD",
                          },
                         "templatefilter": 'self',
-                        "destzoneid": 2, # For Copy template (Destination zone)
+                        "destzoneid": 5, # For Copy template (Destination zone)
                         "isfeatured": True,
                         "ispublic": True,
                         "isextractable": False,
                         "bootable": True,
                         "passwordenabled": True,
                         "ostypeid": 12,
+                        "zoneid": 1,
+                        # Optional, if specified the mentioned zone will be
+                        # used for tests
+                        "mode": 'advanced', # Networking mode: Advanced, basic
                      }
 
 
@@ -104,7 +111,7 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -121,8 +128,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
-                            admin=True
+                            cls.services["account"]
                             )
         cls.services["account"] = cls.account.account.name
 
@@ -136,20 +142,21 @@ class TestCreateTemplate(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
-                                    serviceofferingid=cls.service_offering.id
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
                                     )
 
         #Stop virtual machine
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = cls.virtual_machine.id
-        cls.api_client.stopVirtualMachine(cmd)
+        cls.virtual_machine.stop(cls.api_client)
 
         #Wait before server has be successfully stopped
         time.sleep(30)
-        cmd = listVolumes.listVolumesCmd()
-        cmd.virtualmachineid = cls.virtual_machine.id
-        cmd.type = 'ROOT'
-        list_volume = cls.api_client.listVolumes(cmd)
+        list_volume = list_volumes(
+                                   cls.api_client,
+                                   virtualmachineid=cls.virtual_machine.id,
+                                   type='ROOT'
+                                   )
+
         cls.volume = list_volume[0]
         cls._cleanup = [
                         cls.virtual_machine,
@@ -184,23 +191,25 @@ class TestCreateTemplate(cloudstackTestCase):
         #Create template from Virtual machine and Volume ID
         template = Template.create(
                                 self.apiclient,
-                                self.volume,
-                                self.services["template_1"]
+                                self.services["template_1"],
+                                self.volume.id
                                 )
         self.cleanup.append(template)
 
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = self.services["templatefilter"]
-        cmd.id = template.id
-        list_template_response = self.apiclient.listTemplates(cmd)
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=template.id
+                                    )
 
         #Verify template response to check whether template added successfully
-        template_response = list_template_response[0]
         self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template avaliable in List Templates"
                         )
+        template_response = list_template_response[0]
 
         self.assertEqual(
                             template_response.displaytext,
@@ -230,7 +239,7 @@ class TestTemplates(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -248,8 +257,7 @@ class TestTemplates(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
-                            admin=True
+                            cls.services["account"]
                             )
 
         cls.user = Account.create(
@@ -269,31 +277,32 @@ class TestTemplates(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
-                                    serviceofferingid=cls.service_offering.id
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
                                     )
         #Stop virtual machine
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = cls.virtual_machine.id
-        cls.api_client.stopVirtualMachine(cmd)
+        cls.virtual_machine.stop(cls.api_client)
 
         #Wait before server has be successfully stopped
         time.sleep(30)
-        cmd = listVolumes.listVolumesCmd()
-        cmd.virtualmachineid = cls.virtual_machine.id
-        cmd.type = 'ROOT'
-        list_volume = cls.api_client.listVolumes(cmd)
+
+        list_volume = list_volumes(
+                                   cls.api_client,
+                                   virtualmachineid=cls.virtual_machine.id,
+                                   type='ROOT'
+                                   )
         cls.volume = list_volume[0]
 
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(
                                          cls.api_client,
-                                         cls.volume,
-                                         cls.services["template_1"]
+                                         cls.services["template_1"],
+                                         cls.volume.id
                                          )
         cls.template_2 = Template.create(
                                          cls.api_client,
-                                         cls.volume,
-                                         cls.services["template_2"]
+                                         cls.services["template_2"],
+                                         cls.volume.id
                                          )
         cls._cleanup = [
                         cls.template_2,
@@ -358,18 +367,18 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.updateTemplate(cmd)
 
         # Verify template response for updated attributes
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = self.services["templatefilter"]
-        cmd.id = self.template_1.id
-
-        list_template_response = self.apiclient.listTemplates(cmd)
-        template_response = list_template_response[0]
-
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=self.template_1.id
+                                    )
         self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template available in List Templates"
                         )
+        template_response = list_template_response[0]
 
         self.assertEqual(
                             template_response.displaytext,
@@ -403,11 +412,12 @@ class TestTemplates(cloudstackTestCase):
 
         self.template_1.delete(self.apiclient)
 
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = self.services["templatefilter"]
-        cmd.id = self.template_1.id
-        list_template_response = self.apiclient.listTemplates(cmd)
-
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=self.template_1.id
+                                    )
         # Verify template is deleted properly using ListTemplates
         self.assertEqual(
                          list_template_response,
@@ -476,12 +486,13 @@ class TestTemplates(cloudstackTestCase):
 
         self.apiclient.updateTemplatePermissions(cmd)
 
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.id = self.template_2.id
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        cmd.templatefilter = 'featured'
-        list_template_response = self.apiclient.listTemplates(cmd)
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter='featured',
+                                    id=self.template_2.id,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
 
         # Verify template response for updated permissions for normal user
         template_response = list_template_response[0]
@@ -518,17 +529,19 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.copyTemplate(cmd)
 
         # Verify template is copied to another zone using ListTemplates
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.id = self.template_2.id
-        cmd.templatefilter = self.services["templatefilter"]
-        list_template_response = self.apiclient.listTemplates(cmd)
-
-        template_response = list_template_response[0]
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=self.template_2.id
+                                    )
         self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template extracted in List Templates"
                         )
+
+        template_response = list_template_response[0]
         self.assertEqual(
                             template_response.id,
                             self.template_2.id,
@@ -547,12 +560,12 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. ListTemplates should show only 'public' templates for normal user
 
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = 'featured'
-        cmd.account = self.user.account.name
-        cmd.domainid = self.user.account.domainid
-
-        list_template_response = self.apiclient.listTemplates(cmd)
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter='featured',
+                                    account=self.user.account.name,
+                                    domainid=self.user.account.domainid
+                                    )
 
         self.assertNotEqual(
                             len(list_template_response),
@@ -574,12 +587,12 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. ListTemplates should not show 'SYSTEM' templates for normal user
 
-        cmd = listTemplates.listTemplatesCmd()
-        cmd.templatefilter = 'featured'
-        cmd.account = self.user.account.name
-        cmd.domainid = self.user.account.domainid
-
-        list_template_response = self.apiclient.listTemplates(cmd)
+        list_template_response = list_templates(
+                                    self.apiclient,
+                                    templatefilter='featured',
+                                    account=self.user.account.name,
+                                    domainid=self.user.account.domainid
+                                    )
 
         self.assertNotEqual(
                             len(list_template_response),

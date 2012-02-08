@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 #Import System modules
 import time
@@ -39,6 +40,9 @@ class Services:
                             },
                          "sleep": 180,
                          "timeout": 5,
+                         "zoneid": 1,
+                         # Optional, if specified the mentioned zone will be
+                         # used for tests
                         }
 
 class TestSecStorageServices(cloudstackTestCase):
@@ -49,7 +53,7 @@ class TestSecStorageServices(cloudstackTestCase):
         self.cleanup = []
         self.services = Services().services
         # Get Zone and pod
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id)
 
         self.services["storage"]["zoneid"] = self.zone.id
@@ -91,10 +95,11 @@ class TestSecStorageServices(cloudstackTestCase):
                             "Check zoneid where sec storage is added"
                         )
 
-        cmd = listHosts.listHostsCmd()
-        cmd.type = 'SecondaryStorage'
-        cmd.id = sec_storage.id
-        list_hosts_response = self.apiclient.listHosts(cmd)
+        list_hosts_response = list_hosts(
+                           self.apiclient,
+                           type='SecondaryStorage',
+                           id=sec_storage.id
+                           )
 
         self.assertNotEqual(
                         len(list_hosts_response),
@@ -125,11 +130,12 @@ class TestSecStorageServices(cloudstackTestCase):
         #    in UP state
         # 3. verify that secondary storage was added successfully
 
-        cmd = listHosts.listHostsCmd()
-        cmd.type = 'Routing'
-        cmd.zoneid = self.zone.id
-        cmd.podid = self.pod.id
-        list_hosts_response = self.apiclient.listHosts(cmd)
+        list_hosts_response = list_hosts(
+                           self.apiclient,
+                           type='Routing',
+                           zoneid=self.zone.id,
+                           podid=self.pod.id
+                           )
         # ListHosts has all 'routing' hosts in UP state
         self.assertNotEqual(
                                 len(list_hosts_response),
@@ -144,12 +150,11 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
 
         # ListStoragePools shows all primary storage pools in UP state
-        cmd = listStoragePools.listStoragePoolsCmd()
-        cmd.name = 'Primary'
-        cmd.zoneid = self.zone.id
-        cmd.podid = self.pod.id
-        list_storage_response = self.apiclient.listStoragePools(cmd)
-
+        list_storage_response = list_storage_pools(
+                                                   self.apiclient,
+                                                   zoneid=self.zone.id,
+                                                   podid=self.pod.id
+                                                   )
         self.assertNotEqual(
                                 len(list_storage_response),
                                 0,
@@ -164,13 +169,14 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
 
         # Secondary storage is added successfully
-        cmd = listHosts.listHostsCmd()
-        cmd.type = 'SecondaryStorage'
-        cmd.zoneid = self.zone.id
-
         timeout = self.services["timeout"]
         while True:
-            list_hosts_response = self.apiclient.listHosts(cmd)
+            list_hosts_response = list_hosts(
+                           self.apiclient,
+                           type='SecondaryStorage',
+                           zoneid=self.zone.id,
+                           )
+
             if not list_hosts_response:
                 # Sleep to ensure Secondary storage is Up
                 time.sleep(int(self.services["sleep"]))
@@ -192,15 +198,15 @@ class TestSecStorageServices(cloudstackTestCase):
                         "Check state of secondary storage"
                         )
 
-        cmd = listSystemVms.listSystemVmsCmd()
-        cmd.systemvmtype = 'secondarystoragevm'
-        cmd.zoneid = self.zone.id
-        cmd.podid = self.pod.id
-
         timeout = self.services["timeout"]
 
         while True:
-            list_ssvm_response = self.apiclient.listSystemVms(cmd)
+            list_ssvm_response = list_ssvms(
+                                        self.apiclient,
+                                        systemvmtype='secondarystoragevm',
+                                        zoneid=self.zone.id,
+                                        podid=self.pod.id
+                                        )
             if not list_ssvm_response:
                 # Sleep to ensure SSVMs are Up and Running
                 time.sleep(int(self.services["sleep"]))
@@ -234,31 +240,34 @@ class TestSecStorageServices(cloudstackTestCase):
 
         for k, v in self.services["hypervisors"].items():
 
-            cmd = listTemplates.listTemplatesCmd()
-            cmd.hypervisor = v["hypervisor"]
-            cmd.zoneid = self.zone.id
-            cmd.templatefilter = v["templatefilter"]
-            list_templates = self.apiclient.listTemplates(cmd)
+            list_template_response = list_templates(
+                                    self.apiclient,
+                                    hypervisor=v["hypervisor"],
+                                    zoneid=self.zone.id,
+                                    templatefilter=v["templatefilter"]
+                                    )
 
             # Ensure all BUILTIN templates are downloaded
             templateid = None
-            for template in list_templates:
+            for template in list_template_response:
                 if template.templatetype == "BUILTIN":
                     templateid = template.id
 
-            cmd = listTemplates.listTemplatesCmd()
-            cmd.id = templateid
-            cmd.templatefilter = v["templatefilter"]
-            cmd.zoneid = self.zone.id
+            # Wait to start a downloadin of template
+            time.sleep(self.services["sleep"])
 
             while True and (templateid != None):
-
-                template = self.apiclient.listTemplates(cmd)[0]
+                template_response = list_templates(
+                                    self.apiclient,
+                                    id=templateid,
+                                    zoneid=self.zone.id,
+                                    templatefilter=v["templatefilter"]
+                                    )
+                template = template_response[0]
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
                 # Error - Any other string 
-
                 if template.status == 'Download Complete'  :
                     break
                 elif 'Downloaded' not in template.status.split():
@@ -268,7 +277,13 @@ class TestSecStorageServices(cloudstackTestCase):
 
             #Ensuring the template is in ready state
             time.sleep(30)
-            template = self.apiclient.listTemplates(cmd)[0]
+            template_response = list_templates(
+                                    self.apiclient,
+                                    id=templateid,
+                                    zoneid=self.zone.id,
+                                    templatefilter=v["templatefilter"]
+                                    )
+            template = template_response[0]
 
             self.assertEqual(
                             template.isready,

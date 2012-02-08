@@ -1,0 +1,31 @@
+P1 Cases
+--------------------------------------
+These test cases are the core functionality tests that ensure the application is stable and can be tested thoroughly.
+These P1 cases definitions are located at : https://docs.google.com/a/clogeny.com/spreadsheet/ccc?key=0Aq5M2ldK6eyedDJBa0EzM0RPNmdVNVZOWnFnOVJJcHc&hl=en_US
+
+
+Guidelines
+----------
+P1 test cases are being developed using Python's unittests2. Following are certain guidelines being followed
+    1. Tests exercised for the same resource should ideally be present under a single suite or file.
+
+    2. Time-consuming operations that create new cloud resources like server creation, volume creation etc 
+        should not necessarily be exercised per unit test. The resources can be shared by creating them at 
+        the class-level using setUpClass and shared across all instances during a single run.
+
+    3. Certain tests pertaining to NAT, Firewall and Load Balancing warrant fresh resources per test. Hence a call should be
+        taken by the stakeholders regarding sharing resources.
+
+    4. Ensure that the tearDown/tearDownClass functions clean up all the resources created during the test run. 
+
+For more information about unittests: http://docs.python.org/library/unittest.html
+
+
+P1 Tests
+----------
+The following files contain these P1 cases:
+
+1. test_snapshots.py - Snapshots related tests
+2. test_routers.py - Router related tests
+3. test_usage.py - Usage realted tests
+

@@ -8,8 +8,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 class Services:
     """Test Disk offerings Services
@@ -56,10 +57,10 @@ class TestCreateDiskOffering(cloudstackTestCase):
                                         )
         self.cleanup.append(disk_offering)
 
-        cmd = listDiskOfferings.listDiskOfferingsCmd()
-        cmd.id = disk_offering.id
-        list_disk_response = self.apiclient.listDiskOfferings(cmd)
-
+        list_disk_response = list_disk_offering(
+                                                self.apiclient,
+                                                id=disk_offering.id
+                                                )
         self.assertNotEqual(
                             len(list_disk_response),
                             0,
@@ -140,9 +141,10 @@ class TestDiskOfferings(cloudstackTestCase):
 
         self.apiclient.updateDiskOffering(cmd)
 
-        cmd = listDiskOfferings.listDiskOfferingsCmd()
-        cmd.id = self.disk_offering_1.id
-        list_disk_response = self.apiclient.listDiskOfferings(cmd)
+        list_disk_response = list_disk_offering(
+                                                self.apiclient,
+                                                id=self.disk_offering_1.id
+                                                )
 
         self.assertNotEqual(
                             len(list_disk_response),
@@ -171,13 +173,12 @@ class TestDiskOfferings(cloudstackTestCase):
         # 1. deleteDiskOffering should return
         #    a valid information for newly created offering
 
-        cmd = deleteDiskOffering.deleteDiskOfferingCmd()
-        cmd.id = self.disk_offering_2.id
-        self.apiclient.deleteDiskOffering(cmd)
+        self.disk_offering_2.delete(self.apiclient)
 
-        cmd = listDiskOfferings.listDiskOfferingsCmd()
-        cmd.id = self.disk_offering_2.id
-        list_disk_response = self.apiclient.listDiskOfferings(cmd)
+        list_disk_response = list_disk_offering(
+                                                self.apiclient,
+                                                id=self.disk_offering_2.id
+                                                )
 
         self.assertEqual(
                         list_disk_response,

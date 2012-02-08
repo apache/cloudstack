@@ -7,8 +7,9 @@
 #Import Local Modules
 from cloudstackTestCase import *
 from cloudstackAPI import *
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 import urllib
 from random import random
 #Import System modules
@@ -30,8 +31,8 @@ class Services:
                         },
             "iso_1":
                     {
-                        "displaytext": "Test ISO type 1",
-                        "name": "testISOType_1",
+                        "displaytext": "Test ISO 1",
+                        "name": "ISO 1",
                         "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                         # Source URL where ISO is located
                         "isextractable": True,
@@ -41,8 +42,8 @@ class Services:
                     },
             "iso_2":
                     {
-                        "displaytext": "Test ISO type 2",
-                        "name": "testISOType_2",
+                        "displaytext": "Test ISO 2",
+                        "name": "ISO 2",
                         "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                         # Source URL where ISO is located
                         "isextractable": True,
@@ -52,7 +53,7 @@ class Services:
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
-            "destzoneid": 2,
+            "destzoneid": 5,
             # Copy ISO from one zone to another (Destination Zone)
             "isfeatured": True,
             "ispublic": True,
@@ -61,6 +62,10 @@ class Services:
             "passwordenabled": True,
             "ostypeid": 12,
             "domainid": 1,
+            "zoneid": 1,
+            # Optional, if specified the mentioned zone will be
+            # used for tests
+            "mode": 'advanced'
         }
 
 
@@ -71,7 +76,7 @@ class TestCreateIso(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
-        self.zone = get_zone(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.services)
         self.services["iso_2"]["zoneid"] = self.zone.id
         self.cleanup = []
         return
@@ -102,9 +107,10 @@ class TestCreateIso(cloudstackTestCase):
         iso.download(self.apiclient)
         self.cleanup.append(iso)
 
-        cmd = listIsos.listIsosCmd()
-        cmd.id = iso.id
-        list_iso_response = self.apiclient.listIsos(cmd)
+        list_iso_response = list_isos(
+                                      self.apiclient,
+                                      id=iso.id
+                                      )
 
         iso_response = list_iso_response[0]
 
@@ -140,7 +146,7 @@ class TestISO(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         cls.services["iso_1"]["zoneid"] = cls.zone.id
         cls.services["iso_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
@@ -209,9 +215,10 @@ class TestISO(cloudstackTestCase):
         self.apiclient.updateIso(cmd)
 
         #Check whether attributes are updated in ISO using listIsos
-        cmd = listIsos.listIsosCmd()
-        cmd.id = self.iso_1.id
-        list_iso_response = self.apiclient.listIsos(cmd)
+        list_iso_response = list_isos(
+                                      self.apiclient,
+                                      id=self.iso_1.id
+                                      )
 
         self.assertNotEqual(
                             len(list_iso_response),
@@ -254,9 +261,10 @@ class TestISO(cloudstackTestCase):
         self.iso_1.delete(cls.api_client)
 
         #ListIsos to verify deleted ISO is properly deleted
-        cmd = listIsos.listIsosCmd()
-        cmd.id = self.iso_1.id
-        list_iso_response = self.apiclient.listIsos(cmd)
+        list_iso_response = list_isos(
+                                      self.apiclient,
+                                      id=self.iso_1.id
+                                      )
 
         self.assertEqual(
                          list_iso_response,
@@ -324,11 +332,12 @@ class TestISO(cloudstackTestCase):
         self.apiclient.updateIsoPermissions(cmd)
 
         #Verify ListIsos have updated permissions for the ISO for normal user
-        cmd = listIsos.listIsosCmd()
-        cmd.id = self.iso_2.id
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        list_iso_response = self.apiclient.listIsos(cmd)
+        list_iso_response = list_isos(
+                                      self.apiclient,
+                                      id=self.iso_2.id,
+                                      account=self.account.account.name,
+                                      domainid=self.account.account.domainid
+                                      )
 
         iso_response = list_iso_response[0]
 
@@ -360,13 +369,14 @@ class TestISO(cloudstackTestCase):
         cmd = copyIso.copyIsoCmd()
         cmd.id = self.iso_2.id
         cmd.destzoneid = self.services["destzoneid"]
-        cmd.sourcezoneid = self.services["sourcezoneid"]
+        cmd.sourcezoneid = self.zone.id
         self.apiclient.copyIso(cmd)
 
         #Verify ISO is copied to another zone using ListIsos
-        cmd = listIsos.listIsosCmd()
-        cmd.id = self.iso_2.id
-        list_iso_response = self.apiclient.listIsos(cmd)
+        list_iso_response = list_isos(
+                                      self.apiclient,
+                                      id=self.iso_2.id
+                                      )
 
         iso_response = list_iso_response[0]
 

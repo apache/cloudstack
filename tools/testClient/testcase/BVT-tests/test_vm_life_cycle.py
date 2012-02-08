@@ -9,8 +9,9 @@
 from cloudstackTestCase import *
 from cloudstackAPI import *
 import remoteSSHClient
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 #Import System modules
 import time
 
@@ -78,7 +79,7 @@ class Services:
                         "displaytext": "Small Instance",
                         "cpunumber": 1,
                         "cpuspeed": 500,
-                        "memory": 512
+                        "memory": 256
                     },
                 "medium":
                     {
@@ -102,10 +103,14 @@ class Services:
                 },
             "diskdevice": '/dev/xvdd',
             "mount_dir": "/mnt/tmp",
-            "hostid": 1,
+            "hostid": 5,
             #Migrate VM to hostid
-            "ostypeid": 12
+            "ostypeid": 12,
             # CentOS 5.3 (64-bit)
+            "zoneid": 1,
+            # Optional, if specified the mentioned zone will be
+            # used for tests
+            "mode":'advanced',
         }
 
 class TestDeployVM(cloudstackTestCase):
@@ -116,12 +121,8 @@ class TestDeployVM(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.services = Services().services
         # Get Zone, Domain and templates
-        zone = get_zone(self.apiclient)
+        zone = get_zone(self.apiclient, self.services)
 
-        disk_offering = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"]
-                                    )
         template = get_template(
                             self.apiclient,
                             zone.id,
@@ -129,7 +130,6 @@ class TestDeployVM(cloudstackTestCase):
                             )
         # Set Zones and disk offerings
         self.services["small"]["zoneid"] = zone.id
-        self.services["small"]["diskoffering"] = disk_offering.id
         self.services["small"]["template"] = template.id
 
         self.services["medium"]["zoneid"] = zone.id
@@ -139,8 +139,7 @@ class TestDeployVM(cloudstackTestCase):
         # Create Account, VMs, NAT Rules etc
         self.account = Account.create(
                             self.apiclient,
-                            self.services["account"],
-                            admin=True
+                            self.services["account"]
                             )
 
         self.service_offering = ServiceOffering.create(
@@ -150,7 +149,6 @@ class TestDeployVM(cloudstackTestCase):
         # Cleanup
         self.cleanup = [
                         self.service_offering,
-                        disk_offering,
                         self.account
                         ]
 
@@ -166,14 +164,15 @@ class TestDeployVM(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["small"],
-                                    self.account.account.name,
+                                    accountid=self.account.account.name,
                                     serviceofferingid=self.service_offering.id
                                 )
-        self.cleanup.append(self.virtual_machine)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
+        list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.virtual_machine.id
+                                                 )
+
         self.debug(
                 "Verify listVirtualMachines response for virtual machine: %s" \
                 % self.virtual_machine.id
@@ -215,11 +214,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
-        zone = get_zone(cls.api_client)
-        disk_offering = DiskOffering.create(
-                                    cls.api_client,
-                                    cls.services["disk_offering"]
-                                    )
+        zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
                             zone.id,
@@ -227,7 +222,6 @@ class TestVMLifeCycle(cloudstackTestCase):
                             )
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = zone.id
-        cls.services["small"]["diskoffering"] = disk_offering.id
         cls.services["small"]["template"] = template.id
 
         cls.services["medium"]["zoneid"] = zone.id
@@ -237,8 +231,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
-                            admin=True
+                            cls.services["account"]
                             )
 
         cls.small_offering = ServiceOffering.create(
@@ -255,38 +248,24 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         cls.api_client,
                                         cls.services["small"],
                                         accountid=cls.account.account.name,
-                                        serviceofferingid=cls.small_offering.id
+                                        serviceofferingid=cls.small_offering.id,
+                                        mode=cls.services["mode"]
                                         )
         cls.medium_virtual_machine = VirtualMachine.create(
                                        cls.api_client,
                                        cls.services["medium"],
                                        accountid=cls.account.account.name,
-                                       serviceofferingid=cls.medium_offering.id
+                                       serviceofferingid=cls.medium_offering.id,
+                                       mode=cls.services["mode"]
                                     )
         cls.virtual_machine = VirtualMachine.create(
                                         cls.api_client,
                                         cls.services["small"],
                                         accountid=cls.account.account.name,
-                                        serviceofferingid=cls.small_offering.id
+                                        serviceofferingid=cls.small_offering.id,
+                                        mode=cls.services["mode"]
                                         )
-        cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["small"]
-                                           )
-        cls.nat_rule = NATRule.create(
-                            cls.api_client,
-                            cls.virtual_machine,
-                            cls.services["small"],
-                            ipaddressid=cls.public_ip.ipaddress.id
-                            )
         cls._cleanup = [
-                        cls.nat_rule,
-                        cls.public_ip,
-                        cls.medium_virtual_machine,
-                        cls.virtual_machine,
                         cls.small_offering,
                         cls.medium_offering,
                         cls.account
@@ -317,13 +296,13 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. listVM command should return
         #    this VM.State of this VM should be ""Stopped"".
 
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.api_client.stopVirtualMachine(cmd)
+        self.small_virtual_machine.stop(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.api_client.listVirtualMachines(cmd)
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
+
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
@@ -345,14 +324,12 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 1. listVM command should return this VM.State
         #    of this VM should be Running".
 
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.startVirtualMachine(cmd)
+        self.small_virtual_machine.start(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
@@ -375,7 +352,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             )
         # SSH to check whether VM is Up and Running
         try:
-            self.small_virtual_machine.get_ssh_client(self.nat_rule.ipaddress)
+            self.small_virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail(
                 "SSH Access failed for %s: %s" \
@@ -392,13 +369,12 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. listVM command should return the deployed VM.
         #    State of this VM should be "Running"
 
-        cmd = rebootVirtualMachine.rebootVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.rebootVirtualMachine(cmd)
+        self.small_virtual_machine.reboot(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
 
         self.assertNotEqual(
                             len(list_vm_response),
@@ -422,28 +398,23 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. Using  listVM command verify that this Vm 
         #    has Medium service offering Id.
 
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.stopVirtualMachine(cmd)
+        self.small_virtual_machine.stop(self.apiclient)
 
         cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
         cmd.id = self.small_virtual_machine.id
         cmd.serviceofferingid = self.medium_offering.id
-
         self.apiclient.changeServiceForVirtualMachine(cmd)
 
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.startVirtualMachine(cmd)
+        self.small_virtual_machine.start(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
+        # Sleep to ensure that VM is started properly
+        time.sleep(60)
         try:
-            ssh = self.small_virtual_machine.get_ssh_client(
-                                        self.nat_rule.ipaddress
-                                        )
+            ssh = self.small_virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail(
                     "SSH Access failed for %s: %s" % \
@@ -487,9 +458,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. Using  listVM command verify that this Vm 
         #    has Small service offering Id.
 
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = self.medium_virtual_machine.id
-        self.apiclient.stopVirtualMachine(cmd)
+        self.medium_virtual_machine.stop(self.apiclient)
 
         cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
@@ -497,18 +466,14 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.apiclient.changeServiceForVirtualMachine(cmd)
 
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = self.medium_virtual_machine.id
-        self.apiclient.startVirtualMachine(cmd)
+        self.medium_virtual_machine.start(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.medium_virtual_machine.id
+                                            )
         try:
-            ssh = self.medium_virtual_machine.get_ssh_client(
-                                                    self.nat_rule.ipaddress
-                                                    )
+            ssh = self.medium_virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -541,6 +506,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                             self.small_offering.memory,
                             "Check Memory(kb) for small offering"
                         )
+        # Cleanup - Not required for further tests
+        self.cleanup.append(self.medium_virtual_machine)
+        return
 
 
     def test_06_destroy_vm(self):
@@ -552,14 +520,12 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. listVM command should return this VM.State
         #    of this VM should be "Destroyed".
 
-        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.destroyVirtualMachine(cmd)
+        self.small_virtual_machine.delete(self.apiclient)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
@@ -586,14 +552,11 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = self.small_virtual_machine.id
         self.apiclient.recoverVirtualMachine(cmd)
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
 
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
 
         self.assertNotEqual(
                             len(list_vm_response),
@@ -618,19 +581,17 @@ class TestVMLifeCycle(cloudstackTestCase):
         #    should be "Running" and the host should be the host 
         #    to which the VM was migrated to
 
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        self.apiclient.startVirtualMachine(cmd)
+        self.small_virtual_machine.start(self.apiclient)
 
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
         cmd.hostid = self.services["hostid"]
         cmd.virtualmachineid = self.small_virtual_machine.id
         self.apiclient.migrateVirtualMachine(cmd)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
-
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
         self.assertNotEqual(
                             list_vm_response,
                             None,
@@ -662,15 +623,19 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.id = self.small_virtual_machine.id
         self.apiclient.destroyVirtualMachine(cmd)
 
-        cmd = listConfigurations.listConfigurationsCmd()
-        cmd.name = 'expunge.delay'
-        response = self.apiclient.listConfigurations(cmd)[0]
+        config = list_configurations(
+                                     self.apiclient,
+                                     name='expunge.delay'
+                                     )
+
+        response = config[0]
         # Wait for some time more than expunge.delay
         time.sleep(int(response.value) * 2)
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.id = self.small_virtual_machine.id
-        list_vm_response = self.apiclient.listVirtualMachines(cmd)
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
 
         self.assertEqual(
                         list_vm_response,
@@ -700,9 +665,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.attachIso(cmd)
 
-        ssh_client = self.virtual_machine.get_ssh_client(
-                                                self.nat_rule.ipaddress
-                                                )
+        ssh_client = self.virtual_machine.get_ssh_client()
 
         cmds = [
                 "mkdir -p %s" % self.services["mount_dir"],

@@ -8,8 +8,9 @@
 from cloudstackTestCase import *
 from cloudstackAPI import *
 import remoteSSHClient
-from utils import *
-from base import *
+from testcase.libs.utils import *
+from testcase.libs.base import *
+from testcase.libs.common import *
 
 #Import System modules
 import time
@@ -22,8 +23,8 @@ class Services:
     def __init__(self):
         self.services = {
                          "service_offering": {
-                                    "name": "Tiny Service Offering",
-                                    "displaytext": "Tiny service offering",
+                                    "name": "Tiny Instance",
+                                    "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
                                     "memory": 64, # In MBs
@@ -32,22 +33,26 @@ class Services:
                                     {
                                         "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "password",
+                                        "password": "fr3sca",
                                         "ssh_port": 22,
-                                        "hypervisor": 'VMWare',
+                                        "hypervisor": 'XenServer',
                                         "domainid": 1,
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
                                 },
                         "account": {
-                                            "email": "test@test.com",
-                                            "firstname": "Test",
-                                            "lastname": "User",
-                                            "username": "testuser",
-                                            "password": "fr3sca",
+                                        "email": "test@test.com",
+                                        "firstname": "Test",
+                                        "lastname": "User",
+                                        "username": "testuser",
+                                        "password": "fr3sca",
                                         },
                          "ostypeid":12,
+                         "zoneid": 1,
+                         # Optional, if specified the mentioned zone will be
+                         # used for tests
+                         "mode": 'advanced', #Networking mode: Basic, Advanced
                         }
 
 
@@ -59,7 +64,7 @@ class TestRouterServices(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -70,8 +75,7 @@ class TestRouterServices(cloudstackTestCase):
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
                                      cls.api_client,
-                                     cls.services["account"],
-                                     admin=True
+                                     cls.services["account"]
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -115,8 +119,11 @@ class TestRouterServices(cloudstackTestCase):
         # 2. router will have dns same as that seen in listZones
         # 3. router will have a guestIP and a linkLocalIp"
 
-        cmd = listRouters.listRoutersCmd()
-        list_router_response = self.apiclient.listRouters(cmd)
+        list_router_response = list_routers(
+                                        self.apiclient,
+                                        account=self.account.account.name,
+                                        domainid=self.account.account.domainid
+                                        )
 
         self.assertNotEqual(
                              len(list_router_response),
@@ -130,9 +137,11 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-            cmd = listZones.listZonesCmd()
-            cmd.zoneid = router.zoneid
-            zone = self.apiclient.listZones(cmd)[0]
+            zones = list_zones(
+                               self.apiclient,
+                               id=router.zoneid
+                               )
+            zone = zones[0]
 
             self.assertEqual(
                             router.dns1,
@@ -166,10 +175,11 @@ class TestRouterServices(cloudstackTestCase):
         # 2. router will have dns and gateway as in listZones, listVlanIpRanges
         # 3. router will have guest,public and linklocal IPs
 
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        list_router_response = self.apiclient.listRouters(cmd)
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
 
         self.assertNotEqual(
                              len(list_router_response),
@@ -183,9 +193,11 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-            cmd = listZones.listZonesCmd()
-            cmd.zoneid = router.zoneid
-            zone = self.apiclient.listZones(cmd)[0]
+            zones = list_zones(
+                               self.apiclient,
+                               id=router.zoneid
+                               )
+            zone = zones[0]
 
             self.assertEqual(
                             router.dns1,
@@ -210,13 +222,14 @@ class TestRouterServices(cloudstackTestCase):
                             )
 
             #Fetch corresponding ip ranges information from listVlanIpRanges
-            cmd = listVlanIpRanges.listVlanIpRangesCmd()
-            cmd.id = router.zoneid
-            ipranges_response = self.apiclient.listVlanIpRanges(cmd)[0]
-
+            ipranges_response = list_vlan_ipranges(
+                                                   self.apiclient,
+                                                   zoneid=router.zoneid
+                                                   )
+            iprange = ipranges_response[0]
             self.assertEqual(
                             router.gateway,
-                            ipranges_response.gateway,
+                            iprange.gateway,
                             "Check gateway with that of corresponding IP range"
                             )
         return
@@ -228,10 +241,12 @@ class TestRouterServices(cloudstackTestCase):
         # Validate the following
         # 1. listRouter should report the router for the account as stopped
 
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
@@ -239,13 +254,14 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.stopRouter(cmd)
 
         #List routers to check state of router
-        cmd = listRouters.listRoutersCmd()
-        cmd.id = router.id
-        router_response = self.apiclient.listRouters(cmd)[0]
+        router_response = list_routers(
+                                    self.apiclient,
+                                    id=router.id
+                                    )
 
         #List router should have router in stopped state
         self.assertEqual(
-                            router_response.state,
+                            router_response[0].state,
                             'Stopped',
                             "Check list router response for router state"
                         )
@@ -258,10 +274,12 @@ class TestRouterServices(cloudstackTestCase):
         # Validate the following
         # 1. listRouter should report the router for the account as stopped
 
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         #Start the router
         cmd = startRouter.startRouterCmd()
@@ -269,13 +287,14 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.startRouter(cmd)
 
         #List routers to check state of router
-        cmd = listRouters.listRoutersCmd()
-        cmd.id = router.id
-        router_response = self.apiclient.listRouters(cmd)[0]
+        router_response = list_routers(
+                                    self.apiclient,
+                                    id=router.id
+                                    )
 
         #List router should have router in running state
         self.assertEqual(
-                            router_response.state,
+                            router_response[0].state,
                             'Running',
                             "Check list router response for router state"
                         )
@@ -288,10 +307,12 @@ class TestRouterServices(cloudstackTestCase):
         # Validate the following
         # 1. listRouter should report the router for the account as stopped
 
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         public_ip = router.publicip
 
@@ -301,19 +322,20 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.rebootRouter(cmd)
 
         #List routers to check state of router
-        cmd = listRouters.listRoutersCmd()
-        cmd.id = router.id
-        router_response = self.apiclient.listRouters(cmd)[0]
+        router_response = list_routers(
+                                    self.apiclient,
+                                    id=router.id
+                                    )
 
         #List router should have router in running state and same public IP
         self.assertEqual(
-                            router_response.state,
+                            router_response[0].state,
                             'Running',
                             "Check list router response for router state"
                         )
 
         self.assertEqual(
-                            router_response.publicip,
+                            router_response[0].publicip,
                             public_ip,
                             "Check list router response for router public IP"
                         )
@@ -329,10 +351,11 @@ class TestRouterServices(cloudstackTestCase):
         # 3. After network.gc.interval, router should be stopped
         # 4. ListRouters should return the router in Stopped state
 
-        cmd = listVirtualMachines.listVirtualMachinesCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        list_vms = self.apiclient.listVirtualMachines(cmd)
+        list_vms = list_virtual_machines(
+                                         self.apiclient,
+                                         account=self.account.account.name,
+                                         domainid=self.account.account.domainid
+                                         )
 
         self.assertNotEqual(
                             len(list_vms),
@@ -346,18 +369,23 @@ class TestRouterServices(cloudstackTestCase):
             cmd.id = vm.id
             self.apiclient.stopVirtualMachine(cmd)
 
-        # Wait for network.gc.interval
-        cmd = listConfigurations.listConfigurationsCmd()
-        cmd.name = 'network.gc.interval'
-        response = self.apiclient.listConfigurations(cmd)[0]
+        config = list_configurations(
+                                     self.apiclient,
+                                     name='network.gc.interval'
+                                     )
 
-        time.sleep(int(response.value) * 2)
+        response = config[0]
+
+        # Wait for network.gc.interval * 2 time
+        time.sleep(int(response.value) * 3)
 
         #Check status of network router
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         self.assertEqual(
             router.state,
@@ -375,41 +403,31 @@ class TestRouterServices(cloudstackTestCase):
         #    by checking status of dnsmasq process
 
         # Find router associated with user account
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.account.account.domainid
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
-        cmd = listHosts.listHostsCmd()
-        cmd.zoneid = router.zoneid
-        cmd.type = 'Routing'
-        cmd.state = 'Up'
-        host = self.apiclient.listHosts(cmd)[0]
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
 
-        #SSH to the machine
-        ssh = remoteSSHClient.remoteSSHClient(
-                            host.ipaddress,
-                            self.services['virtual_machine']["publicport"],
-                            self.vm_1.username,
-                                self.vm_1.password
-                            )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s "\
-                        % router.linklocalip
-
-        # Double hop into router
-        timeout = 5
-        # Ensure the SSH login is successful
-        c = ssh_command + "service dnsmasq status"
-        while True:
-            res = ssh.execute(c)[0]
-            if res != "Host key verification failed.":
-                break
-            elif timeout == 0:
-                break
-            time.sleep(5)
-            timeout = timeout - 1
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service dnsmasq status"
+                                )
         self.assertEqual(
-                            res.count("is running"),
+                            result.count("running"),
                             1,
                             "Check dnsmasq service is running or not"
                         )
@@ -424,58 +442,45 @@ class TestRouterServices(cloudstackTestCase):
         # 3. dnsmasq, haproxy processes should be running
 
         # Find router associated with user account
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
-        cmd = listHosts.listHostsCmd()
-        cmd.zoneid = router.zoneid
-        cmd.type = 'Routing'
-        cmd.state = 'Up'
-        host = self.apiclient.listHosts(cmd)[0]
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
 
-        #SSH to the machine
-        ssh = remoteSSHClient.remoteSSHClient(
+        result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
-                                self.vm_1.password
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service dnsmasq status"
                                 )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s "\
-                        % router.linklocalip
-
-        # Double hop into router
-        timeout = 5
-        # Ensure the SSH login is successful
-        c = ssh_command + "service dnsmasq status"
-        while True:
-            res = ssh.execute(c)[0]
-            if res != "Host key verification failed.":
-                break
-            elif timeout == 0:
-                break
-            time.sleep(5)
-            timeout = timeout - 1
         self.assertEqual(
-                            res.count("running"),
+                            result.count("running"),
                             1,
                             "Check dnsmasq service is running or not"
                         )
 
-        timeout = 5
-        # Ensure the SSH login is successful
-        c = ssh_command + "service haproxy status"
-        while True:
-            res = ssh.execute(c)[0]
-            if res != "Host key verification failed.":
-                break
-            elif timeout == 0:
-                break
-            time.sleep(5)
-            timeout = timeout - 1
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service haproxy status"
+                                )
         self.assertEqual(
-                            res.count("running"),
+                            result.count("running"),
                             1,
                             "Check haproxy service is running or not"
                         )
@@ -491,18 +496,22 @@ class TestRouterServices(cloudstackTestCase):
         #    all it's services should resume
 
         # Find router associated with user account
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         #Store old values before restart
         old_linklocalip = router.linklocalip
 
-        cmd = listNetworks.listNetworksCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        network = self.apiclient.listNetworks(cmd)[0]
+        networks = list_networks(
+                                 self.apiclient,
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+        network = networks[0]
 
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = network.id
@@ -510,10 +519,12 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.restartNetwork(cmd)
 
         # Get router details after restart
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
         self.assertNotEqual(
                             router.linklocalip,
@@ -531,10 +542,12 @@ class TestRouterServices(cloudstackTestCase):
         #    all services inside the router are restarted
         # 2. check 'uptime' to see if the actual restart happened
 
-        cmd = listNetworks.listNetworksCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        network = self.apiclient.listNetworks(cmd)[0]
+        networks = list_networks(
+                                 self.apiclient,
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+        network = networks[0]
 
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = network.id
@@ -542,38 +555,29 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.restartNetwork(cmd)
 
         # Get router details after restart
-        cmd = listRouters.listRoutersCmd()
-        cmd.account = self.account.account.name
-        cmd.domainid = self.services["virtual_machine"]["domainid"]
-        router = self.apiclient.listRouters(cmd)[0]
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
 
-        cmd = listHosts.listHostsCmd()
-        cmd.zoneid = router.zoneid
-        cmd.type = 'Routing'
-        cmd.state = 'Up'
-        host = self.apiclient.listHosts(cmd)[0]
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
 
-        #SSH to the machine
-        ssh = remoteSSHClient.remoteSSHClient(
+        res = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
-                                self.vm_1.password
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "uptime"
                                 )
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s uptime"\
-                        % router.linklocalip
-
-        # Double hop into router to check router uptime
-        timeout = 5
-        while True:
-            res = ssh.execute(ssh_command)[0]
-            if res != "Host key verification failed.":
-                break
-            elif timeout == 0:
-                break
-            time.sleep(5)
-            timeout = timeout - 1
-
         # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
         # Split result to check the uptime
         result = res.split()
