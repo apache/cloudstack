@@ -630,3 +630,21 @@ UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM n
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `specified_cidr` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if the CIDR/gateway/vlan are specified in this network';
 DELETE FROM `cloud`.`configuration` WHERE name='network.redundantrouter';
+
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.public.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.storage.network.device1';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.storage.network.device2';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.private.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'xen.guest.network.device';
+
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'vmware.private.vswitch';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'vmware.public.vswitch';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'vmware.guest.vswitch';
+
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'ovm.public.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'ovm.private.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'ovm.guest.network.device';
+
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.public.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.private.network.device';
+UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.guest.network.device';

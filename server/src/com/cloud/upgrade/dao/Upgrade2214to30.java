@@ -109,41 +109,19 @@ public class Upgrade2214to30 implements DbUpgrade {
             // Load all DataCenters
             String getNextNetworkSequenceSql = "SELECT value from sequence where name='physical_networks_seq'";
             String advanceNetworkSequenceSql = "UPDATE sequence set value=value+1 where name='physical_networks_seq'";
-            pstmt = conn.prepareStatement("SELECT value FROM configuration where name = 'xen.public.network.device'");
-            rs = pstmt.executeQuery();
-            String xenPublicLabel = null;
-            if (rs.next()) {
-                xenPublicLabel = rs.getString(1);
-            }
-            rs.close();
-            pstmt.close();
 
-            pstmt = conn.prepareStatement("SELECT value FROM configuration where name = 'xen.private.network.device'");
-            rs = pstmt.executeQuery();
-            String xenPrivateLabel = null;
-            if (rs.next()) {
-                xenPrivateLabel = rs.getString(1);
-            }
-            rs.close();
-            pstmt.close();
+            String xenPublicLabel = getNetworkLabelFromConfig(conn, "xen.public.network.device");
+            String xenPrivateLabel = getNetworkLabelFromConfig(conn, "xen.private.network.device");
+            String xenStorageLabel = getNetworkLabelFromConfig(conn, "xen.storage.network.device1");
+            String xenGuestLabel = getNetworkLabelFromConfig(conn, "xen.guest.network.device");
 
-            pstmt = conn.prepareStatement("SELECT value FROM configuration where name = 'xen.storage.network.device1'");
-            rs = pstmt.executeQuery();
-            String xenStorageLabel = null;
-            if (rs.next()) {
-                xenStorageLabel = rs.getString(1);
-            }
-            rs.close();
-            pstmt.close();
+            String kvmPublicLabel = getNetworkLabelFromConfig(conn, "kvm.public.network.device");
+            String kvmPrivateLabel = getNetworkLabelFromConfig(conn, "kvm.private.network.device");
+            String kvmGuestLabel = getNetworkLabelFromConfig(conn, "kvm.guest.network.device");
 
-            pstmt = conn.prepareStatement("SELECT value FROM configuration where name = 'xen.guest.network.device'");
-            rs = pstmt.executeQuery();
-            String xenGuestLabel = null;
-            if (rs.next()) {
-                xenGuestLabel = rs.getString(1);
-            }
-            rs.close();
-            pstmt.close();
+            String vmwarePublicLabel = getNetworkLabelFromConfig(conn, "vmware.public.vswitch");
+            String vmwarePrivateLabel = getNetworkLabelFromConfig(conn, "vmware.private.vswitch");
+            String vmwareGuestLabel = getNetworkLabelFromConfig(conn, "vmware.guest.vswitch");
 
             pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name FROM data_center");
             rs = pstmt.executeQuery();
@@ -192,12 +170,14 @@ public class Upgrade2214to30 implements DbUpgrade {
 
                 // add traffic types
                 s_logger.debug("Adding PhysicalNetwork traffic types");
-                String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label, uuid) VALUES ( ?, ?, ?, ?)";
+                String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label, kvm_network_label, vmware_network_label, uuid) VALUES ( ?, ?, ?, ?, ?, ?)";
                 pstmtUpdate = conn.prepareStatement(insertTraficType);
                 pstmtUpdate.setLong(1, physicalNetworkId);
                 pstmtUpdate.setString(2, "Public");
                 pstmtUpdate.setString(3, xenPublicLabel);
-                pstmtUpdate.setString(4, UUID.randomUUID().toString());
+                pstmtUpdate.setString(4, kvmPublicLabel);
+                pstmtUpdate.setString(5, vmwarePublicLabel);
+                pstmtUpdate.setString(6, UUID.randomUUID().toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
 
@@ -205,7 +185,9 @@ public class Upgrade2214to30 implements DbUpgrade {
                 pstmtUpdate.setLong(1, physicalNetworkId);
                 pstmtUpdate.setString(2, "Management");
                 pstmtUpdate.setString(3, xenPrivateLabel);
-                pstmtUpdate.setString(4, UUID.randomUUID().toString());
+                pstmtUpdate.setString(4, kvmPrivateLabel);
+                pstmtUpdate.setString(5, vmwarePrivateLabel);
+                pstmtUpdate.setString(6, UUID.randomUUID().toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
 
@@ -213,7 +195,9 @@ public class Upgrade2214to30 implements DbUpgrade {
                 pstmtUpdate.setLong(1, physicalNetworkId);
                 pstmtUpdate.setString(2, "Storage");
                 pstmtUpdate.setString(3, xenStorageLabel);
-                pstmtUpdate.setString(4, UUID.randomUUID().toString());
+                pstmtUpdate.setString(4, null);
+                pstmtUpdate.setString(5, null);
+                pstmtUpdate.setString(6, UUID.randomUUID().toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
 
@@ -221,7 +205,9 @@ public class Upgrade2214to30 implements DbUpgrade {
                 pstmtUpdate.setLong(1, physicalNetworkId);
                 pstmtUpdate.setString(2, "Guest");
                 pstmtUpdate.setString(3, xenGuestLabel);
-                pstmtUpdate.setString(4, UUID.randomUUID().toString());
+                pstmtUpdate.setString(4, kvmGuestLabel);
+                pstmtUpdate.setString(5, vmwareGuestLabel);
+                pstmtUpdate.setString(6, UUID.randomUUID().toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
 
@@ -323,6 +309,36 @@ public class Upgrade2214to30 implements DbUpgrade {
 
         }
 
+    }
+    
+    private String getNetworkLabelFromConfig(Connection conn, String name){
+        String sql = "SELECT value FROM configuration where name = '"+name+"'";
+        String networkLabel = null;
+        PreparedStatement pstmt = null; 
+        ResultSet rs = null;
+        try{
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                networkLabel = rs.getString(1);
+            }
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to fetch network label from configuration", e);
+        }finally{
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+        return networkLabel;
     }
 
     private void encryptData(Connection conn) {

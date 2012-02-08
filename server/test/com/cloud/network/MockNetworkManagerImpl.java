@@ -833,4 +833,16 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		return false;
 	}
 
+    @Override
+    public String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
