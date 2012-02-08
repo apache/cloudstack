@@ -59,6 +59,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
+    @Parameter(name=ApiConstants.CHANGE_CIDR, type=CommandType.BOOLEAN, description="Force update even if cidr type is different")
+    private Boolean changeCidr;
+    
     @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, description="network offering ID")
     private Long networkOfferingId;
@@ -86,7 +89,13 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     private Long getNetworkOfferingId() {
         return networkOfferingId;
     }
-    
+
+    public Boolean getChangeCidr() {
+        if (changeCidr != null) {
+            return changeCidr;
+        }
+        return false;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -110,7 +119,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());      
-        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId());
+        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

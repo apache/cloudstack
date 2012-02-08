@@ -3852,7 +3852,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId) {
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -3908,8 +3908,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {
-                if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
-                    throw new InvalidParameterValueException("Network offering " + networkOffering + " contained external network elements, can't be upgraded from a CIDR specify network!");
+                if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId) != networkOfferingIsConfiguredForExternalNetworking(oldNetworkOfferingId)
+                        && !changeCidr) {
+                    throw new InvalidParameterValueException("Network offerings contained external network elements, need user agree to change CIDR!");
                 }
                 // check if the network is upgradable
                 if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
