@@ -722,8 +722,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (snapshot.getStatus() == Snapshot.Status.BackedUp) {
         	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
         	_usageEventDao.persist(usageEvent);
+        	_accountMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         }
-        _accountMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         txn.commit();
 
         long lastId = snapshotId;

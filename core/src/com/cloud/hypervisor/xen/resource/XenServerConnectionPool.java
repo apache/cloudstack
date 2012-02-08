@@ -218,7 +218,6 @@ public class XenServerConnectionPool {
             int wait) throws XmlRpcException, XenAPIException {
         synchronized (poolUuid.intern()) {
             String masterIp = host.getAddress(conn);
-            PoolSyncDB(conn);
             s_logger.debug("Designating the new master to " + masterIp);
             Pool.designateNewMaster(conn, host);
             Connection slaveConn = null;
@@ -253,7 +252,6 @@ public class XenServerConnectionPool {
                     loginWithPassword(masterConn, username, password, APIVersion.latest().toString());
                     removeConnect(poolUuid);
                     ensurePoolIntegrity(masterConn, masterIp, username, password, wait);
-                    PoolSyncDB(masterConn);
                     return;
                 } catch (Types.HostIsSlave e) {
                     s_logger.debug("HostIsSlaveException: Still waiting for the conversion to the master"); 
@@ -350,27 +348,6 @@ public class XenServerConnectionPool {
         throw new RuntimeException("can not get master ip");
     }
 
-
-    static void PoolSyncDB(Connection conn) {
-        try {
-            Set<Host> hosts = Host.getAll(conn);
-            for (Host host : hosts) {
-                try {
-                    host.enable(conn);
-                } catch (Exception e) {
-                }
-            }
-        } catch (Exception e) {
-            s_logger.debug("Enbale host failed due to " + e.getMessage()
-                    + e.toString());
-        }
-        try {
-            Pool.syncDatabase(conn);
-        } catch (Exception e) {
-            s_logger.debug("Sync Database failed due to " + e.getMessage()
-                    + e.toString());
-        }
-    }
 
     void PoolEmergencyTransitionToMaster(String slaveIp, String username, Queue<String> password) {
         if (!s_managePool) {
@@ -554,13 +531,12 @@ public class XenServerConnectionPool {
             s_logger.debug(msg);
             throw new CloudRuntimeException(msg);
         }
-        Host host = null;
         synchronized (poolUuid.intern()) {
             // Let's see if it is an existing connection.
             mConn = getConnect(poolUuid);
             if (mConn != null){
                 try{
-                    host = Host.getByUuid(mConn, hostUuid);
+                    Host.getByUuid(mConn, hostUuid);
                 } catch (Types.SessionInvalid e) {
                     s_logger.debug("Session thgrough ip " + mConn.getIp() + " is invalid for pool(" + poolUuid + ") due to " + e.toString());
                     try {
@@ -656,38 +632,6 @@ public class XenServerConnectionPool {
                 } finally {
                     localLogout(sConn);
                     sConn = null;
-                }
-            }
-        }
-    
-        if ( mConn != null ) {
-            if (s_managePool) {
-                try {
-                    host.enable(mConn);
-                } catch (Types.CannotContactHost e ) {
-                    if (s_logger.isDebugEnabled()) {
-                        String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
-                        s_logger.debug(msg);
-                    }  
-                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
-                } catch (Types.HostOffline e ) {
-                    if (s_logger.isDebugEnabled()) {
-                        String msg = "Catch Exception: " + e.getClass().getName() + " Host is offline " + ipAddress + " due to " + e.toString();
-                        s_logger.debug(msg);
-                    }
-                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
-                } catch (Types.HostNotLive e ) {
-                    String msg = "Catch Exception: " + e.getClass().getName() + " Host Not Live " + ipAddress + " due to " + e.toString();
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(msg);
-                    } 
-                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
-                } catch (Exception e) {
-                    String msg = "Master can not talk to Slave " + hostUuid + " IP " + ipAddress;
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(msg);                           
-                    }
-                    throw new CloudRuntimeException(msg);
                 }
             }
         }
@@ -935,6 +879,24 @@ public class XenServerConnectionPool {
                         }
                         loginWithPassword(this, _username, _password, APIVersion.latest().toString());
                         method_params[0] = getSessionReference();
+                    }  catch (Types.CannotContactHost e ) {
+                        if (s_logger.isDebugEnabled()) {
+                            String msg = "Cannot Contact Host for method: " + method_call + " due to " + e.toString();
+                            s_logger.debug(msg);
+                        }
+                        throw e;
+                    } catch (Types.HostOffline e ) {
+                        if (s_logger.isDebugEnabled()) {
+                            String msg = "Host Offline for method: " + method_call + " due to " + e.toString();
+                            s_logger.debug(msg);
+                        }
+                        throw e;
+                    } catch (Types.HostNotLive e ) {
+                        if (s_logger.isDebugEnabled()) {
+                            String msg = "Host is Not alive for method: " + method_call + " due to " + e.toString();
+                            s_logger.debug(msg);
+                        }
+                        throw e;
                     } catch (XmlRpcClientException e) {
                         s_logger.debug("XmlRpcClientException for method: " + method_call + " due to " + e.getMessage()); 
                         removeConnect(_poolUuid);

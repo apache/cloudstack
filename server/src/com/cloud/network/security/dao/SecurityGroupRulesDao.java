@@ -50,4 +50,5 @@ public interface SecurityGroupRulesDao extends GenericDao<SecurityGroupRulesVO, 
      * @return the security group with associated ingress rules
      */
     List<SecurityGroupRulesVO> listSecurityRulesByGroupId(long groupId);
+    List<SecurityGroupRulesVO> listSecurityRulesByGroupIds(Long[] groupId);
 }

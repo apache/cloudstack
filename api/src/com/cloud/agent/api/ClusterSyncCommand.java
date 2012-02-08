@@ -20,37 +20,20 @@ package com.cloud.agent.api;
 
 public class ClusterSyncCommand extends Command implements CronCommand {
     int _interval;
-    int _skipSteps;  // skip this many steps for full sync
-    int _steps;
 
     long _clusterId;
     
     public ClusterSyncCommand() {
     }
     
-    public ClusterSyncCommand(int interval, int skipSteps, long clusterId){
+    public ClusterSyncCommand(int interval, long clusterId){
         _interval = interval;
-        _skipSteps = skipSteps;
         _clusterId = clusterId;
-        _steps=0;
     }
 
     @Override
     public int getInterval() {
         return _interval;
-    }
-    
-    public int getSkipSteps(){
-        return _skipSteps;
-    }
-    
-    public void incrStep(){
-        _steps++;
-        if (_steps>=_skipSteps)_steps=0;
-    }
-    
-    public boolean isRightStep(){
-        return (_steps==0);
     }
     
     public long getClusterId() {

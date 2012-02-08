@@ -33,12 +33,12 @@ function ipGetSearchParams() {
 				        
         if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none"
 	        && $advancedSearchPopup.find("#domain").hasClass("textwatermark") == false) {
-	        var domainName = $advancedSearchPopup.find("#domain").val();
-	        if (domainName != null && domainName.length > 0) { 	
+	        var domainPath = $advancedSearchPopup.find("#domain").val();
+	        if (domainPath != null && domainPath.length > 0) { 	
 				var domainId;							    
 			    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 				    for(var i=0; i < autoCompleteDomains.length; i++) {					        
-				      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				      if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 				          domainId = autoCompleteDomains[i].id;
 				          break;	
 				      }
@@ -1258,6 +1258,7 @@ function ipJsonToVPNTab() {
 	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
 	$thisTab.find("#tab_spinning_wheel").show();    
     $thisTab.find("#tab_container").hide();   
+		$thisTab.find("#tab_container").find("#grid_content").empty();
 		
 	$.ajax({
         data: createURL("command=listRemoteAccessVpns&publicipid="+ipObj.id),
@@ -1382,13 +1383,14 @@ function showVpnUsers(presharedkey, publicip) {
 				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));					    
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
 				if (!isValid) return;	
-				
+			
+				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+					
 				var username = todb($thisDialog.find("#username").val());
 				var password = todb($thisDialog.find("#password").val());
-				
-				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+							
 				$.ajax({
-					data: createURL("command=addVpnUser&username="+username+"&password="+password),
+					data: createURL("command=addVpnUser&username=" + username + "&password=" + password + "&domainid=" + ipObj.domainid + '&account=' + ipObj.account),
 					dataType: "json",
 					success: function(json) {
 						var jobId = json.addvpnuserresponse.jobid;

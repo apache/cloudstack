@@ -18,7 +18,9 @@
 package com.cloud.api.commands;
 
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -27,6 +29,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
@@ -96,6 +99,9 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
     private String templateTag;        
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -167,7 +173,18 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     public String getTemplateTag() {
         return templateTag;
-    } 
+    }
+    
+    public Map getDetails() {
+    	if (details == null || details.isEmpty()) {
+    		return null;
+    	}
+    	
+    	Collection paramsCollection = details.values();
+    	Map params = (Map) (paramsCollection.toArray())[0];
+    	return params;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

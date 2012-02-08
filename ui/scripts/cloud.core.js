@@ -1149,7 +1149,7 @@ function applyAutoCompleteToDomainField($field) {
 					var array1 = [];				
 					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 						for(var i=0; i < autoCompleteDomains.length; i++) 					        
-							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+							array1.push(fromdb(autoCompleteDomains[i].path));		   					   			    
 					}					
 					response(array1);
 				}
@@ -1170,7 +1170,7 @@ function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {
 					autoCompleteDomains = json.listdomainchildrenresponse.domain;								
 					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 						for(var i=0; i < autoCompleteDomains.length; i++) 					        
-							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+							array1.push(fromdb(autoCompleteDomains[i].path));		   					   			    
 					}								
 				}
 			});	
@@ -1182,7 +1182,7 @@ function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {
 					var items = json.listdomainsresponse.domain;									
 					if(items != null && items.length > 0) {	
 					    autoCompleteDomains.push(items[0]);					
-					    array1.push(fromdb(items[0].name));										   			    
+					    array1.push(fromdb(items[0].path));										   			    
 					}	
 				}
 			});	

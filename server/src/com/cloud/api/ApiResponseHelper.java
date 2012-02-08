@@ -353,6 +353,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setLevel(domain.getLevel());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
         domainResponse.setParentDomainId(domain.getParent());
+        StringBuilder domainPath = new StringBuilder("ROOT");  
+        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+        domainResponse.setPath(domainPath.toString());
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
         }
@@ -1434,7 +1437,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setFormat(result.getFormat());
         response.setOsTypeId(result.getGuestOSId());
         response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
-
+        response.setDetails(result.getDetails());
+        
         if (result.getFormat() == ImageFormat.ISO) { // Templates are always bootable
             response.setBootable(result.isBootable());
         } else {
@@ -1498,6 +1502,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
         templateResponse.setHypervisor(template.getHypervisorType().toString());
+        templateResponse.setDetails(template.getDetails());
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
         if (os != null) {
@@ -1586,6 +1591,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setPublic(iso.isPublicTemplate());
             isoResponse.setCreated(iso.getCreated());
             isoResponse.setPasswordEnabled(false);
+            isoResponse.setDetails(iso.getDetails());
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
             if (owner != null) {
                 isoResponse.setAccount(owner.getAccountName());
@@ -1629,6 +1635,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setFeatured(iso.isFeatured());
         isoResponse.setCrossZones(iso.isCrossZones());
         isoResponse.setPublic(iso.isPublicTemplate());
+        isoResponse.setDetails(iso.getDetails());
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());

@@ -28,12 +28,12 @@ function diskOfferingGetSearchParams() {
 	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	        
         if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none"
 	        && $advancedSearchPopup.find("#domain").hasClass("textwatermark") == false) {
-	        var domainName = $advancedSearchPopup.find("#domain").val();
-	        if (domainName != null && domainName.length > 0) { 	
+	        var domainPath = $advancedSearchPopup.find("#domain").val();
+	        if (domainPath != null && domainPath.length > 0) { 	
 				var domainId;							    
 			    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 				    for(var i=0; i < autoCompleteDomains.length; i++) {					        
-				      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				      if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 				          domainId = autoCompleteDomains[i].id;
 				          break;	
 				      }
@@ -109,12 +109,12 @@ function initAddDiskOfferingDialog() {
 				
 				if($thisDialog.find("#domain_container").css("display") != "none") {
 				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
-				    var domainName = $thisDialog.find("#domain").val();
+				    var domainPath = $thisDialog.find("#domain").val();
 				    var domainId;
-				    if(domainName != null && domainName.length > 0) { 				    
+				    if(domainPath != null && domainPath.length > 0) { 				    
 				        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 					        for(var i=0; i < autoCompleteDomains.length; i++) {					        
-					          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					          if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainPath.toLowerCase()) {
 					              domainId = autoCompleteDomains[i].id;
 					              break;	
 					          }

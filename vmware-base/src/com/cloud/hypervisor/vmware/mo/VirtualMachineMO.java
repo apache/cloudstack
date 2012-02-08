@@ -1187,6 +1187,9 @@ public class VirtualMachineMO extends BaseMO {
 		try {
 			if(state == HttpNfcLeaseState.ready) {
 				final HttpNfcLeaseMO.ProgressReporter progressReporter = leaseMo.createProgressReporter();
+
+                boolean success = false;
+                List<String> fileNames = new ArrayList<String>();
 				try {
 					HttpNfcLeaseInfo leaseInfo = leaseMo.getLeaseInfo();
 					final long totalBytes = leaseInfo.getTotalDiskCapacityInKB() * 1024;
@@ -1194,8 +1197,6 @@ public class VirtualMachineMO extends BaseMO {
 					
 					HttpNfcLeaseDeviceUrl[] deviceUrls = leaseInfo.getDeviceUrl();
 					if(deviceUrls != null) {
-						List<String> fileNames = new ArrayList<String>();
-						
 						OvfFile[] ovfFiles = new OvfFile[deviceUrls.length];  
 						for (int i = 0; i < deviceUrls.length; i++) {  
 							String deviceId = deviceUrls[i].getKey();  
@@ -1252,11 +1253,7 @@ public class VirtualMachineMO extends BaseMO {
 					        
 					        String result = command.execute();
 					        if(result == null) {
-					        	if(leaveOvaFileOnly) {
-							        for(String name: fileNames) {
-                                        new File(name).delete();
-                                    }
-					        	}
+					            success = true;
 					        }
 						}
 					}
@@ -1264,6 +1261,16 @@ public class VirtualMachineMO extends BaseMO {
 					s_logger.error("Unexpected exception ", e);
 				} finally {
 					progressReporter.close();
+
+					if(leaveOvaFileOnly) {
+                        for(String name : fileNames) {
+                            new File(name).delete();
+                        }
+					}
+					
+					if(!success) {
+					    new File(exportDir + File.separator + exportName + ".ova").delete();
+					} 
 				}
 			}
 		} finally {

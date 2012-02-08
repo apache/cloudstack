@@ -1618,7 +1618,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
 
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
 
         // Network usage command to create iptables rules
         cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
@@ -1748,7 +1748,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
-
         return true;
     }
 

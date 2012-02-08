@@ -19,6 +19,7 @@
 package com.cloud.consoleproxy;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
@@ -49,13 +50,15 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 	public void init(byte[] ksBits, String ksPassword) {
 	    s_logger.info("Start initializing SSL");
 
-	    if(ksBits == null) {
+	    // if(ksBits == null) {
 			try {
 			    s_logger.info("Initializing SSL from built-in default certificate");
 				
 				char[] passphrase = "vmops.com".toCharArray();
 				KeyStore ks = KeyStore.getInstance("JKS");
-				ks.load(ConsoleProxy.class.getResourceAsStream("/realhostip.keystore"), passphrase);
+				
+				ks.load(new FileInputStream("certs/realhostip.keystore"), passphrase);
+				// ks.load(ConsoleProxy.class.getResourceAsStream("/realhostip.keystore"), passphrase);
 				
 			    s_logger.info("SSL certificate loaded");
 				
@@ -73,6 +76,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 			} catch (Exception ioe) {
 				s_logger.error(ioe.toString(), ioe);
 			}
+/*			
 	    } else {
 			char[] passphrase = ksPassword != null ? ksPassword.toCharArray() : null;
 			try {
@@ -96,6 +100,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 				s_logger.error("Unable to init factory due to exception ", e);
 			}
 	    }
+*/	    
 	}
 	
 	public HttpServer createHttpServerInstance(int port) throws IOException {

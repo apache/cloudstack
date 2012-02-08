@@ -21,14 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-@Local(value = ServerResource.class)
-public class XenServer600Resource extends XenServer56Resource {
+@Local(value=ServerResource.class)
+public class XenServer600Resource extends XenServer56FP1Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer600Resource.class);
 
     public XenServer600Resource() {

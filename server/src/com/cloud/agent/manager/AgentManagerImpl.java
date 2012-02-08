@@ -921,7 +921,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
-    public void removeAgent(AgentAttache attache, Status nextState, Event event, Boolean investigate) {
+    public void removeAgent(AgentAttache attache, Status nextState) {
         if (attache == null) {
             return;
         }
@@ -944,13 +944,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         if (removed != null) {
             removed.disconnect(nextState);
-        }
-        
-        HostVO host = _hostDao.findById(hostId);
-        if (event != null && investigate != null) {
-        	if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
-                _haMgr.scheduleRestartForVmsOnHost(host, investigate);
-            }
         }
         
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
@@ -1012,7 +1005,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             s_logger.warn("Can't find host with " + hostId);
-            removeAgent(attache, Status.Removed, event, investigate);
+            removeAgent(attache, Status.Removed);
             return true;
 
         }
@@ -1022,7 +1015,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 s_logger.debug("Host " + hostId + " is already " + currentState);
             }
             if (currentState != Status.PrepareForMaintenance) {
-                removeAgent(attache, currentState, event, investigate);
+                removeAgent(attache, currentState);
             }
             return true;
         }
@@ -1110,8 +1103,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextState);
         }
-        removeAgent(attache, nextState, event, investigate);
+        
+        removeAgent(attache, nextState);
         _hostDao.disconnect(host, event, _nodeId);
+        
+    	if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
+            _haMgr.scheduleRestartForVmsOnHost(host, investigate);
+        }
 
         return true;
     }

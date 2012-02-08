@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -252,6 +253,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
+    protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
@@ -727,10 +729,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
         if (sourceNat) {
-            args += " -f ";
-            args += " -l ";
-            args += publicIpAddress + "/" + cidrSize;
-        } else if (firstIP) {
+            args += " -s ";
+        } 
+        if (firstIP) {
             args += " -f ";
             args += " -l ";
             args += publicIpAddress + "/" + cidrSize;
@@ -855,6 +856,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String controlIp = VmwareResource.getRouterSshControlIp(cmd);
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
+            
+            // command may sometimes be redirect to a wrong host, we relax
+            // the check and will try to find it within cluster
+            if(vmMo == null) {
+                if(hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(),
+                        ((HostMO)hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(routerName);
+                }
+            }
+            
             if (vmMo == null) {
                 String msg = "Router " + routerName + " no longer exists to execute IPAssoc command";
                 s_logger.error(msg);
@@ -1323,25 +1335,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 i++;
             }
 
-            for (VolumeTO vol : disks) {
+            for (VolumeTO vol : sortVolumesByDeviceId(disks)) {
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
                 if (vol.getType() == Volume.Type.ISO) {
                     controllerKey = ideControllerKey;
                 } else {
                     if(vol.getType() == Volume.Type.ROOT) {
-                        if(vmSpec.getDetails() != null && vmSpec.getDetails().get("root.disk.controller") != null)
-                        {
-                            if(vmSpec.getDetails().get("root.disk.controller").equalsIgnoreCase("scsi"))
-                                controllerKey = scsiControllerKey;
-                            else
-                                controllerKey = ideControllerKey;
-                        } else {
-                            if(_rootDiskController == DiskControllerType.scsi)
-                                controllerKey = scsiControllerKey;
-                            else
-                                controllerKey = ideControllerKey;
-                        }
+                    	if(vmSpec.getDetails() != null && vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null)
+                    	{
+                    		if(vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi"))
+    	                		controllerKey = scsiControllerKey;
+    	                	else
+    	                		controllerKey = ideControllerKey;
+                    	} else {
+    	                	if(_rootDiskController == DiskControllerType.scsi)
+    	                		controllerKey = scsiControllerKey;
+    	                	else
+    	                		controllerKey = ideControllerKey;
+                    	}
                     } else {
                         // data volume always uses SCSI
                         controllerKey = scsiControllerKey;
@@ -1526,6 +1538,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         return listForSort.toArray(new NicTO[0]);
     }
+    
+    private VolumeTO[] sortVolumesByDeviceId(VolumeTO[] volumes) {
+
+        List<VolumeTO> listForSort = new ArrayList<VolumeTO>();
+        for (VolumeTO vol : volumes) {
+            listForSort.add(vol);
+        }
+        Collections.sort(listForSort, new Comparator<VolumeTO>() {
+
+            @Override
+            public int compare(VolumeTO arg0, VolumeTO arg1) {
+                if (arg0.getDeviceId() < arg1.getDeviceId()) {
+                    return -1;
+                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
+                    return 0;
+                }
+
+                return 1;
+            }
+        });
+
+        return listForSort.toArray(new VolumeTO[0]);
+    }
+    
 
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context, VolumeTO[] disks) throws Exception {
         HashMap<String ,Pair<ManagedObjectReference, DatastoreMO>> poolMors = new HashMap<String, Pair<ManagedObjectReference, DatastoreMO>>();
@@ -2030,6 +2066,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String vmName = vm.getName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
@@ -2043,6 +2080,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nic : nics) {
                 // prepare network on the host
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic);
+            }
+
+            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            if(secStoreUrl == null) {
+                String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                throw new Exception(msg);
+            }
+            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            
+            ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
+            if (morSecDs == null) {
+                String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                throw new Exception(msg);
             }
 
             synchronized (_vms) {
@@ -3049,6 +3099,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if(hyperHost.isHyperHostConnected()) {
                 mgr.gcLeftOverVMs(context);
+                
+                if(_recycleHungWorker) {
+                    s_logger.info("Scan hung worker VM to recycle");
+                    
+                    // GC worker that has been running for too long
+                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime"});
+                    if(ocs != null) {
+                        for(ObjectContent oc : ocs) {
+                            DynamicProperty[] props = oc.getPropSet();
+                            if(props != null) {
+                                String name = null;
+                                boolean template = false;
+                                VirtualMachinePowerState powerState = VirtualMachinePowerState.poweredOff;
+                                GregorianCalendar bootTime = null;
+                                
+                                for(DynamicProperty prop : props) {
+                                    if(prop.getName().equals("name"))
+                                        name = prop.getVal().toString();
+                                    else if(prop.getName().equals("config.template"))
+                                        template = (Boolean)prop.getVal();
+                                    else if(prop.getName().equals("runtime.powerState"))
+                                        powerState = (VirtualMachinePowerState)prop.getVal();
+                                    else if(prop.getName().equals("runtime.bootTime")) 
+                                        bootTime = (GregorianCalendar)prop.getVal();
+                                }
+                                
+                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+                                    boolean recycle = false;
+    
+                                    // recycle stopped worker VM and VM that has been running for too long (hard-coded 10 hours for now)
+                                    if(powerState == VirtualMachinePowerState.poweredOff)
+                                        recycle = true;
+                                    else if(bootTime != null && (new Date().getTime() - bootTime.getTimeInMillis() > 10*3600*1000))
+                                        recycle = true;
+                                    
+                                    if(recycle) {
+                                        s_logger.info("Recycle pending worker VM: " + name);
+                                        
+                                        VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                                        vmMo.powerOff();
+                                        vmMo.destroy();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 s_logger.error("Host is no longer connected.");
                 return null;
@@ -3816,22 +3914,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _cluster = (String) params.get("cluster");
         _guid = (String) params.get("guid");
 
-        String value = (String) params.get("cpu.overprovisioning.factor");
-        if(value != null)
-            _cpuOverprovisioningFactor = Float.parseFloat(value);
-
-        value = (String) params.get("vmware.reserve.cpu");
-        if(value != null && value.equalsIgnoreCase("true"))
-            _reserveCpu = true;
-
-        value = (String) params.get("mem.overprovisioning.factor");
-        if(value != null)
-            _memOverprovisioningFactor = Float.parseFloat(value);
-
-        value = (String) params.get("vmware.reserve.mem");
-        if(value != null && value.equalsIgnoreCase("true"))
-            _reserveMem = true;
-
         String[] tokens = _guid.split("@");
         _vCenterAddress = tokens[1];
         _morHyperHost = new ManagedObjectReference();
@@ -3860,6 +3942,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
         _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
 
+        String value = (String) params.get("cpu.overprovisioning.factor");
+        if(value != null)
+            _cpuOverprovisioningFactor = Float.parseFloat(value);
+
+        value = (String) params.get("vmware.reserve.cpu");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _reserveCpu = true;
+        
+        value = (String) params.get("vmware.recycle.hung.wokervm");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _recycleHungWorker = true;
+
+        value = (String) params.get("mem.overprovisioning.factor");
+        if(value != null)
+            _memOverprovisioningFactor = Float.parseFloat(value);
+
+        value = (String) params.get("vmware.reserve.mem");
+        if(value != null && value.equalsIgnoreCase("true"))
+            _reserveMem = true;
+        
         value = (String)params.get("vmware.root.disk.controller");
         if(value != null && value.equalsIgnoreCase("scsi"))
             _rootDiskController = DiskControllerType.scsi;

@@ -200,22 +200,9 @@
         <include name="cloud-commons-discovery.jar" />
         <include name="cloud-wsdl4j.jar" />
         <include name="vmware-apputils.jar" />
-        <include name="vmware-lib-jaxen-core.jar" />
-        <include name="vmware-lib-jdom.jar" />
-        <include name="vmware-lib-smtp.jar" />
-        <include name="vmware-lib-xerces.jar" />
         <include name="vmware-vim.jar" />
-        <include name="vmware-credstore.jar" />
-        <include name="vmware-lib-jaxen-jdom.jar" />
-        <include name="vmware-lib-mailapi.jar" />
-        <include name="vmware-lib-wbem.jar" />
-        <include name="vmware-lib-xml-apis.jar" />
-        <include name="vmware-lib-activation.jar" />
         <include name="vmware-lib-jaxrpc.jar" />
-        <include name="vmware-lib-saxpath.jar" />
-        <include name="vmware-lib-xalan.jar" />
         <include name="vmware-vim25.jar" />
-        <include name="vmware-vim.jar" />
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />

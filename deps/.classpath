@@ -36,17 +36,7 @@
 	<classpathentry exported="true" kind="lib" path="cloud-iControl.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-manageontap.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-apputils.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-credstore.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-activation.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxen-core.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxen-jdom.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxrpc.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jdom.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-saxpath.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-wbem.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xalan.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xerces.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xml-apis.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-vim.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-vim25.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jnetpcap.jar"/>

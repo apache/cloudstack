@@ -33,6 +33,7 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
     private SearchBuilder<SecurityGroupRulesVO> AccountGroupNameSearch;
     private SearchBuilder<SecurityGroupRulesVO> AccountSearch;
     private SearchBuilder<SecurityGroupRulesVO> GroupSearch;
+    private SearchBuilder<SecurityGroupRulesVO> GroupSearch2;
 
 
     protected SecurityGroupRulesDaoImpl() {
@@ -48,6 +49,10 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         GroupSearch = createSearchBuilder();
         GroupSearch.and("groupId", GroupSearch.entity().getId(), SearchCriteria.Op.EQ);
         GroupSearch.done();
+        
+        GroupSearch2 = createSearchBuilder();
+        GroupSearch2.and("groupId", GroupSearch2.entity().getId(), SearchCriteria.Op.IN);
+        GroupSearch2.done();
         
     }
 
@@ -81,6 +86,14 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
         SearchCriteria<SecurityGroupRulesVO> sc = GroupSearch.create();
         sc.setParameters("groupId", groupId);
+        return listBy(sc, searchFilter);
+    }
+    
+    @Override
+    public List<SecurityGroupRulesVO> listSecurityRulesByGroupIds(Long[] groupId) {
+        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
+        SearchCriteria<SecurityGroupRulesVO> sc = GroupSearch2.create();
+        sc.setParameters("groupId", (Object[])groupId);
         return listBy(sc, searchFilter);
     }
 }

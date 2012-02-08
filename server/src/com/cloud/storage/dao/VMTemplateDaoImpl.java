@@ -68,6 +68,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Inject
     VMTemplateZoneDao _templateZoneDao;
     @Inject
+    VMTemplateDetailsDao _templateDetailsDao;
+    
+    @Inject
     ConfigurationDao  _configDao;
     @Inject
     HostDao   _hostDao;
@@ -532,6 +535,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		VMTemplateVO tmplt2 = findById(tmplt.getId());
 		if (tmplt2 == null){
 			persist(tmplt);
+			if(tmplt.getDetails() != null) {
+				_templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
+			}
 		}
 		VMTemplateZoneVO tmpltZoneVO = _templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
 		if ( tmpltZoneVO == null ) {
