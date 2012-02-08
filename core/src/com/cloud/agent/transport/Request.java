@@ -20,6 +20,7 @@ package com.cloud.agent.transport;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.stream.JsonReader;
 
 /**
  * Request is a simple wrapper around command and answer to add sequencing,
@@ -228,7 +230,10 @@ public class Request {
     public Command[] getCommands() {
         if (_cmds == null) {
             try {
-                _cmds = s_gson.fromJson(_content, Command[].class);
+                StringReader reader = new StringReader(_content);
+                JsonReader jsonReader = new JsonReader(reader);
+                jsonReader.setLenient(true);
+                _cmds = s_gson.fromJson(jsonReader, (Type)Command[].class);
             } catch (RuntimeException e) {
                 s_logger.error("Caught problem with " + _content, e);
                 throw e;
