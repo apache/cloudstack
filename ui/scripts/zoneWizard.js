@@ -101,10 +101,14 @@
         preFilter: function(args) {
           var $form = args.$form;
 					
-          if (args.data['network-model'] == 'Basic')            
-					  args.$form.find('[rel=networkOfferingId]').show();		           
-					else  //args.data['network-model'] == 'Advanced'      
-						args.$form.find('[rel=networkOfferingId]').hide();          
+          if (args.data['network-model'] == 'Basic') {           
+					  args.$form.find('[rel=networkOfferingId]').show();	
+						args.$form.find('[rel=guestcidraddress]').hide(); 
+          }						
+					else { //args.data['network-model'] == 'Advanced'      
+						args.$form.find('[rel=networkOfferingId]').hide();    
+            args.$form.find('[rel=guestcidraddress]').show(); 						
+					}
 
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
