@@ -50,7 +50,6 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
-import com.cloud.api.commands.ListTopConsumedResources;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -441,6 +440,6 @@ public interface ManagementService {
      * @param cmd
      * @return List of capacities
      */
-    List<? extends Capacity> listTopConsumedResources(ListTopConsumedResources cmd);
+    List<? extends Capacity> listTopConsumedResources(ListCapacityCmd cmd);
 
 }

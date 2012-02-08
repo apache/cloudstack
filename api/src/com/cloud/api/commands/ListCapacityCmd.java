@@ -28,7 +28,6 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.Capacity;
@@ -60,8 +59,8 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, description="recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
     
-    @Parameter(name=ApiConstants.RESOURCE_STATE, type=CommandType.BOOLEAN, description="list capacities by resource state. Resource state represents current state determined by admin of the resource, value can be one of [Enabled, Disabled, Maintenance]")
-    private Boolean resourceState;
+    @Parameter(name=ApiConstants.SORT_BY_USAGE, type=CommandType.BOOLEAN, description="if true then lists the top consumed resources at various hierarchy level")
+    private Boolean sortByUsage;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
     																		 "* CAPACITY_TYPE_MEMORY = 0" +
@@ -101,6 +100,9 @@ public class ListCapacityCmd extends BaseListCmd {
         return type;
     }
 
+    public Boolean getSortByUsage() {
+        return sortByUsage;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

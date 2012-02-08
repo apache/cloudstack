@@ -84,7 +84,6 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
-import com.cloud.api.commands.ListTopConsumedResources;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -1939,7 +1938,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<CapacityVO> listTopConsumedResources(ListTopConsumedResources cmd) {
+    public List<CapacityVO> listTopConsumedResources(ListCapacityCmd cmd) {
         
         Integer capacityType = cmd.getType();
         Long zoneId = cmd.getZoneId();
@@ -2042,10 +2041,15 @@ public class ManagementServerImpl implements ManagementServer {
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
         Boolean fetchLatest = cmd.getFetchLatest();
+        Boolean sortByUsage = cmd.getSortByUsage();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         if (fetchLatest != null && fetchLatest){
         	_alertMgr.recalculateCapacity();
+        }
+        
+        if (sortByUsage != null && sortByUsage){
+            return listTopConsumedResources(cmd);
         }
         List<SummedCapacity> summedCapacities = _capacityDao.findCapacityBy(capacityType, zoneId, podId, clusterId);
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
