@@ -106,6 +106,7 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -427,9 +428,23 @@ public class ApiServer implements HttpRequestHandler {
             }
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
+            	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
+            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
+                // copy over the IdentityProxy information as well and throw the serverapiexception.
+                IdentityProxy id = ref.getProxyObject();
+                if (id != null) {
+                	e.setProxyObject(id.getTableName(), id.getValue());
+                }
+                throw e;
             } else if (ex instanceof PermissionDeniedException) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
+            	PermissionDeniedException ref = (PermissionDeniedException)ex;
+            	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
+                // copy over the IdentityProxy information as well and throw the serverapiexception.
+                IdentityProxy id = ref.getProxyObject();
+                if (id != null) {
+                	e.setProxyObject(id.getTableName(), id.getValue());
+                }
+                throw e;
             } else if (ex instanceof ServerApiException) {
                 throw (ServerApiException) ex;
             } else {

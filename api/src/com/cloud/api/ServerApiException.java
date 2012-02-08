@@ -17,6 +17,7 @@
  */
 
 package com.cloud.api;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.exception.RuntimeCloudException;
 
 @SuppressWarnings("serial")
@@ -49,4 +50,5 @@ public class ServerApiException extends RuntimeCloudException {
     public void setDescription(String description) {
         _description = description;
     }
+	
 }

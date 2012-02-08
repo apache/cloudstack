@@ -30,13 +30,13 @@ import com.cloud.utils.IdentityProxy;
 
 public class CloudException extends Exception {
     
-	IdentityProxy id;
+	protected IdentityProxy id;
 	
 	public CloudException(String table_name, Long id) {
 		this.id = new IdentityProxy();
         this.id.setTableName(table_name);
         this.id.setValue(id);
-    }
+	}
 	
 	public CloudException(String message) {
 		super(message);		
@@ -52,4 +52,14 @@ public class CloudException extends Exception {
 		super();
 	}
 	
+	public void setProxyObject(String table_name, Long id) {
+		this.id = new IdentityProxy();
+		this.id.setTableName(table_name);
+		this.id.setValue(id);
+		return;
+	}
+	
+	public IdentityProxy getIdProxy() {
+		return id;
+	}	
 }
