@@ -1890,6 +1890,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
             } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
                 alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+            } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+                alertType = AlertManager.ALERT_TYPE_SSVM;
             }
 
             HostPodVO podVO = _podDao.findById(vm.getPodIdToDeployIn());

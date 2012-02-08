@@ -299,6 +299,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                 alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
             } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
                 alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+            } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+                alertType = AlertManager.ALERT_TYPE_SSVM;
             }
 
             if (!(_forceHA || vm.isHaEnabled())) {
@@ -388,6 +390,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
         } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
             alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+        } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+            alertType = AlertManager.ALERT_TYPE_SSVM;
         }
 
         HostVO host = _hostDao.findById(work.getHostId());

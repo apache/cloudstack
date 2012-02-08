@@ -208,6 +208,7 @@ public class UsageAlertManagerImpl implements AlertManager {
                 (alertType != AlertManager.ALERT_TYPE_USERVM) &&
                 (alertType != AlertManager.ALERT_TYPE_DOMAIN_ROUTER) &&
                 (alertType != AlertManager.ALERT_TYPE_CONSOLE_PROXY) &&
+                (alertType != AlertManager.ALERT_TYPE_SSVM) &&                
                 (alertType != AlertManager.ALERT_TYPE_STORAGE_MISC) &&
                 (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE)) {
                 alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
