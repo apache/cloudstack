@@ -1244,14 +1244,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             Boolean useSSL = cmd.getUseSSL();
             String bindDN = cmd.getBindDN();
             String bindPasswd = cmd.getBindPassword();
+            String trustStore = cmd.getTrustStore();
+            String trustStorePassword = cmd.getTrustStorePassword();
 
             if (bindDN != null && bindPasswd == null) {
                 throw new InvalidParameterValueException("If you specify a bind name then you need to provide bind password too.");
             }
-
-            // System.setProperty("javax.net.ssl.keyStore", "/cygdrive/c/citrix/info/cacerts.jks");
-            // System.setProperty("javax.net.ssl.keyStorePassword", "1111_aaaa");
-
+            
             // check if the info is correct
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -1259,9 +1258,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (new Boolean(useSSL)) {
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol = "ldaps://";
+                if (trustStore == null || trustStorePassword==null ){
+                	throw new InvalidParameterValueException("If you plan to use SSL then you need to configure the trust store.");
+                }
+                System.setProperty("javax.net.ssl.trustStore", trustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
             }
             env.put(Context.PROVIDER_URL, protocol + hostname + ":" + port);
             if (bindDN != null && bindPasswd != null) {
+            	env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, bindDN);
                 env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
             }
@@ -1320,13 +1325,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             cvo.setValue(DBEncryptionUtil.encrypt(bindPasswd));
             _configDao.persist(cvo);
+
+            cvo = _configDao.findByName(LDAPParams.truststore.toString());
+            if (cvo == null) {
+                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.truststore.toString(), null, "Enter the path to trusted keystore");
+            }
+            cvo.setValue(trustStore);
+            _configDao.persist(cvo);
+
+            cvo = _configDao.findByName(LDAPParams.truststorepass.toString());
+            if (cvo == null) {
+                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.truststorepass.toString(), null, "Enter the password for trusted keystore");
+            }
+            cvo.setValue(DBEncryptionUtil.encrypt(trustStorePassword));
+            _configDao.persist(cvo);
+            
+            s_logger.debug("The ldap server is configured: " + hostname);
         } catch (NamingException ne) {
             ne.printStackTrace();
             throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ("Caused by:" + ne.getCause().getMessage()) : ""));
         }
         return true;
     }
-
+    
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_EDIT, eventDescription = "editing zone", async = false)

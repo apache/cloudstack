@@ -187,6 +187,8 @@ public class ApiConstants {
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TYPE = "type";
+    public static final String TRUST_STORE = "truststore";
+    public static final String TRUST_STORE_PASSWORD = "truststorepass";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USER_DATA = "userdata";
@@ -338,7 +340,7 @@ public class ApiConstants {
     }
     
     public enum LDAPParams {
-        hostname, port, usessl, queryfilter, searchbase, dn, passwd;
+        hostname, port, usessl, queryfilter, searchbase, dn, passwd, truststore, truststorepass;
         
         @Override
         public String toString(){

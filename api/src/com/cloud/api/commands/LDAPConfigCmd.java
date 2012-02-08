@@ -65,6 +65,11 @@ public class LDAPConfigCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.BIND_PASSWORD, type=CommandType.STRING, description="Enter the password.")
     private String bindPassword;
     
+    @Parameter(name=ApiConstants.TRUST_STORE, type=CommandType.STRING, description="Enter the path to trust certificates store.")
+    private String trustStore;
+
+    @Parameter(name=ApiConstants.TRUST_STORE_PASSWORD, type=CommandType.STRING, description="Enter the password for trust store.")
+    private String trustStorePassword;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -97,6 +102,16 @@ public class LDAPConfigCmd extends BaseCmd  {
     public Integer getPort() {
         return port <= 0 ? 389 : port;
     }
+
+    public String getTrustStore() {
+        return trustStore;
+    }
+
+
+    public String getTrustStorePassword() {
+        return trustStorePassword;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

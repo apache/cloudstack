@@ -74,6 +74,8 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String useSSL = _configDao.getValue(LDAPParams.usessl.toString());
         String bindDN = _configDao.getValue(LDAPParams.dn.toString());
         String bindPasswd = DBEncryptionUtil.decrypt(_configDao.getValue(LDAPParams.passwd.toString()));
+        String trustStore = _configDao.getValue(LDAPParams.truststore.toString());
+        String trustStorePassword = DBEncryptionUtil.decrypt(_configDao.getValue(LDAPParams.truststorepass.toString()));
         
         try {
             // get all params
@@ -83,6 +85,8 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             if (new Boolean(useSSL)){
             	env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol="ldaps://" ;
+                System.setProperty("javax.net.ssl.trustStore", trustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
             }
             env.put(Context.PROVIDER_URL, protocol + url  + ":" + port);
 
