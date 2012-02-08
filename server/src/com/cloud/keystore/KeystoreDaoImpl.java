@@ -18,6 +18,8 @@
 package com.cloud.keystore;
 
 import java.sql.PreparedStatement;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.ejb.Local;
 
@@ -29,14 +31,33 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 @Local(value={KeystoreDao.class})
 public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements KeystoreDao {
     protected final SearchBuilder<KeystoreVO> FindByNameSearch;
+    protected final SearchBuilder<KeystoreVO> CertChainSearch;
 
 	public KeystoreDaoImpl() {
 		FindByNameSearch = createSearchBuilder();
 		FindByNameSearch.and("name", FindByNameSearch.entity().getName(), Op.EQ);
 		FindByNameSearch.done();
+		
+		CertChainSearch = createSearchBuilder();
+		CertChainSearch.and("key", CertChainSearch.entity().getKey(), Op.NULL);
+		CertChainSearch.done();
+	}
+	
+	@Override
+	public List<KeystoreVO> findCertChain() {
+		SearchCriteria<KeystoreVO> sc =  CertChainSearch.create();
+		List<KeystoreVO> ks = listBy(sc);
+		Collections.sort(ks, new Comparator() { public int compare(Object o1, Object o2) {
+			Integer seq1 = ((KeystoreVO)o1).getIndex();
+			Integer seq2 = ((KeystoreVO)o2).getIndex();
+			return seq1.compareTo(seq2);
+		}});
+		return ks;
 	}
 	
 	@Override
@@ -70,6 +91,26 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 		} catch(Exception e) {
 			txn.rollback();
 			throw new CloudRuntimeException("Unable to save certificate under name " + name + " due to exception", e);
+		}
+	}
+	
+	@Override
+	@DB
+	public void save(String alias, String certificate, Integer index, String domainSuffix) {
+		KeystoreVO ks = this.findByName(alias);
+		if (ks != null) {
+			ks.setCertificate(certificate);
+			ks.setName(alias);
+			ks.setIndex(index);
+			ks.setDomainSuffix(domainSuffix);
+			this.update(ks.getId(), ks);
+		} else {
+			KeystoreVO newks = new KeystoreVO();
+			newks.setCertificate(certificate);
+			newks.setName(alias);
+			newks.setIndex(index);
+			newks.setDomainSuffix(domainSuffix);
+			this.persist(newks);
 		}
 	}
 }

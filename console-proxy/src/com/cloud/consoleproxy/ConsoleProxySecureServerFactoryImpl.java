@@ -50,7 +50,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 	public void init(byte[] ksBits, String ksPassword) {
 	    s_logger.info("Start initializing SSL");
 
-	    // if(ksBits == null) {
+	    if(ksBits == null) {
 			try {
 			    s_logger.info("Initializing SSL from built-in default certificate");
 				
@@ -76,7 +76,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 			} catch (Exception ioe) {
 				s_logger.error(ioe.toString(), ioe);
 			}
-/*			
+			
 	    } else {
 			char[] passphrase = ksPassword != null ? ksPassword.toCharArray() : null;
 			try {
@@ -100,7 +100,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 				s_logger.error("Unable to init factory due to exception ", e);
 			}
 	    }
-*/	    
+	    
 	}
 	
 	public HttpServer createHttpServerInstance(int port) throws IOException {

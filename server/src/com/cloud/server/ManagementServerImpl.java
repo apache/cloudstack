@@ -4549,11 +4549,29 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
-        if (!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
+    	if (cmd.getPrivateKey() != null && cmd.getAlias() != null) {
+    		throw new InvalidParameterValueException("Can't change the alias for private key certification");
+    	}
+    	
+    	if (cmd.getPrivateKey() == null) {
+    		if (cmd.getAlias() == null) {
+    			throw new InvalidParameterValueException("alias can't be empty, if it's a certification chain");
+    		}
+    		
+    		if (cmd.getCertIndex() == null) {
+    			throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain");
+    		}
+    	}
+    	
+        if (cmd.getPrivateKey() != null &&!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
             throw new InvalidParameterValueException("Failed to pass certificate validation check");
         }
 
-        _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+        if (cmd.getPrivateKey() != null) {
+        	_ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+        } else {
+        	_ksMgr.saveCertificate(cmd.getAlias(), cmd.getCertificate(), cmd.getCertIndex(), cmd.getDomainSuffix());
+        }
 
         _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
         return "Certificate has been updated, we will stop all running console proxy VMs to propagate the new certificate, please give a few minutes for console access service to be up again";

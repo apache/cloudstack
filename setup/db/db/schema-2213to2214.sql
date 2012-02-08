@@ -63,3 +63,5 @@ ALTER TABLE `cloud`.`vm_instance` MODIFY `limit_cpu_use` tinyint(1) unsigned NOT
 UPDATE `cloud`.`configuration` SET `value`='false' WHERE `name`='agent.lb.enabled';
 
 ALTER TABLE `cloud_usage`.`user_statistics` MODIFY `device_type` varchar(32) NOT NULL;
+ALTER TABLE `cloud`.`keystore` ADD seq int;
+ALTER TABLE `cloud`.`keystore` MODIFY `cloud`.`keystore`.`key` text;

@@ -23,6 +23,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +34,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
@@ -100,6 +104,17 @@ public class KeystoreManagerImpl implements KeystoreManager {
 	}
 	
 	@Override
+	public void saveCertificate(String name, String certificate, Integer index, String domainSuffix) {
+		if(name == null || name.isEmpty() ||
+			certificate == null || certificate.isEmpty() ||
+			index == null ||
+			domainSuffix == null || domainSuffix.isEmpty())
+			throw new CloudRuntimeException("invalid parameter in saveCerticate");
+		
+		_ksDao.save(name, certificate, index, domainSuffix);
+	}
+	
+	@Override
 	public byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword) {
 		assert(name != null);
 		assert(aliasForCertificateInStore != null);
@@ -109,8 +124,19 @@ public class KeystoreManagerImpl implements KeystoreManager {
 		if(ksVo == null)
 			throw new CloudRuntimeException("Unable to find keystore " + name);
 	
+		List<Ternary<String, String, String>> certs = new ArrayList<Ternary<String, String, String>>();
+		List<KeystoreVO> certChains = _ksDao.findCertChain();
+	
+		for (KeystoreVO ks : certChains) {
+			Ternary<String, String, String> cert = new Ternary<String, String, String>(ks.getName(), ks.getCertificate(), null);
+			certs.add(cert);
+		}
+		
+		Ternary<String, String, String> cert = new Ternary<String, String, String>(ksVo.getName(), ksVo.getCertificate(), getKeyContent(ksVo.getKey()));
+		certs.add(cert);
+		
 		try {
-			return CertificateHelper.buildAndSaveKeystore(aliasForCertificateInStore, ksVo.getCertificate(), getKeyContent(ksVo.getKey()), storePassword);
+			return CertificateHelper.buildAndSaveKeystore(certs, storePassword);
 		} catch(KeyStoreException e) {
 			s_logger.warn("Unable to build keystore for " + name + " due to KeyStoreException");
 		} catch(CertificateException e) {
@@ -123,6 +149,28 @@ public class KeystoreManagerImpl implements KeystoreManager {
 			s_logger.warn("Unable to build keystore for " + name + " due to IOException");
 		}
 		return null;
+	}
+	
+	@Override
+	public SecStorageSetupCommand.Certificates getCertificates(String name) {
+		KeystoreVO ksVo = _ksDao.findByName(name);
+		if (ksVo == null) {
+			return null;
+		}
+		String prvKey = ksVo.getKey();
+		String prvCert = ksVo.getCertificate();
+		String certChain = null;
+		List<KeystoreVO> certchains = _ksDao.findCertChain();
+		if (certchains.size() > 0) {
+			StringBuilder chains = new StringBuilder();
+			for (KeystoreVO cert : certchains) {
+				chains.append(cert.getCertificate());
+				chains.append("\n");
+			}
+			certChain = chains.toString();
+		}
+		SecStorageSetupCommand.Certificates certs = new SecStorageSetupCommand.Certificates(prvKey, prvCert, certChain);
+		return certs;
 	}
 	
 	private static String getKeyContent(String key) {

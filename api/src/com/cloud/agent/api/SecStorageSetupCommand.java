@@ -17,16 +17,51 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 public class SecStorageSetupCommand extends Command {
 	private String secUrl;
+	private Certificates certs;
+	
+	public static class Certificates {
+	    @LogLevel(Log4jLevel.Off)
+		private String privKey;
+	    @LogLevel(Log4jLevel.Off)
+		private String privCert;
+	    @LogLevel(Log4jLevel.Off)
+		private String certChain;
+	    
+	    public Certificates() {
+	    	
+	    }
+	    
+	    public Certificates(String prvKey, String privCert, String certChain) {
+	    	this.privKey = prvKey;
+	    	this.privCert = privCert;
+	    	this.certChain = certChain;
+	    }
+	    
+	    public String getPrivKey() {
+	    	return this.privKey;
+	    }
+	    
+	    public String getPrivCert() {
+	    	return this.privCert;
+	    }
+	    
+	    public String getCertChain() {
+	    	return this.certChain;
+	    }
+	}
 	
 	public SecStorageSetupCommand() {
 		super();
 	}
-	
-	public SecStorageSetupCommand(String secUrl) {
+
+	public SecStorageSetupCommand(String secUrl, Certificates certs) {
 		super();
 		this.secUrl = secUrl;
+		this.certs = certs;
 	}
 	
 	@Override
@@ -37,8 +72,13 @@ public class SecStorageSetupCommand extends Command {
     public String getSecUrl() {
         return secUrl;
     }
+    
+    public Certificates getCerts() {
+    	return this.certs;
+    }
 
     public void setSecUrl(String secUrl) {
         this.secUrl = secUrl;
+       
     }
 }
