@@ -902,9 +902,10 @@
 					var array1 = [];					
 					var networkType = args.data.zone.networkType;  //"Basic", "Advanced"			
 					array1.push("&networktype=" + todb(networkType));
-					if(networkType == "Advanced") 
-						array1.push("&securitygroupenabled=false");  					
-
+					if(networkType == "Advanced") {						
+            array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));						
+          }
+					
 					array1.push("&name=" + todb(args.data.zone.name));
 
 					array1.push("&dns1=" + todb(args.data.zone.dns1));
