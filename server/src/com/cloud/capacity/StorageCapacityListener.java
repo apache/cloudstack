@@ -20,6 +20,8 @@ package com.cloud.capacity;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -28,6 +30,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -38,7 +41,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class StorageCapacityListener implements Listener {
     
     CapacityDao _capacityDao;
-    float _overProvisioningFactor = 1.0f;
+    float _overProvisioningFactor = 1.0f;    
 
 
     public StorageCapacityListener(CapacityDao _capacityDao,
@@ -82,12 +85,6 @@ public class StorageCapacityListener implements Listener {
         capacitySC.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
-        // remove old entries, we'll recalculate them anyway
-        if ((capacities != null) && !capacities.isEmpty()) {
-            for (CapacityVO capacity : capacities) {
-                _capacityDao.remove(capacity.getId());
-            }
-        }
 
         StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
         if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
