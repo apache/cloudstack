@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export CATALINA_HOME=/usr/share/tomcat
+export CATALINA_HOME=/usr/share/tomcat6
 
 ant clean-all
 
