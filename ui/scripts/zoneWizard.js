@@ -363,7 +363,7 @@
           vlanRange: {
             label: 'VLAN Range',
             range: ['vlanRangeStart', 'vlanRangeEnd'],
-            validation: { required: true, digits: true }
+            validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan is optional
           }
 					//Advanced (end)
         }
@@ -1978,69 +1978,76 @@
 						});	 
 					}
 					else if(args.data.returnedZone.networktype == "Advanced") {	 //update VLAN in physical network(s) in advanced zone   	
-						var physicalNetworksHavingGuest = [];
+						var physicalNetworksHavingGuestIncludingVlan = [];
 						$(args.data.physicalNetworks).each(function(){		
-						  if(this.guestConfiguration != null) {		
-						    physicalNetworksHavingGuest.push(this);
+						  if(this.guestConfiguration != null && this.guestConfiguration.vlanRangeStart == null && this.guestConfiguration.vlanRangeStart.length > 0) {		
+						    physicalNetworksHavingGuestIncludingVlan.push(this);
 						  }
 						});
-						
-						var updatedCount = 0;
-            $(physicalNetworksHavingGuest).each(function(){
-							var vlan;
-							if(this.guestConfiguration.vlanRangeEnd == null || this.guestConfiguration.vlanRangeEnd.length == 0)
-								vlan = this.guestConfiguration.vlanRangeStart;
-							else
-								vlan = this.guestConfiguration.vlanRangeStart + "-" + this.guestConfiguration.vlanRangeEnd;
-							
-							var originalId = this.id;
-							var returnedId;
-							$(args.data.returnedPhysicalNetworks).each(function(){								  
-								if(this.originalId == originalId) {
-									returnedId = this.id;
-									return false; //break the loop
-								}
+												
+						if(physicalNetworksHavingGuestIncludingVlan.length == 0) {															
+							stepFns.addCluster({
+								data: args.data
 							});
-							
-							$.ajax({
-								url: createURL("updatePhysicalNetwork&id=" + returnedId  + "&vlan=" + todb(vlan)), 
-								dataType: "json",
-								success: function(json) {
-									var jobId = json.updatephysicalnetworkresponse.jobid;							
-									var timerKey = "asyncJob_" + jobId;							
-									$("body").everyTime(2000, timerKey, function(){
-										$.ajax({
-											url: createURL("queryAsyncJobResult&jobid=" + jobId),
-											dataType: "json",
-											success: function(json) {									
-												var result = json.queryasyncjobresultresponse;												
-												if(result.jobstatus == 0) {
-													return;
-												}
-												else {
-													$("body").stopTime(timerKey);
-													if(result.jobstatus == 1) {	
-														updatedCount++;
-														if(updatedCount == physicalNetworksHavingGuest.length) {															
-															stepFns.addCluster({
-																data: args.data
-															});
+						}						
+						else {
+							var updatedCount = 0;
+							$(physicalNetworksHavingGuestIncludingVlan).each(function(){
+								var vlan;
+								if(this.guestConfiguration.vlanRangeEnd == null || this.guestConfiguration.vlanRangeEnd.length == 0)
+									vlan = this.guestConfiguration.vlanRangeStart;
+								else
+									vlan = this.guestConfiguration.vlanRangeStart + "-" + this.guestConfiguration.vlanRangeEnd;
+								
+								var originalId = this.id;
+								var returnedId;
+								$(args.data.returnedPhysicalNetworks).each(function(){								  
+									if(this.originalId == originalId) {
+										returnedId = this.id;
+										return false; //break the loop
+									}
+								});
+								
+								$.ajax({
+									url: createURL("updatePhysicalNetwork&id=" + returnedId  + "&vlan=" + todb(vlan)), 
+									dataType: "json",
+									success: function(json) {
+										var jobId = json.updatephysicalnetworkresponse.jobid;							
+										var timerKey = "asyncJob_" + jobId;							
+										$("body").everyTime(2000, timerKey, function(){
+											$.ajax({
+												url: createURL("queryAsyncJobResult&jobid=" + jobId),
+												dataType: "json",
+												success: function(json) {									
+													var result = json.queryasyncjobresultresponse;												
+													if(result.jobstatus == 0) {
+														return;
+													}
+													else {
+														$("body").stopTime(timerKey);
+														if(result.jobstatus == 1) {	
+															updatedCount++;
+															if(updatedCount == physicalNetworksHavingGuestIncludingVlan.length) {															
+																stepFns.addCluster({
+																	data: args.data
+																});
+															}
 														}
-													}
-													else if(result.jobstatus == 2){
-														alert("error: " + fromdb(result.jobresult.errortext));
-													}
-												}										
-											},	
-											error: function(XMLHttpResponse) {
-												var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-												error('configureGuestTraffic', errorMsg, { fn: 'configureGuestTraffic', args: args });
-											}		
-										});
-									});								
-								}
-							});		
-            });			
+														else if(result.jobstatus == 2){
+															alert("error: " + fromdb(result.jobresult.errortext));
+														}
+													}										
+												},	
+												error: function(XMLHttpResponse) {
+													var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+													error('configureGuestTraffic', errorMsg, { fn: 'configureGuestTraffic', args: args });
+												}		
+											});
+										});								
+									}
+								});		
+							});	
+						}
 					}					
         },
         				
