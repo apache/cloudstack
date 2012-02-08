@@ -708,20 +708,15 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
         
         PreparedStatement pstmt = null;
-        try {
-            txn.start();            
+        try {       
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
             pstmt.setString(1, capacityState);
             for (int i = 0; i < resourceIdList.size(); i++){                
                 pstmt.setLong( 2+i, resourceIdList.get(i));
             }            
             pstmt.executeUpdate();
-            txn.commit();
         } catch (Exception e) {
-            txn.rollback();
             s_logger.warn("Error updating CapacityVO", e);
-        } finally {
-            txn.close();
         }
     }
 }

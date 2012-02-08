@@ -53,13 +53,13 @@ public class ListCapacityCmd extends BaseListCmd {
     private Long podId;
     
     @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="lists capacity by the Cluster ID")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, since="3.0.0", description="lists capacity by the Cluster ID")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, description="recalculate capacities and fetch the latest")
+    @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, since="3.0.0", description="recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
     
-    @Parameter(name=ApiConstants.SORT_BY_USAGE, type=CommandType.BOOLEAN, description="if true then lists the top consumed resources at various hierarchy level")
+    @Parameter(name=ApiConstants.SORT_BY_USAGE, type=CommandType.BOOLEAN, since="3.0.0", description="if true then lists the top consumed resources at various hierarchy level and in enabled resource state")
     private Boolean sortByUsage;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +

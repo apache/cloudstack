@@ -160,6 +160,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
@@ -2004,9 +2005,12 @@ public class ManagementServerImpl implements ManagementServer {
     
     List<SummedCapacity> getSecStorageUsed(Long zoneId, Integer capacityType){
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
-            List<SummedCapacity> list = new ArrayList<SummedCapacity>();
-            
+            List<SummedCapacity> list = new ArrayList<SummedCapacity>();                        
             if (zoneId != null){
+                DataCenterVO zone = ApiDBUtils.findZoneById(zoneId);
+                if(zone == null || zone.getAllocationState() == AllocationState.Disabled){
+                    return null;   
+                }
                 CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
                 if (capacity.getTotalCapacity()!= 0){
                     capacity.setUsedPercentage( capacity.getUsedCapacity() / capacity.getTotalCapacity() );    
@@ -2016,7 +2020,7 @@ public class ManagementServerImpl implements ManagementServer {
                 SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
                 list.add(summedCapacity) ;
             }else {
-                List<DataCenterVO> dcList = ApiDBUtils.listZones();
+                List<DataCenterVO> dcList = _dcDao.listEnabledZones();
                 for(DataCenterVO dc : dcList){
                     CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());                    
                     if (capacity.getTotalCapacity()!= 0){
