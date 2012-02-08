@@ -225,9 +225,9 @@
             $.ajax({
               url: createURL('listCapacity'),
               data: {
-                sortBy: 'usage',
+                listtopused: true,
                 page: 1,
-                pageSize: 5
+                pagesize: 8
               },
               success: function(json) {
                 var capacities = json.listcapacityresponse.capacity ?
@@ -235,6 +235,14 @@
 
                 complete($.extend(data, {
                   zoneCapacities: $.map(capacities, function(capacity) {
+                    if (capacity.podname) {
+                      capacity.zonename = capacity.zonename.concat('<br/>Pod: ' + capacity.podname);
+                    }
+
+                    if (capacity.clustername) {
+                      capacity.zonename = capacity.zonename.concat('<br/>Cluster: ' + capacity.clustername);
+                    }
+
                     return {
                       zoneID: capacity.zoneid, // Temporary fix for dashboard
                       zoneName: capacity.zonename,
