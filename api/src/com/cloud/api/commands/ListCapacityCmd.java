@@ -59,8 +59,8 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, since="3.0.0", description="recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
     
-    @Parameter(name=ApiConstants.SORT_BY_USAGE, type=CommandType.BOOLEAN, since="3.0.0", description="if true then lists the top consumed resources at various hierarchy level and in enabled resource state")
-    private Boolean sortByUsage;
+    @Parameter(name=ApiConstants.LIST_TOP_USED, type=CommandType.BOOLEAN, since="3.0.0", description="if true then lists the top consumed enabled resources at Zone/Pod/Cluster level ordered by percentage.")
+    private Boolean listTopUsed;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
     																		 "* CAPACITY_TYPE_MEMORY = 0" +
@@ -100,8 +100,8 @@ public class ListCapacityCmd extends BaseListCmd {
         return type;
     }
 
-    public Boolean getSortByUsage() {
-        return sortByUsage;
+    public Boolean getlistTopUsed() {
+        return listTopUsed;
     }
 
     /////////////////////////////////////////////////////

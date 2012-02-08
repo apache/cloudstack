@@ -1945,6 +1945,10 @@ public class ManagementServerImpl implements ManagementServer {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
+        
+        if (clusterId != null){
+            throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
+        }
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
         
@@ -2017,7 +2021,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }else {
                     capacity.setUsedPercentage(0);
                 }
-                SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
                 list.add(summedCapacity) ;
             }else {
                 List<DataCenterVO> dcList = _dcDao.listEnabledZones();
@@ -2028,7 +2032,7 @@ public class ManagementServerImpl implements ManagementServer {
                     }else {
                         capacity.setUsedPercentage(0);
                     }
-                    SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                    SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
                     list.add(summedCapacity);
                 }//End of for                
             }
@@ -2045,14 +2049,14 @@ public class ManagementServerImpl implements ManagementServer {
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
         Boolean fetchLatest = cmd.getFetchLatest();
-        Boolean sortByUsage = cmd.getSortByUsage();
+        Boolean listTopUsed = cmd.getlistTopUsed();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         if (fetchLatest != null && fetchLatest){
         	_alertMgr.recalculateCapacity();
         }
         
-        if (sortByUsage != null && sortByUsage){
+        if (listTopUsed != null && listTopUsed){
             return listTopConsumedResources(cmd);
         }
         List<SummedCapacity> summedCapacities = _capacityDao.findCapacityBy(capacityType, zoneId, podId, clusterId);

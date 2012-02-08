@@ -2441,10 +2441,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
             capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
-            if (summedCapacity.getTotalCapacity() != 0) {
-                capacityResponse.setPercentUsed(format.format((float) summedCapacity.getUsedCapacity() / (float) summedCapacity.getTotalCapacity() * 100f));
-            } else if (summedCapacity.getUsedPercentage() != null){
+            if (summedCapacity.getUsedPercentage() != null){
                 capacityResponse.setPercentUsed(format.format(summedCapacity.getUsedPercentage() * 100f));
+            } else if (summedCapacity.getTotalCapacity() != 0) {
+                capacityResponse.setPercentUsed(format.format((float) summedCapacity.getUsedCapacity() / (float) summedCapacity.getTotalCapacity() * 100f));
             } else {
                 capacityResponse.setPercentUsed(format.format(0L));
             }

@@ -115,6 +115,7 @@ public class ApiConstants {
     public static final String MODE = "mode";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
+    public static final String LIST_TOP_USED = "listtopused";
     public static final String NETWORK_DOMAIN = "networkdomain";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
@@ -171,8 +172,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
-    public static final String SOURCE_ZONE_ID = "sourcezoneid";
-    public static final String SORT_BY_USAGE = "sortbyusage";
+    public static final String SOURCE_ZONE_ID = "sourcezoneid";    
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
     public static final String START_PORT = "startport";
