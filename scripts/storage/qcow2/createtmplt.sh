@@ -97,28 +97,28 @@ uncompress() {
 
 create_from_file() {
   local tmpltfs=$1
-  local tmpltimg=$2
+  local tmpltimg="$2"
   local tmpltname=$3
   if [ -b $tmpltimg ]; then
-      $qemu-img convert -f raw -O qcow2 $tmpltimg /$tmpltfs/$tmpltname
+      $qemu-img convert -f raw -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname
   else
-      $qemu_img convert -f qcow2 -O qcow2 $tmpltimg /$tmpltfs/$tmpltname >& /dev/null
+      $qemu_img convert -f qcow2 -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname >& /dev/null
   fi
   
   if [ "$cleanup" == "true" ]
   then
-    rm -f $tmpltimg
+    rm -f "$tmpltimg"
   fi
   chmod a+r /$tmpltfs/$tmpltname
 }
 
 create_from_snapshot() {
-  local tmpltImg=$1
-  local snapshotName=$2
+  local tmpltImg="$1"
+  local snapshotName="$2"
   local tmpltfs=$3
   local tmpltname=$4
 
-  $qemu_img convert -f qcow2 -O qcow2 -s $snapshotName $tmpltImg /$tmpltfs/$tmpltname >& /dev/null
+  $qemu_img convert -f qcow2 -O qcow2 -s "$snapshotName" "$tmpltImg" /$tmpltfs/$tmpltname >& /dev/null
   if [ $? -gt 0 ]
   then
      printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
@@ -185,7 +185,7 @@ then
   exit 3
 fi
 
-tmpltimg=$(uncompress $tmpltimg)
+tmpltimg=$(uncompress "$tmpltimg")
 if [ $? -ne 0 ]
 then
   printf "failed to uncompress $tmpltimg\n"
@@ -193,9 +193,9 @@ fi
 
 if [ "$sflag" == "1" ]
 then
-   create_from_snapshot  $tmpltimg $snapshotName $tmpltfs $tmpltname
+   create_from_snapshot  "$tmpltimg" "$snapshotName" $tmpltfs $tmpltname
 else
-   create_from_file $tmpltfs $tmpltimg $tmpltname
+   create_from_file $tmpltfs "$tmpltimg" $tmpltname
 fi
 
 touch /$tmpltfs/template.properties
@@ -209,7 +209,7 @@ echo "description=$descr" >> /$tmpltfs/template.properties
 
 if [ "$cleanup" == "true" ]
 then
-  rm -f $tmpltimg
+  rm -f "$tmpltimg"
 fi
 
 exit 0

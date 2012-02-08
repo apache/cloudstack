@@ -43,7 +43,7 @@ fi
 
 create_snapshot() {
   local disk=$1
-  local snapshotname=$2
+  local snapshotname="$2"
   local failed=0
 
   if [ -b "${disk}" ] && lvm lvs "${disk}" >/dev/null 2>&1; then
@@ -160,7 +160,7 @@ destroy_snapshot() {
 
 rollback_snapshot() {
   local disk=$1
-  local snapshotname=$2
+  local snapshotname="$2"
   local failed=0
 
   $qemu_img snapshot -a $snapshotname $disk
@@ -266,11 +266,11 @@ done
 
 if [ "$cflag" == "1" ]
 then
-  create_snapshot $pathval $snapshot
+  create_snapshot $pathval "$snapshot"
   exit $?
 elif [ "$dflag" == "1" ]
 then
-  destroy_snapshot $pathval $snapshot $deleteDir
+  destroy_snapshot $pathval "$snapshot" $deleteDir
   exit $?
 elif [ "$bflag" == "1" ]
 then
@@ -278,7 +278,7 @@ then
   exit $?
 elif [ "$rflag" == "1" ]
 then
-  rollback_snapshot $pathval $snapshot $destPath
+  rollback_snapshot $pathval "$snapshot" $destPath
   exit $?
 fi
 
