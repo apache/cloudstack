@@ -151,6 +151,13 @@ public class Upgrade2213to2214 implements DbUpgrade {
     	keys.add("fk_ssh_keypairs__domain_id");
     	DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, true);
     	
+    	keys = new ArrayList<String>();
+    	keys.add("fk_ssh_keypair__account_id");
+    	keys.add("fk_ssh_keypair__domain_id");
+    	keys.add("fk_ssh_keypairs__account_id");
+    	keys.add("fk_ssh_keypairs__domain_id");
+    	DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, false);
+    	
     	try {
     		PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypairs__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
     		pstmt.executeUpdate();
