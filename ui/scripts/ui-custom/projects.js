@@ -420,32 +420,6 @@
                             } : {
                               account: { label: 'Invited Accounts'}
                             },
-                            actions: !cloudStack.projects.requireInvitation() ? {
-                              destroy: {
-                                label: 'Remove account from project',
-                                action: {
-                                  custom: function(args) {
-                                    var $instanceRow = args.$instanceRow;
-
-                                    $instanceRow.animate({ opacity: 0.5 });
-
-                                    cloudStack.projects.addUserForm.actions.destroy.action({
-                                      context: $.extend(true, {}, cloudStack.context, {
-                                        projects: [project],
-                                        multiRule: [{
-                                          username: $instanceRow.find('td.username span').html()
-                                        }]
-                                      }),
-                                      response: {
-                                        success: function(args) {
-                                          $instanceRow.remove();
-                                        }
-                                      }
-                                    });
-                                  }
-                                }
-                              }
-                            } : {},
                             dataProvider: function(args) {
                               setTimeout(function() {
                                 args.response.success({
