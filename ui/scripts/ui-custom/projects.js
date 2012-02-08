@@ -622,6 +622,19 @@
         if ($target.is('li')) {
           cloudStack.context.projects = [$target.data('json-obj')];
           showDashboard();
+          
+          var $switcher = $('.select.project-view');
+          var projectName = cloudStack.context.projects[0].name;
+
+          $switcher.attr('title', projectName);
+          if (projectName.length > 10) {
+            projectName = projectName.substr(0, 10).concat('...');
+          }
+          
+          // Put project name in header
+          $switcher.html('<span class="icon">&nbsp;</span>' + projectName);
+          
+
           $.merge($selector, $('.overlay')).remove();
 
           // Select active project
@@ -700,8 +713,9 @@
       $(this).addClass('active');
       $(this).siblings().removeClass('active');
 
-      if (cloudStack.context.projects && cloudStack.context.projects[0])
+      if (cloudStack.context.projects && cloudStack.context.projects[0]) {
         showDashboard();
+      }
 
       return false;
     };

@@ -155,6 +155,11 @@
                 $projectSwitcher.find('.select.default-view').addClass('active')
                   .siblings().removeClass('active');
 
+                // Put project name in header
+                $('.select.project-view').html(
+                  '<span class="icon">&nbsp;</span> Project View'
+                ).attr('title', '');
+
                 // Clear out project
                 cloudStack.context.projects = null;
               }
