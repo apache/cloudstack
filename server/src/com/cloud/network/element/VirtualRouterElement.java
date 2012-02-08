@@ -282,9 +282,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                  * <path-parameters|query-string>]
                  */
                 /* example: appsession JSESSIONID len 52 timeout 3h */
-                String cookieName = null; // required
-                String length = null; // required
-                String holdTime = null; // required
+                String cookieName = null; // optional
+                String length = null; // optional
+                String holdTime = null; // optional
 
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
@@ -296,13 +296,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                     if ("holdtime".equalsIgnoreCase(key))
                         holdTime = value;
                 }
-                if ((cookieName == null) || (length == null) || (holdTime == null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length, holdtime or cookie-name is null.");
-                }
-                if (!containsOnlyNumbers(length, null)) {
+
+                if ((length != null) && (!containsOnlyNumbers(length, null))) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
                 }
-                if (!containsOnlyNumbers(holdTime, timeEndChar)) {
+                if ((holdTime != null) && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null))) {
                     throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
                 }
             }
@@ -452,12 +450,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,
                 "This is App session based sticky method. Define session stickiness on an existing application cookie. It can be used only for a specific http traffic");
-        method.addParam("cookie-name", true, "This is the name of the cookie used by the application and which LB will have to learn for each new session", false);
-        method.addParam("length", true, "This is the max number of characters that will be memorized and checked in each cookie value", false);
+        method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will have to learn for each new session. Default value: Auto geneared based on ip", false);
+        method.addParam("length", false, "This is the max number of characters that will be memorized and checked in each cookie value. Default value:52", false);
         method.addParam(
                 "holdtime",
-                true,
-                "This is the time after which the cookie will be removed from memory if unused. The value should be in the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid , cannot use th combinations like 20h30m. ",
+                false,
+                "This is the time after which the cookie will be removed from memory if unused. The value should be in the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid , cannot use th combinations like 20h30m. Default value:3h ",
                 false);
         method.addParam(
                 "request-learn",
@@ -477,8 +475,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         methodList.add(method);
 
         method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based Stickiness method, it can be used for any type of protocol.");
-        method.addParam("tablesize", false, "Size of table to store source ip addresses. example: tablesize=200k or 300m or 400g", false);
-        method.addParam("expire", false, "Entry in source ip table will expire after expire duration. units can be s,m,h,d . example: expire=30m 20s 50h 4d", false);
+        method.addParam("tablesize", false, "Size of table to store source ip addresses. example: tablesize=200k or 300m or 400g. Default value:200k", false);
+        method.addParam("expire", false, "Entry in source ip table will expire after expire duration. units can be s,m,h,d . example: expire=30m 20s 50h 4d. Default value:3h", false);
         methodList.add(method);
 
         Gson gson = new Gson();

@@ -315,10 +315,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 */
     private String getLbSubRuleForStickiness(LoadBalancerTO lbTO) {
         int i = 0;
-        /* This is timeformat as per the haproxy doc, d=day, h=hour m=minute, s=seconds
-        * example: 20s 30m 400h 20d
-        */
-        String timeEndChar = "dhms";
         
         if (lbTO.getStickinessPolicies() == null)
             return null;
@@ -338,7 +334,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
              */
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 /* Default Values */
-                String name = null; // optional 
+                String cookieName = null; // optional 
                 String mode ="insert "; // optional
                 Boolean indirect = false; // optional
                 Boolean nocache = false; // optional
@@ -348,7 +344,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 for(Pair<String,String> paramKV :paramsList){
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("cookie-name".equalsIgnoreCase(key)) name = value;
+                    if ("cookie-name".equalsIgnoreCase(key)) cookieName = value;
                     if ("mode".equalsIgnoreCase(key)) mode = value;
                     if ("domain".equalsIgnoreCase(key)) {
                         if (domainSb == null) {
@@ -361,16 +357,16 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     if ("nocache".equalsIgnoreCase(key)) nocache = true;
                     if ("postonly".equalsIgnoreCase(key)) postonly = true;
                 }
-                if (name == null) {// re-check all mandatory params 
+                if (cookieName == null) {// re-check all haproxy mandatory params 
                     StringBuilder tempSb = new StringBuilder();
                     String srcip = lbTO.getSrcIp();
                     if (srcip == null)
                         srcip = "TESTCOOKIE";
                     tempSb.append("lbcooki_").append(srcip.hashCode())
                             .append("_").append(lbTO.getSrcPort());
-                    name = tempSb.toString();
+                    cookieName = tempSb.toString();
                 }
-                sb.append("\t").append("cookie ").append(name).append(" ").append(mode).append(" ");
+                sb.append("\t").append("cookie ").append(cookieName).append(" ").append(mode).append(" ");
                 if (indirect) sb.append("indirect ");
                 if (nocache) sb.append("nocache ");
                 if (postonly) sb.append("postonly ");
@@ -397,9 +393,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                  * <path-parameters|query-string>]
                  */
                 /* example: appsession JSESSIONID len 52 timeout 3h */
-                String name = null; // required 
-                String length = null; // required 
-                String holdtime = null; // required 
+                String cookieName = null; // optional 
+                String length = "52"; // optional 
+                String holdtime = "3h"; // optional 
                 String mode = null; // optional 
                 Boolean requestlearn = false; // optional 
                 Boolean prefix = false; // optional 
@@ -407,24 +403,23 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 for(Pair<String,String> paramKV :paramsList){
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("cookie-name".equalsIgnoreCase(key))   name = value;
+                    if ("cookie-name".equalsIgnoreCase(key))   cookieName = value;
                     if ("length".equalsIgnoreCase(key)) length = value;                
                     if ("holdtime".equalsIgnoreCase(key))  holdtime = value;
                     if ("mode".equalsIgnoreCase(key))  mode = value;
                     if ("request-learn".equalsIgnoreCase(key)) requestlearn = true;
                     if ("prefix".equalsIgnoreCase(key)) prefix = true;
                 }
-                if ((name == null) || (length == null) || (holdtime == null)) {
-                    /*
-                     * Error is silently swallowed.
-                     * Not supposed to reach here, validation of params are
-                     * done at the higher layer
-                     */
-                    s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause: length,holdtime or name is null");
-                    return null;
+                if (cookieName == null) {// re-check all haproxy mandatory params 
+                    StringBuilder tempSb = new StringBuilder();
+                    String srcip = lbTO.getSrcIp();
+                    if (srcip == null)
+                        srcip = "TESTCOOKIE";
+                    tempSb.append("appcookie_").append(srcip.hashCode())
+                            .append("_").append(lbTO.getSrcPort());
+                    cookieName = tempSb.toString();
                 }
- 
-                sb.append("\t").append("appsession ").append(name)
+                sb.append("\t").append("appsession ").append(cookieName)
                         .append(" len ").append(length).append(" timeout ")
                         .append(holdtime).append(" ");
                 if (prefix) sb.append("prefix ");
