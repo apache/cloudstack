@@ -3299,6 +3299,14 @@
               tabs: {
                 details: {
                   title: 'Details',
+									
+									preFilter: function(args) {
+										var hiddenFields = [];		                   
+                    if(selectedZoneObj.networktype == "Basic")										
+										  hiddenFields.push("guestcidraddress");										
+										return hiddenFields;
+									},
+									
                   fields: [
                     {
                       name: { label: 'Zone', isEditable: true }
@@ -3311,7 +3319,8 @@
                       internaldns1: { label: 'Internal DNS 1', isEditable: true },
                       internaldns2: { label: 'Internal DNS 2', isEditable: true },
                       domainname: { label: 'Domain' },
-											networktype: { label: 'Network Type' },                      
+											networktype: { label: 'Network Type' },     
+                      guestcidraddress : { label: 'Guest CIDR' },											
                       domain: {
                         label: 'Network domain',
                         isEditable: true
