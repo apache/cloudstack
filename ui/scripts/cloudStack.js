@@ -65,8 +65,7 @@
         g_username = $.cookie("username");
         g_account = $.cookie("account");
         g_domainid = $.cookie("domainid");
-        g_timezone = $.cookie("timezone");
-        g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
+        g_timezone = $.cookie("timezone");        
         g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
         g_userfullname = $.cookie('userfullname');
         g_userid = $.cookie('userid');
@@ -74,10 +73,7 @@
         if($.cookie("timezoneoffset") != null)
           g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
         else
-          g_timezoneoffset = null;
-
-        if (g_directAttachSecurityGroupsEnabled == null || g_directAttachSecurityGroupsEnabled.length == 0)
-          g_directAttachSecurityGroupsEnabled = "false";
+          g_timezoneoffset = null;     
 
         if (g_userPublicTemplateEnabled == null || g_userPublicTemplateEnabled.length == 0)
           g_userPublicTemplateEnabled = "true";
@@ -102,13 +98,7 @@
             if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
               g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
               $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
-            }
-
-            if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-              g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
-              $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
-            }
-
+            }  
             userValid = true;
           },
           error: function(xmlHTTP) {
@@ -217,11 +207,6 @@
                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                   g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                   $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
-                }
-
-                if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-                  g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
-                  $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
                 }
 
                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;

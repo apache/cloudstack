@@ -243,7 +243,7 @@
                       }
                     });
                                        
-                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true") { 
+                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware") { 
                       step5ContainerType = 'nothing-to-select';
                     }
                     else {
