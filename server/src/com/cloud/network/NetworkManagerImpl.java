@@ -1091,6 +1091,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
 
+        boolean success = true;
+
+        // Cleanup all ip address resources - PF/LB/Static nat rules
+        if (!cleanupIpResources(addrId, userId, caller)) {
+            success = false;
+            s_logger.warn("Failed to release resources for ip address id=" + addrId);
+        }
+
         IPAddressVO ip = markIpAsUnavailable(addrId);
 
         assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
@@ -1100,14 +1108,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
-        }
-
-        boolean success = true;
-
-        // Cleanup all ip address resources - PF/LB/Static nat rules
-        if (!cleanupIpResources(addrId, userId, caller)) {
-            success = false;
-            s_logger.warn("Failed to release resources for ip address id=" + addrId);
         }
 
         if (ip.getAssociatedWithNetworkId() != null) {
