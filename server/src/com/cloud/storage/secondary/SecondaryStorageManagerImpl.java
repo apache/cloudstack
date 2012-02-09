@@ -39,6 +39,7 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
@@ -53,6 +54,7 @@ import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -70,6 +72,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
+import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -218,6 +221,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     NetworkOfferingDao _networkOfferingDao;
     
 
+    @Inject
+    KeystoreManager _keystoreMgr;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
     private int _secStorageVmRamSize;
@@ -280,7 +285,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
             for( HostVO ssHost : ssHosts ) {
                 String secUrl = ssHost.getStorageUrl();
-                SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
+                SecStorageSetupCommand setupCmd = null;
+                if (!_useSSlCopy) {
+                	setupCmd = new SecStorageSetupCommand(secUrl, null);
+                } else {
+                	Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
+                	setupCmd = new SecStorageSetupCommand(secUrl, certs);
+                }
                 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
                 if (answer != null && answer.getResult()) {
@@ -300,7 +311,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         } else if( cssHost.getType() == Host.Type.SecondaryStorage ) {
             List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, zoneId, State.Running);
             String secUrl = cssHost.getStorageUrl();
-            SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
+            SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl, null);
             for ( SecondaryStorageVmVO ssVm : alreadyRunning ) {
                 HostVO host = _resourceMgr.findHostByName(ssVm.getInstanceName());
                 Answer answer = _agentMgr.easySend(host.getId(), setupCmd);

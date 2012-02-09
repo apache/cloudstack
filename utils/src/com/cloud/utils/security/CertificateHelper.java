@@ -3,6 +3,7 @@ package com.cloud.utils.security;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -14,13 +15,42 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
+
+import com.cloud.utils.Ternary;
 
 public class CertificateHelper {
 	public static byte[] buildAndSaveKeystore(String alias, String cert, String privateKey, String storePassword) throws KeyStoreException, CertificateException, 
 		NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		KeyStore ks = buildKeystore(alias, cert, privateKey, storePassword);
+		
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
+		os.close();
+		return os.toByteArray();
+	}
+	
+	public static byte[] buildAndSaveKeystore(List<Ternary<String, String, String>> certs, String storePassword) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InvalidKeySpecException {
+		KeyStore ks = KeyStore.getInstance("JKS");
+		ks.load(null, storePassword != null ? storePassword.toCharArray() : null);
+
+		//name,cert,key
+		for (Ternary<String, String, String> cert : certs) {
+			if (cert.third() == null) {
+				Certificate c = buildCertificate(cert.second());
+				ks.setCertificateEntry(cert.first(), c);
+			} else {
+				Certificate[] c = new Certificate[certs.size()];
+				int i = certs.size();
+				for (Ternary<String, String, String> ct : certs) {
+					c[i - 1] = buildCertificate(ct.second());
+					i--;
+				}
+			    ks.setKeyEntry(cert.first(), buildPrivateKey(cert.third()), storePassword != null ? storePassword.toCharArray() : null, c );
+			}
+		}
 		
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
