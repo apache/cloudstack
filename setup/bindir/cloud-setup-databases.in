@@ -332,16 +332,9 @@ for full help
                 else: self.errorAndExit(e.__str__())
             self.info(None, True)
                 
-        def checkMysqlConnection():
-            self.info("Testing mysql connection ...", None)
-            sql = "SELECT * from mysql.user limit 0"
-            self.runMysql(sql, 'test script', self.rootuser != None)
-            self.info(None, True)
-        
         checkCloudDbFiles()
         checkHostName()
         checkSELinux()
-        checkMysqlConnection()
                     
     def parseOptions(self):
         def parseOtherOptions():
