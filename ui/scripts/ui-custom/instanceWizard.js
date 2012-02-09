@@ -604,9 +604,16 @@
         // Events
         $wizard.click(function(event) {
           var $target = $(event.target);
+          var $activeStep = $form.find('.step:visible');
 
           // Next button
           if ($target.closest('div.button.next').size()) {
+            // Make sure ISO or template is selected
+            if ($activeStep.hasClass('select-iso') &&
+                !$activeStep.find('.content:visible input:checked').size()) {
+              cloudStack.dialog.notice({ message: 'message.step.1.continue' });
+              return false;
+            }
             if (!$form.valid()) {
               if ($form.find('input.error:visible, select.error:visible').size()) {
                 return false;
