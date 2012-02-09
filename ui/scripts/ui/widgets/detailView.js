@@ -437,7 +437,7 @@
 
     if (isCustom) {
       $browser.cloudBrowser('addPanel', {
-        title: viewAllID.label,
+        title: _l(viewAllID.label),
         maximizeIfSelected: true,
         complete: function($newPanel) {
           $newPanel.append(
@@ -487,7 +487,7 @@
 
     // Make panel
     var $panel = $browser.cloudBrowser('addPanel', {
-      title: listViewArgs.title,
+      title: _l(listViewArgs.title),
       data: '',
       noSelectPanel: true,
       maximizeIfSelected: true,
