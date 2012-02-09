@@ -575,14 +575,14 @@
         if (!$list.find('li').size()) {
           cloudStack.dialog.notice({
             message: isAdmin() || isDomainAdmin() || g_userProjectsEnabled ?
-              'You do not have any projects.<br/>Please create a new one from the projects section.' :
-              'You do not have any projects.<br/>Please ask your administrator to create a new project.'
+              _l('message.no.projects') :
+              _l('message.no.projects.adminOnly')
           }).closest('.ui-dialog');
           $.merge($selector, $('.overlay')).remove();
           $('.select.default-view').click();
         } else {
           $selector.dialog({
-            title: 'Select Project',
+            title: _l('label.select.project'),
             dialogClass: 'project-selector-dialog',
             width: 420
           }).closest('.ui-dialog').overlay();

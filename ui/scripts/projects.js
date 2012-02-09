@@ -267,8 +267,8 @@
               }
             });
           },
-          error: function() {
-            args.response.error('Could not create project.');
+          error: function(json) {
+            args.response.error(parseXMLHttpResponse(json));
           }
         });
       }, 100);
@@ -302,13 +302,13 @@
                   jobId: data.addaccounttoprojectresponse.jobid
                 },
                 notification: {
-                  label: 'Invited user to project',
+                  label: 'label.project.invite',
                   poll: pollAsyncJobResult
                 }
               });
             },
-            error: function(data) {
-              args.response.error('Could not create user');
+            error: function(json) {
+              args.response.error(parseXMLHttpResponse(json));
             }
           });
         }
@@ -325,7 +325,7 @@
 
       actions: {
         destroy: {
-          label: 'Revoke invitation',
+          label: 'label.revoke.project.invite',
           action: function(args) {
             $.ajax({
               url: createURL('deleteProjectInvitation'),
@@ -336,7 +336,7 @@
                 args.response.success({
                   _custom: { jobId: data.deleteprojectinvitationresponse.jobid },
                   notification: {
-                    label: 'Un-invited user',
+                    label: 'label.revoke.project.invite',
                     poll: pollAsyncJobResult
                   }
                 });
@@ -380,12 +380,12 @@
         return g_capabilities.projectinviterequired;
       },
       fields: {
-        'username': { edit: true, label: 'Account' },
-        'role': { edit: 'ignore', label: 'Role' },
+        'username': { edit: true, label: 'label.account' },
+        'role': { edit: 'ignore', label: 'label.role' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Add account',
+        label: 'label.add.account',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),
@@ -401,13 +401,13 @@
                   jobId: data.addaccounttoprojectresponse.jobid
                 },
                 notification: {
-                  label: 'Added user to project',
+                  label: 'label.add.account.to.project',
                   poll: pollAsyncJobResult
                 }
               });
 
               if (g_capabilities.projectinviterequired) {
-                cloudStack.dialog.notice({ message: 'Invite sent to user; they will be added to the project once they accept the invitation' });
+                cloudStack.dialog.notice({ message: 'message.project.invite.sent' });
               }
             }
           });
@@ -427,7 +427,7 @@
       },
       actions: {
         destroy: {
-          label: 'Remove user from project',
+          label: 'label.remove.project.account',
           action: function(args) {
             $.ajax({
               url: createURL('deleteAccountFromProject', { ignoreProject: true }),
@@ -443,7 +443,7 @@
                     jobId: data.deleteaccountfromprojectresponse.jobid
                   },
                   notification: {
-                    label: 'Removed user from project',
+                    label: 'label.remove.project.account',
                     poll: pollAsyncJobResult
                   }
                 });
@@ -456,7 +456,7 @@
         },
 
         makeOwner: {
-          label: 'Make user project owner',
+          label: 'label.make.project.owner',
           action: function(args) {
             $.ajax({
               url: createURL('updateProject', { ignoreProject: true }),
@@ -472,7 +472,7 @@
                     jobId: data.updateprojectresponse.jobid
                   },
                   notification: {
-                    label: 'Assigned new project owner',
+                    label: 'label.make.project.owner',
                     poll: pollAsyncJobResult
                   }
                 });
@@ -536,7 +536,7 @@
   };
 
   cloudStack.sections.projects = {
-    title: 'Projects',
+    title: 'label.projects',
     id: 'projects',
     sectionSelect: {
       label: 'Select view'
@@ -545,19 +545,24 @@
       projects: {
         type: 'select',
         id: 'projects',
-        title: 'Projects',
+        title: 'label.projects',
         listView: {
           fields: {
-            name: { label: 'Project Name' },
-            displaytext: { label: 'Display Text' },
-            domain: { label: 'Domain' },
-            account: { label: 'Owner' },
+            name: { label: 'label.name' },
+            displaytext: { label: 'label.display.name' },
+            domain: { label: 'label.domain' },
+            account: { label: 'label.owner.account' },
             state: {
               converter: function(str) {
                 // For localization
                 return str;
               },
-              label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' }
+              label: 'Status', indicator: {
+                converter: function(str) {
+                  return 'state.' + str;
+                },
+                'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off'
+              }
             }
           },
 
@@ -590,72 +595,10 @@
 
           actions: {
             add: {
-              label: 'New Project',
+              label: 'label.new.project',
               action: {
                 custom: function(args) {
                   $(window).trigger('cloudStack.newProject');
-                }
-              },
-
-              actions: {
-                add: {
-                  label: 'New Project',
-                  action: {
-                    custom: function(args) {
-                      $(window).trigger('cloudStack.newProject');
-                    }
-                  },
-
-                  messages: {
-                    confirm: function(args) {
-                      return 'Are you sure you want to remove ' + args.name + '?';
-                    },
-                    notification: function(args) {
-                      return 'Removed project';
-                    }
-                  }
-                },
-
-                destroy: {
-                  label: 'Remove project',
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL('deleteProject', { ignoreProject: true }),
-                      data: {
-                        id: args.data.id
-                      },
-                      dataType: 'json',
-                      async: true,
-                      success: function(data) {
-                        args.response.success({
-                          _custom: {
-                            getUpdatedItem: function(data) {
-                              return $.extend(data, { state: 'Destroyed' });
-                            },
-                            getActionFilter: function(args) {
-                              return function() {
-                                return [];
-                              };
-                            },
-                            jobId: data.deleteprojectresponse.jobid
-                          }
-                        });
-                      }
-                    });
-                  },
-
-                  messages: {
-                    confirm: function(args) {
-                      return 'Are you sure you want to remove ' + args.name + '?';
-                    },
-                    notification: function(args) {
-                      return 'Removed project';
-                    }
-                  },
-
-                  notification: {
-                    poll: pollAsyncJobResult
-                  }
                 }
               }
             }
@@ -664,7 +607,7 @@
           detailView: {
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   $.ajax({
                     url: createURL('updateProject'),
@@ -678,11 +621,11 @@
                   });
                 },
                 messages: {
-                  notification: function(args) { return 'Edited project details'; }
+                  notification: function(args) { return 'label.edit.project.details'; }
                 }
               },
               disable: {
-                label: 'Suspend project',
+                label: 'label.suspend.project',
                 action: function(args) {
                   $.ajax({
                     url: createURL('suspendProject'),
@@ -705,14 +648,14 @@
                   });
                 },
                 messages: {
-                  confirm: function() { return 'Are you sure you want to suspend this project?'; },
-                  notification: function() { return 'Suspended project'; }
+                  confirm: function() { return 'message.suspend.project'; },
+                  notification: function() { return 'label.suspend.project'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
 
               enable: {
-                label: 'Activate project',
+                label: 'label.activate.project',
                 action: function(args) {
                   $.ajax({
                     url: createURL('activateProject'),
@@ -735,14 +678,14 @@
                   });
                 },
                 messages: {
-                  confirm: function() { return 'Are you sure you want to activate this project?'; },
-                  notification: function() { return 'Activated project'; }
+                  confirm: function() { return 'message.activate.project'; },
+                  notification: function() { return 'label.activate.project'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
 
               destroy: {
-                label: 'Remove project',
+                label: 'label.delete.project',
                 action: function(args) {
                   $.ajax({
                     url: createURL('deleteProject', { ignoreProject: true }),
@@ -771,10 +714,10 @@
 
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to remove ' + args.name + '?';
+                    return 'message.delete.project';
                   },
                   notification: function(args) {
-                    return 'Removed project';
+                    return 'label.delete.project';
                   }
                 },
 
@@ -802,13 +745,13 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
-                    displaytext: { label: 'Display text', isEditable: true },
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account'},
-                    state: { label: 'State' }
+                    displaytext: { label: 'label.display.name', isEditable: true },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account'},
+                    state: { label: 'label.state' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -831,7 +774,7 @@
               },
 
               accounts: {
-                title: 'Accounts',
+                title: 'label.accounts',
                 custom: function(args) {
                   var project = args.context.projects[0];
                   var multiEditArgs = $.extend(
@@ -848,7 +791,7 @@
               },
 
               invitations: {
-                title: 'Invitations',
+                title: 'label.invitations',
                 custom: function(args) {
                   var project = args.context.projects[0];
                   var $invites = cloudStack.uiCustom.projectsTabs.userManagement({
@@ -861,7 +804,7 @@
               },
 
               resources: {
-                title: 'Resources',
+                title: 'label.resources',
                 custom: function(args) {
                   var $resources = cloudStack.uiCustom
                     .projectsTabs.dashboardTabs.resources({
@@ -879,16 +822,16 @@
       invitations: {
         type: 'select',
         id: 'invitations',
-        title: 'Invitations',
+        title: 'label.invitations',
         listView: {
           fields: {
-            project: { label: 'Project' },
-            domain: { label: 'Domain' },
+            project: { label: 'label.project' },
+            domain: { label: 'label.domain' },
             state: {
               label: 'Status',
               converter: function(str) {
                 // For localization
-                return str;
+                return 'state.' + str;
               },
               indicator: {
                 'Accepted': 'on', 'Completed': 'on',
@@ -915,7 +858,7 @@
 
           actions: {
             enterToken: {
-              label: 'Enter Token',
+              label: 'label.enter.token',
               isHeader: true,
               addRow: false,
               preFilter: function(args) {
@@ -935,10 +878,10 @@
                 return !invitationsPresent;
               },
               createForm: {
-                desc: 'Please enter the token that you were given in your invite e-mail.',
+                desc: 'message.enter.token',
                 fields: {
-                  projectid: { label: 'Project ID', validation: { required: true }},
-                  token: { label: 'Token', validation: { required: true }}
+                  projectid: { label: 'label.project.id', validation: { required: true }},
+                  token: { label: 'label.token', validation: { required: true }}
                 }
               },
               action: function(args) {
@@ -959,17 +902,17 @@
               },
               messages: {
                 notification: function() {
-                  return 'Accepted project invitation';
+                  return 'label.accept.project.invitation';
                 },
                 complete: function() {
-                  return 'You have now joined a project. Please switch to Project view to see the project.';
+                  return 'message.join.project';
                 }
               },
               notification: { poll: pollAsyncJobResult }
             },
             
             accept: {
-              label: 'Accept Invitation',
+              label: 'message.accept.project.invitation',
               action: function(args) {
                 $.ajax({
                   url: createURL('updateProjectInvitation'),
@@ -990,14 +933,14 @@
                 });
               },
               messages: {
-                confirm: function() { return 'Please confirm you wish to join this project.'; },
-                notification: function() { return 'Accepted project invitation'; }
+                confirm: function() { return 'message.confirm.join.project'; },
+                notification: function() { return 'message.accept.project.invitation'; }
               },
               notification: { poll: pollAsyncJobResult }
             },
 
             decline: {
-              label: 'Decline Invitation',
+              label: 'label.decline.invitation',
               action: function(args) {
                 $.ajax({
                   url: createURL('updateProjectInvitation'),
@@ -1019,8 +962,8 @@
               },
               notification: { poll: pollAsyncJobResult },
               messages: {
-                confirm: function() { return 'Are you sure you want to decline this project invitation?'; },
-                notification: function() { return 'Declined project invitation'; }
+                confirm: function() { return 'message.decline.invitation'; },
+                notification: function() { return 'label.decline.invitation'; }
               }
             }
           }
