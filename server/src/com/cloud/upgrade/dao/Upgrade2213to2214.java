@@ -56,7 +56,7 @@ public class Upgrade2213to2214 implements DbUpgrade {
 			ResultSet rs = pstmt.executeQuery();
 			while (rs.next()) {
 				String privateKeyMd5 = rs.getString(1);
-				if (privateKeyMd5.equalsIgnoreCase("b2d3089241ed0ea0336efeb125dbb610")) {
+				if (privateKeyMd5.equalsIgnoreCase("432ea1370f57ccd774f4f36052c5fd73")) {
 					s_logger.debug("Need to upgrade cloudstack provided certificate");
 					pstmt = conn.prepareStatement("update `cloud`.`keystore` set `cloud`.`keystore`.key = ?, certificate = ? where name = 'CPVMCertificate'");
 					pstmt.setString(1, ConsoleProxyManagerImpl.keyContent);
