@@ -1,6 +1,6 @@
 (function($, cloudStack) {
 
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, isoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
@@ -110,6 +110,36 @@
                     }
                   });
 
+									//???
+									 $.ajax({
+                    url: createURL("listIsos&isofilter=featured&zoneid="+args.currentData.zoneid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      featuredIsoObjs = json.listisosresponse.iso;
+                    }
+                  });
+
+                  $.ajax({
+                    url: createURL("listIsos&isofilter=community&zoneid="+args.currentData.zoneid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      communityIsoObjs = json.listisosresponse.iso;
+                    }
+                  });
+
+                  $.ajax({
+                    url: createURL("listIsos&isofilter=selfexecutable&zoneid="+args.currentData.zoneid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      myIsoObjs = json.listisosresponse.iso;
+                    }
+                  });
+									//???									
+									
+									/*
                   $.ajax({
                     url: createURL("listIsos&isReady=true&bootable=true&isofilter=executable&zoneid="+args.currentData.zoneid),
                     dataType: "json",
@@ -118,7 +148,8 @@
                       isoObjs = json.listisosresponse.iso;
                     }
                   });
-
+                  */
+									
                   args.response.success({
                     hypervisor: {
                       idField: 'name',
@@ -129,7 +160,11 @@
                         featuredtemplates: featuredTemplateObjs,
                         communitytemplates: communityTemplateObjs,
                         mytemplates: myTemplateObjs,
-                        isos: isoObjs
+                        
+												featuredisos: featuredIsoObjs,
+                        communityisos: communityIsoObjs,
+                        myisos: myIsoObjs //???
+												//isos: isoObjs
                       },
                       hypervisors: hypervisorObjs
                     }

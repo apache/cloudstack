@@ -218,7 +218,7 @@
                       'wizard-field': 'template'
                     });
 
-                    if (type == 'isos') {
+                    if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos') {
                       // Create hypervisor select
                       $selects.find('input').bind('click', function() {
                         var $select = $(this).closest('.select');
@@ -251,7 +251,11 @@
                       ['featuredtemplates', 'instance-wizard-featured-templates'],
                       ['communitytemplates', 'instance-wizard-community-templates'],
                       ['mytemplates', 'instance-wizard-my-templates'],
-                      ['isos', 'instance-wizard-all-isos']
+											
+											['featuredisos', 'instance-wizard-featured-isos'],
+                      ['communityisos', 'instance-wizard-community-isos'],
+                      ['myisos', 'instance-wizard-my-isos']
+                      //['isos', 'instance-wizard-all-isos']
                     ]
                   ).each(function() {
                     var item = this;

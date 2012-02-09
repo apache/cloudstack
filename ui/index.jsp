@@ -139,15 +139,34 @@
                     You can also choose to upload your own iso as well.
                   </p>
                 </div>
-                <div class="iso-select content tab-view">
-                  <ul>
+                <div class="iso-select content tab-view">                  									
+									<ul>
+									  <li class="first"><a href="#instance-wizard-featured-isos">Featured</a></li>
+                    <li><a href="#instance-wizard-community-isos">Community</a></li>
+                    <li class="last"><a href="#instance-wizard-my-isos">My ISO</a></li>		
+                  </ul>
+									<div id="instance-wizard-featured-isos">
+                    <div class="select-container">
+                    </div>
+                  </div>
+									<div id="instance-wizard-community-isos">
+                    <div class="select-container">
+                    </div>
+                  </div>
+									<div id="instance-wizard-my-isos">
+                    <div class="select-container">
+                    </div>
+                  </div>
+																											
+									<!--
+									<ul>
                     <li class="first last"><a href="#instance-wizard-all-isos">All ISOs</a></li>
                   </ul>
-
                   <div id="instance-wizard-all-isos">
                     <div class="select-container">
                     </div>
                   </div>
+									-->
                 </div>
               </div>
             </div>
