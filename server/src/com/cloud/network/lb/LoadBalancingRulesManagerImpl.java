@@ -824,8 +824,15 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Override
     public boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException {
         LoadBalancerVO lb = _lbDao.findById(lbRuleId);
-        // get all rules in transition state
-        List<LoadBalancerVO> lbs = _lbDao.listInTransitionStateByNetworkId(lb.getNetworkId());
+        List<LoadBalancerVO> lbs;
+        if (isRollBackAllowedForProvider(lb)) { 
+            // this is for Netscalar type of devices. if their is failure the db entries will be rollbacked.
+            lbs = new ArrayList<LoadBalancerVO>(1);
+            lbs.add(_lbDao.findById(lbRuleId));
+        } else {
+            // get all rules in transition state
+            lbs = _lbDao.listInTransitionStateByNetworkId(lb.getNetworkId());
+        }
         return applyLoadBalancerRules(lbs, true);
     }
 
