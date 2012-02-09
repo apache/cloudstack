@@ -217,7 +217,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    try{
     	    // Create Symlink at ssvm
 	    	String path = vmTemplateHost.getInstallPath();
-	    	String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
+	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().getFileExtension(); // adding "." + vhd/ova... etc.
 	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
     	    long result = send(ssvm.getId(), cmd, null);
     	    if (result == -1){
