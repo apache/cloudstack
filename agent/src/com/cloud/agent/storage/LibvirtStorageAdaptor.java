@@ -305,7 +305,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         } catch (LibvirtException e) {
             s_logger.debug("Faild to get vol path: " + e.toString());
             throw e;
-        } finally {l
+        } finally {
             try {
                 if (sp != null) {
                     sp.free();
