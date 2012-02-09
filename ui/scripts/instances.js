@@ -91,7 +91,6 @@
                       featuredTemplateObjs = json.listtemplatesresponse.template;
                     }
                   });
-
                   $.ajax({
                     url: createURL("listTemplates&templatefilter=community&zoneid="+args.currentData.zoneid),
                     dataType: "json",
@@ -100,7 +99,6 @@
                       communityTemplateObjs = json.listtemplatesresponse.template;
                     }
                   });
-
                   $.ajax({
                     url: createURL("listTemplates&templatefilter=selfexecutable&zoneid="+args.currentData.zoneid),
                     dataType: "json",
@@ -110,8 +108,8 @@
                     }
                   });
 
-									//???
-									 $.ajax({
+									
+									$.ajax({
                     url: createURL("listIsos&isofilter=featured&zoneid="+args.currentData.zoneid),
                     dataType: "json",
                     async: false,
@@ -119,7 +117,6 @@
                       featuredIsoObjs = json.listisosresponse.iso;
                     }
                   });
-
                   $.ajax({
                     url: createURL("listIsos&isofilter=community&zoneid="+args.currentData.zoneid),
                     dataType: "json",
@@ -128,7 +125,6 @@
                       communityIsoObjs = json.listisosresponse.iso;
                     }
                   });
-
                   $.ajax({
                     url: createURL("listIsos&isofilter=selfexecutable&zoneid="+args.currentData.zoneid),
                     dataType: "json",
@@ -136,9 +132,7 @@
                     success: function(json) {
                       myIsoObjs = json.listisosresponse.iso;
                     }
-                  });
-									//???									
-									
+                  });		
 									/*
                   $.ajax({
                     url: createURL("listIsos&isReady=true&bootable=true&isofilter=executable&zoneid="+args.currentData.zoneid),

@@ -222,7 +222,12 @@
                       // Create hypervisor select
                       $selects.find('input').bind('click', function() {
                         var $select = $(this).closest('.select');
-                        $select.siblings().removeClass('selected').find('.hypervisor').remove();
+                        
+												//$select.siblings().removeClass('selected').find('.hypervisor').remove(); //SelectISO has 3 tabs now. This line only remove hypervisor div in the same tab, not enough. The following 3 lines will remove hypervisor div in all of 3 tabs.											
+												$("#instance-wizard-featured-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+												$("#instance-wizard-community-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+												$("#instance-wizard-my-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+																								
                         $select.addClass('selected').append(
                           $('<div>').addClass('hypervisor')
                             .append($('<label>').html('Hypervisor:'))
