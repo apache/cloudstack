@@ -259,46 +259,23 @@
 									break;
 								}
 							}
-						}		
-
-            //temporary until Alena fixes listNetworks API to return both isolated and shared networks in one call		
-						var networkObjs1 = [];
+						}		           
 						$.ajax({
               url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-                type: 'isolated',
-                supportedServices: 'SourceNat',
+              data: {               
 								listAll: true
               },
               dataType: 'json',
               async: false,
-              success: function(data) {
-							  if(data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0)
-                  networkObjs1 = data.listnetworksresponse.network;  
+              success: function(data) {							 
+								args.response.success({
+									data: data.listnetworksresponse.network
+								});									
               },
               error: function(data) {
                 args.response.error(parseXMLHttpResponse(data));
               }
-            });							
-						var networkObjs2 = [];
-						$.ajax({
-							url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-							data: {
-								type: 'shared',
-								supportedServices: 'Lb,StaticNat,SecurityGroup',
-								listAll: true
-							},
-							async: false,
-							success: function(data) {			
-                if(data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0)							
-								  networkObjs2 = data.listnetworksresponse.network; 								
-							}
-						});				
-							
-						var networkObjs = $.extend(networkObjs1, networkObjs2);						
-						args.response.success({
-							data: networkObjs
-						});		
+            });						
           },
 
           detailView: {
