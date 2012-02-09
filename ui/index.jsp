@@ -1084,8 +1084,8 @@
         <!-- General alerts-->
         <div class="dashboard-container sub alerts first">
           <div class="top">
-            <div class="title"><span>General Alerts</span></div>
-            <div class="button view-all">view all</div>
+            <div class="title"><span></span></div>
+            <div class="button view-all"></div>
           </div>
           <ul data-item="alerts">
             <li class="error" concat-value="50">
@@ -1100,8 +1100,8 @@
         <!-- Host alerts-->
         <div class="dashboard-container sub alerts last">
           <div class="top">
-            <div class="title"><span>Host Alerts</span></div>
-            <div class="button view-all">view all</div>
+            <div class="title"><span></span></div>
+            <div class="button view-all"></div>
           </div>
           <ul data-item="hostAlerts">
             <li class="error" concat-value="50">
@@ -1116,7 +1116,7 @@
         <div class="dashboard-container head">
           <div class="top">
             <div class="title">
-              <span>System Capacity</span>
+              <span></span>
             </div>
             <div class="selects" style="display:none;">
               <div class="select">
@@ -1599,6 +1599,23 @@
 
 <script language="javascript">
 dictionary = {
+'label.local.storage': '<fmt:message key="label.local.storage"/>',
+'label.direct.ips': '<fmt:message key="label.direct.ips"/>',
+'label.secondary.storage': '<fmt:message key="label.secondary.storage"/>',
+'label.private.ips': '<fmt:message key="label.private.ips"/>',
+'label.public.ips': '<fmt:message key="label.public.ips"/>',
+'label.primary.storage': '<fmt:message key="label.primary.storage"/>',
+'label.storage': '<fmt:message key="label.storage"/>',
+'label.memory': '<fmt:message key="label.memory"/>',
+'label.system.capacity': '<fmt:message key="label.system.capacity"/>',
+'label.host.alerts': '<fmt:message key="label.host.alerts"/>',
+'label.view.all': '<fmt:message key="label.view.all"/>',
+'label.general.alerts': '<fmt:message key="label.general.alerts"/>',
+'label.zone.details': '<fmt:message key="label.zone.details"/>',
+'message.alert.state.detected': '<fmt:message key="message.alert.state.detected"/>',
+'label.alert': '<fmt:message key="label.alert"/>',
+'label.resources': '<fmt:message key="label.resources"/>',
+'label.menu.dashboard': '<fmt:message key="label.menu.dashboard"/>',
 'state.Starting': '<fmt:message key="state.Starting"/>',
 'state.Creating': '<fmt:message key="state.Creating"/>',
 'state.Expunging': '<fmt:message key="state.Expunging"/>',

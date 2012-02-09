@@ -27,7 +27,7 @@
                   if ($li.is('.zone-stats li')) {
                     $li.click(function() {
                       $browser.cloudBrowser('addPanel', {
-                        title: 'Zone details',
+                        title: _l('label.zone.details'),
                         parent: $dashboard.closest('.panel'),
                         maximizeIfSelected: true,
                         complete: function($newPanel) {
@@ -125,6 +125,12 @@
     // Get dashboard layout
     var $dashboard = $('#template').find('div.dashboard.' + dashboardType).clone();
 
+    // Update text
+    $dashboard.find('.button.view-all').html(_l('label.view.all'));
+    $dashboard.find('.dashboard-container.sub.alerts.first .top .title span').html(_l('label.general.alerts'));
+    $dashboard.find('.dashboard-container.sub.alerts.last .top .title span').html(_l('label.host.alerts'));
+    $dashboard.find('.dashboard-container.head .top .title span').html(_l('label.system.capacity'));
+    
     // View all action
     $dashboard.find('.view-all').click(function() {
       if ($(this).hasClass('network')) $('#navigation li.network').click();

@@ -1,7 +1,7 @@
 (function($, cloudStack) {
   // Admin dashboard
   cloudStack.sections.dashboard = {
-    title: 'Dashboard',
+    title: 'label.menu.dashboard',
     show: cloudStack.uiCustom.dashboard,
 
     adminCheck: function(args) {
@@ -104,7 +104,7 @@
       zoneDetailView: {
         tabs: {
           resources: {
-            title: 'Resources',
+            title: 'label.resources',
             custom: cloudStack.uiCustom.systemChart('resources')
           }
         }
@@ -213,7 +213,7 @@
                   hostAlerts: $.map(hosts, function(host) {
                     return {
                       name: host.name,
-                      description: 'Alert state detected for ' + host.name
+                      description: 'message.alert.state.detected'
                     };
                   })
                 }));

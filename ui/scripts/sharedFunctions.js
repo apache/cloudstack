@@ -291,16 +291,16 @@ cloudStack.converters = {
   },
   toAlertType: function(alertCode) {
     switch (alertCode) {
-    case 0 : return "Memory";
-    case 1 : return "CPU";
-    case 2 : return "Storage";
-    case 3 : return "Allocated Storage";
-    case 4 : return "Public IP";
-    case 5 : return "Private IP";
-    case 6 : return "Secondary Storage";
-    case 7 : return "VLAN";
-    case 8 : return "Direct Public IP";
-    case 9 : return "Local Storage";
+    case 0 : return _l('label.memory');
+    case 1 : return 'CPU';
+    case 2 : return _l('label.storage');
+    case 3 : return _l('label.primary.storage');
+    case 4 : return _l('label.public.ips');
+    case 5 : return _l('label.private.ips');
+    case 6 : return _l('label.secondary.storage');
+    case 7 : return 'VLAN';
+    case 8 : return _l('label.direct.ips');
+    case 9 : return _l('label.local.storage');
 
     // These are old values -- can be removed in the future 
     case 10 : return "Routing Host";
