@@ -339,8 +339,18 @@ public class LibvirtStorageResource {
         StoragePool sp = null;
         try {
             sp = conn.storagePoolLookupByUUIDString(spt.getUuid());
+            //double check the mount point
+            String targetPath = _mountPoint + File.separator + spt.getUuid();
+            if (!_storageLayer.exists(targetPath)) {
+            	try {
+            		sp.destroy();
+            		sp.undefine();
+            	} catch(LibvirtException e) {
+            		
+            	}
+            	sp = null;
+            }
         } catch (LibvirtException e) {
-            
         }
         
         if (sp == null) {
