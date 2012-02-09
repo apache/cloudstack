@@ -1599,6 +1599,12 @@
 
 <script language="javascript">
 dictionary = {
+'message.pending.projects.2': '<fmt:message key="message.pending.projects.2"/>',
+'message.pending.projects.1': '<fmt:message key="message.pending.projects.1"/>',
+'label.required': '<fmt:message key="label.required"/>',
+'label.project.view': '<fmt:message key="label.project.view"/>',
+'label.default.view': '<fmt:message key="label.default.view"/>',
+'label.notifications': '<fmt:message key="label.notifications"/>',
 'label.cancel': '<fmt:message key="label.cancel"/>',
 'message.step.1.continue': '<fmt:message key="message.step.1.continue"/>',
 'message.instanceWizard.noTemplates': '<fmt:message key="message.instanceWizard.noTemplates"/>',

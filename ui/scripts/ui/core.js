@@ -98,7 +98,7 @@
                 // Total notifications
                 .append($('<span>').html(0))
             )
-            .append($('<span>').html(_l('Notifications')))
+            .append($('<span>').html(_l('label.notifications')))
             .notifications();
 
       // Project switcher
@@ -106,7 +106,7 @@
             .append(
               // Default View
               $('<div>').addClass('select default-view active')
-                .html(_l('Default View'))
+                .html(_l('label.default.view'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
                 )
@@ -114,7 +114,7 @@
             .append(
               // Project View
               $('<div>').addClass('select project-view')
-                .html(_l('Project View'))
+                .html(_l('label.project.view'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
                 )
@@ -157,7 +157,7 @@
 
                 // Put project name in header
                 $('.select.project-view').html(
-                  '<span class="icon">&nbsp;</span>' + _l('Project View')
+                  '<span class="icon">&nbsp;</span>' + _l('label.project.view')
                 ).attr('title', '');
 
                 // Clear out project
@@ -272,7 +272,7 @@
       .click();
 
     // Validation
-    $.extend($.validator.messages, { required: 'Required field' });
+    $.extend($.validator.messages, { required: 'label.required' });
 
     // Check for pending project invitations
     cloudStack.projects.invitationCheck({
@@ -286,9 +286,9 @@
           }).join('');
 
           cloudStack.dialog.notice({
-            message: 'You have pending project invitations for:' +
+            message: _l('message.pending.projects.1') +
               '<ul>' + projectList + '</ul>' +
-              '<p>To view, please go to the projects section, then select invitations from the drop-down.</p>'
+              '<p>' + _l('message.pending.projects.2') + '</p>'
           });
         }
       }
