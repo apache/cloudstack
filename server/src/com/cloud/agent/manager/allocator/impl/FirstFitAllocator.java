@@ -32,7 +32,6 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -166,7 +165,7 @@ public class FirstFitAllocator implements HostAllocator {
     }
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity, Account account) {
-        if (_allocationAlgorithm.equals("random")) {
+        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
         	// Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
         }else if(_allocationAlgorithm.equals("userdispersing")){
@@ -397,9 +396,7 @@ public class FirstFitAllocator implements HostAllocator {
             _factor = NumbersUtil.parseFloat(opFactor, 1);
             
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null && (allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.random.toString()) 
-                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString()) 
-                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString()))) {
+            if (allocationAlgorithm != null) {
             	_allocationAlgorithm = allocationAlgorithm;
             }
         }

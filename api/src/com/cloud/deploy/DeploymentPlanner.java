@@ -89,7 +89,8 @@ public interface DeploymentPlanner extends Adapter {
         random,
         firstfit,
         userdispersing,
-        userconcentratedpod;
+        userconcentratedpod_random,
+        userconcentratedpod_firstfit;
     }
 
     public static class ExcludeList {

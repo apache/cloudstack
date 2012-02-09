@@ -147,7 +147,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
     public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
         if(vm.getHypervisorType() != HypervisorType.BareMetal){
             //check the allocation strategy
-            if (_allocationAlgorithm != null && _allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod.toString())) {
+            if (_allocationAlgorithm != null && (_allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_random.toString()) || _allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_firstfit.toString()))){
                 return true;
             }
         }

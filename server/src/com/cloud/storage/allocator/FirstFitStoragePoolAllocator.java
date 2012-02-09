@@ -30,7 +30,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
@@ -88,7 +87,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         StatsCollector sc = StatsCollector.getInstance();
 
         //FixMe: We are ignoring userdispersing algorithm when account is null. Find a way to get account ID when VMprofile is null
-        if(_allocationAlgorithm.equals("random") || (account == null)) {
+        if(_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             // Shuffle this so that we don't check the pools in the same order.
             Collections.shuffle(pools);
         }else if(_allocationAlgorithm.equals("userdispersing")){
@@ -152,9 +151,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         if (_configDao != null) {
             Map<String, String> configs = _configDao.getConfiguration(params);
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null && (allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.random.toString()) 
-                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString()) 
-                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString()))) {
+            if (allocationAlgorithm != null) {
                 _allocationAlgorithm = allocationAlgorithm;
             }
         }

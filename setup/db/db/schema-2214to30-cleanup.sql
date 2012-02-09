@@ -47,3 +47,5 @@ ALTER TABLE `cloud`.`networks` DROP COLUMN `is_default`;
 
 UPDATE `cloud`.`networks` SET guest_type=(SELECT guest_type FROM network_offerings no where no.id=network_offering_id);
 UPDATE `cloud`.`networks` SET guru_name='ExternalGuestNetworkGuru' where guest_type='Isolated';
+
+DELETE FROM `cloud`.`configuration` WHERE name='use.user.concentrated.pod.allocation';
