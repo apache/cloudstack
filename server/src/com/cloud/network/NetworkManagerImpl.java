@@ -3910,7 +3910,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networkOfferingId != oldNetworkOfferingId) {
                 if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId) != networkOfferingIsConfiguredForExternalNetworking(oldNetworkOfferingId)
                         && !changeCidr) {
-                    throw new InvalidParameterValueException("The guest network CIDR may changed after update network. Need user's acknowledge to process!");
+                    throw new InvalidParameterValueException("Can't guarantee guest network CIDR is unchanged after updating network!");
                 }
                 // check if the network is upgradable
                 if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
