@@ -272,7 +272,7 @@
       .click();
 
     // Validation
-    $.extend($.validator.messages, { required: 'label.required' });
+    $.extend($.validator.messages, { required: _l('label.required') });
 
     // Check for pending project invitations
     cloudStack.projects.invitationCheck({

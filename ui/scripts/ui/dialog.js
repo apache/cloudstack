@@ -1,4 +1,4 @@
-(function($, cloudStack, _l) {
+(function($, cloudStack) {
   cloudStack.dialog = {
     /**
      * Error message form
@@ -275,7 +275,7 @@
         }
 
         $input.data('validation-rules', field.validation);
-        $('<label>').addClass('error').appendTo($value).html('*' + _l('required'));
+        $('<label>').addClass('error').appendTo($value).html('*' + _l('label.required'));
       });
 
       $form.find('select').trigger('change');
@@ -417,4 +417,4 @@
       });
     }
   };
-})(window.jQuery, window.cloudStack, window._l);
+})(window.jQuery, window.cloudStack);
