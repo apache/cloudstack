@@ -219,34 +219,40 @@
             context: args.context
           });
 
-          args.response.success({
-            data: [
-              {
-                id: 'netscaler',
-                name: 'NetScaler',
-                state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
-              },
-              {
-                id: 'srx',
-                name: 'SRX',
-                state: nspMap.srx ? nspMap.srx.state : 'Disabled'
-              },
-              {
-                id: 'f5',
-                name: 'F5',
-                state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
-              },
-              {
-                id: 'virtualRouter',
-                name: 'Virtual Router',
-                state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
-              },
-              {
+					var networkProviderData = [
+						{
+							id: 'netscaler',
+							name: 'NetScaler',
+							state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
+						},
+						{
+							id: 'srx',
+							name: 'SRX',
+							state: nspMap.srx ? nspMap.srx.state : 'Disabled'
+						},
+						{
+							id: 'f5',
+							name: 'F5',
+							state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
+						},
+						{
+							id: 'virtualRouter',
+							name: 'Virtual Router',
+							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
+						}
+					];
+					
+					if(selectedZoneObj.networktype == "Basic") {
+					  networkProviderData.push({
                 id: 'securityGroups',
                 name: 'Security Groups',
                 state: nspMap.securityGroups ? nspMap.securityGroups.state : 'Disabled'
               }
-            ]
+						);
+					}
+
+          args.response.success({
+            data: networkProviderData
           })
         },
 
