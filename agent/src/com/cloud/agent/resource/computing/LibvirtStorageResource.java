@@ -361,7 +361,8 @@ public class LibvirtStorageResource {
                 sp.create(0);
             }
         } catch (LibvirtException e) {
-
+        	s_logger.debug("Failed to create storage pool: " + e.toString());
+        	return null;
         }
         
         if (spt.getType() == StoragePoolType.NetworkFilesystem) {
