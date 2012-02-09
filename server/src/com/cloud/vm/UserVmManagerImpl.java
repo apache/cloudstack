@@ -1859,9 +1859,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData);
-
+        UserVmVO newVM = _vmDao.findById(id);;
         if (updateUserdata) {
-        	_networkMgr.updateVmData(vmInstance);
+        	_networkMgr.updateVmData(newVM);
         }
         return _vmDao.findById(id);
     }
