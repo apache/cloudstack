@@ -44,6 +44,9 @@ public class KeystoreVO {
     
     @Column(name="domain_suffix")
     private String domainSuffix;
+    
+    @Column(name="seq")
+    private Integer index;
 
     public KeystoreVO() {
     }
@@ -86,5 +89,13 @@ public class KeystoreVO {
 
 	public void setDomainSuffix(String domainSuffix) {
 		this.domainSuffix = domainSuffix;
+	}
+	
+	public void setIndex(Integer index) {
+		this.index = index;
+	}
+	
+	public Integer getIndex() {
+		return this.index;
 	}
 }

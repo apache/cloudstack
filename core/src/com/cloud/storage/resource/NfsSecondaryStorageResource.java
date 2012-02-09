@@ -17,8 +17,10 @@
  */
 package com.cloud.storage.resource;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -52,6 +54,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
@@ -208,6 +211,38 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, checksum);
     }
 
+    private void configCerts(Certificates certs) {
+    	if (certs == null) {
+    		configureSSL();
+    	} else {
+    		String prvKey = certs.getPrivKey();
+    		String pubCert = certs.getPrivCert();
+    		String certChain = certs.getCertChain();
+    		
+    		try {
+				File prvKeyFile = File.createTempFile("prvkey", null);
+				String prvkeyPath = prvKeyFile.getAbsolutePath();
+				BufferedWriter out = new BufferedWriter(new FileWriter(prvKeyFile));
+				out.write(prvKey);
+				out.close();
+				
+				File pubCertFile = File.createTempFile("pubcert", null);
+				String pubCertFilePath = pubCertFile.getAbsolutePath();
+				
+				out = new BufferedWriter(new FileWriter(pubCertFile));
+				out.write(pubCert);
+				out.close();
+				
+				configureSSL(prvkeyPath, pubCertFilePath, null);
+				
+				prvKeyFile.delete();
+				pubCertFile.delete();
+				
+			} catch (IOException e) {
+				s_logger.debug("Failed to config ssl: " + e.toString());
+			}
+    	}
+    }
     
     private Answer execute(SecStorageSetupCommand cmd) {
         if (!_inSystemVM){
@@ -226,6 +261,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
             String root = _parent + "/" + dir;
             mount(root, nfsPath);
+
+            configCerts(cmd.getCerts());
+            
             return new SecStorageSetupAnswer(dir);
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
@@ -556,13 +594,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
 
             }
-            String useSsl = (String)params.get("sslcopy");
-            if (useSsl != null) {
-            	_sslCopy = Boolean.parseBoolean(useSsl);
-            	if (_sslCopy) {
-            		configureSSL();
-            	}
-            }
+            
         	startAdditionalServices();
         	_params.put("install.numthreads", "50");
         	_params.put("secondary.storage.vm", "true");
@@ -639,8 +671,23 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
 	private void configureSSL() {
 		Script command = new Script(_configSslScr);
-		command.add(_publicIp);
-		command.add(_hostname);
+		command.add("-i", _publicIp);
+		command.add("-h", _hostname);
+		String result = command.execute();
+		if (result != null) {
+			s_logger.warn("Unable to configure httpd to use ssl");
+		}
+	}
+	
+	private void configureSSL(String prvkeyPath, String prvCertPath, String certChainPath) {
+		Script command = new Script(_configSslScr);
+		command.add("-i", _publicIp);
+		command.add("-h", _hostname);
+		command.add("-k", prvkeyPath);
+		command.add("-p", prvCertPath);
+		if (certChainPath != null) {
+			command.add("-t", certChainPath);
+		}
 		String result = command.execute();
 		if (result != null) {
 			s_logger.warn("Unable to configure httpd to use ssl");

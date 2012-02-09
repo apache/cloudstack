@@ -19,7 +19,12 @@
   # along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #
  
-
+help() {
+   printf " -c use customized key/cert\n"
+   printf " -k path of private key\n"
+   printf " -p path of certificate of public key\n"
+   printf " -t path of certificate chain\n"
+}
 
 
 config_httpd_conf() {
@@ -46,16 +51,19 @@ config_apache2_conf() {
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
   sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
-  sed -i  's/ssl-cert-snakeoil.key/realhostip.key/' /etc/apache2/sites-available/default-ssl
-  sed -i  's/ssl-cert-snakeoil.pem/realhostip.crt/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/ssl-cert-snakeoil.key/cert_apache.key/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/ssl-cert-snakeoil.pem/cert_apache.crt/' /etc/apache2/sites-available/default-ssl
 }
 
 copy_certs() {
   local certdir=$(dirname $0)/certs
   local mydir=$(dirname $0)
-  if [ -d $certdir ] && [ -f $certdir/realhostip.key ] &&  [ -f $certdir/realhostip.crt ] ; then
-       mkdir -p /etc/httpd/ssl/keys  &&  mkdir -p /etc/httpd/ssl/certs  &&  cp $certdir/realhostip.key /etc/httpd/ssl/keys   &&  cp $certdir/realhostip.crt /etc/httpd/ssl/certs
+  if [ -d $certdir ] && [ -f $customPrivKey ] &&  [ -f $customPrivCert ] ; then
+       mkdir -p /etc/httpd/ssl/keys  &&  mkdir -p /etc/httpd/ssl/certs  &&  cp $customprivKey /etc/httpd/ssl/keys   &&  cp $customPrivCert /etc/httpd/ssl/certs
       return $?
+  fi
+  if [ ! -z customCertChain ] && [ -f $customCertChain ] ; then
+     cp $customCertChain /etc/httpd/ssl/certs  
   fi
   return 1
 }
@@ -63,16 +71,82 @@ copy_certs() {
 copy_certs_apache2() {
   local certdir=$(dirname $0)/certs
   local mydir=$(dirname $0)
-  if [ -d $certdir ] && [ -f $certdir/realhostip.key ] &&  [ -f $certdir/realhostip.crt ] ; then
-      cp $certdir/realhostip.key /etc/ssl/private/   &&  cp $certdir/realhostip.crt /etc/ssl/certs/
-      return $?
+  if [ -f $customPrivKey ] &&  [ -f $customPrivCert ] ; then
+      cp $customPrivKey /etc/ssl/private/cert_apache.key   &&  cp $customPrivCert /etc/ssl/certs/cert_apache.crt
   fi
-  return 1
+  if [ ! -z "$customCertChain" ] && [ -f "$customCertChain" ] ; then
+     cp $customCertChain /etc/ssl/certs/cert_apache_chain.crt
+  fi
+  return 0
 }
 
-if [ $# -ne 2 ] ; then
-	echo $"Usage: `basename $0` ipaddr servername "
-	exit 0
+
+cflag=
+cpkflag=
+cpcflag=
+cccflag=
+customPrivKey=$(dirname $0)/certs/realhostip.key
+customPrivCert=$(dirname $0)/certs/realhostip.crt
+customCertChain=
+publicIp=
+hostName=
+while getopts 'i:h:k:p:t:c' OPTION
+do
+  case $OPTION in
+     c) cflag=1
+        ;;
+     k) cpkflag=1
+        customPrivKey="$OPTARG"
+        ;;
+     p) cpcflag=1
+        customPrivCert="$OPTARG"
+        ;;
+     t) cccflag=1
+        customCertChain="$OPTARG"
+        ;;
+     i) publicIp="$OPTARG"
+        ;;
+     h) hostName="$OPTARG"
+        ;;
+     ?) help
+        ;;
+   esac
+done
+
+
+if [ -z "$publicIp" ] || [ -z "$hostName" ]
+then
+   help
+   exit 1
+fi
+
+if [ "$cflag" == "1" ]
+then
+  if [ "$cpkflag$cpcflag" != "11" ] 
+  then
+     help
+     exit 1
+  fi
+  if [ ! -f "$customPrivKey" ]
+  then
+     printf "priviate key file is not exist\n"
+     exit 2
+  fi
+
+  if [ ! -f "$customPrivCert" ]
+  then
+     printf "public certificate is not exist\n"
+     exit 3
+  fi
+
+  if [ "$cccflag" == "1" ] 
+  then
+     if [ ! -f "$customCertChain" ]
+     then
+        printf "certificate chain is not exist\n"
+        exit 4
+     fi
+  fi
 fi
 
 if [ -d /etc/apache2 ]
@@ -90,7 +164,11 @@ fi
 
 if [ -d /etc/apache2 ]
 then
-  config_apache2_conf $1 $2
+  config_apache2_conf $publicIp $hostName
+  /etc/init.d/apache2 stop
+  /etc/init.d/apache2 start
 else
-  config_httpd_conf $1 $2
+  config_httpd_conf $publicIp $hostName
 fi
+
+
