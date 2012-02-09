@@ -1599,6 +1599,7 @@
 
 <script language="javascript">
 dictionary = {
+'state.Expunging': '<fmt:message key="state.Expunging"/>',
 'message.decline.invitation': '<fmt:message key="message.decline.invitation"/>',
 'label.decline.invitation': '<fmt:message key="label.decline.invitation"/>',
 'message.confirm.join.project': '<fmt:message key="message.confirm.join.project"/>',
