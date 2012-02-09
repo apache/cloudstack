@@ -14,7 +14,15 @@
           id: 'templates',
           label: 'Templates',          
           filters: {     
-            all: { label: 'All' },
+            all: { 
+						  preFilter: function(args) {					  
+								if (isAdmin() || isDomainAdmin())
+									return true;
+								else						
+									return false;
+							},
+						  label: 'All' 
+					 },
 						mine: { label: 'Mine' },		
             featured: { label: 'Featured' },
             community: { label: 'Community' }            
