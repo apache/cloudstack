@@ -52,18 +52,26 @@ public class SecStorageFirewallCfgCommand extends Command {
 	}
 	
 	private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
+	private boolean isAppendAIp = false;	
 	
 	public SecStorageFirewallCfgCommand() {
 		
 	}
     
-    
+	public SecStorageFirewallCfgCommand(boolean isAppend) {
+    	this.isAppendAIp = isAppend;
+	} 
+	
     public void addPortConfig(String sourceIp, String port, boolean add, String intf) {
     	PortConfig pc = new PortConfig(sourceIp, port, add, intf);
     	this.portConfigs.add(pc);
     	
     }
 
+	public boolean getIsAppendAIp() {
+		return isAppendAIp;
+	}
+	
 	@Override
     public boolean executeInSequence() {
         return false;

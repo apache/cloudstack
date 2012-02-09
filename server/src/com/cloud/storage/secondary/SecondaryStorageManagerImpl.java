@@ -400,7 +400,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return true;
         }
         HostVO ssAHost = _hostDao.findById(ssAHostId);
-        Long zoneId = ssAHost.getDataCenterId();
         SecondaryStorageVmVO thisSecStorageVm = _secStorageVmDao.findByInstanceName(ssAHost.getName());
         
         if (thisSecStorageVm == null) {
@@ -409,16 +408,17 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         String copyPort = _useSSlCopy? "443" : Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-        SecStorageFirewallCfgCommand cpc = new SecStorageFirewallCfgCommand();
-        SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand();
+        SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand(true);
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
         
         SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
         sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
         List<HostVO> ssvms = sc.list();
         for (HostVO ssvm : ssvms) {
+        	if (ssvm.getId() == ssAHostId) {
+        		continue;
+        	}
             Answer answer = _agentMgr.easySend(ssvm.getId(), thiscpc);
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
@@ -432,7 +432,15 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             }
         }
         
-        Answer answer = _agentMgr.easySend(ssAHostId, cpc);
+        SecStorageFirewallCfgCommand allSSVMIpList = new SecStorageFirewallCfgCommand(false);
+        for (HostVO ssvm : ssvms) {
+        	if (ssvm.getId() == ssAHostId) {
+        		continue;
+        	}
+        	allSSVMIpList.addPortConfig(ssvm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
+        }
+        
+        Answer answer = _agentMgr.easySend(ssAHostId, allSSVMIpList);
         if (answer != null && answer.getResult()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed firewall rules into " + thisSecStorageVm.getHostName());

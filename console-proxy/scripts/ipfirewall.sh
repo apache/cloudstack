@@ -15,11 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
 
-
-
- 
-
-
 BASE_DIR="/var/www/html/copy/"
 HTACCESS="$BASE_DIR/.htaccess"
 
@@ -36,13 +31,18 @@ config_htaccess() {
 }
 
 ips(){
+  public_ip=`ip addr show eth2|grep "inet "|sed "s/^ *//"|cut -d "/" -f 1|cut -d " " -f 2`
+  ip route add $1 via $public_ip
   echo "allow from $1" >> $HTACCESS
   result=$?
   return $result
 }
 
-
-config_htaccess
+is_append="$1"
+shift
+if [ $is_append != "true" ]; then
+	config_htaccess
+fi
 for i in $@
 do
         ips "$i"
