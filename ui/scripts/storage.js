@@ -202,13 +202,13 @@
             viewAll: { path: 'storage.snapshots', label: 'label.snapshots' },
             actions: {
               takeSnapshot: {
-                label: 'label.take.snapshot',
+                label: 'label.action.take.snapshot',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.take.snapshot' ;
                   },
                   notification: function(args) {
-                    return 'label.take.snapshot';
+                    return 'label.action.take.snapshot';
                   }
                 },
                 action: function(args) {
@@ -895,20 +895,25 @@
        */
       snapshots: {
         type: 'select',
-        title: 'Snapshots',
+        title: 'label.snapshots',
         listView: {
           id: 'snapshots',
-          label: 'Snapshots',
+          label: 'label.snapshots',
           fields: {
-            volumename: { label: 'Volume' },
-            intervaltype: { label: 'Interval Type' },
-            created: { label: 'Date', converter: cloudStack.converters.toLocalDate },
+            volumename: { label: 'label.volume' },
+            intervaltype: { label: 'label.interval.type' },
+            created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
             state: {
               converter: function(str) {
                 // For localization
-                return str;
+                return 'state.'+str;
               },
-              label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' }
+              label: 'label.state', indicator: {
+                converter: function(str) {
+                  return 'state.' + str;
+                },
+                'BackedUp': 'on', 'Destroyed': 'off'
+              }
             }
           },
 
@@ -950,23 +955,23 @@
             name: 'Snapshot detail',
             actions: {
               createTemplate: {
-                label: 'Create template',
+                label: 'label.create.template',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to create template?';
+                    return 'message.create.template';
                   },
                   notification: function(args) {
-                    return 'Create template';
+                    return 'label.create.template';
                   }
                 },
                 createForm: {
-                  title: 'Create Template',
+                  title: 'label.create.template',
                   desc: '',
                   fields: {
-                    name: { label: 'Name', validation: { required: true }},
-                    displayText: { label: 'Description', validation: { required: true }},
+                    name: { label: 'label.name', validation: { required: true }},
+                    displayText: { label: 'label.description', validation: { required: true }},
                     osTypeId: {
-                      label: 'OS Type',
+                      label: 'label.os.type',
                       select: function(args) {
                         $.ajax({
                           url: createURL("listOsTypes"),
@@ -983,8 +988,8 @@
                         });
                       }
                     },
-                    isPublic: { label: 'Public', isBoolean: true },
-                    isPasswordEnabled: { label: 'Password enabled', isBoolean: true }
+                    isPublic: { label: 'label.public', isBoolean: true },
+                    isPasswordEnabled: { label: 'label.password.enabled', isBoolean: true }
                   }
                 },
                 action: function(args) {
@@ -1031,21 +1036,21 @@
               },
 
               createVolume: {
-                label: 'Create volume',
+                label: 'label.action.create.volume',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to create volume?';
                   },
                   notification: function(args) {
-                    return 'Create volume';
+                    return 'label.action.create.volume';
                   }
                 },
                 createForm: {
-                  title: 'Create volume',
+                  title: 'label.action.create.volume',
                   desc: '',
                   fields: {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       validation: {
                         required: true
                       }
@@ -1083,13 +1088,13 @@
               },
 
               'destroy': {
-                label: 'Delete snapshot',
+                label: 'label.action.delete.snapshot',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete snapshot?';
+                    return 'message.action.delete.snapshot';
                   },
                   notification: function(args) {
-                    return 'Delete snapshot';
+                    return 'label.action.delete.snapshot';
                   }
                 },
                 action: function(args) {
@@ -1117,20 +1122,19 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
-                    id: { label: 'ID' },
-                    name: { label: 'Name' },
-                    volumename: { label: 'Volume Name' },
-                    state: { label: 'State' },
-                    intervaltype: { label: 'Interval Type' },
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+                    id: { label: 'label.id' },
+                    volumename: { label: 'label.volume.name' },
+                    state: { label: 'label.state' },
+                    intervaltype: { label: 'label.interval.type' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 

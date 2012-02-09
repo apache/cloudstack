@@ -1599,6 +1599,16 @@
 
 <script language="javascript">
 dictionary = {
+'message.action.delete.snapshot': '<fmt:message key="message.action.delete.snapshot"/>',
+'label.description': '<fmt:message key="label.description"/>',
+'label.volume.name': '<fmt:message key="label.volume.name"/>',
+'label.action.delete.snapshot': '<fmt:message key="label.action.delete.snapshot"/>',
+'label.action.create.volume': '<fmt:message key="label.action.create.volume"/>',
+'label.volume': '<fmt:message key="label.volume"/>',
+'state.BackingUp': '<fmt:message key="state.BackingUp"/>',
+'label.action.take.snapshot': '<fmt:message key="label.action.take.snapshot"/>',
+'state.BackedUp': '<fmt:message key="state.BackedUp"/>',
+'label.interval.type': '<fmt:message key="label.interval.type"/>',
 'label.instance': '<fmt:message key="label.instance"/>',
 'label.add': '<fmt:message key="label.add"/>',
 'label.done': '<fmt:message key="label.done"/>',
