@@ -39,16 +39,16 @@
 
               messages: {
                 confirm: function(args) {
-                  return dictionary["create.template.confirm"];
+                  return "create.template.confirm";
                 },
                 success: function(args) {
-                  return dictionary["create.template.success"];
+                  return "create.template.success";
                 },
                 notification: function(args) {
-                  return dictionary["create.template.notification"];
+                  return "create.template.notification";
                 },
                 complete: function(args) {
-                  return dictionary["create.template.complete"];
+                  return "create.template.complete";
                 }
               },
 

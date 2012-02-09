@@ -1,7 +1,7 @@
 /**
  * Create dynamic list view based on data callbacks
  */
-(function($, cloudStack) {
+(function($, cloudStack, _l) {
   var uiActions = {
     standard: function($instanceRow, args, additional) {
       var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
@@ -409,8 +409,12 @@
               {
                 section: $instanceRow.closest('div.view').data('view-args').id,
                 desc: newName ?
-                  'Set value of ' + $instanceRow.find('td.name span').html() + ' to ' + newName :
-                  'Unset value for ' + $instanceRow.find('td.name span').html()
+                  _l('Set value of') +
+                  ' ' + $instanceRow.find('td.name span').html() +
+                  ' ' + _l('to') +
+                  ' ' + newName :
+                  _l('Unset value for') +
+                  ' ' + $instanceRow.find('td.name span').html()
               },
               function(args) {},
               [{ name: newName }]
@@ -500,10 +504,10 @@
     });
     var $actionButton = $('<div></div>').addClass('action');
     var $saveButton = $actionButton.clone().addClass('save').attr({
-      'title': 'Save'
+      'title': _l('Save')
     });
     var $cancelButton = $actionButton.clone().addClass('cancel').attr({
-      'title': 'Cancel edit'
+      'title': _l('Cancel edit')
     });
 
     $([$editField, $saveButton, $cancelButton]).each(function() {
@@ -534,19 +538,19 @@
 
       if ($th.index()) $th.addClass('reduced-hide');
 
-      $th.html(field.label);
+      $th.html(_l(field.label));
     });
 
     if (reorder) {
       $thead.find('tr').append(
-        $('<th>').html('Order').addClass('reorder-actions reduced-hide')
+        $('<th>').html(_l('Order')).addClass('reorder-actions reduced-hide')
       );
     }
 
     if (actions && renderActionCol(actions)) {
       $thead.find('tr').append(
         $('<th></th>')
-          .html('Actions')
+          .html(_l('label.actions'))
           .addClass('actions reduced-hide')
       );
     }
@@ -558,7 +562,7 @@
     if (!filters) return false;
 
     var $filters = $('<div></div>').addClass('filters reduced-hide');
-    $filters.append('<label>Filter By: </label>');
+    $filters.append($('<label>').html(_l('label.filterBy')));
 
     var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
 
@@ -569,7 +573,7 @@
 				}				
         var $option = $('<option>').attr({
           value: key
-        }).html(this.label);
+        }).html(_l(this.label));
 
         $option.appendTo($filterSelect);
       });
@@ -609,8 +613,8 @@
               })
             )
             .attr({
-              alt: action.label,
-              title: action.label
+              alt: _l(action.label),
+              title: _l(action.label)
             })
             .data('list-view-action-id', actionName)
         );
@@ -628,8 +632,8 @@
               })
             )
             .attr({
-              alt: action.label,
-              title: action.label
+              alt: _l(action.label),
+              title: _l(action.label)
             })
             .data('list-view-action-id', actionName)
         );
@@ -642,8 +646,8 @@
             .addClass(actionName)
             .append($('<span>').addClass('icon'))
             .attr({
-              alt: action.label,
-              title: action.label
+              alt: _l(action.label),
+              title: _l(action.label)
             })
             .data('list-view-action-id', actionName);
 
@@ -707,7 +711,7 @@
       if (!$tbody.find('tr').size()) {
         return [
           $('<tr>').addClass('empty').append(
-            $('<td>').html('No data to show')
+            $('<td>').html(_l('No data to show'))
           ).appendTo($tbody)
         ];
       }
@@ -748,7 +752,7 @@
           $td.data('list-view-action', key);
         }
         if (field.converter) {
-          content = field.converter(content, dataItem);
+          content = _l(field.converter(content, dataItem));
         }
 
         $td.html(content);
@@ -809,7 +813,7 @@
                 $('<span>').addClass('icon').html('&nbsp;')
               )
               .attr({
-                title: fnLabel[actionName]
+                title: _l(fnLabel[actionName])
               })
               .appendTo($td)
               .click(function() {
@@ -952,7 +956,7 @@
           error: function(args) {
             setLoadingArgs.loadingCompleted();
             addTableRows(fields, [], $tbody, actions);
-            $table.find('td:first').html('ERROR');
+            $table.find('td:first').html(_l('ERROR'));
             $table.dataTable(null, { noSelect: uiCustom });
           }
         }
@@ -979,7 +983,7 @@
     if (args.sectionSelect) {
       $('<label>')
         .prependTo($sectionSelect.parent())
-        .html(args.sectionSelect.label + ':');
+        .html(_l(args.sectionSelect.label) + ':');
 
       sectionPreFilter = args.sectionSelect.preFilter ?
         args.sectionSelect.preFilter({
@@ -993,7 +997,7 @@
     if (sectionPreFilter && sectionPreFilter.length == 1) {
       $switcher.find('select').hide();
       $switcher.find('label').html(
-        'Viewing ' + sections[sectionPreFilter[0]].title
+        _l('Viewing') + ' ' + _l(sections[sectionPreFilter[0]].title)
       );
     }
 
@@ -1012,7 +1016,7 @@
               .addClass(key)
               .attr({ href: '#' })
               .data('list-view-section-id', key)
-              .html(this.title)
+              .html(_l(this.title))
           );
 
         $sectionButton.appendTo($switcher);
@@ -1020,7 +1024,7 @@
         $sectionSelect.append(
           $('<option></option>')
             .attr('value', key)
-            .html(this.title)
+            .html(_l(this.title))
         );
       }
 
@@ -1113,7 +1117,7 @@
               .addClass('button action add reduced-hide')
               .data('list-view-action-id', 'add')
               .append(
-                $('<span>').html(listViewData.actions.add.label)
+                $('<span>').html(_l(listViewData.actions.add.label))
               )
           ); 
       }
@@ -1134,7 +1138,7 @@
               .addClass('button action main-action reduced-hide').addClass(actionName)
               .data('list-view-action-id', actionName)
               .append($('<span>').addClass('icon'))
-              .append($('<span>').html(action.label))
+              .append($('<span>').html(_l(action.label)))
           );
 
         return true;
@@ -1143,7 +1147,10 @@
 
     $('<tbody>').appendTo($table);
 
-    createHeader(listViewData.fields, $table, listViewData.actions, { reorder: reorder });
+    createHeader(listViewData.fields,
+                 $table,
+                 listViewData.actions,
+                 { reorder: reorder });
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
 
@@ -1503,4 +1510,4 @@
       $listView.listView('refresh');
     });
   });
-})(jQuery, cloudStack);
+})(jQuery, cloudStack, _l);

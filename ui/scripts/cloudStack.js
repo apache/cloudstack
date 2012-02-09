@@ -307,5 +307,10 @@
     };
 
     cloudStack.uiCustom.login(loginArgs);
+
+    // Localization
+    cloudStack.localizationFn = function(str) {
+      return dictionary[str];
+    };
   });
 })(cloudStack, jQuery);

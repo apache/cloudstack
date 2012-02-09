@@ -33,7 +33,14 @@
               }
             },
             domain: { label: 'Domain' },
-            state: { label: 'State', indicator: { 'enabled': 'on', 'Destroyed': 'off', 'disabled': 'off' } }
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'State',
+              indicator: { 'enabled': 'on', 'Destroyed': 'off', 'disabled': 'off' }
+            }
           },
 
           actions: {

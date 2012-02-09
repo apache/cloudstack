@@ -851,7 +851,13 @@
             //vlanname: { label: 'VLAN' },
 						iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },
             account: { label: 'Account' },
-            state: { label: 'State', indicator: { 'Allocated': 'on', 'Released': 'off' } }
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'State', indicator: { 'Allocated': 'on', 'Released': 'off' }
+            }
           },
           actions: {
             add: {

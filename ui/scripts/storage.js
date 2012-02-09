@@ -23,7 +23,13 @@
             type: { label: 'Type' },
             storagetype: { label: 'Storage Type' },
             vmdisplayname: { label: 'VM Display Name' },
-            state: { label: 'State', indicator: { 'Ready': 'on' } }
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'State', indicator: { 'Ready': 'on' }
+            }
           },
 
           // List view actions
@@ -899,7 +905,13 @@
             volumename: { label: 'Volume' },
             intervaltype: { label: 'Interval Type' },
             created: { label: 'Date', converter: cloudStack.converters.toLocalDate },
-            state: { label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' } }
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' }
+            }
           },         
 
           dataProvider: function(args) {					  

@@ -989,7 +989,13 @@
           label: 'Network offerings',
           fields: {
             name: { label: 'Name' },
-            state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }}
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }
+            }
           },
 
           dataProvider: function(args) {					  

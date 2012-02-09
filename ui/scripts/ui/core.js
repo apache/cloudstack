@@ -31,7 +31,7 @@
             .addClass('navigation-item')
             .addClass(sectionID)
             .append($('<span>').addClass('icon').html('&nbsp;'))
-            .append($('<span>').html(args.title))
+            .append($('<span>').html(_l(args.title)))
             .data('cloudStack-section-id', sectionID);
 
       $li.appendTo($navList);
@@ -67,7 +67,7 @@
     // Reset browser panels
     $browser.cloudBrowser('removeAllPanels');
     $panel = $browser.cloudBrowser('addPanel', {
-      title: data.title,
+      title: _l(data.title),
       data: ''
     });
 
@@ -98,7 +98,7 @@
                 // Total notifications
                 .append($('<span>').html(0))
             )
-            .append($('<span>').html('Notifications'))
+            .append($('<span>').html(_l('Notifications')))
             .notifications();
 
       // Project switcher
@@ -106,7 +106,7 @@
             .append(
               // Default View
               $('<div>').addClass('select default-view active')
-                .html('Default View')
+                .html(_l('Default View'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
                 )
@@ -114,7 +114,7 @@
             .append(
               // Project View
               $('<div>').addClass('select project-view')
-                .html('Project View')
+                .html(_l('Project View'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
                 )
@@ -157,7 +157,7 @@
 
                 // Put project name in header
                 $('.select.project-view').html(
-                  '<span class="icon">&nbsp;</span> Project View'
+                  '<span class="icon">&nbsp;</span>' + _l('Project View')
                 ).attr('title', '');
 
                 // Clear out project
@@ -249,7 +249,7 @@
     $(['Logout', 'Help']).each(function() {
       var $link = $('<a>')
         .attr({ href: '#' })
-        .html(this.toString())
+        .html(_l(this.toString()))
         .appendTo($options);
 
       if (this == 'Help') {
@@ -351,4 +351,5 @@
       return true;
     });
   });
-})(jQuery, window.cloudStack ? window.cloudStack : window.cloudStack = {});
+})(window.jQuery,
+   window.cloudStack ? window.cloudStack : window.cloudStack = {});

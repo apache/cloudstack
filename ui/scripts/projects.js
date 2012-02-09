@@ -552,7 +552,13 @@
             displaytext: { label: 'Display Text' },
             domain: { label: 'Domain' },
             account: { label: 'Owner' },
-            state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' } }
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' }
+            }
           },
 
           dataProvider: function(args) {
@@ -880,6 +886,10 @@
             domain: { label: 'Domain' },
             state: {
               label: 'Status',
+              converter: function(str) {
+                // For localization
+                return str;
+              },
               indicator: {
                 'Accepted': 'on', 'Completed': 'on',
                 'Pending': 'off', 'Declined': 'off'

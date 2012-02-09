@@ -1,4 +1,4 @@
-(function($, cloudStack) {
+(function($, cloudStack, _l) {
   cloudStack.dialog = {
     /**
      * Error message form
@@ -19,7 +19,9 @@
      */
     createForm: function(args) {
       var $formContainer = $('<div>').addClass('form-container');
-      var $message = $('<span>').addClass('message').appendTo($formContainer).html(args.form.desc);
+      var $message = $('<span>').addClass('message').appendTo($formContainer).html(
+        _l(args.form.desc)
+      );
       var $form = $('<form>').appendTo($formContainer)
             .submit(function() {
               $(this).closest('.ui-dialog').find('button.ok').click();
@@ -55,7 +57,7 @@
         var $name = $('<div>').addClass('name')
           .appendTo($formItem)
           .append(
-            $('<label>').html(field.label + ':')
+            $('<label>').html(_l(field.label) + ':')
           );
 
         // Add 'required asterisk' if field is required
@@ -65,7 +67,7 @@
 
         // Tooltip description
         if (field.desc) {
-          $formItem.attr({ title: field.desc });
+          $formItem.attr({ title: _l(field.desc) });
         }
 
         // Input area
@@ -201,7 +203,7 @@
                 $('<div>').addClass('item')
                   .append(
                     $.merge(
-                      $('<div>').addClass('name').html(itemValue.label),
+                      $('<div>').addClass('name').html(_l(itemValue.label)),
                       $('<div>').addClass('value').append(
                         $('<input>').attr({ name: itemKey, type: 'checkbox' }).appendTo($value)
                       )
@@ -273,7 +275,7 @@
         }
 
         $input.data('validation-rules', field.validation);
-        $('<label>').addClass('error').appendTo($value).html('*required');
+        $('<label>').addClass('error').appendTo($value).html('*' + _l('required'));
       });
 
       $form.find('select').trigger('change');
@@ -322,7 +324,7 @@
       return $formContainer.dialog({
         dialogClass: 'create-form',
         width: 400,
-        title: args.form.title,
+        title: _l(args.form.title),
         open: function() {
           if (args.form.preFilter) {
             args.form.preFilter({ $form: $form, context: args.context });
@@ -330,7 +332,7 @@
         },
         buttons: [
           {
-            text: createLabel ? createLabel : 'OK',
+            text: createLabel ? createLabel : _l('label.ok'),
             'class': 'ok',
             click: function() {
               if (!complete($formContainer)) { return false; }
@@ -343,7 +345,7 @@
             }
           },
           {
-            text: 'Cancel',
+            text: _l('label.cancel'),
             'class': 'cancel',
             click: function() {
               $('div.overlay').remove();
@@ -361,7 +363,7 @@
     confirm: function(args) {
       return $(
         $('<span>').addClass('message').html(
-          args.message
+          _l(args.message)
         )
       ).dialog({
         title: 'Confirm',
@@ -396,7 +398,7 @@
     notice: function(args) {
       return $(
         $('<span>').addClass('message').html(
-          args.message
+          _l(args.message)
         )
       ).dialog({
         title: 'Status',
@@ -404,7 +406,7 @@
         zIndex: 5000,
         buttons: [
           {
-            text: 'Close',
+            text: _l('Close'),
             'class': 'close',
             click: function() {
               $(this).dialog('destroy');
@@ -415,4 +417,4 @@
       });
     }
   };
-})(jQuery, cloudStack);
+})(window.jQuery, window.cloudStack, window._l);

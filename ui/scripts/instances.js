@@ -5,31 +5,35 @@
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
   cloudStack.sections.instances = {
-    title: 'Instances',
+    title: 'label.instances',
     id: 'instances',
     listView: {
       section: 'instances',
       filters: {
-	      all: { label: 'All' },
-        mine: { label: 'Mine' },
-        running: { label: 'Running' },
-        stopped: { label: 'Stopped' },
-        destroyed: { 				  
-					preFilter: function(args) {					  
-						if (isAdmin() || isDomainAdmin())
-						  return true;
-						else						
-						  return false;
-					},
-					label: 'Destroyed',
-				}
+        all: { label: 'ui.listView.filters.all' },
+        mine: { label: 'ui.listView.filters.mine' },
+        running: { label: 'state.Running' },
+        stopped: { label: 'state.Stopped' },
+        destroyed: {
+          preFilter: function(args) {
+            if (isAdmin() || isDomainAdmin())
+              return true;
+            else
+              return false;
+          },
+          label: 'ui.listView.filters.destroyed'
+        }
       },
       fields: {
-        name: { label: 'Name', editable: true },
-        displayname: { label: 'Display Name' },
-        zonename: { label: 'Zone' },
+        name: { label: 'label.name', editable: true },
+        displayname: { label: 'label.display.name' },
+        zonename: { label: 'label.zone.name' },
         state: {
-          label: 'Status',
+          label: 'label.state',
+          converter: function(str) {
+            // For localization
+            return 'state.' + str;
+          },
           indicator: {
             'Running': 'on',
             'Stopped': 'off',
@@ -43,7 +47,7 @@
       actions: {
         // Add instance wizard
         add: {
-          label: 'Add instance',
+          label: 'label.vm.add',
 
           action: {
             custom: cloudStack.instanceWizard({
@@ -247,7 +251,7 @@
                     }
                   }
 
-                  if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.          
+                  if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.
                     step5ContainerType = 'select-network';
                   }
                   else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
@@ -256,28 +260,28 @@
                       url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
                       dataType: "json",
                       async: false,
-                      success: function(json) {                        
-                        //basic zone should have only one guest network returned in this API call                        
+                      success: function(json) {
+                        //basic zone should have only one guest network returned in this API call
                         var items = json.listnetworksresponse.network;
                         if(items != null && items.length > 0) {
-                          var networkObj = items[0];    //basic zone has only one guest network                      
+                          var networkObj = items[0];    //basic zone has only one guest network
                           var serviceObjArray = networkObj.service;
-                          for(var k = 0; k < serviceObjArray.length; k++) {                            
+                          for(var k = 0; k < serviceObjArray.length; k++) {
                             if(serviceObjArray[k].name == "SecurityGroup") {
                               includingSecurityGroupService = true;
                               break;
                             }
-                          }                          
-                        }                        
+                          }
+                        }
                       }
                     });
-                                       
-                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware") { 
+
+                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware") {
                       step5ContainerType = 'nothing-to-select';
                     }
                     else {
-                      step5ContainerType = 'select-security-group';    
-                    }                      
+                      step5ContainerType = 'select-security-group';
+                    }
                   }
 
                   //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
@@ -291,27 +295,27 @@
                       networkData.domainid = g_domainid;
                       networkData.account = g_account;
                     }
-                    
-										var networkObjs;
+
+                    var networkObjs;
                     $.ajax({
                       url: createURL('listNetworks'),
                       data: networkData,
                       dataType: "json",
                       async: false,
                       success: function(json) {
-                        networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];                        
+                        networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
                       }
-                    });                                      
-                    
+                    });
+
                     $.ajax({
                       url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
                       dataType: "json",
                       async: false,
-                      success: function(json) {                        
-                        networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;                                             
+                      success: function(json) {
+                        networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;
                       }
                     });
-                                      
+
                     args.response.success({
                       type: 'select-network',
                       data: {
@@ -329,7 +333,7 @@
                       domainid: g_domainid,
                       account: g_account
                     };
-                    
+
                     $.ajax({
                       url: createURL("listSecurityGroups"),
                       dataType: "json",
@@ -348,10 +352,10 @@
                     args.response.success({
                       type: 'select-security-group',
                       data: {
-											  myNetworks: [], //not used any more
+                        myNetworks: [], //not used any more
                         sharedNetworks: [],
                         securityGroups: securityGroupArray,
-                        networkOfferings: []											
+                        networkOfferings: []
                       }
                     });
                   }
@@ -360,10 +364,10 @@
                     args.response.success({
                       type: 'nothing-to-select',
                       data: {
-											  myNetworks: [], //not used any more
+                        myNetworks: [], //not used any more
                         sharedNetworks: [],
                         securityGroups: [],
-                        networkOfferings: []	
+                        networkOfferings: []
                       }
                     });
                   }
@@ -404,77 +408,77 @@
                     array1.push("&size=" + args.data.size);
                 }
 
-                //step 5: select network          
-                if (step5ContainerType == 'select-network') {                
-                  var array2 = [];  
-                  var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID                    
-                
-                  var checkedNetworkIdArray;                 
+                //step 5: select network
+                if (step5ContainerType == 'select-network') {
+                  var array2 = [];
+                  var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
+
+                  var checkedNetworkIdArray;
                   if(typeof(args.data["my-networks"]) == "object" && args.data["my-networks"].length != null) { //args.data["my-networks"] is an array of string, e.g. ["203", "202"],
-                    checkedNetworkIdArray = args.data["my-networks"];                          
+                    checkedNetworkIdArray = args.data["my-networks"];
                   }
                   else if(typeof(args.data["my-networks"]) == "string" && args.data["my-networks"].length > 0) { //args.data["my-networks"] is a string, e.g. "202"
                     checkedNetworkIdArray = [];
                     checkedNetworkIdArray.push(args.data["my-networks"]);
                   }
-                  else { // typeof(args.data["my-networks"]) == null 
+                  else { // typeof(args.data["my-networks"]) == null
                     checkedNetworkIdArray = [];
                   }
-                
-                  //create new network starts here  
-                  if(args.data["new-network"] == "create-new-network") {                       
-                    var isCreateNetworkSuccessful = true;                    
+
+                  //create new network starts here
+                  if(args.data["new-network"] == "create-new-network") {
+                    var isCreateNetworkSuccessful = true;
                     $.ajax({
                       url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
-                      success: function(json) {                      
-                        newNetwork = json.createnetworkresponse.network;                                           
-                        checkedNetworkIdArray.push(newNetwork.id);                                                
+                      success: function(json) {
+                        newNetwork = json.createnetworkresponse.network;
+                        checkedNetworkIdArray.push(newNetwork.id);
                         if(defaultNetworkId == "new-network")
-                          defaultNetworkId = newNetwork.id;  
-                      },                      
-                      error: function(XMLHttpResponse) {      
-                        isCreateNetworkSuccessful = false;                          
+                          defaultNetworkId = newNetwork.id;
+                      },
+                      error: function(XMLHttpResponse) {
+                        isCreateNetworkSuccessful = false;
                         var errorMsg = "Failed to create new network, unable to proceed to deploy VM. Error: " + parseXMLHttpResponse(XMLHttpResponse);
                         //alert(errorMsg);
-                        args.response.error(errorMsg);    //args.response.error(errorMsg) here doesn't show errorMsg. Waiting for Brian to fix it. use alert(errorMsg) to show errorMsg for now.                    
-                      }  
-                    });                     
-                    if(isCreateNetworkSuccessful == false)                     
-                      return;                                             
-                  }               
+                        args.response.error(errorMsg);    //args.response.error(errorMsg) here doesn't show errorMsg. Waiting for Brian to fix it. use alert(errorMsg) to show errorMsg for now.
+                      }
+                    });
+                    if(isCreateNetworkSuccessful == false)
+                      return;
+                  }
                   //create new network ends here
-                  
-                  //add default network first                  
+
+                  //add default network first
                   if(defaultNetworkId != null && defaultNetworkId.length > 0)
                     array2.push(defaultNetworkId);
-                 
-                  //then, add other checked networks  
+
+                  //then, add other checked networks
                   if(checkedNetworkIdArray.length > 0) {
                     for(var i=0; i < checkedNetworkIdArray.length; i++) {
                       if(checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
                         array2.push(checkedNetworkIdArray[i]);
                     }
-                  }                                   
-                                                
+                  }
+
                   array1.push("&networkIds=" + array2.join(","));
                 }
-                else if (step5ContainerType == 'select-security-group') {     
-                  var checkedSecurityGroupIdArray;                 
+                else if (step5ContainerType == 'select-security-group') {
+                  var checkedSecurityGroupIdArray;
                   if(typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
-                    checkedSecurityGroupIdArray = args.data["security-groups"];                          
+                    checkedSecurityGroupIdArray = args.data["security-groups"];
                   }
                   else if(typeof(args.data["security-groups"]) == "string" && args.data["security-groups"].length > 0) { //args.data["security-groups"] is a string, e.g. "2375f8cc-8a73-4b8d-9b26-50885a25ffe0"
                     checkedSecurityGroupIdArray = [];
                     checkedSecurityGroupIdArray.push(args.data["security-groups"]);
                   }
-                  else { // typeof(args.data["security-groups"]) == null 
+                  else { // typeof(args.data["security-groups"]) == null
                     checkedSecurityGroupIdArray = [];
                   }
-									
-									if(checkedSecurityGroupIdArray.length > 0)
-									  array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));								
+
+                  if(checkedSecurityGroupIdArray.length > 0)
+                    array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
                 }
 
                 var displayname = args.data.displayname;
@@ -494,9 +498,9 @@
                       {_custom:
                        {jobId: jid,
                         getUpdatedItem: function(json) {
-                          var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;                       
-                          if (item.passwordenabled == true) 
-                            alert("Password of new VM " + getVmName(item.name, item.displayname) + " is  " + item.password);   
+                          var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                          if (item.passwordenabled == true)
+                            alert("Password of new VM " + getVmName(item.name, item.displayname) + " is  " + item.password);
                           return item;
                         },
                         getActionFilter: function() {
@@ -528,7 +532,7 @@
           }
         },
         start: {
-          label: 'Start instance' ,
+          label: 'label.action.start.instance' ,
           action: function(args) {
             $.ajax({
               url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
@@ -553,10 +557,10 @@
           },
           messages: {
             confirm: function(args) {
-              return 'Are you sure you want to start ' + args.name + '?';
+              return 'message.action.start.instance';
             },
             notification: function(args) {
-              return 'Starting VM: ' + args.name;
+              return 'message.notification.start.instance';
             }
           },
           notification: {
@@ -564,22 +568,22 @@
           }
         },
         stop: {
-          label: 'Stop instance',
+          label: 'label.action.stop.instance',
           addRow: 'false',
-					createForm: {
-						title: 'Stop instance',
-						desc: 'Please confirm that you want to stop this instance',
-						fields: {                 
-							forced: {
-								label: 'Force stop',
-								isBoolean: true,                   
-								isChecked: false
-							}                  
-						}
-					},		
-          action: function(args) {					  
-						var array1 = [];
-						array1.push("&forced=" + (args.data.forced == "on"));		
+          createForm: {
+            title: 'label.action.stop.instance',
+            desc: 'message.action.stop.instance',
+            fields: {
+              forced: {
+                label: 'force.stop',
+                isBoolean: true,
+                isChecked: false
+              }
+            }
+          },
+          action: function(args) {
+            var array1 = [];
+            array1.push("&forced=" + (args.data.forced == "on"));
             $.ajax({
               url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
               dataType: "json",
@@ -603,19 +607,19 @@
           },
           messages: {
             confirm: function(args) {
-              return 'Are you sure you want to stop ' + args.name + '?';
+              return 'message.action.stop.instance';
             },
 
             notification: function(args) {
-              return 'Stopping VM: ' + args.name;
+              return 'message.notification.stop.instance';
             }
           },
-          notification: {            
+          notification: {
             poll: pollAsyncJobResult
           }
         },
         restart: {
-          label: 'Reboot instance',
+          label: 'instances.actions.reboot.label',
           action: function(args) {
             $.ajax({
               url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
@@ -640,10 +644,10 @@
           },
           messages: {
             confirm: function(args) {
-              return 'Are you sure you want to reboot ' + args.name + '?';
+              return 'message.action.reboot.instance';
             },
             notification: function(args) {
-              return 'Rebooting VM: ' + args.name;
+              return 'message.notification.reboot.instance';
             }
           },
           notification: {
@@ -651,10 +655,10 @@
           }
         },
         destroy: {
-          label: 'Destroy instance',
+          label: 'label.action.destroy.instance',
           messages: {
             confirm: function(args) {
-              return 'Are you sure you want to destroy ' + args.name + '?';
+              return 'message.action.destroy.instance';
             },
             success: function(args) {
               return args.name + ' is being destroyed.';
@@ -714,13 +718,13 @@
       },
 
       dataProvider: function(args) {
-        var array1 = [];  
+        var array1 = [];
         if(args.filterBy != null) {
           if(args.filterBy.kind != null) {
             switch(args.filterBy.kind) {
             case "all":
-						  array1.push("&listAll=true");
-              break;            
+              array1.push("&listAll=true");
+              break;
             case "mine":
               if (!args.context.projects) array1.push("&domainid=" + g_domainid + "&account=" + g_account);
               break;
@@ -738,16 +742,16 @@
           if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
             switch(args.filterBy.search.by) {
             case "name":
-						  if(args.filterBy.search.value.length > 0)
+              if(args.filterBy.search.value.length > 0)
                 array1.push("&keyword=" + args.filterBy.search.value);
               break;
             }
           }
         }
-			       
-				if("hosts" in args.context)
-					array1.push("&hostid=" + args.context.hosts[0].id);				
-								
+
+        if("hosts" in args.context)
+          array1.push("&hostid=" + args.context.hosts[0].id);
+
         $.ajax({
           url: createURL("listVirtualMachines&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
           dataType: "json",
@@ -765,49 +769,49 @@
 
       detailView: {
         name: 'Instance details',
-        viewAll: { path: 'storage.volumes', label: 'Volumes' },
+        viewAll: { path: 'storage.volumes', label: 'label.volumes' },
         tabFilter: function(args) {
-          var hiddenTabs = []; 
-					var zoneNetworktype;         			
-					$.ajax({
-					  url: createURL("listZones&id=" + args.context.instances[0].zoneid),
-						dataType: "json",
-						async: false,
-						success: function(json) {						  
-							zoneNetworktype = json.listzonesresponse.zone[0].networktype;
-						}
-					});					
-					if(zoneNetworktype == "Basic") { //Basic zone has only one guest network (only one NIC)			
-            var includingSecurityGroupService = false;					
-						$.ajax({
-							url: createURL("listNetworks&id=" + args.context.instances[0].nic[0].networkid),
-							dataType: "json",
-							async: false,
-							success: function(json) {													                       
-								var items = json.listnetworksresponse.network;
-								if(items != null && items.length > 0) {
-									var networkObj = items[0];    //basic zone has only one guest network                      
-									var serviceObjArray = networkObj.service;
-									for(var k = 0; k < serviceObjArray.length; k++) {                            
-										if(serviceObjArray[k].name == "SecurityGroup") {
-											includingSecurityGroupService = true;
-											break;
-										}
-									}                          
-								}   
-							}
-						});					
-						if(includingSecurityGroupService == false)
-						  hiddenTabs.push("securityGroups");							  
-					}
-					else { //Advanced zone
-					  hiddenTabs.push("securityGroups");	    
-					}					                 
+          var hiddenTabs = [];
+          var zoneNetworktype;
+          $.ajax({
+            url: createURL("listZones&id=" + args.context.instances[0].zoneid),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+              zoneNetworktype = json.listzonesresponse.zone[0].networktype;
+            }
+          });
+          if(zoneNetworktype == "Basic") { //Basic zone has only one guest network (only one NIC)
+            var includingSecurityGroupService = false;
+            $.ajax({
+              url: createURL("listNetworks&id=" + args.context.instances[0].nic[0].networkid),
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.listnetworksresponse.network;
+                if(items != null && items.length > 0) {
+                  var networkObj = items[0];    //basic zone has only one guest network
+                  var serviceObjArray = networkObj.service;
+                  for(var k = 0; k < serviceObjArray.length; k++) {
+                    if(serviceObjArray[k].name == "SecurityGroup") {
+                      includingSecurityGroupService = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            });
+            if(includingSecurityGroupService == false)
+              hiddenTabs.push("securityGroups");
+          }
+          else { //Advanced zone
+            hiddenTabs.push("securityGroups");
+          }
           return hiddenTabs;
-        },               
+        },
         actions: {
           start: {
-            label: 'Start instance' ,
+            label: 'label.action.start.instance' ,
             action: function(args) {
               $.ajax({
                 url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
@@ -832,10 +836,10 @@
             },
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to start ' + args.name + '?';
+                return 'message.action.start.instance';
               },
               notification: function(args) {
-                return 'Starting VM: ' + args.name;
+                return 'label.action.start.instance';
               }
             },
             notification: {
@@ -843,48 +847,48 @@
             }
           },
           stop: {
-            label: 'Stop instance',
-						createForm: {
-							title: 'Stop instance',
-							desc: 'Please confirm that you want to stop this instance',
-							fields: {                 
-								forced: {
-									label: 'Force stop',
-									isBoolean: true,                   
-									isChecked: false
-								}                  
-							}
-						},		
-						action: function(args) {					  
-							var array1 = [];
-							array1.push("&forced=" + (args.data.forced == "on"));		
-							$.ajax({
-								url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-								dataType: "json",
-								async: true,
-								success: function(json) {
-									var jid = json.stopvirtualmachineresponse.jobid;
-									args.response.success(
-										{_custom:
-										 {jobId: jid,
-											getUpdatedItem: function(json) {
-												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-											},
-											getActionFilter: function() {
-												return vmActionfilter;
-											}
-										 }
-										}
-									);
-								}
-							});
-						},
+            label: 'label.action.stop.instance',
+            createForm: {
+              title: 'Stop instance',
+              desc: 'message.action.stop.instance',
+              fields: {
+                forced: {
+                  label: 'force.stop',
+                  isBoolean: true,
+                  isChecked: false
+                }
+              }
+            },
+            action: function(args) {
+              var array1 = [];
+              array1.push("&forced=" + (args.data.forced == "on"));
+              $.ajax({
+                url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.stopvirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                     }
+                    }
+                  );
+                }
+              });
+            },
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to stop ' + args.name + '?';
+                return 'message.action.stop.instance';
               },
               notification: function(args) {
-                return 'Stopping VM: ' + args.name;
+                return 'label.action.stop.instance';
               }
             },
             notification: {
@@ -892,7 +896,7 @@
             }
           },
           restart: {
-            label: 'Reboot instance',
+            label: 'label.action.reboot.instance',
             action: function(args) {
               $.ajax({
                 url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
@@ -917,10 +921,10 @@
             },
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to reboot ' + args.name + '?';
+                return 'message.action.reboot.instance';
               },
               notification: function(args) {
-                return 'Rebooting VM: ' + args.name;
+                return 'label.action.reboot.instance';
               }
             },
             notification: {
@@ -928,13 +932,13 @@
             }
           },
           destroy: {
-            label: 'Destroy instance',
+            label: 'label.action.destroy.instance',
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to destroy ' + args.name + '?';
+                return 'message.action.destroy.instance';
               },
               notification: function(args) {
-                return 'Destroying VM: ' + args.name;
+                return 'label.action.destroy.instance';
               }
             },
             action: function(args) {
@@ -964,13 +968,13 @@
             }
           },
           restore: {
-            label: 'Restore instance',
+            label: 'label.action.restore.instance',
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to restore ' + args.name + '?';
+                return 'message.action.restore.instance';
               },
               notification: function(args) {
-                return 'Restoring VM: ' + args.name;
+                return 'label.action.restore.instance';
               }
             },
             action: function(args) {
@@ -1012,10 +1016,10 @@
           },
 
           attachISO: {
-            label: 'Attach ISO',
+            label: 'label.attach.iso',
             createForm: {
-              title: 'Attach ISO',
-              desc: 'Attach ISO to instance',
+              title: 'label.attach.iso',
+              desc: 'label.attach.iso',
               fields: {
                 iso: {
                   label: 'ISO',
@@ -1064,7 +1068,7 @@
                 return 'Are you sure you want to attach ISO to instance ' + args.name + '?';
               },
               notification: function(args) {
-                return 'Attaching ISO to instance ' + args.name;
+                return 'label.attach.iso';
               }
             },
             notification: {
@@ -1073,13 +1077,13 @@
           },
 
           detachISO: {
-            label: 'Detach ISO',
+            label: 'label.detach.iso',
             messages: {
               confirm: function(args) {
-                return 'Are you sure you want to detach ISO ?';
+                return 'message.detach.iso.confirm';
               },
               notification: function(args) {
-                return 'Detaching ISO';
+                return 'label.detach.iso';
               }
             },
             action: function(args) {
@@ -1110,32 +1114,32 @@
           },
 
           resetPassword: {
-            label: 'Reset password',
+            label: 'label.action.reset.password',
             messages: {
-              confirm: function(args) {                
-                return 'Please confirm that you want to reset password.';
+              confirm: function(args) {
+                return 'message.action.instance.reset.password';
               },
               notification: function(args) {
-                return 'Resetting password';
+                return 'label.action.reset.password';
               },
               complete: function(args) {
                 return 'Password has been reset to ' + args.password;
               }
             },
-												
-						preAction: function(args) {    
-							var jsonObj = args.context.instances[0];							
-							if (jsonObj.passwordenabled == false) {
-							  cloudStack.dialog.notice({ message: 'The template this instance was created with is not password enabled' });							
-								return false;
-							} 
-							else if (jsonObj.state != 'Stopped') {
-								cloudStack.dialog.notice({ message: 'Your instance must be stopped before attempting to change its current password' });
-								return false;
-							}
-							return true;
+
+            preAction: function(args) {
+              var jsonObj = args.context.instances[0];
+              if (jsonObj.passwordenabled == false) {
+                cloudStack.dialog.notice({ message: 'message.reset.password.warning.notPasswordEnabled' });
+                return false;
+              }
+              else if (jsonObj.state != 'Stopped') {
+                cloudStack.dialog.notice({ message: 'message.reset.password.warning.notStopped' });
+                return false;
+              }
+              return true;
             },
-												
+
             action: function(args) {
               $.ajax({
                 url: createURL("resetPasswordForVirtualMachine&id=" + args.context.instances[0].id),
@@ -1164,21 +1168,21 @@
           },
 
           changeService: {
-            label: 'Change service offering',
+            label: 'label.action.change.service',
             messages: {
               confirm: function(args) {
                 return 'Are you sure you want to change service offering?';
               },
               notification: function(args) {
-                return 'Changing service offering';
+                return 'label.action.change.service';
               }
             },
             createForm: {
-              title: 'Change Service Offering',
+              title: 'label.action.change.service',
               desc: '',
               fields: {
                 serviceOffering: {
-                  label: 'Service offering',
+                  label: 'label.service.offering',
                   select: function(args) {
                     $.ajax({
                       url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
@@ -1197,16 +1201,16 @@
                 }
               }
             },
-												
-						preAction: function(args) {    
-							var jsonObj = args.context.instances[0];							
-							if (jsonObj.state != 'Stopped') {
-							  cloudStack.dialog.notice({ message: 'Your instance must be stopped before attempting to change its current service offering.' });							
-								return false;
-							}               						
-              return true;							
+
+            preAction: function(args) {
+              var jsonObj = args.context.instances[0];
+              if (jsonObj.state != 'Stopped') {
+                cloudStack.dialog.notice({ message: 'message.action.change.service.warning.for.instance' });
+                return false;
+              }
+              return true;
             },
-												
+
             action: function(args) {
               $.ajax({
                 url: createURL("changeServiceForVirtualMachine&id=" + args.context.instances[0].id + "&serviceOfferingId=" + args.data.serviceOffering),
@@ -1317,7 +1321,7 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          },          
+          },
 
           migrate: {
             label: 'Migrate instance to another host',
@@ -1345,7 +1349,7 @@
                       success: function(json) {
                         var hosts = json.listhostsresponse.host;
                         var items = [];
-                        $(hosts).each(function() {                          
+                        $(hosts).each(function() {
                           items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                         });
                         args.response.success({data: items});
@@ -1395,8 +1399,8 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          },  
-         
+          },
+
           migrateToAnotherStorage: {
             label: 'Migrate instance to another primary storage',
             messages: {
@@ -1414,15 +1418,15 @@
                 storageId: {
                   label: 'Primary storage',
                   validation: { required: true },
-                  select: function(args) {                    
-                    $.ajax({  
+                  select: function(args) {
+                    $.ajax({
                       url: createURL("listStoragePools&zoneid=" + args.context.instances[0].zoneid),
                       dataType: "json",
                       async: true,
-                      success: function(json) {                        
+                      success: function(json) {
                         var pools = json.liststoragepoolsresponse.storagepool;
                         var items = [];
-                        $(pools).each(function() {                          
+                        $(pools).each(function() {
                           items.push({id: this.id, description: this.name});
                         });
                         args.response.success({data: items});
@@ -1442,8 +1446,8 @@
                   args.response.success(
                     {_custom:
                      {jobId: jid,
-                      getUpdatedItem: function(json) {                        
-                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;                       
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                       },
                       getActionFilter: function() {
                         return vmActionfilter;
@@ -1457,53 +1461,53 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          },   
-          
+          },
+
           viewConsole: {
             label: 'View console',
             action: {
               externalLink: {
-                url: function(args) {                
-                  return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;                  
+                url: function(args) {
+                  return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;
                 },
-                title: function(args) {                                 
-                  return "console" + args.context.instances[0].id;  //can't have space in window name in window.open()                
+                title: function(args) {
+                  return "console" + args.context.instances[0].id;  //can't have space in window name in window.open()
                 },
                 width: 820,
                 height: 640
               }
             }
-          } 
+          }
         },
         tabs: {
           // Details tab
           details: {
-            title: 'Details',
-						
-						preFilter: function(args) {
-							var hiddenFields;
-							if(isAdmin()) {
-								hiddenFields = [];
-							}
-							else {
-								hiddenFields = ["hypervisor"];
-							}
-							return hiddenFields;
-						},
-						
+            title: 'label.details',
+
+            preFilter: function(args) {
+              var hiddenFields;
+              if(isAdmin()) {
+                hiddenFields = [];
+              }
+              else {
+                hiddenFields = ["hypervisor"];
+              }
+              return hiddenFields;
+            },
+
             fields: [
               {
-                name: { label: 'Name', isEditable: false }
+                name: { label: 'label.name', isEditable: false }
               },
               {
-                id: { label: 'ID', isEditable: false },
-                displayname: { label: 'Display Name', isEditable: true },
-                state: { label: 'State', isEditable: false },
-                zonename: { label: 'Zone', isEditable: false },
-                hypervisor: { label: 'Hypervisor', isEditable: false },
-                templatename: { label: 'Template name', isEditable: false },                
+                id: { label: 'label.id', isEditable: false },
+                displayname: { label: 'label.display.name', isEditable: true },
+                state: { label: 'label.state', isEditable: false },
+                zonename: { label: 'label.zone.name', isEditable: false },
+                hypervisor: { label: 'label.hypervisor', isEditable: false },
+                templatename: { label: 'label.template', isEditable: false },
                 guestosid: {
-                  label: 'OS Type',
+                  label: 'label.os.type',
                   isEditable: true,
                   select: function(args) {
                     $.ajax({
@@ -1522,20 +1526,20 @@
                   }
                 },
 
-                serviceofferingname: { label: 'Service offering', isEditable: false },
-                group: { label: 'Group', isEditable: true },
-                hostname: { label: 'Host', isEditable: false},
-                haenable: { label: 'HA Enable', isEditable: false, converter:cloudStack.converters.toBooleanText },
+                serviceofferingname: { label: 'label.service.offering', isEditable: false },
+                group: { label: 'label.group', isEditable: true },
+                hostname: { label: 'label.host', isEditable: false},
+                haenable: { label: 'label.ha.enabled', isEditable: false, converter:cloudStack.converters.toBooleanText },
                 isoid: {
-                  label: 'Attached ISO',
+                  label: 'label.attached.iso',
                   isEditable: false,
                   converter: function(isoid) {
                     return cloudStack.converters.toBooleanText(isoid != null);
                   }
                 },
-                domain: { label: 'Domain', isEditable: false },
-                account: { label: 'Account', isEditable: false },
-                created: { label: 'Created', isEditable: false, converter: cloudStack.converters.toLocalDate }
+                domain: { label: 'label.domain', isEditable: false },
+                account: { label: 'label.account', isEditable: false },
+                created: { label: 'label.created', isEditable: false, converter: cloudStack.converters.toLocalDate }
               }
             ],
 
@@ -1553,24 +1557,24 @@
            * NICs tab
            */
           nics: {
-            title: 'NICs',
+            title: 'label.nics',
             multiple: true,
             fields: [
               {
-                name: { label: 'Name', header: true },
-                ipaddress: { label: 'IP Address' },
-                type: { label: 'Type' },
-                gateway: { label: 'Default gateway' },
-                netmask: { label: 'Netmask' },
+                name: { label: 'label.name', header: true },
+                ipaddress: { label: 'label.ip.address' },
+                type: { label: 'label.type' },
+                gateway: { label: 'label.gateway' },
+                netmask: { label: 'label.netmask' },
                 isdefault: {
-                  label: 'Default',
+                  label: 'label.is.default',
                   converter: function(data) {
-                    return data ? 'Yes' : 'No';
+                    return data ? 'label.yes' : 'label.no';
                   }
                 }
               }
             ],
-            dataProvider: function(args) {              
+            dataProvider: function(args) {
               args.response.success({data: $.map(args.context.instances[0].nic, function(nic, index) {
                 var name = 'NIC ' + (index + 1);
 
@@ -1583,7 +1587,7 @@
               })});
             }
           },
-                    
+
            /**
            * Security Groups tab
            */
@@ -1597,7 +1601,7 @@
                 description: { label: 'Description' }
               }
             ],
-            dataProvider: function(args) {              
+            dataProvider: function(args) {
               args.response.success({data: args.context.instances[0].securitygroup});
             }
           },
@@ -1614,7 +1618,7 @@
               networkkbswrite: { label: 'Network Write' }
             },
             dataProvider: function(args) {
-              var jsonObj = args.context.instances[0];                          
+              var jsonObj = args.context.instances[0];
               args.response.success({
                 data: {
                   totalCPU: fromdb(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
@@ -1644,31 +1648,31 @@
       allowedActions.push("stop");
       allowedActions.push("restart");
       allowedActions.push("destroy");
-      
-      if (isAdmin()) 
-        allowedActions.push("migrate");      
 
-      if (jsonObj.isoid == null)	
-        allowedActions.push("attachISO");      
-      else 
-        allowedActions.push("detachISO");      
+      if (isAdmin())
+        allowedActions.push("migrate");
+
+      if (jsonObj.isoid == null)
+        allowedActions.push("attachISO");
+      else
+        allowedActions.push("detachISO");
 
       allowedActions.push("resetPassword");
 
       if(jsonObj.hypervisor == "BareMetal") {
         allowedActions.push("createTemplate");
       }
-      
+
       allowedActions.push("viewConsole");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("edit");
       allowedActions.push("start");
       allowedActions.push("destroy");
-      
+
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
-      
+
       if (jsonObj.isoid == null)	{
         allowedActions.push("attachISO");
       }
