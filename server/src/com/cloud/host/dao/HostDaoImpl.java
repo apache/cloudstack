@@ -803,11 +803,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
-    public List<HostVO> listSecondaryStorageVMInUpAndConnecting(long dcId) {
+    public List<HostVO> listSecondaryStorageVMInUpAndConnecting() {
         SearchCriteria<HostVO> sc = SecondaryStorageVMSearch.create();
         sc.setParameters("type", Type.SecondaryStorageVM);
         sc.setParameters("status", Status.Up, Status.Connecting);
-        sc.setParameters("dc", dcId);
 
         return listBy(sc);
     }

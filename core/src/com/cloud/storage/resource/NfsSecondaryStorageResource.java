@@ -301,7 +301,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		}
 		boolean success = true;
 		String result;
-		result = configureIpFirewall(ipList);
+		result = configureIpFirewall(ipList, cmd.getIsAppendAIp());
 		if (result !=null)
 			success = false;
 
@@ -658,8 +658,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		return result;
 	}
 	
-	private String configureIpFirewall(List<String> ipList){
+	private String configureIpFirewall(List<String> ipList, boolean isAppend){
 		Script command = new Script(_configIpFirewallScr);		
+		command.add(String.valueOf(isAppend));
 		for (String ip : ipList){
 			command.add(ip);
 		}		

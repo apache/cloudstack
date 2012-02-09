@@ -363,12 +363,21 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     @Override
+    /**
+     * two things:
+     * 1. generate a IP list of all SSVM across all zones, set this IP list to my .htaccess allowable from.
+     *    so other SSVMs get privilege to access me.
+     * 2. broadcast my IP to other SSVMs instructing them set me to theirs .htacess allowable from. so I get
+     *    privilege to access others
+     *    
+     * NOTE: given in basic zone the public IP is in same subnet with private IP, we set both of them to .htaccess
+     * because traffic may go through either public IP or private IP, for the default route in SSVM is gateway.
+     */
     public boolean generateFirewallConfiguration(Long ssAHostId) {
         if ( ssAHostId == null ) {
             return true;
         }
         HostVO ssAHost = _hostDao.findById(ssAHostId);
-        Long zoneId = ssAHost.getDataCenterId();
         SecondaryStorageVmVO thisSecStorageVm = _secStorageVmDao.findByInstanceName(ssAHost.getName());
         
         if (thisSecStorageVm == null) {
@@ -377,12 +386,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         String copyPort = _useSSlCopy? "443" : Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-        SecStorageFirewallCfgCommand cpc = new SecStorageFirewallCfgCommand();
-        SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand();
+        SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand(true);
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
         
-        List<HostVO> ssvms = _hostDao.listSecondaryStorageVMInUpAndConnecting(zoneId);
+        List<HostVO> ssvms = _hostDao.listSecondaryStorageVMInUpAndConnecting();
         for (HostVO ssvm : ssvms) {
+        	if (ssvm.getId() == ssAHostId) {
+        		continue;
+        	}
             Answer answer = _agentMgr.easySend(ssvm.getId(), thiscpc);
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
@@ -395,7 +406,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             }
         }
         
-        Answer answer = _agentMgr.easySend(ssAHostId, cpc);
+        SecStorageFirewallCfgCommand allSSVMIpList = new SecStorageFirewallCfgCommand(false);
+        for (HostVO ssvm : ssvms) {
+        	if (ssvm.getId() == ssAHostId) {
+        		continue;
+        	}
+        	allSSVMIpList.addPortConfig(ssvm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
+        }
+        Answer answer = _agentMgr.easySend(ssAHostId, allSSVMIpList);
         if (answer != null && answer.getResult()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed firewall rules into " + thisSecStorageVm.getHostName());
