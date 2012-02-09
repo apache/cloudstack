@@ -2001,7 +2001,9 @@ public class ManagementServerImpl implements ManagementServer {
         summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSizeVal() ? summedCapacities.size() : pageSize);
         for (SummedCapacity summedCapacity : summedCapacities){
             CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId() , summedCapacity.getClusterId(),
-                                                 summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());            
+                                                 summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());
+            capacity.setUsedCapacity(summedCapacity.getUsedCapacity());
+            capacity.setTotalCapacity(summedCapacity.getTotalCapacity());
             capacities.add(capacity);       
         }        
         return capacities;

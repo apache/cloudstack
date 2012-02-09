@@ -446,6 +446,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		
 		public SummedCapacity(long sumUsed, long sumTotal, float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {
 		    super();
+		    this.sumUsed = sumUsed;
+		    this.sumTotal = sumTotal;
 		    this.percentUsed = percentUsed;
 		    this.capacityType = capacityType;
             this.clusterId = clusterId;
