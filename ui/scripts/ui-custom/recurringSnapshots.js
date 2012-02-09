@@ -9,8 +9,18 @@
       var $snapshots = $('#template').find('.recurring-snapshots').clone();
       var context = args.context;
 
+      // Update labels
+      $snapshots.find('.forms ul li.hourly a').html(_l('label.hourly'));
+      $snapshots.find('.forms ul li.daily a').html(_l('label.daily'));
+      $snapshots.find('.forms ul li.weekly a').html(_l('label.weekly'));
+      $snapshots.find('.forms ul li.monthly a').html(_l('label.monthly'));
+      $snapshots.find('.field.timezone .name').html(_l('label.timezone'));
+      $snapshots.find('.field.time .name').html(_l('label.time'));
+      $snapshots.find('.field.time .value label').html(_l('label.minute.past.hour'));
+      $snapshots.find('.add-snapshot-action.add').html(_l('label.add'));
+
       // Get description
-      $snapshots.find('.desc').html(desc);
+      $snapshots.find('.desc').html(_l(desc));
 
       // Snapshot type tabs
       $snapshots.find('.forms').tabs();
@@ -27,7 +37,7 @@
                 $(args.data).each(function() {
                   var $option = $('<option>').appendTo($select);
 
-                  $option.val(this.id).html(this.name);
+                  $option.val(this.id).html(_l(this.name));
                 });
               }
             }
@@ -59,13 +69,13 @@
 
               // Update fields
               $snapshotRow.find('td.time span').html(args.data.time);
-              $snapshotRow.find('td.day-of-week span').html(
+              $snapshotRow.find('td.day-of-week span').html(_l(
                 args.data['day-of-week'] ? 
                   $snapshots.find('select[name=day-of-week] option').filter(function() {
                     return $(this).val() == args.data['day-of-week'];
                   }).html() :
                   args.data['day-of-month']
-              );
+              ));
               $snapshotRow.find('td.timezone span').html(
                 $snapshots.find('select[name=timezone] option').filter(function() {
                   return $(this).val() == args.data['timezone'];
@@ -161,12 +171,12 @@
 
       // Create dialog
       var $dialog = $snapshots.dialog({
-        title: 'Recurring Snapshots',
+        title: _l('label.action.recurring.snapshot'),
         dialogClass: 'recurring-snapshots',
         width: 600,
         buttons: [
           {
-            text: 'Done',
+            text: _l('label.done'),
             'class': 'ok',
             click: function() {
               $dialog.fadeOut(function() {

@@ -1237,10 +1237,10 @@
 
           <div class="forms">
             <ul>
-              <li class="hourly"><a href="#recurring-snapshots-hourly">Hourly</a></li>
-              <li class="daily"><a href="#recurring-snapshots-daily">Daily</a></li>
-              <li class="weekly"><a href="#recurring-snapshots-weekly">Weekly</a></li>
-              <li class="monthly"><a href="#recurring-snapshots-monthly">Monthly</a></li>
+              <li class="hourly"><a href="#recurring-snapshots-hourly"></a></li>
+              <li class="daily"><a href="#recurring-snapshots-daily"></a></li>
+              <li class="weekly"><a href="#recurring-snapshots-weekly"></a></li>
+              <li class="monthly"><a href="#recurring-snapshots-monthly"></a></li>
             </ul>
 
             <!-- Hourly -->
@@ -1250,7 +1250,7 @@
 
                 <!-- Time -->
                 <div class="field time">
-                  <div class="name">Time</div>
+                  <div class="name"></div>
                   <div class="value">
                     <select name="schedule"></select>
                     <label for="schedule">minutes(s) past the hour</label>
@@ -1259,7 +1259,7 @@
 
                 <!-- Timezone -->
                 <div class="field timezone">
-                  <div class="name">Timezone</div>
+                  <div class="name"></div>
                   <div class="value">
                     <select name="timezone">
                       <option value="Etc/GMT+12">[UTC-12:00] GMT-12:00</option>
@@ -1456,7 +1456,7 @@
           </div>
 
           <div class="add-snapshot-actions">
-            <div class="add-snapshot-action add">Add</div>
+            <div class="add-snapshot-action add"></div>
           </div>
         </div>
 
@@ -1599,6 +1599,58 @@
 
 <script language="javascript">
 dictionary = {
+'label.instance': '<fmt:message key="label.instance"/>',
+'label.add': '<fmt:message key="label.add"/>',
+'label.done': '<fmt:message key="label.done"/>',
+'label.timezone': '<fmt:message key="label.timezone"/>',
+'label.time': '<fmt:message key="label.time"/>',
+'label.minute.past.hour': '<fmt:message key="label.minute.past.hour"/>',
+'label.monthly': '<fmt:message key="label.monthly"/>',
+'label.weekly': '<fmt:message key="label.weekly"/>',
+'label.daily': '<fmt:message key="label.daily"/>',
+'label.hourly': '<fmt:message key="label.hourly"/>',
+'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot"/>',
+'label.zone': '<fmt:message key="label.zone"/>',
+'label.vm.name': '<fmt:message key="label.vm.name"/>',
+'label.storage.type': '<fmt:message key="label.storage.type"/>',
+'label.device.id': '<fmt:message key="label.device.id"/>',
+'message.action.delete.volume': '<fmt:message key="message.action.delete.volume"/>',
+'label.action.delete.volume': '<fmt:message key="label.action.delete.volume"/>',
+'label.primary.storage': '<fmt:message key="label.primary.storage"/>',
+'label.migrate.volume': '<fmt:message key="label.migrate.volume"/>',
+'message.migrate.volume': '<fmt:message key="message.migrate.volume"/>',
+'label.password.enabled': '<fmt:message key="label.password.enabled"/>',
+'label.public': '<fmt:message key="label.public"/>',
+'message.create.template': '<fmt:message key="message.create.template"/>',
+'label.create.template': '<fmt:message key="label.create.template"/>',
+'message.download.volume.confirm': '<fmt:message key="message.download.volume.confirm"/>',
+'message.download.volume': '<fmt:message key="message.download.volume"/>',
+'label.action.download.volume': '<fmt:message key="label.action.download.volume"/>',
+'label.action.detach.disk': '<fmt:message key="label.action.detach.disk"/>',
+'message.detach.disk': '<fmt:message key="message.detach.disk"/>',
+'label.action.attach.disk': '<fmt:message key="label.action.attach.disk"/>',
+'label.saturday': '<fmt:message key="label.saturday"/>',
+'label.friday': '<fmt:message key="label.friday"/>',
+'label.thursday': '<fmt:message key="label.thursday"/>',
+'label.wednesday': '<fmt:message key="label.wednesday"/>',
+'label.tuesday': '<fmt:message key="label.tuesday"/>',
+'label.monday': '<fmt:message key="label.monday"/>',
+'label.sunday': '<fmt:message key="label.sunday"/>',
+'message.snapshot.schedule': '<fmt:message key="message.snapshot.schedule"/>',
+'label.action.recurring.snapshot': '<fmt:message key="label.action.recurring.snapshot"/>',
+'label.take.snapshot': '<fmt:message key="label.take.snapshot"/>',
+'label.snapshots': '<fmt:message key="label.snapshots"/>',
+'label.disk.size.gb': '<fmt:message key="label.disk.size.gb"/>',
+'label.disk.offering': '<fmt:message key="label.disk.offering"/>',
+'label.availability.zone': '<fmt:message key="label.availability.zone"/>',
+'message.add.volume': '<fmt:message key="message.add.volume"/>',
+'label.add.volume': '<fmt:message key="label.add.volume"/>',
+'state.Ready': '<fmt:message key="state.Ready"/>',
+'label.vm.display.name': '<fmt:message key="label.vm.display.name"/>',
+'label.storage.type': '<fmt:message key="label.storage.type"/>',
+'label.volumes': '<fmt:message key="label.volumes"/>',
+'label.select-view': '<fmt:message key="label.select-view"/>',
+'label.storage': '<fmt:message key="label.storage"/>',
 'label.local.storage': '<fmt:message key="label.local.storage"/>',
 'label.direct.ips': '<fmt:message key="label.direct.ips"/>',
 'label.secondary.storage': '<fmt:message key="label.secondary.storage"/>',

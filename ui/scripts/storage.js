@@ -3,10 +3,10 @@
   var diskofferingObjs, selectedDiskOfferingObj;
 
   cloudStack.sections.storage = {
-    title: 'Storage',
+    title: 'label.storage',
     id: 'storage',
     sectionSelect: {
-      label: 'Select view'
+      label: 'label.select-view'
     },
     sections: {
       /**
@@ -14,21 +14,22 @@
        */
       volumes: {
         type: 'select',
-        title: 'Volumes',
+        title: 'label.volumes',
         listView: {
           id: 'volumes',
-          label: 'Volumes',
+          label: 'label.volumes',
           fields: {
-            name: { label: 'Name' },
-            type: { label: 'Type' },
-            storagetype: { label: 'Storage Type' },
-            vmdisplayname: { label: 'VM Display Name' },
+            name: { label: 'label.name' },
+            type: { label: 'label.type' },
+            storagetype: { label: 'label.storage.type' },
+            vmdisplayname: { label: 'label.vm.display.name' },
             state: {
               converter: function(str) {
                 // For localization
-                return str;
+                return 'state.' + str;
               },
-              label: 'State', indicator: { 'Ready': 'on' }
+              label: 'State',
+              indicator: { 'Ready': 'on' }
             }
           },
 
@@ -36,27 +37,27 @@
           actions: {
             // Add volume
             add: {
-              label: 'Add volume',
+              label: 'label.add.volume',
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to add a volume?';
+                  return 'message.add.volume';
                 },
                 notification: function(args) {
-                  return 'create volume';
+                  return 'label.add.volume';
                 }
               },
 
               createForm: {
-                title: 'Add volume',
-                desc: 'Please fill in the following data to add a new volume.',
+                title: 'label.add.volume',
+                desc: 'message.add.volume',
                 fields: {
                   name: {
-                    label: 'Name',
+                    label: 'label.name',
                     validation: { required: true }
                   },
                   availabilityZone: {
-                    label: 'Availability Zone',
+                    label: 'label.availability.zone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -70,7 +71,7 @@
                     }
                   },
                   diskOffering: {
-                    label: 'Disk Offering',
+                    label: 'label.disk.offering',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listDiskOfferings"),
@@ -111,7 +112,7 @@
 
                   ,
                   diskSize: {
-                    label: 'Disk size (in GB)',
+                    label: 'label.disk.size.gb',
                     validation: { required: true, number: true },
                     isHidden: true
                   }
@@ -158,23 +159,23 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }  
+            }
 
           },
 
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-											
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }
+
             var apiCmd = "listVolumes&listAll=true&page=" + args.page + "&pagesize=" + pageSize+ array1.join("");
             if(args.context != null) {
               if("instances" in args.context) {
@@ -198,19 +199,19 @@
 
           detailView: {
             name: 'Volume details',
-            viewAll: { path: 'storage.snapshots', label: 'Snapshots' },
+            viewAll: { path: 'storage.snapshots', label: 'label.snapshots' },
             actions: {
               takeSnapshot: {
-                label: 'Take snapshot',
+                label: 'label.take.snapshot',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to take a snapshot' ;
+                    return 'message.action.take.snapshot' ;
                   },
                   notification: function(args) {
-                    return 'Take snapshot';
+                    return 'label.take.snapshot';
                   }
                 },
-                action: function(args) {								  
+                action: function(args) {
                   $.ajax({
                     url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id),
                     dataType: "json",
@@ -236,265 +237,265 @@
                   poll: pollAsyncJobResult
                 }
               },
-							
-							recurringSnapshot: {
-								label: 'Setup recurring snapshots',
-								action: {
-									custom: cloudStack.uiCustom.recurringSnapshots({
-										desc: 'You can setup recurring snapshot schedules by selecting from the available options below and applying your policy preference.',
-										dataProvider: function(args) {
-											$.ajax({
-												url: createURL('listSnapshotPolicies'),
-												data: {
-													volumeid: args.context.volumes[0].id
-												},
-												async: true,
-												dataType: 'json',
-												success: function(data) {
-													args.response.success({
-														data: $.map(
-															data.listsnapshotpoliciesresponse.snapshotpolicy ? data.listsnapshotpoliciesresponse.snapshotpolicy : [],
-															function(snapshot, index) {
-																return {
-																	id: snapshot.id,
-																	type: snapshot.intervaltype,
-																	time: snapshot.intervaltype > 0 ?
-																		snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
-																		snapshot.schedule,
-																	timezone: snapshot.timezone,
-																	keep: snapshot.maxsnaps,
-																	'day-of-week': snapshot.intervaltype == 2 ?
-																		snapshot.schedule.split(':')[2] : null,
-																	'day-of-month': snapshot.intervaltype == 3 ?
-																		snapshot.schedule.split(':')[2] : null
-																};
-															}
-														)
-													});
-												}
-											});
-										},
-										actions: {
-											add: function(args) {
-												var snap = args.snapshot;
 
-												var data = {
-													keep: snap.maxsnaps,
-													timezone: snap.timezone
-												};
+              recurringSnapshot: {
+                label: 'label.snapshot.schedule',
+                action: {
+                  custom: cloudStack.uiCustom.recurringSnapshots({
+                    desc: 'message.snapshot.schedule',
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL('listSnapshotPolicies'),
+                        data: {
+                          volumeid: args.context.volumes[0].id
+                        },
+                        async: true,
+                        dataType: 'json',
+                        success: function(data) {
+                          args.response.success({
+                            data: $.map(
+                              data.listsnapshotpoliciesresponse.snapshotpolicy ? data.listsnapshotpoliciesresponse.snapshotpolicy : [],
+                              function(snapshot, index) {
+                                return {
+                                  id: snapshot.id,
+                                  type: snapshot.intervaltype,
+                                  time: snapshot.intervaltype > 0 ?
+                                    snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
+                                    snapshot.schedule,
+                                  timezone: snapshot.timezone,
+                                  keep: snapshot.maxsnaps,
+                                  'day-of-week': snapshot.intervaltype == 2 ?
+                                    snapshot.schedule.split(':')[2] : null,
+                                  'day-of-month': snapshot.intervaltype == 3 ?
+                                    snapshot.schedule.split(':')[2] : null
+                                };
+                              }
+                            )
+                          });
+                        }
+                      });
+                    },
+                    actions: {
+                      add: function(args) {
+                        var snap = args.snapshot;
 
-												var convertTime = function(minute, hour, meridiem, extra) {
-													var convertedHour = meridiem == 'PM' ?
-																(hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
-													var time = minute + ':' + convertedHour;
-													if (extra) time += ':' + extra;
+                        var data = {
+                          keep: snap.maxsnaps,
+                          timezone: snap.timezone
+                        };
 
-													return time;
-												};
+                        var convertTime = function(minute, hour, meridiem, extra) {
+                          var convertedHour = meridiem == 'PM' ?
+                                (hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
+                          var time = minute + ':' + convertedHour;
+                          if (extra) time += ':' + extra;
 
-												switch (snap['snapshot-type']) {
-												case 'hourly': // Hourly
-													$.extend(data, {
-														schedule: snap.schedule
-													}); break;
+                          return time;
+                        };
 
-												case 'daily': // Daily
-													$.extend(data, {
-														schedule: convertTime(
-															snap['time-minute'],
-															snap['time-hour'],
-															snap['time-meridiem']
-														)
-													}); break;
+                        switch (snap['snapshot-type']) {
+                        case 'hourly': // Hourly
+                          $.extend(data, {
+                            schedule: snap.schedule
+                          }); break;
 
-												case 'weekly': // Weekly
-													$.extend(data, {
-														schedule: convertTime(
-															snap['time-minute'],
-															snap['time-hour'],
-															snap['time-meridiem'],
-															snap['day-of-week']
-														)
-													}); break;
+                        case 'daily': // Daily
+                          $.extend(data, {
+                            schedule: convertTime(
+                              snap['time-minute'],
+                              snap['time-hour'],
+                              snap['time-meridiem']
+                            )
+                          }); break;
 
-												case 'monthly': // Monthly
-													$.extend(data, {
-														schedule: convertTime(
-															snap['time-minute'],
-															snap['time-hour'],
-															snap['time-meridiem'],
-															snap['day-of-month']
-														)
-													}); break;
-												}
+                        case 'weekly': // Weekly
+                          $.extend(data, {
+                            schedule: convertTime(
+                              snap['time-minute'],
+                              snap['time-hour'],
+                              snap['time-meridiem'],
+                              snap['day-of-week']
+                            )
+                          }); break;
 
-												$.ajax({
-													url: createURL('createSnapshotPolicy'),
-													data: {
-														volumeid: args.context.volumes[0].id,
-														intervaltype: snap['snapshot-type'],
-														maxsnaps: snap.maxsnaps,
-														schedule: data.schedule,
-														timezone: snap.timezone
-													},
-													dataType: 'json',
-													async: true,
-													success: function(successData) {
-														var snapshot = successData.createsnapshotpolicyresponse.snapshotpolicy;
+                        case 'monthly': // Monthly
+                          $.extend(data, {
+                            schedule: convertTime(
+                              snap['time-minute'],
+                              snap['time-hour'],
+                              snap['time-meridiem'],
+                              snap['day-of-month']
+                            )
+                          }); break;
+                        }
 
-														args.response.success({
-															data: {
-																id: snapshot.id,
-																type: snapshot.intervaltype,
-																time: snapshot.intervaltype > 0 ?
-																	snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
-																	snapshot.schedule,
-																timezone: snapshot.timezone,
-																keep: snapshot.maxsnaps,
-																'day-of-week': snapshot.intervaltype == 2 ?
-																	snapshot.schedule.split(':')[2] : null,
-																'day-of-month': snapshot.intervaltype == 3 ?
-																	snapshot.schedule.split(':')[2] : null
-															}
-														});
-													}
-												});
-											},
-											remove: function(args) {
-												$.ajax({
-													url: createURL('deleteSnapshotPolicies'),
-													data: {
-														id: args.snapshot.id
-													},
-													dataType: 'json',
-													async: true,
-													success: function(data) {
-														args.response.success();
-													}
-												});
-											}
-										},
+                        $.ajax({
+                          url: createURL('createSnapshotPolicy'),
+                          data: {
+                            volumeid: args.context.volumes[0].id,
+                            intervaltype: snap['snapshot-type'],
+                            maxsnaps: snap.maxsnaps,
+                            schedule: data.schedule,
+                            timezone: snap.timezone
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(successData) {
+                            var snapshot = successData.createsnapshotpolicyresponse.snapshotpolicy;
 
-										// Select data
-										selects: {
-											schedule: function(args) {
-												var time = [];
+                            args.response.success({
+                              data: {
+                                id: snapshot.id,
+                                type: snapshot.intervaltype,
+                                time: snapshot.intervaltype > 0 ?
+                                  snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] :
+                                  snapshot.schedule,
+                                timezone: snapshot.timezone,
+                                keep: snapshot.maxsnaps,
+                                'day-of-week': snapshot.intervaltype == 2 ?
+                                  snapshot.schedule.split(':')[2] : null,
+                                'day-of-month': snapshot.intervaltype == 3 ?
+                                  snapshot.schedule.split(':')[2] : null
+                              }
+                            });
+                          }
+                        });
+                      },
+                      remove: function(args) {
+                        $.ajax({
+                          url: createURL('deleteSnapshotPolicies'),
+                          data: {
+                            id: args.snapshot.id
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(data) {
+                            args.response.success();
+                          }
+                        });
+                      }
+                    },
 
-												for (var i = 1; i <= 59; i++) {
-													time.push({
-														id: i,
-														name: i
-													});
-												}
+                    // Select data
+                    selects: {
+                      schedule: function(args) {
+                        var time = [];
 
-												args.response.success({
-													data: time
-												});
-											},
-											timezone: function(args) {
-												args.response.success({
-													data: $.map(timezoneMap, function(value, key) {
-														return {
-															id: key,
-															name: value
-														};
-													})
-												});
-											},
-											'day-of-week': function(args) {
-												args.response.success({
-													data: [
-														{ id: 1, name: 'Sunday' },
-														{ id: 2, name: 'Monday' },
-														{ id: 3, name: 'Tuesday' },
-														{ id: 4, name: 'Wednesday' },
-														{ id: 5, name: 'Thursday' },
-														{ id: 6, name: 'Friday' },
-														{ id: 7, name: 'Saturday' }
-													]
-												});
-											},
+                        for (var i = 1; i <= 59; i++) {
+                          time.push({
+                            id: i,
+                            name: i
+                          });
+                        }
 
-											'day-of-month': function(args) {
-												var time = [];
+                        args.response.success({
+                          data: time
+                        });
+                      },
+                      timezone: function(args) {
+                        args.response.success({
+                          data: $.map(timezoneMap, function(value, key) {
+                            return {
+                              id: key,
+                              name: value
+                            };
+                          })
+                        });
+                      },
+                      'day-of-week': function(args) {
+                        args.response.success({
+                          data: [
+                            { id: 1, name: 'label.sunday' },
+                            { id: 2, name: 'label.monday' },
+                            { id: 3, name: 'label.tuesday' },
+                            { id: 4, name: 'label.wednesday' },
+                            { id: 5, name: 'label.thursday' },
+                            { id: 6, name: 'label.friday' },
+                            { id: 7, name: 'label.saturday' }
+                          ]
+                        });
+                      },
 
-												for (var i = 1; i <= 31; i++) {
-													time.push({
-														id: i,
-														name: i
-													});
-												}
+                      'day-of-month': function(args) {
+                        var time = [];
 
-												args.response.success({
-													data: time
-												});
-											},
+                        for (var i = 1; i <= 31; i++) {
+                          time.push({
+                            id: i,
+                            name: i
+                          });
+                        }
 
-											'time-hour': function(args) {
-												var time = [];
+                        args.response.success({
+                          data: time
+                        });
+                      },
 
-												for (var i = 1; i <= 12; i++) {
-													time.push({
-														id: i,
-														name: i
-													});
-												}
+                      'time-hour': function(args) {
+                        var time = [];
 
-												args.response.success({
-													data: time
-												});
-											},
+                        for (var i = 1; i <= 12; i++) {
+                          time.push({
+                            id: i,
+                            name: i
+                          });
+                        }
 
-											'time-minute': function(args) {
-												var time = [];
+                        args.response.success({
+                          data: time
+                        });
+                      },
 
-												for (var i = 0; i <= 59; i++) {
-													time.push({
-														id: i < 10 ? '0' + i : i,
-														name: i < 10 ? '0' + i : i
-													});
-												}
+                      'time-minute': function(args) {
+                        var time = [];
 
-												args.response.success({
-													data: time
-												});
-											},
+                        for (var i = 0; i <= 59; i++) {
+                          time.push({
+                            id: i < 10 ? '0' + i : i,
+                            name: i < 10 ? '0' + i : i
+                          });
+                        }
 
-											'time-meridiem': function(args) {
-												args.response.success({
-													data: [
-														{ id: 'AM', name: 'AM' },
-														{ id: 'PM', name: 'PM' }
-													]
-												});
-											}
-										}
-									})
-								},
-								messages: {
-									notification: function(args) {
-										return 'Setup recurring snapshot';
-									}
-								}
-							},            
-													
+                        args.response.success({
+                          data: time
+                        });
+                      },
+
+                      'time-meridiem': function(args) {
+                        args.response.success({
+                          data: [
+                            { id: 'AM', name: 'AM' },
+                            { id: 'PM', name: 'PM' }
+                          ]
+                        });
+                      }
+                    }
+                  })
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.snapshot.schedule';
+                  }
+                }
+              },
+
               attachDisk: {
                 addRow: 'false',
-                label: 'Attach Disk',
+                label: 'label.action.attach.disk',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to attach disk?';
                   },
                   notification: function(args) {
-                    return 'Attach disk';
+                    return 'label.action.attach.disk';
                   }
                 },
                 createForm: {
-                  title: 'Attach Disk',
-                  desc: 'Attach Disk to Instance',
+                  title: 'label.action.attach.disk',
+                  desc: 'label.action.attach.disk',
                   fields: {
                     virtualMachineId: {
-                      label: 'Instance',
+                      label: 'label.instance',
                       select: function(args) {
                         var zoneid = args.context.volumes[0].zoneid;
                         var items = [];
@@ -505,7 +506,7 @@
                             zoneid: zoneid,
                             domainid: args.context.volumes[0].domainid,
                             account: args.context.volumes[0].account
-                          };                          
+                          };
                         } else {
                           data = {
                             zoneid: zoneid,
@@ -523,12 +524,15 @@
                             success: function(json) {
                               var instanceObjs= json.listvirtualmachinesresponse.virtualmachine;
                               $(instanceObjs).each(function() {
-                                items.push({id: this.id, description: this.displayname});
+                                items.push({
+                                  id: this.id, description: this.displayname ?
+                                    this.displayname : this.name
+                                });
                               });
                             }
                           });
                         });
-                        
+
                         args.response.success({data: items});
                       }
                     }
@@ -561,13 +565,13 @@
                 }
               },
               detachDisk: {
-                label: 'Detach disk',
+                label: 'label.action.detach.disk',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to detach disk?';
+                    return 'message.detach.disk';
                   },
                   notification: function(args) {
-                    return 'Detach disk';
+                    return 'label.action.detach.disk';
                   }
                 },
                 action: function(args) {
@@ -601,17 +605,17 @@
               },
 
               downloadVolume: {
-                label: 'Download volume',
+                label: 'label.action.download.volume',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to download volume?';
+                    return 'message.download.volume.confirm';
                   },
                   notification: function(args) {
-                    return 'Downloading volume';
+                    return 'label.action.download.volume';
                   },
                   complete: function(args) {
                     var url = decodeURIComponent(args.url);
-                    var htmlMsg = 'Please click <a href="#">00000</a> to download volume';
+                    var htmlMsg = _l('message.download.volume');
                     var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                     //$infoContainer.find("#info").html(htmlMsg2);
                     return htmlMsg2;
@@ -645,23 +649,23 @@
               },
 
               createTemplate: {
-                label: 'Create template',
+                label: 'label.create.template',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to create template?';
+                    return 'message.create.template';
                   },
                   notification: function(args) {
-                    return 'Create template';
+                    return 'label.create.template';
                   }
                 },
                 createForm: {
-                  title: 'Create Template',
+                  title: 'label.create.template',
                   desc: '',
                   fields: {
-                    name: { label: 'Name', validation: { required: true }},
-                    displayText: { label: 'Description', validation: { required: true }},
+                    name: { label: 'label.name', validation: { required: true }},
+                    displayText: { label: 'label.description', validation: { required: true }},
                     osTypeId: {
-                      label: 'OS Type',
+                      label: 'label.os.type',
                       select: function(args) {
                         $.ajax({
                           url: createURL("listOsTypes"),
@@ -678,8 +682,8 @@
                         });
                       }
                     },
-                    isPublic: { label: 'Public', isBoolean: true },
-                    isPasswordEnabled: { label: 'Password enabled', isBoolean: true }
+                    isPublic: { label: 'label.public', isBoolean: true },
+                    isPasswordEnabled: { label: 'label.password.enabled', isBoolean: true }
                   }
                 },
                 action: function(args) {
@@ -726,27 +730,21 @@
               },
 
               migrateToAnotherStorage: {
-                label: 'Migrate volume to another primary storage',
+                label: 'label.migrate.volume',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to migrate volume to another primary storage.';
-                  },
-                  success: function(args) {
-                    return 'Volume is being migrated to another primary storage.';
+                    return 'message.migrate.volume';
                   },
                   notification: function(args) {
-                    return 'Migrating volume to another primary storage.';
-                  },
-                  complete: function(args) {
-                    return 'Volume has been migrated to another primary storage.';
+                    return 'label.migrate.volume';
                   }
                 },
                 createForm: {
-                  title: 'Migrate volumeto another primary storage',
+                  title: 'label.migrate.volume',
                   desc: '',
                   fields: {
                     storageId: {
-                      label: 'Primary storage',
+                      label: 'label.primary.storage',
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
@@ -794,13 +792,13 @@
               },
 
               'destroy': {
-                label: 'Delete volume',
+                label: 'label.action.delete.volume',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete volume?';
+                    return 'message.action.delete.volume';
                   },
                   notification: function(args) {
-                    return 'Delete volume';
+                    return 'label.action.delete.volume';
                   }
                 },
                 action: function(args) {
@@ -826,7 +824,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
 
                 preFilter: function(args) {
                   var hiddenFields;
@@ -841,16 +839,16 @@
 
                 fields: [
                   {
-                    name: { label: 'Name', isEditable: true }
+                    name: { label: 'label.name', isEditable: true }
                   },
                   {
                     id: { label: 'ID' },
-                    zonename: { label: 'Zone' },
-                    deviceid: { label: 'Device ID' },
-                    state: { label: 'State' },
-                    type: { label: 'Type' },
-                    storagetype: { label: 'Storage Type' },
-                    storage: { label: 'Storage' },
+                    zonename: { label: 'label.zone' },
+                    deviceid: { label: 'label.device.id' },
+                    state: { label: 'label.state' },
+                    type: { label: 'label.type' },
+                    storagetype: { label: 'label.storage.type' },
+                    storage: { label: 'label.storage' },
                     size : {
                       label: 'Size ',
                       converter: function(args) {
@@ -869,11 +867,11 @@
                           return args;
                       }
                     },
-                    vmname: { label: 'VM Name' },
-                    vmdisplayname: { label: 'VM Display Name' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' }
+                    vmname: { label: 'label.vm.name' },
+                    vmdisplayname: { label: 'label.vm.display.name' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' }
                   }
                 ],
 
@@ -912,21 +910,21 @@
               },
               label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' }
             }
-          },         
+          },
 
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-											
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }
+
             var apiCmd = "listSnapshots&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("");
             if(args.context != null) {
               if("volumes" in args.context) {
@@ -1183,7 +1181,7 @@
           }
         }
         else { // Disk not attached
-				  allowedActions.push("destroy");
+          allowedActions.push("destroy");
           allowedActions.push("migrateToAnotherStorage");
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
