@@ -305,7 +305,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         } catch (LibvirtException e) {
             s_logger.debug("Faild to get vol path: " + e.toString());
             throw e;
-        } finally {
+        } finally {l
             try {
                 if (sp != null) {
                     sp.free();
@@ -454,6 +454,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
 		try {
 			sp = conn.storagePoolLookupByUUIDString(name);
+			if (sp.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+				sp.undefine();
+				sp = null;
+			}
 		} catch (LibvirtException e) {
 
 		}
