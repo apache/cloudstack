@@ -57,12 +57,9 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
-<<<<<<< HEAD
-=======
 import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
->>>>>>> 0776447... bug 13470: add cert chain in db, and also open the api to upload a cert chain
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;

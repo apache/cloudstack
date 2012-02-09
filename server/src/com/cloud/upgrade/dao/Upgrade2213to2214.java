@@ -94,6 +94,7 @@ public class Upgrade2213to2214 implements DbUpgrade {
 	@Override
 	public void performDataMigration(Connection conn) {
 		fixIndexes(conn);
+		upgradeCerts(conn);
 	}
 
 	@Override
