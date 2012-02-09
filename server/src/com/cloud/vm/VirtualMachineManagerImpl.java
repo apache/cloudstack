@@ -1682,7 +1682,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
-            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging)) {
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
             	 Host host = _hostDao.findByGuid(info.getHostUuid());
                  if (host != null){
                     s_logger.warn("Stopping a VM which is stopped/destroyed/expunging " + info.name);
