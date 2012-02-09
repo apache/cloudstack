@@ -1599,6 +1599,9 @@
 
 <script language="javascript">
 dictionary = {
+'label.cancel': '<fmt:message key="label.cancel"/>',
+'message.step.1.continue': '<fmt:message key="message.step.1.continue"/>',
+'message.instanceWizard.noTemplates': '<fmt:message key="message.instanceWizard.noTemplates"/>',
 'message.action.change.service.warning.for.instance': '<fmt:message key="message.action.change.service.warning.for.instance"/>',
 'label.service.offering': '<fmt:message key="label.service.offering"/>',
 'label.action.change.service': '<fmt:message key="label.action.change.service"/>',
