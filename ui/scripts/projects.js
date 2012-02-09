@@ -51,9 +51,16 @@
             projectid: projectID
           },
           success: function(json) {
+            var resourceLimits = $.grep(
+              json.listresourcelimitsresponse.resourcelimit,
+              function(resourceLimit) {
+                return resourceLimit.resourcetype != 5;
+              }
+            );
+            
             args.response.success({
               data: $.map(
-                json.listresourcelimitsresponse.resourcelimit,
+                resourceLimits,
                 function(resource) {
                   var resourceMap = {
                     0: {
@@ -75,10 +82,6 @@
                     4: {
                       id: 'template',
                       label: 'Max. Templates'
-                    },
-                    5: {
-                      id: 'project',
-                      label: 'Max. Projects'
                     }
                   };
                   return {
