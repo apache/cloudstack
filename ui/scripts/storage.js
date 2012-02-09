@@ -1168,7 +1168,7 @@
       allowedActions.push("recurringSnapshot");
     }
     if(jsonObj.state != "Allocated") {
-      if(jsonObj.hypervisor != "Ovm") {
+      if(jsonObj.hypervisor != "Ovm" && jsonObj.vmstate == "Stopped") {
         allowedActions.push("downloadVolume");
       }
     }
