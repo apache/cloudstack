@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.rmi.RemoteException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,6 +43,7 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -559,11 +561,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateName, true, false);
             
-            // TODO, need to find out virtual size and physical size
-            long size = new File(installFullPath + "/" + templateName + ".ova").length();
-            postCreatePrivateTemplate(installFullPath, templateId, templateName, size, size);
-            
-            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", size, size);
+            long physicalSize = new File(installFullPath + "/" + templateName + ".ova").length();
+            VmdkProcessor processor = new VmdkProcessor();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            processor.configure("VMDK Processor", params);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateName);
+
+            postCreatePrivateTemplate(installFullPath, templateId, templateName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", physicalSize, virtualSize);
             
         } finally {
             if(clonedVm != null) {
@@ -623,9 +629,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
             
-            long size = new File(installFullName).length();
-            postCreatePrivateTemplate(installFullPath, templateId, templateName, size, size);
-            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", size, size);
+            long physicalSize = new File(installFullPath + "/" + templateName + ".ova").length();
+            VmdkProcessor processor = new VmdkProcessor();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            processor.configure("VMDK Processor", params);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateName);
+
+            postCreatePrivateTemplate(installFullPath, templateId, templateName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", physicalSize, virtualSize);
         
         } catch(Exception e) {
             // TODO, clean up left over files
