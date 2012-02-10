@@ -259,7 +259,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setGateway(config.getGateway());
 
             if (nic.getIp4Address() == null) {
-
                 String guestIp = _networkMgr.acquireGuestIpAddress(config, null);
                 if (guestIp == null) {
                     throw new InsufficientVirtualNetworkCapcityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());

@@ -58,6 +58,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
@@ -136,11 +137,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.setGateway(userSpecified.getGateway());
             } else {
                 String guestNetworkCidr = dc.getGuestNetworkCidr();
-                // guest network cidr can be null for Basic zone
                 if (guestNetworkCidr != null) {
                     String[] cidrTuple = guestNetworkCidr.split("\\/");
                     network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
                     network.setCidr(guestNetworkCidr);
+                } else if (dc.getNetworkType() == NetworkType.Advanced) {
+                    throw new CloudRuntimeException("Can't design network " + network + "; guest CIDR is not configured per zone " + dc);
                 }
             }
 
@@ -150,6 +152,9 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         } else {
             String guestNetworkCidr = dc.getGuestNetworkCidr();
+            if (guestNetworkCidr == null && dc.getNetworkType() == NetworkType.Advanced) {
+                throw new CloudRuntimeException("Can't design network " + network + "; guest CIDR is not configured per zone " + dc);
+            }
             String[] cidrTuple = guestNetworkCidr.split("\\/");
             network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
             network.setCidr(guestNetworkCidr);
