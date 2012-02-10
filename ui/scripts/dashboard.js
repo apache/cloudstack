@@ -225,8 +225,8 @@
             $.ajax({
               url: createURL('listCapacity'),
               data: {
-                listtopused: true,
-                page: 1,
+                sortBy: 'usage',
+                page: 0,
                 pagesize: 8
               },
               success: function(json) {
