@@ -3418,16 +3418,16 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
-  width: 356px;
+  width: 368px;
   height: 274px;
   overflow: auto;
   position: relative;
-  margin: 0 0 0 16px;
+  margin: 0px 0 0 8px;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
   display: block;
-  width: 330px;
+  width: 358px;
   height: 42px;
   color: #000000;
   background: url(../images/bg-gradients.png) 0px -48px;
@@ -3868,7 +3868,7 @@ Dialogs*/
 /** Resources*/
 .system-chart.dashboard.admin {
   width: 97%;
-  height: 95%;
+  height: 96%;
   background: none;
 }
 

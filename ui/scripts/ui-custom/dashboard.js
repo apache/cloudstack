@@ -60,11 +60,15 @@
                         ]);
                       } else {
                         if ($li.attr('concat-value')) {
-                          $arrayElem.html(_l(arrayValue).toString().split('<br/>').map(function(val) {
+                          var val = $(_l(arrayValue).toString().split('<br/>')).map(function() {
+                            var val = this.toString();
                             var concatValue = parseInt($li.attr('concat-value'));
 
-                            return val.length >= concatValue ? val.substring(0, concatValue).concat('...') : val;
-                          }).join('<br/>'));
+                            return val.length >= concatValue ?
+                              val.substring(0, concatValue).concat('...') : val;
+                          }).toArray().join('<br/>');
+
+                          $arrayElem.html(val);
                         } else {
                           $arrayElem.html(_l(arrayValue));
                         }
