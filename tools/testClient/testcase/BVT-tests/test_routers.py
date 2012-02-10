@@ -110,7 +110,240 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         return
 
-    def test_01_router_basic(self):
+    def test_01_router_internal_basic(self):
+        """Test router internal basic zone
+        """
+        # Validate the following
+        # 1. Router only does dhcp
+        # 2. Verify that ports 67 (DHCP) and 53 (DNS) are open on UDP
+        #    by checking status of dnsmasq process
+
+        # Find router associated with user account
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
+
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
+        # Sleep to ensure that router is in ready state before double hop
+        time.sleep(200)
+
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service dnsmasq status"
+                                )
+        res = str(result)
+        self.assertEqual(
+                            res.count("running"),
+                            1,
+                            "Check dnsmasq service is running or not"
+                        )
+        return
+
+    def test_02_router_internal_adv(self):
+        """Test router internal advanced zone
+        """
+        # Validate the following
+        # 1. Router does dhcp, dns, gateway, LB, PF, FW
+        # 2. verify that dhcp, dns ports are open on UDP
+        # 3. dnsmasq, haproxy processes should be running
+
+        # Find router associated with user account
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
+
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
+        # Sleep to ensure that router is in ready state before double hop
+        time.sleep(200)
+
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service dnsmasq status"
+                                )
+        res = str(result)
+        self.assertEqual(
+                            res.count("running"),
+                            1,
+                            "Check dnsmasq service is running or not"
+                        )
+
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "service haproxy status"
+                                )
+        res = str(result)
+        self.assertEqual(
+                            res.count("running"),
+                            1,
+                            "Check haproxy service is running or not"
+                        )
+        return
+
+    def test_03_restart_network_cleanup(self):
+        """Test restart network
+        """
+
+        # Validate the following
+        # 1. When cleanup = true, router is destroyed and a new one created
+        # 2. New router will have new publicIp and linkLocalIp and
+        #    all it's services should resume
+
+        # Find router associated with user account
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
+
+        #Store old values before restart
+        old_linklocalip = router.linklocalip
+
+        timeout = 10
+        # Network should be in Implemented or Setup stage before restart
+        while True:
+            networks = list_networks(
+                                 self.apiclient,
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+            network = networks[0]
+            if network.state in ["Implemented", "Setup"]:
+                break
+            elif timeout == 0:
+                break
+            else:
+                time.sleep(60)
+                timeout = timeout - 1
+
+        cmd = restartNetwork.restartNetworkCmd()
+        cmd.id = network.id
+        cmd.cleanup = True
+        self.apiclient.restartNetwork(cmd)
+
+        # Get router details after restart
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
+
+        self.assertNotEqual(
+                            router.linklocalip,
+                            old_linklocalip,
+                            "Check link-local IP after restart"
+                        )
+        return
+
+    def test_04_restart_network_wo_cleanup(self):
+        """Test restart network without cleanup
+        """
+
+        # Validate the following
+        # 1. When cleanup = false, router is restarted and
+        #    all services inside the router are restarted
+        # 2. check 'uptime' to see if the actual restart happened
+
+        timeout = 10
+        # Network should be in Implemented or Setup stage before restart
+        while True:
+            networks = list_networks(
+                                 self.apiclient,
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+            network = networks[0]
+            if network.state in ["Implemented", "Setup"]:
+                break
+            elif timeout == 0:
+                break
+            else:
+                time.sleep(60)
+                timeout = timeout - 1
+
+        cmd = restartNetwork.restartNetworkCmd()
+        cmd.id = network.id
+        cmd.cleanup = False
+        self.apiclient.restartNetwork(cmd)
+
+        # Get router details after restart
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
+                                    )
+        router = list_router_response[0]
+
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up'
+                           )
+        host = hosts[0]
+
+        res = get_process_status(
+                                host.ipaddress,
+                                self.services['virtual_machine']["publicport"],
+                                self.vm_1.username,
+                                self.vm_1.password,
+                                router.linklocalip,
+                                "uptime"
+                                )
+        # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
+        # Split result to check the uptime
+        result = res[0].split()
+        self.assertEqual(
+                            str(result[1]),
+                            'up',
+                            "Check router is running or not"
+                        )
+        if str(result[3]) == "min,":
+               self.assertEqual(
+                                (int(result[2]) < 3),
+                                True,
+                                "Check uptime is less than 3 mins or not"
+                                )
+        else:
+            self.assertEqual(
+                                str(result[3]),
+                                'sec,',
+                                "Check uptime is in seconds"
+                                )
+        return
+
+    def test_05_router_basic(self):
         """Test router basic setup
         """
 
@@ -166,7 +399,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
-    def test_02_router_advanced(self):
+    def test_06_router_advanced(self):
         """Test router advanced setup
         """
 
@@ -234,7 +467,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
-    def test_03_stop_router(self):
+    def test_07_stop_router(self):
         """Test stop router
         """
 
@@ -267,7 +500,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_04_start_router(self):
+    def test_08_start_router(self):
         """Test start router
         """
 
@@ -300,7 +533,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_05_reboot_router(self):
+    def test_09_reboot_router(self):
         """Test reboot router
         """
 
@@ -341,7 +574,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    def test_06_network_gc(self):
+    def test_10_network_gc(self):
         """Test network GC
         """
 
@@ -376,7 +609,7 @@ class TestRouterServices(cloudstackTestCase):
 
         response = config[0]
 
-        # Wait for network.gc.interval * 2 time
+        # Wait for network.gc.interval * 3 time
         time.sleep(int(response.value) * 3)
 
         #Check status of network router
@@ -391,211 +624,6 @@ class TestRouterServices(cloudstackTestCase):
             router.state,
             'Stopped',
             "Check state of the router after stopping all VMs associated"
-                        )
+            )
         return
 
-    def test_07_router_internal_basic(self):
-        """Test router internal basic zone
-        """
-        # Validate the following
-        # 1. Router only does dhcp
-        # 2. Verify that ports 67 (DHCP) and 53 (DNS) are open on UDP
-        #    by checking status of dnsmasq process
-
-        # Find router associated with user account
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
-                                    )
-        router = list_router_response[0]
-
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=router.zoneid,
-                           type='Routing',
-                           state='Up'
-                           )
-        host = hosts[0]
-
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service dnsmasq status"
-                                )
-        self.assertEqual(
-                            result.count("running"),
-                            1,
-                            "Check dnsmasq service is running or not"
-                        )
-        return
-
-    def test_08_router_internal_adv(self):
-        """Test router internal advanced zone
-        """
-        # Validate the following
-        # 1. Router does dhcp, dns, gateway, LB, PF, FW
-        # 2. verify that dhcp, dns ports are open on UDP
-        # 3. dnsmasq, haproxy processes should be running
-
-        # Find router associated with user account
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
-                                    )
-        router = list_router_response[0]
-
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=router.zoneid,
-                           type='Routing',
-                           state='Up'
-                           )
-        host = hosts[0]
-
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service dnsmasq status"
-                                )
-        self.assertEqual(
-                            result.count("running"),
-                            1,
-                            "Check dnsmasq service is running or not"
-                        )
-
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service haproxy status"
-                                )
-        self.assertEqual(
-                            result.count("running"),
-                            1,
-                            "Check haproxy service is running or not"
-                        )
-        return
-
-    def test_09_restart_network_cleanup(self):
-        """Test restart network
-        """
-
-        # Validate the following
-        # 1. When cleanup = true, router is destroyed and a new one created
-        # 2. New router will have new publicIp and linkLocalIp and
-        #    all it's services should resume
-
-        # Find router associated with user account
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
-                                    )
-        router = list_router_response[0]
-
-        #Store old values before restart
-        old_linklocalip = router.linklocalip
-
-        networks = list_networks(
-                                 self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
-                                 )
-        network = networks[0]
-
-        cmd = restartNetwork.restartNetworkCmd()
-        cmd.id = network.id
-        cmd.cleanup = True
-        self.apiclient.restartNetwork(cmd)
-
-        # Get router details after restart
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
-                                    )
-        router = list_router_response[0]
-
-        self.assertNotEqual(
-                            router.linklocalip,
-                            old_linklocalip,
-                            "Check linklocal IP after restart"
-                        )
-        return
-
-    def test_10_restart_network_wo_cleanup(self):
-        """Test restart network without cleanup
-        """
-
-        # Validate the following
-        # 1. When cleanup = false, router is restarted and
-        #    all services inside the router are restarted
-        # 2. check 'uptime' to see if the actual restart happened
-
-        networks = list_networks(
-                                 self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
-                                 )
-        network = networks[0]
-
-        cmd = restartNetwork.restartNetworkCmd()
-        cmd.id = network.id
-        cmd.cleanup = False
-        self.apiclient.restartNetwork(cmd)
-
-        # Get router details after restart
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
-                                    )
-        router = list_router_response[0]
-
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=router.zoneid,
-                           type='Routing',
-                           state='Up'
-                           )
-        host = hosts[0]
-
-        res = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "uptime"
-                                )
-        # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
-        # Split result to check the uptime
-        result = res.split()
-        self.assertEqual(
-                            str(result[1]),
-                            'up',
-                            "Check router is running or not"
-                        )
-        if str(result[3]) == "min,":
-               self.assertEqual(
-                                (int(result[2]) < 3),
-                                True,
-                                "Check uptime is less than 3 mins or not"
-                                )
-        else:
-            self.assertEqual(
-                                str(result[3]),
-                                'sec,',
-                                "Check uptime is in seconds"
-                                )
-        return

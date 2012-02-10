@@ -16,10 +16,6 @@ import logging
 import string
 import random
 
-def enum(**enums):
-    """Generates Enum"""
-    return type('Enum', (), enums)
-
 def random_gen(size=6, chars=string.ascii_uppercase + string.digits):
     """Generate Random Strings of variable length"""
     return ''.join(random.choice(chars) for x in range(size))
@@ -85,19 +81,19 @@ def get_process_status(hostip, port, username, password, linklocalip, process):
                                           username,
                                           password
                             )
-    ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -p 3922 %s %s" \
+    ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+    ssh_command = ssh_command + "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" \
                         % (linklocalip, process)
 
     # Double hop into router
     timeout = 5
     # Ensure the SSH login is successful
     while True:
-        res = ssh.execute(ssh_command)[0]
-        if res != "Host key verification failed.":
+        res = ssh.execute(ssh_command)
+        if res[0] != "Host key verification failed.":
             break
         elif timeout == 0:
             break
         time.sleep(5)
         timeout = timeout - 1
-
     return res

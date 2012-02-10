@@ -159,9 +159,8 @@ class TestCreateTemplate(cloudstackTestCase):
 
         cls.volume = list_volume[0]
         cls._cleanup = [
-                        cls.virtual_machine,
-                        cls.service_offering,
                         cls.account,
+                        cls.service_offering,
                         cls.disk_offering,
                         ]
         return
@@ -306,7 +305,6 @@ class TestTemplates(cloudstackTestCase):
                                          )
         cls._cleanup = [
                         cls.template_2,
-                        cls.virtual_machine,
                         cls.service_offering,
                         cls.disk_offering,
                         cls.account,
@@ -533,7 +531,8 @@ class TestTemplates(cloudstackTestCase):
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
-                                    id=self.template_2.id
+                                    id=self.template_2.id,
+                                    zoneid=self.services["destzoneid"]
                                     )
         self.assertNotEqual(
                             len(list_template_response),
@@ -552,6 +551,12 @@ class TestTemplates(cloudstackTestCase):
                             self.services["destzoneid"],
                             "Check zone ID of the copied template"
                         )
+
+        # Cleanup- Delete the copied template
+        cmd = deleteTemplate.deleteTemplateCmd()
+        cmd.id = template_response.id
+        cmd.zoneid = self.services["destzoneid"]
+        self.apiclient.deleteTemplate(cmd)
         return
 
     def test_07_list_public_templates(self):

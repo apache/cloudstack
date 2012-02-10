@@ -27,7 +27,10 @@ class Services:
                             "zoneid": 1,
                             # Optional, if specified the mentioned zone will be
                             # used for tests
-                            "mode": 'advanced', # Networking mode: Basic or advanced
+                            "mode": 'advanced',
+                            # Networking mode: Basic or advanced
+                            "lb_switch_wait": 10,
+                            # Time interval after which LB switches the requests
                             "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -37,9 +40,9 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,
+                                    "cpuspeed": 200,
                                     # in MHz
-                                    "memory": 64,
+                                    "memory": 256,
                                     # In MBs
                                     },
                             "account": {
@@ -72,8 +75,8 @@ class Services:
                                     "name": "SSH",
                                     "alg": "roundrobin",
                                     # Algorithm used for load balancing
-                                    "privateport": 80,
-                                    "publicport": 80,
+                                    "privateport": 22,
+                                    "publicport": 2222,
                                 }
                         }
 
@@ -480,9 +483,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                             cls.services["server"]
                                             )
         cls._cleanup = [
-                        cls.vm_1,
-                        cls.vm_2,
-                        cls.non_src_nat_ip,
                         cls.account,
                         cls.service_offering
                         ]
@@ -578,7 +578,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         # If Round Robin Algorithm is chosen,
         # each ssh command should alternate between VMs
         hostnames = [ssh_1.execute("hostname")[0]]
-        time.sleep(20)
+        time.sleep(self.services["lb_switch_wait"])
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
@@ -600,6 +600,13 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         #SSH should pass till there is a last VM associated with LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
+        ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        src_nat_ip_addr.ipaddress,
+                                        self.services['lbrule']["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
+
         hostnames.append(ssh_1.execute("hostname")[0])
         self.assertIn(
                       self.vm_1.name,
@@ -609,6 +616,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         lb_rule.remove(self.apiclient, [self.vm_1])
         with self.assertRaises(Exception):
+            ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        src_nat_ip_addr.ipaddress,
+                                        self.services['lbrule']["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
             ssh_1.execute("hostname")[0]
         return
 
@@ -683,7 +696,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         # If Round Robin Algorithm is chosen,
         # each ssh command should alternate between VMs
         hostnames = [ssh_1.execute("hostname")[0]]
-        time.sleep(20)
+        time.sleep(self.services["lb_switch_wait"])
         ssh_2 = remoteSSHClient.remoteSSHClient(
                                     self.non_src_nat_ip.ipaddress.ipaddress,
                                     self.services['lbrule']["publicport"],
@@ -705,6 +718,13 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         #SSH should pass till there is a last VM associated with LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
+        ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        self.non_src_nat_ip.ipaddress.ipaddress,
+                                        self.services['lbrule']["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
+
         hostnames.append(ssh_1.execute("hostname")[0])
         self.assertIn(
                       self.vm_1.name,
@@ -714,6 +734,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         lb_rule.remove(self.apiclient, [self.vm_1])
         with self.assertRaises(Exception):
+            ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        self.non_src_nat_ip.ipaddress.ipaddress,
+                                        self.services['lbrule']["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
             ssh_1.execute("hostname")[0]
         return
 
@@ -882,9 +908,6 @@ class TestAssignRemoveLB(cloudstackTestCase):
                               )
 
         self.cleanup = [
-                        self.vm_1,
-                        self.vm_2,
-                        self.vm_3,
                         self.account,
                         self.service_offering
                         ]
@@ -914,7 +937,6 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                 self.non_src_nat_ip.id,
                                 self.account.account.name
                               )
-        self.cleanup.append(lb_rule)
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
         #Create SSH client for each VM
         ssh_1 = remoteSSHClient.remoteSSHClient(
@@ -930,16 +952,11 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                         self.vm_2.username,
                                         self.vm_2.password
                                         )
-        ssh_3 = remoteSSHClient.remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_3.username,
-                                        self.vm_3.password
-                                        )
+
         # If Round Robin Algorithm is chosen,
         # each ssh command should alternate between VMs
         res_1 = ssh_1.execute("hostname")[0]
-        time.sleep(20)
+        time.sleep(self.services["lb_switch_wait"])
         res_2 = ssh_2.execute("hostname")[0]
 
         self.assertIn(
@@ -955,7 +972,13 @@ class TestAssignRemoveLB(cloudstackTestCase):
 
         #Removing VM and assigning another VM to LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
-
+        # Again make a SSH connection, as previous is not used after LB remove
+        ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        self.non_src_nat_ip.ipaddress,
+                                        self.services["lbrule"]["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
         res_1 = ssh_1.execute("hostname")[0]
 
         self.assertIn(
@@ -966,8 +989,20 @@ class TestAssignRemoveLB(cloudstackTestCase):
 
         lb_rule.assign(self.apiclient, [self.vm_3])
 
+        ssh_1 = remoteSSHClient.remoteSSHClient(
+                                        self.non_src_nat_ip.ipaddress,
+                                        self.services["lbrule"]["publicport"],
+                                        self.vm_1.username,
+                                        self.vm_1.password
+                                        )
+        ssh_3 = remoteSSHClient.remoteSSHClient(
+                                        self.non_src_nat_ip.ipaddress,
+                                        self.services["lbrule"]["publicport"],
+                                        self.vm_3.username,
+                                        self.vm_3.password
+                                        )
         res_1 = ssh_1.execute("hostname")[0]
-        time.sleep(20)
+        time.sleep(self.services["lb_switch_wait"])
         res_3 = ssh_3.execute("hostname")[0]
 
         self.assertIn(
@@ -982,7 +1017,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                       )
         return
 
-    def teardown(self):
+    def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
@@ -1054,7 +1089,7 @@ class TestReleaseIP(cloudstackTestCase):
                         ]
         return
 
-    def teardown(self):
+    def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
     def test_releaseIP(self):
@@ -1177,8 +1212,12 @@ class TestDeleteAccount(cloudstackTestCase):
         # 3. The domR should have been expunged for this account
 
         self.account.delete(self.apiclient)
+        interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
         # Sleep to ensure that all resources are deleted
-        time.sleep(120)
+        time.sleep(int(interval[0].value))
 
         # ListLoadBalancerRules should not list
         # associated rules with deleted account

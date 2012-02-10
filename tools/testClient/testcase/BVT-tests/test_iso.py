@@ -61,11 +61,13 @@ class Services:
             "bootable": True, # For edit template
             "passwordenabled": True,
             "ostypeid": 12,
+            # CentOS 5.3 (64 bit)
             "domainid": 1,
             "zoneid": 1,
             # Optional, if specified the mentioned zone will be
             # used for tests
             "mode": 'advanced'
+            # Networking mode: Basic or Advanced
         }
 
 
@@ -150,7 +152,8 @@ class TestISO(cloudstackTestCase):
         cls.services["iso_1"]["zoneid"] = cls.zone.id
         cls.services["iso_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
-        #Create an account, network, VM and IP addresses
+
+        #Create an account, ISOs etc.
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
@@ -168,7 +171,7 @@ class TestISO(cloudstackTestCase):
         try:
             cls.api_client = fetch_api_client()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -258,7 +261,7 @@ class TestISO(cloudstackTestCase):
         # 1. UI should not show the deleted ISP
         # 2. database (vm_template table) should not contain deleted ISO
 
-        self.iso_1.delete(cls.api_client)
+        self.iso_1.delete(self.apiclient)
 
         #ListIsos to verify deleted ISO is properly deleted
         list_iso_response = list_isos(
@@ -375,7 +378,8 @@ class TestISO(cloudstackTestCase):
         #Verify ISO is copied to another zone using ListIsos
         list_iso_response = list_isos(
                                       self.apiclient,
-                                      id=self.iso_2.id
+                                      id=self.iso_2.id,
+                                      zoneid=self.services["destzoneid"]
                                       )
 
         iso_response = list_iso_response[0]
@@ -395,4 +399,10 @@ class TestISO(cloudstackTestCase):
                             self.services["destzoneid"],
                             "Check zone ID of the copied ISO"
                         )
+
+        # Cleanup- Delete the copied ISO
+        cmd = deleteIso.deleteIsoCmd()
+        cmd.id = iso_response.id
+        cmd.zoneid = self.services["destzoneid"]
+        self.apiclient.deleteIso(cmd)
         return

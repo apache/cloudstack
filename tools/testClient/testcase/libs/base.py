@@ -44,6 +44,36 @@ class Account:
         cmd.id = self.account.id
         apiclient.deleteAccount(cmd)
 
+class User:
+    """ User Life Cycle """
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, account, domainid):
+        cmd = createUser.createUserCmd()
+        """Creates an user"""
+
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.email = services["email"]
+        cmd.firstname = services["firstname"]
+        cmd.lastname = services["lastname"]
+
+        # Password Encoding
+        mdf = hashlib.md5()
+        mdf.update(services["password"])
+        cmd.password = mdf.hexdigest()
+        cmd.username = "-".join([services["username"], random_gen()])
+        user = apiclient.createUser(cmd)
+
+        return User(user.__dict__)
+
+    def delete(self, apiclient):
+        """Delete an account"""
+        cmd = deleteUser.deleteUserCmd()
+        cmd.id = self.id
+        apiclient.deleteUser(cmd)
 
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
@@ -145,6 +175,9 @@ class VirtualMachine:
 
     def get_ssh_client(self, ipaddress=None, reconnect=False):
         """Get SSH object of VM"""
+
+        # If NAT Rules are not created while VM deployment in Advanced mode
+        # then, IP address must be passed
         if ipaddress != None:
             self.ssh_ip = ipaddress
         if reconnect:
@@ -251,10 +284,14 @@ class Snapshot:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, volume_id):
+    def create(cls, apiclient, volume_id, account=None, domainid=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -603,8 +640,9 @@ class LoadBalancerRule:
     def remove(self, apiclient, vms):
         """Remove virtual machines from load balancing rule"""
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
-        cmd.virtualmachineids = [vm.id for vm in vms]
-        self.apiclient.removeFromLoadBalancerRule(cmd)
+        cmd.id = self.id
+        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        apiclient.removeFromLoadBalancerRule(cmd)
         return
 
 

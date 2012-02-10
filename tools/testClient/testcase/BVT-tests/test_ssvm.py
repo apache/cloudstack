@@ -82,7 +82,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         list_zones_response = list_zones(self.apiclient)
-
+        # Number of Sec storage VMs = No of Zones
         self.assertEqual(
                             len(list_ssvm_response),
                             len(list_zones_response),
@@ -174,7 +174,7 @@ class TestSSVMs(cloudstackTestCase):
                             "Check list System VMs response"
                         )
         list_zones_response = list_zones(self.apiclient)
-
+        # Number of Console Proxy VMs = No of Zones
         self.assertEqual(
                             len(list_cpvm_response),
                             len(list_zones_response),
@@ -290,7 +290,6 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         #Check status of cloud service
-
         result = get_process_status(
                                 host.ipaddress,
                                 self.services['host']["publicport"],
@@ -302,7 +301,7 @@ class TestSSVMs(cloudstackTestCase):
         res = str(result)
         # cloud.com service (type=secstorage) is running: process id: 2346
         self.assertEqual(
-                            res.count("running"),
+                            res.count("is running"),
                             1,
                             "Check cloud service is running or not"
                         )
@@ -357,7 +356,7 @@ class TestSSVMs(cloudstackTestCase):
                                 )
         res = str(result)
         self.assertEqual(
-                            res.count("running"),
+                            res.count("is running"),
                             1,
                             "Check cloud service is running or not"
                         )

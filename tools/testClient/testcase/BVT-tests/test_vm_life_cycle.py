@@ -102,6 +102,7 @@ class Services:
                     "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
                 },
             "diskdevice": '/dev/xvdd',
+            # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
             "hostid": 5,
             #Migrate VM to hostid
@@ -111,6 +112,7 @@ class Services:
             # Optional, if specified the mentioned zone will be
             # used for tests
             "mode":'advanced',
+            # Networking mode: Basic or Advanced
         }
 
 class TestDeployVM(cloudstackTestCase):
@@ -314,7 +316,6 @@ class TestVMLifeCycle(cloudstackTestCase):
                             "Stopped",
                             "Check virtual machine is in stopped state"
                         )
-
         return
 
     def test_02_start_vm(self):
@@ -345,19 +346,6 @@ class TestVMLifeCycle(cloudstackTestCase):
                             "Running",
                             "Check virtual machine is in running state"
                         )
-
-        self.debug(
-            "Verify SSH Access for virtual machine: %s" \
-            % self.small_virtual_machine.id
-            )
-        # SSH to check whether VM is Up and Running
-        try:
-            self.small_virtual_machine.get_ssh_client()
-        except Exception as e:
-            self.fail(
-                "SSH Access failed for %s: %s" \
-                % (self.small_virtual_machine.ipaddress, e)
-                )
         return
 
     def test_03_reboot_vm(self):
@@ -389,66 +377,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    def test_04_change_offering_medium(self):
-        """Change Offering to a medium capacity
-        """
-        # Validate the following
-        # 1. Log in to the Vm .We should see that the CPU and memory Info of
-        #    this Vm matches the one specified for "Medium" service offering. 
-        # 2. Using  listVM command verify that this Vm 
-        #    has Medium service offering Id.
-
-        self.small_virtual_machine.stop(self.apiclient)
-
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
-        cmd.id = self.small_virtual_machine.id
-        cmd.serviceofferingid = self.medium_offering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
-
-        self.small_virtual_machine.start(self.apiclient)
-
-        list_vm_response = list_virtual_machines(
-                                            self.apiclient,
-                                            id=self.small_virtual_machine.id
-                                            )
-        # Sleep to ensure that VM is started properly
-        time.sleep(60)
-        try:
-            ssh = self.small_virtual_machine.get_ssh_client()
-        except Exception as e:
-            self.fail(
-                    "SSH Access failed for %s: %s" % \
-                    (self.small_virtual_machine.ipaddress, e)
-                    )
-
-        cpuinfo = ssh.execute("cat /proc/cpuinfo")
-
-        cpu_cnt = len([i for i in cpuinfo if "processor" in i])
-        #'cpu MHz\t\t: 2660.499'
-        cpu_speed = [i for i in cpuinfo if "cpu MHz" in i][0].split()[3]
-
-        meminfo = ssh.execute("cat /proc/meminfo")
-        #MemTotal:        1017464 kB
-        total_mem = [i for i in meminfo if "MemTotal" in i][0].split()[1]
-
-        self.assertEqual(
-                            cpu_cnt,
-                            self.medium_offering.cpunumber,
-                            "Check CPU Count for medium offering"
-                        )
-
-        self.assertEqual(
-                            list_vm_response[0].cpuspeed,
-                            self.medium_offering.cpuspeed,
-                            "Check CPU Speed for medium offering"
-                        )
-        self.assertEqual(
-                            total_mem,
-                            self.medium_offering.memory,
-                            "Check Memory(kb) for medium offering"
-                        )
-
-    def test_05_change_offering_small(self):
+    def test_04_change_offering_small(self):
         """Change Offering to a small capacity
         """
 
@@ -510,6 +439,67 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.cleanup.append(self.medium_virtual_machine)
         return
 
+    def test_05_change_offering_medium(self):
+        """Change Offering to a medium capacity
+        """
+        # Validate the following
+        # 1. Log in to the Vm .We should see that the CPU and memory Info of
+        #    this Vm matches the one specified for "Medium" service offering. 
+        # 2. Using  listVM command verify that this Vm 
+        #    has Medium service offering Id.
+
+        # Sleep to ensure that VM is in proper state
+        time.sleep(120)
+        self.small_virtual_machine.stop(self.apiclient)
+
+        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd.id = self.small_virtual_machine.id
+        cmd.serviceofferingid = self.medium_offering.id
+        self.apiclient.changeServiceForVirtualMachine(cmd)
+
+        self.small_virtual_machine.start(self.apiclient)
+
+        list_vm_response = list_virtual_machines(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
+        # Sleep to ensure that VM is started properly
+        time.sleep(120)
+        try:
+            ssh_client = self.small_virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail(
+                    "SSH Access failed for %s: %s" % \
+                    (self.small_virtual_machine.ipaddress, e)
+                    )
+
+        cpuinfo = ssh_client.execute("cat /proc/cpuinfo")
+
+        cpu_cnt = len([i for i in cpuinfo if "processor" in i])
+        #'cpu MHz\t\t: 2660.499'
+        cpu_speed = [i for i in cpuinfo if "cpu MHz" in i][0].split()[3]
+
+        meminfo = ssh_client.execute("cat /proc/meminfo")
+        #MemTotal:        1017464 kB
+        total_mem = [i for i in meminfo if "MemTotal" in i][0].split()[1]
+
+        self.assertEqual(
+                            cpu_cnt,
+                            self.medium_offering.cpunumber,
+                            "Check CPU Count for medium offering"
+                        )
+
+        self.assertEqual(
+                            list_vm_response[0].cpuspeed,
+                            self.medium_offering.cpuspeed,
+                            "Check CPU Speed for medium offering"
+                        )
+        self.assertEqual(
+                            total_mem,
+                            self.medium_offering.memory,
+                            "Check Memory(kb) for medium offering"
+                        )
+        return
 
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
@@ -581,16 +571,14 @@ class TestVMLifeCycle(cloudstackTestCase):
         #    should be "Running" and the host should be the host 
         #    to which the VM was migrated to
 
-        self.small_virtual_machine.start(self.apiclient)
-
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
         cmd.hostid = self.services["hostid"]
-        cmd.virtualmachineid = self.small_virtual_machine.id
+        cmd.virtualmachineid = self.medium_virtual_machine.id
         self.apiclient.migrateVirtualMachine(cmd)
 
         list_vm_response = list_virtual_machines(
                                             self.apiclient,
-                                            id=self.small_virtual_machine.id
+                                            id=self.medium_virtual_machine.id
                                             )
         self.assertNotEqual(
                             list_vm_response,
@@ -602,7 +590,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(
                             vm_response.id,
-                            self.small_virtual_machine.id,
+                            self.medium_virtual_machine.id,
                             "Check virtual machine ID of migrated VM"
                         )
 
@@ -682,14 +670,21 @@ class TestVMLifeCycle(cloudstackTestCase):
         #Disk /dev/xvdd: 4393 MB, 4393723904 bytes
 
         # Res may contain more than one strings depending on environment
-        # Split res with space as delimiter to form new list (result)   
+        # Split strings to form new list which is used for assertion on ISO size 
         result = []
         for i in res:
             for k in i.split():
                 result.append(k)
 
+        # Get ISO size
+        iso_response = list_isos(
+                                 self.apiclient,
+                                 id=iso.id
+                                 )
+        iso_size = iso_response[0].size
+
         self.assertEqual(
-                         str(iso.size) in result,
+                         str(iso_size) in result,
                          True,
                          "Check size of the attached ISO"
                          )

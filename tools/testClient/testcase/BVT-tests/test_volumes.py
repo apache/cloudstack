@@ -61,7 +61,7 @@ class Services:
                         "privateport": 22,
                         "publicport": 22,
                         "protocol": 'TCP',
-                        "diskdevice": "/dev/xvda",
+                        "diskdevice": "/dev/xvdb",
                         "ostypeid": 12,
                         "zoneid": 1,
                         # Optional, if specified the mentioned zone will be
@@ -131,6 +131,11 @@ class TestCreateVolume(cloudstackTestCase):
     def test_01_create_volume(self):
         """Test Volume creation for all Disk Offerings (incl. custom)
         """
+
+        # Validate the following
+        # 1. Create volumes from the different sizes
+        # 2. Verify the size of volume with acrual size allocated 
+
         self.volumes = []
         for k, v in self.services["volume_offerings"].items():
             volume = Volume.create(
@@ -173,18 +178,12 @@ class TestCreateVolume(cloudstackTestCase):
             ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-            c = "fdisk -l|grep %s1|head -1" % self.services["diskdevice"]
+            c = "fdisk -l"
             res = ssh.execute(c)
             # Disk /dev/sda doesn't contain a valid partition table
             # Disk /dev/sda: 21.5 GB, 21474836480 bytes
 
-            # Res may return more than one lines
-            # Split res with space as delimiter to form new list (result)   
-            result = []
-            for i in res:
-                for k in i.split():
-                    result.append(k)
-
+            result = str(res)
             self.assertEqual(
                              str(list_volume_response[0].size) in result,
                              True,
@@ -193,7 +192,7 @@ class TestCreateVolume(cloudstackTestCase):
             self.virtual_machine.detach_volume(self.apiClient, volume)
 
     def tearDown(self):
-        #Clean up, terminate the created templates
+        #Clean up, terminate the created volumes
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -226,7 +225,7 @@ class TestVolumes(cloudstackTestCase):
         cls.services["template"] = template.id
         cls.services["diskofferingid"] = cls.disk_offering.id
 
-        # Create VMs, NAT Rules etc
+        # Create VMs, VMs etc
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"]
@@ -313,7 +312,7 @@ class TestVolumes(cloudstackTestCase):
         # A proper exception should be raised;
         # downloading attach VM is not allowed
         with self.assertRaises(Exception):
-            self.apiClient.deleteVolume(cmd)
+            self.apiClient.extractVolume(cmd)
 
     def test_04_delete_attached_volume(self):
         """Delete a Volume attached to a VM
