@@ -2,6 +2,7 @@
 div.panel div.list-view {
   position: relative;
   overflow-x: hidden;
+  margin-top: 0px;
 }
 
 div.toolbar {
@@ -10,6 +11,10 @@ div.toolbar {
 
 div.panel div.list-view div.fixed-header {
   top: expression(this.offsetParent.scrollTop + 30);
+}
+
+div.panel div.list-view div.data-table table.body {
+  top: 78px;
 }
 
 .detail-view .main-groups {
@@ -71,5 +76,19 @@ div.panel div.list-view div.fixed-header {
   overflow: auto;
   overflow-x: hidden;
   top: expression(this.offsetParent.scrollTop);
+}
+
+table tbody td,
+table th {
+  padding: 9px 5px 8px 0px;
+  border-right: 1px solid #BFBFBF;
+  color: #495A76;
+  clear: none;
+  width: auto;
+  width: 88px;
+  min-width: 88px;
+  font-size: 12px;
+  overflow: hidden;
+  vertical-align: middle;
 }
 

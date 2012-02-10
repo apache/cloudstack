@@ -72,7 +72,7 @@
             );
       $table = $mainContainer;
       var $theadContainer = $('<div>').addClass('fixed-header').prependTo($table);
-      var $theadTable = $('<table>').appendTo($theadContainer);
+      var $theadTable = $('<table>').appendTo($theadContainer).attr('nowrap', 'nowrap');
       var $thead = $table.find('thead').remove().appendTo($theadTable);
 
       return $thead;
@@ -218,7 +218,10 @@
 
     var init = function() {
       var noSelect = options && options.noSelect == true ? true : false;
-      if (!$table.closest('div.data-table').size() && !$table.hasClass('no-split')) splitTable();
+      if (!$table.closest('div.data-table').size() && !$table.hasClass('no-split')) {
+        splitTable();
+        $table.find('tbody').closest('table').addClass('body');
+      }
 
       $table.find('th').bind('mousemove mouseout', hoverResizableEvent);
       $table.find('th').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
