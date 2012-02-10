@@ -363,7 +363,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("vm manager", UserVmManagerImpl.class);
         addManager("upgrade manager", UpgradeManagerImpl.class);
         addManager("StorageManager", StorageManagerImpl.class);
-        addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("Alert Manager", AlertManagerImpl.class);
         addManager("Template Manager", TemplateManagerImpl.class);
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
@@ -390,6 +389,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("SwiftManager", SwiftManagerImpl.class);
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerDeviceManager", ExternalLoadBalancerDeviceManagerImpl.class);
+        addManager("HA Manager", HighAvailabilityManagerImpl.class);
     }
 
     @Override
