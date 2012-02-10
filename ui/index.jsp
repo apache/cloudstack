@@ -1101,7 +1101,6 @@
         <div class="dashboard-container sub alerts last">
           <div class="top">
             <div class="title"><span></span></div>
-            <div class="button view-all"></div>
           </div>
           <ul data-item="hostAlerts">
             <li class="error" concat-value="50">
