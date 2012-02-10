@@ -33,7 +33,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.user.Account;
 
-@Implementation(description="Generates usage records", responseObject=SuccessResponse.class)
+@Implementation(description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
 public class GenerateUsageRecordsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GenerateUsageRecordsCmd.class.getName());
 
