@@ -1658,11 +1658,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
-        // Guest cidr is required for Advanced zone creation; error out when the
-        // parameter specified for Basic zone
-        if (zoneType == NetworkType.Advanced && guestCidr == null && !isSecurityGroupEnabled) {
-            throw new InvalidParameterValueException("guestCidrAddress parameter is required for Advanced zone creation");
-        } else if (zoneType == NetworkType.Basic && guestCidr != null) {
+        // error out when the parameter specified for Basic zone
+        if (zoneType == NetworkType.Basic && guestCidr != null) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
         }
 
