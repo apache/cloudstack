@@ -203,7 +203,7 @@
 					guestcidraddress: { 
 					  label: 'Guest CIDR', 
 						defaultValue: '10.1.1.0/24',
-						validation: { required: true }
+						validation: { required: false }
 					},
           ispublic: {
             isReverse: true,
