@@ -719,9 +719,9 @@
                           select: function(args) {
                             args.response.success({
                               data: [
-                                { name: 'roundrobin', description: 'label.round.robin' },
-                                { name: 'leastconn', description: 'label.least.connections' },
-                                { name: 'source', description: 'label.source' }
+                                { name: 'roundrobin', description: _l('label.round.robin') },
+                                { name: 'leastconn', description: _l('label.least.connections') },
+                                { name: 'source', description: _l('label.source') }
                               ]
                             });
                           }
@@ -1731,9 +1731,9 @@
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { name: 'roundrobin', description: 'label.round.robin' },
-                              { name: 'leastconn', description: 'label.least.connections' },
-                              { name: 'source', description: 'label.source' }
+                              { name: 'roundrobin', description: _l('label.round.robin') },
+                              { name: 'leastconn', description: _l('label.least.connections') },
+                              { name: 'source', description: _l('label.source') }
                             ]
                           });
                         }
