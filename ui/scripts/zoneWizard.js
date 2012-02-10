@@ -602,12 +602,12 @@
         fields: {
           name: {
             label: 'Name',
-            validation: { required: true }
+            validation: { required: false }  // Primary storage is not required. User can use local storage instead of primary storage.
           },
 
           protocol: {
             label: 'Protocol',
-            validation: { required: true },
+            validation: { required: false }, // Primary storage is not required. User can use local storage instead of primary storage.
             select: function(args) {
               var selectedClusterObj = {
                 hypervisortype: args.context.zones[0].hypervisor
@@ -824,52 +824,52 @@
           },
           server: {
             label: 'Server',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //nfs
           path: {
             label: 'Path',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //iscsi
           iqn: {
             label: 'Target IQN',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
           lun: {
             label: 'LUN #',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
 					//clvm
 					volumegroup: {
 						label: 'Volume Group',
-						validation: { required: true },
+						validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
 						isHidden: true
 					},
 					
           //vmfs
           vCenterDataCenter: {
             label: 'vCenter Datacenter',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
           vCenterDataStore: {
             label: 'vCenter Datastore',
-            validation: { required: true },
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //always appear (begin)
           storageTags: {
             label: 'Storage Tags',
-            validation: { required: false }
+            validation: { required: false }   // Primary storage is not required. User can use local storage instead of primary storage.
           }
           //always appear (end)
         }
@@ -2181,6 +2181,14 @@
         },
         
         addPrimaryStorage: function(args) {
+				  var server = args.data.primaryStorage.server;				 
+					if(server == null || server.length == 0) {
+					  stepFns.addSecondaryStorage({
+							data: args.data
+						});						
+						return;
+					}
+									
           message('Creating primary storage');
 					
 					var array1 = [];
@@ -2188,8 +2196,7 @@
 					array1.push("&podId=" + args.data.returnedPod.id);
 					array1.push("&clusterid=" + args.data.returnedCluster.id);
 					array1.push("&name=" + todb(args.data.primaryStorage.name));
-
-					var server = args.data.primaryStorage.server;
+					
 					var url = null;
 					if (args.data.primaryStorage.protocol == "nfs") {
 						//var path = trim($thisDialog.find("#add_pool_path").val());
