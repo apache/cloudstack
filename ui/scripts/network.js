@@ -1003,6 +1003,7 @@
               $.ajax({
                 url: createURL('listRemoteAccessVpns'),
                 data: {
+                  listAll: true,
                   publicipid: item.id
                 },
                 dataType: 'json',
