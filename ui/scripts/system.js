@@ -4,7 +4,8 @@
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
-
+  var networklabelDisplayForBlankValue = "Use default gateway";
+	
   var getTrafficType = function(physicalNetwork, typeID) {
     var trafficType = {};
 
@@ -24,17 +25,29 @@
       }
     });
 
+		if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
+		  trafficType.xennetworklabel = networklabelDisplayForBlankValue;
+		if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
+		  trafficType.kvmnetworklabel = networklabelDisplayForBlankValue;
+		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
+		  trafficType.vmwarenetworklabel = networklabelDisplayForBlankValue;
+		
     return trafficType;
   };
 
   var updateTrafficLabels = function(trafficType, labels, complete) {
-    $.ajax({
-      url: createURL('updateTrafficType'),
+    var array1 = [];
+		if(labels.xennetworklabel != networklabelDisplayForBlankValue)
+		  array1.push("&xennetworklabel=" + labels.xennetworklabel);
+		if(labels.kvmnetworklabel != networklabelDisplayForBlankValue)
+		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
+		if(labels.vmwarenetworklabel != networklabelDisplayForBlankValue)
+		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
+				
+		$.ajax({
+      url: createURL('updateTrafficType' + array1.join("")),
       data: {
-        id: trafficType.id,
-        xennetworklabel: labels.xennetworklabel,
-        kvmnetworklabel: labels.kvmnetworklabel,
-        vmwarenetworklabel: labels.vmwarenetworklabel
+        id: trafficType.id       
       },
       success: function(json) {
         var jobID = json.updatetraffictyperesponse.jobid;
