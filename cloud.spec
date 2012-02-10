@@ -487,6 +487,8 @@ fi
 %{_javadir}/%{name}-jnetpcap.jar
 %{_javadir}/%{name}-junit.jar
 %{_javadir}/%{name}-jasypt-1.8.jar
+%{_javadir}/%{name}-commons-configuration-1.8
+%{_javadir}/%{name}-commons-collections-3.2.1
 
 
 %files core
