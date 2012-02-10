@@ -348,80 +348,80 @@
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
                   array1.push("&displaytext=" + todb(args.data.displaytext));
-									
+
                   //args.data.networkdomain is null when networkdomain field is hidden
                   if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
                     array1.push("&networkdomain=" + todb(args.data.networkdomain));
-									
+
                   //args.data.networkofferingid is null when networkofferingid field is hidden
-                  if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) { 									 
-                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));			
-										
-										if(args.context.networks[0].type == "Isolated") { //Isolated network
-											cloudStack.dialog.confirm({
-												message: 'Do you want to keep the current guest network CIDR unchanged?',
-												action: function() { //"Yes"	button is clicked											
-													array1.push("&changecidr=false");																								
-													$.ajax({
-														url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-														dataType: "json",
-														success: function(json) {
-															var jid = json.updatenetworkresponse.jobid;
-															args.response.success(
-																{_custom:
-																 {jobId: jid,
-																	getUpdatedItem: function(json) {
-																		var item = json.queryasyncjobresultresponse.jobresult.network;
-																		return {data: item};
-																	}
-																 }
-																}
-															);
-														}
-													});		
-												},
-												cancelAction: function() { //"Cancel" button is clicked								
-													array1.push("&changecidr=true");												
-													$.ajax({
-														url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-														dataType: "json",
-														success: function(json) {
-															var jid = json.updatenetworkresponse.jobid;
-															args.response.success(
-																{_custom:
-																 {jobId: jid,
-																	getUpdatedItem: function(json) {
-																		var item = json.queryasyncjobresultresponse.jobresult.network;
-																		return {data: item};
-																	}
-																 }
-																}
-															);
-														}
-													});		
-												}
-											});	
-											return;										
-										}																
-									}
-									
-									$.ajax({
-										url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
-										dataType: "json",
-										success: function(json) {
-											var jid = json.updatenetworkresponse.jobid;
-											args.response.success(
-												{_custom:
-												 {jobId: jid,
-													getUpdatedItem: function(json) {
-														var item = json.queryasyncjobresultresponse.jobresult.network;
-														return {data: item};
-													}
-												 }
-												}
-											);
-										}
-									});		
+                  if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
+                    array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+
+                    if(args.context.networks[0].type == "Isolated") { //Isolated network
+                      cloudStack.dialog.confirm({
+                        message: 'Do you want to keep the current guest network CIDR unchanged?',
+                        action: function() { //"Yes"	button is clicked
+                          array1.push("&changecidr=false");
+                          $.ajax({
+                            url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                            dataType: "json",
+                            success: function(json) {
+                              var jid = json.updatenetworkresponse.jobid;
+                              args.response.success(
+                                {_custom:
+                                 {jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    var item = json.queryasyncjobresultresponse.jobresult.network;
+                                    return {data: item};
+                                  }
+                                 }
+                                }
+                              );
+                            }
+                          });
+                        },
+                        cancelAction: function() { //"Cancel" button is clicked
+                          array1.push("&changecidr=true");
+                          $.ajax({
+                            url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                            dataType: "json",
+                            success: function(json) {
+                              var jid = json.updatenetworkresponse.jobid;
+                              args.response.success(
+                                {_custom:
+                                 {jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    var item = json.queryasyncjobresultresponse.jobresult.network;
+                                    return {data: item};
+                                  }
+                                 }
+                                }
+                              );
+                            }
+                          });
+                        }
+                      });
+                      return;
+                    }
+                  }
+
+                  $.ajax({
+                    url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {
+                            var item = json.queryasyncjobresultresponse.jobresult.network;
+                            return {data: item};
+                          }
+                         }
+                        }
+                      );
+                    }
+                  });
                 },
                 notification: {
                   poll: pollAsyncJobResult
@@ -863,27 +863,27 @@
               label: 'IP',
               converter: function(text, item) {
                 if (item.issourcenat) {
-                  return text + ' [Source NAT]';
+                  return text + ' [' + _l('label.source.nat') + ']';
                 }
 
                 return text;
               }
             },
-            zonename: { label: 'Zone' },
+            zonename: { label: 'label.zone' },
             //vlanname: { label: 'VLAN' },
-            iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },
-            account: { label: 'Account' },
+            iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
+            account: { label: 'label.account' },
             state: {
               converter: function(str) {
                 // For localization
                 return str;
               },
-              label: 'State', indicator: { 'Allocated': 'on', 'Released': 'off' }
+              label: 'label.state', indicator: { 'Allocated': 'on', 'Released': 'off' }
             }
           },
           actions: {
             add: {
-              label: 'Acquire new IP',
+              label: 'label.acquire.new.ip',
               addRow: 'true',
               action: function(args) {
                 var apiCmd = "associateIpAddress";
@@ -921,10 +921,10 @@
 
               messages: {
                 confirm: function(args) {
-                  return 'Please confirm that you would like to acquire a net IP for this network.';
+                  return 'message.acquire.new.ip';
                 },
                 notification: function(args) {
-                  return 'Allocated IP';
+                  return 'label.acquire.new.ip';
                 }
               },
 
@@ -1035,7 +1035,7 @@
             },
             actions: {
               enableVPN: {
-                label: 'Enable VPN',
+                label: 'label.enable.vpn',
                 action: function(args) {
                   $.ajax({
                     url: createURL('createRemoteAccessVpn'),
@@ -1069,14 +1069,15 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want VPN enabled for this IP address.';
+                    return 'message.enable.vpn';
                   },
                   notification: function(args) {
-                    return 'Enabled VPN';
+                    return 'label.enable.vpn';
                   },
                   complete: function(args) {
-                    return 'VPN is now enabled for IP ' + args.vpn.publicip + '.'
-                      + '<br/>Your IPsec pre-shared key is:<br/>' + args.vpn.presharedkey;
+                    return _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>'
+                      + _l('message.enabled.vpn.ip.sec') + '<br/>'
+                      + args.vpn.presharedkey;
                   }
                 },
                 notification: {
@@ -1084,7 +1085,7 @@
                 }
               },
               disableVPN: {
-                label: 'Disable VPN',
+                label: 'label.disable.vpn',
                 action: function(args) {
                   $.ajax({
                     url: createURL('deleteRemoteAccessVpn'),
@@ -1114,10 +1115,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable VPN?';
+                    return 'message.disable.vpn';
                   },
                   notification: function(args) {
-                    return 'Disabled VPN';
+                    return 'label.disable.vpn';
                   }
                 },
                 notification: {
@@ -1125,7 +1126,7 @@
                 }
               },
               enableStaticNAT: {
-                label: 'Enable static NAT',
+                label: 'label.action.enable.static.NAT',
                 action: {
                   noAdd: true,
                   custom: cloudStack.uiCustom.enableStaticNAT({
@@ -1181,7 +1182,7 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'Enabled Static NAT';
+                    return 'label.action.enable.static.NAT';
                   }
                 },
                 notification: {
@@ -1197,7 +1198,7 @@
                 }
               },
               disableStaticNAT: {
-                label: 'Disable static NAT',
+                label: 'label.action.disable.static.NAT',
                 action: function(args) {
                   $.ajax({
                     url: createURL('disableStaticNat'),
@@ -1232,10 +1233,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable static NAT?';
+                    return 'message.action.disable.static.NAT';
                   },
                   notification: function(args) {
-                    return 'Disable Static NAT';
+                    return 'label.action.disable.static.NAT';
                   }
                 },
                 notification: {
@@ -1243,7 +1244,7 @@
                 }
               },
               destroy: {
-                label: 'Release IP',
+                label: 'label.action.release.ip',
                 action: function(args) {
                   $.ajax({
                     url: createURL('disassociateIpAddress'),
@@ -1281,10 +1282,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to release this IP?';
+                    return 'message.action.release.ip';
                   },
                   notification: function(args) {
-                    return 'Release IP';
+                    return 'label.action.release.ip';
                   }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -1298,20 +1299,20 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
-                    id: { label: 'id' },
-                    networkname: { label: 'Network' },
-                    networktype: { label: 'Network Type' },
-                    networkid: { label: 'Network ID' },
-                    associatednetworkid: { label: 'Assoc. Network ID' },
-                    state: { label: 'State' },
-                    issourcenat: { label: 'Source NAT', converter: cloudStack.converters.toBooleanText },
-                    isstaticnat: { label: 'Static NAT', converter: cloudStack.converters.toBooleanText },
-                    iselastic: { label: 'Elastic', converter: cloudStack.converters.toBooleanText },
-                    virtualmachinedisplayname: { label: 'Virtual machine' },
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' },
-                    zonename: { label: 'Zone' },
-                    vlanname: { label: 'VLAN' }
+                    id: { label: 'label.id' },
+                    networkname: { label: 'label.network' },
+                    networktype: { label: 'label.network.type' },
+                    networkid: { label: 'label.network.id' },
+                    associatednetworkid: { label: 'label.associated.network.id' },
+                    state: { label: 'label.state' },
+                    issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
+                    isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
+                    iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
+                    virtualmachinedisplayname: { label: 'label.vm.name' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    zonename: { label: 'label.zone' },
+                    vlanname: { label: 'label.vlan' }
                   }
                 ],
 
@@ -1369,7 +1370,7 @@
                 }
               },
               ipRules: {
-                title: 'Configuration',
+                title: 'label.configuration',
                 custom: cloudStack.ipRules({
                   preFilter: function(args) {
                     var disallowedActions = [];
@@ -1411,9 +1412,9 @@
                   firewall: {
                     noSelect: true,
                     fields: {
-                      'cidrlist': { edit: true, label: 'Source CIDR' },
+                      'cidrlist': { edit: true, label: 'label.cidr.list' },
                       'protocol': {
-                        label: 'Protocol',
+                        label: 'label.protocol',
                         select: function(args) {
                           args.$select.change(function() {
                             var $inputs = args.$form.find('input');
@@ -1449,17 +1450,17 @@
                           });
                         }
                       },
-                      'startport': { edit: true, label: 'Start Port' },
-                      'endport': { edit: true, label: 'End Port' },
-                      'icmptype': { edit: true, label: 'ICMP Type', isDisabled: true },
-                      'icmpcode': { edit: true, label: 'ICMP Code', isDisabled: true },
+                      'startport': { edit: true, label: 'label.start.port' },
+                      'endport': { edit: true, label: 'label.end.port' },
+                      'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
+                      'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
                       'add-rule': {
-                        label: 'Add Rule',
+                        label: 'label.add.rule',
                         addButton: true
                       }
                     },
                     add: {
-                      label: 'Add',
+                      label: 'label.add',
                       action: function(args) {
                         $.ajax({
                           url: createURL('createFirewallRule'),
@@ -1473,7 +1474,7 @@
                                 jobId: data.createfirewallruleresponse.jobid
                               },
                               notification: {
-                                label: 'Add firewall rule',
+                                label: 'label.add.firewall',
                                 poll: pollAsyncJobResult
                               }
                             });
@@ -1486,7 +1487,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Remove Rule',
+                        label: 'label.action.delete.firewall',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteFirewallRule'),
@@ -1503,7 +1504,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove firewall rule',
+                                  label: 'label.action.delete.firewall',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -1584,7 +1585,7 @@
                     noSelect: true,
                     fields: {
                       'protocol': {
-                        label: 'Protocol',
+                        label: 'label.protocol',
                         select: function(args) {
                           args.response.success({
                             data: [
@@ -1594,15 +1595,15 @@
                           });
                         }
                       },
-                      'startport': { edit: true, label: 'Start Port' },
-                      'endport': { edit: true, label: 'End Port' },
+                      'startport': { edit: true, label: 'label.start.port' },
+                      'endport': { edit: true, label: 'label.end.port' },
                       'add-rule': {
-                        label: 'Add Rule',
+                        label: 'label.add.rule',
                         addButton: true
                       }
                     },
                     add: {
-                      label: 'Add',
+                      label: 'label.add',
                       action: function(args) {
                         $.ajax({
                           url: createURL('createIpForwardingRule'),
@@ -1616,7 +1617,7 @@
                                 jobId: data.createipforwardingruleresponse.jobid
                               },
                               notification: {
-                                label: 'Added static NAT rule',
+                                label: 'label.add.static.nat.rule',
                                 poll: pollAsyncJobResult
                               }
                             });
@@ -1629,7 +1630,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Remove Rule',
+                        label: 'label.remove.rule',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteIpForwardingRule'),
@@ -1645,7 +1646,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Removed static NAT rule',
+                                  label: 'label.remove.static.nat.rule',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -1722,35 +1723,35 @@
                     }),
                     multipleAdd: true,
                     fields: {
-                      'name': { edit: true, label: 'Name' },
-                      'publicport': { edit: true, label: 'Public Port' },
-                      'privateport': { edit: true, label: 'Private Port' },
+                      'name': { edit: true, label: 'label.name' },
+                      'publicport': { edit: true, label: 'label.public.port' },
+                      'privateport': { edit: true, label: 'label.private.port' },
                       'algorithm': {
-                        label: 'Algorithm',
+                        label: 'label.algorithm',
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { name: 'roundrobin', description: 'Round-robin' },
-                              { name: 'leastconn', description: 'Least connections' },
-                              { name: 'source', description: 'Source' }
+                              { name: 'roundrobin', description: 'label.round.robin' },
+                              { name: 'leastconn', description: 'label.least.connections' },
+                              { name: 'source', description: 'label.source' }
                             ]
                           });
                         }
                       },
                       'sticky': {
-                        label: 'Stickiness',
+                        label: 'label.stickiness',
                         custom: {
-                          buttonLabel: 'Configure',
+                          buttonLabel: 'label.configure',
                           action: cloudStack.lbStickyPolicy.dialog()
                         }
                       },
                       'add-vm': {
-                        label: 'Add VMs',
+                        label: 'label.add.vms',
                         addButton: true
                       }
                     },
                     add: {
-                      label: 'Add VMs',
+                      label: 'label.add.vms',
                       action: function(args) {
                         var openFirewall = false;
                         var data = {
@@ -1841,7 +1842,7 @@
                     },
                     actions: {
                       destroy:  {
-                        label: 'Remove load balancer rule',
+                        label: 'label.action.delete.load.balancer',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteLoadBalancerRule'),
@@ -1858,7 +1859,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove load balancer rule',
+                                  label: 'label.action.delete.load.balancer',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -1872,7 +1873,7 @@
                     },
                     itemActions: {
                       add: {
-                        label: 'Add VM(s) to load balancer rule',
+                        label: 'label.add.vms.to.lb',
                         action: function(args) {
                           $.ajax({
                             url: createURL('assignToLoadBalancerRule'),
@@ -1901,7 +1902,7 @@
                         }
                       },
                       destroy: {
-                        label: 'Remove VM from load balancer',
+                        label: 'label.remove.vm.from.lb',
                         action: function(args) {
                           $.ajax({
                             url: createURL('removeFromLoadBalancerRule'),
@@ -1915,7 +1916,7 @@
                                   _custom: {
                                     jobId: json.removefromloadbalancerruleresponse.jobid
                                   },
-                                  desc: 'Remove VM from load balancer rule',
+                                  desc: 'label.remove.vm.from.lb',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -2057,17 +2058,17 @@
                       //'private-ports': {
                       privateport: {
                         edit: true,
-                        label: 'Private Port',
+                        label: 'label.private.port'
                         //range: ['privateport', 'privateendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
                       },
                       //'public-ports': {
                       publicport: {
                         edit: true,
-                        label: 'Public Port',
+                        label: 'label.public.port'
                         //range: ['publicport', 'publicendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
                       },
                       'protocol': {
-                        label: 'Protocol',
+                        label: 'label.protocol',
                         select: function(args) {
                           args.response.success({
                             data: [
@@ -2078,12 +2079,12 @@
                         }
                       },
                       'add-vm': {
-                        label: 'Add VM',
+                        label: 'label.add.vm',
                         addButton: true
                       }
                     },
                     add: {
-                      label: 'Add VM',
+                      label: 'label.add.vm',
                       action: function(args) {
                         var openFirewall = false;
 
@@ -2116,7 +2117,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Remove port forwarding rule',
+                        label: 'label.remove.pf',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deletePortForwardingRule'),
@@ -2133,7 +2134,7 @@
                                   jobId: jobID
                                 },
                                 notification: {
-                                  label: 'Remove port forwarding rule',
+                                  label: 'label.remove.pf',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -2211,24 +2212,24 @@
                       $('<ul>').addClass('info')
                         .append(
                           // VPN IP
-                          $('<li>').addClass('ip').html('Your VPN access is currently enabled and can be accessed via the IP: ')
+                          $('<li>').addClass('ip').html(_l('message.enabled.vpn') + ' ')
                             .append($('<strong>').html(ipAddress))
                         )
                         .append(
                           // PSK
-                          $('<li>').addClass('psk').html('Your IPSec pre-shared key is: ')
+                          $('<li>').addClass('psk').html(_l('message.enabled.vpn.ip.sec') + ' ')
                             .append($('<strong>').html(psk))
                         )
                     ).multiEdit({
                       context: args.context,
                       noSelect: true,
                       fields: {
-                        'username': { edit: true, label: 'Username' },
-                        'password': { edit: true, isPassword: true, label: 'Password' },
-                        'add-user': { addButton: true, label: 'Add user' }
+                        'username': { edit: true, label: 'label.username' },
+                        'password': { edit: true, isPassword: true, label: 'label.password' },
+                        'add-user': { addButton: true, label: 'label.add.user' }
                       },
                       add: {
-                        label: 'Add user',
+                        label: 'label.add.user',
                         action: function(args) {
                           $.ajax({
                             url: createURL('addVpnUser'),
@@ -2240,7 +2241,7 @@
                                   jobId: data.addvpnuserresponse.jobid
                                 },
                                 notification: {
-                                  label: 'Added VPN user',
+                                  label: 'label.add.vpn.user',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -2253,7 +2254,7 @@
                       },
                       actions: {
                         destroy: {
-                          label: 'Remove user',
+                          label: 'label.action.delete.user',
                           action: function(args) {
                             $.ajax({
                               url: createURL('removeVpnUser'),
@@ -2271,7 +2272,7 @@
                                     jobId: jobID
                                   },
                                   notification: {
-                                    label: 'Removed VPN user',
+                                    label: 'label.delete.vpn.user',
                                     poll: pollAsyncJobResult
                                   }
                                 });
@@ -2305,20 +2306,20 @@
       },
       securityGroups: {
         type: 'select',
-        title: 'Security Groups',
+        title: 'label.menu.security.groups',
         id: 'securityGroups',
         listView: {
           id: 'securityGroups',
-          label: 'Security Groups',
+          label: 'label.menu.security.groups',
           fields: {
-            name: { label: 'Name', editable: true },
-            description: { label: 'Description' },
-            domain: { label: 'Domain' },
-            account: { label: 'Account' }
+            name: { label: 'label.name', editable: true },
+            description: { label: 'label.description' },
+            domain: { label: 'label.domain' },
+            account: { label: 'label.account' }
           },
           actions: {
             add: {
-              label: 'Add security group',
+              label: 'label.add.security.group',
 
               action: function(args) {
                 $.ajax({
@@ -2343,7 +2344,7 @@
                 poll: function(args) {
                   args.complete({
                     actionFilter: actionFilters.securityGroups
-                  })
+                  });
                 }
               },
 
@@ -2352,16 +2353,16 @@
                   return 'Are you sure you want to add ' + args.name + '?';
                 },
                 notification: function(args) {
-                  return 'Created security group';
+                  return 'label.add.security.group';
                 }
               },
 
               createForm: {
-                title: 'New security group',
-                desc: 'Please name your security group.',
+                title: 'label.add.security.group',
+                desc: 'label.add.security.group',
                 fields: {
-                  name: { label: 'Name' },
-                  description: { label: 'Description' }
+                  name: { label: 'label.name' },
+                  description: { label: 'label.description' }
                 }
               }
             }
@@ -2398,16 +2399,16 @@
             name: 'Security group details',
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'ID' },
-                    description: { label: 'Description' },
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' }
+                    description: { label: 'label.description' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' }
                   }
                 ],
 
@@ -2429,13 +2430,13 @@
                 }
               },
               ingressRules: {
-                title: 'Ingress Rules',
+                title: 'label.ingress.rule',
                 custom: cloudStack.uiCustom.securityRules({
                   noSelect: true,
                   noHeaderActionsColumn: true,
                   fields: {
                     'protocol': {
-                      label: 'Protocol',
+                      label: 'label.protocol',
                       select: function(args) {
                         args.$select.change(function() {
                           var $inputs = args.$form.find('th, td');
@@ -2477,24 +2478,24 @@
                         });
                       }
                     },
-                    'startport': { edit: true, label: 'Start Port' },
-                    'endport': { edit: true, label: 'End Port' },
-                    'icmptype': { edit: true, label: 'ICMP Type', isHidden: true },
-                    'icmpcode': { edit: true, label: 'ICMP Code', isHidden: true },
+                    'startport': { edit: true, label: 'label.start.port' },
+                    'endport': { edit: true, label: 'label.end.port' },
+                    'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
+                    'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
                     'cidr': { edit: true, label: 'CIDR', isHidden: true },
                     'accountname': {
                       edit: true,
-                      label: 'Account, Security Group',
+                      label: _l('label.account') + ', ' + _l('label.security.group'),
                       isHidden: true,
                       range: ['accountname', 'securitygroup']
                     },
                     'add-rule': {
-                      label: 'Add',
+                      label: 'label.add',
                       addButton: true
                     }
                   },
                   add: {
-                    label: 'Add',
+                    label: 'label.add',
                     action: function(args) {
                       var data = {
                         securitygroupid: args.context.securityGroups[0].id,
@@ -2537,7 +2538,7 @@
                               jobId: jobId
                             },
                             notification: {
-                              label: 'Add new ingress rule',
+                              label: 'label.add.ingress.rule',
                               poll: pollAsyncJobResult
                             }
                           });
@@ -2547,7 +2548,7 @@
                   },
                   actions: {
                     destroy: {
-                      label: 'Remove Rule',
+                      label: 'label.remove.rule',
                       action: function(args) {
                         $.ajax({
                           url: createURL('revokeSecurityGroupIngress'),
@@ -2566,7 +2567,7 @@
                                 jobId: jobID
                               },
                               notification: {
-                                label: 'Revoke ingress rule',
+                                label: 'label.remove.ingress.rule',
                                 poll: pollAsyncJobResult
                               }
                             });
@@ -2605,13 +2606,13 @@
                 })
               },
               egressRules: {
-                title: 'Egress Rules',
+                title: 'label.egress.rule',
                 custom: cloudStack.uiCustom.securityRules({
                   noSelect: true,
                   noHeaderActionsColumn: true,
                   fields: {
                     'protocol': {
-                      label: 'Protocol',
+                      label: 'label.protocol',
                       select: function(args) {
                         args.$select.change(function() {
                           var $inputs = args.$form.find('th, td');
@@ -2653,24 +2654,24 @@
                         });
                       }
                     },
-                    'startport': { edit: true, label: 'Start Port' },
-                    'endport': { edit: true, label: 'End Port' },
-                    'icmptype': { edit: true, label: 'ICMP Type', isHidden: true },
-                    'icmpcode': { edit: true, label: 'ICMP Code', isHidden: true },
+                    'startport': { edit: true, label: 'label.start.port' },
+                    'endport': { edit: true, label: 'label.end.port' },
+                    'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
+                    'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
                     'cidr': { edit: true, label: 'CIDR', isHidden: true },
                     'accountname': {
                       edit: true,
-                      label: 'Account, Security Group',
+                      label: _l('label.account') + ', ' + _l('label.security.group'),
                       isHidden: true,
                       range: ['accountname', 'securitygroup']
                     },
                     'add-rule': {
-                      label: 'Add',
+                      label: 'label.add',
                       addButton: true
                     }
                   },
                   add: {
-                    label: 'Add',
+                    label: 'label.add',
                     action: function(args) {
                       var data = {
                         securitygroupid: args.context.securityGroups[0].id,
@@ -2713,7 +2714,7 @@
                               jobId: jobId
                             },
                             notification: {
-                              label: 'Add new egress rule',
+                              label: 'label.add.egress.rule',
                               poll: pollAsyncJobResult
                             }
                           });
@@ -2723,7 +2724,7 @@
                   },
                   actions: {
                     destroy: {
-                      label: 'Remove Rule',
+                      label: 'label.remove.rule',
                       action: function(args) {
                         $.ajax({
                           url: createURL('revokeSecurityGroupEgress'),
@@ -2742,7 +2743,7 @@
                                 jobId: jobID
                               },
                               notification: {
-                                label: 'Revoke egress rule',
+                                label: 'label.remove.egress.rule',
                                 poll: pollAsyncJobResult
                               }
                             });
@@ -2784,13 +2785,13 @@
 
             actions: {
               destroy: {
-                label: 'Delete security group',
+                label: 'label.action.delete.security.group',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete ' + args.name + '?';
+                    return 'message.action.delete.security.group';
                   },
                   notification: function(args) {
-                    return 'Deleted security group: ' + args.name;
+                    return 'label.action.delete.security.group';
                   }
                 },
                 action: function(args) {
@@ -2815,7 +2816,7 @@
                     });
                   }
                 }
-              },
+              }
             }
           }
         }
