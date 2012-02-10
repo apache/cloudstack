@@ -906,8 +906,9 @@
 					var array1 = [];					
 					var networkType = args.data.zone.networkType;  //"Basic", "Advanced"			
 					array1.push("&networktype=" + todb(networkType));
-					if(networkType == "Advanced") {						
-            array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));						
+					if(networkType == "Advanced") {		
+            if(args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)					
+              array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));						
           }
 					
 					array1.push("&name=" + todb(args.data.zone.name));
