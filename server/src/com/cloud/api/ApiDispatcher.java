@@ -175,12 +175,12 @@ public class ApiDispatcher {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
 
         if (cmd instanceof BaseListCmd) {
-        	Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
-        	Long pageSize = null;
-        	if (pageSizeObj != null) {
-        		pageSize = Long.valueOf((String)pageSizeObj);
-        	}
-        	
+            Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
+            Long pageSize = null;
+            if (pageSizeObj != null) {
+                pageSize = Long.valueOf((String) pageSizeObj);
+            }
+
             if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && pageSize != BaseListCmd.PAGESIZE_UNLIMITED)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
             } else if (pageSize == null && (unpackedParams.get(ApiConstants.PAGE) != null)) {
@@ -206,13 +206,14 @@ public class ApiDispatcher {
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
-            
+
             IdentityMapper identityMapper = field.getAnnotation(IdentityMapper.class);
 
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to missing parameter " + parameterAnnotation.name());
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to missing parameter "
+                            + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -224,20 +225,23 @@ public class ApiDispatcher {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to invalid value " + paramObj + " for parameter "
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj
+                        + " for parameter "
                         + parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8));
+                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + ", please pass dates in the format mentioned in the api documentation");
-            } catch (InvalidParameterValueException invEx){
-            	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to invalid value. " + invEx.getMessage());
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
+                        + ", please pass dates in the format mentioned in the api documentation");
+            } catch (InvalidParameterValueException invEx) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (CloudRuntimeException cloudEx) {
-                // FIXME: Better error message? This only happens if the API command is not executable, which typically means
+                // FIXME: Better error message? This only happens if the API command is not executable, which typically
+// means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8));
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
         }
     }
@@ -252,28 +256,29 @@ public class ApiDispatcher {
                 field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
                 break;
             case DATE:
-                // This piece of code is for maintaining backward compatibility and support both the date formats(Bug 9724)
+                // This piece of code is for maintaining backward compatibility and support both the date formats(Bug
+// 9724)
                 // Do the date massaging for ListEventsCmd only
-                if(cmdObj instanceof ListEventsCmd){
+                if (cmdObj instanceof ListEventsCmd) {
                     boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
-                    if (isObjInNewDateFormat){
+                    if (isObjInNewDateFormat) {
                         DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
                         synchronized (newFormat) {
-                            field.set(cmdObj, newFormat.parse(paramObj.toString()));        
+                            field.set(cmdObj, newFormat.parse(paramObj.toString()));
                         }
-                    }else{
+                    } else {
                         DateFormat format = BaseCmd.INPUT_FORMAT;
                         synchronized (format) {
-                            Date date = format.parse(paramObj.toString());                             
-                            if (field.getName().equals("startDate")){
+                            Date date = format.parse(paramObj.toString());
+                            if (field.getName().equals("startDate")) {
                                 date = massageDate(date, 0, 0, 0);
-                            }else if (field.getName().equals("endDate")){
+                            } else if (field.getName().equals("endDate")) {
                                 date = massageDate(date, 23, 59, 59);
                             }
                             field.set(cmdObj, date);
                         }
-                    }                    
-                }else{
+                    }
+                } else {
                     DateFormat format = BaseCmd.INPUT_FORMAT;
                     format.setLenient(false);
                     synchronized (format) {
@@ -297,16 +302,15 @@ public class ApiDispatcher {
                     case INTEGER:
                         listParam.add(Integer.valueOf(token));
                         break;
-                    case LONG:
-                    	{
-                    		Long val = null;
-	                    	if(identityMapper != null)
-	                    		val = s_instance._identityDao.getIdentityId(identityMapper, token);
-	                    	else
-	                    		val = Long.valueOf(token);
-	                    	
-	                        listParam.add(val);
-                    	}
+                    case LONG: {
+                        Long val = null;
+                        if (identityMapper != null)
+                            val = s_instance._identityDao.getIdentityId(identityMapper, token);
+                        else
+                            val = Long.valueOf(token);
+
+                        listParam.add(val);
+                    }
                         break;
                     case SHORT:
                         listParam.add(Short.valueOf(token));
@@ -318,19 +322,19 @@ public class ApiDispatcher {
                 field.set(cmdObj, listParam);
                 break;
             case LONG:
-            	if(identityMapper != null)
-            		field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
-            	else
-            		field.set(cmdObj, Long.valueOf(paramObj.toString()));
+                if (identityMapper != null)
+                    field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
+                else
+                    field.set(cmdObj, Long.valueOf(paramObj.toString()));
                 break;
             case SHORT:
                 field.set(cmdObj, Short.valueOf(paramObj.toString()));
                 break;
             case STRING:
-            	if((paramObj != null) && paramObj.toString().length() > annotation.length()){
-            		s_logger.error("Value greater than max allowed length "+annotation.length()+" for param: "+field.getName());
-            		throw new InvalidParameterValueException("Value greater than max allowed length "+annotation.length()+" for param: "+field.getName());
-            	}            	
+                if ((paramObj != null) && paramObj.toString().length() > annotation.length()) {
+                    s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                    throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                }
                 field.set(cmdObj, paramObj.toString());
                 break;
             case TZDATE:
@@ -346,12 +350,12 @@ public class ApiDispatcher {
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
     }
-    
+
     private static boolean isObjInNewDateFormat(String string) {
         Matcher matcher = BaseCmd.newInputDateFormat.matcher(string);
         return matcher.matches();
     }
-    
+
     private static Date massageDate(Date date, int hourOfDay, int minute, int second) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
@@ -360,10 +364,10 @@ public class ApiDispatcher {
         cal.set(Calendar.SECOND, second);
         return cal.getTime();
     }
-    
+
     public static void plugService(BaseCmd cmd) {
-        
-        if(!ApiServer.isPluggableServiceCommand(cmd.getClass().getName())){
+
+        if (!ApiServer.isPluggableServiceCommand(cmd.getClass().getName())) {
             return;
         }
         Class<?> clazz = cmd.getClass();
@@ -379,12 +383,12 @@ public class ApiDispatcher {
                 Object instance = null;
                 if (PluggableService.class.isAssignableFrom(fc)) {
                     instance = locator.getPluggableService(fc);
-                } 
-        
+                }
+
                 if (instance == null) {
                     throw new CloudRuntimeException("Unable to plug service " + fc.getSimpleName() + " in command " + clazz.getSimpleName());
                 }
-                
+
                 try {
                     field.setAccessible(true);
                     field.set(cmd, instance);

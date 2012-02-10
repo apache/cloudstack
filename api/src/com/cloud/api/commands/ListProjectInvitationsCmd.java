@@ -31,30 +31,31 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.projects.ProjectInvitation;
 
-@Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectInvitationResponse.class, since="3.0.0")
+@Implementation(description = "Lists projects and provides detailed information for listed projects", responseObject = ProjectInvitationResponse.class, since = "3.0.0")
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectInvitationsCmd.class.getName());
     private static final String s_name = "listprojectinvitationsresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list by project id")
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
+    @IdentityMapper(entityTableName = "projects")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.LONG, description = "list by project id")
     private Long projectId;
-   
-    @Parameter(name=ApiConstants.ACTIVE_ONLY, type=CommandType.BOOLEAN, description="if true, list only active invitations - having Pending state and ones that are not timed out yet")
+
+    @Parameter(name = ApiConstants.ACTIVE_ONLY, type = CommandType.BOOLEAN, description = "if true, list only active invitations - having Pending state and ones that are not timed out yet")
     private boolean activeOnly;
-    
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list invitations by state")
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list invitations by state")
     private String state;
-    
-    @IdentityMapper(entityTableName="project_invitations")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list invitations by id")
+
+    @IdentityMapper(entityTableName = "project_invitations")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "list invitations by id")
     private Long id;
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
     public Long getProjectId() {
         return projectId;
     }
@@ -66,7 +67,7 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public String getState() {
         return state;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -75,14 +76,15 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-    
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
-    public void execute(){
-        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(), this.isRecursive(), this.listAll());
+    public void execute() {
+        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, this.getAccountName(), this.getDomainId(), state, activeOnly, this.getStartIndex(), this.getPageSizeVal(),
+                this.isRecursive(), this.listAll());
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
         List<ProjectInvitationResponse> projectInvitationResponses = new ArrayList<ProjectInvitationResponse>();
         for (ProjectInvitation invite : invites) {
@@ -91,7 +93,8 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
         }
         response.setResponses(projectInvitationResponses);
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
+
 }

@@ -1,4 +1,3 @@
-
 package com.cloud.projects;
 
 import java.util.List;
@@ -11,10 +10,11 @@ public interface ProjectManager extends ProjectService {
     boolean canModifyProjectAccount(Account caller, long accountId);
 
     boolean deleteAccountFromProject(long projectId, long accountId);
-    
+
     List<Long> listPermittedProjectAccounts(long accountId);
 
-	boolean projectInviteRequired();
-	
-	boolean allowUserToCreateProject();
+    boolean projectInviteRequired();
+
+    boolean allowUserToCreateProject();
+
 }

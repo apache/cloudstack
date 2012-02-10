@@ -23,13 +23,14 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ProjectDao extends GenericDao<ProjectVO, Long>{
+public interface ProjectDao extends GenericDao<ProjectVO, Long> {
 
     ProjectVO findByNameAndDomain(String name, long domainId);
 
     Long countProjectsForDomain(long domainId);
-    
+
     ProjectVO findByProjectAccountId(long projectAccountId);
-    
+
     List<ProjectVO> listByState(Project.State state);
+
 }

@@ -16,49 +16,49 @@ import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="project_invitations")
+@Table(name = "project_invitations")
 public class ProjectInvitationVO implements ProjectInvitation, Identity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="project_id")
+
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long forAccountId;
-    
-    @Column(name="domain_id")
+
+    @Column(name = "domain_id")
     private Long inDomainId;
-    
-    @Column(name="token")
+
+    @Column(name = "token")
     private String token;
-    
-    @Column(name="email")
+
+    @Column(name = "email")
     private String email;
-    
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state = State.Pending;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
-    
-    protected ProjectInvitationVO(){
-    	this.uuid = UUID.randomUUID().toString();
+
+    protected ProjectInvitationVO() {
+        this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public ProjectInvitationVO(long projectId, Long accountId, Long domainId, String email, String token) {
-       this.forAccountId = accountId;
-       this.inDomainId = domainId;
-       this.projectId = projectId;
-       this.email = email;
-       this.token = token;
-   		this.uuid = UUID.randomUUID().toString();
+        this.forAccountId = accountId;
+        this.inDomainId = domainId;
+        this.projectId = projectId;
+        this.email = email;
+        this.token = token;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -89,8 +89,8 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     @Override
     public Date getCreated() {
         return created;
-    } 
-    
+    }
+
     @Override
     public State getState() {
         return state;
@@ -99,7 +99,7 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     public void setState(State state) {
         this.state = state;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("ProjectInvitation[");
@@ -111,21 +111,21 @@ public class ProjectInvitationVO implements ProjectInvitation, Identity {
     public Long getInDomainId() {
         return inDomainId;
     }
-    
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
-    
+
     @Override
     public long getDomainId() {
         return inDomainId == null ? -1 : inDomainId;
     }
-    
+
     @Override
     public long getAccountId() {
         return forAccountId == null ? -1 : forAccountId;

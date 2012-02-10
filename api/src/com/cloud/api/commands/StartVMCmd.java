@@ -40,31 +40,31 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
-@Implementation(responseObject=UserVmResponse.class, description="Starts a virtual machine.")
+@Implementation(responseObject = UserVmResponse.class, description = "Starts a virtual machine.")
 public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
     private static final String s_name = "startvirtualmachineresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @IdentityMapper(entityTableName = "vm_instance")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -72,7 +72,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-    	return "virtualmachine";
+        return "virtualmachine";
     }
 
     @Override
@@ -82,7 +82,8 @@ public class StartVMCmd extends BaseAsyncCmd {
             return vm.getAccountId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
+// tracked
     }
 
     @Override
@@ -92,44 +93,45 @@ public class StartVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "starting user vm: " + getId();
+        return "starting user vm: " + getId();
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.VirtualMachine;
+        return AsyncJob.Type.VirtualMachine;
     }
-    
+
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException{
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         try {
-            UserContext.current().setEventDetails("Vm Id: "+getId());
+            UserContext.current().setEventDetails("Vm Id: " + getId());
             UserVm result;
             if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-            	result = _bareMetalVmService.startVirtualMachine(this);
+                result = _bareMetalVmService.startVirtualMachine(this);
             } else {
-            	result = _userVmService.startVirtualMachine(this);
+                result = _userVmService.startVirtualMachine(this);
             }
-            
-            if (result != null){
+
+            if (result != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start a vm");
             }
-        }catch (ConcurrentOperationException ex) {
+        } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }catch (StorageUnavailableException ex) {
+        } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        }catch (ExecutionException ex) {
+        } catch (ExecutionException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }        
+        }
     }
+
 }

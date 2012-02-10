@@ -298,17 +298,18 @@ public class ManagementServerImpl implements ManagementServer {
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
-    @Inject ProjectManager _projectMgr;
+    @Inject
+    ProjectManager _projectMgr;
     private final ResourceManager _resourceMgr;
     @Inject
     SnapshotManager _snapshotMgr;
-    
+
     private final KeystoreManager _ksMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
 
     private final Map<String, String> _configs;
-    
+
     private final StatsCollector _statsCollector;
 
     private final Map<String, Boolean> _availableIdsMap;
@@ -366,18 +367,17 @@ public class ManagementServerImpl implements ManagementServer {
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
-        
+
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
-        
-        
+
         _hostAllocators = locator.getAdapters(HostAllocator.class);
         if (_hostAllocators == null || !_hostAllocators.isSet()) {
             s_logger.error("Unable to find HostAllocators");
         }
-        
+
         String value = _configs.get("account.cleanup.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
-        
+
         _statsCollector = StatsCollector.getInstance(_configs);
 
         _purgeDelay = NumbersUtil.parseInt(_configs.get("event.purge.delay"), 0);
@@ -414,10 +414,10 @@ public class ManagementServerImpl implements ManagementServer {
             // right now, we made the decision to only list zones associated with this domain
             dcs = _dcDao.findZonesByDomainId(domainId, keyword); // private zones
         } else if ((account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-        	if (keyword != null) {
+            if (keyword != null) {
                 dcs = _dcDao.findByKeyword(keyword);
             } else {
-            	dcs = _dcDao.listAll(); // all zones
+                dcs = _dcDao.listAll(); // all zones
             }
         } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             // it was decided to return all zones for the user's domain, and everything above till root
@@ -616,10 +616,11 @@ public class ManagementServerImpl implements ManagementServer {
         // The list method for offerings is being modified in accordance with discussion with Will/Kevin
         // For now, we will be listing the following based on the usertype
         // 1. For root, we will list all offerings
-        // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till
+        // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way
+// till
         // root
-    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-    	isAscending = (isAscending == null ? true : isAscending);
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(ServiceOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
@@ -634,8 +635,8 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
-        } 
-        
+        }
+
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this domain
         if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -647,14 +648,14 @@ public class ManagementServerImpl implements ManagementServer {
 
         // For non-root users
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            if (isSystem){
+            if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
             return searchServiceOfferingsInternal(caller, name, id, vmId, keyword, searchFilter);
         }
 
         // for root users, the existing flow
-        if (caller.getDomainId() != 1 && isSystem){ //NON ROOT admin
+        if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
             throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
         }
 
@@ -669,7 +670,7 @@ public class ManagementServerImpl implements ManagementServer {
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
-            
+
             _accountMgr.checkAccess(caller, null, true, vmInstance);
 
             ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
@@ -682,7 +683,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
-        
+
         if (isSystem != null) {
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         }
@@ -690,12 +691,12 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        
+
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        
-        if (vm_type_str != null){
+
+        if (vm_type_str != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vm_type_str);
         }
 
@@ -707,7 +708,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter) {
 
-        // it was decided to return all offerings for the user's domain, and everything above till root (for normal user or
+        // it was decided to return all offerings for the user's domain, and everything above till root (for normal user
+// or
         // domain admin)
         // list all offerings belonging to this domain, and all of its parents
         // check the parent, if not null, add offerings for that parent to list
@@ -763,8 +765,8 @@ public class ManagementServerImpl implements ManagementServer {
 
                 // for this domain
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
-                
-                //don't return removed service offerings
+
+                // don't return removed service offerings
                 sc.addAnd("removed", SearchCriteria.Op.NULL);
 
                 // search and add for this domain
@@ -840,7 +842,7 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-        
+
         return _clusterDao.search(sc, searchFilter);
     }
 
@@ -870,11 +872,11 @@ public class ManagementServerImpl implements ManagementServer {
             }
             throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
-        
+
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
-        }        
+        }
         // business logic
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
@@ -883,7 +885,8 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
+                && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM, cannot migrate this VM.");
             }
@@ -922,7 +925,6 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Calling HostAllocators to search for hosts in cluster: " + cluster + " having enough capacity and suitable for migration");
         }
 
-        
         List<Host> suitableHosts = new ArrayList<Host>();
         Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
 
@@ -939,9 +941,9 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        if(suitableHosts.isEmpty()){
+        if (suitableHosts.isEmpty()) {
             s_logger.debug("No suitable hosts found");
-        }else{
+        } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Hosts having capacity and suitable for migration: " + suitableHosts);
             }
@@ -1065,8 +1067,8 @@ public class ManagementServerImpl implements ManagementServer {
                 vlanType = VlanType.DirectAttached.toString();
             }
         }
-        
-        //set project information
+
+        // set project information
         if (projectId != null) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
@@ -1185,16 +1187,16 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Account caller = UserContext.current().getCaller();
-        
+
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (isoFilter != null && isoFilter == TemplateFilter.all));
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
-        	permittedAccounts.add(_accountMgr.getAccount(accountId));
+            permittedAccounts.add(_accountMgr.getAccount(accountId));
         }
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
@@ -1206,9 +1208,9 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
-        
+
         Account caller = UserContext.current().getCaller();
-        
+
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (templateFilter != null && templateFilter == TemplateFilter.all));
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -1216,19 +1218,19 @@ public class ManagementServerImpl implements ManagementServer {
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
-        	permittedAccounts.add(_accountMgr.getAccount(accountId));
+            permittedAccounts.add(_accountMgr.getAccount(accountId));
         }
-        
+
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        
+
         return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria);
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize, Long startIndex,
             Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        
+
         VMTemplateVO template = null;
         if (templateId != null) {
             template = _templateDao.findById(templateId);
@@ -1251,10 +1253,10 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
-        
+
         List<HypervisorType> hypers = null;
-        if(!isIso) {
-            hypers =  _resourceMgr.listAvailHypervisorInZone(null, null);
+        if (!isIso) {
+            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
         if (_swiftMgr.isSwiftEnabled()) {
@@ -1294,7 +1296,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         return templateZonePairSet;
     }
-
 
     @Override
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
@@ -1345,9 +1346,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (displayText != null) {
             template.setDisplayText(displayText);
         }
-        
+
         if (sortKey != null) {
-        	template.setSortKey(sortKey);
+            template.setSortKey(sortKey);
         }
 
         ImageFormat imageFormat = null;
@@ -1384,10 +1385,9 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.findById(id);
     }
 
-
     @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) {
-    	Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Long id = cmd.getId();
@@ -1403,12 +1403,12 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<EventVO> sb = _eventDao.createSearchBuilder();
-        
-		sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+
+        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
@@ -1416,18 +1416,18 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
+
         if (listProjectResourcesCriteria != null) {
-        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-        	if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-        		accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
-        		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-       	 	} else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-       	 		accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-       	 		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-       	 	}
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                accountSearch.and("accountType", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            }
         }
-                
+
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
         sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
@@ -1435,15 +1435,15 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("createDateB", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
-        sb.and("state", sb.entity().getState(),SearchCriteria.Op.NEQ);
-	    sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
-	    sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
+        sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
+        sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
 
         SearchCriteria<EventVO> sc = sb.create();
         if (listProjectResourcesCriteria != null) {
-        	sc.setJoinParameters("accountSearch","accountType", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "accountType", Account.ACCOUNT_TYPE_PROJECT);
         }
-        
+
         if (!permittedAccounts.isEmpty()) {
             sc.setParameters("accountIdIN", permittedAccounts.toArray());
         } else if (domainId != null) {
@@ -1454,11 +1454,11 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.setParameters("domainId", domainId);
             }
         }
-        
+
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (keyword != null) {
             SearchCriteria<EventVO> ssc = _eventDao.createSearchCriteria();
             ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1475,14 +1475,14 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("type", type);
         }
 
-        if (startDate != null && endDate != null) {            
+        if (startDate != null && endDate != null) {
             sc.setParameters("createDateB", startDate, endDate);
-        } else if (startDate != null) {            
+        } else if (startDate != null) {
             sc.setParameters("createDateG", startDate);
         } else if (endDate != null) {
             sc.setParameters("createDateL", endDate);
         }
-        
+
         if ((entryTime != null) && (duration != null)) {
             if (entryTime <= duration) {
                 throw new InvalidParameterValueException("Entry time must be greater than duration");
@@ -1493,8 +1493,8 @@ public class ManagementServerImpl implements ManagementServer {
             calMax.add(Calendar.SECOND, -duration);
             Date minTime = calMin.getTime();
             Date maxTime = calMax.getTime();
-            
-    	    sc.setParameters("state", com.cloud.event.Event.State.Completed);
+
+            sc.setParameters("state", com.cloud.event.Event.State.Completed);
             sc.setParameters("startId", 0);
             sc.setParameters("createDate", minTime, maxTime);
             List<EventVO> startedEvents = _eventDao.searchAllEvents(sc, searchFilter);
@@ -1506,15 +1506,14 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
             return pendingEvents;
-        } else  {
-        	return _eventDao.searchAllEvents(sc, searchFilter);
+        } else {
+            return _eventDao.searchAllEvents(sc, searchFilter);
         }
     }
 
-
     @Override
     public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) {
-    	Long id = cmd.getId();
+        Long id = cmd.getId();
         String name = cmd.getRouterName();
         String state = cmd.getState();
         Long zone = cmd.getZoneId();
@@ -1522,7 +1521,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long hostId = cmd.getHostId();
         String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
-        
+
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -1555,7 +1554,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchCriteria<DomainRouterVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        
+
         if (keyword != null) {
             SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1590,7 +1589,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _routerDao.search(sc, searchFilter);
     }
 
-
     @Override
     public List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
         Object keyword = cmd.getKeyword();
@@ -1604,10 +1602,10 @@ public class ManagementServerImpl implements ManagementServer {
         Long ipId = cmd.getId();
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
-        
+
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
-       
+
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
@@ -1617,12 +1615,12 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        
+
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
@@ -1631,9 +1629,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
-       
-        
-        if (forLoadBalancing != null && (Boolean)forLoadBalancing) {
+
+        if (forLoadBalancing != null && (Boolean) forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
             sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
             sb.groupBy(sb.entity().getId());
@@ -1652,17 +1649,17 @@ public class ManagementServerImpl implements ManagementServer {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
             allocatedOnly = true;
         }
-        
+
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
             vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
         } else {
             vlanType = VlanType.VirtualNetwork;
         }
-        
-        //don't show SSVM/CPVM ips
+
+        // don't show SSVM/CPVM ips
         if (vlanType == VlanType.VirtualNetwork && (allocatedOnly)) {
-        	sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
+            sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
@@ -1677,15 +1674,14 @@ public class ManagementServerImpl implements ManagementServer {
         if (ipId != null) {
             sc.setParameters("id", ipId);
         }
-        
+
         if (sourceNat != null) {
             sc.setParameters("isSourceNat", sourceNat);
         }
-        
+
         if (staticNat != null) {
             sc.setParameters("isStaticNat", staticNat);
         }
-        
 
         if (address == null && keyword != null) {
             sc.setParameters("addressLIKE", "%" + keyword + "%");
@@ -1698,13 +1694,13 @@ public class ManagementServerImpl implements ManagementServer {
         if (vlan != null) {
             sc.setParameters("vlanDbId", vlan);
         }
-        
+
         if (physicalNetworkId != null) {
             sc.setParameters("physicalNetworkId", physicalNetworkId);
         }
-        
+
         if (associatedNetworkId != null) {
-        	sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
         }
 
         return _publicIpAddressDao.search(sc, searchFilter);
@@ -1838,53 +1834,53 @@ public class ManagementServerImpl implements ManagementServer {
         // check permissions
         Account caller = UserContext.current().getCaller();
         _accountMgr.checkAccess(caller, domain);
-        
-        //domain name is unique in the cloud
+
+        // domain name is unique in the cloud
         if (domainName != null) {
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
             sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
             List<DomainVO> domains = _domainDao.search(sc, null);
-            
+
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
-            
+
             if (!domains.isEmpty() && !sameDomain) {
                 throw new InvalidParameterValueException("Failed to update domain id=" + domainId + "; domain with name " + domainName + " already exists in the system");
             }
         }
 
-        //validate network domain 
-        if (networkDomain != null && !networkDomain.isEmpty()){
+        // validate network domain
+        if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
         Transaction txn = Transaction.currentTxn();
-        
+
         txn.start();
-        
+
         if (domainName != null) {
             String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
             updateDomainChildren(domain, updatedDomainPath);
             domain.setName(domainName);
             domain.setPath(updatedDomainPath);
         }
-        
+
         if (networkDomain != null) {
-        	if (networkDomain.isEmpty()) {
-        		domain.setNetworkDomain(null);
-        	} else {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
                 domain.setNetworkDomain(networkDomain);
-        	}
+            }
         }
         _domainDao.update(domainId, domain);
-        
+
         txn.commit();
 
         return _domainDao.findById(domainId);
-       
+
     }
 
     private String getUpdatedDomainPath(String oldPath, String newName) {
@@ -1937,154 +1933,155 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _alertDao.search(sc, searchFilter);
     }
-    
+
     @Override
     public List<CapacityVO> listTopConsumedResources(ListCapacityCmd cmd) {
-        
+
         Integer capacityType = cmd.getType();
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
-        
-        if (clusterId != null){
+
+        if (clusterId != null) {
             throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
         }
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
-        
-        if (zoneId == null && podId == null){//Group by Zone, capacity type
+
+        if (zoneId == null && podId == null) {// Group by Zone, capacity type
             List<SummedCapacity> summedCapacitiesAtZone = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 1, cmd.getPageSizeVal());
-            if(summedCapacitiesAtZone != null){
+            if (summedCapacitiesAtZone != null) {
                 summedCapacities.addAll(summedCapacitiesAtZone);
             }
         }
-        if (podId == null){//Group by Pod, capacity type
+        if (podId == null) {// Group by Pod, capacity type
             List<SummedCapacity> summedCapacitiesAtPod = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 2, cmd.getPageSizeVal());
-            if(summedCapacitiesAtPod != null){
+            if (summedCapacitiesAtPod != null) {
                 summedCapacities.addAll(summedCapacitiesAtPod);
-            }                           
+            }
             List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
-            if (summedCapacitiesForSecStorage != null){
+            if (summedCapacitiesForSecStorage != null) {
                 summedCapacities.addAll(summedCapacitiesForSecStorage);
             }
         }
-        
-        //Group by Cluster, capacity type
+
+        // Group by Cluster, capacity type
         List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 3, cmd.getPageSizeVal());
-        if(summedCapacitiesAtCluster != null){
+        if (summedCapacitiesAtCluster != null) {
             summedCapacities.addAll(summedCapacitiesAtCluster);
-        }                       
-        
-        //Sort Capacities
+        }
+
+        // Sort Capacities
         Collections.sort(summedCapacities, new Comparator<SummedCapacity>() {
             @Override
             public int compare(SummedCapacity arg0, SummedCapacity arg1) {
                 if (arg0.getPercentUsed() < arg1.getPercentUsed()) {
                     return 1;
-                } else if (arg0.getPercentUsed()== arg1.getPercentUsed()) {
+                } else if (arg0.getPercentUsed() == arg1.getPercentUsed()) {
                     return 0;
                 }
                 return -1;
             }
         });
-        
+
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
-        
-            
+
         Integer pageSize = null;
-        try { 
-            pageSize = Integer.valueOf(cmd.getPageSizeVal().toString()); 
-        } catch(IllegalArgumentException e) { 
-               throw new InvalidParameterValueException("pageSize " + cmd.getPageSizeVal() + " is out of Integer range is not supported for this call");
+        try {
+            pageSize = Integer.valueOf(cmd.getPageSizeVal().toString());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("pageSize " + cmd.getPageSizeVal() + " is out of Integer range is not supported for this call");
         }
 
         summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSizeVal() ? summedCapacities.size() : pageSize);
-        for (SummedCapacity summedCapacity : summedCapacities){
-            CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId() , summedCapacity.getClusterId(),
-                                                 summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());
+        for (SummedCapacity summedCapacity : summedCapacities) {
+            CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId(), summedCapacity.getClusterId(),
+                    summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());
             capacity.setUsedCapacity(summedCapacity.getUsedCapacity());
             capacity.setTotalCapacity(summedCapacity.getTotalCapacity());
-            capacities.add(capacity);       
-        }        
+            capacities.add(capacity);
+        }
         return capacities;
     }
-    
-    List<SummedCapacity> getSecStorageUsed(Long zoneId, Integer capacityType){
-        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
-            List<SummedCapacity> list = new ArrayList<SummedCapacity>();                        
-            if (zoneId != null){
+
+    List<SummedCapacity> getSecStorageUsed(Long zoneId, Integer capacityType) {
+        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+            List<SummedCapacity> list = new ArrayList<SummedCapacity>();
+            if (zoneId != null) {
                 DataCenterVO zone = ApiDBUtils.findZoneById(zoneId);
-                if(zone == null || zone.getAllocationState() == AllocationState.Disabled){
-                    return null;   
+                if (zone == null || zone.getAllocationState() == AllocationState.Disabled) {
+                    return null;
                 }
                 CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-                if (capacity.getTotalCapacity()!= 0){
-                    capacity.setUsedPercentage( capacity.getUsedCapacity() / capacity.getTotalCapacity() );    
-                }else {
+                if (capacity.getTotalCapacity() != 0) {
+                    capacity.setUsedPercentage(capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                } else {
                     capacity.setUsedPercentage(0);
                 }
-                SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
-                list.add(summedCapacity) ;
-            }else {
+                SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(),
+                        capacity.getPodId(), capacity.getClusterId());
+                list.add(summedCapacity);
+            } else {
                 List<DataCenterVO> dcList = _dcDao.listEnabledZones();
-                for(DataCenterVO dc : dcList){
-                    CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());                    
-                    if (capacity.getTotalCapacity()!= 0){
-                        capacity.setUsedPercentage( capacity.getUsedCapacity() / capacity.getTotalCapacity() );    
-                    }else {
+                for (DataCenterVO dc : dcList) {
+                    CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());
+                    if (capacity.getTotalCapacity() != 0) {
+                        capacity.setUsedPercentage(capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                    } else {
                         capacity.setUsedPercentage(0);
                     }
-                    SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                    SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(), capacity.getCapacityType(), capacity.getDataCenterId(),
+                            capacity.getPodId(), capacity.getClusterId());
                     list.add(summedCapacity);
-                }//End of for                
+                }// End of for
             }
             return list;
         }
         return null;
     }
-    
+
     @Override
     public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
 
-    	Integer capacityType = cmd.getType();
+        Integer capacityType = cmd.getType();
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
         Boolean fetchLatest = cmd.getFetchLatest();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
-        if (fetchLatest != null && fetchLatest){
-        	_alertMgr.recalculateCapacity();
+        if (fetchLatest != null && fetchLatest) {
+            _alertMgr.recalculateCapacity();
         }
 
         List<SummedCapacity> summedCapacities = _capacityDao.findCapacityBy(capacityType, zoneId, podId, clusterId);
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
 
-        for (SummedCapacity summedCapacity : summedCapacities){
-        	CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), podId, clusterId,
-        			summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), 
-        			summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
-        	
-        	if ( summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU){
-        		capacity.setTotalCapacity((long)(summedCapacity.getTotalCapacity() * ApiDBUtils.getCpuOverprovisioningFactor()));
-        	}
-        	capacities.add(capacity);		
+        for (SummedCapacity summedCapacity : summedCapacities) {
+            CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), podId, clusterId,
+                    summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(),
+                    summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+
+            if (summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
+                capacity.setTotalCapacity((long) (summedCapacity.getTotalCapacity() * ApiDBUtils.getCpuOverprovisioningFactor()));
+            }
+            capacities.add(capacity);
         }
 
         // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
         // Show Sec. Storage only when the api is invoked for the zone layer.
         List<DataCenterVO> dcList = new ArrayList<DataCenterVO>();
-        if (zoneId==null && podId==null && clusterId==null){
+        if (zoneId == null && podId == null && clusterId == null) {
             dcList = ApiDBUtils.listZones();
-        }else if (zoneId != null){
+        } else if (zoneId != null) {
             dcList.add(ApiDBUtils.findZoneById(zoneId));
-        }else{
+        } else {
             if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
                 capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
             }
         }
-        
-        for(DataCenterVO zone : dcList){
+
+        for (DataCenterVO zone : dcList) {
             zoneId = zone.getId();
             if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) && podId == null && clusterId == null) {
                 capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
@@ -2108,9 +2105,9 @@ public class ManagementServerImpl implements ManagementServer {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
-    
     private List<DiskOfferingVO> searchDiskOfferingsInternal(Account account, Object name, Object id, Object keyword, Filter searchFilter) {
-        // it was decided to return all offerings for the user's domain, and everything above till root (for normal user or
+        // it was decided to return all offerings for the user's domain, and everything above till root (for normal user
+// or
         // domain admin)
         // list all offerings belonging to this domain, and all of its parents
         // check the parent, if not null, add offerings for that parent to list
@@ -2178,11 +2175,12 @@ public class ManagementServerImpl implements ManagementServer {
         // The list method for offerings is being modified in accordance with discussion with Will/Kevin
         // For now, we will be listing the following based on the usertype
         // 1. For root, we will list all offerings
-        // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till
+        // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way
+// till
         // root
 
-    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-    	isAscending = (isAscending == null ? true : isAscending);
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
@@ -2247,7 +2245,8 @@ public class ManagementServerImpl implements ManagementServer {
         // FIXME: disk offerings should search back up the hierarchy for available disk offerings...
         /*
          * if (domainId != null) { sc.setParameters("domainId", domainId); // //DomainVO domain =
-         * _domainDao.findById((Long)domainId); // // I want to join on user_vm.domain_id = domain.id where domain.path like
+         * _domainDao.findById((Long)domainId); // // I want to join on user_vm.domain_id = domain.id where domain.path
+         * like
          * 'foo%' //sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%"); // }
          */
 
@@ -2362,80 +2361,79 @@ public class ManagementServerImpl implements ManagementServer {
         return _poolDao.search(sc, searchFilter);
     }
 
-
     @Override
     public List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
-    	
-    	 Account caller = UserContext.current().getCaller();
 
-         List<Long> permittedAccounts = new ArrayList<Long>();
-    	
-         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-         Long domainId = domainIdRecursiveListProject.first();
-         Boolean isRecursive = domainIdRecursiveListProject.second();
-         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();         
-         
-         Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-         SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
-         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-         SearchBuilder<AccountVO> accountSearch = null;
-         boolean accountJoinIsDone = false;
-         if (permittedAccounts.isEmpty() && domainId != null) {
-        	 accountSearch = _accountDao.createSearchBuilder();
-             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
-             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-             domainSearch.and("domainId", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
-             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-             accountJoinIsDone = true;
-             accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-         }
-         
-         if (listProjectResourcesCriteria != null) {
-        	if (accountSearch == null) {
-             	accountSearch = _accountDao.createSearchBuilder();
-        	}
-    	 	if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-        	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
-    	 	} else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-        	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-    	 	}
-    	 	
-    	 	if (!accountJoinIsDone) {
-    	 		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-    	 	}
-         }
-       
-         Object keyword = cmd.getKeyword();
-         Object startDate = cmd.getStartDate();
+        Account caller = UserContext.current().getCaller();
 
-         SearchCriteria<AsyncJobVO> sc = sb.create();
-         if (listProjectResourcesCriteria != null) {
-        	 sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
-         }
-        
-         if (!permittedAccounts.isEmpty()) {
-        	 sc.setParameters("accountIdIN", permittedAccounts.toArray());
-         } else if (domainId != null) {
-        	 DomainVO domain = _domainDao.findById(domainId);
-        	 if (isRecursive) {
-        		 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        	 } else {
-        		 sc.setJoinParameters("domainSearch", "domainId", domainId);
-        	 }	
-         }
-        
-         if (keyword != null) {
-        	 sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-         }
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
-         if (startDate != null) {
-        	 sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
-         }
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-         return _jobDao.search(sc, searchFilter);
-	}
+        Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
+        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        SearchBuilder<AccountVO> accountSearch = null;
+        boolean accountJoinIsDone = false;
+        if (permittedAccounts.isEmpty() && domainId != null) {
+            accountSearch = _accountDao.createSearchBuilder();
+            // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("domainId", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            accountJoinIsDone = true;
+            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        if (listProjectResourcesCriteria != null) {
+            if (accountSearch == null) {
+                accountSearch = _accountDao.createSearchBuilder();
+            }
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+            }
+
+            if (!accountJoinIsDone) {
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            }
+        }
+
+        Object keyword = cmd.getKeyword();
+        Object startDate = cmd.getStartDate();
+
+        SearchCriteria<AsyncJobVO> sc = sb.create();
+        if (listProjectResourcesCriteria != null) {
+            sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            } else {
+                sc.setJoinParameters("domainSearch", "domainId", domainId);
+            }
+        }
+
+        if (keyword != null) {
+            sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+
+        if (startDate != null) {
+            sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        return _jobDao.search(sc, searchFilter);
+    }
 
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "starting secondary storage Vm", async = true)
     public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
@@ -2636,7 +2634,7 @@ public class ManagementServerImpl implements ManagementServer {
         if ((user == null) || (user.getRemoved() != null)) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
-        
+
         // check permissions
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
 
@@ -2674,7 +2672,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
             String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
-            elasticLoadBalancerEnabled = elbEnabled==null?false:Boolean.parseBoolean(elbEnabled);
+            elasticLoadBalancerEnabled = elbEnabled == null ? false : Boolean.parseBoolean(elbEnabled);
             if (elasticLoadBalancerEnabled) {
                 String networkType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
                 if (networkType != null)
@@ -2711,13 +2709,13 @@ public class ManagementServerImpl implements ManagementServer {
         if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
-        
+
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find volume with id " + volumeId);
         }
-        
-        //perform permission check
+
+        // perform permission check
         _accountMgr.checkAccess(account, null, true, volume);
 
         if (_dcDao.findById(zoneId) == null) {
@@ -2731,16 +2729,18 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
             throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
         }
-        
-        if (volume.getVolumeType() != Volume.Type.DATADISK){ //Datadisk dont have any template dependence.
-        	
-        	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-        	if (template != null){ //For ISO based volumes template = null and we allow extraction of all ISO based volumes
-	            boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-	            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are always allowed to extract
-	                throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
-	            }
-        	}
+
+        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
+
+            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based
+// volumes
+                boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+                if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
+// admins are always allowed to extract
+                    throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
+                }
+            }
         }
 
         Upload.Mode extractMode;
@@ -2749,7 +2749,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
-        
+
         // If mode is upload perform extra checks on url and also see if there is an ongoing upload on the same.
         if (extractMode == Upload.Mode.FTP_UPLOAD) {
             URI uri = new URI(url);
@@ -2801,7 +2801,7 @@ public class ManagementServerImpl implements ManagementServer {
                 _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
             }
             String value = _configs.get(Config.CopyVolumeWait.toString());
-            int copyvolumewait  = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+            int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
             // Copy the volume from the source storage pool to secondary storage
             CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, copyvolumewait);
             CopyVolumeAnswer cvAnswer = null;
@@ -2848,23 +2848,22 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    private String getFormatForPool(StoragePoolVO pool){
-    	ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-    	
-    	if (cluster.getHypervisorType() == HypervisorType.XenServer){
-    		return "vhd";
-    	}else if (cluster.getHypervisorType() == HypervisorType.KVM){
-    		return "qcow2";    		
-    	}else if (cluster.getHypervisorType() == HypervisorType.VMware){
-    		return "ova";
-    	}else if (cluster.getHypervisorType() == HypervisorType.Ovm){
-    		return "raw";
-    	}else{
-    		return null;
-    	}
+    private String getFormatForPool(StoragePoolVO pool) {
+        ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
+
+        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
+            return "vhd";
+        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
+            return "qcow2";
+        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
+            return "ova";
+        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
+            return "raw";
+        } else {
+            return null;
+        }
     }
-    
-    
+
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
         Account caller = UserContext.current().getCaller();
@@ -2898,7 +2897,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long id = cmd.getId();
         String name = cmd.getGroupName();
         String keyword = cmd.getKeyword();
-        
+
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -2906,12 +2905,12 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(InstanceGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
+
         SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
-        
+
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
@@ -2920,23 +2919,23 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
+
         if (listProjectResourcesCriteria != null) {
-       	 	if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-           	 	sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-       	 	} else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-           	 	sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
-       	 	}
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+            }
         }
-        
+
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
 
         SearchCriteria<InstanceGroupVO> sc = sb.create();
         if (listProjectResourcesCriteria != null) {
-        	sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
         }
-        
+
         if (!permittedAccounts.isEmpty()) {
             sc.setParameters("accountIdIN", permittedAccounts.toArray());
         } else if (domainId != null) {
@@ -2988,28 +2987,28 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
-    	if (cmd.getPrivateKey() != null && cmd.getAlias() != null) {
-    		throw new InvalidParameterValueException("Can't change the alias for private key certification");
-    	}
-    	
-    	if (cmd.getPrivateKey() == null) {
-    		if (cmd.getAlias() == null) {
-    			throw new InvalidParameterValueException("alias can't be empty, if it's a certification chain");
-    		}
-    		
-    		if (cmd.getCertIndex() == null) {
-    			throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain");
-    		}
-    	}
-    	
-        if (cmd.getPrivateKey() != null &&!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
+        if (cmd.getPrivateKey() != null && cmd.getAlias() != null) {
+            throw new InvalidParameterValueException("Can't change the alias for private key certification");
+        }
+
+        if (cmd.getPrivateKey() == null) {
+            if (cmd.getAlias() == null) {
+                throw new InvalidParameterValueException("alias can't be empty, if it's a certification chain");
+            }
+
+            if (cmd.getCertIndex() == null) {
+                throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain");
+            }
+        }
+
+        if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
             throw new InvalidParameterValueException("Failed to pass certificate validation check");
         }
 
         if (cmd.getPrivateKey() != null) {
-        	_ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+            _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
         } else {
-        	_ksMgr.saveCertificate(cmd.getAlias(), cmd.getCertificate(), cmd.getCertIndex(), cmd.getDomainSuffix());
+            _ksMgr.saveCertificate(cmd.getAlias(), cmd.getCertificate(), cmd.getCertIndex(), cmd.getDomainSuffix());
         }
 
         _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
@@ -3091,7 +3090,7 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long projectId = cmd.getProjectId();
-        
+
         Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
@@ -3106,7 +3105,7 @@ public class ManagementServerImpl implements ManagementServer {
     public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
         String name = cmd.getName();
         String fingerPrint = cmd.getFingerprint();
-        
+
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -3114,7 +3113,8 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -3135,9 +3135,9 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
         Account caller = UserContext.current().getCaller();
-        
+
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        
+
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
@@ -3145,11 +3145,11 @@ public class ManagementServerImpl implements ManagementServer {
 
         String name = cmd.getName();
         String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
-        
+
         if (publicKey == null) {
             throw new InvalidParameterValueException("Public key is invalid");
         }
-        
+
         String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
 
         return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null, owner);
@@ -3200,19 +3200,19 @@ public class ManagementServerImpl implements ManagementServer {
             HostVO host = _hostDao.findById(cmd.getHostId());
             if (host != null && host.getHypervisorType() == HypervisorType.XenServer) {
                 throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
-            }else {
+            } else {
                 throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
         } else {
-            
+
             ClusterVO cluster = ApiDBUtils.findClusterById(cmd.getClusterId());
-            if (cluster == null || cluster.getHypervisorType() !=  HypervisorType.XenServer){
+            if (cluster == null || cluster.getHypervisorType() != HypervisorType.XenServer) {
                 throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
             // get all the hosts in this cluster
             List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
             Transaction txn = Transaction.currentTxn();
-            try{
+            try {
                 txn.start();
                 for (HostVO h : hosts) {
                     if (s_logger.isDebugEnabled()) {
@@ -3232,24 +3232,24 @@ public class ManagementServerImpl implements ManagementServer {
                 }
                 txn.commit();
                 // if hypervisor is xenserver then we update it in CitrixResourceBase
-            }catch (Exception e) {
+            } catch (Exception e) {
                 txn.rollback();
-                throw new CloudRuntimeException("Failed to update password " + e.getMessage());                
+                throw new CloudRuntimeException("Failed to update password " + e.getMessage());
             }
         }
-        
+
         return true;
     }
 
     @Override
-    public String[] listEventTypes(){
-        Object eventObj = new EventTypes(); 
+    public String[] listEventTypes() {
+        Object eventObj = new EventTypes();
         Class<EventTypes> c = EventTypes.class;
         Field[] fields = c.getDeclaredFields();
         String[] eventTypes = new String[fields.length];
         try {
             int i = 0;
-            for(Field field : fields){
+            for (Field field : fields) {
                 eventTypes[i++] = field.get(eventObj).toString();
             }
             return eventTypes;
@@ -3260,9 +3260,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return null;
     }
-    
+
     @Override
-    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal){
+    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal) {
         Filter searchFilter = new Filter(HypervisorCapabilitiesVO.class, "id", true, startIndex, pageSizeVal);
         SearchCriteria<HypervisorCapabilitiesVO> sc = _hypervisorCapabilitiesDao.createSearchCriteria();
 
@@ -3279,39 +3279,38 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("hypervisorType", SearchCriteria.Op.SC, ssc);
         }
-        
+
         return _hypervisorCapabilitiesDao.search(sc, searchFilter);
-        
+
     }
-    
+
     @Override
-    public HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled){
+    public HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled) {
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
-        
-        if(hpvCapabilities == null){
+
+        if (hpvCapabilities == null) {
             throw new InvalidParameterValueException("unable to find the hypervisor capabilities " + id);
         }
-        
+
         boolean updateNeeded = (maxGuestsLimit != null || securityGroupEnabled != null);
         if (!updateNeeded) {
             return hpvCapabilities;
         }
-        
-        
+
         hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
-        if (maxGuestsLimit != null){
+        if (maxGuestsLimit != null) {
             hpvCapabilities.setMaxGuestsLimit(maxGuestsLimit);
         }
-        
-        if (securityGroupEnabled != null){
+
+        if (securityGroupEnabled != null) {
             hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
         }
 
-        if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)){
+        if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
             hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
             UserContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
-            return hpvCapabilities;            
+            return hpvCapabilities;
         } else {
             return null;
         }

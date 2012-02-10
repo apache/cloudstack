@@ -23,18 +23,20 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long>{
+public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
     ProjectAccountVO getProjectOwner(long projectId);
+
     List<ProjectAccountVO> listByProjectId(long projectId);
+
     ProjectAccountVO findByProjectIdAccountId(long projectId, long accountId);
-    
+
     boolean canAccessProjectAccount(long accountId, long projectAccountId);
-   
+
     boolean canModifyProjectAccount(long accountId, long projectAccountId);
-    
+
     List<Long> listPermittedAccountIds(long accountId);
-    
+
     List<Long> listAdministratedProjects(long adminAccountId);
-    
+
     Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role);
 }

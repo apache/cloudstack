@@ -35,41 +35,40 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@Implementation(responseObject=UserVmResponse.class, description="Stops a virtual machine.")
+@Implementation(responseObject = UserVmResponse.class, description = "Stops a virtual machine.")
 public class StopVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
     private static final String s_name = "stopvirtualmachineresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vm_instance")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @IdentityMapper(entityTableName = "vm_instance")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine")
     private Long id;
-    
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM.  The caller knows the VM is stopped.")
     private Boolean forced;
 
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
         return "virtualmachine";
     }
@@ -81,7 +80,8 @@ public class StopVMCmd extends BaseAsyncCmd {
             return vm.getAccountId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
+// tracked
     }
 
     @Override
@@ -91,34 +91,34 @@ public class StopVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "stopping user vm: " + getId();
+        return "stopping user vm: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.VirtualMachine;
+        return AsyncJob.Type.VirtualMachine;
     }
-    
+
     @Override
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     public boolean isForced() {
         return (forced != null) ? forced : false;
     }
 
     @Override
-    public void execute() throws ServerApiException, ConcurrentOperationException{
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ServerApiException, ConcurrentOperationException {
+        UserContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
-        
+
         if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-        	result = _bareMetalVmService.stopVirtualMachine(getId(), isForced());
+            result = _bareMetalVmService.stopVirtualMachine(getId(), isForced());
         } else {
-        	result = _userVmService.stopVirtualMachine(getId(), isForced());
+            result = _userVmService.stopVirtualMachine(getId(), isForced());
         }
-        
+
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());

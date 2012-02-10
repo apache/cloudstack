@@ -31,42 +31,42 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Accepts or declines project invitation", responseObject=SuccessResponse.class, since="3.0.0")
+@Implementation(description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectInvitationCmd.class.getName());
     private static final String s_name = "deleteprojectinvitationresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="project_invitations")
-    @Parameter(name=ApiConstants.ID, required=true, type=CommandType.LONG, description="id of the invitation")
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
+    @IdentityMapper(entityTableName = "project_invitations")
+    @Parameter(name = ApiConstants.ID, required = true, type = CommandType.LONG, description = "id of the invitation")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
     public Long getId() {
         return id;
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
-        //TODO - return project entity ownerId
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        // TODO - return project entity ownerId
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
+// tracked
     }
- 
 
     @Override
-    public void execute(){
+    public void execute() {
         UserContext.current().setEventDetails("Project invitation id " + id);
         boolean result = _projectService.deleteProjectInvitation(id);
         if (result) {
@@ -76,14 +76,15 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete the project invitation");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_INVITATION_REMOVE;
     }
-    
+
     @Override
     public String getEventDescription() {
-        return  "Project invitatino id " + id + " is being removed";
+        return "Project invitatino id " + id + " is being removed";
     }
+
 }

@@ -335,7 +335,7 @@ public class ApiServer implements HttpRequestHandler {
                     responseType = paramValue[1];
                 } else {
                     // according to the servlet spec, the parameter map should be in the form (name=String,
-// value=String[]), so
+                    // value=String[]), so
                     // parameter values will be stored in an array
                     parameterMap.put(/* name */paramValue[0], /* value */new String[] { paramValue[1] });
                 }
@@ -867,7 +867,7 @@ public class ApiServer implements HttpRequestHandler {
     // FIXME: the following two threads are copied from
     // http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java
     // we have to cite a license if we are using this code directly, so we need to add the appropriate citation or
-// modify the
+    // modify the
     // code to be very specific to our needs
     static class ListenerThread extends Thread {
         private HttpService _httpService = null;
