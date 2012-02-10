@@ -1658,7 +1658,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (VMInstanceVO vm : set_vms) {
             if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
-                VMInstanceVO castedVm = null;
+            VMInstanceVO castedVm = null;
             if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
             		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
             {
@@ -1683,21 +1683,39 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
-            else {
-                // host id can change
-                if (info != null && vm.getState() == State.Running){
-                    // check for host id changes
-                    Host host = _hostDao.findByGuid(info.getHostUuid());
-                    if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
-                        s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
-                        try {
-                            stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
-                        } catch (NoTransitionException e) {
-                            s_logger.warn(e.getMessage());
-                        }
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
+            	 Host host = _hostDao.findByGuid(info.getHostUuid());
+                 if (host != null){
+                    s_logger.warn("Stopping a VM which is stopped/stopping state " + info.name);
+                    vm.setState(State.Stopped); // set it as stop and clear it from host
+                    vm.setHostId(null);
+                    _vmDao.persist(vm);
+                     try {
+	                     Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+	                     if (!answer.getResult()) {
+	                         s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+	                     }
+                     }
+                     catch (Exception e) {
+                         s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                     }
+                 }
+            }
+            else 
+            // host id can change
+            if (info != null && vm.getState() == State.Running){
+                // check for host id changes
+                Host host = _hostDao.findByGuid(info.getHostUuid());
+                if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
+                    s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
+                    try {
+                        stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
+                    } catch (NoTransitionException e) {
+                        s_logger.warn(e.getMessage());
                     }
                 }
             }
+            
         }
 
         for (final AgentVmInfo left : infos.values()) {
@@ -1717,7 +1735,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
     }
-
 
 
     protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
