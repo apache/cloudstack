@@ -34,74 +34,71 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the user account Id")
     private IdentityProxy accountId = new IdentityProxy("account");
     
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource")
     private IdentityProxy projectId = new IdentityProxy("projects");
     
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID number")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID")
     private IdentityProxy domainId = new IdentityProxy("domain");
     
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the public IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the resource is associated with")
     private String domainName;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID number")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of account, including account name, service offering, and template")
+    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the usage record")
     private String description;
 
     @SerializedName("usage") @Param(description="usage in hours")
     private String usage;
 
-    @SerializedName("usagetype") @Param(description="usage type")
+    @SerializedName("usagetype") @Param(description="usage type ID")
     private Integer usageType;
 
     @SerializedName("rawusage") @Param(description="raw usage in hours")
     private String rawUsage;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virtual machine ID number")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virtual machine ID")
     private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
 
     @SerializedName(ApiConstants.NAME) @Param(description="virtual machine name")
     private String vmName;
 
-    @SerializedName("offeringid") @Param(description="service offering ID number")
-    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
+    @SerializedName("offeringid") @Param(description="offering ID")
+    private String  offeringId;
 
-    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="template ID number")
+    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="template ID")
     private IdentityProxy templateId = new IdentityProxy("vm_template");
 
-    @SerializedName("usageid") @Param(description="id of the usage entity")
-    private Long usageId;
+    @SerializedName("usageid") @Param(description="id of the resource")
+    private String usageId;
     
-    @SerializedName(ApiConstants.TYPE) @Param(description="type")
+    @SerializedName(ApiConstants.TYPE) @Param(description="resource type")
     private String type;
 
-    @SerializedName(ApiConstants.SIZE)
+    @SerializedName(ApiConstants.SIZE) @Param(description="resource size")
     private Long size;
 
-    @SerializedName(ApiConstants.START_DATE) @Param(description="start date of account")
+    @SerializedName(ApiConstants.START_DATE) @Param(description="start date of the usage record")
     private String startDate;
 
-    @SerializedName(ApiConstants.END_DATE) @Param(description="end date of account")
+    @SerializedName(ApiConstants.END_DATE) @Param(description="end date of the usage record")
     private String endDate;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the IP address")
-    private String ipAddress;
-
-    @SerializedName("assigneddate") @Param(description="the assign date of the account")
-    private String assignedDate;
-
-    @SerializedName("releaseddate") @Param(description="the release date of the account")
-    private String releasedDate;
-    
-    @SerializedName("issourcenat") @Param(description="source Nat flag for IPAddress")
+    @SerializedName("issourcenat") @Param(description="True if the IPAddress is source NAT")
     private Boolean isSourceNat;
 
-    @SerializedName("iselastic") @Param(description="Elastic flag for IPAddress")
+    @SerializedName("iselastic") @Param(description="True if the IPAddress is elastic")
     private Boolean isElastic;
+    
+    @SerializedName("networkid") @Param(description="id of the network")
+    private String networkId;
+    
+    @SerializedName("isdefault") @Param(description="True if the resource is default")
+    private Boolean isDefault;
     
     @Override
     public void setAccountName(String accountName) {
@@ -145,15 +142,15 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.vmName = vmName;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId.setValue(serviceOfferingId);
+    public void setOfferingId(String offeringId) {
+        this.offeringId =  offeringId;
     }
 
     public void setTemplateId(Long templateId) {
         this.templateId.setValue(templateId);
     }
 
-    public void setUsageId(Long usageId) {
+    public void setUsageId(String usageId) {
         this.usageId = usageId;
     }
 
@@ -171,18 +168,6 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public void setAssignedDate(String assignedDate) {
-        this.assignedDate = assignedDate;
-    }
-
-    public void setReleasedDate(String releasedDate) {
-        this.releasedDate = releasedDate;
     }
 
     public void setSourceNat(Boolean isSourceNat) {
@@ -206,5 +191,13 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId =  networkId;
+    }
+    
+    public void setDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

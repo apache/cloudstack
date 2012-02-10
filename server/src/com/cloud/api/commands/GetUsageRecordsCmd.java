@@ -41,6 +41,8 @@ import com.cloud.server.api.response.UsageRecordResponse;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
+import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.uuididentity.dao.IdentityDaoImpl;
 
 @Implementation(description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
@@ -219,6 +221,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public void execute(){
         ManagementServerExt _mgrExt = (ManagementServerExt)_mgr;
         List<UsageVO> usageRecords = _mgrExt.getUsageRecords(this);
+        IdentityDao identityDao = new IdentityDaoImpl();
         ListResponse<UsageRecordResponse> response = new ListResponse<UsageRecordResponse>();
         List<UsageRecordResponse> usageResponses = new ArrayList<UsageRecordResponse>();
         for (Object usageRecordGeneric : usageRecords) {
@@ -245,17 +248,78 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 usageRecResponse.setUsageType(usageRecord.getUsageType());
                 usageRecResponse.setVirtualMachineId(usageRecord.getVmInstanceId());
                 usageRecResponse.setVmName(usageRecord.getVmName());
-                usageRecResponse.setServiceOfferingId(usageRecord.getOfferingId());
                 usageRecResponse.setTemplateId(usageRecord.getTemplateId());
-                usageRecResponse.setUsageId(usageRecord.getUsageId());
-                if(usageRecord.getUsageType() == UsageTypes.IP_ADDRESS){
+                
+                if(usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM){
+                	//Service Offering Id
+                	usageRecResponse.setOfferingId(identityDao.getIdentityUuid("disk_offering", usageRecord.getOfferingId().toString()));
+                	//VM Instance ID
+                	usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_instance", usageRecord.getUsageId().toString()));
+                	//Hypervisor Type
+                	usageRecResponse.setType(usageRecord.getType());
+                	
+                } else if(usageRecord.getUsageType() == UsageTypes.IP_ADDRESS){
+                	//isSourceNAT
                     usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat"))?true:false);
+                    //isElastic
                     usageRecResponse.setElastic((usageRecord.getSize() == 1)?true:false);
-                } else {
-                    usageRecResponse.setType(usageRecord.getType());
+                    //IP Address ID
+                    usageRecResponse.setUsageId(identityDao.getIdentityUuid("user_ip_address", usageRecord.getUsageId().toString()));
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED){
+                	//Device Type
+                	usageRecResponse.setType(usageRecord.getType());
+                	if(usageRecord.getType().equals("DomainRouter")){
+                        //Domain Router Id
+                        usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_instance", usageRecord.getUsageId().toString()));
+                	} else {
+                		//External Device Host Id
+                		usageRecResponse.setUsageId(identityDao.getIdentityUuid("host", usageRecord.getUsageId().toString()));	
+                	}
+                    //Network ID
+                    usageRecResponse.setNetworkId(identityDao.getIdentityUuid("networks", usageRecord.getNetworkId().toString()));
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.VOLUME){
+                    //Volume ID
+                    usageRecResponse.setUsageId(identityDao.getIdentityUuid("volumes", usageRecord.getUsageId().toString()));
+                    //Volume Size
                     usageRecResponse.setSize(usageRecord.getSize());
-                }
+                	//Disk Offering Id
+                    if(usageRecord.getOfferingId() != null){
+                    	usageRecResponse.setOfferingId(identityDao.getIdentityUuid("disk_offering", usageRecord.getOfferingId().toString()));
+                    }
 
+                } else if(usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO){
+                    //Template/ISO ID
+                    usageRecResponse.setUsageId(identityDao.getIdentityUuid("vm_template", usageRecord.getUsageId().toString()));
+                    //Template/ISO Size
+                    usageRecResponse.setSize(usageRecord.getSize());
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.SNAPSHOT){
+                    //Snapshot ID
+                    usageRecResponse.setUsageId(identityDao.getIdentityUuid("snapshots", usageRecord.getUsageId().toString()));
+                    //Snapshot Size
+                    usageRecResponse.setSize(usageRecord.getSize());
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
+                    //Load Balancer Policy ID
+                    usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
+                    //Port Forwarding Rule ID
+                    usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
+                	//Network Offering Id
+                	usageRecResponse.setOfferingId(identityDao.getIdentityUuid("network_offerings", usageRecord.getOfferingId().toString()));
+                	//is Default
+                	usageRecResponse.setDefault((usageRecord.getUsageId() == 1)? true:false);
+                	
+                } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
+                    //VPN User ID
+                    usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+                }
+                
                 if (usageRecord.getRawUsage() != null) {
                     DecimalFormat decimalFormat = new DecimalFormat("###########.######");
                     usageRecResponse.setRawUsage(decimalFormat.format(usageRecord.getRawUsage()));
