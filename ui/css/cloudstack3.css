@@ -3235,9 +3235,8 @@ Dialogs*/
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 774px;
-  height: 294px;
-  overflow: auto;
-  overflow-x: hidden;
+  height: 293px;
+  overflow: hidden;
   /*+placement:shift 0px -11px;*/
   position: relative;
   left: 0px;
