@@ -1398,14 +1398,62 @@
                           array1.push("&name=" + todb(args.data.name));
                           array1.push("&displaytext=" + todb(args.data.displaytext));
 
-                          //args.data.networkofferingid is null when networkofferingid field is hidden
-                          if(args.data.networkofferingid != null && args.data.networkofferingid != selectedGuestNetworkObj.networkofferingid)
-                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    
-
-                          //args.data.networkdomain is null when networkdomain field is hidden
+													//args.data.networkdomain is null when networkdomain field is hidden
                           if(args.data.networkdomain != null && args.data.networkdomain != selectedGuestNetworkObj.networkdomain)
                             array1.push("&networkdomain=" + todb(args.data.networkdomain));
-
+																																				
+				                  //args.data.networkofferingid is null when networkofferingid field is hidden
+													if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) { 									 
+														array1.push("&networkofferingid=" + todb(args.data.networkofferingid));			
+														
+														if(args.context.networks[0].type == "Isolated") { //Isolated network
+															cloudStack.dialog.confirm({
+																message: 'Do you want to keep the current guest network CIDR unchanged?',
+																action: function() { //"Yes"	button is clicked											
+																	array1.push("&changecidr=false");																								
+																	$.ajax({
+																		url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+																		dataType: "json",
+																		success: function(json) {
+																			var jid = json.updatenetworkresponse.jobid;
+																			args.response.success(
+																				{_custom:
+																				 {jobId: jid,
+																					getUpdatedItem: function(json) {
+																						var item = json.queryasyncjobresultresponse.jobresult.network;
+																						return {data: item};
+																					}
+																				 }
+																				}
+																			);
+																		}
+																	});		
+																},
+																cancelAction: function() { //"Cancel" button is clicked								
+																	array1.push("&changecidr=true");												
+																	$.ajax({
+																		url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+																		dataType: "json",
+																		success: function(json) {
+																			var jid = json.updatenetworkresponse.jobid;
+																			args.response.success(
+																				{_custom:
+																				 {jobId: jid,
+																					getUpdatedItem: function(json) {
+																						var item = json.queryasyncjobresultresponse.jobresult.network;
+																						return {data: item};
+																					}
+																				 }
+																				}
+																			);
+																		}
+																	});		
+																}
+															});	
+															return;										
+														}																
+													}                          											
+														
                           $.ajax({
                             url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
                             dataType: "json",
