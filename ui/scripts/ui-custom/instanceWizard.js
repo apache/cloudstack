@@ -614,6 +614,15 @@
               cloudStack.dialog.notice({ message: 'message.step.1.continue' });
               return false;
             }
+						
+						//step 5 - select network
+						if($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) { 
+						  if($activeStep.find('input[type=checkbox]:checked').size() == 0) {  //if no checkbox is checked
+							  cloudStack.dialog.notice({ message: 'message.step.4.continue' });
+								return false;
+							}
+						}											
+						
             if (!$form.valid()) {
               if ($form.find('input.error:visible, select.error:visible').size()) {
                 return false;
