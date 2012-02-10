@@ -144,7 +144,7 @@
             
             $td.data('multi-custom-data', data[fieldName]);            
             $button.html(data && data[fieldName] && data[fieldName]['_buttonLabel'] ?
-                         data[fieldName]['_buttonLabel'] : field.custom.buttonLabel);
+                         _l(data[fieldName]['_buttonLabel']) : _l(field.custom.buttonLabel));
             $button.click(function() {
               var $button = $(this);
               
@@ -155,7 +155,7 @@
                 response: {
                   success: function(args) {
                     if (args.data['_buttonLabel']) {
-                      $button.html(args.data['_buttonLabel']);
+                      $button.html(_l(args.data['_buttonLabel']));
                     }
                     $td.data('multi-custom-data', args.data);
                   }
@@ -332,7 +332,7 @@
       $listView = $('<div>').listView(instances);
 
       // Change action label
-      $listView.find('th.actions').html('Select');
+      $listView.find('th.actions').html(_l('Select'));
 
       var $dataList = $listView.dialog({
         dialogClass: 'multi-edit-add-list panel',
@@ -413,7 +413,7 @@
       if (label) {
         $loading.append(
           $('<div>').addClass('label').append(
-            $('<span>').html(label)
+            $('<span>').html(_l(label))
           )
         );
       }
@@ -596,7 +596,7 @@
 
     // Setup input table headers
     $.each(args.fields, function(fieldName, field) {
-      var $th = $('<th>').addClass(fieldName).html(field.label.toString());
+      var $th = $('<th>').addClass(fieldName).html(_l(field.label.toString()));
       $th.attr('rel', fieldName);
       $th.appendTo($thead);
       var $td = $('<td>').addClass(fieldName);
@@ -658,7 +658,7 @@
         }
       } else if (field.custom) {
         $('<div>').addClass('button add-vm custom-action')
-          .html(field.custom.buttonLabel)
+          .html(_l(field.custom.buttonLabel))
           .click(function() {
             field.custom.action({
               context: context,
@@ -672,7 +672,7 @@
           }).appendTo($td);
       } else if (field.addButton) {
         $addVM = $('<div>').addClass('button add-vm').html(
-          args.add.label
+          _l(args.add.label)
         ).appendTo($td);
       }
     });
