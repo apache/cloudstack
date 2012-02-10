@@ -30,8 +30,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -51,10 +49,10 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 
     private String _name = null;
-    @Inject private UserVmDao _userVmDao = null;
-    @Inject private AgentManager _agentMgr = null;
-    @Inject private NetworkManager _networkMgr = null;
-    @Inject private VirtualNetworkApplianceManager _vnaMgr = null;
+    @Inject private final UserVmDao _userVmDao = null;
+    @Inject private final AgentManager _agentMgr = null;
+    @Inject private final NetworkManager _networkMgr = null;
+    @Inject private final VirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
@@ -192,7 +190,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                 }
             } catch (Exception e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't reach due to" + e.toString());
+                    s_logger.debug("Couldn't reach due to", e);
                 }
                 continue;
             }
