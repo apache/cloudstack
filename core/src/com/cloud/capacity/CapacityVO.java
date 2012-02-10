@@ -75,7 +75,7 @@ public class CapacityVO implements Capacity {
     protected Date updateTime;
     
     @Transient
-    private float usedPercentage;
+    private Float usedPercentage;
     
     public CapacityVO() {}
 
