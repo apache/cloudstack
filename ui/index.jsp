@@ -568,7 +568,7 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
-              <li class="physical-network active">Netscaler</li>
+              <li class="conditional elb physical-network active">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
@@ -584,7 +584,7 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
-              <li class="physical-network">Netscaler</li>
+              <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network active">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
@@ -600,7 +600,7 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
-              <li class="physical-network">Netscaler</li>
+              <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod active">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
@@ -620,7 +620,7 @@
                zone-wizard-step-id="configureGuestTraffic"
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
-              <li class="physical-network">Netscaler</li>
+              <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic active">Guest Traffic</li>

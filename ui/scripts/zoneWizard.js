@@ -59,13 +59,16 @@
 				var isShown; 
 				if(args.data['network-model'] == 'Basic') {
 				  if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
+            $('.conditional.elb').show();
             isShown = true;
           }			
           else {
+            $('.conditional.elb').hide();
             isShown = false;
           }	
 				}
 				else { //args.data['network-model'] == 'Advanced'
+          $('.conditional.elb').hide();
 				  isShown = true; 
 				}
 				return isShown;
@@ -73,10 +76,13 @@
 
       addNetscalerDevice: function(args) { //add Netscaler
 			  var isShown;
-				if(args.data['network-model'] == 'Basic' && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
+				if(args.data['network-model'] == 'Basic' && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)) {
 				  isShown = true;
-				else
+          $('.conditional.elb').show();
+        } else {
 				  isShown= false;
+          $('.conditional.elb').hide();
+        }
 				return isShown;				
       },
 
