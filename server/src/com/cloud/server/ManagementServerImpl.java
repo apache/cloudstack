@@ -2051,16 +2051,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
         Boolean fetchLatest = cmd.getFetchLatest();
-        Boolean listTopUsed = cmd.getlistTopUsed();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         if (fetchLatest != null && fetchLatest){
         	_alertMgr.recalculateCapacity();
         }
-        
-        if (listTopUsed != null && listTopUsed){
-            return listTopConsumedResources(cmd);
-        }
+
         List<SummedCapacity> summedCapacities = _capacityDao.findCapacityBy(capacityType, zoneId, podId, clusterId);
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
 

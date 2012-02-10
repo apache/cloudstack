@@ -115,7 +115,6 @@ public class ApiConstants {
     public static final String MODE = "mode";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
-    public static final String LIST_TOP_USED = "listtopused";
     public static final String NETWORK_DOMAIN = "networkdomain";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
