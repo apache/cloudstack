@@ -25,6 +25,10 @@
                 )
             );
 
+      if (options.error) {
+        $cornerAlert.addClass('error');
+      }
+
       return $cornerAlert
         .css({
           position: 'absolute',
@@ -95,7 +99,7 @@
             clearInterval(pollTimer);
             notifications.activeTasks.pop(pollTimer);
             notifications.cornerAlert({ message: $item.html() }, {
-              error: _l('ERROR')
+              error: _l('label.error')
             });
             $item.removeClass('pending').addClass('error');
 

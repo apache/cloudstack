@@ -945,6 +945,10 @@ div.notification.corner-alert div.title span {
   font-weight: bold;
 }
 
+div.notification.corner-alert.error div.title span {
+  background: url(../images/icons.png) no-repeat -4px -190px;
+}
+
 div.notification.corner-alert div.message span {
   position: relative;
   padding-top: 6px;
