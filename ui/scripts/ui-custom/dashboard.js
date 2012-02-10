@@ -54,10 +54,12 @@
                       if ($arrayElem.hasClass('pie-chart')) {
                         // Generate pie chart
                         // -- values above 80 have a red color
-                        pieChart($arrayElem, [
-                          { data: [[1, 100 - arrayValue]], color: '#54697e' },
-                          { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
-                        ]);
+                        setTimeout(function() {
+                          pieChart($arrayElem, [
+                            { data: [[1, 100 - arrayValue]], color: '#54697e' },
+                            { data: [[1, arrayValue]], color: arrayValue < 80 ? 'orange' : 'red' }
+                          ]);
+                        });
                       } else {
                         if ($li.attr('concat-value')) {
                           var val = $(_l(arrayValue).toString().split('<br/>')).map(function() {

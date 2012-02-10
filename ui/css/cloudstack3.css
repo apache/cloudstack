@@ -3239,8 +3239,9 @@ Dialogs*/
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 774px;
-  height: 293px;
-  overflow: hidden;
+  height: 297px;
+  overflow: auto;
+  overflow-x: hidden;
   /*+placement:shift 0px -11px;*/
   position: relative;
   left: 0px;
@@ -3264,8 +3265,15 @@ Dialogs*/
   border-top: none;
   height: 73px;
   float: left;
+  position: absolute;
   position: relative;
   cursor: pointer;
+  z-index: 1;
+}
+
+.dashboard.admin .zone-stats ul li canvas {
+  position: relative;
+  z-index: -1;
 }
 
 .dashboard.admin .zone-stats ul li:hover {
@@ -3314,6 +3322,8 @@ Dialogs*/
   height: 66px;
   float: left;
   margin: 3px 27px 0 16px;
+  position: relative;
+  z-index: -1;
 }
 
 .dashboard.admin .dashboard-container .stats ul li {
