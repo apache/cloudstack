@@ -321,12 +321,12 @@
           1: { name: 'CPU' },
           2: { name: 'Storage' },
           3: { name: 'Allocated Storage' },
+          6: { name: 'Secondary Storage' },
+          9: { name: 'Local Storage' },
           4: { name: 'Public IP' },
           5: { name: 'Private IP' },
-          6: { name: 'Secondary Storage' },
-          7: { name: 'VLAN' },
           8: { name: 'Direct Public IP' },
-          9: { name: 'Local Storage' }
+          7: { name: 'VLAN' }
         };
 
         $top.append($title);
