@@ -114,7 +114,7 @@ convert_primary_to_32() {
       fi
       if [ "$mask" != "32" ]
       then
-         sudo ip addr add dev $ethDev $ipNoMask/32
+         ip_addr_add $ethDev $ipNoMask/32
       fi
   done
 #delete primaries
@@ -168,6 +168,13 @@ copy_routes_from_main() {
   sudo ip route add throw $eth1Mask table $tableName proto static 
   sudo ip route add throw $ethMask  table $tableName proto static 
   return 0;
+}
+
+ip_addr_add() {
+  local dev="$1"
+  local ip="$2"
+  local brd=`TERM=linux ipcalc $ip|grep Broadcast|awk -F' ' '{print $2}'`
+  sudo ip addr add dev $dev $ip broadcast $brd
 }
 
 add_routing() {
@@ -237,7 +244,7 @@ add_first_ip() {
   local old_state=$?
   
   convert_primary_to_32 $pubIp
-  sudo ip addr add dev $ethDev $pubIp
+  ip_addr_add $ethDev $pubIp
   if [ "$mask" != "32" ] && [ "$mask" != "" ]
   then
     # remove if duplicat ip with 32 mask, this happens when we are promting the ip to primary
@@ -301,7 +308,7 @@ add_an_ip () {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
 
-  sudo ip addr add dev $ethDev $pubIp ;
+  ip_addr_add $ethDev $pubIp
   add_snat $1
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
@@ -335,7 +342,7 @@ remove_an_ip () {
         if [ -n "$replaceIpMask" ]; then
           sudo ip addr del dev $ethDev $replaceIpMask;
           replaceIp=`echo $replaceIpMask | awk -F/ '{print $1}'`;
-          sudo ip addr add dev $ethDev $replaceIp/$existingMask;
+          ip_addr_add $ethDev $replaceIp/$existingMask
         fi
     result=$?
   fi
