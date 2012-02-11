@@ -1748,7 +1748,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return _accountDao.findUserAccountByApiKey(apiKey);
     }
 
-    @Override
+    @Override @DB
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
@@ -1758,8 +1758,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
         String[] keys = new String[2];
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         keys[0] = createUserApiKey(userId);
         keys[1] = createUserSecretKey(userId);
+        txn.commit();
 
         return keys;
     }
