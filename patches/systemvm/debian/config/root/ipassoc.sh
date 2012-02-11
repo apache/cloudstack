@@ -272,6 +272,10 @@ remove_first_ip() {
   logger -t cloud "$(basename $0):Removing first ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   local mask=$(echo $1 | awk -F'/' '{print $2}')
+
+  local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
+  [ "$existingIpMask" == "" ] && return 0
+
   [ "$mask" == "" ] && mask="32"
 
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
