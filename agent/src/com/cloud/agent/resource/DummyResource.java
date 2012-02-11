@@ -44,171 +44,185 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
-@Local(value={ServerResource.class})
+@Local(value = { ServerResource.class })
 public class DummyResource implements ServerResource {
-    String _name;
-    Host.Type _type;
-    boolean _negative;
-    IAgentControl _agentControl;
-    private Map<String, Object> _params;
+	String _name;
+	Host.Type _type;
+	boolean _negative;
+	IAgentControl _agentControl;
+	private Map<String, Object> _params;
 
-    @Override
-    public void disconnected() {
-    }
+	@Override
+	public void disconnected() {
+	}
 
-    @Override
-    public Answer executeRequest(Command cmd) {
-    	if (cmd instanceof CheckNetworkCommand) {
-    		return new CheckNetworkAnswer((CheckNetworkCommand)cmd, true, null);
-    	}
-        System.out.println("Received Command: " + cmd.toString());
-        Answer answer = new Answer(cmd, !_negative, "response");
-        System.out.println("Replying with: " + answer.toString());
-        return answer;
-    }
+	@Override
+	public Answer executeRequest(Command cmd) {
+		if (cmd instanceof CheckNetworkCommand) {
+			return new CheckNetworkAnswer((CheckNetworkCommand) cmd, true, null);
+		}
+		System.out.println("Received Command: " + cmd.toString());
+		Answer answer = new Answer(cmd, !_negative, "response");
+		System.out.println("Replying with: " + answer.toString());
+		return answer;
+	}
 
-    @Override
-    public PingCommand getCurrentStatus(long id) {
-        return new PingCommand(_type, id);
-    }
+	@Override
+	public PingCommand getCurrentStatus(long id) {
+		return new PingCommand(_type, id);
+	}
 
-    @Override
-    public Type getType() {
-        return _type;
-    }
+	@Override
+	public Type getType() {
+		return _type;
+	}
 
-    protected String getConfiguredProperty(String key, String defaultValue) {
-        String val = (String)_params.get(key);
-        return val==null?defaultValue:val;
-    }
+	protected String getConfiguredProperty(String key, String defaultValue) {
+		String val = (String) _params.get(key);
+		return val == null ? defaultValue : val;
+	}
 
-    protected Long getConfiguredProperty(String key, Long defaultValue) {
-        String val = (String)_params.get(key);
+	protected Long getConfiguredProperty(String key, Long defaultValue) {
+		String val = (String) _params.get(key);
 
-        if (val != null) {
-            Long result = Long.parseLong(val);
-            return result;
-        }
-        return defaultValue;
-    }
+		if (val != null) {
+			Long result = Long.parseLong(val);
+			return result;
+		}
+		return defaultValue;
+	}
 
-    protected List<Object> getHostInfo() {
-        final ArrayList<Object> info = new ArrayList<Object>();
-        long speed = getConfiguredProperty("cpuspeed", 4000L) ;
-        long cpus = getConfiguredProperty("cpus", 4L);
-        long ram = getConfiguredProperty("memory", 16000L*1024L*1024L);
-        long dom0ram = Math.min(ram/10, 768*1024*1024L);
+	protected List<Object> getHostInfo() {
+		final ArrayList<Object> info = new ArrayList<Object>();
+		long speed = getConfiguredProperty("cpuspeed", 4000L);
+		long cpus = getConfiguredProperty("cpus", 4L);
+		long ram = getConfiguredProperty("memory", 16000L * 1024L * 1024L);
+		long dom0ram = Math.min(ram / 10, 768 * 1024 * 1024L);
 
+		String cap = getConfiguredProperty("capabilities", "hvm");
+		info.add((int) cpus);
+		info.add(speed);
+		info.add(ram);
+		info.add(cap);
+		info.add(dom0ram);
+		return info;
 
-        String cap = getConfiguredProperty("capabilities", "hvm");
-        info.add((int)cpus);
-        info.add(speed);
-        info.add(ram);
-        info.add(cap);
-        info.add(dom0ram);
-        return info;
+	}
 
-    }
+	protected void fillNetworkInformation(final StartupCommand cmd) {
 
-    protected void fillNetworkInformation(final StartupCommand cmd) {
+		cmd.setPrivateIpAddress((String) getConfiguredProperty(
+				"private.ip.address", "127.0.0.1"));
+		cmd.setPrivateMacAddress((String) getConfiguredProperty(
+				"private.mac.address", "8A:D2:54:3F:7C:C3"));
+		cmd.setPrivateNetmask((String) getConfiguredProperty(
+				"private.ip.netmask", "255.255.255.0"));
 
-        cmd.setPrivateIpAddress((String)getConfiguredProperty("private.ip.address", "127.0.0.1"));
-        cmd.setPrivateMacAddress((String)getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
-        cmd.setPrivateNetmask((String)getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
+		cmd.setStorageIpAddress((String) getConfiguredProperty(
+				"private.ip.address", "127.0.0.1"));
+		cmd.setStorageMacAddress((String) getConfiguredProperty(
+				"private.mac.address", "8A:D2:54:3F:7C:C3"));
+		cmd.setStorageNetmask((String) getConfiguredProperty(
+				"private.ip.netmask", "255.255.255.0"));
+		cmd.setGatewayIpAddress((String) getConfiguredProperty(
+				"gateway.ip.address", "127.0.0.1"));
 
-        cmd.setStorageIpAddress((String)getConfiguredProperty("private.ip.address", "127.0.0.1"));
-        cmd.setStorageMacAddress((String)getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
-        cmd.setStorageNetmask((String)getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
-        cmd.setGatewayIpAddress((String)getConfiguredProperty("gateway.ip.address", "127.0.0.1"));
+	}
 
-    }
+	private Map<String, String> getVersionStrings() {
+		Map<String, String> result = new HashMap<String, String>();
+		String hostOs = (String) _params.get("Host.OS");
+		String hostOsVer = (String) _params.get("Host.OS.Version");
+		String hostOsKernVer = (String) _params.get("Host.OS.Kernel.Version");
+		result.put("Host.OS", hostOs == null ? "Fedora" : hostOs);
+		result.put("Host.OS.Version", hostOsVer == null ? "14" : hostOsVer);
+		result.put("Host.OS.Kernel.Version",
+				hostOsKernVer == null ? "2.6.35.6-45.fc14.x86_64"
+						: hostOsKernVer);
+		return result;
+	}
 
-    private Map<String, String> getVersionStrings() {
-        Map<String, String> result = new HashMap<String, String>();
-        String hostOs = (String) _params.get("Host.OS");
-        String hostOsVer = (String) _params.get("Host.OS.Version");
-        String hostOsKernVer = (String) _params.get("Host.OS.Kernel.Version");
-        result.put("Host.OS", hostOs==null?"Fedora":hostOs);
-        result.put("Host.OS.Version", hostOsVer==null?"14":hostOsVer);
-        result.put("Host.OS.Kernel.Version", hostOsKernVer==null?"2.6.35.6-45.fc14.x86_64":hostOsKernVer);
-        return result;
-    }
+	protected StoragePoolInfo initializeLocalStorage() {
+		String hostIp = (String) getConfiguredProperty("private.ip.address",
+				"127.0.0.1");
+		String localStoragePath = (String) getConfiguredProperty(
+				"local.storage.path", "/mnt");
+		String lh = hostIp + localStoragePath;
+		String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
 
-    protected  StoragePoolInfo initializeLocalStorage() {
-        String hostIp = (String)getConfiguredProperty("private.ip.address", "127.0.0.1");
-        String localStoragePath = (String)getConfiguredProperty("local.storage.path", "/mnt");
-        String lh = hostIp + localStoragePath;
-        String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
+		String capacity = (String) getConfiguredProperty(
+				"local.storage.capacity", "1000000000");
+		String available = (String) getConfiguredProperty(
+				"local.storage.avail", "10000000");
 
-        String capacity = (String)getConfiguredProperty("local.storage.capacity", "1000000000");
-        String available = (String)getConfiguredProperty("local.storage.avail", "10000000");
+		return new StoragePoolInfo(uuid, hostIp, localStoragePath,
+				localStoragePath, StoragePoolType.Filesystem,
+				Long.parseLong(capacity), Long.parseLong(available));
 
-        return new StoragePoolInfo(uuid, hostIp, localStoragePath,
-                                   localStoragePath, StoragePoolType.Filesystem,
-                                   Long.parseLong(capacity), Long.parseLong(available));
+	}
 
-    }
+	@Override
+	public StartupCommand[] initialize() {
+		Map<String, VmState> changes = null;
 
-    @Override
-    public StartupCommand[] initialize() {
-    	   Map<String, VmState> changes = null;
+		final List<Object> info = getHostInfo();
 
+		final StartupRoutingCommand cmd = new StartupRoutingCommand(
+				(Integer) info.get(0), (Long) info.get(1), (Long) info.get(2),
+				(Long) info.get(4), (String) info.get(3), HypervisorType.KVM,
+				RouterPrivateIpStrategy.HostLocal, changes);
+		fillNetworkInformation(cmd);
+		cmd.getHostDetails().putAll(getVersionStrings());
+		cmd.setCluster(getConfiguredProperty("cluster", "1"));
+		StoragePoolInfo pi = initializeLocalStorage();
+		StartupStorageCommand sscmd = new StartupStorageCommand();
+		sscmd.setPoolInfo(pi);
+		sscmd.setGuid(pi.getUuid());
+		sscmd.setDataCenter((String) _params.get("zone"));
+		sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
 
-           final List<Object> info = getHostInfo();
+		return new StartupCommand[] { cmd, sscmd };
+	}
 
-           final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes);
-           fillNetworkInformation(cmd);
-           cmd.getHostDetails().putAll(getVersionStrings());
-           cmd.setCluster(getConfiguredProperty("cluster", "1"));
-           StoragePoolInfo pi = initializeLocalStorage();
-           StartupStorageCommand sscmd = new StartupStorageCommand();
-           sscmd.setPoolInfo(pi);
-           sscmd.setGuid(pi.getUuid());
-           sscmd.setDataCenter((String)_params.get("zone"));
-           sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+	@Override
+	public boolean configure(String name, Map<String, Object> params) {
+		_name = name;
 
-           return new StartupCommand[]{cmd, sscmd};
-    }
+		String value = (String) params.get("type");
+		_type = Host.Type.valueOf(value);
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) {
-        _name = name;
+		value = (String) params.get("negative.reply");
+		_negative = Boolean.parseBoolean(value);
+		setParams(params);
+		return true;
+	}
 
-        String value = (String)params.get("type");
-        _type = Host.Type.valueOf(value);
+	public void setParams(Map<String, Object> _params) {
+		this._params = _params;
+	}
 
-        value = (String)params.get("negative.reply");
-        _negative = Boolean.parseBoolean(value);
-        setParams(params);
-        return true;
-    }
+	@Override
+	public String getName() {
+		return _name;
+	}
 
-    public void setParams(Map<String, Object> _params) {
-        this._params = _params;
-    }
+	@Override
+	public boolean start() {
+		return true;
+	}
 
-    @Override
-    public String getName() {
-        return _name;
-    }
+	@Override
+	public boolean stop() {
+		return true;
+	}
 
-    @Override
-    public boolean start() {
-        return true;
-    }
+	@Override
+	public IAgentControl getAgentControl() {
+		return _agentControl;
+	}
 
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public IAgentControl getAgentControl() {
-    	return _agentControl;
-    }
-
-    @Override
-    public void setAgentControl(IAgentControl agentControl) {
-    	_agentControl = agentControl;
-    }
+	@Override
+	public void setAgentControl(IAgentControl agentControl) {
+		_agentControl = agentControl;
+	}
 }

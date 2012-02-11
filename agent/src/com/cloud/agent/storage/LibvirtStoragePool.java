@@ -19,7 +19,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	protected StorageAdaptor _storageAdaptor;
 	protected StoragePool _pool;
 
-	public LibvirtStoragePool(String uuid, String name, StoragePoolType type, StorageAdaptor adaptor, StoragePool pool) {
+	public LibvirtStoragePool(String uuid, String name, StoragePoolType type,
+			StorageAdaptor adaptor, StoragePool pool) {
 		this.uuid = uuid;
 		this.name = name;
 		this.type = type;
@@ -74,13 +75,16 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	}
 
 	@Override
-	public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, long size) {
-		return this._storageAdaptor.createPhysicalDisk(name, this, format, size);
+	public KVMPhysicalDisk createPhysicalDisk(String name,
+			PhysicalDiskFormat format, long size) {
+		return this._storageAdaptor
+				.createPhysicalDisk(name, this, format, size);
 	}
 
 	@Override
 	public KVMPhysicalDisk createPhysicalDisk(String name, long size) {
-		return this._storageAdaptor.createPhysicalDisk(name, this, this.getDefaultFormat(), size);
+		return this._storageAdaptor.createPhysicalDisk(name, this,
+				this.getDefaultFormat(), size);
 	}
 
 	@Override

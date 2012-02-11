@@ -1,6 +1,6 @@
 /**
  * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -32,7 +32,6 @@
  */
 package com.cloud.agent.dhcp;
 
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,269 +58,283 @@ import org.jnetpcap.protocol.tcpip.Udp;
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
-@Local(value = { DhcpSnooper.class})
+@Local(value = { DhcpSnooper.class })
 public class DhcpSnooperImpl implements DhcpSnooper {
-    private static final Logger s_logger = Logger.getLogger(DhcpSnooperImpl.class);
-    public enum DHCPState {
-        DHCPACKED,
-        DHCPREQUESTED,
-        DHCPRESET;
-    }
-    public class IPAddr {
-        String _vmName;
-        InetAddress _ip;
-        DHCPState _state;
-        public IPAddr(InetAddress ip, DHCPState state, String vmName) {
-            _ip = ip;
-            _state = state;
-            _vmName = vmName;
-        }
-    }
-    protected ExecutorService _executor;
-    protected Map<String, IPAddr> _macIpMap;
-    protected Map<InetAddress, String> _ipMacMap;
-    private DhcpServer _server;
-    protected long _timeout = 1200000;
-    protected InetAddress _dhcpServerIp;
+	private static final Logger s_logger = Logger
+			.getLogger(DhcpSnooperImpl.class);
 
-    public DhcpSnooperImpl(String bridge, long timeout) {
+	public enum DHCPState {
+		DHCPACKED, DHCPREQUESTED, DHCPRESET;
+	}
 
-        _timeout = timeout;
-        _executor = new ThreadPoolExecutor(10, 10 * 10, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("DhcpListener"));
-        _macIpMap = new ConcurrentHashMap<String, IPAddr>();
-        _ipMacMap = new ConcurrentHashMap<InetAddress, String>();
-        _server = new DhcpServer(this, bridge);
-        _server.start();
-    }
+	public class IPAddr {
+		String _vmName;
+		InetAddress _ip;
+		DHCPState _state;
 
+		public IPAddr(InetAddress ip, DHCPState state, String vmName) {
+			_ip = ip;
+			_state = state;
+			_vmName = vmName;
+		}
+	}
 
-    @Override
-    public InetAddress getIPAddr(String macAddr, String vmName) {
-        String macAddrLowerCase = macAddr.toLowerCase();
-        IPAddr addr =  _macIpMap.get(macAddrLowerCase);
-        if (addr == null) {
-            addr = new IPAddr(null, DHCPState.DHCPRESET, vmName);
-            _macIpMap.put(macAddrLowerCase, addr);
-        } else {
-            addr._state = DHCPState.DHCPRESET;
-        }
+	protected ExecutorService _executor;
+	protected Map<String, IPAddr> _macIpMap;
+	protected Map<InetAddress, String> _ipMacMap;
+	private DhcpServer _server;
+	protected long _timeout = 1200000;
+	protected InetAddress _dhcpServerIp;
 
-        synchronized(addr) {
-            try {
-                addr.wait(_timeout);
-            } catch (InterruptedException e) {
-            }
-            if (addr._state == DHCPState.DHCPACKED) {
-                addr._state = DHCPState.DHCPRESET;
-                return addr._ip;
-            }
-        }
+	public DhcpSnooperImpl(String bridge, long timeout) {
 
-        return null;
-    }
+		_timeout = timeout;
+		_executor = new ThreadPoolExecutor(10, 10 * 10, 1, TimeUnit.DAYS,
+				new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
+						"DhcpListener"));
+		_macIpMap = new ConcurrentHashMap<String, IPAddr>();
+		_ipMacMap = new ConcurrentHashMap<InetAddress, String>();
+		_server = new DhcpServer(this, bridge);
+		_server.start();
+	}
 
-    public InetAddress getDhcpServerIP() {
-        return _dhcpServerIp;
-    }
+	@Override
+	public InetAddress getIPAddr(String macAddr, String vmName) {
+		String macAddrLowerCase = macAddr.toLowerCase();
+		IPAddr addr = _macIpMap.get(macAddrLowerCase);
+		if (addr == null) {
+			addr = new IPAddr(null, DHCPState.DHCPRESET, vmName);
+			_macIpMap.put(macAddrLowerCase, addr);
+		} else {
+			addr._state = DHCPState.DHCPRESET;
+		}
 
+		synchronized (addr) {
+			try {
+				addr.wait(_timeout);
+			} catch (InterruptedException e) {
+			}
+			if (addr._state == DHCPState.DHCPACKED) {
+				addr._state = DHCPState.DHCPRESET;
+				return addr._ip;
+			}
+		}
 
-    @Override
-    public void cleanup(String macAddr, String vmName) {
-        try {
-            if (macAddr == null) {
-                return;
-            }
-            _macIpMap.remove(macAddr);
-            _ipMacMap.values().remove(macAddr);
-        } catch (Exception e) {
-            s_logger.debug("Failed to cleanup: " + e.toString());
-        }
-    }
+		return null;
+	}
 
+	public InetAddress getDhcpServerIP() {
+		return _dhcpServerIp;
+	}
 
-    @Override
-    public Map<String, InetAddress> syncIpAddr() {
-        Collection<IPAddr> ips = _macIpMap.values();
-        HashMap<String, InetAddress> vmIpMap = new HashMap<String, InetAddress>();
-        for(IPAddr ip : ips) {
-            if (ip._state == DHCPState.DHCPACKED) {
-                vmIpMap.put(ip._vmName, ip._ip);
-            }
-        }
-        return vmIpMap;
-    }
+	@Override
+	public void cleanup(String macAddr, String vmName) {
+		try {
+			if (macAddr == null) {
+				return;
+			}
+			_macIpMap.remove(macAddr);
+			_ipMacMap.values().remove(macAddr);
+		} catch (Exception e) {
+			s_logger.debug("Failed to cleanup: " + e.toString());
+		}
+	}
 
-    @Override
-    public void initializeMacTable(List<Pair<String, String>> macVmNameList) {
-        for (Pair<String, String> macVmname : macVmNameList) {
-            IPAddr ipAdrr = new IPAddr(null, DHCPState.DHCPRESET, macVmname.second());
-            _macIpMap.put(macVmname.first(), ipAdrr);
-        }
-    }
+	@Override
+	public Map<String, InetAddress> syncIpAddr() {
+		Collection<IPAddr> ips = _macIpMap.values();
+		HashMap<String, InetAddress> vmIpMap = new HashMap<String, InetAddress>();
+		for (IPAddr ip : ips) {
+			if (ip._state == DHCPState.DHCPACKED) {
+				vmIpMap.put(ip._vmName, ip._ip);
+			}
+		}
+		return vmIpMap;
+	}
 
-    protected void setIPAddr(String macAddr, InetAddress ip, DHCPState state, InetAddress dhcpServerIp) {
-        String macAddrLowerCase = macAddr.toLowerCase();
-        if (state == DHCPState.DHCPREQUESTED) {
-            IPAddr ipAddr = _macIpMap.get(macAddrLowerCase);
-            if (ipAddr == null) {
-                return;
-            }
+	@Override
+	public void initializeMacTable(List<Pair<String, String>> macVmNameList) {
+		for (Pair<String, String> macVmname : macVmNameList) {
+			IPAddr ipAdrr = new IPAddr(null, DHCPState.DHCPRESET,
+					macVmname.second());
+			_macIpMap.put(macVmname.first(), ipAdrr);
+		}
+	}
 
-            _ipMacMap.put(ip, macAddr);
-        } else if (state == DHCPState.DHCPACKED) {
-            _dhcpServerIp = dhcpServerIp;
-            String destMac = macAddrLowerCase;
-            if (macAddrLowerCase.equalsIgnoreCase("ff:ff:ff:ff:ff:ff")) {
-                destMac = _ipMacMap.get(ip);
-                if (destMac == null) {
-                    return;
-                }
-            }
+	protected void setIPAddr(String macAddr, InetAddress ip, DHCPState state,
+			InetAddress dhcpServerIp) {
+		String macAddrLowerCase = macAddr.toLowerCase();
+		if (state == DHCPState.DHCPREQUESTED) {
+			IPAddr ipAddr = _macIpMap.get(macAddrLowerCase);
+			if (ipAddr == null) {
+				return;
+			}
 
-            IPAddr addr = _macIpMap.get(destMac);
-            if (addr != null) {
-                addr._ip = ip;
-                addr._state = state;
-                synchronized (addr) {
-                    addr.notify();
-                }
-            }
-        }
-    }
+			_ipMacMap.put(ip, macAddr);
+		} else if (state == DHCPState.DHCPACKED) {
+			_dhcpServerIp = dhcpServerIp;
+			String destMac = macAddrLowerCase;
+			if (macAddrLowerCase.equalsIgnoreCase("ff:ff:ff:ff:ff:ff")) {
+				destMac = _ipMacMap.get(ip);
+				if (destMac == null) {
+					return;
+				}
+			}
 
-    /* (non-Javadoc)
-     * @see com.cloud.agent.dhcp.DhcpSnooper#stop()
-     */
-    @Override
-    public boolean stop() {
-        _executor.shutdown();
-        _server.StopServer();
-        return true;
-    }
+			IPAddr addr = _macIpMap.get(destMac);
+			if (addr != null) {
+				addr._ip = ip;
+				addr._state = state;
+				synchronized (addr) {
+					addr.notify();
+				}
+			}
+		}
+	}
 
-    private class DhcpServer extends Thread {
-        private DhcpSnooperImpl _manager;
-        private String _bridge;
-        private Pcap _pcapedDev;
-        private boolean _loop;
-        public DhcpServer(DhcpSnooperImpl mgt, String bridge) {
-            _manager = mgt;
-            _bridge = bridge;
-            _loop = true;
-        }
-        public void StopServer() {
-            _loop = false;
-            _pcapedDev.breakloop();
-            _pcapedDev.close();
-        }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.cloud.agent.dhcp.DhcpSnooper#stop()
+	 */
+	@Override
+	public boolean stop() {
+		_executor.shutdown();
+		_server.StopServer();
+		return true;
+	}
 
-        private Pcap initializePcap() {
-            try {
-                List<PcapIf> alldevs = new ArrayList<PcapIf>();
-                StringBuilder errBuf = new StringBuilder();
-                int r = Pcap.findAllDevs(alldevs, errBuf);
-                if (r == Pcap.NOT_OK || alldevs.isEmpty()) {
-                    return null;
-                }
+	private class DhcpServer extends Thread {
+		private DhcpSnooperImpl _manager;
+		private String _bridge;
+		private Pcap _pcapedDev;
+		private boolean _loop;
 
-                PcapIf dev = null;
-                for (PcapIf device : alldevs) {
-                    if (device.getName().equalsIgnoreCase(_bridge)) {
-                        dev = device;
-                        break;
-                    }
-                }
+		public DhcpServer(DhcpSnooperImpl mgt, String bridge) {
+			_manager = mgt;
+			_bridge = bridge;
+			_loop = true;
+		}
 
-                if (dev == null) {
-                    s_logger.debug("Pcap: Can't find device: " + _bridge + " to listen on");
-                    return null;
-                }
+		public void StopServer() {
+			_loop = false;
+			_pcapedDev.breakloop();
+			_pcapedDev.close();
+		}
 
-                int snaplen = 64*1024;
-                int flags = Pcap.MODE_PROMISCUOUS;
-                int timeout = 10 * 1000;
-                Pcap pcap = Pcap.openLive(dev.getName(), snaplen, flags, timeout, errBuf);
-                if (pcap == null) {
-                    s_logger.debug("Pcap: Can't open " + _bridge);
-                    return null;
-                }
+		private Pcap initializePcap() {
+			try {
+				List<PcapIf> alldevs = new ArrayList<PcapIf>();
+				StringBuilder errBuf = new StringBuilder();
+				int r = Pcap.findAllDevs(alldevs, errBuf);
+				if (r == Pcap.NOT_OK || alldevs.isEmpty()) {
+					return null;
+				}
 
-                PcapBpfProgram program = new PcapBpfProgram();
-                String expr = "dst port 68 or 67";
-                int optimize = 0;
-                int netmask = 0xFFFFFF00;
-                if (pcap.compile(program, expr, optimize, netmask) != Pcap.OK) {
-                    s_logger.debug("Pcap: can't compile BPF");
-                    return null;
-                }
+				PcapIf dev = null;
+				for (PcapIf device : alldevs) {
+					if (device.getName().equalsIgnoreCase(_bridge)) {
+						dev = device;
+						break;
+					}
+				}
 
-                if(pcap.setFilter(program) != Pcap.OK) {
-                    s_logger.debug("Pcap: Can't set filter");
-                    return null;
-                }
-                return pcap;
-            } catch (Exception e) {
-                s_logger.debug("Failed to initialized: " + e.toString());
-            }
-            return null;
-        }
+				if (dev == null) {
+					s_logger.debug("Pcap: Can't find device: " + _bridge
+							+ " to listen on");
+					return null;
+				}
 
-        public void run() {
-            while (_loop) {
-                try {
-                    _pcapedDev = initializePcap();
-                    if (_pcapedDev == null) {
-                        return;
-                    }
+				int snaplen = 64 * 1024;
+				int flags = Pcap.MODE_PROMISCUOUS;
+				int timeout = 10 * 1000;
+				Pcap pcap = Pcap.openLive(dev.getName(), snaplen, flags,
+						timeout, errBuf);
+				if (pcap == null) {
+					s_logger.debug("Pcap: Can't open " + _bridge);
+					return null;
+				}
 
-                    PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
-                        public void nextPacket(PcapPacket packet, String user) {
-                            Udp u = new Udp();
-                            if (packet.hasHeader(u)) {
-                                int offset = u.getOffset() + u.getLength();
-                                _executor.execute(new DhcpPacketParser(packet, offset, u.length() - u.getLength(), _manager));
-                            }
-                        }
-                    };
-                    s_logger.debug("Starting DHCP snooping on " + _bridge);
-                    int retValue = _pcapedDev.loop(-1, jpacketHandler, "pcapPacketHandler");
-                    if ( retValue == -1) {
-                        s_logger.debug("Pcap: failed to set loop handler");
-                    } else if ( retValue == -2 && !_loop) {
-                        s_logger.debug("Pcap: terminated");
-                        return;
-                    }
-                    _pcapedDev.close();
-                } catch (Exception e) {
-                    s_logger.debug("Pcap error:" + e.toString());
-                }
-            }
-        }
-    }
+				PcapBpfProgram program = new PcapBpfProgram();
+				String expr = "dst port 68 or 67";
+				int optimize = 0;
+				int netmask = 0xFFFFFF00;
+				if (pcap.compile(program, expr, optimize, netmask) != Pcap.OK) {
+					s_logger.debug("Pcap: can't compile BPF");
+					return null;
+				}
 
-    static public void main(String args[]) {
-        s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new org.apache.log4j.PatternLayout(), "System.out"));
-       final DhcpSnooperImpl manager = new DhcpSnooperImpl("cloudbr0", 10000);
-       s_logger.debug(manager.getIPAddr("02:00:4c:66:00:03", "i-2-5-VM"));
-       manager.stop();
+				if (pcap.setFilter(program) != Pcap.OK) {
+					s_logger.debug("Pcap: Can't set filter");
+					return null;
+				}
+				return pcap;
+			} catch (Exception e) {
+				s_logger.debug("Failed to initialized: " + e.toString());
+			}
+			return null;
+		}
 
-    }
+		public void run() {
+			while (_loop) {
+				try {
+					_pcapedDev = initializePcap();
+					if (_pcapedDev == null) {
+						return;
+					}
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        // TODO configure timeout here
-        return true;
-    }
+					PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
+						public void nextPacket(PcapPacket packet, String user) {
+							Udp u = new Udp();
+							if (packet.hasHeader(u)) {
+								int offset = u.getOffset() + u.getLength();
+								_executor.execute(new DhcpPacketParser(packet,
+										offset, u.length() - u.getLength(),
+										_manager));
+							}
+						}
+					};
+					s_logger.debug("Starting DHCP snooping on " + _bridge);
+					int retValue = _pcapedDev.loop(-1, jpacketHandler,
+							"pcapPacketHandler");
+					if (retValue == -1) {
+						s_logger.debug("Pcap: failed to set loop handler");
+					} else if (retValue == -2 && !_loop) {
+						s_logger.debug("Pcap: terminated");
+						return;
+					}
+					_pcapedDev.close();
+				} catch (Exception e) {
+					s_logger.debug("Pcap error:" + e.toString());
+				}
+			}
+		}
+	}
 
-    @Override
-    public boolean start() {
-        return true;
-    }
+	static public void main(String args[]) {
+		s_logger.addAppender(new org.apache.log4j.ConsoleAppender(
+				new org.apache.log4j.PatternLayout(), "System.out"));
+		final DhcpSnooperImpl manager = new DhcpSnooperImpl("cloudbr0", 10000);
+		s_logger.debug(manager.getIPAddr("02:00:4c:66:00:03", "i-2-5-VM"));
+		manager.stop();
 
-    @Override
-    public String getName() {
-        return "DhcpSnooperImpl";
-    }
+	}
+
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		// TODO configure timeout here
+		return true;
+	}
+
+	@Override
+	public boolean start() {
+		return true;
+	}
+
+	@Override
+	public String getName() {
+		return "DhcpSnooperImpl";
+	}
 
 }

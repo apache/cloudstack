@@ -24,18 +24,18 @@ import java.util.Map;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 
-public interface DhcpSnooper   extends Adapter{
+public interface DhcpSnooper extends Adapter {
 
-    public  InetAddress getIPAddr(String macAddr, String vmName);
+	public InetAddress getIPAddr(String macAddr, String vmName);
 
-    public InetAddress getDhcpServerIP();
+	public InetAddress getDhcpServerIP();
 
-    public  void cleanup(String macAddr, String vmName);
+	public void cleanup(String macAddr, String vmName);
 
-    public  Map<String, InetAddress> syncIpAddr();
+	public Map<String, InetAddress> syncIpAddr();
 
-    public  boolean stop();
+	public boolean stop();
 
-    public  void initializeMacTable(List<Pair<String, String>> macVmNameList);
+	public void initializeMacTable(List<Pair<String, String>> macVmNameList);
 
 }

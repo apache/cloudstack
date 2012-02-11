@@ -28,52 +28,51 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 
-
 public class AgentComponentLibraryBase extends ComponentLibraryBase {
-    @Override
-    public Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
-        return null;
-    }
+	@Override
+	public Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
+		return null;
+	}
 
-    @Override
-    public Map<String, ComponentInfo<Manager>> getManagers() {
-        if (_managers.size() == 0) {
-            populateManagers();
-        }
-        return _managers;
-    }
+	@Override
+	public Map<String, ComponentInfo<Manager>> getManagers() {
+		if (_managers.size() == 0) {
+			populateManagers();
+		}
+		return _managers;
+	}
 
-    @Override
-    public Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
-        if (_adapters.size() == 0) {
-            populateAdapters();
-        }
-        return _adapters;
-    }
+	@Override
+	public Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
+		if (_adapters.size() == 0) {
+			populateAdapters();
+		}
+		return _adapters;
+	}
 
-    @Override
-    public Map<Class<?>, Class<?>> getFactories() {
-        return null;
-    }
+	@Override
+	public Map<Class<?>, Class<?>> getFactories() {
+		return null;
+	}
 
-    protected void populateManagers() {
-        //addManager("StackMaidManager", StackMaidManagerImpl.class);
-    }
+	protected void populateManagers() {
+		// addManager("StackMaidManager", StackMaidManagerImpl.class);
+	}
 
-    protected void populateAdapters() {
+	protected void populateAdapters() {
 
-    }
+	}
 
-    protected void populateServices() {
+	protected void populateServices() {
 
-    }
+	}
 
-    @Override
-    public Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
-        if (_pluggableServices.size() == 0) {
-            populateServices();
-        }
-        return _pluggableServices;
-    }
+	@Override
+	public Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
+		if (_pluggableServices.size() == 0) {
+			populateServices();
+		}
+		return _pluggableServices;
+	}
 
 }

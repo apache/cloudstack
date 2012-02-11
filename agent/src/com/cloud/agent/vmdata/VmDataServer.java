@@ -24,15 +24,15 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.utils.component.Manager;
 
 /**
- * Maintains vm data (user data, meta-data, password) that can be fetched via HTTP
- * by user vms
- *
+ * Maintains vm data (user data, meta-data, password) that can be fetched via
+ * HTTP by user vms
+ * 
  */
 public interface VmDataServer extends Manager {
 
-    public Answer handleVmDataCommand(VmDataCommand cmd);
+	public Answer handleVmDataCommand(VmDataCommand cmd);
 
-    public void handleVmStarted(VirtualMachineTO vm);
+	public void handleVmStarted(VirtualMachineTO vm);
 
-    public void handleVmStopped(String vmName);
+	public void handleVmStopped(String vmName);
 }

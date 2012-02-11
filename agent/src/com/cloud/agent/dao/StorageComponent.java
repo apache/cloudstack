@@ -20,12 +20,12 @@ package com.cloud.agent.dao;
 
 import com.cloud.utils.component.Manager;
 
-
 /**
  * StorageDao is an abstraction layer for what the agent will use for storage.
- *
+ * 
  */
 public interface StorageComponent extends Manager {
-    String get(String key);
-    void persist(String key, String value);
+	String get(String key);
+
+	void persist(String key, String value);
 }

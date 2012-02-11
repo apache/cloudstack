@@ -34,98 +34,98 @@ import com.cloud.utils.PropertiesUtil;
 
 /**
  * Uses Properties to implement storage.
- *
- * @config
- * {@table
- *    || Param Name | Description | Values | Default ||
- *    || path | path to the properties _file | String | db/db.properties ||
- *  }
+ * 
+ * @config {@table || Param Name | Description | Values | Default || || path |
+ *         path to the properties _file | String | db/db.properties || * }
  **/
-@Local(value={StorageComponent.class})
+@Local(value = { StorageComponent.class })
 public class PropertiesStorage implements StorageComponent {
-    private static final Logger s_logger = Logger.getLogger(PropertiesStorage.class);
-    Properties _properties = new Properties();
-    File _file;
-    String _name;
+	private static final Logger s_logger = Logger
+			.getLogger(PropertiesStorage.class);
+	Properties _properties = new Properties();
+	File _file;
+	String _name;
 
-    @Override
-    public synchronized String get(String key) {
-        return _properties.getProperty(key);
-    }
+	@Override
+	public synchronized String get(String key) {
+		return _properties.getProperty(key);
+	}
 
-    @Override
-    public synchronized void persist(String key, String value) {
-        _properties.setProperty(key, value);
-        FileOutputStream output = null;
-        try {
-            output = new FileOutputStream(_file);
-            _properties.store(output, _name);
-            output.flush();
-            output.close();
-        } catch (FileNotFoundException e) {
-            s_logger.error("Who deleted the file? ", e);
-        } catch (IOException e) {
-            s_logger.error("Uh-oh: ", e);
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    //ignore.
-                }
-            }
-        }
-    }
+	@Override
+	public synchronized void persist(String key, String value) {
+		_properties.setProperty(key, value);
+		FileOutputStream output = null;
+		try {
+			output = new FileOutputStream(_file);
+			_properties.store(output, _name);
+			output.flush();
+			output.close();
+		} catch (FileNotFoundException e) {
+			s_logger.error("Who deleted the file? ", e);
+		} catch (IOException e) {
+			s_logger.error("Uh-oh: ", e);
+		} finally {
+			if (output != null) {
+				try {
+					output.close();
+				} catch (IOException e) {
+					// ignore.
+				}
+			}
+		}
+	}
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) {
-        _name = name;
-        String path = (String)params.get("path");
-        if (path == null) {
-            path = "agent.properties";
-        }
+	@Override
+	public boolean configure(String name, Map<String, Object> params) {
+		_name = name;
+		String path = (String) params.get("path");
+		if (path == null) {
+			path = "agent.properties";
+		}
 
-        File file = PropertiesUtil.findConfigFile(path);
-        if (file == null) {
-            file = new File(path);
-            try {
-                if (!file.createNewFile()) {
-                    s_logger.error("Unable to create _file: " + file.getAbsolutePath());
-                    return false;
-                }
-            } catch (IOException e) {
-                s_logger.error("Unable to create _file: " + file.getAbsolutePath(), e);
-                return false;
-            }
-        }
+		File file = PropertiesUtil.findConfigFile(path);
+		if (file == null) {
+			file = new File(path);
+			try {
+				if (!file.createNewFile()) {
+					s_logger.error("Unable to create _file: "
+							+ file.getAbsolutePath());
+					return false;
+				}
+			} catch (IOException e) {
+				s_logger.error(
+						"Unable to create _file: " + file.getAbsolutePath(), e);
+				return false;
+			}
+		}
 
-        try {
-            _properties.load(new FileInputStream(file));
-            _file = file;
-        } catch (FileNotFoundException e) {
-            s_logger.error("How did we get here? ", e);
-            return false;
-        } catch (IOException e) {
-            s_logger.error("IOException: ", e);
-            return false;
-        }
+		try {
+			_properties.load(new FileInputStream(file));
+			_file = file;
+		} catch (FileNotFoundException e) {
+			s_logger.error("How did we get here? ", e);
+			return false;
+		} catch (IOException e) {
+			s_logger.error("IOException: ", e);
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public String getName() {
-        return _name;
-    }
+	@Override
+	public String getName() {
+		return _name;
+	}
 
-    @Override
-    public boolean start() {
-        return true;
-    }
+	@Override
+	public boolean start() {
+		return true;
+	}
 
-    @Override
-    public boolean stop() {
-        return true;
-    }
+	@Override
+	public boolean stop() {
+		return true;
+	}
 
 }
