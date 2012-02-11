@@ -35,17 +35,17 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 
-
 public class KVMHABase {
-	private long _timeout = 60000; /*1 minutes*/
+	private long _timeout = 60000; /* 1 minutes */
 	protected static String _heartBeatPath;
 	protected long _heartBeatUpdateTimeout = 60000;
 	protected long _heartBeatUpdateFreq = 60000;
 	protected long _heartBeatUpdateMaxRetry = 3;
+
 	public static enum PoolType {
-		PrimaryStorage,
-		SecondaryStorage
+		PrimaryStorage, SecondaryStorage
 	}
+
 	public static class NfsStoragePool {
 		String _poolUUID;
 		String _poolIp;
@@ -53,7 +53,8 @@ public class KVMHABase {
 		String _mountDestPath;
 		PoolType _type;
 
-		public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
+		public NfsStoragePool(String poolUUID, String poolIp,
+				String poolSourcePath, String mountDestPath, PoolType type) {
 			this._poolUUID = poolUUID;
 			this._poolIp = poolIp;
 			this._poolMountSourcePath = poolSourcePath;
@@ -64,7 +65,8 @@ public class KVMHABase {
 
 	protected String checkingMountPoint(NfsStoragePool pool, String poolName) {
 		String mountSource = pool._poolIp + ":" + pool._poolMountSourcePath;
-		String mountPaths = Script.runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
+		String mountPaths = Script
+				.runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
 		String destPath = pool._mountDestPath;
 
 		if (mountPaths != null) {
@@ -73,7 +75,7 @@ public class KVMHABase {
 			String mountDestPath = token[1];
 			if (mountType.equalsIgnoreCase("nfs")) {
 				if (poolName != null && !mountDestPath.startsWith(destPath)) {
-					/*we need to mount it under poolName*/
+					/* we need to mount it under poolName */
 					Script mount = new Script("/bin/bash", 60000);
 					mount.add("-c");
 					mount.add("mount " + mountSource + " " + destPath);
@@ -87,8 +89,8 @@ public class KVMHABase {
 				}
 			}
 		} else {
-			/*Can't find the mount point?*/
-			/*we need to mount it under poolName*/
+			/* Can't find the mount point? */
+			/* we need to mount it under poolName */
 			if (poolName != null) {
 				Script mount = new Script("/bin/bash", 60000);
 				mount.add("-c");
@@ -110,13 +112,17 @@ public class KVMHABase {
 		StoragePool pool = null;
 		String poolName = null;
 		try {
-			pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUUID);
+			pool = LibvirtConnection.getConnection()
+					.storagePoolLookupByUUIDString(storagePool._poolUUID);
 			if (pool != null) {
 				StoragePoolInfo spi = pool.getInfo();
 				if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
 					pool.create(0);
 				} else {
-					/*Sometimes, the mount point is lost, even libvirt thinks the storage pool still running*/
+					/*
+					 * Sometimes, the mount point is lost, even libvirt thinks
+					 * the storage pool still running
+					 */
 				}
 			}
 			poolName = pool.getName();
@@ -136,7 +142,7 @@ public class KVMHABase {
 	}
 
 	protected void destroyVMs(String mountPath) {
-		/*if there are VMs using disks under this mount path, destroy them*/
+		/* if there are VMs using disks under this mount path, destroy them */
 		Script cmd = new Script("/bin/bash", _timeout);
 		cmd.add("-c");
 		cmd.add("ps axu|grep qemu|grep " + mountPath + "* |awk '{print $2}'");
@@ -154,14 +160,16 @@ public class KVMHABase {
 	}
 
 	protected String getHBFile(String mountPoint, String hostIP) {
-		return mountPoint + File.separator + "KVMHA" + File.separator + "hb-" + hostIP;
+		return mountPoint + File.separator + "KVMHA" + File.separator + "hb-"
+				+ hostIP;
 	}
 
 	protected String getHBFolder(String mountPoint) {
 		return mountPoint + File.separator + "KVMHA" + File.separator;
 	}
 
-	protected String runScriptRetry(String cmdString, OutputInterpreter interpreter) {
+	protected String runScriptRetry(String cmdString,
+			OutputInterpreter interpreter) {
 		String result = null;
 		for (int i = 0; i < 3; i++) {
 			Script cmd = new Script("/bin/bash", _timeout);
@@ -184,20 +192,22 @@ public class KVMHABase {
 
 	public static void main(String[] args) {
 
-		NfsStoragePool pool = new KVMHAMonitor.NfsStoragePool(null,null,null,null, PoolType.PrimaryStorage);
+		NfsStoragePool pool = new KVMHAMonitor.NfsStoragePool(null, null, null,
+				null, PoolType.PrimaryStorage);
 
 		KVMHAMonitor haWritter = new KVMHAMonitor(pool, "192.168.1.163", null);
 		Thread ha = new Thread(haWritter);
 		ha.start();
 
-		KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(), "192.168.1.163");
+		KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(),
+				"192.168.1.163");
 
 		ExecutorService exe = Executors.newFixedThreadPool(1);
-		Future<Boolean> future = exe.submit((Callable<Boolean>)haChecker);
+		Future<Boolean> future = exe.submit((Callable<Boolean>) haChecker);
 		try {
 			for (int i = 0; i < 10; i++) {
 				System.out.println(future.get());
-				future = exe.submit((Callable<Boolean>)haChecker);
+				future = exe.submit((Callable<Boolean>) haChecker);
 			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block

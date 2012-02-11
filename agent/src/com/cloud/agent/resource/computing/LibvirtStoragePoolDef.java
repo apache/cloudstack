@@ -20,19 +20,19 @@ package com.cloud.agent.resource.computing;
 
 public class LibvirtStoragePoolDef {
 	public enum poolType {
-		ISCSI("iscsi"),
-		NETFS("netfs"),
-		LOGICAL("logical"),
-		DIR("dir");
+		ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir");
 		String _poolType;
+
 		poolType(String poolType) {
 			_poolType = poolType;
 		}
+
 		@Override
 		public String toString() {
 			return _poolType;
 		}
 	}
+
 	private poolType _poolType;
 	private String _poolName;
 	private String _uuid;
@@ -40,7 +40,8 @@ public class LibvirtStoragePoolDef {
 	private String _sourceDir;
 	private String _targetPath;
 
-	public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String host, String dir, String targetPath) {
+	public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
+			String host, String dir, String targetPath) {
 		_poolType = type;
 		_poolName = poolName;
 		_uuid = uuid;
@@ -50,26 +51,26 @@ public class LibvirtStoragePoolDef {
 	}
 
 	public String getPoolName() {
-	    return _poolName;
+		return _poolName;
 	}
 
 	public poolType getPoolType() {
-	    return _poolType;
+		return _poolType;
 	}
 
 	public String getSourceHost() {
-	    return _sourceHost;
+		return _sourceHost;
 	}
 
 	public String getSourceDir() {
-	    return _sourceDir;
+		return _sourceDir;
 	}
 
 	public String getTargetPath() {
-	    return _targetPath;
+		return _targetPath;
 	}
 
-    @Override
+	@Override
 	public String toString() {
 		StringBuilder storagePoolBuilder = new StringBuilder();
 		storagePoolBuilder.append("<pool type='" + _poolType + "'>\n");

@@ -20,13 +20,13 @@ package com.cloud.agent.resource.computing;
 
 public class LibvirtStorageVolumeDef {
 	public enum volFormat {
-		RAW("raw"),
-		QCOW2("qcow2"),
-		DIR("dir");
+		RAW("raw"), QCOW2("qcow2"), DIR("dir");
 		private String _format;
+
 		volFormat(String format) {
 			_format = format;
 		}
+
 		@Override
 		public String toString() {
 			return _format;
@@ -44,13 +44,15 @@ public class LibvirtStorageVolumeDef {
 			return null;
 		}
 	}
+
 	private String _volName;
 	private Long _volSize;
 	private volFormat _volFormat;
 	private String _backingPath;
 	private volFormat _backingFormat;
 
-	public LibvirtStorageVolumeDef(String volName, Long size, volFormat format, String tmplPath, volFormat tmplFormat) {
+	public LibvirtStorageVolumeDef(String volName, Long size, volFormat format,
+			String tmplPath, volFormat tmplFormat) {
 		_volName = volName;
 		_volSize = size;
 		_volFormat = format;
@@ -61,13 +63,15 @@ public class LibvirtStorageVolumeDef {
 	public volFormat getFormat() {
 		return this._volFormat;
 	}
+
 	@Override
 	public String toString() {
 		StringBuilder storageVolBuilder = new StringBuilder();
 		storageVolBuilder.append("<volume>\n");
 		storageVolBuilder.append("<name>" + _volName + "</name>\n");
 		if (_volSize != null) {
-			storageVolBuilder.append("<capacity >" + _volSize + "</capacity>\n");
+			storageVolBuilder
+					.append("<capacity >" + _volSize + "</capacity>\n");
 		}
 		storageVolBuilder.append("<target>\n");
 		storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");
@@ -78,7 +82,8 @@ public class LibvirtStorageVolumeDef {
 		if (_backingPath != null) {
 			storageVolBuilder.append("<backingStore>\n");
 			storageVolBuilder.append("<path>" + _backingPath + "</path>\n");
-			storageVolBuilder.append("<format type='" + _backingFormat + "'/>\n");
+			storageVolBuilder.append("<format type='" + _backingFormat
+					+ "'/>\n");
 			storageVolBuilder.append("</backingStore>\n");
 		}
 		storageVolBuilder.append("</volume>\n");

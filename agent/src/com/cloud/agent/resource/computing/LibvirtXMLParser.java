@@ -29,57 +29,46 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class LibvirtXMLParser extends DefaultHandler{
-    private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
-    protected static  SAXParserFactory s_spf;
+public class LibvirtXMLParser extends DefaultHandler {
+	private static final Logger s_logger = Logger
+			.getLogger(LibvirtXMLParser.class);
+	protected static SAXParserFactory s_spf;
 
-    static {
-    	s_spf = SAXParserFactory.newInstance();
+	static {
+		s_spf = SAXParserFactory.newInstance();
 
-    }
-    protected   SAXParser _sp;
-	protected  boolean _initialized = false;
+	}
+	protected SAXParser _sp;
+	protected boolean _initialized = false;
 
+	public LibvirtXMLParser() {
 
-	public LibvirtXMLParser(){
-
-	    try {
+		try {
 			_sp = s_spf.newSAXParser();
 			_initialized = true;
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 		}
 
 	}
 
-	public  boolean parseDomainXML(String domXML) {
-		if (!_initialized){
+	public boolean parseDomainXML(String domXML) {
+		if (!_initialized) {
 			return false;
 		}
 		try {
 			_sp.parse(new InputSource(new StringReader(domXML)), this);
 			return true;
-		}catch(SAXException se) {
+		} catch (SAXException se) {
 			s_logger.warn(se.getMessage());
-		}catch (IOException ie) {
+		} catch (IOException ie) {
 			s_logger.error(ie.getMessage());
 		}
 		return false;
 	}
 
-
-
 	@Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
+	public void characters(char[] ch, int start, int length)
+			throws SAXException {
 	}
 
-
-
-
-
-
 }
-
-
-
-
-
