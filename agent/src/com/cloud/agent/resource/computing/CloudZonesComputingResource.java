@@ -125,7 +125,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         boolean success = super.configure(name, params);
-        if (! success) {
+        if (!success) {
             return false;
         }
 

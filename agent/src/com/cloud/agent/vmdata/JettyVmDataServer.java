@@ -256,7 +256,7 @@ public class JettyVmDataServer implements VmDataServer {
         connector1.setMaxIdleTime(30000);
         connector1.setRequestBufferSize(8192);
 
-        _jetty.setConnectors(new Connector[]{ connector0, connector1});
+        _jetty.setConnectors(new Connector[] {connector0, connector1});
 
         Context root = new Context(_jetty,"/latest",Context.SESSIONS);
         root.setResourceBase(_vmDataDir);
@@ -267,7 +267,7 @@ public class JettyVmDataServer implements VmDataServer {
         resource_handler.setResourceBase("/var/lib/images/");
 
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { root, resource_handler, new DefaultHandler() });
+        handlers.setHandlers(new Handler[] {root, resource_handler, new DefaultHandler() });
         _jetty.setHandler(handlers);
 
         _jetty.start();

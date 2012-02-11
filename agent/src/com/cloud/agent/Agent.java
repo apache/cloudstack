@@ -666,7 +666,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     @Override
     public AgentControlAnswer sendRequest(AgentControlCommand cmd, int timeoutInMilliseconds) throws AgentControlChannelException {
-        Request request = new Request(this.getId(), -1, new Command[] { cmd }, true, false);
+        Request request = new Request(this.getId(), -1, new Command[] { cmd } , true, false);
         request.setSequence(getNextSequence());
 
         AgentControlListener listener = new AgentControlListener(request);
@@ -690,7 +690,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     @Override
     public void postRequest(AgentControlCommand cmd) throws AgentControlChannelException {
-        Request request = new Request(this.getId(), -1, new Command[] { cmd }, true, false);
+        Request request = new Request(this.getId(), -1, new Command[] { cmd } , true, false);
         request.setSequence(getNextSequence());
         postRequest(request);
     }

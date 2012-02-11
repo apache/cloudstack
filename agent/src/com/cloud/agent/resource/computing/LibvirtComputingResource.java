@@ -423,7 +423,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		boolean success = super.configure(name, params);
-		if (! success) {
+		if (!success) {
             return false;
         }
 
@@ -462,7 +462,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			storageScriptsDir = getDefaultStorageScriptsDir();
 		}
 
-		if ( ! success) {
+		if ( !success) {
 			return false;
 		}
 
