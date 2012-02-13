@@ -40,6 +40,7 @@ dirname_to_dirname = {
 
 
 known_categories = {
+    'Simulator': 'Simulator',
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
     'VM': 'Virtual Machine',
