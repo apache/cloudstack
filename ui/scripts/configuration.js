@@ -4,110 +4,110 @@
   var networkServiceObjs = [], serviceCheckboxNames = [];
 	
   cloudStack.sections.configuration = {
-    title: 'Configuration',
+    title: 'label.configuration',
     id: 'configuration',
     sectionSelect: {
-      label: 'Select view'
+      label: 'label.select-view'
     },
     sections: {
       serviceOfferings: {
         type: 'select',
-        title: 'Service offerings',
+        title: 'label.menu.service.offerings',
         listView: {
           id: 'serviceOfferings',
-          label: 'Service offerings',
+          label: 'label.menu.service.offerings',
           fields: {
-            name: { label: 'Name', editable: true },
-            displaytext: { label: 'Description' }
+            name: { label: 'label.name', editable: true },
+            displaytext: { label: 'label.description' }
           },
 
           reorder: cloudStack.api.actions.sort('updateServiceOffering', 'serviceOfferings'),
 
           actions: {
             add: {
-              label: 'Add service offering',
+              label: 'label.add.service.offering',
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to add a service offering?';
+                  return 'message.add.service.offering';
                 },
                 notification: function(args) {
-                  return 'Creating new service offering';
+                  return 'label.add.service.offering';
                 }
               },
 
               createForm: {
-                title: 'Add service offering',
+                title: 'label.add.service.offering',
                 fields: {
                   name: {
-                    label: 'Name',
+                    label: 'label.name',
                     validation: { required: true }
                   },
                   description: {
-                    label: 'Description',
+                    label: 'label.description',
                     validation: { required: true }
                   },
                   storageType: {
-                    label: 'Storage type',
+                    label: 'label.storage.type',
                     select: function(args) {
                       var items = [];
-                      items.push({id: 'shared', description: 'shared'});
-                      items.push({id: 'local', description: 'local'});
+                      items.push({id: 'shared', description: 'Shared'});
+                      items.push({id: 'local', description: 'Local'});
                       args.response.success({data: items});
                     }
                   },
                   cpuNumber: {
-                    label: '# of CPU cores',
+                    label: 'label.num.cpu.cores',
                     validation: {
                       required: true,
                       number: true
                     }
                   },
                   cpuSpeed: {
-                    label: 'CPU (in MHz)',
+                    label: 'label.cpu.mhz',
                     validation: {
                       required: true,
                       number: true
                     }
                   },
                   memory: {
-                    label: 'Memory (in MB)',
+                    label: 'label.memory.mb',
                     validation: {
                       required: true,
                       number: true
                     }
                   },
                   networkRate: {
-                    label: 'Network rate',
+                    label: 'network.rate',
                     validation: {
                       required: false, //optional
                       number: true
                     }
                   },
                   offerHA: {
-                    label: 'Offer HA',
+                    label: 'label.offer.ha',
                     isBoolean: true,
                     isChecked: false
                   },
                   storageTags: {
-                    label: 'Storage tags'
+                    label: 'label.storage.tags'
                   },
                   hostTags: {
-                    label: 'Host tags'
+                    label: 'label.host.tags'
                   },
                   cpuCap: {
-                    label: 'CPU cap',
+                    label: 'label.CPU.cap',
                     isBoolean: true,
                     isChecked: false
                   },
                   isPublic: {
-                    label: 'Public',
+                    label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
                     isChecked: true
                   },
                   domainId: {
-                    label: 'Domain',
+                    label: 'label.domain',
                     dependsOn: 'isPublic',
                     select: function(args) {		
                       $.ajax({
@@ -210,7 +210,7 @@
             name: 'Service offering details',
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
@@ -230,13 +230,13 @@
               },
 
               'delete': {
-                label: 'Delete service offering',
+                label: 'label.action.delete.service.offering',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete this service offering?';
+                    return 'message.action.delete.service.offering';
                   },
                   notification: function(args) {
-                    return 'Deleting service offering';
+                    return 'label.action.delete.service.offering';
                   }
                 },
                 action: function(args) {
@@ -262,48 +262,48 @@
 
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
 
                 fields: [
                   {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     displaytext: {
-                      label: 'Description',
+                      label: 'label.description',
                       isEditable: true
                     },
-                    storagetype: { label: 'Storage Type' },
-                    cpunumber: { label: 'CPU number' },
+                    storagetype: { label: 'label.storage.type' },
+                    cpunumber: { label: 'label.num.cpu.cores' },
                     cpuspeed: {
-                      label: 'CPU speed',
+                      label: 'label.cpu.mhz',
                       converter: function(args) {
                         return cloudStack.converters.convertHz(args);
                       }
                     },
                     memory: {
-                      label: 'Memory',
+                      label: 'label.memory',
                       converter: function(args) {
                         return cloudStack.converters.convertBytes(args*1024*1024);
                       }
                     },
-                    networkrate: { label: 'Network rate' },
+                    networkrate: { label: 'label.network.rate' },
                     offerha: {
-                      label: 'Offer HA',
+                      label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
                     },
                     limitcpuuse: {
-                      label: 'CPU cap',
+                      label: 'label.CPU.cap',
                       converter: cloudStack.converters.toBooleanText
                     },
-                    tags: { label: 'Storage tags' },
-                    hosttags: { label: 'Host tags' },
-                    domain: { label: 'Domain' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+                    tags: { label: 'label.storage.tags' },
+                    hosttags: { label: 'label.host.tags' },
+                    domain: { label: 'label.domain' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
