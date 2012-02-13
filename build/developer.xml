@@ -397,8 +397,8 @@
   </target>
   
   <target name="build-apidocs-zip" depends="build-apidocs">
-    <delete file="${dist.dir}/apidocs-${version}.zip" />
-    <zip destfile="${dist.dir}/apidocs-${version}.zip" basedir="${dist.dir}/xmldoc/html" />
+    <delete file="${dist.dir}/apidocs-2.2.y.zip" />
+    <zip destfile="${dist.dir}/apidocs-2.2.y.zip" basedir="${dist.dir}/xmldoc/html" />
   </target>
 
 </project>
