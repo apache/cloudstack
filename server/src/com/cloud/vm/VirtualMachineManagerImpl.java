@@ -1741,6 +1741,24 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
+            	 Host host = _hostDao.findByGuid(info.getHostUuid());
+                 if (host != null){
+                    s_logger.warn("Stopping a VM which is stopped/stopping " + info.name);
+                    vm.setState(State.Stopped); // set it as stop and clear it from host
+                    vm.setHostId(null);
+                    _vmDao.persist(vm);
+                     try {
+	                     Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+	                     if (!answer.getResult()) {
+	                         s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+	                     }
+                     }
+                     catch (Exception e) {
+                         s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                     }
+                 }
+            }
             else
             // host id can change
 	        if (info != null && vm.getState() == State.Running){
