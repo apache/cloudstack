@@ -1599,6 +1599,15 @@
 
 <script language="javascript">
 dictionary = {
+'message.delete.user': '<fmt:message key="message.delete.user"/>',
+'message.enable.user': '<fmt:message key="message.enable.user"/>',
+'message.disable.user': '<fmt:message key="message.disable.user"/>',
+'message.generate.keys': '<fmt:message key="message.generate.keys"/>',
+'message.update.resource.count': '<fmt:message key="message.update.resource.count"/>',
+'message.edit.account': '<fmt:message key="message.edit.account"/>',
+'label.totoal.of.ip': '<fmt:message key="label.totoal.of.ip"/>',
+'label.total.of.vm': '<fmt:message key="label.total.of.vm"/>',
+'state.enabled': '<fmt:message key="state.enabled"/>',
 'message.action.download.iso': '<fmt:message key="message.action.download.iso"/>',
 'message.action.download.template': '<fmt:message key="message.action.download.template"/>',
 'label.destination.zone': '<fmt:message key="label.destination.zone"/>',

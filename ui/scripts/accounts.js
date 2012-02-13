@@ -9,7 +9,7 @@
   var adminUserId = 2;
 
   cloudStack.sections.accounts = {
-    title: 'Accounts',
+    title: 'label.accounts',
     id: 'accounts',
     sectionSelect: {
       label: 'Select View',
@@ -21,75 +21,79 @@
       accounts: {
         type: 'select',
         id: 'accounts',
-        title: 'Accounts',
+        title: 'label.accounts',
         listView: {
           id: 'accounts',
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
             accounttype: {
-              label: 'Role',
+              label: 'label.role',
               converter: function(args){
                 return cloudStack.converters.toRole(args);
               }
             },
-            domain: { label: 'Domain' },
+            domain: { label: 'label.domain' },
             state: {
               converter: function(str) {
                 // For localization
                 return str;
               },
-              label: 'State',
-              indicator: { 'enabled': 'on', 'Destroyed': 'off', 'disabled': 'off' }
+              label: 'label.state',
+              converter: function(str) {
+                return 'state.' + str;
+              },
+              indicator: {
+                'enabled': 'on',
+                'Destroyed': 'off',
+                'disabled': 'off'
+              }
             }
           },
 
           actions: {
             add: {
-              label: 'Create account',
-							preFilter: function(args) {							  
-								if(isAdmin()) 								
-								  return true;
-								else
-								  return false;
-							},							
+              label: 'label.add.account',
+              preFilter: function(args) {
+                if(isAdmin())
+                  return true;
+                else
+                  return false;
+              },
               messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to create an account?';
-                },
                 notification: function(args) {
-                  return 'Creating new account';
+                  return 'label.add.account';
                 }
               },
 
               createForm: {
-                title: 'Create account',
-                desc: 'Please fill in the following data to create a new account.',
+                title: 'label.add.account',
+                desc: 'label.add.account',
                 fields: {
                   username: {
-                    label: 'Username',
+                    label: 'label.username',
                     validation: { required: true }
                   },
                   password: {
-                    label: 'Password',
+                    label: 'label.password',
                     validation: { required: true },
                     isPassword: true
                   },
                   email: {
-                    label: 'Email',
+                    label: 'label.email',
                     validation: { required: true }
                   },
                   firstname: {
-                    label: 'First name',
+                    label: 'label.first.name',
                     validation: { required: true }
                   },
                   lastname: {
-                    label: 'Last name',
+                    label: 'label.last.name',
                     validation: { required: true }
                   },
                   domainid: {
-                    label: 'Domain',
+                    label: 'label.domain',
                     validation: { required: true },
-                    select: function(args) {	
+                    select: function(args) {
                       $.ajax({
                         url: createURL("listDomains&listAll=true"),
                         dataType: "json",
@@ -106,10 +110,10 @@
                     }
                   },
                   account: {
-                    label: 'Account'
+                    label: 'label.account'
                   },
                   accounttype: {
-                    label: 'Account type',
+                    label: 'label.type',
                     validation: { required: true },
                     select: function(args) {
                       var items = [];
@@ -119,7 +123,7 @@
                     }
                   },
                   timezone: {
-                    label: 'Timezone',
+                    label: 'label.timezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});
@@ -128,8 +132,8 @@
                       args.response.success({data: items});
                     }
                   },
-                  networkdomain: { 
-                    label: 'Network domain',
+                  networkdomain: {
+                    label: 'label.network.domain',
                     validation: { required: false }
                   }
                 }
@@ -164,8 +168,8 @@
                   array1.push("&timezone=" + todb(args.data.timezone));
 
                 if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                  array1.push("&networkdomain=" + todb(args.data.networkdomain));      
-                  
+                  array1.push("&networkdomain=" + todb(args.data.networkdomain));
+
                 $.ajax({
                   url: createURL("createAccount" + array1.join("")),
                   dataType: "json",
@@ -187,22 +191,22 @@
                   });
                 }
               }
-            }            
+            }
           },
 
           dataProvider: function(args) {
             var array1 = [];
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-						
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }
+
             if("domains" in args.context)
               array1.push("&domainid=" + args.context.domains[0].id);
             $.ajax({
@@ -221,16 +225,16 @@
 
           detailView: {
             name: 'Account details',
-            viewAll: { path: 'accounts.users', label: 'Users' },
+            viewAll: { path: 'accounts.users', label: 'label.users' },
 
             actions: {
               edit: {
-                label: 'Edit ("-1" indicates no limit to the amount of resources create)',
+                label: 'message.edit.account',
                 action: function(args) {
                   var accountObj = args.context.accounts[0];
 
-                  var array1 = [];                  
-                  array1.push("&newname=" + todb(args.data.name));                  
+                  var array1 = [];
+                  array1.push("&newname=" + todb(args.data.name));
                   array1.push("&networkdomain=" + todb(args.data.networkdomain));
                   $.ajax({
                     url: createURL("updateAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name + array1.join("")),
@@ -291,13 +295,13 @@
               },
 
               updateResourceCount: {
-                label: 'Update Resource Count',
+                label: 'label.action.update.resource.count',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to update resource count ?';
+                    return 'message.update.resource.count';
                   },
                   notification: function(args) {
-                    return 'Updating resource count';
+                    return 'label.action.update.resource.count';
                   }
                 },
                 action: function(args) {
@@ -308,6 +312,10 @@
                     async: true,
                     success: function(json) {
                       //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
+                      args.response.success();
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
                 },
@@ -319,13 +327,13 @@
               },
 
               disable: {
-                label: 'Disable account',
+                label: 'label.action.disable.account',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable this account?';
+                    return 'message.disable.account';
                   },
                   notification: function(args) {
-                    return 'Disabling account';
+                    return 'label.action.disable.account';
                   }
                 },
                 action: function(args) {
@@ -357,13 +365,13 @@
               },
 
               lock: {
-                label: 'Lock account',
+                label: 'label.action.lock.account',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to lock this account?';
+                    return 'message.lock.account';
                   },
                   notification: function(args) {
-                    return 'Locking account';
+                    return 'label.action.lock.account';
                   }
                 },
                 action: function(args) {
@@ -395,13 +403,13 @@
               },
 
               enable: {
-                label: 'Enable account',
+                label: 'label.action.enable.account',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to enable this account?';
+                    return 'message.enable.account';
                   },
                   notification: function(args) {
-                    return 'Enabling account';
+                    return 'label.action.enable.account';
                   }
                 },
                 action: function(args) {
@@ -425,13 +433,13 @@
               },
 
               destroy: {
-                label: 'Delete account',
+                label: 'label.action.delete.account',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete this account?';
+                    return 'message.delete.account';
                   },
                   notification: function(args) {
-                    return 'Deleting account';
+                    return 'label.action.delete.account';
                   }
                 },
                 action: function(args) {
@@ -465,54 +473,54 @@
 
             tabs: {
               details: {
-                title: 'details',
+                title: 'label.details',
 
                 fields: [
                   {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
                   {
                     id: { label: 'ID' },
                     accounttype: {
-                      label: 'Role',
+                      label: 'label.role',
                       converter: function(args){
                         return cloudStack.converters.toRole(args);
                       }
                     },
-                    domain: { label: 'Domain' },
-                    state: { label: 'State' },
-                    networkdomain: { 
-                     label: 'Network domain',
+                    domain: { label: 'label.domain' },
+                    state: { label: 'label.state' },
+                    networkdomain: {
+                     label: 'label.network.domain',
                      isEditable: true
-                    },                    
+                    },
                     vmLimit: {
-                      label: 'Instance limits',
+                      label: 'label.instance.limits',
                       isEditable: true
                     },
                     ipLimit: {
-                      label: 'Public IP limits',
+                      label: 'label.ip.limits',
                       isEditable: true
                     },
                     volumeLimit: {
-                      label: 'Volume limits',
+                      label: 'label.volume.limits',
                       isEditable: true
                     },
                     snapshotLimit: {
-                      label: 'Snapshot limits',
+                      label: 'label.snapshot.limits',
                       isEditable: true
                     },
                     templateLimit: {
-                      label: 'Template limits',
+                      label: 'label.template.limits',
                       isEditable: true
                     },
 
-                    vmtotal: { label: 'Total of VM' },
-                    iptotal: { label: 'Total of IP Address' },
+                    vmtotal: { label: 'label.total.of.vm' },
+                    iptotal: { label: 'label.totoal.of.ip' },
                     receivedbytes: {
-                      label: 'Bytes received',
+                      label: 'label.bytes.received',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -521,7 +529,7 @@
                       }
                     },
                     sentbytes: {
-                      label: 'Bytes sent',
+                      label: 'label.bytes.sent',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -581,27 +589,27 @@
       users: {
         type: 'select',
         id: 'users',
-        title: 'Users',
+        title: 'label.users',
         listView: {
           id: 'users',
           fields: {
-            username: { label: 'Username', editable: true },
-            firstname: { label: 'First name' },
-            lastname: { label: 'Last name' }
+            username: { label: 'label.username', editable: true },
+            firstname: { label: 'label.first.name' },
+            lastname: { label: 'label.last.name' }
           },
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-										
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  if(args.filterBy.search.value.length > 0)
+                    array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }
+
             var accountObj = args.context.accounts[0];
             $.ajax({
               url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + accountObj.name + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
@@ -616,50 +624,47 @@
           },
           actions: {
             add: {
-              label: 'Create user',
+              label: 'label.add.user',
 
-							preFilter: function(args) {							  
-								if(isAdmin()) 								
-								  return true;
-								else
-								  return false;
-							},	
-							
+              preFilter: function(args) {
+                if(isAdmin())
+                  return true;
+                else
+                  return false;
+              },
+
               messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to create an user?';
-                },
                 notification: function(args) {
-                  return 'Creating new user';
+                  return 'label.add.user';
                 }
               },
 
               createForm: {
-                title: 'Create user',
+                title: 'label.add.user',
                 fields: {
                   username: {
-                    label: 'Username',
+                    label: 'label.username',
                     validation: { required: true }
                   },
                   password: {
-                    label: 'Password',
+                    label: 'label.password',
                     isPassword: true,
                     validation: { required: true }
                   },
                   email: {
-                    label: 'Email',
+                    label: 'label.email',
                     validation: { required: true }
                   },
                   firstname: {
-                    label: 'First name',
+                    label: 'label.first.name',
                     validation: { required: true }
                   },
                   lastname: {
-                    label: 'Last name',
+                    label: 'label.last.name',
                     validation: { required: true }
                   },
                   timezone: {
-                    label: 'Timezone',
+                    label: 'label.timezone',
                     select: function(args) {
                       var items = [];
                       items.push({id: "", description: ""});
@@ -680,8 +685,8 @@
                 var password = args.data.password;
                 if (md5Hashed)
                   password = $.md5(password);
-								else
-								  password = todb(password);
+                else
+                  password = todb(password);
                 array1.push("&password=" + password);
 
                 array1.push("&email=" + todb(args.data.email));
@@ -720,7 +725,7 @@
             name: 'User details',
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&username=" + todb(args.data.username));
@@ -741,31 +746,28 @@
               },
 
               changePassword: {
-                label: 'Change password',
+                label: 'label.action.change.password',
                 messages: {
-                  confirm: function(args) {
-                    return 'Are you sure you want to change password?';
-                  },
                   notification: function(args) {
-                    return 'Changing password';
+                    return 'label.action.change.password';
                   }
                 },
                 createForm: {
-                  label: 'Change password',
+                  label: 'label.action.change.password',
                   fields: {
-                    newPassword: { 
-										  label: 'New password',
-											isPassword: true, 
-											validation: { required: true }
-										}
+                    newPassword: {
+                      label: 'label.new.password',
+                      isPassword: true,
+                      validation: { required: true }
+                    }
                   }
                 },
                 action: function(args) {
                   var password = args.data.newPassword;
                   if (md5Hashed)
                     password = $.md5(password);
-									else
-									  password = todb(password);
+                  else
+                    password = todb(password);
                   $.ajax({
                     url: createURL("updateUser&id=" + args.context.users[0].id + "&password=" + password),
                     dataType: "json",
@@ -783,13 +785,13 @@
               },
 
               generateKeys: {
-                label: 'Generate keys',
+                label: 'label.action.generate.keys',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to generate keys?';
+                    return 'message.generate.keys';
                   },
                   notification: function(args) {
-                    return 'Generating keys';
+                    return 'label.action.generate.keys';
                   }
                 },
                 action: function(args) {
@@ -810,13 +812,13 @@
               },
 
               disable: {
-                label: 'Disable user',
+                label: 'label.action.disable.user',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable this user?';
+                    return 'message.disable.user';
                   },
                   notification: function(args) {
-                    return 'Disabling user';
+                    return 'label.action.disable.user';
                   }
                 },
                 action: function(args) {
@@ -847,13 +849,13 @@
               },
 
               enable: {
-                label: 'Enable user',
+                label: 'label.action.enable.user',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to enable this user?';
+                    return 'message.enable.user';
                   },
                   notification: function(args) {
-                    return 'Enabling user';
+                    return 'label.action.enable.user';
                   }
                 },
                 action: function(args) {
@@ -863,6 +865,9 @@
                     async: true,
                     success: function(json) {
                       args.response.success({data: json.enableuserresponse.user});
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
                 },
@@ -874,13 +879,13 @@
               },
 
               'delete': {
-                label: 'Delete user',
+                label: 'label.action.delete.user',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete this user?';
+                    return 'message.delete.user';
                   },
                   notification: function(args) {
-                    return 'Deleting user';
+                    return 'label.action.delete.user';
                   }
                 },
                 action: function(args) {
@@ -897,46 +902,45 @@
                   }
                 }
               }
-
             },
             tabs: {
               details: {
-                title: 'details',
+                title: 'label.details',
 
                 fields: [
                   {
                     username: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
                   {
                     id: { label: 'ID' },
-                    state: { label: 'State' },
-                    apikey: { label: 'API key' },
-                    secretkey: { label: 'Secret key' },
-                    account: { label: 'Account name' },
+                    state: { label: 'label.state' },
+                    apikey: { label: 'label.api.key' },
+                    secretkey: { label: 'label.secret.key' },
+                    account: { label: 'label.account.name' },
                     accounttype: {
-                      label: 'Role',
+                      label: 'label.role',
                       converter: function(args) {
                         return cloudStack.converters.toRole(args);
                       }
                     },
-                    domain: { label: 'Domain' },
+                    domain: { label: 'label.domain' },
                     email: {
-                      label: 'Email',
+                      label: 'label.email',
                       isEditable: true
                     },
                     firstname: {
-                      label: 'First name',
+                      label: 'label.first.name',
                       isEditable: true
                     },
                     lastname: {
-                      label: 'Last name',
+                      label: 'label.last.name',
                       isEditable: true
                     },
                     timezone: {
-                      label: 'Timezone',
+                      label: 'label.timezone',
                       converter: function(args) {
                         if(args == null || args.length == 0)
                           return "";
