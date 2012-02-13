@@ -64,8 +64,8 @@
                     label: 'label.storage.type',
                     select: function(args) {
                       var items = [];
-                      items.push({id: 'shared', description: 'Shared'});
-                      items.push({id: 'local', description: 'Local'});
+                      items.push({id: 'shared', description: 'shared'});
+                      items.push({id: 'local', description: 'local'});
                       args.response.success({data: items});
                     }
                   },
