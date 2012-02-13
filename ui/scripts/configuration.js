@@ -636,22 +636,22 @@
 
       diskOfferings: {
         type: 'select',
-        title: 'Disk offerings',
+        title: 'label.menu.disk.offerings',
         listView: {
           id: 'diskOfferings',
-          label: 'Disk offerings',
+          label: 'label.menu.disk.offerings',
           fields: {
             name: { label: 'label.name' },
             displaytext: { label: 'label.description' },
             iscustomized: {
-              label: 'Custom disk size',
+              label: 'label.custom.disk.size',
               converter: cloudStack.converters.toBooleanText
             },
             disksize: {
-              label: 'Disk Size',
+              label: 'label.disk.size.gb',
               converter: function(args) {
                 if(args != 0)
-                  return args + " GB";
+                  return args;
                 else
                   return "N/A";
               }
@@ -689,19 +689,19 @@
 
           actions: {
             add: {
-              label: 'Add disk offering',
+              label: 'label.add.disk.offering',
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to add a disk offering?';
+                  return 'message.add.disk.offering';
                 },
                 notification: function(args) {
-                  return 'Creating new disk offering';
+                  return 'label.add.disk.offering';
                 }
               },
 
               createForm: {
-                title: 'Add disk offering',
+                title: 'label.add.disk.offering',
                 fields: {
                   name: {
                     label: 'label.name',
@@ -712,13 +712,13 @@
                     validation: { required: true }
                   },
                   isCustomized: {
-                    label: 'Custom disk size',
+                    label: 'label.custom.disk.size',
                     isBoolean: true,
                     isReverse: true,
                     isChecked: false
                   },
                   disksize: {
-                    label: 'Disk size (in GB)',
+                    label: 'label.disk.size.gb',
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
                   },
@@ -815,13 +815,13 @@
               },
 
               'delete': {
-                label: 'Delete disk offering',
+                label: 'label.action.delete.disk.offering',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete this disk offering?';
+                    return 'message.action.delete.disk.offering';
                   },
                   notification: function(args) {
-                    return 'Deleting disk offering';
+                    return 'label.action.delete.disk.offering';
                   }
                 },
                 action: function(args) {
@@ -852,7 +852,7 @@
                 fields: [
                   {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
@@ -863,14 +863,14 @@
                       isEditable: true
                     },
                     iscustomized: {
-                      label: 'Custom disk size',
+                      label: 'label.custom.disk.size',
                       converter: cloudStack.converters.toBooleanText
                     },
                     disksize: {
-                      label: 'Disk Size',
+                      label: 'label.disk.size.gb',
                       converter: function(args) {
                         if(args != 0)
-                          return args + " GB";
+                          return args;
                         else
                           return "N/A";
                       }

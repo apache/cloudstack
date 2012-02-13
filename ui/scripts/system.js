@@ -217,7 +217,7 @@
       providerListView: {
         id: 'networkProviders',
         fields: {
-          name: { label: 'Name' },
+          name: { label: 'label.name' },
           state: {
             label: 'State',
             converter: function(str) {
@@ -897,7 +897,7 @@
                   section: 'networks',
                   id: 'networks',
                   fields: {
-                    name: { label: 'Name' },
+                    name: { label: 'label.name' },
                     type: { label: 'Type' },
                     vlan: { label: 'VLAN ID' },                    
                     cidr: { label: 'CIDR' },
@@ -921,7 +921,7 @@
                         
                         fields: {
                           name: {
-                            label: 'Name',
+                            label: 'label.name',
                             validation: { required: true }
                           },
                           description: {
@@ -1596,7 +1596,7 @@
                         fields: [
                           {
                             name: {
-                              label: 'Name',
+                              label: 'label.name',
                               isEditable: true
                             }
                           },
@@ -1697,7 +1697,7 @@
           id: 'physicalNetworks',
           hideToolbar: true,
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
             state: {
               converter: function(str) {
                 // For localization
@@ -1888,7 +1888,7 @@
             isMaximized: true,
             type: 'detailView',
             fields: {
-              name: { label: 'Name' },
+              name: { label: 'label.name' },
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
@@ -1897,7 +1897,7 @@
                 title: 'Network',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' },
@@ -1943,7 +1943,7 @@
                   label: 'Virtual Appliances',
                   id: 'routers',
                   fields: {
-                    name: { label: 'Name' },
+                    name: { label: 'label.name' },
                     zonename: { label: 'Zone' },
                     state: {
                       converter: function(str) {
@@ -2270,7 +2270,7 @@
                         title: 'label.details',
                         fields: [
                           {
-                            name: { label: 'Name' }
+                            name: { label: 'label.name' }
                           },
                           {
                             id: { label: 'label.id' },
@@ -2373,7 +2373,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' }
@@ -2582,7 +2582,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' }
@@ -2790,7 +2790,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' }
@@ -3013,7 +3013,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     state: { label: 'State' },
@@ -3094,7 +3094,7 @@
 
             fields: {
               id: { label: 'label.id' },
-              name: { label: 'Name' }//,
+              name: { label: 'label.name' }//,
               //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
             }
           }
@@ -3448,7 +3448,7 @@
                     label: 'System VMs',
                     id: 'systemVMs',
                     fields: {
-                      name: { label: 'Name' },
+                      name: { label: 'label.name' },
                       systemvmtype: {
                         label: 'Type',
                         converter: function(args) {
@@ -3751,7 +3751,7 @@
                           title: 'label.details',
                           fields: [
                             {
-                              name: { label: 'Name' }
+                              name: { label: 'label.name' }
                             },
                             {
                               id: { label: 'label.id' },
@@ -4426,7 +4426,7 @@
           id: 'pods',
           section: 'pods',
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
             gateway: { label: 'Gateway' },
             netmask: { label: 'Netmask' },
             allocationstate: {
@@ -4690,7 +4690,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name', isEditable: true }
+                    name: { label: 'label.name', isEditable: true }
                   },
                   {
                     id: { label: 'label.id' },
@@ -4749,7 +4749,7 @@
           id: 'clusters',
           section: 'clusters',
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
             podname: { label: 'Pod' },
             hypervisortype: { label: 'Hypervisor' },
             //allocationstate: { label: 'Allocation State' },
@@ -5164,7 +5164,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' },
@@ -5195,7 +5195,7 @@
           section: 'hosts',
           id: 'hosts',
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
             zonename: { label: 'Zone' },
             podname: { label: 'Pod' },
             clustername: { label: 'Cluster' }
@@ -5756,7 +5756,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' },
@@ -5814,7 +5814,7 @@
           id: 'primarystorages',
           section: 'primary-storage',
           fields: {
-            name: { label: 'Name' },            
+            name: { label: 'label.name' },            
             ipaddress: { label: 'Server' },
 						path: { label: 'Path' }
           },
@@ -5904,7 +5904,7 @@
                   },
 
                   name: {
-                    label: 'Name',
+                    label: 'label.name',
                     validation: { required: true }
                   },
 
@@ -6438,7 +6438,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' },
@@ -6493,7 +6493,7 @@
           id: 'secondarystorages',
           section: 'seconary-storage',
           fields: {
-            name: { label: 'Name' },
+            name: { label: 'label.name' },
 						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
           },
 
@@ -6621,7 +6621,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'label.name' }
                   },
                   {
                     id: { label: 'label.id' },
