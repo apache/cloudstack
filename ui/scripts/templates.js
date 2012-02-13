@@ -1,41 +1,41 @@
 (function(cloudStack, $) {
 
   cloudStack.sections.templates = {
-    title: 'Templates',
+    title: 'label.menu.templates',
     id: 'templates',
     sectionSelect: {
-      label: 'Select view'
+      label: 'label.select-view'
     },
     sections: {
       templates: {
         type: 'select',
-        title: 'Templates',
+        title: 'label.menu.templates',
         listView: {
           id: 'templates',
-          label: 'Templates',          
-          filters: {     
-            all: { 
-						  preFilter: function(args) {					  
-								if (isAdmin()) //"listTemplates&templatefilter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all templates until listTemplates API supports a new type of templatefilter for domain-admin to see all templates in his domain.
-									return true;
-								else						
-									return false;
-							},
-						  label: 'All' 
-					 },
-						mine: { label: 'Mine' },		
-            featured: { label: 'Featured' },
-            community: { label: 'Community' }            
-          },          
+          label: 'label.menu.templates',
+          filters: {
+            all: {
+              preFilter: function(args) {
+                if (isAdmin()) //"listTemplates&templatefilter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all templates until listTemplates API supports a new type of templatefilter for domain-admin to see all templates in his domain.
+                  return true;
+                else
+                  return false;
+              },
+              label: 'ui.listView.filters.all'
+           },
+            mine: { label: 'ui.listView.filters.mine' },
+            featured: { label: 'label.featured' },
+            community: { label: 'label.community' }
+          },
           fields: {
-            name: { label: 'Name' },           
-            zonename: { label: 'Zone' },
-            hypervisor: { label: 'Hypervisor' }
+            name: { label: 'label.name' },
+            zonename: { label: 'label.zone' },
+            hypervisor: { label: 'label.hypervisor' }
           },
           reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
           actions: {
             add: {
-              label: 'Create template',
+              label: 'label.action.create.template',
 
               messages: {
                 confirm: function(args) {
@@ -53,16 +53,16 @@
               },
 
               createForm: {
-                title: 'Create template',
-                desc: 'Please fill in the following data to create a new template.',
+                title: 'label.action.create.template',
+                desc: 'label.action.create.template',
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
-                    label: 'Name',
+                    label: 'label.name',
                     validation: { required: true }
                   },
                   description: {
-                    label: 'Description',
+                    label: 'label.description',
                     validation: { required: true }
                   },
                   url: {
@@ -70,7 +70,7 @@
                     validation: { required: true }
                   },
                   zone: {
-                    label: 'Zone',
+                    label: 'label.zone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -91,7 +91,7 @@
                     }
                   },
                   hypervisor: {
-                    label: 'Hypervisor',
+                    label: 'label.hypervisor',
                     dependsOn: 'zone',
                     select: function(args) {
                       if(args.zone == null)
@@ -116,9 +116,9 @@
                           args.response.success({data: items});
                         }
                       });
-                      
+
                       args.$select.change(function() {
-                        var $form = $(this).closest('form');                        
+                        var $form = $(this).closest('form');
                         if($(this).val() == "VMware") {
                           $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
                           $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
@@ -128,14 +128,14 @@
                           $form.find('.form-item[rel=rootDiskControllerType]').hide();
                           $form.find('.form-item[rel=nicAdapterType]').hide();
                           $form.find('.form-item[rel=keyboardType]').hide();
-                        }                        
-                      });                      
+                        }
+                      });
                     }
                   },
-                  
+
                   //fields for hypervisor == "VMware" (starts here)
                   rootDiskControllerType: {
-                    label: 'Root disk controller',
+                    label: 'label.root.disk.controller',
                     isHidden: true,
                     select: function(args) {
                       var items = []
@@ -146,7 +146,7 @@
                     }
                   },
                   nicAdapterType: {
-                    label: 'NIC adapter type',
+                    label: 'label.nic.adapter.type',
                     isHidden: true,
                     select: function(args) {
                       var items = []
@@ -159,20 +159,20 @@
                     }
                   },
                   keyboardType: {
-                    label: 'Keyboard type',
+                    label: 'label.keyboard.type',
                     isHidden: true,
                     select: function(args) {
                       var items = []
                       items.push({id: "", description: ""});
-                      items.push({id: "us", description: "US"});  
-                      items.push({id: "jp", description: "Japanese"});                                         
+                      items.push({id: "us", description: "US"});
+                      items.push({id: "jp", description: "Japanese"});
                       args.response.success({data: items});
                     }
                   },
                   //fields for hypervisor == "VMware" (ends here)
-                  
+
                   format: {
-                    label: 'Format',
+                    label: 'label.format',
                     dependsOn: 'hypervisor',
                     select: function(args) {
                       var items = [];
@@ -201,7 +201,7 @@
                   },
 
                   osTypeId: {
-                    label: 'OS Type',
+                    label: 'label.os.type',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listOsTypes"),
@@ -216,23 +216,23 @@
                   },
 
                   isExtractable: {
-                    label: "Extractable",
+                    label: "extractable",
                     isBoolean: true
                   },
 
                   isPasswordEnabled: {
-                    label: "Password Enabled",
+                    label: "label.password.enabled",
                     isBoolean: true
                   },
 
                   isPublic: {
-                    label: "Public",
+                    label: "label.public",
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
-                    label: "Featured",
+                    label: "label.featured",
                     isBoolean: true,
                     isHidden: true
                   }
@@ -258,13 +258,13 @@
 
                 //VMware only (starts here)
                 if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "")
-                  array1.push("&details[0].rootDiskController=" + args.data.rootDiskControllerType);                    
+                  array1.push("&details[0].rootDiskController=" + args.data.rootDiskControllerType);
                 if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "")
-                  array1.push("&details[0].nicAdapter=" + args.data.nicAdapterType);                    
+                  array1.push("&details[0].nicAdapter=" + args.data.nicAdapterType);
                 if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "")
-                  array1.push("&details[0].keyboard=" + args.data.keyboardType);  
+                  array1.push("&details[0].keyboard=" + args.data.keyboardType);
                 //VMware only (ends here)
-                
+
                 $.ajax({
                   url: createURL("registerTemplate" + array1.join("")),
                   dataType: "json",
@@ -294,22 +294,22 @@
                   args.complete();
                 }
               }
-            }  
+            }
           },
 
-          dataProvider: function(args) {        	
-        	  var array1 = [];
+          dataProvider: function(args) {
+            var array1 = [];
             var ignoreProject = false;
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
-                switch(args.filterBy.kind) {  
+                switch(args.filterBy.kind) {
                 case "all":
                   ignoreProject = true;
                   array1.push("&templatefilter=all");
-                  break; 
+                  break;
                 case "mine":
                   array1.push("&templatefilter=self");
-                  break;                  								
+                  break;
                 case "featured":
                   ignoreProject = true;
                   array1.push("&templatefilter=featured");
@@ -317,18 +317,18 @@
                 case "community":
                   ignoreProject = true;
                   array1.push("&templatefilter=community");
-                  break;                   
+                  break;
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
                 switch(args.filterBy.search.by) {
                 case "name":
-								  if(args.filterBy.search.value.length > 0)
+                  if(args.filterBy.search.value.length > 0)
                     array1.push("&keyword=" + args.filterBy.search.value);
                   break;
                 }
               }
-            }                	  
+            }
             $.ajax({
               url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join(""),
                              { ignoreProject: ignoreProject }),
@@ -348,50 +348,50 @@
             name: 'Template details',
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
                   array1.push("&displaytext=" + todb(args.data.displaytext));
-                  array1.push("&ostypeid=" + args.data.ostypeid);                  
-                  array1.push("&passwordenabled=" + (args.data.passwordenabled=="on"));	                                                                      
+                  array1.push("&ostypeid=" + args.data.ostypeid);
+                  array1.push("&passwordenabled=" + (args.data.passwordenabled=="on"));
                   $.ajax({
                     url: createURL("updateTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array1.join("")),
                     dataType: "json",
                     async: false,
-                    success: function(json) {    
-                      //API returns an incomplete embedded object  (some properties are missing in the embedded template object)                   
+                    success: function(json) {
+                      //API returns an incomplete embedded object  (some properties are missing in the embedded template object)
                     }
                   });
-                                                      
+
                   var array2 = [];
-                  array2.push("&ispublic=" + (args.data.ispublic=="on"));                           
-                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));	
-                  array2.push("&isextractable=" + (args.data.isextractable=="on"));	                                          
+                  array2.push("&ispublic=" + (args.data.ispublic=="on"));
+                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));
+                  array2.push("&isextractable=" + (args.data.isextractable=="on"));
                   $.ajax({
                     url: createURL("updateTemplatePermissions&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array2.join("")),
                     dataType: "json",
                     async: false,
-                    success: function(json) {   
-                      //API doesn't return an embedded object                    
+                    success: function(json) {
+                      //API doesn't return an embedded object
                     }
                   });
-                  
+
                   //So, we call listTemplates API to get a complete template object
-                  $.ajax({                  
+                  $.ajax({
                     url: createURL("listTemplates&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&templatefilter=self"),
                     dataType: "json",
                     async: false,
-                    success: function(json){            
+                    success: function(json){
                       var item = json.listtemplatesresponse.template;
                       args.response.success({data: item});
                     }
-                  });                  
+                  });
                 }
               },
 
               copyTemplate: {
-                label: 'Copy template',
+                label: 'label.action.copy.template',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to copy template?';
@@ -400,18 +400,15 @@
                     return 'Template is being copied.';
                   },
                   notification: function(args) {
-                    return 'Copying template';
-                  },
-                  complete: function(args) {
-                    return 'Template has been copied.';
+                    return 'label.action.copy.template';
                   }
                 },
                 createForm: {
-                  title: 'Copy template',
+                  title: 'label.action.copy.template',
                   desc: '',
                   fields: {
                     destinationZoneId: {
-                      label: 'Destination zone',
+                      label: 'label.destination.zone',
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
@@ -460,29 +457,26 @@
               },
 
               downloadTemplate: {
-                label: 'Download template',
+                label: 'label.action.download.template',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to download template ?';
-                  },
-                  success: function(args) {
-                    return 'Template is being downloaded.';
+                    return 'message.action.download.template';
                   },
                   notification: function(args) {
                     return 'Downloading template';
                   },
                   complete: function(args) {
                     var url = decodeURIComponent(args.url);
-                    var htmlMsg = 'Please click <a href="#">00000</a> to download template';
+                    var htmlMsg = _l('message.download.template');
                     var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                     return htmlMsg2;
                   }
                 },
-                action: function(args) {								  
-								  var apiCmd = "extractTemplate&mode=HTTP_DOWNLOAD&id=" + args.context.templates[0].id;
-									if(args.context.templates[0].zoneid != null)
-									  apiCmd += "&zoneid=" + args.context.templates[0].zoneid;
-								
+                action: function(args) {
+                  var apiCmd = "extractTemplate&mode=HTTP_DOWNLOAD&id=" + args.context.templates[0].id;
+                  if(args.context.templates[0].zoneid != null)
+                    apiCmd += "&zoneid=" + args.context.templates[0].zoneid;
+
                   $.ajax({
                     url: createURL(apiCmd),
                     dataType: "json",
@@ -510,19 +504,13 @@
               },
 
               'delete': {
-                label: 'Delete template',
+                label: 'label.action.delete.template',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete template ?';
-                  },
-                  success: function(args) {
-                    return 'template is being deleted.';
+                    return 'message.action.delete.template';
                   },
                   notification: function(args) {
-                    return 'Deleting template';
-                  },
-                  complete: function(args) {
-                    return 'template has been deleted.';
+                    return 'label.action.delete.template';
                   }
                 },
                 action: function(args) {
@@ -559,7 +547,7 @@
             },
             tabs: {
               details: {
-                title: 'Template Details',
+                title: 'label.details',
 
                 preFilter: function(args) {
                   var hiddenFields;
@@ -575,24 +563,24 @@
                 fields: [
                   {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
                   {
                     id: { label: 'ID' },
-                    zonename: { label: 'Zone name' },
-                    zoneid: { label: 'Zone ID' },
+                    zonename: { label: 'label.zone.name' },
+                    zoneid: { label: 'label.zone.id' },
                     displaytext: {
-                      label: 'Description',
+                      label: 'label.description',
                       isEditable: true
                     },
-                    hypervisor: { label: 'Hypervisor' },
-                    templatetype: { label: 'Template Type' },
-                    isready: { label: 'Ready', converter:cloudStack.converters.toBooleanText },
-                    status: { label: 'Status' },
+                    hypervisor: { label: 'label.hypervisor' },
+                    templatetype: { label: 'label.type' },
+                    isready: { label: 'state.ready', converter:cloudStack.converters.toBooleanText },
+                    status: { label: 'label.status' },
                     size : {
-                      label: 'Size',
+                      label: 'label.size',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -601,36 +589,36 @@
                       }
                     },
                     isextractable: {
-                      label: 'Extractable',
+                      label: 'extractable',
                       isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     passwordenabled: {
-                      label: 'Password Enabled',
+                      label: 'label.password.enabled',
                       isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     ispublic: {
-                      label: 'Public',
+                      label: 'label.public',
                       isBoolean: true,
-                      isEditable: true, 
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
-                      label: 'Featured',
+                      label: 'label.featured',
                       isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     crossZones: {
-                      label: 'Cross Zones',
+                      label: 'label.cross.zones',
                       converter:cloudStack.converters.toBooleanText
                     },
 
                     ostypeid: {
-                      label: 'OS Type',
+                      label: 'label.os.type',
                       isEditable: true,
                       select: function(args) {
                         $.ajax({
@@ -649,29 +637,29 @@
                       }
                     },
 
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
-                dataProvider: function(args) {								 
-                  var jsonObj = args.context.templates[0];									
-									var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
-									if(jsonObj.zoneid != null)
-										apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;   
-										
-								  $.ajax({
-									  url: createURL(apiCmd),
-										dataType: "json",
-										success: function(json) {		
-											args.response.success({
-												actionFilter: templateActionfilter,
-												data: json.listtemplatesresponse.template[0]
-											});	
-										}
-									});		
-									
+                dataProvider: function(args) {
+                  var jsonObj = args.context.templates[0];
+                  var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
+                  if(jsonObj.zoneid != null)
+                    apiCmd = apiCmd + "&zoneid=" + jsonObj.zoneid;
+
+                  $.ajax({
+                    url: createURL(apiCmd),
+                    dataType: "json",
+                    success: function(json) {
+                      args.response.success({
+                        actionFilter: templateActionfilter,
+                        data: json.listtemplatesresponse.template[0]
+                      });
+                    }
+                  });
+
                 }
               }
             }
@@ -680,60 +668,51 @@
       },
       isos: {
         type: 'select',
-        title: 'ISOs',
+        title: 'label.iso',
         listView: {
-          label: 'ISOs',
-          filters: {            
-					  all: { 						
-						 preFilter: function(args) {					  
-								if (isAdmin()) //"listIsos&filter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all Isos until listIsos API supports a new type of isofilter for domain-admin to see all Isos in his domain.
-									return true;
-								else						
-									return false;
-							},						
-						  label: 'All' 
-						},
-					  mine: { label: 'Mine' },					
-            featured: { label: 'Featured' },
-            community: { label: 'Community' }            
-          },      
-          fields: {
-            displaytext: { label: 'Name' },            
-            zonename: { label: 'Zone' }
+          label: 'label.iso',
+          filters: {
+            all: {
+             preFilter: function(args) {
+                if (isAdmin()) //"listIsos&filter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all Isos until listIsos API supports a new type of isofilter for domain-admin to see all Isos in his domain.
+                  return true;
+                else
+                  return false;
+              },
+              label: 'ui.listView.filters.all'
+            },
+            mine: { label: 'ui.listView.filters.mine' },
+            featured: { label: 'label.featured' },
+            community: { label: 'labelc.community' }
           },
-          
+          fields: {
+            displaytext: { label: 'label.name' },
+            zonename: { label: 'label.zone' }
+          },
+
           reorder: cloudStack.api.actions.sort('updateIso', 'isos'),
 
           actions: {
             add: {
-              label: 'Create ISO',
+              label: 'label.add.iso',
 
               messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to create a ISO?';
-                },
-                success: function(args) {
-                  return 'Your new ISO is being created.';
-                },
                 notification: function(args) {
-                  return 'Creating new ISO';
-                },
-                complete: function(args) {
-                  return 'ISO has been created successfully!';
+                  return 'label.add.iso';
                 }
               },
 
               createForm: {
-                title: 'Create ISO',
-                desc: 'Please fill in the following data to create a new ISO.',
+                title: 'label.add.iso',
+                desc: 'label.add.iso',
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
-                    label: 'Name',
+                    label: 'label.name',
                     validation: { required: true }
                   },
                   description: {
-                    label: 'Description',
+                    label: 'label.description',
                     validation: { required: true }
                   },
                   url: {
@@ -741,7 +720,7 @@
                     validation: { required: true }
                   },
                   zone: {
-                    label: 'Zone',
+                    label: 'label.zone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -763,13 +742,13 @@
                   },
 
                   isBootable: {
-                    label: "Bootable",
+                    label: "label.bootable",
                     isBoolean: true,
-										isChecked: true
+                    isChecked: true
                   },
 
                   osTypeId: {
-                    label: 'OS Type',
+                    label: 'label.os.type',
                     dependsOn: 'isBootable',
                     isHidden: false,
                     validation: { required: true },
@@ -792,18 +771,18 @@
                   },
 
                   isExtractable: {
-                    label: "Extractable",
+                    label: "extractable",
                     isBoolean: true
                   },
 
                   isPublic: {
-                    label: "Public",
+                    label: "label.public",
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
-                    label: "Featured",
+                    label: "label.featured",
                     isBoolean: true,
                     isHidden: true
                   }
@@ -856,22 +835,22 @@
                   args.complete();
                 }
               }
-            }  
+            }
           },
 
-          dataProvider: function(args) {           
+          dataProvider: function(args) {
             var array1 = [];
-	          var ignoreProject = false;
+            var ignoreProject = false;
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
-                switch(args.filterBy.kind) {   
-								case "all":
+                switch(args.filterBy.kind) {
+                case "all":
                   ignoreProject = true;
                   array1.push("&isofilter=all");
-                  break;   
-								case "mine":
+                  break;
+                case "mine":
                   array1.push("&isofilter=self");
-                  break; 								
+                  break;
                 case "featured":
                   ignoreProject = true;
                   array1.push("&isofilter=featured");
@@ -879,19 +858,19 @@
                 case "community":
                   ignoreProject = true;
                   array1.push("&isofilter=community");
-                  break;      
+                  break;
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
                 switch(args.filterBy.search.by) {
                 case "name":
-								  if(args.filterBy.search.value.length > 0)
+                  if(args.filterBy.search.value.length > 0)
                     array1.push("&keyword=" + args.filterBy.search.value);
                   break;
                 }
               }
-            }                
-                      
+            }
+
             $.ajax({
               url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join(""), { ignoreProject: ignoreProject }),
               dataType: "json",
@@ -907,10 +886,10 @@
           },
 
           detailView: {
-            name: 'ISO details',
+            name: 'label.details',
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&name=" + todb(args.data.name));
@@ -921,59 +900,50 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                      //updateIso API returns an incomplete ISO object (isextractable and isfeatured are missing)              
+                      //updateIso API returns an incomplete ISO object (isextractable and isfeatured are missing)
                     }
                   });
-                                   
+
                   var array2 = [];
-                  array2.push("&ispublic=" + (args.data.ispublic=="on"));                           
-                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));	
-                  array2.push("&isextractable=" + (args.data.isextractable=="on"));	  
+                  array2.push("&ispublic=" + (args.data.ispublic=="on"));
+                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));
+                  array2.push("&isextractable=" + (args.data.isextractable=="on"));
                   $.ajax({
                     url: createURL("updateIsoPermissions&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + array2.join("")),
                     dataType: "json",
                     async: false,
-                    success: function(json) {   
-                      //updateIsoPermissions API doesn't return ISO object             
+                    success: function(json) {
+                      //updateIsoPermissions API doesn't return ISO object
                     }
                   });
-                  
+
                   //So, we call listIsos API to get a complete ISO object
-                  $.ajax({                  
+                  $.ajax({
                     url: createURL("listIsos&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + "&isofilter=self"),
                     dataType: "json",
                     async: false,
-                    success: function(json){  
+                    success: function(json){
                       var item = json.listisosresponse.iso;
                       args.response.success({data: item});
                     }
-                  });    
+                  });
                 }
               },
 
               copyISO: {
-                label: 'Copy ISO',
+                label: 'label.action.copy.iso',
                 messages: {
-                  confirm: function(args) {
-                    return 'Are you sure you want to copy ISO?';
-                  },
-                  success: function(args) {
-                    return 'ISO is being copied.';
-                  },
                   notification: function(args) {
                     return 'Copying ISO';
-                  },
-                  complete: function(args) {
-                    return 'ISO has been copied.';
                   }
                 },
                 createForm: {
-                  title: 'Copy ISO',
-                  desc: '',
+                  title: 'label.action.copy.iso',
+                  desc: 'label.action.copy.iso',
                   fields: {
                     destinationZoneId: {
-                      label: 'Destination zone',
-											validation: { required: true },
+                      label: 'label.destinaton.zone',
+                      validation: { required: true },
                       select: function(args) {
                         $.ajax({
                           url: createURL("listZones&available=true"),
@@ -1021,16 +991,13 @@
               },
 
               downloadISO: {
-                label: 'Download ISO',
+                label: 'label.action.download.ISO',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to download ISO ?';
-                  },
-                  success: function(args) {
-                    return 'ISO is being downloaded.';
+                    return 'message.action.download.iso';
                   },
                   notification: function(args) {
-                    return 'Downloading ISO';
+                    return 'label.action.download.ISO';
                   },
                   complete: function(args) {
                     var url = decodeURIComponent(args.url);
@@ -1039,11 +1006,11 @@
                     return htmlMsg2;
                   }
                 },
-                action: function(args) {								 
-									var apiCmd = "extractIso&mode=HTTP_DOWNLOAD&id=" + args.context.isos[0].id;
-									if(args.context.isos[0].zoneid != null)
-									  apiCmd += "&zoneid=" + args.context.isos[0].zoneid;
-										
+                action: function(args) {
+                  var apiCmd = "extractIso&mode=HTTP_DOWNLOAD&id=" + args.context.isos[0].id;
+                  if(args.context.isos[0].zoneid != null)
+                    apiCmd += "&zoneid=" + args.context.isos[0].zoneid;
+
                   $.ajax({
                     url: createURL(apiCmd),
                     dataType: "json",
@@ -1071,19 +1038,13 @@
               },
 
               'delete': {
-                label: 'Delete ISO',
+                label: 'label.action.delete.ISO',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete ISO ?';
-                  },
-                  success: function(args) {
-                    return 'ISO is being deleted.';
+                    return 'message.action.delete.ISO';
                   },
                   notification: function(args) {
-                    return 'Deleting ISO';
-                  },
-                  complete: function(args) {
-                    return 'ISO has been deleted.';
+                    return 'label.action.delete.ISO';
                   }
                 },
                 action: function(args) {
@@ -1121,27 +1082,27 @@
 
             tabs: {
               details: {
-                title: 'ISO Details',                
+                title: 'label.details',
 
                 fields: [
                   {
                     name: {
-                      label: 'Name',
+                      label: 'label.name',
                       isEditable: true
                     }
                   },
                   {
                     id: { label: 'ID' },
-                    zonename: { label: 'Zone name' },
-                    zoneid: { label: 'Zone ID' },
+                    zonename: { label: 'label.zone.name' },
+                    zoneid: { label: 'label.zone.id' },
                     displaytext: {
-                      label: 'Description',
+                      label: 'label.description',
                       isEditable: true
                     },
-                    isready: { label: 'Ready', converter:cloudStack.converters.toBooleanText },
-                    status: { label: 'Status' },
+                    isready: { label: 'state.Ready', converter:cloudStack.converters.toBooleanText },
+                    status: { label: 'label.status' },
                     size : {
-                      label: 'Size',
+                      label: 'label.size',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -1150,34 +1111,34 @@
                       }
                     },
                     isextractable: {
-                      label: 'Extractable',
+                      label: 'extractable',
                        isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     bootable: {
-                      label: 'Bootable',
+                      label: 'label.bootable',
                       converter:cloudStack.converters.toBooleanText
                     },
                     ispublic: {
-                      label: 'Public',
+                      label: 'label.public',
                        isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
-                      label: 'Featured',
+                      label: 'label.featured',
                        isBoolean: true,
-                      isEditable: true,  
+                      isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
                     crossZones: {
-                      label: 'Cross Zones',
+                      label: 'label.cross.zones',
                       converter:cloudStack.converters.toBooleanText
                     },
 
                     ostypeid: {
-                      label: 'OS Type',
+                      label: 'label.os.type',
                       isEditable: true,
                       select: function(args) {
                         $.ajax({
@@ -1196,29 +1157,29 @@
                       }
                     },
 
-                    domain: { label: 'Domain' },
-                    account: { label: 'Account' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
 
                 dataProvider: function(args) {
-								  var jsonObj = args.context.isos[0];
-									var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
-									if(jsonObj.zoneid != null)
-											apiCmd = apiCmd + "&zoneid="+jsonObj.zoneid;    
-								
-								  $.ajax({
-									  url: createURL(apiCmd),
-										dataType: "json",
-										success: function(json) {	
-											args.response.success({
-												actionFilter: isoActionfilter,
-												data: json.listisosresponse.iso[0]
-											});											
-										}
-									});
-								                  
+                  var jsonObj = args.context.isos[0];
+                  var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
+                  if(jsonObj.zoneid != null)
+                      apiCmd = apiCmd + "&zoneid="+jsonObj.zoneid;
+
+                  $.ajax({
+                    url: createURL(apiCmd),
+                    dataType: "json",
+                    success: function(json) {
+                      args.response.success({
+                        actionFilter: isoActionfilter,
+                        data: json.listisosresponse.iso[0]
+                      });
+                    }
+                  });
+
                 }
               }
             }
@@ -1230,20 +1191,20 @@
 
   var templateActionfilter = function(args) {
     var jsonObj = args.context.item;
-    var allowedActions = [];   
+    var allowedActions = [];
 
     // "Edit Template", "Copy Template", "Create VM"
     if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
         || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
       //do nothing
     }
-    else {      
-      allowedActions.push("edit");   
-						
-			if(havingSwift == false)
-        allowedActions.push("copyTemplate");   
-      
-      //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.   
+    else {
+      allowedActions.push("edit");
+
+      if(havingSwift == false)
+        allowedActions.push("copyTemplate");
+
+      //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
     }
 
     // "Download Template"
@@ -1251,18 +1212,18 @@
         || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
       //do nothing
     }
-    else {      
+    else {
       allowedActions.push("downloadTemplate");
     }
 
     // "Delete Template"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
     if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
-        || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)        
-        || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")) {   
+        || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
+        || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")) {
       //do nothing
     }
-    else {      
+    else {
       allowedActions.push("delete");
     }
 
@@ -1279,11 +1240,11 @@
        ) {
          //do nothing
        }
-    else {      
-      allowedActions.push("edit");   
-			
-      if(havingSwift == false)		
-        allowedActions.push("copyISO");      
+    else {
+      allowedActions.push("edit");
+
+      if(havingSwift == false)
+        allowedActions.push("copyISO");
     }
 
     // "Create VM"
@@ -1297,7 +1258,7 @@
      ) {
        //do nothing
      }
-     else {     
+     else {
        allowedActions.push("createVm");
      }
      */
@@ -1310,7 +1271,7 @@
        ) {
          //do nothing
        }
-    else {      
+    else {
       allowedActions.push("downloadISO");
     }
 
@@ -1322,7 +1283,7 @@
        ) {
          //do nothing
        }
-    else {     
+    else {
       allowedActions.push("delete");
     }
 

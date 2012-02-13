@@ -1599,6 +1599,13 @@
 
 <script language="javascript">
 dictionary = {
+'message.action.download.iso': '<fmt:message key="message.action.download.iso"/>',
+'message.action.download.template': '<fmt:message key="message.action.download.template"/>',
+'label.destination.zone': '<fmt:message key="label.destination.zone"/>',
+'label.nic.adapter.type': '<fmt:message key="label.nic.adapter.type"/>',
+'label.keyboard.type': '<fmt:message key="label.keyboard.type"/>',
+'label.root.disk.controller': '<fmt:message key="label.root.disk.controller"/>',
+'label.community': '<fmt:message key="label.community"/>',
 'label.remove.egress.rule': '<fmt:message key="label.remove.egress.rule"/>',
 'label.add.egress.rule': '<fmt:message key="label.add.egress.rule"/>',
 'label.egress.rule': '<fmt:message key="label.egress.rule"/>',
