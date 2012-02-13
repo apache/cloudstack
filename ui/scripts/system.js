@@ -2423,15 +2423,15 @@
                       label: 'Number of retries',
                       defaultValue: '2'
                     },
-                    inline: {
-                      label: 'Mode',
-                      select: function(args) {
-                        var items = [];
-                        items.push({id: "false", description: "side by side"});
-                        items.push({id: "true", description: "inline"});
-                        args.response.success({data: items});
-                      }
-                    },
+                    // inline: {
+                    //   label: 'Mode',
+                    //   select: function(args) {
+                    //     var items = [];
+                    //     items.push({id: "false", description: "side by side"});
+                    //     items.push({id: "true", description: "inline"});
+                    //     args.response.success({data: items});
+                    //   }
+                    // },
                     capacity: {
                       label: 'Capacity',
                       validation: { required: false, number: true }
@@ -2630,15 +2630,15 @@
                       label: 'Number of retries',
                       defaultValue: '2'
                     },
-                    inline: {
-                      label: 'Mode',
-                      select: function(args) {
-                        var items = [];
-                        items.push({id: "false", description: "side by side"});
-                        items.push({id: "true", description: "inline"});
-                        args.response.success({data: items});
-                      }
-                    },
+                    // inline: {
+                    //   label: 'Mode',
+                    //   select: function(args) {
+                    //     var items = [];
+                    //     items.push({id: "false", description: "side by side"});
+                    //     items.push({id: "true", description: "inline"});
+                    //     args.response.success({data: items});
+                    //   }
+                    // },
                     capacity: {
                       label: 'Capacity',
                       validation: { required: false, number: true }
@@ -2845,15 +2845,15 @@
                       label: 'Timeout',
                       defaultValue: '300'
                     },
-                    inline: {
-                      label: 'Mode',
-                      select: function(args) {
-                        var items = [];
-                        items.push({id: "false", description: "side by side"});
-                        items.push({id: "true", description: "inline"});
-                        args.response.success({data: items});
-                      }
-                    },
+                    // inline: {
+                    //   label: 'Mode',
+                    //   select: function(args) {
+                    //     var items = [];
+                    //     items.push({id: "false", description: "side by side"});
+                    //     items.push({id: "true", description: "inline"});
+                    //     args.response.success({data: items});
+                    //   }
+                    // },
                     publicnetwork: {
                       label: 'Public network',
                       defaultValue: 'untrusted'
@@ -3858,15 +3858,15 @@
                     label: 'Number of retries',
                     defaultValue: '2'
                   },
-                  inline: {
-                    label: 'Mode',
-                    select: function(args) {
-                      var items = [];
-                      items.push({id: "false", description: "side by side"});
-                      items.push({id: "true", description: "inline"});
-                      args.response.success({data: items});
-                    }
-                  },
+                  // inline: {
+                  //   label: 'Mode',
+                  //   select: function(args) {
+                  //     var items = [];
+                  //     items.push({id: "false", description: "side by side"});
+                  //     items.push({id: "true", description: "inline"});
+                  //     args.response.success({data: items});
+                  //   }
+                  // },
                   capacity: {
                     label: 'Capacity',
                     validation: { required: false, number: true }
@@ -4056,15 +4056,15 @@
                     label: 'Number of retries',
                     defaultValue: '2'
                   },
-                  inline: {
-                    label: 'Mode',
-                    select: function(args) {
-                      var items = [];
-                      items.push({id: "false", description: "side by side"});
-                      items.push({id: "true", description: "inline"});
-                      args.response.success({data: items});
-                    }
-                  },
+                  // inline: {
+                  //   label: 'Mode',
+                  //   select: function(args) {
+                  //     var items = [];
+                  //     items.push({id: "false", description: "side by side"});
+                  //     items.push({id: "true", description: "inline"});
+                  //     args.response.success({data: items});
+                  //   }
+                  // },
                   capacity: {
                     label: 'Capacity',
                     validation: { required: false, number: true }
@@ -4268,15 +4268,15 @@
                     label: 'Timeout',
                     defaultValue: '300'
                   },
-                  inline: {
-                    label: 'Mode',
-                    select: function(args) {
-                      var items = [];
-                      items.push({id: "false", description: "side by side"});
-                      items.push({id: "true", description: "inline"});
-                      args.response.success({data: items});
-                    }
-                  },
+                  // inline: {
+                  //   label: 'Mode',
+                  //   select: function(args) {
+                  //     var items = [];
+                  //     items.push({id: "false", description: "side by side"});
+                  //     items.push({id: "true", description: "inline"});
+                  //     args.response.success({data: items});
+                  //   }
+                  // },
                   publicnetwork: {
                     label: 'Public network',
                     defaultValue: 'untrusted'
