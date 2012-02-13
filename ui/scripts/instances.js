@@ -57,7 +57,7 @@
                   $.ajax({
                     url: createURL("listZones&available=true"),
                     dataType: "json",
-                    async: true,
+                    async: false,
                     success: function(json) {
                       zoneObjs = json.listzonesresponse.zone;
                       args.response.success({ data: {zones: zoneObjs}});
