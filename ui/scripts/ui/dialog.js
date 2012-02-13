@@ -29,7 +29,7 @@
               return false;
             });
       
-      var createLabel = args.form.createLabel;
+      var createLabel = _l(args.form.createLabel);
       var $submit = $('<input>')
             .attr({
               type: 'submit'

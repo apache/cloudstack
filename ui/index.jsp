@@ -1599,6 +1599,8 @@
 
 <script language="javascript">
 dictionary = {
+'label.full.path': '<fmt:message key="label.full.path"/>',
+'message.add.domain': '<fmt:message key="message.add.domain"/>',
 'message.delete.user': '<fmt:message key="message.delete.user"/>',
 'message.enable.user': '<fmt:message key="message.enable.user"/>',
 'message.disable.user': '<fmt:message key="message.disable.user"/>',
