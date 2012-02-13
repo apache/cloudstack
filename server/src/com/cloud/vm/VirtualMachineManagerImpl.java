@@ -2164,12 +2164,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     deltaSync(hs.getNewStates());
                     hs.setExecuted();
                 }
-            } else if (!answer.getResult()) {
-                s_logger.warn("Cleanup failed due to " + answer.getDetails());
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cleanup succeeded. Details " + answer.getDetails());
-                }
             }
         }
         return true;
