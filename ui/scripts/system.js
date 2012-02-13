@@ -280,7 +280,7 @@
           detailView: {
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Public');
 
@@ -295,7 +295,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     traffictype: { label: 'Traffic type' },
@@ -428,7 +428,7 @@
           detailView: {
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Storage');
 
@@ -443,7 +443,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     traffictype: { label: 'Traffic type' },
@@ -585,7 +585,7 @@
           detailView: {
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Management');
 
@@ -600,7 +600,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     traffictype: { label: 'Traffic type' },
@@ -672,7 +672,7 @@
           detailView: {
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var vlan;
                   if(args.data.endVlan == null || args.data.endVlan.length == 0)
@@ -712,7 +712,7 @@
             
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 preFilter: function(args) {                  
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
@@ -1391,7 +1391,7 @@
 									  },
                     actions: {
                       edit: {
-                        label: 'Edit',
+                        label: 'label.edit',
                         messages: {
                           confirm: function(args) {
                             return 'Are you sure you want to edit network?';
@@ -1572,7 +1572,7 @@
                     },
                     tabs: {
                       details: {
-                        title: 'Details',
+                        title: 'label.details',
                         preFilter: function(args) {
                           var hiddenFields = [];
                           if(selectedZoneObj.networktype == "Basic") {
@@ -1601,7 +1601,7 @@
                             }
                           },
                           {
-                            id: { label: 'ID' },
+                            id: { label: 'label.id' },
                             displaytext: {
                               label: 'Description',
                               isEditable: true
@@ -1900,7 +1900,7 @@
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     state: { label: 'State' },
                     physicalnetworkid: { label: 'Physical network ID' },
                     destinationphysicalnetworkid: { label: 'Destination physical networkID' }
@@ -2267,13 +2267,13 @@
                     },
                     tabs: {
                       details: {
-                        title: 'Details',
+                        title: 'label.details',
                         fields: [
                           {
                             name: { label: 'Name' }
                           },
                           {
-                            id: { label: 'ID' },
+                            id: { label: 'label.id' },
                             state: { label: 'State' },
                             publicip: { label: 'Public IP' },
                             guestipaddress: { label: 'Guest IP' },
@@ -2283,7 +2283,7 @@
                             networkdomain: { label: 'Network domain' },
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },
-                            created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
+                            created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
                             isredundantrouter: {
                               label: 'Redundant router',
                               converter: cloudStack.converters.toBooleanText
@@ -2370,13 +2370,13 @@
             viewAll: { label: 'Providers', path: '_zone.netscalerProviders' },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' }
+                    id: { label: 'label.id' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -2579,13 +2579,13 @@
             viewAll: { label: 'Providers', path: '_zone.f5Providers' },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' }
+                    id: { label: 'label.id' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -2787,13 +2787,13 @@
             viewAll: { label: 'Providers', path: '_zone.srxProviders' },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' }
+                    id: { label: 'label.id' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -3010,14 +3010,14 @@
             viewAll: { label: 'Security Groups', path: 'network.securityGroups' },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
                     state: { label: 'State' },
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     physicalnetworkid: { label: 'Physical network ID' }
                   }
                 ],
@@ -3093,7 +3093,7 @@
             },
 
             fields: {
-              id: { label: 'ID' },
+              id: { label: 'label.id' },
               name: { label: 'Name' }//,
               //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
             }
@@ -3360,7 +3360,7 @@
               isMaximized: true,
               actions: {
                 edit: {
-                  label: 'Edit',
+                  label: 'label.edit',
                   action: function(args) {
                     var array1 = [];
                     array1.push("&name="  +todb(args.data.name));
@@ -3386,7 +3386,7 @@
               },
               tabs: {
                 details: {
-                  title: 'Details',
+                  title: 'label.details',
 									
 									preFilter: function(args) {
 										var hiddenFields = [];		                   
@@ -3400,7 +3400,7 @@
                       name: { label: 'Zone', isEditable: true }
                     },
                     {
-                      id: { label: 'ID' },
+                      id: { label: 'label.id' },
                       allocationstate: { label: 'Allocation State' },
                       dns1: { label: 'DNS 1', isEditable: true },
                       dns2: { label: 'DNS 2', isEditable: true },
@@ -3748,13 +3748,13 @@
                       },
                       tabs: {
                         details: {
-                          title: 'Details',
+                          title: 'label.details',
                           fields: [
                             {
                               name: { label: 'Name' }
                             },
                             {
-                              id: { label: 'ID' },
+                              id: { label: 'label.id' },
                               state: { label: 'State' },
                               systemvmtype: {
                                 label: 'Type',
@@ -3773,7 +3773,7 @@
                               linklocalip: { label: 'Link local IP' },
                               hostname: { label: 'Host' },
                               gateway: { label: 'Gateway' },
-                              created: { label: 'Created', converter: cloudStack.converters.toLocalDate },
+                              created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
                               activeviewersessions: { label: 'Active sessions' }
                             }
                           ],
@@ -3975,10 +3975,10 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    lbdeviceid: { label: 'ID' },
+                    lbdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     lbdevicestate: { label: 'Status' },
                     lbdevicename: { label: 'Type' },
@@ -4180,10 +4180,10 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    lbdeviceid: { label: 'ID' },
+                    lbdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     lbdevicestate: { label: 'Status' },
                     lbdevicename: { label: 'Type' },
@@ -4400,10 +4400,10 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    fwdeviceid: { label: 'ID' },
+                    fwdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     fwdevicestate: { label: 'Status' },
                     fwdevicename: { label: 'Type' },
@@ -4555,7 +4555,7 @@
             },
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&name="  +todb(args.data.name));
@@ -4687,13 +4687,13 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name', isEditable: true }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     netmask: { label: 'Netmask', isEditable: true },
                     startip: { label: 'Start IP Range', isEditable: true },
                     endip: { label: 'End IP Range', isEditable: true },
@@ -4721,7 +4721,7 @@
                 multiple: true,
                 fields: [
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     gateway: { label: 'Gateway' },
                     netmask: { label: 'Netmask' },
                     startip: { label: 'Start IP range' },
@@ -5161,13 +5161,13 @@
 
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     zonename: { label: 'Zone' },
                     podname: { label: 'Pod' },
                     hypervisortype: { label: 'Hypervisor' },
@@ -5547,7 +5547,7 @@
 						},				
             actions: {
               edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];
                   array1.push("&hosttags=" + todb(args.data.hosttags));
@@ -5753,13 +5753,13 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     resourcestate: { label: 'Resource state' },
                     state: { label: 'State' },
                     type: { label: 'Type' },
@@ -6180,7 +6180,7 @@
 
                   //always appear (begin)
                   storageTags: {
-                    label: 'Storage Tags',
+                    label: 'label.storage.tags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -6295,7 +6295,7 @@
             name: "Primary storage details",
             actions: {						 
 							edit: {
-                label: 'Edit',
+                label: 'label.edit',
                 action: function(args) {
                   var array1 = [];							
                   array1.push("&tags=" + todb(args.data.tags));
@@ -6435,16 +6435,16 @@
 
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     state: { label: 'State' },  
 										tags: { 
-										  label: 'Storage tags',
+										  label: 'label.storage.tags',
 											isEditable: true
 										},
 										podname: { label: 'Pod' },
@@ -6494,7 +6494,7 @@
           section: 'seconary-storage',
           fields: {
             name: { label: 'Name' },
-						created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
           },
 
           dataProvider: function(args) {
@@ -6618,14 +6618,14 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'Name' }
                   },
                   {
-                    id: { label: 'ID' },
-                    created: { label: 'Created', converter: cloudStack.converters.toLocalDate }
+                    id: { label: 'label.id' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 
@@ -6647,7 +6647,7 @@
         listView: {
           section: 'guest-IP-range',
           fields: {
-            //id: { label: 'ID' },
+            //id: { label: 'label.id' },
             //podname: { label: 'Pod' },
             //vlan: { label: 'VLAN' },
             startip: { label: 'Start IP' },
