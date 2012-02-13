@@ -384,8 +384,8 @@
       <arg value="build-apidoc.sh" />
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
+      <arg value="${dist.dir}" />
       <arg value="-f ${commands.file},${commands.ext.file},${commands.simulator.file}" />
-      <arg value="-d ${dist.dir}" />
     </exec>
     <echo message="Result locates at ${dist.dir}/commands.xml" />
     
@@ -396,5 +396,9 @@
     </chmod>
   </target>
   
-</project>
+  <target name="build-apidocs-zip" depends="build-apidocs">
+    <delete file="${dist.dir}/apidocs-${version}.zip" />
+    <zip destfile="${dist.dir}/apidocs-${version}.zip" basedir="${dist.dir}/xmldoc/html" />
+  </target>
 
+</project>
