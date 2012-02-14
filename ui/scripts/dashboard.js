@@ -236,12 +236,14 @@
                 complete($.extend(data, {
                   zoneCapacities: $.map(capacities, function(capacity) {
                     if (capacity.podname) {
-                      capacity.zonename = capacity.zonename.concat('<br/>Pod: ' + capacity.podname);
+                      capacity.zonename = capacity.zonename.concat('<br/>' + _l('label.pod') + ': ' + capacity.podname);
                     }
 
                     if (capacity.clustername) {
-                      capacity.zonename = capacity.zonename.concat('<br/>Cluster: ' + capacity.clustername);
+                      capacity.zonename = capacity.zonename.concat('<br/>' + _l('label.cluster') + ': ' + capacity.clustername);
                     }
+
+                    capacity.zonename.replace('Zone:', _l('label.zone') + ':');
 
                     return {
                       zoneID: capacity.zoneid, // Temporary fix for dashboard
