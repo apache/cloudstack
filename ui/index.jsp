@@ -2578,6 +2578,7 @@ dictionary = {
 'supported.source.NAT.type': '<fmt:message key="supported.source.NAT.type" />',
 'elastic.LB': '<fmt:message key="elastic.LB" />',
 'LB.isolation': '<fmt:message key="LB.isolation" />',
-'elastic.IP': '<fmt:message key="elastic.IP" />'
+'elastic.IP': '<fmt:message key="elastic.IP" />',
+'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />'
 };
 </script>
