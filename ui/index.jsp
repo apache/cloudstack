@@ -1599,6 +1599,8 @@
 
 <script language="javascript">
 dictionary = {
+'changed.item.properties': '<fmt:message key="changed.item.properties"/>',
+'label.apply': '<fmt:message key="label.apply"/>',
 'label.default': '<fmt:message key="label.default"/>',
 'label.viewing': '<fmt:message key="label.viewing"/>',
 'label.drag.new.position': '<fmt:message key="label.drag.new.position"/>',
@@ -1675,6 +1677,7 @@ dictionary = {
 'label.create.template': '<fmt:message key="label.create.template" />',
 'message.download.volume.confirm': '<fmt:message key="message.download.volume.confirm" />',
 'message.detach.disk': '<fmt:message key="message.detach.disk" />',
+'state.ready': '<fmt:message key="state.ready" />',
 'state.Ready': '<fmt:message key="state.Ready" />',
 'label.vm.display.name': '<fmt:message key="label.vm.display.name" />',
 'label.select-view': '<fmt:message key="label.select-view" />',

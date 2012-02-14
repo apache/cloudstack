@@ -257,7 +257,7 @@
       var $inputs = $detailView.find('input, select');
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
-      var $editButton = $('<div>').addClass('button done').html(_l('Apply')).hide()
+      var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide()
             .appendTo(
               $detailView.find('.ui-tabs-panel .detail-group.actions')              
             ).fadeIn();
@@ -276,7 +276,7 @@
             var val = $input.is(':checked');
             
             $value.data('detail-view-boolean-value', val);
-            $value.html(val ? _l('Yes') : _l('No')); 
+            $value.html(val ? _l('label.yes') : _l('label.no')); 
           }
           else if ($input.is('select')) {
             $value.html(
@@ -316,7 +316,7 @@
               success: function(args) {
                 var notificationArgs = {
                   section: id,
-                  desc: 'Changed item properties',
+                  desc: _l('changed.item.properties'),
                   _custom: args ? args._custom : null
                 };
 
@@ -880,7 +880,7 @@
         $('<div>')
           .addClass('button refresh')
           .append(
-            $('<span>').html(_l('Refresh'))
+            $('<span>').html(_l('label.refresh'))
           )
       );
   };
