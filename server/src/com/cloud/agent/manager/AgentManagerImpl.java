@@ -17,9 +17,12 @@
  */
 package com.cloud.agent.manager;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -676,6 +679,74 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
     
+    private ServerResource loadResourcesWithoutHypervisor(HostVO host){
+        String resourceName = host.getResource();
+        ServerResource resource = null;
+        try {
+            Class<?> clazz = Class.forName(resourceName);
+            Constructor constructor = clazz.getConstructor();
+            resource = (ServerResource) constructor.newInstance();
+        } catch (ClassNotFoundException e) {
+            s_logger.warn("Unable to find class " + host.getResource(), e);
+        } catch (InstantiationException e) {
+            s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
+        } catch (IllegalAccessException e) {
+            s_logger.warn("Illegal access " + host.getResource(), e);
+        } catch (SecurityException e) {
+            s_logger.warn("Security error on " + host.getResource(), e);
+        } catch (NoSuchMethodException e) {
+            s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
+        } catch (IllegalArgumentException e) {
+            s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
+        } catch (InvocationTargetException e) {
+            s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
+        }
+
+        if(resource != null){
+            _hostDao.loadDetails(host);
+    
+            HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
+            params.putAll(host.getDetails());
+    
+            params.put("guid", host.getGuid());
+            params.put("zone", Long.toString(host.getDataCenterId()));
+            if (host.getPodId() != null) {
+                params.put("pod", Long.toString(host.getPodId()));
+            }
+            if (host.getClusterId() != null) {
+                params.put("cluster", Long.toString(host.getClusterId()));
+                String guid = null;
+                ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+                if (cluster.getGuid() == null) {
+                    guid = host.getDetail("pool");
+                } else {
+                    guid = cluster.getGuid();
+                }
+                if (guid != null && !guid.isEmpty()) {
+                    params.put("pool", guid);
+                }
+            }
+    
+            params.put("ipaddress", host.getPrivateIpAddress());
+            params.put("secondary.storage.vm", "false");
+            params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
+            params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
+    
+            try {
+                resource.configure(host.getName(), params);
+            } catch (ConfigurationException e) {
+                s_logger.warn("Unable to configure resource due to " + e.getMessage());
+                return null;
+            }
+    
+            if (!resource.start()) {
+                s_logger.warn("Unable to start the resource");
+                return null;
+            }
+        }
+        return resource;
+    }
+    
 
     @SuppressWarnings("rawtypes")
     protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
@@ -685,14 +756,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             //load the respective discoverer
             Discoverer discoverer = _resourceMgr.getMatchingDiscover(host.getHypervisorType());
             if(discoverer == null){
-                s_logger.warn("Unable to find a Discoverer to load the resource: "+ host.getId() +" for hypervisor type: "+host.getHypervisorType());
-                return false;
+                s_logger.info("Could not to find a Discoverer to load the resource: "+ host.getId() +" for hypervisor type: "+host.getHypervisorType());
+                resource = loadResourcesWithoutHypervisor(host);
+            }else{
+                resource = discoverer.reloadResource(host);
             }
             
-            resource = discoverer.reloadResource(host);
-            
             if(resource == null){
-                s_logger.warn("Discoverer is unable to load the resource: "+ host.getId());
+                s_logger.warn("Unable to load the resource: "+ host.getId());
                 return false;
             }
         
