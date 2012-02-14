@@ -78,9 +78,9 @@ tcp_or_udp_entry() {
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables -t mangle $op PREROUTING --proto $proto -i $dev -d $publicIp \
-           --destination-port $port -j MARK --set-mark $tableNo) && 
+           --destination-port $port -j MARK --set-mark $tableNo &>> $OUTFILE || [ "$op" == "-D" ]) && 
   (sudo iptables -t mangle $op PREROUTING --proto $proto -i $dev -d $publicIp \
-           --destination-port $port -m state --state NEW -j CONNMARK --save-mark) &&
+           --destination-port $port -m state --state NEW -j CONNMARK --save-mark &>> $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables -t nat $op OUTPUT  --proto $proto -d $publicIp  \
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
@@ -193,9 +193,9 @@ static_nat() {
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
   (sudo iptables -t mangle $op PREROUTING -i $dev -d $publicIp \
-           -j MARK --set-mark $tableNo) && 
+           -j MARK --set-mark $tableNo &>>  $OUTFILE || [ "$op" == "-D" ]) && 
   (sudo iptables -t mangle $op PREROUTING -i $dev -d $publicIp \
-           -m state --state NEW -j CONNMARK --save-mark) &&
+           -m state --state NEW -j CONNMARK --save-mark &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp -j DNAT \
            --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp  -m state \
