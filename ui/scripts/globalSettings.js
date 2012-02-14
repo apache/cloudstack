@@ -62,7 +62,6 @@
             if (args.filterBy.search.value) {
               data.name = args.filterBy.search.value;
             }
-
             $.ajax({
               url: createURL('listConfigurations'),
               data: data,
