@@ -1599,6 +1599,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.clear.list': '<fmt:message key="label.clear.list"/>',
 'label.add.vm': '<fmt:message key="label.add.vm"/>',
 'label.full.path': '<fmt:message key="label.full.path"/>',
 'message.add.domain': '<fmt:message key="message.add.domain"/>',
