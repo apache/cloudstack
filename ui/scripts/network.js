@@ -558,6 +558,8 @@
                   if(zone.networktype == "Basic") {
                     hiddenFields.push("account");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("vlan");
+                    hiddenFields.push("cidr");
                     //hiddenFields.push("netmask");
                   }
 
