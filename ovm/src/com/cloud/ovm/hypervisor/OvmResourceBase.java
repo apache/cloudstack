@@ -21,6 +21,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -78,6 +80,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.ovm.object.Connection;
@@ -106,6 +109,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Types.XenAPIException;
 
 public class OvmResourceBase implements ServerResource, HypervisorResource {
 	private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
@@ -125,6 +129,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     String _guestNetworkName;
     boolean _canBridgeFirewall;
     static boolean _isHeartBeat = false;
+    List<String> _bridges = null;
 	protected HashMap<String, State> _vms = new HashMap<String, State>(50);
 	static HashMap<String, State> _stateMaps;
 	private final Map<String, Pair<Long, Long>> _vmNetworkStats= new ConcurrentHashMap<String, Pair<Long, Long>>();
@@ -197,26 +202,25 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		}
 		
         _conn = new Connection(_ip, _agentUserName, _agentPassword);
-        List<String> bridges = null;
         try {
 			OvmHost.registerAsMaster(_conn);
 			OvmHost.registerAsVmServer(_conn);
-			bridges = OvmBridge.getAllBridges(_conn);
+			_bridges = OvmBridge.getAllBridges(_conn);
 		} catch (XmlRpcException e) {
 			s_logger.debug("Get bridges failed", e);
 			throw new ConfigurationException("Cannot get bridges on host " + _ip + "," + e.getMessage());
 		}
 		
-		if (_privateNetworkName != null && !bridges.contains(_privateNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
+		if (_privateNetworkName != null && !_bridges.contains(_privateNetworkName)) {
+			throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
 		}
 		
-		if (_publicNetworkName != null && !bridges.contains(_publicNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
+		if (_publicNetworkName != null && !_bridges.contains(_publicNetworkName)) {
+			throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
 		}
 		
-		if (_guestNetworkName != null && !bridges.contains(_guestNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
+		if (_guestNetworkName != null && !_bridges.contains(_guestNetworkName)) {
+			throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
 		}
         
 		/* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
@@ -1225,6 +1229,54 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		return new Answer(cmd);
 	}
 	
+	protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if network name setup is done on the resource");
+        }
+
+		List<PhysicalNetworkSetupInfo> infoList = cmd.getPhysicalNetworkInfoList();
+
+		boolean errorout = false;
+		String msg = "";
+		for (PhysicalNetworkSetupInfo info : infoList) {
+			if (!isNetworkSetupByName(info.getGuestNetworkName())) {
+				msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Guest Network is not configured on the backend by name "
+				        + info.getGuestNetworkName();
+				errorout = true;
+				break;
+			}
+			if (!isNetworkSetupByName(info.getPrivateNetworkName())) {
+				msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name "
+				        + info.getPrivateNetworkName();
+				errorout = true;
+				break;
+			}
+			if (!isNetworkSetupByName(info.getPublicNetworkName())) {
+				msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name "
+				        + info.getPublicNetworkName();
+				errorout = true;
+				break;
+			}
+		}
+		
+		if (errorout) {
+			s_logger.error(msg);
+			return new CheckNetworkAnswer(cmd, false, msg);
+		} else {
+			return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
+		}
+    }
+
+    private boolean isNetworkSetupByName(String nameTag) {
+        if (nameTag != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Looking for network setup by name " + nameTag);
+            }
+            return _bridges.contains(nameTag);
+        }
+        return true;
+    }    
+    
 	@Override
 	public Answer executeRequest(Command cmd) {
 		Class<? extends Command> clazz = cmd.getClass();
@@ -1282,6 +1334,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			return execute((CopyVolumeCommand)cmd);
 		} else if (clazz == DeleteStoragePoolCommand.class) {
 			return execute((DeleteStoragePoolCommand)cmd);
+		} else if (clazz == CheckNetworkCommand.class) {
+			return execute((CheckNetworkCommand)cmd);
 		} else {
 			return Answer.createUnsupportedCommandAnswer(cmd);
 		}

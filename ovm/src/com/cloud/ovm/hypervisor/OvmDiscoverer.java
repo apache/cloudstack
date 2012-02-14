@@ -74,12 +74,11 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer,
 	}
 
 	private boolean checkIfExisted(String guid) {
-		SearchCriteria2<HostVO, Long> sc = SearchCriteria2.create(HostVO.class,
-				Long.class);
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getGuid(), SearchCriteria.Op.EQ, guid);
 		sc.addAnd(sc.getEntity().getHypervisorType(), SearchCriteria.Op.EQ,
 				HypervisorType.Ovm);
-		List<Long> hosts = sc.list();
+		List<HostVO> hosts = sc.list();
 		return !hosts.isEmpty();
 	}
 
