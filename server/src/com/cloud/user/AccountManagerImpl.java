@@ -445,20 +445,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
-
+        
+        //delete the account record
         if (!_accountDao.remove(accountId)) {
             s_logger.error("Unable to delete account " + accountId);
             return false;
         }
 
-        List<UserVO> users = _userDao.listByAccount(accountId);
-
-        for (UserVO user : users) {
-            _userDao.remove(user.getId());
-        }
-
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Remove account " + accountId);
+            s_logger.debug("Removed account " + accountId);
         }
 
         return cleanupAccount(account, callerUserId, caller);
@@ -468,8 +463,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
-
+        
         try {
+            //cleanup the users from the account
+            List<UserVO> users = _userDao.listByAccount(accountId);
+            for (UserVO user : users) {
+                if (!_userDao.remove(user.getId())) {
+                    s_logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
+                    accountCleanupNeeded = true;
+                }
+            }
+            
+            //delete the account from project accounts
+            _projectAccountDao.removeAccountFromProjects(accountId);
+            
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
@@ -582,7 +589,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
-// up
+            // up
             // successfully
             if (networksDeleted) {
                 if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)) {
@@ -1010,7 +1017,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjects(accountId);
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
         if (!managedProjectIds.isEmpty()) {
             StringBuilder projectIds = new StringBuilder();
             for (Long projectId : managedProjectIds) {
