@@ -561,11 +561,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             
             // untar OVA file at template directory
             command = new Script("tar", 0, s_logger);
+            command.add("--no-same-owner");
             command.add("-xf", installFullName);
             command.setWorkDir(installFullPath);
+            s_logger.info("Executing command: " + command.toString());
             result = command.execute();
             if(result != null) {
-                String msg = "unable to copy snapshot " + snapshotFullName + " to " + installFullPath; 
+                String msg = "unable to untar snapshot " + snapshotFullName + " to " 
+                    + installFullPath; 
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -643,8 +646,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String srcFileName = getOVFFilePath(srcOVAFileName);
         if(srcFileName == null) {
             Script command = new Script("tar", 0, s_logger);
+            command.add("--no-same-owner");
             command.add("-xf", srcOVAFileName);
             command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir);
+            s_logger.info("Executing command: " + command.toString());
             String result = command.execute();
             if(result != null) {
                 String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
