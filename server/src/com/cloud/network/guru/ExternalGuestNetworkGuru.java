@@ -213,7 +213,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
         if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             profile.setStrategy(ReservationStrategy.Start);
-            profile.setIp4Address(null);
+            /* We won't clear IP address, because router may set gateway as it IP, and it would be updated properly later */
+            //profile.setIp4Address(null);
             profile.setGateway(null);
             profile.setNetmask(null);
         }
