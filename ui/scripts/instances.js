@@ -1016,10 +1016,10 @@
           },
 
           attachISO: {
-            label: 'label.attach.iso',
+            label: 'label.action.attach.iso',
             createForm: {
-              title: 'label.attach.iso',
-              desc: 'label.attach.iso',
+              title: 'label.action.attach.iso',
+              desc: 'label.action.attach.iso',
               fields: {
                 iso: {
                   label: 'ISO',
@@ -1077,13 +1077,13 @@
           },
 
           detachISO: {
-            label: 'label.detach.iso',
+            label: 'label.action.detach.iso',
             messages: {
               confirm: function(args) {
                 return 'message.detach.iso.confirm';
               },
               notification: function(args) {
-                return 'label.detach.iso';
+                return 'label.action.detach.iso';
               }
             },
             action: function(args) {
