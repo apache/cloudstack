@@ -1,6 +1,6 @@
 (function(cloudStack) {
   cloudStack.sections.events = {
-    title: 'Events',
+    title: 'label.menu.events',
     id: 'events',
     sectionSelect: {
       preFilter: function(args) {
@@ -9,20 +9,20 @@
         else
           return ["events"];
       },
-      label: 'Select view'
+      label: 'label.select-view'
     },
     sections: {
       events: {
         type: 'select',
-        title: 'Events',
+        title: 'label.menu.events',
         listView: {
           id: 'events',
-          label: 'Events',
+          label: 'label.menu.events',
           fields: {
-            type: { label: 'Type' },
-            description: { label: 'Description' },
-            username: { label: 'Initiated By' },
-            created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
+            type: { label: 'label.type' },
+            description: { label: 'label.description' },
+            username: { label: 'label.initiated.by' },
+            created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -48,15 +48,15 @@
             });
           },
 					detailView: {
-            name: 'Event details',
+            name: 'label.details',
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
-                    type: { label: 'Type' },
-                    description: { label: 'Description' },
-                    created: { label: 'Date', converter: cloudStack.converters.toLocalDate }
+                    type: { label: 'label.type' },
+                    description: { label: 'label.description' },
+                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 dataProvider: function(args) {
@@ -69,13 +69,13 @@
       },
       alerts: {
         type: 'select',
-        title: 'Alerts',
+        title: 'label.menu.alerts',
         listView: {
           id: 'alerts',
-          label: 'Alerts',
+          label: 'label.menu.alerts',
           fields: {
-            description: { label: 'Description' },
-            sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
+            description: { label: 'label.description' },
+            sent: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {
 					  var array1 = [];  
@@ -103,12 +103,12 @@
             name: 'Alert details',
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     id: { label: 'ID' },
-                    description: { label: 'Description' },
-                    sent: { label: 'Date', converter: cloudStack.converters.toLocalDate }
+                    description: { label: 'label.description' },
+                    sent: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
                 dataProvider: function(args) {

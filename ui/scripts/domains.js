@@ -1,6 +1,6 @@
 (function(cloudStack) {
   cloudStack.sections.domains = {
-    title: 'Domains',
+    title: 'label.menu.domains',
     id: 'domains',
 
     // Domain tree
@@ -9,26 +9,24 @@
       detailView: {
         name: 'Domain details',
         viewAll: {
-          label: 'Accounts',
+          label: 'label.accounts',
           path: 'accounts'
         },
 
         // Detail actions
         actions: {
           'delete': {
-            label: 'Delete domain',
+            label: 'label.action.delete.domain',
             messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to delete this domain?'
-              },
               notification: function(args) {
-                return 'Domain is deleted';
+                return 'label.action.delete.domain';
               }
             },
 
             createForm: {
-              title: 'Delete domain',
-              createLabel: 'Delete',
+              title: 'label.action.delete.domain',
+              desc: 'message.action.delete.domain',
+              createLabel: 'label.delete',
               preFilter: function(args) {
                 if(isAdmin()) {
                   args.$form.find('.form-item[rel=isForced]').css('display', 'inline-block');
@@ -36,7 +34,7 @@
               },
               fields: {
                 isForced: {
-                  label: 'Force delete',
+                  label: 'force.delete',
                   isBoolean: true,
                   isHidden: true
                 }
@@ -75,10 +73,10 @@
 
           // Edit domain
           edit: {
-            label: 'Edit domain details',
+            label: 'label.action.edit.domain',
             messages: {
               notification: function(args) {
-                return 'Edited domain: ' + args.name;
+                return 'label.action.edit.domain';
               }
             },
             action: function(args) {
@@ -142,7 +140,7 @@
 
           // Add domain
           create: {
-            label: 'Add domain',
+            label: 'label.add.domain',
 
             action: function(args) {
               var array1 = [];
@@ -164,20 +162,20 @@
 
             messages: {
               notification: function(args) {
-                return 'Created domain'
+                return 'label.add.domain';
               }
             },
 
             createForm: {
-              title: 'Add subdomain',
-              desc: 'Please specify the subdomain you want to create under this domain',
+              title: 'label.add.domain',
+              desc: 'message.add.domain',
               fields: {
                 name: {
-                  label: 'Name',
+                  label: 'label.name',
                   validation: { required: true }
                 },
                 networkdomain: {
-                  label: 'Network Domain',
+                  label: 'label.network.domain',
                   validation: { required: false }
                 }
               }
@@ -186,43 +184,43 @@
         },
         tabs: {
           details: {
-            title: 'Details',
+            title: 'label.details',
             fields: [
               {
-                name: { label: 'Name', isEditable: true }
+                name: { label: 'label.name', isEditable: true }
               },
               {
                 id: { label: 'ID' },
 								
-								path: { label: 'Full path'},
+								path: { label: 'label.full.path' },
 								
                 networkdomain: { 
-                  label: 'Network domain',
+                  label: 'label.network.domain',
                   isEditable: true
                 },
                 vmLimit: {
-                  label: 'Instance limits',
+                  label: 'label.instance.limits',
                   isEditable: true
                 },
                 ipLimit: {
-                  label: 'Public IP limits',
+                  label: 'label.ip.limits',
                   isEditable: true
                 },
                 volumeLimit: {
-                  label: 'Volume limits',
+                  label: 'label.volume.limits',
                   isEditable: true
                 },
                 snapshotLimit: {
-                  label: 'Snapshot limits',
+                  label: 'label.snapshot.limits',
                   isEditable: true
                 },
                 templateLimit: {
-                  label: 'Template limits',
+                  label: 'label.template.limits',
                   isEditable: true
                 },
-                accountTotal: { label: 'Accounts' },
-                vmTotal: { label: 'Instances' },
-                volumeTotal: { label: 'Volumes' }
+                accountTotal: { label: 'label.accounts' },
+                vmTotal: { label: 'label.instances' },
+                volumeTotal: { label: 'label.volumes' }
               }
             ],
             dataProvider: function(args) {

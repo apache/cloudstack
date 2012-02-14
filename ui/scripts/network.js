@@ -558,6 +558,8 @@
                   if(zone.networktype == "Basic") {
                     hiddenFields.push("account");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("vlan");
+                    hiddenFields.push("cidr");
                     //hiddenFields.push("netmask");
                   }
 
@@ -1322,44 +1324,39 @@
 
                   // Get network data
                   $.ajax({
-                    url: createURL("listPublicIpAddresses&id="+args.id),
+                    url: createURL('listPublicIpAddresses'),
+                    data: {
+                      listAll: true,
+                      id: args.id
+                    },
                     dataType: "json",
                     async: true,
                     success: function(json) {
                       var item = items[0];
+                      // Get VPN data
                       $.ajax({
-                        url: createURL('listNetworks'),
+                        url: createURL('listRemoteAccessVpns'),
                         data: {
-                          networkid: this.associatednetworkid
+                          listAll: true,
+                          publicipid: item.id
                         },
                         dataType: 'json',
                         async: true,
-                        success: function(data) {
-                          // Get VPN data
-                          $.ajax({
-                            url: createURL('listRemoteAccessVpns'),
-                            data: {
-                              publicipid: item.id
-                            },
-                            dataType: 'json',
-                            async: true,
-                            success: function(vpnResponse) {
-                              var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-                              if (isVPNEnabled) {
-                                item.vpnenabled = true;
-                                item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-                              };
+                        success: function(vpnResponse) {
+                          var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+                          if (isVPNEnabled) {
+                            item.vpnenabled = true;
+                            item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+                          };
 
-                              // Check if data retrieval complete
-                              item.network = data.listnetworksresponse.network[0];
-                              item.networkname = item.network.name;
-                              item.networktype = item.network.type;
+                          // Check if data retrieval complete
+                          item.network = args.context.networks[0];
+                          item.networkname = item.network.name;
+                          item.networktype = item.network.type;
 
-                              args.response.success({
-                                actionFilter: actionFilters.ipAddress,
-                                data: item
-                              });
-                            }
+                          args.response.success({
+                            actionFilter: actionFilters.ipAddress,
+                            data: item
                           });
                         }
                       });
