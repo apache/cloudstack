@@ -706,7 +706,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     }
 
-    private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter) {
+    private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account caller, Object name, Object id, Long vmId, Object keyword, Filter searchFilter) {
 
         // it was decided to return all offerings for the user's domain, and everything above till root (for normal user
 // or
@@ -714,7 +714,7 @@ public class ManagementServerImpl implements ManagementServer {
         // list all offerings belonging to this domain, and all of its parents
         // check the parent, if not null, add offerings for that parent to list
         List<ServiceOfferingVO> sol = new ArrayList<ServiceOfferingVO>();
-        DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+        DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
         boolean includePublicOfferings = true;
         if (domainRecord != null) {
             while (true) {
@@ -740,22 +740,14 @@ public class ManagementServerImpl implements ManagementServer {
                     if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                         throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
                     }
-                    if ((account != null) && !isAdmin(account.getType())) {
-                        if (account.getId() != vmInstance.getAccountId()) {
-                            throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
-                        }
-                    }
+                    
+                    _accountMgr.checkAccess(caller, null, false, vmInstance);
 
                     ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
                     sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
 
                     sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
                 }
-
-                // if (id != null) {
-                // includePublicOfferings = false;
-                // sc.addAnd("id", SearchCriteria.Op.EQ, id);
-                // }
 
                 if (name != null) {
                     includePublicOfferings = false;
@@ -780,8 +772,8 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         } else {
-            s_logger.error("Could not find the domainId for account:" + account.getAccountName());
-            throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+            s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
+            throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
         }
 
         // add all the public offerings to the sol list before returning
