@@ -1633,6 +1633,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         try {
             long proxyVmId = startupCmd.getProxyVmId();
             ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
+            if(consoleProxy == null) {
+                s_logger.info("Proxy " + proxyVmId + " is no longer in DB, skip sending startup command");
+                return;
+            }
+            
             assert (consoleProxy != null);
             HostVO consoleProxyHost = findConsoleProxyHostByName(consoleProxy.getHostName());
 
