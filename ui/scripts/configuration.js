@@ -1248,7 +1248,7 @@
 
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
-                    label: 'Service Offering',
+                    label: 'label.service.offering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true'),
@@ -1280,14 +1280,14 @@
                   },
 									
                   "service.SourceNat.redundantRouterCapabilityCheckbox" : {
-                    label: "Redundant router capability",
+                    label: "redundant.router.capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
                     isBoolean: true
                   },
 
                   "service.SourceNat.sourceNatTypeDropdown": {
-                    label: 'Supported Source NAT type',
+                    label: 'supported.source.NAT.type',
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
@@ -1300,13 +1300,13 @@
                     }
                   },
 									"service.Lb.elasticLbCheckbox" : {
-                    label: "Elastic LB",
+                    label: "elastic.LB",
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
                     isBoolean: true
                   },
                   "service.Lb.lbIsolationDropdown": {
-                    label: 'LB isolation',
+                    label: 'LB.isolation',
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
                     select: function(args) {
@@ -1319,7 +1319,7 @@
                     }
                   },									
 									"service.StaticNat.elasticIpCheckbox" : {
-										label: "Elastic IP",
+										label: "elastic.IP",
 										isHidden: true,
 										dependsOn: 'service.StaticNat.isEnabled',
 										isBoolean: true

@@ -2123,7 +2123,7 @@
                           desc: '',
                           fields: {
                             serviceOfferingId: {
-                              label: 'Service offering',
+                              label: 'label.service.offering',
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
@@ -2279,7 +2279,7 @@
                             guestipaddress: { label: 'Guest IP' },
                             linklocalip: { label: 'Link local IP' },
                             hostname: { label: 'Host' },
-                            serviceofferingname: { label: 'Service offering' },
+                            serviceofferingname: { label: 'label.service.offering' },
                             networkdomain: { label: 'Network domain' },
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },

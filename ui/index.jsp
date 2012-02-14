@@ -2573,6 +2573,11 @@ dictionary = {
 'conserve.mode': '<fmt:message key="conserve.mode" />',
 'created.by.system': '<fmt:message key="created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
-'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />'
+'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
+'redundant.router.capability': '<fmt:message key="redundant.router.capability" />',
+'supported.source.NAT.type': '<fmt:message key="supported.source.NAT.type" />',
+'elastic.LB': '<fmt:message key="elastic.LB" />',
+'LB.isolation': '<fmt:message key="LB.isolation" />',
+'elastic.IP': '<fmt:message key="elastic.IP" />'
 };
 </script>
