@@ -733,15 +733,22 @@
               var project = args.context.projects[0];
               var projectOwner = project.account;
               var currentAccount = args.context.users[0].account;
+              var hiddenTabs = [];
 
-              if ((!isAdmin() && !isDomainAdmin()) &&
-                  (currentAccount != projectOwner)) return ['accounts', 'invitations', 'resources'];
+              if (!isAdmin() && !isDomainAdmin()) {
+                hiddenTabs.push('resources');
 
-              if (!cloudStack.projects.requireInvitation()) {
-                return ['invitations'];
+                if (currentAccount != projectOwner) {
+                  hiddenTabs.push('accounts');
+                  hiddenTabs.push('invitations');
+                }
               }
 
-              return [];
+              if (!cloudStack.projects.requireInvitation()) {
+                hiddenTabs.push('invitations');
+              }
+
+              return hiddenTabs;
             },
             tabs: {
               details: {
