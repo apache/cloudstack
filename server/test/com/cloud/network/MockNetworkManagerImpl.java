@@ -514,7 +514,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public long findPhysicalNetworkId(long zoneId, String tag) {
+    public long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType) {
         // TODO Auto-generated method stub
         return 0;
     }
