@@ -1569,7 +1569,7 @@
                 isdefault: {
                   label: 'label.is.default',
                   converter: function(data) {
-                    return data ? 'label.yes' : 'label.no';
+                    return data ? _l('label.yes') : _l('label.no');
                   }
                 }
               }
@@ -1579,7 +1579,7 @@
                 var name = 'NIC ' + (index + 1);
 
                 if (nic.isdefault) {
-                  name += ' (Default)';
+                  name += ' (' + _l('label.default') + ')';
                 }
                 return $.extend(nic, {
                   name: name
@@ -1610,12 +1610,12 @@
            * Statistics tab
            */
           stats: {
-            title: 'Statistics',
+            title: 'label.statistics',
             fields: {
-              totalCPU: { label: 'Total CPU' },
-              cpuused: { label: 'CPU Utilized' },
-              networkkbsread: { label: 'Network Read' },
-              networkkbswrite: { label: 'Network Write' }
+              totalCPU: { label: 'label.total.cpu' },
+              cpuused: { label: 'label.cpu.utilized' },
+              networkkbsread: { label: 'label.network.read' },
+              networkkbswrite: { label: 'label.network.write' }
             },
             dataProvider: function(args) {
               var jsonObj = args.context.instances[0];

@@ -1599,6 +1599,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.default': '<fmt:message key="label.default"/>',
 'label.viewing': '<fmt:message key="label.viewing"/>',
 'label.drag.new.position': '<fmt:message key="label.drag.new.position"/>',
 'label.move.down.row': '<fmt:message key="label.move.down.row"/>',
