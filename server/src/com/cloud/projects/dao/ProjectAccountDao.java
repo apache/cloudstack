@@ -36,7 +36,9 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
 
     List<Long> listPermittedAccountIds(long accountId);
 
-    List<Long> listAdministratedProjects(long adminAccountId);
+    List<Long> listAdministratedProjectIds(long adminAccountId);
 
     Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role);
+    
+    void removeAccountFromProjects(long accountId);
 }
