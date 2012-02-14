@@ -645,3 +645,5 @@ UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'ovm.guest.n
 UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.public.network.device';
 UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.private.network.device';
 UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.guest.network.device';
+
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `ovm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a Ovm host';

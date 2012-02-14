@@ -1978,6 +1978,7 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `kvm_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
   `vmware_network_label` varchar(255) DEFAULT 'vSwitch0' COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
   `simulator_network_label` varchar(255) COMMENT 'The name labels needed for identifying the simulator',
+  `ovm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a Ovm host',
   `vlan` varchar(255) COMMENT 'The vlan tag to be sent down to a VMware host',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
