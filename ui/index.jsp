@@ -627,8 +627,8 @@
             </ul>
 
             <div class="info-desc">
-              Enter the first and last IP addresses that define a range that CloudStack can assign to guest VMs. We strongly recommend the use of multiple NICs. If multiple NICs are used, the guest IPs may be in a separate subnet. If one NIC is used, the guest IPs should be in the same CIDR as the pod's CIDR, but not within the reserved system IP range.
-            </div>
+              Guest network traffic is communication between end-user virtual machines.  
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
