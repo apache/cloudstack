@@ -21,7 +21,7 @@
             else
               return false;
           },
-          label: 'ui.listView.filters.destroyed'
+          label: 'state.Destroyed'
         }
       },
       fields: {
