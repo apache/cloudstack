@@ -79,7 +79,7 @@
   };
 
   cloudStack.sections.system = {
-    title: 'System',
+    title: 'label.menu.system',
     id: 'system',
 
     // System dashboard
@@ -298,12 +298,12 @@
                 fields: [
                   {
                     traffictype: { label: 'label.traffic.type' },
-                    broadcastdomaintype: { label: 'Broadcast domain type' }
+                    broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
+                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -336,15 +336,15 @@
                     context: args.context,
                     noSelect: true,
                     fields: {
-                      'gateway': { edit: true, label: 'Gateway' },
-                      'netmask': { edit: true, label: 'Netmask' },
-                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
-                      'startip': { edit: true, label: 'Start IP' },
-                      'endip': { edit: true, label: 'End IP' },
-                      'add-rule': { label: 'Add', addButton: true }
+                      'gateway': { edit: true, label: 'label.gateway' },
+                      'netmask': { edit: true, label: 'label.netmask' },
+                      'vlan': { edit: true, label: 'label.vlan', isOptional: true },
+                      'startip': { edit: true, label: 'start.IP' },
+                      'endip': { edit: true, label: 'end.IP' },
+                      'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
-                      label: 'Add',
+                      label: 'label.add',
                       action: function(args) {
                         var array1 = [];
                         array1.push("&zoneId=" + args.context.zones[0].id);
@@ -370,7 +370,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'IP range is added',
+                                label: 'IP.range.is.added',
                                 poll: function(args) {
                                   args.complete();
                                 }
@@ -386,7 +386,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Delete',
+                        label: 'remove.IP.range',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
@@ -395,7 +395,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  label: 'remove.IP.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -436,7 +436,7 @@
                   });
                 },
                 messages: {
-                  notification: 'Updated storage traffic type'
+                  notification: 'storage.traffic.type.is.updated'
                 }
               }
             },
@@ -446,12 +446,12 @@
                 fields: [
                   {
                     traffictype: { label: 'label.traffic.type' },
-                    broadcastdomaintype: { label: 'Broadcast domain type' }
+                    broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
+                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -499,14 +499,14 @@
 													});
 												}											
 											},										
-                      'netmask': { edit: true, label: 'Netmask' },
-                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
-                      'startip': { edit: true, label: 'Start IP' },
-                      'endip': { edit: true, label: 'End IP' },
-                      'add-rule': { label: 'Add', addButton: true }
+                      'netmask': { edit: true, label: 'label.netmask' },
+                      'vlan': { edit: true, label: 'label.vlan', isOptional: true },
+                      'startip': { edit: true, label: 'start.IP' },
+                      'endip': { edit: true, label: 'end.IP' },
+                      'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
-                      label: 'Add',
+                      label: 'label.add',
                       action: function(args) {
                         var array1 = [];
                         array1.push("&zoneId=" + args.context.zones[0].id);												
@@ -529,7 +529,7 @@
 																jobId: json.createstoragenetworkiprangeresponse.jobid
 															},
 															notification: {
-																label: 'Added IP range',
+																label: 'IP.range.is.added',
 																poll: pollAsyncJobResult
 															}
 														});
@@ -543,7 +543,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Delete',
+                        label: 'label.delete',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteStorageNetworkIpRange&id=' + args.context.multiRule[0].id),
@@ -552,7 +552,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  label: 'remove.IP.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -603,12 +603,12 @@
                 fields: [
                   {
                     traffictype: { label: 'label.traffic.type' },
-                    broadcastdomaintype: { label: 'Broadcast domain type' }
+                    broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
+                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -634,10 +634,10 @@
 								listView: {
 									fields: {
 										name: { label: 'Pod name' },
-										gateway: { label: 'Gateway' },  //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
-										netmask: { label: 'Netmask' },  //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
-										startip: { label: 'Start IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
-										endip: { label: 'End IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
+										gateway: { label: 'label.gateway' },  //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
+										netmask: { label: 'label.netmask' },  //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
+										startip: { label: 'start.IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
+										endip: { label: 'end.IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
 									},
 									dataProvider: function(args) {	                    
 										var array1 = [];  
@@ -734,9 +734,9 @@
                     broadcastdomainrange: { label: 'Broadcast domain range' }                    
                   },
                   {
-                    xennetworklabel: { label: 'Xen traffic label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM traffic label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware traffic label', isEditable: true }
+                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -799,14 +799,14 @@
 													});
 												}											
 											},
-                      'gateway': { edit: true, label: 'Gateway' },
-                      'netmask': { edit: true, label: 'Netmask' },                     
-                      'startip': { edit: true, label: 'Start IP' },
-                      'endip': { edit: true, label: 'End IP' },
-                      'add-rule': { label: 'Add', addButton: true }
+                      'gateway': { edit: true, label: 'label.gateway' },
+                      'netmask': { edit: true, label: 'label.netmask' },                     
+                      'startip': { edit: true, label: 'start.IP' },
+                      'endip': { edit: true, label: 'end.IP' },
+                      'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
-                      label: 'Add',
+                      label: 'label.add',
                       action: function(args) {											  
                         var array1 = [];												
                         array1.push("&podid=" + args.data.podid); 
@@ -826,7 +826,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'IP range is added',
+                                label: 'IP.range.is.added',
                                 poll: function(args) {
                                   args.complete();
                                 }
@@ -842,7 +842,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Delete',
+                        label: 'remove.IP.range',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
@@ -851,7 +851,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  label: 'remove.IP.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -1658,8 +1658,8 @@
                               label: 'Network offering ID'
                             },
                           
-                            gateway: { label: 'Gateway' },
-                            //netmask: { label: 'Netmask' },                            
+                            gateway: { label: 'label.gateway' },
+                            //netmask: { label: 'label.netmask' },                            
                             cidr: { label: 'CIDR' },
                             networkdomaintext: {
                               label: 'Network domain'
@@ -1908,7 +1908,7 @@
                     Vpn: { label: 'VPN' },
                     Dhcp: { label: 'DHCP' },
                     Dns: { label: 'DNS' },
-                    Gateway: { label: 'Gateway' },
+                    Gateway: { label: 'label.gateway' },
                     Firewall: { label: 'Firewall' },
                     Lb: { label: 'Load Balancer' },
                     UserData: { label: 'UserData' },
@@ -3296,7 +3296,7 @@
               },
 
               'delete': {
-                label: 'Delete' ,
+                label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'Please confirm that you want to delete this zone.';
@@ -3771,7 +3771,7 @@
                               privateip: { label: 'Private IP' },
                               linklocalip: { label: 'Link local IP' },
                               hostname: { label: 'Host' },
-                              gateway: { label: 'Gateway' },
+                              gateway: { label: 'label.gateway' },
                               created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
                               activeviewersessions: { label: 'Active sessions' }
                             }
@@ -4426,8 +4426,8 @@
           section: 'pods',
           fields: {
             name: { label: 'label.name' },
-            gateway: { label: 'Gateway' },
-            netmask: { label: 'Netmask' },
+            gateway: { label: 'label.gateway' },
+            netmask: { label: 'label.netmask' },
             allocationstate: {
               converter: function(str) {
                 // For localization
@@ -4654,7 +4654,7 @@
               },
 
               'delete': {
-                label: 'Delete' ,
+                label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'Please confirm that you want to delete this pod.';
@@ -4693,10 +4693,10 @@
                   },
                   {
                     id: { label: 'label.id' },
-                    netmask: { label: 'Netmask', isEditable: true },
+                    netmask: { label: 'label.netmask', isEditable: true },
                     startip: { label: 'Start IP Range', isEditable: true },
                     endip: { label: 'End IP Range', isEditable: true },
-                    gateway: { label: 'Gateway', isEditable: true },
+                    gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
@@ -4721,8 +4721,8 @@
                 fields: [
                   {
                     id: { label: 'label.id' },
-                    gateway: { label: 'Gateway' },
-                    netmask: { label: 'Netmask' },
+                    gateway: { label: 'label.gateway' },
+                    netmask: { label: 'label.netmask' },
                     startip: { label: 'Start IP range' },
                     endip: { label: 'End IP range' }
                   }
@@ -5127,7 +5127,7 @@
               },
 
               'delete': {
-                label: 'Delete' ,
+                label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'Please confirm that you want to delete this cluster.';
@@ -6400,7 +6400,7 @@
               },
 
               'delete': {
-                label: 'Delete' ,
+                label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'Please confirm that you want to delete this primary storage.';
@@ -6584,7 +6584,7 @@
             name: 'Secondary storage details',
             actions: {
               'delete': {
-                label: 'Delete' ,
+                label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'Please confirm that you want to delete this secondary storage.';
@@ -6648,9 +6648,9 @@
           fields: {
             //id: { label: 'label.id' },
             //podname: { label: 'Pod' },
-            //vlan: { label: 'VLAN' },
-            startip: { label: 'Start IP' },
-            endip: { label: 'End IP' }
+            //vlan: { label: 'label.vlan' },
+            startip: { label: 'start.IP' },
+            endip: { label: 'end.IP' }
           },
 
           dataProvider: function(args) {
@@ -6791,19 +6791,19 @@
             },
 
             'delete': {
-              label: 'Delete' ,
+              label: 'remove.IP.range' ,
               messages: {
                 confirm: function(args) {
                   return 'Please confirm that you want to delete this IP range.';
                 },
                 success: function(args) {
-                  return 'IP range is being deleted.';
+                  return 'remove.IP.range';
                 },
                 notification: function(args) {
-                  return 'Deleting IP range';
+                  return 'remove.IP.range';
                 },
                 complete: function(args) {
-                  return 'IP range has been deleted.';
+                  return 'remove.IP.range';
                 }
               },
               action: function(args) {							

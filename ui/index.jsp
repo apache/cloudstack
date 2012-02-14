@@ -2588,6 +2588,14 @@ dictionary = {
 'elastic.LB': '<fmt:message key="elastic.LB" />',
 'LB.isolation': '<fmt:message key="LB.isolation" />',
 'elastic.IP': '<fmt:message key="elastic.IP" />',
-'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />'
+'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />',
+'Xen.traffic.label': '<fmt:message key="Xen.traffic.label" />',
+'KVM.traffic.label': '<fmt:message key="KVM.traffic.label" />',
+'VMware.traffic.label': '<fmt:message key="VMware.traffic.label" />',
+'start.IP': '<fmt:message key="start.IP" />',
+'end.IP': '<fmt:message key="end.IP" />',
+'IP.range.is.added': '<fmt:message key="IP.range.is.added" />',
+'remove.IP.range': '<fmt:message key="remove.IP.range" />',
+'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />'
 };
 </script>
