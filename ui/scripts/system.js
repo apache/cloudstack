@@ -288,7 +288,7 @@
                   });
                 },
                 messages: {
-                  notification: 'Updated public traffic type'
+                  notification: 'public.traffic.type.is.updated'
                 }
               }
             },
@@ -330,7 +330,7 @@
               },
 
               ipAddresses: {
-                title: 'IP Ranges',
+                title: 'IP.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
@@ -476,7 +476,7 @@
               },
 
               ipAddresses: {
-                title: 'IP Ranges',
+                title: 'IP.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
@@ -593,7 +593,7 @@
                   });
                 },
                 messages: {
-                  notification: 'Updated management traffic type'
+                  notification: 'management.traffic.type.is.updated'
                 }
               }
             },
@@ -630,10 +630,10 @@
                 }
               },
               ipAddresses: { //read-only listView (no actions) filled with pod info (not VlanIpRange info)
-                title: 'IP Ranges',               
+                title: 'IP.ranges',               
 								listView: {
 									fields: {
-										name: { label: 'Pod name' },
+										name: { label: 'label.pod' }, //pod name
 										gateway: { label: 'label.gateway' },  //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
 										netmask: { label: 'label.netmask' },  //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
 										startip: { label: 'start.IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
@@ -724,14 +724,14 @@
                   {                    
                     state: { label: 'label.state' },
                     startVlan: {
-                      label: 'Start Vlan',
+                      label: 'start.Vlan',
                       isEditable: true
                     },
                     endVlan: {
-                      label: 'End Vlan',
+                      label: 'end.Vlan',
                       isEditable: true
                     },
-                    broadcastdomainrange: { label: 'Broadcast domain range' }                    
+                    broadcastdomainrange: { label: 'broadcast.domain.range' }                    
                   },
                   {
                     xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
@@ -776,14 +776,14 @@
               },
 
               ipAddresses: {
-                title: 'IP Ranges',
+                title: 'IP.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
                     noSelect: true,
                     fields: {
 										  'podid': { 
-											  label: 'Pod',
+											  label: 'label.pod',
 												select: function(args) {												 
 												  $.ajax({
 													  url: createURL("listPods&zoneid=" + selectedZoneObj.id),
@@ -891,32 +891,32 @@
               },
 
               network: {
-                title: 'Network',
+                title: 'label.network',
                 listView: {
                   section: 'networks',
                   id: 'networks',
                   fields: {
                     name: { label: 'label.name' },
-                    type: { label: 'Type' },
-                    vlan: { label: 'VLAN ID' },                    
-                    cidr: { label: 'CIDR' },
-                    scope: { label: 'Scope' }
+                    type: { label: 'label.type' },
+                    vlan: { label: 'label.vlan.id' },                    
+                    cidr: { label: 'label.cidr' },
+                    scope: { label: 'label.scope' }
                   },
                   actions: {
                     add: {
-                      label: 'Add guest network',
+                      label: 'label.add.guest.network',
 
                       messages: {
                         confirm: function(args) {
-                          return 'Please confirm that you want to add a guest network';
+                          return 'message.add.guest.network';
                         },
                         notification: function(args) {
-                          return 'Adding guest network';
+                          return 'label.add.guest.network';
                         }
                       },
 
                       createForm: {  
-                        title: 'Add guest network',  //Add guest network in advanced zone
+                        title: 'label.add.guest.network',  //Add guest network in advanced zone
                         
                         fields: {
                           name: {
@@ -924,15 +924,15 @@
                             validation: { required: true }
                           },
                           description: {
-                            label: 'Description',
+                            label: 'label.description',
                             validation: { required: true }
                           },  
                           vlanId: { 
-                            label: "VLAN ID" 
+                            label: 'label.vlan.id'
                           },
                           
                           scope: {
-                            label: 'Scope',
+                            label: 'label.scope',
                             select: function(args) {
                               var array1 = [];															
 															array1.push({id: 'zone-wide', description: 'All'});
@@ -972,7 +972,7 @@
                             }
                           },
                           domainId: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             validation: { required: true },
                             select: function(args) {
                               var items = [];
@@ -1016,11 +1016,11 @@
                               args.response.success({data: items});
                             }
                           },
-                          subdomainaccess: { label: 'Subdomain Access', isBoolean: true, isHidden: true },
-                          account: { label: 'Account' },
+                          subdomainaccess: { label: 'subdomain.access', isBoolean: true, isHidden: true },
+                          account: { label: 'label.account' },
                           
 													projectId: {
-                            label: 'Project',
+                            label: 'label.project',
                             validation: { required: true },
                             select: function(args) {
                               var items = [];
@@ -1039,8 +1039,8 @@
                             }
                           },
 													
-                          networkOfferingId: {
-                            label: 'Network offering',
+                          networkOfferingId: { 
+                            label: 'label.network.offering',
                             dependsOn: 'scope',
                             select: function(args) {
                               var array1 = [];
@@ -1131,11 +1131,11 @@
                             }
                           },
 
-                          guestGateway: { label: 'Guest gateway' },
-                          guestNetmask: { label: 'Guest netmask' },
-                          guestStartIp: { label: 'Guest start IP' },
-                          guestEndIp: { label: 'Guest end IP' },
-                          networkdomain: { label: 'Network domain' }
+                          guestGateway: { label: 'label.guest.gateway' },
+                          guestNetmask: { label: 'label.guest.netmask' },
+                          guestStartIp: { label: 'guest.start.IP' },
+                          guestEndIp: { label: 'guest.end.IP' },
+                          networkdomain: { label: 'label.network.domain' }
                         }
                       },
 
@@ -1192,109 +1192,13 @@
                           success: function(json) {
                             var item = json.createnetworkresponse.network;
                             args.response.success({data:item});
-
-                            if(selectedZoneObj.networktype == "Basic") {
-                              var array2 = [];
-
-                              var podId;
-                              if(args.data.podId != "0") {
-                                podId = args.data.podId;
-                              }
-                              else { //args.data.podId==0, create pod first
-                                var array1 = [];
-                                array1.push("&zoneId=" + selectedZoneObj.id);
-                                array1.push("&name=" + todb(args.data.podname));
-                                array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
-                                array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
-                                array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
-
-                                var endip = args.data.reservedSystemEndIp;      //optional
-                                if (endip != null && endip.length > 0)
-                                  array1.push("&endIp=" + todb(endip));
-
-                                $.ajax({
-                                  url: createURL("createPod" + array1.join("")),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var item = json.createpodresponse.pod;
-                                    podId = item.id;
-                                  },
-                                  error: function(XMLHttpResponse) {
-                                    //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                    //args.response.error(errorMsg);
-                                  }
-                                });
-                              }
-                              if(podId == null)  {
-                                alert("podId is null, so unable to create IP range on pod level");
-                                return;
-                              }
-                              array2.push("&podId=" + podId);
-                              array2.push("&vlan=untagged");
-                              array2.push("&zoneid=" + selectedZoneObj.id);
-                              array2.push("&forVirtualNetwork=false"); //direct VLAN
-                              array2.push("&gateway=" + todb(args.data.guestGateway));
-                              array2.push("&netmask=" + todb(args.data.guestNetmask));
-                              array2.push("&startip=" + todb(args.data.guestStartIp));
-                              var endip = args.data.guestEndIp;
-                              if(endip != null && endip.length > 0)
-                                array2.push("&endip=" + todb(endip));
-                              $.ajax({
-                                url: createURL("createVlanIpRange" + array2.join("")),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                  //var item = json.createvlaniprangeresponse.vlan;
-                                },
-                                error: function(XMLHttpResponse) {
-                                  //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                  //args.response.error(errorMsg);
-                                }
-                              });
-
-                            }
                           },
                           error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                             args.response.error(errorMsg);
                           }
                         });
-                      },
-
-                      preAction: function(args) {
-                        //var zone = $('.detail-view:last').data('view-args').context.zones[0]; //this line causes a bug when going back and forth between listView and detailView: "$(".detail-view:last").data("view-args").context.zones is undefined"
-                        var zone = selectedZoneObj;
-                        
-                        var networksPresent = false;
-
-                        // Only 1 guest network is allowed per basic zone,
-                        // so don't show the dialog in this case
-                        $.ajax({
-                          url: createURL('listNetworks&listAll=true'),
-                          data: {
-                            trafficType: 'guest',
-                            zoneId: zone.id
-                          },
-                          async: false,
-                          success: function(json) {
-                            if (json.listnetworksresponse.network) {
-                              networksPresent = true;
-                            }
-                          }
-                        });
-
-                        if (zone.networktype == 'Basic' && networksPresent) {
-                          cloudStack.dialog.notice({
-                            message: 'Sorry, you can only have one guest network for a basic zone.'
-                          });
-
-                          return false;
-                        }
-
-                        return true;
-                      },
-
+                      },                      
                       notification: {
                         poll: function(args) {
                           args.complete();
@@ -1303,7 +1207,7 @@
                     }
                   },
                   
-                  dataProvider: function(args) {									  
+                  dataProvider: function(args) {		//Jes							  
 										var array1 = [];  
 										if(args.filterBy != null) {          
 											if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
@@ -1373,7 +1277,7 @@
                     name: 'Guest network details',
                     viewAll: { 
 										  path: '_zone.guestIpRanges', 
-											label: 'IP ranges',
+											label: 'IP.ranges',
                       preFilter: function(args) {                        
 												if(selectedGuestNetworkObj.type == "Isolated") {												  
 													var services = selectedGuestNetworkObj.service;
@@ -1606,7 +1510,7 @@
                               isEditable: true
                             },
                             type: {
-                              label: 'Type'
+                              label: 'label.type'
                             },
                             state: {
                               label: 'label.state'
@@ -1620,11 +1524,11 @@
                                   return "No";
                               }
                             },                           
-                            vlan: { label: 'VLAN ID' },
-                            scope: { label: 'Scope' },
-                            networkofferingdisplaytext: { label: 'Network offering' },
+                            vlan: { label: 'label.vlan.id' },
+                            scope: { label: 'label.scope' },
+                            networkofferingdisplaytext: { label: 'label.network.offering' },
                             networkofferingid: {
-                              label: 'Network offering',
+                              label: 'label.network.offering',
                               isEditable: true,
                               select: function(args){
                                 var items = [];															
@@ -1660,12 +1564,12 @@
                           
                             gateway: { label: 'label.gateway' },
                             //netmask: { label: 'label.netmask' },                            
-                            cidr: { label: 'CIDR' },
+                            cidr: { label: 'label.cidr' },
                             networkdomaintext: {
-                              label: 'Network domain'
+                              label: 'label.network.domain'
                             },
                             networkdomain: {
-                              label: 'Network domain',
+                              label: 'label.network.domain',
                               isEditable: true
                             },
 														
@@ -1673,8 +1577,8 @@
                             subdomainaccess: { label: 'Subdomain Access?', converter: function(data) {
                               return data ? 'Yes' : 'No';
                             } },
-														account: { label: 'Account' },
-														project: { label: 'Project' }														
+														account: { label: 'label.account' },
+														project: { label: 'label.project' }														
                           }
                         ],
                         dataProvider: function(args) {    
@@ -1893,7 +1797,7 @@
             },
             tabs: {
               network: {
-                title: 'Network',
+                title: 'label.network',
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -2279,9 +2183,9 @@
                             linklocalip: { label: 'Link local IP' },
                             hostname: { label: 'Host' },
                             serviceofferingname: { label: 'label.service.offering' },
-                            networkdomain: { label: 'Network domain' },
+                            networkdomain: { label: 'label.network.domain' },
                             domain: { label: 'Domain' },
-                            account: { label: 'Account' },
+                            account: { label: 'label.account' },
                             created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
                             isredundantrouter: {
                               label: 'Redundant router',
@@ -2403,7 +2307,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Type',
+                      label: 'label.type',
                       select: function(args) {
                         var items = [];
                         items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
@@ -2612,7 +2516,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Type',
+                      label: 'label.type',
                       select: function(args) {
                         var items = [];
                         items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});
@@ -2820,7 +2724,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Type',
+                      label: 'label.type',
                       select: function(args) {
                         var items = [];
                         items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});
@@ -3192,7 +3096,7 @@
                   desc: 'Please fill in the following information to enable support for Swift',
                   fields: {
                     url: { label: 'URL', validation: { required: true } },
-                    account: { label: 'Account' },
+                    account: { label: 'label.account' },
                     username: { label: 'Username' },
                     key: { label: 'Key' }
                   }
@@ -3409,7 +3313,7 @@
 											networktype: { label: 'Network Type' },     
                       guestcidraddress : { label: 'Guest CIDR' },											
                       domain: {
-                        label: 'Network domain',
+                        label: 'label.network.domain',
                         isEditable: true
                       }
                     }
@@ -3429,27 +3333,27 @@
                 },
 
                 compute: {
-                  title: 'Compute',
+                  title: 'label.compute',
                   custom: cloudStack.uiCustom.systemChart('compute')
                 },
                 network: {
-                  title: 'Network',
+                  title: 'label.network',
                   custom: cloudStack.uiCustom.systemChart('network')
                 },
                 resources: {
-                  title: 'Resources',
+                  title: 'label.resources',
                   custom: cloudStack.uiCustom.systemChart('resources')
                 },
 
                 systemVMs: {
-                  title: 'System VMs',
+                  title: 'label.system.vms',
                   listView: {
-                    label: 'System VMs',
+                    label: 'label.system.vms',
                     id: 'systemVMs',
                     fields: {
                       name: { label: 'label.name' },
                       systemvmtype: {
-                        label: 'Type',
+                        label: 'label.type',
                         converter: function(args) {
                           if(args == "consoleproxy")
                             return "Console Proxy VM";
@@ -3756,7 +3660,7 @@
                               id: { label: 'label.id' },
                               state: { label: 'label.state' },
                               systemvmtype: {
-                                label: 'Type',
+                                label: 'label.type',
                                 converter: function(args) {
                                   if(args == "consoleproxy")
                                     return "Console Proxy VM";
@@ -3838,7 +3742,7 @@
                     isPassword: true
                   },
                   networkdevicetype: {
-                    label: 'Type',
+                    label: 'label.type',
                     select: function(args) {
                       var items = [];
                       items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
@@ -3980,7 +3884,7 @@
                     lbdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     lbdevicestate: { label: 'Status' },
-                    lbdevicename: { label: 'Type' },
+                    lbdevicename: { label: 'label.type' },
                     lbdevicecapacity: { label: 'Capacity' },
                     lbdevicededicated: {
                       label: 'Dedicated',
@@ -4038,7 +3942,7 @@
                     isPassword: true
                   },
                   networkdevicetype: {
-                    label: 'Type',
+                    label: 'label.type',
                     select: function(args) {
                       var items = [];
                       items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});
@@ -4185,7 +4089,7 @@
                     lbdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     lbdevicestate: { label: 'Status' },
-                    lbdevicename: { label: 'Type' },
+                    lbdevicename: { label: 'label.type' },
                     lbdevicecapacity: { label: 'Capacity' },
                     lbdevicededicated: {
                       label: 'Dedicated',
@@ -4243,7 +4147,7 @@
                     isPassword: true
                   },
                   networkdevicetype: {
-                    label: 'Type',
+                    label: 'label.type',
                     select: function(args) {
                       var items = [];
                       items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});
@@ -4405,7 +4309,7 @@
                     fwdeviceid: { label: 'label.id' },
                     ipaddress: { label: 'IP Address' },
                     fwdevicestate: { label: 'Status' },
-                    fwdevicename: { label: 'Type' },
+                    fwdevicename: { label: 'label.type' },
                     fwdevicecapacity: { label: 'Capacity' },
                     timeout: { label: 'Timeout' }
                   }
@@ -5761,7 +5665,7 @@
                     id: { label: 'label.id' },
                     resourcestate: { label: 'Resource state' },
                     state: { label: 'label.state' },
-                    type: { label: 'Type' },
+                    type: { label: 'label.type' },
                     zonename: { label: 'Zone' },
                     podname: { label: 'Pod' },
                     clustername: { label: 'Cluster' },
@@ -6448,7 +6352,7 @@
 										},
 										podname: { label: 'Pod' },
                     clustername: { label: 'Cluster' },
-                    type: { label: 'Type' },
+                    type: { label: 'label.type' },
                     ipaddress: { label: 'IP Address' },
                     path: { label: 'Path' },
                     disksizetotal: {
@@ -6750,10 +6654,10 @@
                   },
                   //create new pod fields ends here
 
-                  guestGateway: { label: 'Guest gateway' },
-                  guestNetmask: { label: 'Guest netmask' },
-                  guestStartIp: { label: 'Guest start IP' },
-                  guestEndIp: { label: 'Guest end IP' }
+                  guestGateway: { label: 'label.guest.gateway' },
+                  guestNetmask: { label: 'label.guest.netmask' },
+                  guestStartIp: { label: 'guest.start.IP' },
+                  guestEndIp: { label: 'guest.end.IP' }
                 }
               },
 

@@ -2601,6 +2601,18 @@ dictionary = {
 'end.IP': '<fmt:message key="end.IP" />',
 'IP.range.is.added': '<fmt:message key="IP.range.is.added" />',
 'remove.IP.range': '<fmt:message key="remove.IP.range" />',
-'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />'
+'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
+'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
+'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
+'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
+'IP.ranges': '<fmt:message key="IP.ranges" />',
+'start.Vlan': '<fmt:message key="start.Vlan" />',
+'end.Vlan': '<fmt:message key="end.Vlan" />',
+'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
+'label.compute': '<fmt:message key="label.compute" />',
+'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
+'subdomain.access': '<fmt:message key="subdomain.access" />',
+'guest.start.IP': '<fmt:message key="guest.start.IP" />',
+'guest.end.IP': '<fmt:message key="guest.end.IP" />'
 };
 </script>
