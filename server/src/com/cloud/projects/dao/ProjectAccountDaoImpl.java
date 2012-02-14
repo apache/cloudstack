@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,6 +38,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
+    public static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class.getName());
 
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -124,7 +127,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
-    public List<Long> listAdministratedProjects(long adminAccountId) {
+    public List<Long> listAdministratedProjectIds(long adminAccountId) {
         SearchCriteria<Long> sc = AdminSearch.create();
         sc.setParameters("role", ProjectAccount.Role.Admin);
         sc.setParameters("accountId", adminAccountId);
@@ -137,6 +140,17 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         sc.setParameters("accountId", accountId);
         sc.setParameters("role", role);
         return customSearch(sc, null).get(0);
+    }
+    
+    @Override
+    public void removeAccountFromProjects(long accountId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+
+        int rowsRemoved = remove(sc);
+        if (rowsRemoved > 0) {
+            s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " projects");
+        }
     }
 
 }

@@ -169,5 +169,9 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network entity");
         }
     }
-
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.PhysicalNetwork;
+    }
 }

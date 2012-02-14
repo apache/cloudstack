@@ -5068,8 +5068,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public long findPhysicalNetworkId(long zoneId, String tag) {
-        List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(zoneId);
+    public long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType) {
+        List<PhysicalNetworkVO> pNtwks = new ArrayList<PhysicalNetworkVO>();
+        if (trafficType != null) {
+            pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
+        } else {
+            pNtwks = _physicalNetworkDao.listByZone(zoneId);
+        }
+        
         if (pNtwks.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
         }
@@ -5330,7 +5336,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // physical network id can be null in Guest Network in Basic zone, so locate the physical network
         if (physicalNetworkId == null) {
-            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null, null);
         }
 
         return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), Service.SecurityGroup);
@@ -5754,7 +5760,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network);
         } else {
             NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags());
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
         }
 
         if (physicalNetworkId == null) {
@@ -5896,7 +5902,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long physicalNetworkId = network.getPhysicalNetworkId();
         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         if (physicalNetworkId == null) {
-            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags());
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
         }
         return physicalNetworkId;
     }
@@ -6007,7 +6013,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services) {
-        long physicalNtwkId = findPhysicalNetworkId(zoneId, tags);
+        long physicalNtwkId = findPhysicalNetworkId(zoneId, tags, null);
         boolean result = true;
         List<String> checkedProvider = new ArrayList<String>();
         for (Service service : services) {

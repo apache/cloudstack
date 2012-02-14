@@ -1,12 +1,12 @@
 (function(cloudStack) {
   cloudStack.sections['global-settings'] = {
-    title: 'Global Settings',
+    title: 'label.menu.global.settings',
     id: 'global-settings',
     listView: {
-      label: 'Global Settings',
+      label: 'label.menu.global.settings',
       actions: {
         edit: {
-          label: 'Change value',
+          label: 'label.change.value',
           action: function(args) {           
             var name = args.data.jsonObj.name;
             var value = args.data.value;
@@ -19,7 +19,7 @@
               async: true,
               success: function(json) {                
                 var item = json.updateconfigurationresponse.configuration;
-                cloudStack.dialog.notice({ message: 'Please restart your management server for your change to take effect.' });
+                cloudStack.dialog.notice({ message: _l('message.restart.mgmt.server') });
                 args.response.success({data: item});
               },
               error: function(json) {                
@@ -30,9 +30,9 @@
         }
       },
       fields: {
-        name: { label: 'Name', id: true },
-        description: { label: 'Description' },
-        value: { label: 'Value', editable: true }
+        name: { label: 'label.name', id: true },
+        description: { label: 'label.description' },
+        value: { label: 'label.value', editable: true }
       },
       dataProvider: function(args) {
         var data = {

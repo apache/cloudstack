@@ -627,8 +627,8 @@
             </ul>
 
             <div class="info-desc">
-              Enter the first and last IP addresses that define a range that CloudStack can assign to guest VMs. We strongly recommend the use of multiple NICs. If multiple NICs are used, the guest IPs may be in a separate subnet. If one NIC is used, the guest IPs should be in the same CIDR as the pod's CIDR, but not within the reserved system IP range.
-            </div>
+              Guest network traffic is communication between end-user virtual machines.  
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -1599,6 +1599,19 @@
 
 <script language="javascript">
 dictionary = {
+'state.Allocated': '<fmt:message key="state.Allocated"/>',
+'changed.item.properties': '<fmt:message key="changed.item.properties"/>',
+'label.apply': '<fmt:message key="label.apply"/>',
+'label.default': '<fmt:message key="label.default"/>',
+'label.viewing': '<fmt:message key="label.viewing"/>',
+'label.drag.new.position': '<fmt:message key="label.drag.new.position"/>',
+'label.move.down.row': '<fmt:message key="label.move.down.row"/>',
+'label.move.up.row': '<fmt:message key="label.move.up.row"/>',
+'label.move.to.top': '<fmt:message key="label.move.to.top"/>',
+'label.order': '<fmt:message key="label.order"/>',
+'label.no.data': '<fmt:message key="label.no.data"/>',
+'label.change.value': '<fmt:message key="label.change.value"/>',
+'label.clear.list': '<fmt:message key="label.clear.list"/>',
 'label.add.vm': '<fmt:message key="label.add.vm"/>',
 'label.full.path': '<fmt:message key="label.full.path"/>',
 'message.add.domain': '<fmt:message key="message.add.domain"/>',
@@ -1665,6 +1678,7 @@ dictionary = {
 'label.create.template': '<fmt:message key="label.create.template" />',
 'message.download.volume.confirm': '<fmt:message key="message.download.volume.confirm" />',
 'message.detach.disk': '<fmt:message key="message.detach.disk" />',
+'state.ready': '<fmt:message key="state.ready" />',
 'state.Ready': '<fmt:message key="state.Ready" />',
 'label.vm.display.name': '<fmt:message key="label.vm.display.name" />',
 'label.select-view': '<fmt:message key="label.select-view" />',
@@ -2578,6 +2592,27 @@ dictionary = {
 'supported.source.NAT.type': '<fmt:message key="supported.source.NAT.type" />',
 'elastic.LB': '<fmt:message key="elastic.LB" />',
 'LB.isolation': '<fmt:message key="LB.isolation" />',
-'elastic.IP': '<fmt:message key="elastic.IP" />'
+'elastic.IP': '<fmt:message key="elastic.IP" />',
+'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />',
+'Xen.traffic.label': '<fmt:message key="Xen.traffic.label" />',
+'KVM.traffic.label': '<fmt:message key="KVM.traffic.label" />',
+'VMware.traffic.label': '<fmt:message key="VMware.traffic.label" />',
+'start.IP': '<fmt:message key="start.IP" />',
+'end.IP': '<fmt:message key="end.IP" />',
+'IP.range.is.added': '<fmt:message key="IP.range.is.added" />',
+'remove.IP.range': '<fmt:message key="remove.IP.range" />',
+'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
+'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
+'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
+'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
+'IP.ranges': '<fmt:message key="IP.ranges" />',
+'start.Vlan': '<fmt:message key="start.Vlan" />',
+'end.Vlan': '<fmt:message key="end.Vlan" />',
+'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
+'label.compute': '<fmt:message key="label.compute" />',
+'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
+'subdomain.access': '<fmt:message key="subdomain.access" />',
+'guest.start.IP': '<fmt:message key="guest.start.IP" />',
+'guest.end.IP': '<fmt:message key="guest.end.IP" />'
 };
 </script>

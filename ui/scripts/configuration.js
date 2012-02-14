@@ -1084,7 +1084,8 @@
                       $serviceOfferingId.css('display', 'inline-block');
                     else
                       $serviceOfferingId.hide();		
-											
+
+	                  $(':ui-dialog').dialog('option', 'position', 'center');
                   });
 								},				
                 fields: {
