@@ -1599,6 +1599,7 @@
 
 <script language="javascript">
 dictionary = {
+'state.Allocated': '<fmt:message key="state.Allocated"/>',
 'changed.item.properties': '<fmt:message key="changed.item.properties"/>',
 'label.apply': '<fmt:message key="label.apply"/>',
 'label.default': '<fmt:message key="label.default"/>',
