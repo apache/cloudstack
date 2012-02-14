@@ -30,6 +30,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProviderResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -130,5 +131,10 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return  "Adding physical network ServiceProvider: " + getEntityId();
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.PhysicalNetworkServiceProvider;
     }
 }

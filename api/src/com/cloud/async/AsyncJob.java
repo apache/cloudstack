@@ -36,7 +36,9 @@ public interface AsyncJob extends Identity {
         StoragePool,
         IpAddress,
         SecurityGroup,
-        PhysicalNetwork
+        PhysicalNetwork,
+        TrafficType,
+        PhysicalNetworkServiceProvider
     }
 
     Long getId();
