@@ -185,7 +185,7 @@ public class CreateNetworkCmd extends BaseCmd {
             if (zoneId == null) {
                 throw new InvalidParameterValueException("ZoneId is required as physicalNetworkId is null");
             }
-            return _networkService.findPhysicalNetworkId(zoneId, offering.getTags());
+            return _networkService.findPhysicalNetworkId(zoneId, offering.getTags(), offering.getTrafficType());
         }
     }
 

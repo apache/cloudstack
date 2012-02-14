@@ -66,17 +66,14 @@ public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Lo
         PhysicalNetworkTrafficTypeVO trafficTypeEntity = trafficTypeSearch.entity();
         trafficTypeSearch.and("trafficType", trafficTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
 
-        SearchBuilder<PhysicalNetworkVO> dcSearch = createSearchBuilder();
-        dcSearch.and("dataCenterId", dcSearch.entity().getDataCenterId(), Op.EQ);
-        dcSearch.join("trafficTypeSearch", trafficTypeSearch, dcSearch.entity().getId(), trafficTypeEntity.getPhysicalNetworkId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<PhysicalNetworkVO> pnSearch = createSearchBuilder();
+        pnSearch.and("dataCenterId", pnSearch.entity().getDataCenterId(), Op.EQ);
+        pnSearch.join("trafficTypeSearch", trafficTypeSearch, pnSearch.entity().getId(), trafficTypeEntity.getPhysicalNetworkId(), JoinBuilder.JoinType.INNER);
 
-        SearchCriteria<PhysicalNetworkVO> sc = dcSearch.create();
+        SearchCriteria<PhysicalNetworkVO> sc = pnSearch.create();
         sc.setJoinParameters("trafficTypeSearch", "trafficType", trafficType);
         sc.setParameters("dataCenterId", dataCenterId);
 
-        return listBy(sc);
-        
+        return listBy(sc);  
     }
-    
-    
 }
