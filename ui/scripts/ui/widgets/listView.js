@@ -543,7 +543,7 @@
 
     if (reorder) {
       $thead.find('tr').append(
-        $('<th>').html(_l('Order')).addClass('reorder-actions reduced-hide')
+        $('<th>').html(_l('label.order')).addClass('reorder-actions reduced-hide')
       );
     }
 
@@ -711,7 +711,7 @@
       if (!$tbody.find('tr').size()) {
         return [
           $('<tr>').addClass('empty').append(
-            $('<td>').html(_l('No data to show'))
+            $('<td>').html(_l('label.no.data'))
           ).appendTo($tbody)
         ];
       }
@@ -800,10 +800,10 @@
 
           $.each(reorder, function(actionName, action) {
             var fnLabel = {
-              moveTop: 'Move to top',
-              moveUp: 'Move up one row',
-              moveDown: 'Move down one row',
-              moveDrag: 'Drag to new position'
+              moveTop: _l('label.move.to.top'),
+              moveUp: _l('label.move.up.row'),
+              moveDown: _l('label.move.down.row'),
+              moveDrag: _l('label.drag.new.position')
             };
 
             $('<div>')
@@ -997,7 +997,7 @@
     if (sectionPreFilter && sectionPreFilter.length == 1) {
       $switcher.find('select').hide();
       $switcher.find('label').html(
-        _l('Viewing') + ' ' + _l(sections[sectionPreFilter[0]].title)
+        _l('label.viewing') + ' ' + _l(sections[sectionPreFilter[0]].title)
       );
     }
 

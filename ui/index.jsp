@@ -1599,6 +1599,13 @@
 
 <script language="javascript">
 dictionary = {
+'label.viewing': '<fmt:message key="label.viewing"/>',
+'label.drag.new.position': '<fmt:message key="label.drag.new.position"/>',
+'label.move.down.row': '<fmt:message key="label.move.down.row"/>',
+'label.move.up.row': '<fmt:message key="label.move.up.row"/>',
+'label.move.to.top': '<fmt:message key="label.move.to.top"/>',
+'label.order': '<fmt:message key="label.order"/>',
+'label.no.data': '<fmt:message key="label.no.data"/>',
 'label.change.value': '<fmt:message key="label.change.value"/>',
 'label.clear.list': '<fmt:message key="label.clear.list"/>',
 'label.add.vm': '<fmt:message key="label.add.vm"/>',
