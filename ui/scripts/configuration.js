@@ -1106,7 +1106,7 @@
                   },
 
                   guestIpType: {
-                    label: 'Guest Type',
+                    label: 'guest.type',
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1127,10 +1127,10 @@
                     }
                   },
 
-                  specifyVlan: { label: 'Specify VLAN', isBoolean: true },																
+                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true },																
 								
                   supportedServices: {
-                    label: 'Supported Services',
+                    label: 'supported.services',
 
                     dynamic: function(args) {
                       $.ajax({
@@ -1327,12 +1327,12 @@
                   //show or hide upon checked services and selected providers above (end)
 									
 									
-									conservemode: { label: 'Conserve mode', isBoolean: true },
+									conservemode: { label: 'conserve.mode', isBoolean: true },
 									
-                  tags: { label: 'Tags' },
+                  tags: { label: 'label.tags' },
 									
 									availability: {
-                    label: 'Availability',
+                    label: 'label.availability',
                     isHidden: true,  
                     select: function(args) {
                       args.response.success({
@@ -1632,10 +1632,10 @@
                     },
                     state: { label: 'label.state' },
                     guestiptype: {
-                      label: 'Guest type'
+                      label: 'guest.type'
                     },
                     availability: {
-                      label: 'Availability',
+                      label: 'label.availability',
                       isEditable: true,
                       select: function(args) {
                         var items = [];
@@ -1646,19 +1646,19 @@
                       }
                     },
                     isdefault: { //created by system by default
-                      label: 'Created by system',
+                      label: 'created.by.system',
                       converter: cloudStack.converters.toBooleanText
                     },
                     specifyvlan: {
-                      label: 'Specify VLAN',
+                      label: 'label.specify.vlan',
                       converter: cloudStack.converters.toBooleanText
                     },
 										specifyipranges: { 
-										  label: 'Specify IP ranges', 
+										  label: 'specify.IP.ranges', 
 											converter: cloudStack.converters.toBooleanText
 										},
 										conservemode: {
-                      label: 'Conserve mode',
+                      label: 'conserve.mode',
                       converter: cloudStack.converters.toBooleanText
                     },
                     networkrate: {
@@ -1678,7 +1678,7 @@
                       label: 'label.traffic.type'
                     },
                     supportedServices: {
-                      label: 'services'
+                      label: 'supported.services'
                     },
                     serviceCapabilities: {
                       label: 'service.capabilities'
