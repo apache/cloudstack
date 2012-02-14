@@ -64,6 +64,7 @@ public class VmdkProcessor implements Processor {
         File templateFile = new File(templateFileFullPath);
         
         Script command = new Script("tar", 0, s_logger);
+        command.add("--no-same-owner", templateFileFullPath);
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
