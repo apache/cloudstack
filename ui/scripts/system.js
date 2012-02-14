@@ -219,7 +219,7 @@
         fields: {
           name: { label: 'label.name' },
           state: {
-            label: 'State',
+            label: 'label.state',
             converter: function(str) {
               // For localization
               return str;
@@ -298,7 +298,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    traffictype: { label: 'Traffic type' },
+                    traffictype: { label: 'label.traffic.type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
                   },
                   {
@@ -446,7 +446,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    traffictype: { label: 'Traffic type' },
+                    traffictype: { label: 'label.traffic.type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
                   },
                   {
@@ -603,7 +603,7 @@
                 title: 'label.details',
                 fields: [
                   {
-                    traffictype: { label: 'Traffic type' },
+                    traffictype: { label: 'label.traffic.type' },
                     broadcastdomaintype: { label: 'Broadcast domain type' }
                   },
                   {
@@ -723,7 +723,7 @@
                 },
                 fields: [                  
                   {                    
-                    state: { label: 'State' },
+                    state: { label: 'label.state' },
                     startVlan: {
                       label: 'Start Vlan',
                       isEditable: true
@@ -1610,7 +1610,7 @@
                               label: 'Type'
                             },
                             state: {
-                              label: 'State'
+                              label: 'label.state'
                             },                           
                             restartrequired: {
                               label: 'Restart required',
@@ -1703,7 +1703,7 @@
                 // For localization
                 return str;
               },
-              label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off' }
+              label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off' }
             },
             vlan: { label: 'VLAN Range' }
           }
@@ -1901,7 +1901,7 @@
                   },
                   {
                     id: { label: 'label.id' },
-                    state: { label: 'State' },
+                    state: { label: 'label.state' },
                     physicalnetworkid: { label: 'Physical network ID' },
                     destinationphysicalnetworkid: { label: 'Destination physical networkID' }
                   },
@@ -2274,7 +2274,7 @@
                           },
                           {
                             id: { label: 'label.id' },
-                            state: { label: 'State' },
+                            state: { label: 'label.state' },
                             publicip: { label: 'Public IP' },
                             guestipaddress: { label: 'Guest IP' },
                             linklocalip: { label: 'Link local IP' },
@@ -3016,7 +3016,7 @@
                     name: { label: 'label.name' }
                   },
                   {
-                    state: { label: 'State' },
+                    state: { label: 'label.state' },
                     id: { label: 'label.id' },
                     physicalnetworkid: { label: 'Physical network ID' }
                   }
@@ -3755,7 +3755,7 @@
                             },
                             {
                               id: { label: 'label.id' },
-                              state: { label: 'State' },
+                              state: { label: 'label.state' },
                               systemvmtype: {
                                 label: 'Type',
                                 converter: function(args) {
@@ -4751,7 +4751,7 @@
           fields: {
             name: { label: 'label.name' },
             podname: { label: 'Pod' },
-            hypervisortype: { label: 'Hypervisor' },
+            hypervisortype: { label: 'label.hypervisor' },
             //allocationstate: { label: 'Allocation State' },
             //managedstate: { label: 'Managed State' },
 						state: {
@@ -4759,7 +4759,7 @@
                 // For localization
                 return str;
               },
-              label: 'State',
+              label: 'label.state',
               indicator: { 'Enabled': 'on', 'Destroyed': 'off'}
             }
           },
@@ -4826,7 +4826,7 @@
                 desc: 'Please fill in the following data to add a new cluster.',
                 fields: {
                   hypervisor: {
-                    label: 'Hypervisor',
+                    label: 'label.hypervisor',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listHypervisors"),
@@ -5170,11 +5170,11 @@
                     id: { label: 'label.id' },
                     zonename: { label: 'Zone' },
                     podname: { label: 'Pod' },
-                    hypervisortype: { label: 'Hypervisor' },
+                    hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'Cluster type' },
                     //allocationstate: { label: 'Allocation State' },
                     //managedstate: { label: 'Managed State' },
-										state: { label: 'State' }
+										state: { label: 'label.state' }
                   }
                 ],                
                 dataProvider: function(args) {
@@ -5761,7 +5761,7 @@
                   {
                     id: { label: 'label.id' },
                     resourcestate: { label: 'Resource state' },
-                    state: { label: 'State' },
+                    state: { label: 'label.state' },
                     type: { label: 'Type' },
                     zonename: { label: 'Zone' },
                     podname: { label: 'Pod' },
@@ -6442,7 +6442,7 @@
                   },
                   {
                     id: { label: 'label.id' },
-                    state: { label: 'State' },  
+                    state: { label: 'label.state' },  
 										tags: { 
 										  label: 'label.storage.tags',
 											isEditable: true

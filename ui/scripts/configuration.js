@@ -896,14 +896,14 @@
 
       hypervisorCapabilities: {
         type: 'select',
-        title: 'Hypervisor capabilities',
+        title: 'hypervisor.capabilities',
         listView: {
           id: 'hypervisorCapabilities',
-          label: 'Hypervisor capabilities',
+          label: 'hypervisor.capabilities',
           fields: {
-            hypervisor: { label: 'Hypervisor' },
-            hypervisorversion: { label: 'Hypervisor version' },
-            maxguestslimit: { label: 'Max guest limit' }
+            hypervisor: { label: 'label.hypervisor' },
+            hypervisorversion: { label: 'hypervisor.version' },
+            maxguestslimit: { label: 'max.guest.limit' }
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -961,14 +961,14 @@
                 fields: [
                   {
                     id: { label: 'label.id' },
-                    hypervisor: { label: 'Hypervisor' },
-                    hypervisorversion: { label: 'Hypervisor version' },
+                    hypervisor: { label: 'label.hypervisor' },
+                    hypervisorversion: { label: 'hypervisor.version' },
                     maxguestslimit: {
-                      label: 'Max guest limit',
+                      label: 'max.guest.limit',
                       isEditable: true
                     },
                     securitygroupenabled: {
-                      label: 'Security group enabled',
+                      label: 'security.group.enabled',
                       converter: cloudStack.converters.toBooleanText
                     }
                   }
@@ -988,10 +988,10 @@
 
       networkOfferings: {
         type: 'select',
-        title: 'Network offerings',
+        title: 'label.menu.network.offerings',
         listView: {
           id: 'networkOfferings',
-          label: 'Network offerings',
+          label: 'label.menu.network.offerings',
           fields: {
             name: { label: 'label.name' },
             state: {
@@ -999,7 +999,7 @@
                 // For localization
                 return str;
               },
-              label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }
+              label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }
             }
           },
 
@@ -1047,11 +1047,10 @@
 
           actions: {
             add: {
-              label: 'Add network offering',
+              label: 'add.network.offering',
 
 							createForm: {
-                title: 'Add network offering',
-                desc: 'Please specify the network offering',																
+                title: 'add.network.offering',               														
 								preFilter: function(args) {
                   var $availability = args.$form.find('.form-item[rel=availability]');
                   var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');
@@ -1096,7 +1095,7 @@
                   networkRate: { label: 'label.network.rate' },
 
                   trafficType: {
-                    label: 'Traffic Type', validation: { required: true },
+                    label: 'label.traffic.type', validation: { required: true },
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1631,7 +1630,7 @@
                       label: 'label.description',
                       isEditable: true
                     },
-                    state: { label: 'State' },
+                    state: { label: 'label.state' },
                     guestiptype: {
                       label: 'Guest type'
                     },
@@ -1676,13 +1675,13 @@
                       }
                     },
                     traffictype: {
-                      label: 'Traffic type'
+                      label: 'label.traffic.type'
                     },
                     supportedServices: {
-                      label: 'Services'
+                      label: 'services'
                     },
                     serviceCapabilities: {
-                      label: 'Service Capabilities'
+                      label: 'service.capabilities'
                     }
                   }
                 ],
