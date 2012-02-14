@@ -377,6 +377,7 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
+
                 }
               }
             },
@@ -418,6 +419,7 @@
               },
 
               ipAddresses: {
+
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -587,6 +589,7 @@
               },
 
               ipAddresses: {
+
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -741,6 +744,7 @@
                 }
               },
               ipAddresses: { //read-only listView (no actions) filled with pod info (not VlanIpRange info)
+
                 title: 'label.ip.ranges',
 								listView: {
 									fields: {
@@ -838,6 +842,7 @@
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
                     startVlan: {
+
                       label: 'label.start.vlan',
                       isEditable: true
                     },
@@ -1143,6 +1148,7 @@
                               args.response.success({data: items});
                             }
                           },
+
                           subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
                           account: { label: 'label.account' },
 
@@ -1165,6 +1171,7 @@
                               args.response.success({data: items});
                             }
                           },
+
 
                           networkOfferingId: {
                             label: 'label.network.offering',
@@ -3405,6 +3412,7 @@
                   }
                 }
 
+
               },
 
               dataProvider: function(args) {
@@ -5608,7 +5616,7 @@
                     fwdevicename: { label: 'label.type' },
                     fwdevicecapacity: { label: 'label.capacity' },
                     timeout: { label: 'label.timeout' }
-                  }
+                 }
                 ],
                 dataProvider: function(args) {	
 									$.ajax({

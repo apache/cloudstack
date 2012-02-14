@@ -2829,6 +2829,7 @@ dictionary = {
 'label.created.by.system': '<fmt:message key="label.created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
 'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
+
 'label.redundant.router.capability': '<fmt:message key="label.redundant.router.capability" />',
 'label.supported.source.NAT.type': '<fmt:message key="label.supported.source.NAT.type" />',
 'label.elastic.LB': '<fmt:message key="label.elastic.LB" />',
@@ -2957,5 +2958,6 @@ dictionary = {
 'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.action.register.iso': '<fmt:message key="label.action.register.iso" />',
 'label.isolation.method': '<fmt:message key="label.isolation.method" />'
+
 };
 </script>
