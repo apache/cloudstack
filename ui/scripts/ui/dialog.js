@@ -371,7 +371,7 @@
         zIndex: 5000,
         buttons: [
           {
-            text: _l('label.cancel'),
+            text: _l('label.no'),
             'class': 'cancel',
             click: function() {
               $(this).dialog('destroy');
