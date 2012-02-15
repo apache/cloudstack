@@ -303,7 +303,8 @@ public enum Config {
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
 	
-	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "true", "If agent load balancing enabled in cluster setup", null),
+	//disabling lb as cluster sync does not work with distributed cluster
+	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
 	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use exetrnal dns1 and dns2", null),
 	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do UTF-8 encoding for the api response, false by default", null),
