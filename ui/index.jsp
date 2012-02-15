@@ -757,41 +757,41 @@
           <div class="compute-and-storage">
             <div class="system-dashboard">
               <div class="head">
-                <span>Compute and Storage</span>
+                <span><fmt:message key="label.compute.and.storage"/></span>
               </div>
               <ul class="status_box good">
                 <!-- Virtual Machines -->
                 <li class="block virtual-machines">
-                  <span class="header">Virtual Machines</span>
+                  <span class="header"><fmt:message key="label.virtual.machines"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <!-- Running -->
                     <div class="overview-item running">
                       <div class="total" data-item="runningInstances">5</div>
-                      <div class="label">Running</div>
+                      <div class="label"><fmt:message key="state.Running"/></div>
                     </div>
 
                     <!-- Stopped -->
                     <div class="overview-item stopped">
                       <div class="total" data-item="stoppedInstances">10</div>
-                      <div class="label">Stopped</div>
+                      <div class="label"><fmt:message key="state.Stopped"/></div>
                     </div>
                   </div>
                 </li>
 
                 <!-- Storage -->
                 <li class="block storage">
-                  <span class="header">Storage</span>
+                  <span class="header"><fmt:message key="label.storage"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <div class="total" data-item="totalVolumes">10</div>
-                    <div class="label">volumes</div>
+                    <div class="label"><fmt:message key="label.volumes"/></div>
                   </div>
                 </li>
 
                 <!-- Bandwidth -->
                 <li class="block storage bandwidth">
-                  <span class="header">Bandwidth</span>
+                  <span class="header"><fmt:message key="label.bandwidth"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <div class="total" data-item="totalBandwidth">200</div>
@@ -806,7 +806,7 @@
           <div class="users">
             <div class="system-dashboard">
               <div class="head">
-                <span>Users</span>
+                <span><fmt:message key="label.users"/></span>
               </div>
               <ul class="status_box good" data-item="users">
                 <li class="block user">
@@ -822,25 +822,25 @@
           <!-- Networking and security -->
           <div class="info-box networking-and-security">
             <div class="title">
-              <span>Networking and Security</span>
+              <span><fmt:message key="label.networking.and.security"/></span>
             </div>
             <ul>
               <!-- IP addresses -->
               <li class="odd">
                 <div class="total"><span data-item="totalIPAddresses"></span></div>
-                <div class="desc">IP addresses</div>
+                <div class="desc"><fmt:message key="label.menu.ipaddresses"/></div>
               </li>
 
               <!-- Load balancing policies -->
               <li>
                 <div class="total"><span data-item="totalLoadBalancers"></span></div>
-                <div class="desc">Load balancing policies</div>
+                <div class="desc"><fmt:message key="label.load.balancing.policies"/></div>
               </li>
 
               <!-- Port forwarding policies -->
               <li class="odd">
                 <div class="total"><span data-item="totalPortForwards"></span></div>
-                <div class="desc">Port forwarding policies</div>
+                <div class="desc"><fmt:message key="label.port.forwarding.policies"/></div>
               </li>
 
               <!-- Blank -->
@@ -854,7 +854,7 @@
                 <div class="total"></div>
                 <div class="desc">
                   <div class="button manage-resources">
-                    <span>Manage Resources</span>
+                    <span><fmt:message key="label.manage.resources"/></span>
                     <span class="arrow"></span>
                   </div>
                 </div>
@@ -865,9 +865,9 @@
           <!-- Events -->
           <div class="info-box events">
             <div class="title">
-              <span>Events</span>
+              <span><fmt:message key="label.menu.events"/></span>
               <div class="button view-all">
-                <span>View all</span>
+                <span><fmt:message key="label.view.all"/></span>
                 <span class="arrow"></span>
               </div>
             </div>
@@ -1592,6 +1592,33 @@
 
 <script language="javascript">
 dictionary = {
+'label.port.forwarding.policies': '<fmt:message key="label.port.forwarding.policies"/>',
+'label.load.balancing.policies': '<fmt:message key="label.load.balancing.policies"/>',
+'label.networking.and.security': '<fmt:message key="label.networking.and.security"/>',
+'label.bandwidth': '<fmt:message key="label.bandwidth"/>',
+'label.virtual.machines': '<fmt:message key="label.virtual.machines"/>',
+'label.compute.and.storage': '<fmt:message key="label.compute.and.storage"/>',
+'label.task.completed': '<fmt:message key="label.task.completed"/>',
+'label.update.project.resources': '<fmt:message key="label.update.project.resources"/>',
+'label.remove.project.account': '<fmt:message key="label.remove.project.account"/>',
+'label.item.listing': '<fmt:message key="label.item.listing"/>',
+'message.select.item': '<fmt:message key="message.select.item"/>',
+'label.removing': '<fmt:message key="label.removing"/>',
+'label.invite': '<fmt:message key="label.invite"/>',
+'label.project.dashboard': '<fmt:message key="label.project.dashboard"/>',
+'label.add.by': '<fmt:message key="label.add.by"/>',
+'label.max.vms': '<fmt:message key="label.max.vms"/>',
+'label.max.public.ips': '<fmt:message key="label.max.public.ips"/>',
+'label.max.volumes': '<fmt:message key="label.max.volumes"/>',
+'label.max.snapshots': '<fmt:message key="label.max.snapshots"/>',
+'label.max.templates': '<fmt:message key="label.max.templates"/>',
+'label.remind.later': '<fmt:message key="label.remind.later"/>',
+'label.invited.accounts': '<fmt:message key="label.invited.accounts"/>',
+'label.add.accounts.to': '<fmt:message key="label.add.accounts.to"/>',
+'label.invite.to': '<fmt:message key="label.invite.to"/>',
+'label.add.accounts': '<fmt:message key="label.add.accounts"/>',
+'label.project.name': '<fmt:message key="label.project.name"/>',
+'label.create.project': '<fmt:message key="label.create.project"/>',
 'label.networks': '<fmt:message key="label.networks"/>',
 'label.launch.vm': '<fmt:message key="label.launch.vm"/>',
 'label.new.vm': '<fmt:message key="label.new.vm"/>',
