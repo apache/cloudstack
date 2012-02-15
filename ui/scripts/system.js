@@ -6390,7 +6390,7 @@
       },
 
       guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges 
-        title: 'label.guest.ip.range', //Jes
+        title: 'label.guest.ip.range', 
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
@@ -6453,18 +6453,12 @@
             },
 
             'delete': {
-              label: 'remove.IP.range' ,
+              label: 'remove.IP.range' , 
               messages: {
                 confirm: function(args) {
-                  return 'Please confirm that you want to delete this IP range.';
-                },
-                success: function(args) {
-                  return 'remove.IP.range';
-                },
+                  return 'confirm.remove.IP.range';
+                },                
                 notification: function(args) {
-                  return 'remove.IP.range';
-                },
-                complete: function(args) {
                   return 'remove.IP.range';
                 }
               },
@@ -6488,7 +6482,7 @@
     }
   };
   
-  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) { 
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
     array1.push("&username=" + todb(args.data.username));

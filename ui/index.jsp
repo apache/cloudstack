@@ -2716,6 +2716,7 @@ dictionary = {
 'agent.password': '<fmt:message key="agent.password" />',
 'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
 'resource.state': '<fmt:message key="resource.state" />',
-'LUN.number': '<fmt:message key="LUN.number" />'
+'LUN.number': '<fmt:message key="LUN.number" />',
+'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />'
 };
 </script>
