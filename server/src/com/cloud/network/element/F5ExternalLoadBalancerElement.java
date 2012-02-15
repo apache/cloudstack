@@ -41,6 +41,7 @@ import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -138,9 +139,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         try {
             return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
-            // TODO: handle out of capacity exception in graceful manner when multiple providers are avaialble for the
-// network
-            return false;
+            throw new ResourceUnavailableException("There are no F5 load balancer devices with the free capacity for implementing this network", DataCenter.class, guestConfig.getDataCenterId());
         }
     }
 
