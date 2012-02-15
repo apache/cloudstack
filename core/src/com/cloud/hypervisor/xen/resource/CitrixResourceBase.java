@@ -6026,11 +6026,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if( cmd.getSwift() != null ) {
                         try {
                             swiftBackupSnapshot(conn, cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, "S-" + volumeId.toString(), false, wait);
+                            snapshotBackupUuid = snapshotBackupUuid + ".vhd";
                         } finally {
                             deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
                         }
-                    }
-                    snapshotBackupUuid = snapshotBackupUuid + ".vhd";
+                    }                    
                     success = true;
                 } finally {
                     if( snapshotSr != null) {
