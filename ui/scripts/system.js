@@ -3207,7 +3207,7 @@
         }
       }
     },
-    show: cloudStack.uiCustom.physicalResources({//Jes
+    show: cloudStack.uiCustom.physicalResources({
       sections: {
         physicalResources: {
           type: 'select',
@@ -5197,7 +5197,7 @@
             },
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details', 
                 fields: [
                   {
                     lbdeviceid: { label: 'label.id' },
@@ -5363,7 +5363,7 @@
               }
             });
           },
-          detailView: {
+          detailView: {  
             name: 'F5 details',
             actions: {
               'remove': {
@@ -8025,7 +8025,6 @@
                 fields: {
                   guestStartIp: { label: 'label.guest.start.ip' },
                   guestEndIp: { label: 'label.guest.end.ip' }
-                }
               },
               action: function(args) {
                 var array2 = [];

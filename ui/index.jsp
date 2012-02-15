@@ -2958,6 +2958,5 @@ dictionary = {
 'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.action.register.iso': '<fmt:message key="label.action.register.iso" />',
 'label.isolation.method': '<fmt:message key="label.isolation.method" />'
-
 };
 </script>
