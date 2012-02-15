@@ -558,9 +558,9 @@
             state: {
               converter: function(str) {
                 // For localization
-                return str;
+                return 'state.' + str;
               },
-              label: 'Status', indicator: {
+              label: 'label.status', indicator: {
                 converter: function(str) {
                   return 'state.' + str;
                 },
@@ -838,7 +838,7 @@
             project: { label: 'label.project' },
             domain: { label: 'label.domain' },
             state: {
-              label: 'Status',
+              label: 'label.status',
               converter: function(str) {
                 // For localization
                 return 'state.' + str;
