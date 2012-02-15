@@ -7148,7 +7148,7 @@
               }
 
             },
-            tabs: {  //Jes
+            tabs: {  
               details: {
                 title: 'label.details',
 								
@@ -7284,18 +7284,27 @@
         }
       },
 <<<<<<< HEAD
+<<<<<<< HEAD
       'primary-storage': {
         title: 'label.primary.storage',
 =======
       'primary-storage': {  //Jes
         title: 'Primary Storage',
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+      'primary-storage': {  
+        title: 'label.primary.storage',
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
         id: 'primarystorages',
         listView: {
           id: 'primarystorages',
           section: 'primary-storage',
           fields: {
+<<<<<<< HEAD
             name: { label: 'label.name' },
+=======
+            name: { label: 'label.name' },            
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
             ipaddress: { label: 'label.server' },
 						path: { label: 'label.path' }
           },
@@ -7336,7 +7345,11 @@
               label: 'label.add.primary.storage',
 
               createForm: {
+<<<<<<< HEAD
                 title: 'label.add.primary.storage',
+=======
+                title: 'label.add.primary.storage',              
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -7640,7 +7653,11 @@
                   //always appear (end)
 
                   server: {
+<<<<<<< HEAD
                     label: 'label.server',
+=======
+                    label: 'label.server',  
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -7659,7 +7676,11 @@
                     isHidden: true
                   },
                   lun: {
+<<<<<<< HEAD
                     label: 'label.LUN.number',
+=======
+                    label: 'LUN.number',
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -7790,15 +7811,24 @@
 
               messages: {
                 notification: function(args) {
+<<<<<<< HEAD
                   return 'label.add.primary.storage';
+=======
+                  return 'label.add.primary.storage';  
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 }
               }
             }
           },
 
           detailView: {
+<<<<<<< HEAD
             name: "Primary storage details",
             actions: {
+=======
+            name: "Primary storage details", //Jes
+            actions: {						 
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
 							edit: {
                 label: 'label.edit',
                 action: function(args) {
@@ -7846,7 +7876,11 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.primarystorage.enable.maintenance.mode';
+<<<<<<< HEAD
                   },
+=======
+                  },                 
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.enable.maintenance.mode';
                   }
@@ -7857,11 +7891,19 @@
               },
 
               cancelMaintenanceMode: {
+<<<<<<< HEAD
                 label: 'label.action.cancel.maintenance.mode' ,
 								messages: {
                   confirm: function(args) {
                     return 'message.action.cancel.maintenance.mode';
                   },
+=======
+                label: 'label.action.cancel.maintenance.mode' , 
+								messages: {
+                  confirm: function(args) {
+                    return 'message.action.cancel.maintenance.mode';
+                  },                  
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.cancel.maintenance.mode';
                   }
@@ -7887,15 +7929,28 @@
                       );
                     }
                   });
+<<<<<<< HEAD
                 },
+=======
+                },                
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 notification: {
                   poll: pollAsyncJobResult
                 }
               },
 
+<<<<<<< HEAD
               'remove': {
                 label: 'label.action.delete.primary.storage' ,
                 messages: {                  
+=======
+              'delete': {
+                label: 'label.action.delete.primary.storage' ,  
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.primary.storage';
+                  },                 
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.delete.primary.storage';
                   }
@@ -7930,7 +7985,7 @@
 
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details', //Jes
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -7988,8 +8043,13 @@
         }
       },
 
+<<<<<<< HEAD
       'secondary-storage': {
         title: 'label.secondary.storage',
+=======
+      'secondary-storage': {  //Jes
+        title: 'Secondary Storage',
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
         id: 'secondarystorages',
         listView: {
           id: 'secondarystorages',

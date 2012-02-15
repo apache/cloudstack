@@ -2971,7 +2971,12 @@ dictionary = {
 'agent.username': '<fmt:message key="agent.username" />',
 'agent.password': '<fmt:message key="agent.password" />',
 'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
+<<<<<<< HEAD
 'resource.state': '<fmt:message key="resource.state" />'
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+'resource.state': '<fmt:message key="resource.state" />',
+'LUN.number': '<fmt:message key="LUN.number" />'
+>>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
 };
 </script>
