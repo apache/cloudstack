@@ -535,7 +535,16 @@ class firewallConfigBase(serviceCfgBase):
             pass
         
         if not status: 
-            bash("iptables -I INPUT -p tcp -m tcp --dport %s -j ACCEPT"%port)
+            redo = False
+            result = True
+            try:
+                result = bash("iptables -I INPUT -p tcp -m tcp --dport %s -j ACCEPT"%port).isSuccess()
+            except:
+                redo = True
+            
+            if not result or redo:
+                bash("sleep 30")
+                bash("iptables -I INPUT -p tcp -m tcp --dport %s -j ACCEPT"%port)
         
     def config(self):
         try:
