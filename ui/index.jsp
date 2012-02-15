@@ -2689,6 +2689,25 @@ dictionary = {
 'add.new.SRX': '<fmt:message key="add.new.SRX" />',
 'timeout': '<fmt:message key="timeout" />',
 'public.network': '<fmt:message key="public.network" />',
-'private.network': '<fmt:message key="private.network" />'
+'private.network': '<fmt:message key="private.network" />',
+'public': '<fmt:message key="public" />',
+'enable.swift': '<fmt:message key="enable.swift" />',
+'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
+'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
+'URL': '<fmt:message key="URL" />',
+'key': '<fmt:message key="key" />',
+'domain': '<fmt:message key="domain" />',
+'delete.NetScaler': '<fmt:message key="delete.NetScaler" />',
+'confirm.delete.NetScaler': '<fmt:message key="confirm.delete.NetScaler" />',
+'delete.F5': '<fmt:message key="delete.F5" />',
+'confirm.delete.F5': '<fmt:message key="confirm.delete.F5" />',
+'delete.SRX': '<fmt:message key="delete.SRX" />',
+'confirm.delete.SRX': '<fmt:message key="confirm.delete.SRX" />',
+'label.pods': '<fmt:message key="label.pods" />',
+'pod.name': '<fmt:message key="pod.name" />',
+'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
+'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
+'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
+'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />'
 };
 </script>
