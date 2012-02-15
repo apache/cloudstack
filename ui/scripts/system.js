@@ -682,7 +682,8 @@
                     url: createURL("updatePhysicalNetwork"),
                     data: {
                       id: selectedPhysicalNetworkObj.id,
-                      vlan: todb(vlan)
+                      vlan: todb(vlan),
+                      tags: args.data.tags
                     },
                     dataType: "json",
                     success: function(json) {
@@ -734,6 +735,7 @@
                     broadcastdomainrange: { label: 'broadcast.domain.range' }                    
                   },
                   {
+                    tags: { label: 'Tags', isEditable: true },
                     xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
