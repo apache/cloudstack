@@ -2889,6 +2889,7 @@ dictionary = {
 'label.delete.SRX': '<fmt:message key="label.delete.SRX" />',
 'message.confirm.delete.SRX': '<fmt:message key="message.confirm.delete.SRX" />',
 'label.pods': '<fmt:message key="label.pods" />',
+<<<<<<< HEAD
 'label.pod.name': '<fmt:message key="label.pod.name" />',
 'label.reserved.system.gateway': '<fmt:message key="label.reserved.system.gateway" />',
 'label.reserved.system.netmask': '<fmt:message key="label.reserved.system.netmask" />',
@@ -2958,5 +2959,19 @@ dictionary = {
 'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.action.register.iso': '<fmt:message key="label.action.register.iso" />',
 'label.isolation.method': '<fmt:message key="label.isolation.method" />'
+=======
+'pod.name': '<fmt:message key="pod.name" />',
+'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
+'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
+'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
+'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />',
+'label.clusters': '<fmt:message key="label.clusters" />',
+'cluster.name': '<fmt:message key="cluster.name" />',
+'host.MAC': '<fmt:message key="host.MAC" />',
+'agent.username': '<fmt:message key="agent.username" />',
+'agent.password': '<fmt:message key="agent.password" />',
+'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
+'resource.state': '<fmt:message key="resource.state" />'
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 };
 </script>

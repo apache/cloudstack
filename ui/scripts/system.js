@@ -5823,11 +5823,19 @@
               },
 
               enable: {
+<<<<<<< HEAD
                 label: 'label.action.enable.pod',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.enable.pod';
                   },
+=======
+                label: 'label.action.enable.pod', 
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.enable.pod';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.pod';
                   }
@@ -5853,12 +5861,20 @@
                 }
               },
 
+<<<<<<< HEAD
               disable: {
+=======
+              disable: { 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 label: 'label.action.disable.pod',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.disable.pod';
+<<<<<<< HEAD
                   },
+=======
+                  },                  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.disable.pod';
                   }
@@ -5884,12 +5900,21 @@
                 }
               },
 
+<<<<<<< HEAD
               'remove': {
                 label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.pod';
                   },
+=======
+              'delete': {
+                label: 'label.delete' , 
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.pod';
+                  },                  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.delete.pod';
                   }
@@ -5919,15 +5944,24 @@
                   {
                     id: { label: 'label.id' },
                     netmask: { label: 'label.netmask', isEditable: true },
+<<<<<<< HEAD
                     startip: { label: 'label.start.IP', isEditable: true },
                     endip: { label: 'label.end.IP', isEditable: true },
+=======
+                    startip: { label: 'start.IP', isEditable: true },
+                    endip: { label: 'end.IP', isEditable: true },
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
                         return str;
                       },
+<<<<<<< HEAD
                       label: 'label.allocation.state'
+=======
+                      label: 'allocation.state'
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     }
                   }
                 ],
@@ -5949,15 +5983,24 @@
               },
 
               ipAllocations: {
+<<<<<<< HEAD
                 title: 'label.ip.allocations',
+=======
+                title: 'label.ip.allocations',  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 multiple: true,
                 fields: [
                   {
                     id: { label: 'label.id' },
                     gateway: { label: 'label.gateway' },
                     netmask: { label: 'label.netmask' },
+<<<<<<< HEAD
                     startip: { label: 'label.start.IP' },
                     endip: { label: 'label.end.IP' }
+=======
+                    startip: { label: 'start.IP' },
+                    endip: { label: 'end.IP' }
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   }
                 ],
                 dataProvider: function(args) {
@@ -5975,7 +6018,11 @@
           }
         }
       },
+<<<<<<< HEAD
       clusters: {
+=======
+      clusters: {  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
         title: 'label.clusters',
         listView: {
           id: 'clusters',
@@ -6029,16 +6076,24 @@
             });
           },
 
-          actions: {
+          actions: {  
             add: {
               label: 'label.add.cluster',
+<<<<<<< HEAD
               messages: {
+=======
+              messages: {                
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 notification: function(args) {
                   return 'label.add.cluster';
                 }
               },
               createForm: {
+<<<<<<< HEAD
                 title: 'label.add.cluster',
+=======
+                title: 'label.add.cluster',                
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -6128,7 +6183,11 @@
                     }
                   },
                   name: {
+<<<<<<< HEAD
                     label: 'label.cluster.name',
+=======
+                    label: 'cluster.name',
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     validation: { required: true }
                   },
 
@@ -6217,7 +6276,11 @@
           },
 
           detailView: {
+<<<<<<< HEAD
             viewAll: { path: '_zone.hosts', label: 'label.hosts' },
+=======
+            viewAll: { path: '_zone.hosts', label: 'label.hosts' },  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 
             actions: {
               enable: {
@@ -6225,7 +6288,11 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.enable.cluster';
+<<<<<<< HEAD
                   },
+=======
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.cluster';
                   }
@@ -6253,11 +6320,19 @@
               },
 
               disable: {
+<<<<<<< HEAD
                 label: 'label.action.disable.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.disable.cluster';
                   },
+=======
+                label: 'label.action.disable.cluster',  
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.disable.cluster';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.disable.cluster';
                   }
@@ -6285,11 +6360,19 @@
               },
 
               manage: {
+<<<<<<< HEAD
                 label: 'label.action.manage.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.manage.cluster';
                   },
+=======
+                label: 'label.action.manage.cluster',  
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.manage.cluster';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.manage.cluster';
                   }
@@ -6317,11 +6400,19 @@
               },
 
               unmanage: {
+<<<<<<< HEAD
                 label: 'label.action.unmanage.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.unmanage.cluster';
                   },
+=======
+                label: 'label.action.unmanage.cluster',  
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.unmanage.cluster';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.unmanage.cluster';
                   }
@@ -6348,12 +6439,21 @@
                 }
               },
 
+<<<<<<< HEAD
               'remove': {
                 label: 'label.action.delete.cluster' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.cluster';
                   },
+=======
+              'delete': {
+                label: 'label.action.delete.cluster' , 
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.cluster';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.delete.cluster';
                   }
@@ -6376,7 +6476,7 @@
 
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details', 
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -6387,7 +6487,11 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
+<<<<<<< HEAD
                     //allocationstate: { label: 'label.allocation.state' },
+=======
+                    //allocationstate: { label: 'allocation.state' },
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
                   }
@@ -6412,7 +6516,11 @@
         }
       },
       hosts: {
+<<<<<<< HEAD
         title: 'label.hosts',
+=======
+        title: 'label.hosts', 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
         id: 'hosts',
         listView: {
           section: 'hosts',
@@ -6467,7 +6575,11 @@
 
           actions: {
             add: {
+<<<<<<< HEAD
               label: 'label.add.host',
+=======
+              label: 'label.add.host',  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 
               createForm: {
                 title: 'label.add.host',
@@ -6692,7 +6804,11 @@
                     isHidden: true
                   },
                   baremetalMAC: {
+<<<<<<< HEAD
                     label: 'label.host.MAC',
+=======
+                    label: 'host.MAC',
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -6700,12 +6816,20 @@
 
                   //input_group="OVM" starts here
                   agentUsername: {
+<<<<<<< HEAD
                     label: 'label.agent.username',
+=======
+                    label: 'agent.username',
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     validation: { required: false },
                     isHidden: true
                   },
                   agentPassword: {
+<<<<<<< HEAD
                     label: 'label.agent.password',
+=======
+                    label: 'agent.password',
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -6798,8 +6922,13 @@
               }
             }
           },
+<<<<<<< HEAD
           detailView: {
             name: "Host details",
+=======
+          detailView: {  
+            name: "Host details",												
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 						viewAll: {
 							label: 'label.instances',
 							path: 'instances'
@@ -6828,7 +6957,11 @@
               },
 
               enableMaintenanceMode: {
+<<<<<<< HEAD
                 label: 'label.action.enable.maintenance.mode',
+=======
+                label: 'label.action.enable.maintenance.mode',  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 action: function(args) {
                   $.ajax({
                     url: createURL("prepareHostForMaintenance&id=" + args.context.hosts[0].id),
@@ -6854,7 +6987,11 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.host.enable.maintenance.mode';
+<<<<<<< HEAD
                   },
+=======
+                  },                  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.maintenance.mode';
                   }
@@ -6864,7 +7001,11 @@
                 }
               },
 
+<<<<<<< HEAD
               cancelMaintenanceMode: {
+=======
+              cancelMaintenanceMode: {  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 label: 'label.action.cancel.maintenance.mode' ,
                 action: function(args) {
                   $.ajax({
@@ -6891,7 +7032,11 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.cancel.maintenance.mode';
+<<<<<<< HEAD
                   },
+=======
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.cancel.maintenance.mode';
                   }
@@ -6902,7 +7047,11 @@
               },
 
               forceReconnect: {
+<<<<<<< HEAD
                 label: 'label.action.force.reconnect',
+=======
+                label: 'label.action.force.reconnect',  
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 action: function(args) {
                   $.ajax({
                     url: createURL("reconnectHost&id=" + args.context.hosts[0].id),
@@ -6927,8 +7076,13 @@
                 },
                 messages: {
                   confirm: function(args) {
+<<<<<<< HEAD
                     return 'message.confirm.action.force.reconnect';
                   },
+=======
+                    return 'confirm.action.force.reconnect';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.force.reconnect';
                   }
@@ -6938,9 +7092,18 @@
                 }
               },
 
+<<<<<<< HEAD
               'remove': {
                 label: 'label.action.remove.host' ,
                 messages: {
+=======
+              'delete': {  
+                label: 'label.action.remove.host' ,
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.remove.host';
+                  },                 
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.remove.host';
                   }
@@ -6952,7 +7115,10 @@
                 },
                 createForm: {
                   title: 'label.action.remove.host',
+<<<<<<< HEAD
                   desc: 'message.action.remove.host',
+=======
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   fields: {
                     isForced: {
                       label: 'force.remove',
@@ -6982,7 +7148,7 @@
               }
 
             },
-            tabs: {
+            tabs: {  //Jes
               details: {
                 title: 'label.details',
 								
@@ -7007,9 +7173,20 @@
                   },
                   {
                     id: { label: 'label.id' },
+<<<<<<< HEAD
                     resourcestate: { label: 'label.resource.state' },
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },                    
+=======
+                    resourcestate: { label: 'resource.state' },
+                    state: { label: 'label.state' },
+                    type: { label: 'label.type' },
+                    zonename: { label: 'label.zone' },
+                    podname: { label: 'label.pod' },
+                    clustername: { label: 'label.cluster' },
+                    ipaddress: { label: 'label.ip.address' },
+                    version: { label: 'label.version' },
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     hosttags: {
                       label: 'label.host.tags',
                       isEditable: true
@@ -7039,11 +7216,14 @@
                         });
                       }
                     },
+<<<<<<< HEAD
 										zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
                     ipaddress: { label: 'label.ip.address' },
                     version: { label: 'label.version' },
+=======
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     disconnected: { label: 'label.last.disconnected' }
                   }
                 ],
@@ -7103,8 +7283,13 @@
           }
         }
       },
+<<<<<<< HEAD
       'primary-storage': {
         title: 'label.primary.storage',
+=======
+      'primary-storage': {  //Jes
+        title: 'Primary Storage',
+>>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
         id: 'primarystorages',
         listView: {
           id: 'primarystorages',
