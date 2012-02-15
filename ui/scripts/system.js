@@ -5525,7 +5525,7 @@
               }
 
             },
-            tabs: {  //Jes
+            tabs: {  
               details: {
                 title: 'label.details',
                 fields: [
@@ -5581,16 +5581,16 @@
           }
         }
       },
-      'primary-storage': {  //Jes
-        title: 'Primary Storage',
+      'primary-storage': {  
+        title: 'label.primary.storage',
         id: 'primarystorages',
         listView: {
           id: 'primarystorages',
           section: 'primary-storage',
           fields: {
             name: { label: 'label.name' },            
-            ipaddress: { label: 'Server' },
-						path: { label: 'Path' }
+            ipaddress: { label: 'label.server' },
+						path: { label: 'label.path' }
           },
 
           dataProvider: function(args) {
@@ -5626,11 +5626,10 @@
 
           actions: {
             add: {
-              label: 'Add primary storage',
+              label: 'label.add.primary.storage',
 
               createForm: {
-                title: 'Add new primary storage',
-                desc: 'Please fill in the following information to add a new primary storage',
+                title: 'label.add.primary.storage',              
                 fields: {
                   //always appear (begin)
                   podId: {
@@ -5683,7 +5682,7 @@
                   },
 
                   protocol: {
-                    label: 'Protocol',
+                    label: 'label.protocol',
                     validation: { required: true },
                     dependsOn: 'clusterId',
                     select: function(args) {
@@ -5909,45 +5908,45 @@
                   //always appear (end)
 
                   server: {
-                    label: 'Server',
+                    label: 'label.server',  
                     validation: { required: true },
                     isHidden: true
                   },
 
                   //nfs
                   path: {
-                    label: 'Path',
+                    label: 'label.path',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   //iscsi
                   iqn: {
-                    label: 'Target IQN',
+                    label: 'label.target.iqn',
                     validation: { required: true },
                     isHidden: true
                   },
                   lun: {
-                    label: 'LUN #',
+                    label: 'LUN.number',
                     validation: { required: true },
                     isHidden: true
                   },
 
 									//clvm
 									volumegroup: {
-                    label: 'Volume Group',
+                    label: 'label.volgroup',
                     validation: { required: true },
                     isHidden: true
                   },
 									
                   //vmfs
                   vCenterDataCenter: {
-                    label: 'vCenter Datacenter',
+                    label: 'label.vcenter.datacenter',
                     validation: { required: true },
                     isHidden: true
                   },
                   vCenterDataStore: {
-                    label: 'vCenter Datastore',
+                    label: 'label.vcenter.datastore',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -6059,14 +6058,14 @@
 
               messages: {
                 notification: function(args) {
-                  return 'Added new primary storage';
+                  return 'label.add.primary.storage';  
                 }
               }
             }   
           },
 
           detailView: {
-            name: "Primary storage details",
+            name: "Primary storage details", //Jes
             actions: {						 
 							edit: {
                 label: 'label.edit',
@@ -6089,7 +6088,7 @@
               },							
 													
               enableMaintenanceMode: {
-                label: 'Enable Maintenace' ,
+                label: 'label.action.enable.maintenance.mode' ,
                 action: function(args) {
                   $.ajax({
                     url: createURL("enableStorageMaintenance&id=" + args.context.primarystorages[0].id),
@@ -6114,16 +6113,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?';
-                  },
-                  success: function(args) {
-                    return 'Maintenance is being enabled.';
-                  },
+                    return 'message.action.primarystorage.enable.maintenance.mode';
+                  },                 
                   notification: function(args) {
-                    return 'Enabling maintenance';
-                  },
-                  complete: function(args) {
-                    return 'Maintenance has been enabled.';
+                    return 'label.action.enable.maintenance.mode';
                   }
                 },
                 notification: {
@@ -6132,7 +6125,15 @@
               },
 
               cancelMaintenanceMode: {
-                label: 'Cancel Maintenace' ,
+                label: 'label.action.cancel.maintenance.mode' , 
+								messages: {
+                  confirm: function(args) {
+                    return 'message.action.cancel.maintenance.mode';
+                  },                  
+                  notification: function(args) {
+                    return 'label.action.cancel.maintenance.mode';
+                  }
+                },
                 action: function(args) {
                   $.ajax({
                     url: createURL("cancelStorageMaintenance&id=" + args.context.primarystorages[0].id),
@@ -6154,40 +6155,20 @@
                       );
                     }
                   });
-                },
-                messages: {
-                  confirm: function(args) {
-                    return 'Please confirm that you want to cancel this maintenance.';
-                  },
-                  success: function(args) {
-                    return 'Maintenance is being cancelled.';
-                  },
-                  notification: function(args) {
-                    return 'Cancelling maintenance';
-                  },
-                  complete: function(args) {
-                    return 'Maintenance has been cancelled.';
-                  }
-                },
+                },                
                 notification: {
                   poll: pollAsyncJobResult
                 }
               },
 
               'delete': {
-                label: 'label.delete' ,
+                label: 'label.action.delete.primary.storage' ,  
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete this primary storage.';
-                  },
-                  success: function(args) {
-                    return 'Primary storage is being deleted.';
-                  },
+                    return 'message.action.delete.primary.storage';
+                  },                 
                   notification: function(args) {
-                    return 'Deleting primary storage';
-                  },
-                  complete: function(args) {
-                    return 'Primary storage has been deleted.';
+                    return 'label.action.delete.primary.storage';
                   }
                 },
                 action: function(args) {
@@ -6209,7 +6190,7 @@
 
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details', //Jes
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -6225,9 +6206,9 @@
                     clustername: { label: 'label.cluster' },
                     type: { label: 'label.type' },
                     ipaddress: { label: 'label.ip.address' },
-                    path: { label: 'Path' },
+                    path: { label: 'label.path' },
                     disksizetotal: {
-                      label: 'Disk total',
+                      label: 'label.disk.total',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -6236,7 +6217,7 @@
                       }
                     },
                     disksizeallocated: {
-                      label: 'Disk Allocated',
+                      label: 'label.disk.allocated',
                       converter: function(args) {
                         if (args == null || args == 0)
                           return "";
@@ -6260,7 +6241,7 @@
         }
       },
 
-      'secondary-storage': {
+      'secondary-storage': {  //Jes
         title: 'Secondary Storage',
         id: 'secondarystorages',
         listView: {

@@ -2715,6 +2715,7 @@ dictionary = {
 'agent.username': '<fmt:message key="agent.username" />',
 'agent.password': '<fmt:message key="agent.password" />',
 'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
-'resource.state': '<fmt:message key="resource.state" />'
+'resource.state': '<fmt:message key="resource.state" />',
+'LUN.number': '<fmt:message key="LUN.number" />'
 };
 </script>
