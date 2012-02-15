@@ -2807,18 +2807,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public void shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
-
+    public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
+        boolean result = false;
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
-            return;
+            return false;
         }
         if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
             s_logger.debug("Network is not implemented: " + network);
-            return;
+            return false;
         }
 
         network.setState(Network.State.Shutdown);
@@ -2842,12 +2843,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
-
+            result = true;
         } else {
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
+            result = false;
         }
         txn.commit();
+        return result;
     }
 
     private boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, NetworkVO network) {
@@ -3849,6 +3852,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
+    private boolean checkForNonStoppedVmInNetwork(long networkId) {
+        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Starting, 
+                VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
+        return vms.isEmpty();
+    }
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
@@ -3912,6 +3921,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         && !changeCidr) {
                     throw new InvalidParameterValueException("Can't guarantee guest network CIDR is unchanged after updating network!");
                 }
+                if (changeCidr) {
+                    if (!checkForNonStoppedVmInNetwork(network.getId())) {
+                        throw new InvalidParameterValueException("All user vm of network: " + network + " should be stopped before changing CIDR!");
+                    }
+                }
                 // check if the network is upgradable
                 if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
@@ -3956,11 +3970,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
         if (restartNetwork) {
             if (validStateToShutdown) {
-                s_logger.debug("Shutting down elements and resources for network id=" + networkId + " as a part of network update");
+                if (!changeCidr) {
+                    s_logger.debug("Shutting down elements and resources for network id=" + networkId + " as a part of network update");
 
-                if (!shutdownNetworkElementsAndResources(context, true, network)) {
-                    s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network);
-                    throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network update: " + network);
+                    if (!shutdownNetworkElementsAndResources(context, true, network)) {
+                        s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network);
+                        throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network update: " + network);
+                    }
+                } else {
+                    // We need to shutdown the network, since we want to re-implement the network.
+                    s_logger.debug("Shutting down network id=" + networkId + " as a part of network update");
+
+                    if (!shutdownNetwork(network.getId(), context, true)) {
+                        s_logger.warn("Failed to shutdown the network as a part of network update: " + network);
+                        throw new CloudRuntimeException("Failed to shutdown the network as a part of network update: " + network);
+                    }
                 }
             } else {
                 throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network update: " + network + "; network is in wrong state: " + network.getState());
@@ -4013,7 +4037,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
                 s_logger.debug("Implementing the network " + network + " elements and resources as a part of network update");
                 try {
-                    implementNetworkElementsAndResources(dest, context, network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+                    if (!changeCidr) {
+                        implementNetworkElementsAndResources(dest, context, network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+                    } else {
+                        implementNetwork(network.getId(), dest, context);
+                    }
                 } catch (Exception ex) {
                     s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
                     throw new CloudRuntimeException("Failed to implement network " + network + " elements and resources as a part of network update");

@@ -163,7 +163,7 @@ public interface NetworkManager extends NetworkService {
 
     <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
 
-    void shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
+    boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
