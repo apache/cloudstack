@@ -323,6 +323,10 @@ JsCookedKeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers
 			this.mappedInput.push({type : AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SHIFT, modifiers: modifiers});
 			return;
 		}
+		
+		// ENTER/BACKSPACE key should already have been sent through KEY DOWN/KEY UP event
+		if(code == AjaxViewer.JS_KEY_ENTER || code == AjaxViewer.JS_KEY_BACKSPACE)
+			return;
 			
 		this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
 		this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
