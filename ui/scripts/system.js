@@ -6389,20 +6389,17 @@
         }
       },
 
-      guestIpRanges: {
+      guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges 
         title: 'label.guest.ip.range', //Jes
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
-          fields: {
-            //id: { label: 'label.id' },
-            //podname: { label: 'label.pod' },
-            //vlan: { label: 'label.vlan' },
+          fields: {            
             startip: { label: 'start.IP' },
             endip: { label: 'end.IP' }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {				
             $.ajax({
               url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkid=" + args.context.networks[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -6417,95 +6414,13 @@
           actions: {
             add: {
               label: 'label.add.ip.range',
-
               createForm: {
                 title: 'label.add.ip.range',
-
-                preFilter: function(args) {
-                  if(selectedZoneObj.networktype == "Basic") {
-                    args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
-                    args.$form.find('.form-item[rel=guestGateway]').css('display', 'inline-block');
-                    args.$form.find('.form-item[rel=guestNetmask]').css('display', 'inline-block');
-                  }
-                  else {  //"Advanced"
-                    args.$form.find('.form-item[rel=podId]').hide();
-                    args.$form.find('.form-item[rel=guestGateway]').hide();
-                    args.$form.find('.form-item[rel=guestNetmask]').hide();
-                  }
-                },
-
-                fields: {
-                  podId: {
-                    label: 'label.pod',
-                    validation: { required: true },
-                    select: function(args) {
-                      var items = [];
-                      if(selectedZoneObj.networktype == "Basic") {
-                        $.ajax({
-                          url: createURL("listPods&zoneid=" + selectedZoneObj.id),
-                          dataType: "json",
-                          async: false,
-                          success: function(json) {
-                            var podObjs = json.listpodsresponse.pod;
-                            $(podObjs).each(function(){
-                              items.push({id: this.id, description: this.name});
-                            });
-                          }
-                        });
-                        items.push({id: 0, description: "(create new pod)"});
-                      }
-                      args.response.success({data: items});
-
-                      args.$select.change(function() {
-                        var $form = $(this).closest('form');
-                        if($(this).val() == "0") {
-                          $form.find('.form-item[rel=podname]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=reservedSystemGateway]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=reservedSystemNetmask]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=reservedSystemStartIp]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=reservedSystemEndIp]').css('display', 'inline-block');
-                        }
-                        else {
-                          $form.find('.form-item[rel=podname]').hide();
-                          $form.find('.form-item[rel=reservedSystemGateway]').hide();
-                          $form.find('.form-item[rel=reservedSystemNetmask]').hide();
-                          $form.find('.form-item[rel=reservedSystemStartIp]').hide();
-                          $form.find('.form-item[rel=reservedSystemEndIp]').hide();
-                        }
-                      });
-                    }
-                  },
-
-                  //create new pod fields start here
-                  podname: {
-                    label: 'pod.name',
-                    validation: { required: true }
-                  },
-                  reservedSystemGateway: {
-                    label: 'reserved.system.gateway',
-                    validation: { required: true }
-                  },
-                  reservedSystemNetmask: {
-                    label: 'reserved.system.netmask',
-                    validation: { required: true }
-                  },
-                  reservedSystemStartIp: {
-                    label: 'start.reserved.system.IP',
-                    validation: { required: true }
-                  },
-                  reservedSystemEndIp: {
-                    label: 'end.reserved.system.IP',
-                    validation: { required: false }
-                  },
-                  //create new pod fields ends here
-
-                  guestGateway: { label: 'label.guest.gateway' },
-                  guestNetmask: { label: 'label.guest.netmask' },
+                fields: {   
                   guestStartIp: { label: 'guest.start.IP' },
                   guestEndIp: { label: 'guest.end.IP' }
                 }
               },
-
               action: function(args) {		                
 								var array2 = [];
 								array2.push("&startip=" + args.data.guestStartIp);
@@ -6525,16 +6440,14 @@
 									}
 								});                
               },
-
               notification: {
                 poll: function(args) {
                   args.complete();
                 }
               },
-
               messages: {
                 notification: function(args) {
-                  return 'Added new IP range';
+                  return 'label.add.ip.range';
                 }
               }
             },
