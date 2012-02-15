@@ -8273,9 +8273,13 @@
       guestIpRanges: {
 =======
       guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges 
+<<<<<<< HEAD
 >>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
         title: 'label.guest.ip.range', //Jes
 >>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
+=======
+        title: 'label.guest.ip.range', 
+>>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
@@ -8390,6 +8394,7 @@
               }
             },
 
+<<<<<<< HEAD
             'remove': {
               label: 'label.remove.ip.range' ,
               messages: {
@@ -8398,6 +8403,16 @@
                 },
                 notification: function(args) {
                   return 'label.remove.ip.range';
+=======
+            'delete': {
+              label: 'remove.IP.range' , 
+              messages: {
+                confirm: function(args) {
+                  return 'confirm.remove.IP.range';
+                },                
+                notification: function(args) {
+                  return 'remove.IP.range';
+>>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
                 }
               },
               action: function(args) {
@@ -8422,8 +8437,13 @@
       }
     }
   };
+<<<<<<< HEAD
 
   function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+=======
+  
+  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) { 
+>>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
     array1.push("&username=" + todb(args.data.username));

@@ -2976,7 +2976,12 @@ dictionary = {
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 =======
 'resource.state': '<fmt:message key="resource.state" />',
+<<<<<<< HEAD
 'LUN.number': '<fmt:message key="LUN.number" />'
 >>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
+=======
+'LUN.number': '<fmt:message key="LUN.number" />',
+'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />'
+>>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
 };
 </script>
