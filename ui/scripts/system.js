@@ -2116,9 +2116,9 @@
                             url: function(args) {
                               return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
                             },
-                            title: function(args) {
-                              return "console";  //can't have space in window name in window.open()
-                            },
+                            title: function(args) {						
+															return args.context.routers[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+														},
                             width: 820,
                             height: 640
                           }
@@ -3660,9 +3660,9 @@
                               url: function(args) {
                                 return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
                               },
-                              title: function(args) {
-                                return "console";  //can't have space in window name in window.open()
-                              },
+                              title: function(args) {						
+																return args.context.systemVMs[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+															},
                               width: 820,
                               height: 640
                             }
