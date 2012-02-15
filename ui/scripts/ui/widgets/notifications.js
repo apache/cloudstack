@@ -14,7 +14,7 @@
             .append(
               $('<div>').addClass('title').append(
                 $('<span>').html(
-                  options.error ? options.error : _l('Task completed')
+                  options.error ? options.error : _l('label.task.completed')
                 )
               )
             )

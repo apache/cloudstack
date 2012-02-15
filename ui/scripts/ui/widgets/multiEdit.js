@@ -118,7 +118,7 @@
                 _medit.vmList($multi,
                               options.listView,
                               options.context,
-                              options.multipleAdd, 'Add VMs',
+                              options.multipleAdd, _l('label.add.vms'),
                               addItemAction,
                               {
                                 multiRule: multiRule
@@ -200,7 +200,7 @@
           $('<div>').addClass('action')
             .addClass(actionID)
             .append($('<span>').addClass('icon'))
-            .attr({ title: action.label })
+            .attr({ title: _l(action.label) })
             .click(function() {
               var $target = $(this);
               var $dataItem = $target.closest('.data-item');
@@ -208,7 +208,7 @@
               var isDestroy = $target.hasClass('destroy');
 
               if (isDestroy) {
-                var $loading = _medit.loadingItem($multi, 'Removing...');
+                var $loading = _medit.loadingItem($multi, _l('label.removing') + '...');
 
                 if ($expandable.is(':visible')) {
                   $expandable.slideToggle(function() {
@@ -340,11 +340,11 @@
         title: label,
         buttons: [
           {
-            text: 'Apply',
+            text: _l('label.apply'),
             'class': 'ok',
             click: function() {
               if (!$listView.find('input[type=radio]:checked, input[type=checkbox]:checked').size()) {
-                cloudStack.dialog.notice({ message: 'Please select an instance '});
+                cloudStack.dialog.notice({ message: _l('message.select.item')});
 
                 return false;
               }
@@ -369,7 +369,7 @@
             }
           },
           {
-            text: 'Cancel',
+            text: _l('label.cancel'),
             'class': 'cancel',
             click: function() {
               $dataList.fadeOut(function() {
@@ -463,7 +463,7 @@
 
         // Show list view of selected VMs
         $browser.cloudBrowser('addPanel', {
-          title: 'Load Balanced VMs',
+          title: _l('label.item.listing'),
           data: '',
           noSelectPanel: true,
           maximizeIfSelected: true,
@@ -668,7 +668,7 @@
                   $td.data('multi-custom-data', args.data);
                 }
               }
-            })
+            });
           }).appendTo($td);
       } else if (field.addButton) {
         $addVM = $('<div>').addClass('button add-vm').html(
@@ -678,7 +678,7 @@
     });
 
     if (args.actions && !args.noHeaderActionsColumn) {
-      $thead.append($('<th>Actions</th>').addClass('multi-actions'));
+      $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
       $inputForm.append($('<td></td>').addClass('multi-actions'));
     }
 
@@ -714,7 +714,7 @@
         });
 
         // Loading appearance
-        var $loading = _medit.loadingItem($multi, 'Adding...');
+        var $loading = _medit.loadingItem($multi, _l('label.adding') + '...');
         $dataBody.prepend($loading);
 
         // Clear out fields
@@ -785,7 +785,7 @@
       _medit.vmList($multi,
                     args.listView,
                     args.context,
-                    multipleAdd, 'Add VMs',
+                    multipleAdd, _l('label.add.vms'),
                     addItem);
 
       return true;
