@@ -221,6 +221,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         s_logger.debug("Marking domain id=" + domain.getId() + " as " + Domain.State.Inactive + " before actually deleting it");
         domain.setState(Domain.State.Inactive);
         _domainDao.update(domain.getId(), domain);
+        boolean rollBackState = false;
 
         try {
             long ownerId = domain.getAccountId();
@@ -235,10 +236,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
                     if (!_domainDao.remove(domain.getId())) {
                         s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domain.getId()
                                 + "); please make sure all users and sub domains have been removed from the domain before deleting");
+                        rollBackState = true;
                         return false;
                     }
                 } else {
                     s_logger.warn("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+                    rollBackState = true;
                     return false;
                 }
             }
@@ -248,6 +251,13 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
             return false;
+        } finally {
+            //when success is false
+            if (rollBackState) {
+                s_logger.debug("Changing domain id=" + domain.getId() + " state back to " + Domain.State.Active + " because it can't be removed due to resources referencing to it");
+                domain.setState(Domain.State.Active);
+                _domainDao.update(domain.getId(), domain);
+            }
         }
     }
 
