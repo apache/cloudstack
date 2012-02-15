@@ -6065,7 +6065,7 @@
           },
 
           detailView: {
-            name: "Primary storage details", //Jes
+            name: "Primary storage details", 
             actions: {						 
 							edit: {
                 label: 'label.edit',
@@ -6190,7 +6190,7 @@
 
             tabs: {
               details: {
-                title: 'label.details', //Jes
+                title: 'label.details', 
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -6241,8 +6241,8 @@
         }
       },
 
-      'secondary-storage': {  //Jes
-        title: 'Secondary Storage',
+      'secondary-storage': {  
+        title: 'label.secondary.storage',
         id: 'secondarystorages',
         listView: {
           id: 'secondarystorages',
@@ -6281,18 +6281,17 @@
 
           actions: {
             add: {
-              label: 'Add secondary storage',
+              label: 'label.add.secondary.storage', 
 
               createForm: {
-                title: 'Add new secondary storage',
-                desc: 'Please fill in the following information to add a new secondary storage',
+                title: 'label.add.secondary.storage',               
                 fields: {
                   nfsServer: {
-                    label: 'NFS Server',
+                    label: 'label.nfs.server',
                     validation: { required: true }
                   },
                   path: {
-                    label: 'Path',
+                    label: 'label.path',
                     validation: { required: true }
                   }
                 }
@@ -6330,7 +6329,7 @@
 
               messages: {
                 notification: function(args) {
-                  return 'Added new secondary storage';
+                  return 'label.add.secondary.storage';
                 }
               }
             }
@@ -6340,19 +6339,13 @@
             name: 'Secondary storage details',
             actions: {
               'delete': {
-                label: 'label.delete' ,
+                label: 'label.action.delete.secondary.storage' ,  
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete this secondary storage.';
-                  },
-                  success: function(args) {
-                    return 'Secondary storage is being deleted.';
-                  },
+                    return 'message.action.delete.secondary.storage';
+                  },                 
                   notification: function(args) {
-                    return 'Deleting secondary storage';
-                  },
-                  complete: function(args) {
-                    return 'Secondary storage has been deleted.';
+                    return 'label.action.delete.secondary.storage';
                   }
                 },
                 action: function(args) {
@@ -6373,7 +6366,7 @@
             },
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details',  
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -6397,7 +6390,7 @@
       },
 
       guestIpRanges: {
-        title: 'Guest IP Range',
+        title: 'label.guest.ip.range', //Jes
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
@@ -6423,10 +6416,10 @@
 
           actions: {
             add: {
-              label: 'Add IP range',
+              label: 'label.add.ip.range',
 
               createForm: {
-                title: 'Add IP range',
+                title: 'label.add.ip.range',
 
                 preFilter: function(args) {
                   if(selectedZoneObj.networktype == "Basic") {
