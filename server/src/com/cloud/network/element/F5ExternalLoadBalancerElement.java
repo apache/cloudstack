@@ -199,7 +199,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
 
         // specifies that F5 BIG IP network element can provide shared mode only
-        lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
+        lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
 
         // Specifies that load balancing rules can be made for either TCP or UDP traffic
         lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
