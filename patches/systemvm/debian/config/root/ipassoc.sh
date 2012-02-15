@@ -214,7 +214,7 @@ add_snat() {
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-  sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+  sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
   return $?
 }
 remove_snat() {
