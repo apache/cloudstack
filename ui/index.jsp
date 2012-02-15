@@ -1592,6 +1592,10 @@
 
 <script language="javascript">
 dictionary = {
+'label.installWizard.title': '<fmt:message key="label.installWizard.title"/>',
+'label.agree': '<fmt:message key="label.agree"/>',
+'label.license.agreement.subtitle': '<fmt:message key="label.license.agreement.subtitle"/>',
+'label.license.agreement': '<fmt:message key="label.license.agreement"/>',
 'label.port.forwarding.policies': '<fmt:message key="label.port.forwarding.policies"/>',
 'label.load.balancing.policies': '<fmt:message key="label.load.balancing.policies"/>',
 'label.networking.and.security': '<fmt:message key="label.networking.and.security"/>',

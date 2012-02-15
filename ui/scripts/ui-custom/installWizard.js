@@ -202,7 +202,7 @@
         return $('<div></div>').addClass('header')
           .append(
             $.merge(
-              $('<h2></h2>').html('Hello and Welcome to CloudStack.'),
+              $('<h2></h2>').html(_l('label.installWizard.title')),
               $('<h3></h3>').html('This tour will aid you in setting up your CloudStack installation')
             )
         );
@@ -285,10 +285,10 @@
     var steps = {
       eula: function(args) {
         var $intro = $('<div></div>').addClass('intro eula');
-        var $title = $('<div></div>').addClass('title').html('License Agreement');
-        var $subtitle = $('<div></div>').addClass('subtitle').html('Please accept the CloudStack&#8482 EULA before installing.');
+        var $title = $('<div></div>').addClass('title').html(_l('label.license.agreement'));
+        var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.license.agreement.subtitle'));
         var $copy = getCopy('eula', $('<div></div>').addClass('eula-copy'));
-        var $continue = elems.nextButton('Agree');
+        var $continue = elems.nextButton(_l('label.agree'));
 
         $continue.click(function() {
           goTo('intro');
