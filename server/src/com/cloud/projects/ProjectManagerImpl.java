@@ -444,10 +444,27 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         return _projectAccountDao.persist(new ProjectAccountVO(project, accountId, accountRole));
     }
     
-    @Override
+    @Override @DB
     public boolean deleteAccountFromProject(long projectId, long accountId) {
+        boolean success = true;
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        //remove account
         ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
-        return _projectAccountDao.remove(projectAccount.getId());
+        success = _projectAccountDao.remove(projectAccount.getId());
+        
+        //remove all invitations for account
+        if (success) {
+            s_logger.debug("Removed account " + accountId + " from project " + projectId + " , cleaning up old invitations for account/project...");
+            ProjectInvitation invite = _projectInvitationDao.findByAccountIdProjectId(accountId, projectId);
+            if (invite != null) {
+                success = success && _projectInvitationDao.remove(invite.getId());
+            }
+        }
+        
+        txn.commit();
+        return success;
     }
     
     @Override
@@ -730,7 +747,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     	}
     	
         if (invite != null) {
-            if (invite.getState() == ProjectInvitation.State.Completed || _projectInvitationDao.isActive(invite.getId(), _invitationTimeOut)) {
+            if (invite.getState() == ProjectInvitation.State.Completed || 
+                    (invite.getState() == ProjectInvitation.State.Pending && _projectInvitationDao.isActive(invite.getId(), _invitationTimeOut))) {
             	return true;
             } else {
                 if (invite.getState() == ProjectInvitation.State.Pending) {
