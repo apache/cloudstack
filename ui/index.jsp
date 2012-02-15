@@ -1671,7 +1671,6 @@
 
 <script language="javascript">
 dictionary = {
-<<<<<<< HEAD
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
@@ -1791,8 +1790,6 @@ dictionary = {
 'label.introduction.to.cloudstack': '<fmt:message key="label.introduction.to.cloudstack"/>',
 'label.what.is.cloudstack': '<fmt:message key="label.what.is.cloudstack"/>',
 'label.installWizard.subtitle': '<fmt:message key="label.installWizard.subtitle"/>',
-=======
->>>>>>> 18bfc40... WIP: Install wizard localization
 'label.installWizard.title': '<fmt:message key="label.installWizard.title"/>',
 'label.agree': '<fmt:message key="label.agree"/>',
 'label.license.agreement.subtitle': '<fmt:message key="label.license.agreement.subtitle"/>',
