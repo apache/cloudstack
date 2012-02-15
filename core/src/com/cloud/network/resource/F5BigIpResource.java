@@ -182,10 +182,8 @@ public class F5BigIpResource implements ServerResource {
             
             _inline = Boolean.parseBoolean((String) params.get("inline"));
     		    		    	
-            if (!login()) {
-            	throw new ExecutionException("Failed to login to the F5 BigIp.");
-            }
-    		    		
+            login();
+		
     		return true;
     	} catch (Exception e) {
     		throw new ConfigurationException(e.getMessage());
@@ -274,7 +272,15 @@ public class F5BigIpResource implements ServerResource {
 	}
 	
 	private boolean shouldRetry(int numRetries) {
-		return (numRetries > 0 && login());
+        try {
+            if (numRetries > 0) {
+                login();
+                return true;
+            }
+        } catch (Exception e) {
+            s_logger.error("Failed to log in to F5 device at " + _ip + " due to " + e.getMessage());
+        }
+        return false;
 	}
 	
 	private Answer execute(ReadyCommand cmd) {
@@ -590,14 +596,17 @@ public class F5BigIpResource implements ServerResource {
 	
 	// Login	
 	
-	private boolean login() {
+	private void login() throws ExecutionException {
 		try {			
 			_interfaces = new Interfaces();
 			
 			if (!_interfaces.initialize(_ip, _username, _password)) {
 				throw new ExecutionException("Failed to log in to BigIp appliance");
 			}
-			
+
+			// iControl.Interfaces.initialize always return true so make a call to force connect to F5 to validate credentials
+			_interfaces.getSystemSystemInfo().get_system_information();
+
 			_virtualServerApi = _interfaces.getLocalLBVirtualServer();
 			_loadbalancerApi = _interfaces.getLocalLBPool();		
 			_nodeApi = _interfaces.getLocalLBNodeAddress();
@@ -605,10 +614,8 @@ public class F5BigIpResource implements ServerResource {
 			_selfIpApi = _interfaces.getNetworkingSelfIP();
 			_routeDomainApi = _interfaces.getNetworkingRouteDomain();
 			_configSyncApi = _interfaces.getSystemConfigSync();
-			
-			return true;
 		} catch (Exception e) {
-			return false;
+		    throw new ExecutionException("Failed to log in to BigIp appliance due to " + e.getMessage());
 		}
 	}
 
