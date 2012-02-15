@@ -4440,19 +4440,13 @@
               },
 
               enable: {
-                label: 'Enable pod', //Jes
+                label: 'label.action.enable.pod', 
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to enable this pod?';
-                  },
-                  success: function(args) {
-                    return 'This pod is being enabled.';
-                  },
+                    return 'message.action.enable.pod';
+                  },                 
                   notification: function(args) {
-                    return 'Enabling pod';
-                  },
-                  complete: function(args) {
-                    return 'Pod has been enabled.';
+                    return 'label.action.enable.pod';
                   }
                 },
                 action: function(args) {
@@ -4476,20 +4470,14 @@
                 }
               },
 
-              disable: {
-                label: 'Disable pod',
+              disable: { 
+                label: 'label.action.disable.pod',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable this pod?';
-                  },
-                  success: function(args) {
-                    return 'This pod is being disabled.';
-                  },
+                    return 'message.action.disable.pod';
+                  },                  
                   notification: function(args) {
-                    return 'Disabling pod';
-                  },
-                  complete: function(args) {
-                    return 'Pod has been disabled.';
+                    return 'label.action.disable.pod';
                   }
                 },
                 action: function(args) {
@@ -4514,19 +4502,13 @@
               },
 
               'delete': {
-                label: 'label.delete' ,
+                label: 'label.delete' , 
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete this pod.';
-                  },
-                  success: function(args) {
-                    return 'pod is being deleted.';
-                  },
+                    return 'message.action.delete.pod';
+                  },                  
                   notification: function(args) {
-                    return 'Deleting pod';
-                  },
-                  complete: function(args) {
-                    return 'Pod has been deleted.';
+                    return 'label.action.delete.pod';
                   }
                 },
                 action: function(args) {
@@ -4554,15 +4536,15 @@
                   {
                     id: { label: 'label.id' },
                     netmask: { label: 'label.netmask', isEditable: true },
-                    startip: { label: 'Start IP Range', isEditable: true },
-                    endip: { label: 'End IP Range', isEditable: true },
+                    startip: { label: 'start.IP', isEditable: true },
+                    endip: { label: 'end.IP', isEditable: true },
                     gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
                         return str;
                       },
-                      label: 'Allocation Status'
+                      label: 'allocation.state'
                     }
                   }
                 ],
@@ -4576,15 +4558,15 @@
               },
 
               ipAllocations: {
-                title: 'IP Allocations',
+                title: 'label.ip.allocations',  
                 multiple: true,
                 fields: [
                   {
                     id: { label: 'label.id' },
                     gateway: { label: 'label.gateway' },
                     netmask: { label: 'label.netmask' },
-                    startip: { label: 'Start IP range' },
-                    endip: { label: 'End IP range' }
+                    startip: { label: 'start.IP' },
+                    endip: { label: 'end.IP' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -4602,8 +4584,8 @@
           }
         }
       },
-      clusters: {
-        title: 'Clusters',
+      clusters: {  
+        title: 'label.clusters',
         listView: {
           id: 'clusters',
           section: 'clusters',
@@ -4661,28 +4643,16 @@
             });
           },
 
-          actions: {
+          actions: {  
             add: {
-              label: 'Add cluster',
-
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to add a cluster?';
-                },
-                success: function(args) {
-                  return 'Your new cluster is being created.';
-                },
+              label: 'label.add.cluster',
+              messages: {                
                 notification: function(args) {
-                  return 'Creating new cluster';
-                },
-                complete: function(args) {
-                  return 'Cluster has been created successfully!';
+                  return 'label.add.cluster';
                 }
               },
-
               createForm: {
-                title: 'Add cluster',
-                desc: 'Please fill in the following data to add a new cluster.',
+                title: 'label.add.cluster',                
                 fields: {
                   hypervisor: {
                     label: 'label.hypervisor',
@@ -4746,26 +4716,26 @@
                     }
                   },
                   name: {
-                    label: 'Cluster Name',
+                    label: 'cluster.name',
                     validation: { required: true }
                   },
 
                   //hypervisor==VMWare begins here
                   vCenterHost: {
-                    label: 'vCenter Host',
+                    label: 'label.vcenter.host',
                     validation: { required: true }
                   },
                   vCenterUsername: {
-                    label: 'vCenter Username',
+                    label: 'label.vcenter.username',
                     validation: { required: true }
                   },
                   vCenterPassword: {
-                    label: 'vCenter Password',
+                    label: 'label.vcenter.password',
                     validation: { required: true },
                     isPassword: true
                   },
                   vCenterDatacenter: {
-                    label: 'vCenter Datacenter',
+                    label: 'label.vcenter.datacenter',
                     validation: { required: true }
                   }
                   //hypervisor==VMWare ends here
@@ -4835,23 +4805,17 @@
           },
 					
           detailView: {
-            viewAll: { path: '_zone.hosts', label: 'Hosts' },
+            viewAll: { path: '_zone.hosts', label: 'label.hosts' },  
 
             actions: {
               enable: {
-                label: 'Enable cluster',
+                label: 'label.action.enable.cluster',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to enable this cluster?';
-                  },
-                  success: function(args) {
-                    return 'This cluster is being enabled.';
-                  },
+                    return 'message.action.enable.cluster';
+                  },                 
                   notification: function(args) {
-                    return 'Enabling cluster';
-                  },
-                  complete: function(args) {
-                    return 'Cluster has been enabled.';
+                    return 'label.action.enable.cluster';
                   }
                 },
                 action: function(args) {
@@ -4876,19 +4840,13 @@
               },
 
               disable: {
-                label: 'Disable cluster',
+                label: 'label.action.disable.cluster',  
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to disable this cluster?';
-                  },
-                  success: function(args) {
-                    return 'This cluster is being disabled.';
-                  },
+                    return 'message.action.disable.cluster';
+                  },                 
                   notification: function(args) {
-                    return 'Disabling cluster';
-                  },
-                  complete: function(args) {
-                    return 'Cluster has been disabled.';
+                    return 'label.action.disable.cluster';
                   }
                 },
                 action: function(args) {
@@ -4913,19 +4871,13 @@
               },
 
               manage: {
-                label: 'Manage cluster',
+                label: 'label.action.manage.cluster',  
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to manage this cluster?';
-                  },
-                  success: function(args) {
-                    return 'This cluster is being managed.';
-                  },
+                    return 'message.action.manage.cluster';
+                  },                 
                   notification: function(args) {
-                    return 'Managing cluster';
-                  },
-                  complete: function(args) {
-                    return 'Cluster has been managed.';
+                    return 'label.action.manage.cluster';
                   }
                 },
                 action: function(args) {
@@ -4950,19 +4902,13 @@
               },
 
               unmanage: {
-                label: 'Unmanage cluster',
+                label: 'label.action.unmanage.cluster',  
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to unmanage this cluster?';
-                  },
-                  success: function(args) {
-                    return 'This cluster is being unmanaged.';
-                  },
+                    return 'message.action.unmanage.cluster';
+                  },                 
                   notification: function(args) {
-                    return 'Unmanaging cluster';
-                  },
-                  complete: function(args) {
-                    return 'Cluster has been unmanaged.';
+                    return 'label.action.unmanage.cluster';
                   }
                 },
                 action: function(args) {
@@ -4987,19 +4933,13 @@
               },
 
               'delete': {
-                label: 'label.delete' ,
+                label: 'label.action.delete.cluster' , 
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete this cluster.';
-                  },
-                  success: function(args) {
-                    return 'Cluster is being deleted.';
-                  },
+                    return 'message.action.delete.cluster';
+                  },                 
                   notification: function(args) {
-                    return 'Deleting cluster';
-                  },
-                  complete: function(args) {
-                    return 'Cluster has been deleted.';
+                    return 'label.action.delete.cluster';
                   }
                 },
                 action: function(args) {
@@ -5020,7 +4960,7 @@
 
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details', 
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -5030,7 +4970,7 @@
                     zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
-                    clustertype: { label: 'Cluster type' },
+                    clustertype: { label: 'label.cluster.type' },
                     //allocationstate: { label: 'allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
@@ -5048,7 +4988,7 @@
         }
       },
       hosts: {
-        title: 'Hosts',
+        title: 'label.hosts', 
         id: 'hosts',
         listView: {
           section: 'hosts',
@@ -5093,11 +5033,10 @@
 
           actions: {
             add: {
-              label: 'Add host',
+              label: 'label.add.host',  
 
               createForm: {
-                title: 'Add new host',
-                desc: 'Please fill in the following information to add a new host for the specified zone configuration.',
+                title: 'label.add.host',
                 fields: {
                   //always appear (begin)
                   podId: {
@@ -5248,13 +5187,13 @@
 
                   //input_group="general" starts here
                   hostname: {
-                    label: 'Host name',
+                    label: 'label.host.name',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   username: {
-                    label: 'User name',
+                    label: 'label.username',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -5269,7 +5208,7 @@
 
                   //input_group="VMWare" starts here
                   vcenterHost: {
-                    label: 'ESX/ESXi Host',
+                    label: 'label.esx.host',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -5277,22 +5216,22 @@
 
                   //input_group="BareMetal" starts here
                   baremetalCpuCores: {
-                    label: '# of CPU Cores',
+                    label: 'label.num.cpu.cores',
                     validation: { required: true },
                     isHidden: true
                   },
                   baremetalCpu: {
-                    label: 'CPU (in MHz)',
+                    label: 'label.cpu.mhz',
                     validation: { required: true },
                     isHidden: true
                   },
                   baremetalMemory: {
-                    label: 'Memory (in MB)',
+                    label: 'label.memory.mb',
                     validation: { required: true },
                     isHidden: true
                   },
                   baremetalMAC: {
-                    label: 'Host MAC',
+                    label: 'host.MAC',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -5300,12 +5239,12 @@
 
                   //input_group="OVM" starts here
                   agentUsername: {
-                    label: 'Agent Username',
+                    label: 'agent.username',
                     validation: { required: false },
                     isHidden: true
                   },
                   agentPassword: {
-                    label: 'Agent Password',
+                    label: 'agent.password',
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -5314,7 +5253,7 @@
 
                   //always appear (begin)
                   hosttags: {
-                    label: 'Host tags',
+                    label: 'label.host.tags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -5393,12 +5332,12 @@
 
               messages: {
                 notification: function(args) {
-                  return 'Added new host';
+                  return 'label.add.host';
                 }
               }
             } 
           },
-          detailView: {
+          detailView: {  
             name: "Host details",												
 						viewAll: {
 							label: 'label.instances',
@@ -5430,7 +5369,7 @@
               },
 
               enableMaintenanceMode: {
-                label: 'Enable Maintenace' ,
+                label: 'label.action.enable.maintenance.mode',  
                 action: function(args) {
                   $.ajax({
                     url: createURL("prepareHostForMaintenance&id=" + args.context.hosts[0].id),
@@ -5455,16 +5394,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.';
-                  },
-                  success: function(args) {
-                    return 'Maintenance is being enabled.';
-                  },
+                    return 'message.action.host.enable.maintenance.mode';
+                  },                  
                   notification: function(args) {
-                    return 'Enabling maintenance';
-                  },
-                  complete: function(args) {
-                    return 'Maintenance has been enabled.';
+                    return 'label.action.enable.maintenance.mode';
                   }
                 },
                 notification: {
@@ -5472,8 +5405,8 @@
                 }
               },
 
-              cancelMaintenanceMode: {
-                label: 'Cancel Maintenace' ,
+              cancelMaintenanceMode: {  
+                label: 'label.action.cancel.maintenance.mode' ,
                 action: function(args) {
                   $.ajax({
                     url: createURL("cancelHostMaintenance&id=" + args.context.hosts[0].id),
@@ -5498,16 +5431,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to cancel this maintenance.';
-                  },
-                  success: function(args) {
-                    return 'Maintenance is being cancelled.';
-                  },
+                    return 'message.action.cancel.maintenance.mode';
+                  },                 
                   notification: function(args) {
-                    return 'Cancelling maintenance';
-                  },
-                  complete: function(args) {
-                    return 'Maintenance has been cancelled.';
+                    return 'label.action.cancel.maintenance.mode';
                   }
                 },
                 notification: {
@@ -5516,7 +5443,7 @@
               },
 
               forceReconnect: {
-                label: 'Force Reconnect' ,
+                label: 'label.action.force.reconnect',  
                 action: function(args) {
                   $.ajax({
                     url: createURL("reconnectHost&id=" + args.context.hosts[0].id),
@@ -5541,16 +5468,10 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to force reconnect this host.';
-                  },
-                  success: function(args) {
-                    return 'Host is being force reconnected.';
-                  },
+                    return 'confirm.action.force.reconnect';
+                  },                 
                   notification: function(args) {
-                    return 'Force reconnecting host';
-                  },
-                  complete: function(args) {
-                    return 'Host has been force reconnected.';
+                    return 'label.action.force.reconnect';
                   }
                 },
                 notification: {
@@ -5558,20 +5479,14 @@
                 }
               },
 
-              'delete': {
-                label: 'Remove host' ,
+              'delete': {  
+                label: 'label.action.remove.host' ,
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to remove this host.';
-                  },
-                  success: function(args) {
-                    return 'Host is being removed.';
-                  },
+                    return 'message.action.remove.host';
+                  },                 
                   notification: function(args) {
-                    return 'Removing host';
-                  },
-                  complete: function(args) {
-                    return 'Host has been removed.';
+                    return 'label.action.remove.host';
                   }
                 },
                 preFilter: function(args) {
@@ -5580,10 +5495,10 @@
                   }
                 },
                 createForm: {
-                  title: 'Remove host',
+                  title: 'label.action.remove.host',
                   fields: {
                     isForced: {
-                      label: 'Force Remove',
+                      label: 'force.remove',
                       isBoolean: true,
                       isHidden: true
                     }
@@ -5610,7 +5525,7 @@
               }
 
             },
-            tabs: {
+            tabs: {  //Jes
               details: {
                 title: 'label.details',
                 fields: [
@@ -5619,20 +5534,20 @@
                   },
                   {
                     id: { label: 'label.id' },
-                    resourcestate: { label: 'Resource state' },
+                    resourcestate: { label: 'resource.state' },
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },
                     zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
                     ipaddress: { label: 'label.ip.address' },
-                    version: { label: 'Version' },
+                    version: { label: 'label.version' },
                     hosttags: {
-                      label: 'Host tags',
+                      label: 'label.host.tags',
                       isEditable: true
                     },
                     oscategoryid: {
-                      label: 'OS Preference',
+                      label: 'label.os.preference',
                       isEditable: true,
                       select: function(args) {
                         $.ajax({
@@ -5650,7 +5565,7 @@
                         });
                       }
                     },
-                    disconnected: { label: 'Last disconnected' }
+                    disconnected: { label: 'label.last.disconnected' }
                   }
                 ],
 
@@ -5666,7 +5581,7 @@
           }
         }
       },
-      'primary-storage': {
+      'primary-storage': {  //Jes
         title: 'Primary Storage',
         id: 'primarystorages',
         listView: {

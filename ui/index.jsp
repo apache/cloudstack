@@ -2708,6 +2708,13 @@ dictionary = {
 'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
 'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
 'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
-'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />'
+'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />',
+'label.clusters': '<fmt:message key="label.clusters" />',
+'cluster.name': '<fmt:message key="cluster.name" />',
+'host.MAC': '<fmt:message key="host.MAC" />',
+'agent.username': '<fmt:message key="agent.username" />',
+'agent.password': '<fmt:message key="agent.password" />',
+'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
+'resource.state': '<fmt:message key="resource.state" />'
 };
 </script>
