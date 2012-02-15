@@ -8266,21 +8266,31 @@
       },
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges
         title: 'label.guest.ip.range',
 =======
       guestIpRanges: {
+=======
+      guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges 
+>>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
         title: 'label.guest.ip.range', //Jes
 >>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
+<<<<<<< HEAD
           fields: {
             startip: { label: 'label.start.IP' },
             endip: { label: 'label.end.IP' }
+=======
+          fields: {            
+            startip: { label: 'start.IP' },
+            endip: { label: 'end.IP' }
+>>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {				
             $.ajax({
               url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkid=" + args.context.networks[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -8295,6 +8305,7 @@
           actions: {
             add: {
               label: 'label.add.ip.range',
+<<<<<<< HEAD
 <<<<<<< HEAD
               createForm: {
                 title: 'label.add.ip.range',
@@ -8339,6 +8350,33 @@
                     args.response.error(errorMsg);
                   }
                 });
+=======
+              createForm: {
+                title: 'label.add.ip.range',
+                fields: {   
+                  guestStartIp: { label: 'guest.start.IP' },
+                  guestEndIp: { label: 'guest.end.IP' }
+                }
+              },
+              action: function(args) {		                
+								var array2 = [];
+								array2.push("&startip=" + args.data.guestStartIp);
+								var endip = args.data.guestEndIp;
+								if(endip != null && endip.length > 0)
+									array2.push("&endip=" + endip);
+								$.ajax({
+									url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
+									dataType: "json",
+									success: function(json) {
+										var item = json.createvlaniprangeresponse.vlan;
+										args.response.success({data:item});
+									},
+									error: function(XMLHttpResponse) {
+										var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+										args.response.error(errorMsg);
+									}
+								});                
+>>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
               },
               notification: {
                 poll: function(args) {
