@@ -1634,7 +1634,7 @@
                     },
                     tabs: {
                       details: {
-                        title: 'label.details',
+                        title: 'label.details', 
                         preFilter: function(args) {
                           var hiddenFields = [];
                           if(selectedZoneObj.networktype == "Basic") {
@@ -1898,6 +1898,7 @@
                     physicalnetworkid: { label: 'label.physical.network.ID' },
                     destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
 										supportedServices: { label: 'label.supported.services' }
+
                   }
                 ],
                 dataProvider: function(args) { 					 
@@ -3206,7 +3207,7 @@
         }
       }
     },
-    show: cloudStack.uiCustom.physicalResources({
+    show: cloudStack.uiCustom.physicalResources({//Jes
       sections: {
         physicalResources: {
           type: 'select',
