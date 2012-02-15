@@ -7823,10 +7823,14 @@
 
           detailView: {
 <<<<<<< HEAD
+<<<<<<< HEAD
             name: "Primary storage details",
             actions: {
 =======
             name: "Primary storage details", //Jes
+=======
+            name: "Primary storage details", 
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
             actions: {						 
 >>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
 							edit: {
@@ -7985,7 +7989,7 @@
 
             tabs: {
               details: {
-                title: 'label.details', //Jes
+                title: 'label.details', 
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -8044,12 +8048,17 @@
       },
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       'secondary-storage': {
         title: 'label.secondary.storage',
 =======
       'secondary-storage': {  //Jes
         title: 'Secondary Storage',
 >>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
+=======
+      'secondary-storage': {  
+        title: 'label.secondary.storage',
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
         id: 'secondarystorages',
         listView: {
           id: 'secondarystorages',
@@ -8099,10 +8108,17 @@
 
           actions: {
             add: {
+<<<<<<< HEAD
               label: 'label.add.secondary.storage',
 
               createForm: {
                 title: 'label.add.secondary.storage',
+=======
+              label: 'label.add.secondary.storage', 
+
+              createForm: {
+                title: 'label.add.secondary.storage',               
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -8181,12 +8197,21 @@
           detailView: {
             name: 'Secondary storage details',
             actions: {
+<<<<<<< HEAD
               remove: {
                 label: 'label.action.delete.secondary.storage' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.secondary.storage';
                   },
+=======
+              'delete': {
+                label: 'label.action.delete.secondary.storage' ,  
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.secondary.storage';
+                  },                 
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                   notification: function(args) {
                     return 'label.action.delete.secondary.storage';
                   }
@@ -8209,7 +8234,7 @@
             },
             tabs: {
               details: {
-                title: 'label.details',
+                title: 'label.details',  
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -8240,8 +8265,13 @@
         }
       },
 
+<<<<<<< HEAD
       guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges
         title: 'label.guest.ip.range',
+=======
+      guestIpRanges: {
+        title: 'label.guest.ip.range', //Jes
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
@@ -8265,8 +8295,28 @@
           actions: {
             add: {
               label: 'label.add.ip.range',
+<<<<<<< HEAD
               createForm: {
                 title: 'label.add.ip.range',
+=======
+
+              createForm: {
+                title: 'label.add.ip.range',
+
+                preFilter: function(args) {
+                  if(selectedZoneObj.networktype == "Basic") {
+                    args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                    args.$form.find('.form-item[rel=guestGateway]').css('display', 'inline-block');
+                    args.$form.find('.form-item[rel=guestNetmask]').css('display', 'inline-block');
+                  }
+                  else {  //"Advanced"
+                    args.$form.find('.form-item[rel=podId]').hide();
+                    args.$form.find('.form-item[rel=guestGateway]').hide();
+                    args.$form.find('.form-item[rel=guestNetmask]').hide();
+                  }
+                },
+
+>>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                 fields: {
                   guestStartIp: { label: 'label.guest.start.ip' },
                   guestEndIp: { label: 'label.guest.end.ip' }
