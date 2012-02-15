@@ -215,7 +215,11 @@
           .append(
             $.merge(
               $('<h2></h2>').html(_l('label.installWizard.title')),
+<<<<<<< HEAD
               $('<h3></h3>').html(_l('label.installWizard.subtitle'))
+=======
+              $('<h3></h3>').html('This tour will aid you in setting up your CloudStack installation')
+>>>>>>> 18bfc40... WIP: Install wizard localization
             )
           );
       },
@@ -299,7 +303,11 @@
         var $intro = $('<div></div>').addClass('intro eula');
         var $title = $('<div></div>').addClass('title').html(_l('label.license.agreement'));
         var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.license.agreement.subtitle'));
+<<<<<<< HEAD
         var $copy = $('<div></div>').addClass('eula-copy').html(eulaHTML);
+=======
+        var $copy = getCopy('eula', $('<div></div>').addClass('eula-copy'));
+>>>>>>> 18bfc40... WIP: Install wizard localization
         var $continue = elems.nextButton(_l('label.agree'));
 
         $continue.click(function() {
