@@ -353,7 +353,53 @@
           }
         },
         dataProvider: function(args) {
+<<<<<<< HEAD
 					refreshNspData();
+=======
+          cloudStack.sections.system.naas.networkProviders.statusCheck({
+            context: args.context
+          });
+
+					var networkProviderData = [
+						{
+							id: 'netscaler',
+							name: 'NetScaler',
+							state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
+						},						
+						{
+							id: 'virtualRouter',
+							name: 'virtual.router',
+							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
+						}
+					];
+					
+					if(selectedZoneObj.networktype == "Basic") {
+					  networkProviderData.push(
+						  {
+                id: 'securityGroups',
+                name: 'Security Groups',
+                state: nspMap.securityGroups ? nspMap.securityGroups.state : 'Disabled'
+              }
+						);
+					}
+					else if(selectedZoneObj.networktype == "Advanced"){					  
+						networkProviderData.push(
+						  {
+								id: 'f5',
+								name: 'F5',
+								state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
+							}						
+						);					
+					  networkProviderData.push(
+						  {
+								id: 'srx',
+								name: 'SRX',
+								state: nspMap.srx ? nspMap.srx.state : 'Disabled'
+							}		
+						);
+					}
+
+>>>>>>> 07dc16c... bug 13629: system page - network providers section - basic zone: no F5 and SRX.
           args.response.success({
             data: nspHardcodingArray
           })
