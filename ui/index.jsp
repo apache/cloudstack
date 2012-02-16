@@ -2761,6 +2761,13 @@ dictionary = {
 'adding.host': '<fmt:message key="adding.host" />',
 'creating.primary.storage': '<fmt:message key="creating.primary.storage" />',
 'creating.secondary.storage': '<fmt:message key="creating.secondary.storage" />',
-'Zone.creation.complete': '<fmt:message key="Zone.creation.complete" />'
+'Zone.creation.complete': '<fmt:message key="Zone.creation.complete" />',
+'message.enabling.zone': '<fmt:message key="message.enabling.zone" />',
+'error.something.went.wrong.please.correct.the.following': '<fmt:message key="error.something.went.wrong.please.correct.the.following" />',
+'error.could.not.enable.zone': '<fmt:message key="error.could.not.enable.zone" />',
+'message.zone.creation.complete.would.you.like.to.enable.this.zone': '<fmt:message key="message.zone.creation.complete.would.you.like.to.enable.this.zone" />',
+'message.please.add.at.lease.one.traffic.range': '<fmt:message key="message.please.add.at.lease.one.traffic.range" />',
+'message.you.must.have.at.least.one.physical.network': '<fmt:message key="message.you.must.have.at.least.one.physical.network" />',
+'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />'
 };
 </script>

@@ -946,8 +946,8 @@
       var data = args.data;
 
       var stepFns = {
-        addZone: function() {
-          message('creating.zone'); 
+        addZone: function() {				
+          message(dictionary['creating.zone']); 
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
@@ -996,7 +996,7 @@
         },
 
         addPhysicalNetworks: function(args) {
-          message('creating.physical.networks');
+          message(dictionary['creating.physical.networks']);
 
           var returnedPhysicalNetworks = [];
 
@@ -1279,7 +1279,7 @@
 
         //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
         configurePhysicalNetwork: function(args) {
-          message('configuring.physical.networks'); 
+          message(dictionary['configuring.physical.networks']); 
 
           if(args.data.zone.networkType == "Basic") {
             $.ajax({
@@ -1707,7 +1707,7 @@
         },
 
         addNetscalerDevice: function(args) {
-          message('adding.Netscaler.device'); 
+          message(dictionary['adding.Netscaler.device']); 
 
           var array1 = [];
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -1888,7 +1888,7 @@
         },
 
         addPod: function(args) {
-          message('creating.pod'); 
+          message(dictionary['creating.pod']); 
 
           var array3 = [];
           array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -1923,7 +1923,7 @@
           if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
            ||(args.data.zone.networkType == "Advanced")) {
 					 
-            message('configuring.public.traffic'); 
+            message(dictionary['configuring.public.traffic']); 
 
             var stopNow = false;
 
@@ -2009,7 +2009,7 @@
             return complete({});
           }
 
-          message('configuring.storage.traffic');  
+          message(dictionary['configuring.storage.traffic']);  
           
           var storageIPRanges = args.data.storageTraffic;
           var tasks = [];
@@ -2088,7 +2088,7 @@
         },
 
         configureGuestTraffic: function(args) {
-          message('configuring.guest.traffic');  
+          message(dictionary['configuring.guest.traffic']);  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
             var array1 = [];
@@ -2191,7 +2191,7 @@
         },
 
         addCluster: function(args) {
-          message('creating.cluster'); 
+          message(dictionary['creating.cluster']); 
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -2255,7 +2255,7 @@
         },
 
         addHost: function(args) {
-          message('adding.host'); 
+          message(dictionary['adding.host']); 
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2328,7 +2328,7 @@
             return;
           }
 
-          message('creating.primary.storage');
+          message(dictionary['creating.primary.storage']);
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2418,7 +2418,7 @@
         },
 
         addSecondaryStorage: function(args) {
-          message('creating.secondary.storage');
+          message(dictionary['creating.secondary.storage']);
 
           var nfs_server = args.data.secondaryStorage.nfsServer;
           var path = args.data.secondaryStorage.path;
@@ -2443,7 +2443,7 @@
       };
 
       var complete = function(args) {
-        message('Zone.creation.complete');
+        message(dictionary['Zone.creation.complete']);
         success(args);
       };
 

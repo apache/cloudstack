@@ -135,7 +135,7 @@
       }
 
       cloudStack.dialog.notice({
-        message: 'Please add at lease one traffic range.'
+        message: dictionary['message.please.add.at.lease.one.traffic.range']
       });
       return false;
     }
@@ -497,11 +497,11 @@
 
       if (!$item.siblings().size()) {
         cloudStack.dialog.notice({
-          message: 'You must have at least 1 physical network'
+          message: dictionary['message.you.must.have.at.least.one.physical.network']
         });
       } else if ($item.find('input[type=radio]:checked').size()) {
         cloudStack.dialog.notice({
-          message: 'Please select a different public and/or management network before removing'
+          message: dictionary['message.please.select.a.different.public.and.management.network.before.removing']
         });
       } else {
         // Put any traffic type symbols back in original container
@@ -709,7 +709,7 @@
               };
 
               var enableZone = function() {
-                makeMessage('Enabling zone');
+                makeMessage(dictionary['message.enabling.zone']);
 
                 enableZoneAction({
                   formData: data,
@@ -721,14 +721,14 @@
                     },
 
                     error: function(message) {
-                      cloudStack.dialog.notice({ message: 'Could not enable zone:</br>' + message });
+                      cloudStack.dialog.notice({ message: dictionary['error.could.not.enable.zone'] + ':</br>' + message });
                     }
                   }
                 });
               };
 
               cloudStack.dialog.confirm({
-                message: 'Zone creation complete. Would you like to enable this zone?',
+                message: dictionary['message.zone.creation.complete.would.you.like.to.enable.this.zone'],
                 action: function() {
                   enableZone();
                 },
@@ -750,7 +750,7 @@
                 .removeClass('final')
                 .html('<span>Fix errors</span>')
                 .click(goNextOverride);
-              makeMessage('Something went wrong; please correct the following:<br/>' + message, true);
+              makeMessage(dictionary['error.something.went.wrong.please.correct.the.following'] + ':<br/>' + message, true);
               $wizard.data('startfn', start);
             },
             message: makeMessage
