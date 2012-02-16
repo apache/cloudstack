@@ -349,7 +349,7 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType);
+                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);
                 writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
                 sb.append(" " + se.getErrorCode() + " " + se.getDescription());
             } catch (RuntimeException e) {
@@ -433,7 +433,7 @@ public class ApiServer implements HttpRequestHandler {
                 IdentityProxy id = ref.getProxyObject();
                 if (id != null) {
                 	e.setProxyObject(id.getTableName(), id.getValue());
-                }
+                }                
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
             	PermissionDeniedException ref = (PermissionDeniedException)ex;
@@ -1002,7 +1002,7 @@ public class ApiServer implements HttpRequestHandler {
         }
     }
 
-    public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType) {
+    public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType, Exception ex) {
         String responseName = null;
         String cmdClassName = null;
 
@@ -1030,12 +1030,41 @@ public class ApiServer implements HttpRequestHandler {
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
             apiResponse.setResponseName(responseName);
-
+            // Also copy over the IdentityProxy object into this new apiResponse, from
+            // the exception caught. When invoked from handle(), the exception here can
+            // be either ServerApiException, PermissionDeniedException or InvalidParameterValue
+            // Exception. When invoked from ApiServlet's processRequest(), this can be
+            // a standard exception like NumberFormatException. We'll leave standard ones alone.
+            if (ex != null) {
+            	if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
+            			|| ex instanceof InvalidParameterValueException) {
+            		// Cast the exception appropriately and retrieve the IdentityProxy
+            		if (ex instanceof ServerApiException) {
+            			ServerApiException ref = (ServerApiException) ex;
+            			IdentityProxy uuidproxy = ref.getProxyObject();
+            			if (uuidproxy != null) {
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            			}
+            		} else if (ex instanceof PermissionDeniedException) {
+            			PermissionDeniedException ref = (PermissionDeniedException) ex;
+            			IdentityProxy uuidproxy = ref.getProxyObject();
+            			if (uuidproxy != null) {
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            			}
+            		} else if (ex instanceof InvalidParameterValueException) {
+            			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
+            			IdentityProxy uuidproxy = ref.getProxyObject();
+            			if (uuidproxy != null) {
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            			}
+            		}
+            	}
+            }
             SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {
-            s_logger.error("Exception responding to http request", e);
+            s_logger.error("Exception responding to http request", e);            
         }
         return responseText;
     }
