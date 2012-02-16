@@ -247,8 +247,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             while (rs.next()) {                
                 SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getFloat(3),
                                                                     (short)rs.getLong(4), rs.getLong(5),
-                                                                    level == 3 ? rs.getLong(7): null,
-                                                                    level != 1 ? rs.getLong(6): null);
+                                                                    level != 1 ? rs.getLong(6): null,
+                                                                    level == 3 ? rs.getLong(7): null);
                                                                    
                 result.add(summedCapacity);
             }
