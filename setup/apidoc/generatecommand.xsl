@@ -8,7 +8,7 @@ version="1.0">
 <link rel= "stylesheet" href="../includes/main.css" type="text/css" />
 <link rel="shortcut icon" href="../favicon.ico" type="image/x-icon" />
 
-<title>CloudStack | The Power Behind Your Cloud</title>
+<title>CloudStack API Reference</title>
 </head>
 
 <body>
