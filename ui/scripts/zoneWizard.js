@@ -732,6 +732,7 @@
           },
           numretries: {
             label: 'label.numretries',
+<<<<<<< HEAD
             defaultValue: '2'
           },  
           dedicated: {
@@ -750,6 +751,8 @@
           },
           numretries: {
             label: 'Number of retries',
+=======
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
             defaultValue: '2'
           },
           inline: {
@@ -762,11 +765,19 @@
             }
           },
           capacity: {
+<<<<<<< HEAD
             label: 'Capacity',
             validation: { required: false, number: true }
           },
           dedicated: {
             label: 'Dedicated',
+=======
+            label: 'label.capacity',
+            validation: { required: false, number: true }
+          },
+          dedicated: {
+            label: 'label.dedicated',
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
             isBoolean: true,
             isChecked: false
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
@@ -1352,8 +1363,13 @@
           },
           lun: {
             label: 'label.LUN.number',
+<<<<<<< HEAD
             validation: { required: true },  
 						isHidden: true
+=======
+            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
+            isHidden: true
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
           },
 
           //clvm

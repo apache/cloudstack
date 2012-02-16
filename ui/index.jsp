@@ -2936,6 +2936,9 @@ dictionary = {
 'label.view.console': '<fmt:message key="label.view.console" />',
 'label.redundant.state': '<fmt:message key="label.redundant.state" />',
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'label.enable.provider': '<fmt:message key="label.enable.provider" />',
 'message.confirm.enable.provider': '<fmt:message key="message.confirm.enable.provider" />',
 'label.disable.provider': '<fmt:message key="label.disable.provider" />',
@@ -2955,6 +2958,7 @@ dictionary = {
 'label.public.network': '<fmt:message key="label.public.network" />',
 'label.private.network': '<fmt:message key="label.private.network" />',
 'label.enable.swift': '<fmt:message key="label.enable.swift" />',
+<<<<<<< HEAD
 =======
 'enable.provider': '<fmt:message key="enable.provider" />',
 'confirm.enable.provider': '<fmt:message key="confirm.enable.provider" />',
@@ -2978,6 +2982,8 @@ dictionary = {
 'public': '<fmt:message key="public" />',
 'enable.swift': '<fmt:message key="enable.swift" />',
 >>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
+=======
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
 'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
 'label.key': '<fmt:message key="label.key" />',
@@ -2989,11 +2995,15 @@ dictionary = {
 'message.confirm.delete.SRX': '<fmt:message key="message.confirm.delete.SRX" />',
 'label.pods': '<fmt:message key="label.pods" />',
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'label.pod.name': '<fmt:message key="label.pod.name" />',
 'label.reserved.system.gateway': '<fmt:message key="label.reserved.system.gateway" />',
 'label.reserved.system.netmask': '<fmt:message key="label.reserved.system.netmask" />',
 'label.start.reserved.system.IP': '<fmt:message key="label.start.reserved.system.IP" />',
 'label.end.reserved.system.IP': '<fmt:message key="label.end.reserved.system.IP" />',
+<<<<<<< HEAD
 'label.clusters': '<fmt:message key="label.clusters" />',
 'label.cluster.name': '<fmt:message key="label.cluster.name" />',
 'label.host.MAC': '<fmt:message key="label.host.MAC" />',
@@ -3085,6 +3095,17 @@ dictionary = {
 >>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
 =======
 'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />',
+=======
+'label.clusters': '<fmt:message key="label.clusters" />',
+'label.cluster.name': '<fmt:message key="label.cluster.name" />',
+'label.host.MAC': '<fmt:message key="label.host.MAC" />',
+'label.agent.username': '<fmt:message key="label.agent.username" />',
+'label.agent.password': '<fmt:message key="label.agent.password" />',
+'message.confirm.action.force.reconnect': '<fmt:message key="message.confirm.action.force.reconnect" />',
+'label.resource.state': '<fmt:message key="label.resource.state" />',
+'label.LUN.number': '<fmt:message key="label.LUN.number" />',
+'message.confirm.remove.IP.range': '<fmt:message key="message.confirm.remove.IP.range" />',
+>>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'tooltip.zone.name': '<fmt:message key="tooltip.zone.name" />',
 'tooltip.dns.1': '<fmt:message key="tooltip.dns.1" />',
 'tooltip.dns.2': '<fmt:message key="tooltip.dns.2" />',
