@@ -366,12 +366,12 @@
           _l(args.message)
         )
       ).dialog({
-        title: 'Confirm',
+        title: _l('label.confirmation'),
         dialogClass: 'confirm',
         zIndex: 5000,
         buttons: [
           {
-            text: 'Cancel',
+            text: _l('label.no'),
             'class': 'cancel',
             click: function() {
               $(this).dialog('destroy');
@@ -380,7 +380,7 @@
             }
           },
           {
-            text: 'Yes',
+            text: _l('label.yes'),
             'class': 'ok',
             click: function() {
               args.action();
@@ -401,7 +401,7 @@
           _l(args.message)
         )
       ).dialog({
-        title: 'Status',
+        title: _l('label.status'),
         dialogClass: 'notice',
         zIndex: 5000,
         buttons: [

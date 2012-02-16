@@ -1,7 +1,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <c:if test="${!empty cookie.lang}">
-	<fmt:setLocale value="${cookie.lang.value}" />
+  <fmt:setLocale value="${cookie.lang.value}" />
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
@@ -58,12 +58,12 @@
       <div class="multi-wizard instance-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span>Setup</span><span class="arrow"></span></li>
-            <li><span class="number">2</span><span class="multiline">Select a template</span><span class="arrow"></span></li>
-            <li><span class="number">3</span><span class="multiline">Service Offering</span><span class="arrow"></span></li>
-            <li><span class="number">4</span><span class="multiline">Data Disk Offering</span><span class="arrow"></span></li>
-            <li><span class="number">5</span><span>Network</span><span class="arrow"></span></li>
-            <li class="last"><span class="number">6</span><span>Review</span></li>
+            <li class="first"><span class="number">1</span><span><fmt:message key="label.setup"/></span><span class="arrow"></span></li>
+            <li><span class="number">2</span><span class="multiline"><fmt:message key="label.select.a.template"/></span><span class="arrow"></span></li>
+            <li><span class="number">3</span><span class="multiline"><fmt:message key="label.service.offering"/></span><span class="arrow"></span></li>
+            <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
+            <li><span class="number">5</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
+            <li class="last"><span class="number">6</span><span><fmt:message key="label.review"/></span></li>
           </ul>
         </div>
         <form>
@@ -73,27 +73,27 @@
               <div class="content">
                 <!-- Select a zone -->
                 <div class="section select-zone">
-                  <h3>Select a zone</h3>
-                  <p>A zone typically corresponds to a single datacenter. Multiple zones help make the cloud more reliable by providing physical isolation and redundancy.</p>
+                  <h3><fmt:message key="label.select.a.zone"/></h3>
+                  <p><fmt:message key="message.select.a.zone"/></p>
                   <div class="select-area">
                     <div class="desc"></div>
                     <select name="zoneid" class="required">
-                      <option default="default" value="" >Select a zone</option>
+                      <option default="default" value="" ><fmt:message key="label.select.a.zone"/></option>
                     </select>
                   </div>
                 </div>
 
                 <!-- Select template -->
                 <div class="section select-template">
-                  <h3>Select ISO or template</h3>
+                  <h3><fmt:message key="label.select.iso.or.template" /></h3>
                   <p></p>
                   <div class="select-area">
-                    <div class="desc">OS image that can be used to boot VMs</div>
+                    <div class="desc"><fmt:message key="message.template.desc"/></div>
                     <input type="radio" name="select-template" value="select-template" />
-                    <label>Template</label>
+                    <label><fmt:message key="label.template"/></label>
                   </div>
                   <div class="select-area">
-                    <div class="desc">Disc image containing data or bootable media for OS</div>
+                    <div class="desc"><fmt:message key="message.iso.desc"/></div>
                     <input type="radio" name="select-template" value="select-iso" />
                     <label>ISO</label>
                   </div>
@@ -106,15 +106,13 @@
               <!-- Select template -->
               <div class="wizard-step-conditional select-template">
                 <div class="main-desc">
-                  <p>
-                    Please select a template for your new virtual instance.
-                  </p>
+                  <p><fmt:message key="message.select.template"/></p>
                 </div>
                 <div class="template-select content tab-view">
                   <ul>
-                    <li class="first"><a href="#instance-wizard-featured-templates">Featured</a></li>
-                    <li><a href="#instance-wizard-community-templates">Community</a></li>
-                    <li class="last"><a href="#instance-wizard-my-templates">My Template</a></li>
+                    <li class="first"><a href="#instance-wizard-featured-templates"><fmt:message key="label.featured"/></a></li>
+                    <li><a href="#instance-wizard-community-templates"><fmt:message key="label.community"/></a></li>
+                    <li class="last"><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
                   </ul>
 
                   <div id="instance-wizard-featured-templates">
@@ -135,39 +133,36 @@
               <!-- Select ISO -->
               <div class="wizard-step-conditional select-iso">
                 <div class="main-desc">
-                  <p>
-                    Please select an ISO for your new virtual instance.
-                    You can also choose to upload your own iso as well.
-                  </p>
+                  <p><fmt:message key="message.select.iso"/></p>
                 </div>
-                <div class="iso-select content tab-view">                  									
-									<ul>
-									  <li class="first"><a href="#instance-wizard-featured-isos">Featured</a></li>
-                    <li><a href="#instance-wizard-community-isos">Community</a></li>
-                    <li class="last"><a href="#instance-wizard-my-isos">My ISO</a></li>		
+                <div class="iso-select content tab-view">
+                  <ul>
+                    <li class="first"><a href="#instance-wizard-featured-isos"><fmt:message key="label.featured"/></a></li>
+                    <li><a href="#instance-wizard-community-isos"><fmt:message key="label.community"/></a></li>
+                    <li class="last"><a href="#instance-wizard-my-isos"><fmt:message key="label.menu.my.isos"/></a></li>
                   </ul>
-									<div id="instance-wizard-featured-isos">
+                  <div id="instance-wizard-featured-isos">
                     <div class="select-container">
                     </div>
                   </div>
-									<div id="instance-wizard-community-isos">
+                  <div id="instance-wizard-community-isos">
                     <div class="select-container">
                     </div>
                   </div>
-									<div id="instance-wizard-my-isos">
+                  <div id="instance-wizard-my-isos">
                     <div class="select-container">
                     </div>
                   </div>
-																											
-									<!--
-									<ul>
+
+                  <!--
+                  <ul>
                     <li class="first last"><a href="#instance-wizard-all-isos">All ISOs</a></li>
                   </ul>
                   <div id="instance-wizard-all-isos">
                     <div class="select-container">
                     </div>
                   </div>
-									-->
+                  -->
                 </div>
               </div>
             </div>
@@ -185,7 +180,7 @@
               <div class="content">
                 <div class="section no-thanks">
                   <input type="radio" name="diskofferingid" value="0" />
-                  <label>No thanks</label>
+                  <label><fmt:message key="label.no.thanks"/></label>
                 </div>
 
                 <!-- Existing offerings -->
@@ -194,7 +189,7 @@
 
                 <!-- Custom size slider -->
                 <div class="section custom-size">
-                  <label>Disk size</label>
+                  <label><fmt:message key="label.disk.size"/></label>
 
                   <!-- Slider -->
                   <label class="size">1 GB</label>
@@ -211,21 +206,19 @@
             <div class="step network" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">
-                <p>The zone you selected does not have any choices for network selection</p>               
-                <p>Please proceed to the next step.</p>
+                <p><fmt:message key="message.zone.no.network.selection"/></p>
+                <p><fmt:message key="message.please.proceed"/></p>
               </div>
 
               <!-- 5b: Select network -->
               <div class="wizard-step-conditional select-network">
                 <div class="content">
-                  <div class="main-desc">
-                    Please select networks for your virtual machine
-                  </div>
+                  <div class="main-desc"><fmt:message key="message.please.select.networks"/></div>
                   <div class="select my-networks">
                     <table>
                       <thead>
                         <tr>
-                          <th>Networks</th>
+                          <th><fmt:message key="label.networks"/></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -242,7 +235,7 @@
                     <table>
                       <thead>
                         <tr>
-                          <th>Add new network</th>
+                          <th><fmt:message key="label.add.network"/></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -256,12 +249,12 @@
                                        checked="checked" />
                                 <!-- Default (NEW) -->
                                 <div class="select-desc hide-if-selected">
-                                  <div class="name">NEW</div>
+                                  <div class="name"><fmt:message key="label.new"/></div>
                                 </div>
 
                                 <!-- Name -->
                                 <div class="field name hide-if-unselected">
-                                  <div class="name">Name</div>
+                                  <div class="name"><fmt:message key="label.name"/></div>
                                   <div class="value">
                                     <input type="text" class="required" name="new-network-name" />
                                   </div>
@@ -269,7 +262,7 @@
 
                                 <!-- Service offering -->
                                 <div class="select-desc field service-offering hide-if-unselected">
-                                  <div class="name">Network Offering</div>
+                                  <div class="name"><fmt:message key="label.service.offering"/></div>
                                   <div class="desc">
                                     <select name="new-network-networkofferingid">
                                     </select>
@@ -278,7 +271,7 @@
 
                                 <div class="secondary-input hide-if-unselected">
                                   <input type="radio" name="defaultNetwork" value="new-network" />
-                                  <div class="name">Default</div>
+                                  <div class="name"><fmt:message key="label.default"/></div></div>
                                 </div>
                               </div>
                             </div>
@@ -293,7 +286,7 @@
               <!-- Step 5c: Select security group -->
               <div class="wizard-step-conditional select-security-group">
                 <div class="main-desc">
-                  Please select security group(s) for your new virtual instance
+                  <fmt:message key="message.select.security.groups"/>
                 </div>
                 <div class="content security-groups">
                   <div class="select-container">
@@ -305,14 +298,14 @@
             <!-- Step 6: Review -->
             <div class="step review" wizard-step-id="review">
               <div class="main-desc">
-                Please review the following information and confirm that your virtual instance is correct before launch
+                <fmt:message key="message.vm.review.launch"/>
               </div>
               <div class="content">
                 <div class="select-container">
                   <!-- Name -->
                   <div class="select vm-instance-name">
                     <div class="name">
-                      <span>Name (optional)</span>
+                      <span><fmt:message key="label.name"/> (<fmt:message key="label.optional"/>)</span>
                     </div>
                     <div class="value">
                       <input type="text" name="displayname" />
@@ -322,7 +315,7 @@
                   <!-- Add to group -->
                   <div class="select odd">
                     <div class="name">
-                      <span>Add to group (optional)</span>
+                      <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/></span>
                     </div>
                     <div class="value">
                       <input type="text" name="groupname" />
@@ -332,78 +325,78 @@
                   <!-- Zone -->
                   <div class="select">
                     <div class="name">
-                      <span>Zone</span>
+                      <span><fmt:message key="label.zone"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="zone"></span>
                     </div>
                     <div class="edit">
-                      <a href="1">Edit</a>
+                      <a href="1"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
 
                   <!-- Hypervisor -->
                   <div class="select odd">
                     <div class="name">
-                      <span>Hypervisor</span>
+                      <span><fmt:message key="label.hypervisor"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="hypervisor"></span>
                     </div>
                     <div class="edit">
-                      <a href="1">Edit</a>
+                      <a href="1"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
 
                   <!-- Template -->
                   <div class="select">
                     <div class="name">
-                      <span>Template</span>
+                      <span><fmt:message key="label.template"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="template"></span>
                     </div>
                     <div class="edit">
-                      <a href="2">Edit</a>
+                      <a href="2"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
 
                   <!-- Service offering -->
                   <div class="select odd">
                     <div class="name">
-                      <span>Service offering</span>
+                      <span><fmt:message key="label.service.offering"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="service-offering"></span>
                     </div>
                     <div class="edit">
-                      <a href="3">Edit</a>
+                      <a href="3"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
 
                   <!-- Data disk offering -->
                   <div class="select">
                     <div class="name">
-                      <span>Data disk offering</span>
+                      <span><fmt:message key="label.data.disk.offering"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="disk-offering"></span>
                     </div>
                     <div class="edit">
-                      <a href="4">Edit</a>
+                      <a href="4"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
 
                   <!-- Primary network -->
                   <div class="select odd">
                     <div class="name">
-                      <span>Primary network</span>
+                      <span><fmt:message key="label.primary.storage"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="default-network"></span>
                     </div>
                     <div class="edit">
-                      <a href="5">Edit</a>
+                      <a href="5"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
                 </div>
@@ -427,9 +420,9 @@
 
         <!-- Buttons -->
         <div class="buttons">
-          <div class="button previous"><span>Previous</span></div>
-          <div class="button cancel"><span>Cancel</span></div>
-          <div class="button next"><span>Next</span></div>
+          <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
+          <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
+          <div class="button next"><span><fmt:message key="label.next"/></span></div>
         </div>
       </div>
 
@@ -461,7 +454,7 @@
                   <h3>Set up zone type</h3>
                   <p>Please select a configuration for your zone.</p>
                   <div class="select-area">
-                    <div class="desc">                      
+                    <div class="desc">
                       Provide a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)
                     </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
@@ -499,6 +492,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
             <div class="info-desc">
               When adding an advanced zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the management server. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined.<br/><br/><strong>Drag and drop one or more traffic types</strong> onto each physical network.
@@ -572,6 +566,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">Please specify Netscaler info</div>
@@ -588,6 +583,7 @@
               <li class="public-network active">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
@@ -604,6 +600,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod active">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
@@ -624,14 +621,32 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic active">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
-              Guest network traffic is communication between end-user virtual machines.  
-						</div>
+              Guest network traffic is communication between end-user virtual machines.
+            </div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
+          </div>
+
+          <!-- Step 3.5: Configure storage traffic -->
+          <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
+               zone-wizard-step-id="configureStorageTraffic">
+            <ul class="subnav">
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="storage-traffic active">Storage Traffic</li>
+            </ul>
+
+            <div class="info-desc">
+              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
+            </div>
+            <div ui-custom="storageTrafficIPRange"></div>
           </div>
 
           <!-- Step 4.1: Add cluster -->
@@ -764,41 +779,41 @@
           <div class="compute-and-storage">
             <div class="system-dashboard">
               <div class="head">
-                <span>Compute and Storage</span>
+                <span><fmt:message key="label.compute.and.storage"/></span>
               </div>
               <ul class="status_box good">
                 <!-- Virtual Machines -->
                 <li class="block virtual-machines">
-                  <span class="header">Virtual Machines</span>
+                  <span class="header"><fmt:message key="label.virtual.machines"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <!-- Running -->
                     <div class="overview-item running">
                       <div class="total" data-item="runningInstances">5</div>
-                      <div class="label">Running</div>
+                      <div class="label"><fmt:message key="state.Running"/></div>
                     </div>
 
                     <!-- Stopped -->
                     <div class="overview-item stopped">
                       <div class="total" data-item="stoppedInstances">10</div>
-                      <div class="label">Stopped</div>
+                      <div class="label"><fmt:message key="state.Stopped"/></div>
                     </div>
                   </div>
                 </li>
 
                 <!-- Storage -->
                 <li class="block storage">
-                  <span class="header">Storage</span>
+                  <span class="header"><fmt:message key="label.storage"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <div class="total" data-item="totalVolumes">10</div>
-                    <div class="label">volumes</div>
+                    <div class="label"><fmt:message key="label.volumes"/></div>
                   </div>
                 </li>
 
                 <!-- Bandwidth -->
                 <li class="block storage bandwidth">
-                  <span class="header">Bandwidth</span>
+                  <span class="header"><fmt:message key="label.bandwidth"/></span>
                   <div class="icon"></div>
                   <div class="overview">
                     <div class="total" data-item="totalBandwidth">200</div>
@@ -813,7 +828,7 @@
           <div class="users">
             <div class="system-dashboard">
               <div class="head">
-                <span>Users</span>
+                <span><fmt:message key="label.users"/></span>
               </div>
               <ul class="status_box good" data-item="users">
                 <li class="block user">
@@ -829,25 +844,25 @@
           <!-- Networking and security -->
           <div class="info-box networking-and-security">
             <div class="title">
-              <span>Networking and Security</span>
+              <span><fmt:message key="label.networking.and.security"/></span>
             </div>
             <ul>
               <!-- IP addresses -->
               <li class="odd">
                 <div class="total"><span data-item="totalIPAddresses"></span></div>
-                <div class="desc">IP addresses</div>
+                <div class="desc"><fmt:message key="label.menu.ipaddresses"/></div>
               </li>
 
               <!-- Load balancing policies -->
               <li>
                 <div class="total"><span data-item="totalLoadBalancers"></span></div>
-                <div class="desc">Load balancing policies</div>
+                <div class="desc"><fmt:message key="label.load.balancing.policies"/></div>
               </li>
 
               <!-- Port forwarding policies -->
               <li class="odd">
                 <div class="total"><span data-item="totalPortForwards"></span></div>
-                <div class="desc">Port forwarding policies</div>
+                <div class="desc"><fmt:message key="label.port.forwarding.policies"/></div>
               </li>
 
               <!-- Blank -->
@@ -861,7 +876,7 @@
                 <div class="total"></div>
                 <div class="desc">
                   <div class="button manage-resources">
-                    <span>Manage Resources</span>
+                    <span><fmt:message key="label.manage.resources"/></span>
                     <span class="arrow"></span>
                   </div>
                 </div>
@@ -872,9 +887,9 @@
           <!-- Events -->
           <div class="info-box events">
             <div class="title">
-              <span>Events</span>
+              <span><fmt:message key="label.menu.events"/></span>
               <div class="button view-all">
-                <span>View all</span>
+                <span><fmt:message key="label.view.all"/></span>
                 <span class="arrow"></span>
               </div>
             </div>
@@ -1599,6 +1614,73 @@
 
 <script language="javascript">
 dictionary = {
+'label.installWizard.title': '<fmt:message key="label.installWizard.title"/>',
+'label.agree': '<fmt:message key="label.agree"/>',
+'label.license.agreement.subtitle': '<fmt:message key="label.license.agreement.subtitle"/>',
+'label.license.agreement': '<fmt:message key="label.license.agreement"/>',
+'label.port.forwarding.policies': '<fmt:message key="label.port.forwarding.policies"/>',
+'label.load.balancing.policies': '<fmt:message key="label.load.balancing.policies"/>',
+'label.networking.and.security': '<fmt:message key="label.networking.and.security"/>',
+'label.bandwidth': '<fmt:message key="label.bandwidth"/>',
+'label.virtual.machines': '<fmt:message key="label.virtual.machines"/>',
+'label.compute.and.storage': '<fmt:message key="label.compute.and.storage"/>',
+'label.task.completed': '<fmt:message key="label.task.completed"/>',
+'label.update.project.resources': '<fmt:message key="label.update.project.resources"/>',
+'label.remove.project.account': '<fmt:message key="label.remove.project.account"/>',
+'label.item.listing': '<fmt:message key="label.item.listing"/>',
+'message.select.item': '<fmt:message key="message.select.item"/>',
+'label.removing': '<fmt:message key="label.removing"/>',
+'label.invite': '<fmt:message key="label.invite"/>',
+'label.project.dashboard': '<fmt:message key="label.project.dashboard"/>',
+'label.add.by': '<fmt:message key="label.add.by"/>',
+'label.max.vms': '<fmt:message key="label.max.vms"/>',
+'label.max.public.ips': '<fmt:message key="label.max.public.ips"/>',
+'label.max.volumes': '<fmt:message key="label.max.volumes"/>',
+'label.max.snapshots': '<fmt:message key="label.max.snapshots"/>',
+'label.max.templates': '<fmt:message key="label.max.templates"/>',
+'label.remind.later': '<fmt:message key="label.remind.later"/>',
+'label.invited.accounts': '<fmt:message key="label.invited.accounts"/>',
+'label.add.accounts.to': '<fmt:message key="label.add.accounts.to"/>',
+'label.invite.to': '<fmt:message key="label.invite.to"/>',
+'label.add.accounts': '<fmt:message key="label.add.accounts"/>',
+'label.project.name': '<fmt:message key="label.project.name"/>',
+'label.create.project': '<fmt:message key="label.create.project"/>',
+'label.networks': '<fmt:message key="label.networks"/>',
+'label.launch.vm': '<fmt:message key="label.launch.vm"/>',
+'label.new.vm': '<fmt:message key="label.new.vm"/>',
+'label.previous': '<fmt:message key="label.previous"/>',
+'label.add.to.group': '<fmt:message key="label.add.to.group"/>',
+'message.vm.review.launch': '<fmt:message key="message.vm.review.launch"/>',
+'label.new': '<fmt:message key="label.new"/>',
+'message.select.security.groups': '<fmt:message key="message.select.security.groups"/>',
+'message.please.proceed': '<fmt:message key="message.please.proceed"/>',
+'message.please.select.networks': '<fmt:message key="message.please.select.networks"/>',
+'message.zone.no.network.selection': '<fmt:message key="message.zone.no.network.selection"/>',
+'label.no.thanks': '<fmt:message key="label.no.thanks"/>',
+'label.my.templates': '<fmt:message key="label.my.templates"/>',
+'message.select.iso': '<fmt:message key="message.select.iso"/>',
+'message.select.template': '<fmt:message key="message.select.template"/>',
+'message.template.desc': '<fmt:message key="message.template.desc"/>',
+'message.iso.desc': '<fmt:message key="message.iso.desc"/>',
+'label.select.iso.or.template': '<fmt:message key="label.select.iso.or.template"/>',
+'message.select.a.zone': '<fmt:message key="message.select.a.zone"/>',
+'label.select.a.zone': '<fmt:message key="label.select.a.zone"/>',
+'label.review': '<fmt:message key="label.review"/>',
+'label.select.a.template': '<fmt:message key="label.select.a.template"/>',
+'label.setup': '<fmt:message key="label.setup"/>',
+'state.Allocated': '<fmt:message key="state.Allocated"/>',
+'changed.item.properties': '<fmt:message key="changed.item.properties"/>',
+'label.apply': '<fmt:message key="label.apply"/>',
+'label.default': '<fmt:message key="label.default"/>',
+'label.viewing': '<fmt:message key="label.viewing"/>',
+'label.drag.new.position': '<fmt:message key="label.drag.new.position"/>',
+'label.move.down.row': '<fmt:message key="label.move.down.row"/>',
+'label.move.up.row': '<fmt:message key="label.move.up.row"/>',
+'label.move.to.top': '<fmt:message key="label.move.to.top"/>',
+'label.order': '<fmt:message key="label.order"/>',
+'label.no.data': '<fmt:message key="label.no.data"/>',
+'label.change.value': '<fmt:message key="label.change.value"/>',
+'label.clear.list': '<fmt:message key="label.clear.list"/>',
 'label.add.vm': '<fmt:message key="label.add.vm"/>',
 'label.full.path': '<fmt:message key="label.full.path"/>',
 'message.add.domain': '<fmt:message key="message.add.domain"/>',
@@ -1665,6 +1747,7 @@ dictionary = {
 'label.create.template': '<fmt:message key="label.create.template" />',
 'message.download.volume.confirm': '<fmt:message key="message.download.volume.confirm" />',
 'message.detach.disk': '<fmt:message key="message.detach.disk" />',
+'state.ready': '<fmt:message key="state.ready" />',
 'state.Ready': '<fmt:message key="state.Ready" />',
 'label.vm.display.name': '<fmt:message key="label.vm.display.name" />',
 'label.select-view': '<fmt:message key="label.select-view" />',
@@ -2573,6 +2656,89 @@ dictionary = {
 'conserve.mode': '<fmt:message key="conserve.mode" />',
 'created.by.system': '<fmt:message key="created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
-'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />'
+'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
+'redundant.router.capability': '<fmt:message key="redundant.router.capability" />',
+'supported.source.NAT.type': '<fmt:message key="supported.source.NAT.type" />',
+'elastic.LB': '<fmt:message key="elastic.LB" />',
+'LB.isolation': '<fmt:message key="LB.isolation" />',
+'elastic.IP': '<fmt:message key="elastic.IP" />',
+'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />',
+'Xen.traffic.label': '<fmt:message key="Xen.traffic.label" />',
+'KVM.traffic.label': '<fmt:message key="KVM.traffic.label" />',
+'VMware.traffic.label': '<fmt:message key="VMware.traffic.label" />',
+'start.IP': '<fmt:message key="start.IP" />',
+'end.IP': '<fmt:message key="end.IP" />',
+'IP.range.is.added': '<fmt:message key="IP.range.is.added" />',
+'remove.IP.range': '<fmt:message key="remove.IP.range" />',
+'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
+'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
+'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
+'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
+'IP.ranges': '<fmt:message key="IP.ranges" />',
+'start.Vlan': '<fmt:message key="start.Vlan" />',
+'end.Vlan': '<fmt:message key="end.Vlan" />',
+'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
+'label.compute': '<fmt:message key="label.compute" />',
+'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
+'subdomain.access': '<fmt:message key="subdomain.access" />',
+'guest.start.IP': '<fmt:message key="guest.start.IP" />',
+'guest.end.IP': '<fmt:message key="guest.end.IP" />',
+'restart.required': '<fmt:message key="restart.required" />',
+'virtual.router': '<fmt:message key="virtual.router" />',
+'physical.network.ID': '<fmt:message key="physical.network.ID" />',
+'destination.physical.network.ID': '<fmt:message key="destination.physical.network.ID" />',
+'DHCP': '<fmt:message key="DHCP" />',
+'destroy.router': '<fmt:message key="destroy.router" />',
+'confirm.destroy.router': '<fmt:message key="confirm.destroy.router" />',
+'change.service.offering': '<fmt:message key="change.service.offering" />',
+'view.console': '<fmt:message key="view.console" />',
+'redundant.state': '<fmt:message key="redundant.state" />',
+'enable.provider': '<fmt:message key="enable.provider" />',
+'confirm.enable.provider': '<fmt:message key="confirm.enable.provider" />',
+'disable.provider': '<fmt:message key="disable.provider" />',
+'confirm.disable.provider': '<fmt:message key="confirm.disable.provider" />',
+'shutdown.provider': '<fmt:message key="shutdown.provider" />',
+'confirm.shutdown.provider': '<fmt:message key="confirm.shutdown.provider" />',
+'NetScaler': '<fmt:message key="NetScaler" />',
+'add.new.NetScaler': '<fmt:message key="add.new.NetScaler" />',
+'number.of.retries': '<fmt:message key="number.of.retries" />',
+'capacity': '<fmt:message key="capacity" />',
+'dedicated': '<fmt:message key="dedicated" />',
+'F5': '<fmt:message key="F5" />',
+'add.new.F5': '<fmt:message key="add.new.F5" />',
+'SRX': '<fmt:message key="SRX" />',
+'providers': '<fmt:message key="providers" />',
+'add.new.SRX': '<fmt:message key="add.new.SRX" />',
+'timeout': '<fmt:message key="timeout" />',
+'public.network': '<fmt:message key="public.network" />',
+'private.network': '<fmt:message key="private.network" />',
+'public': '<fmt:message key="public" />',
+'enable.swift': '<fmt:message key="enable.swift" />',
+'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
+'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
+'URL': '<fmt:message key="URL" />',
+'key': '<fmt:message key="key" />',
+'domain': '<fmt:message key="domain" />',
+'delete.NetScaler': '<fmt:message key="delete.NetScaler" />',
+'confirm.delete.NetScaler': '<fmt:message key="confirm.delete.NetScaler" />',
+'delete.F5': '<fmt:message key="delete.F5" />',
+'confirm.delete.F5': '<fmt:message key="confirm.delete.F5" />',
+'delete.SRX': '<fmt:message key="delete.SRX" />',
+'confirm.delete.SRX': '<fmt:message key="confirm.delete.SRX" />',
+'label.pods': '<fmt:message key="label.pods" />',
+'pod.name': '<fmt:message key="pod.name" />',
+'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
+'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
+'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
+'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />',
+'label.clusters': '<fmt:message key="label.clusters" />',
+'cluster.name': '<fmt:message key="cluster.name" />',
+'host.MAC': '<fmt:message key="host.MAC" />',
+'agent.username': '<fmt:message key="agent.username" />',
+'agent.password': '<fmt:message key="agent.password" />',
+'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
+'resource.state': '<fmt:message key="resource.state" />',
+'LUN.number': '<fmt:message key="LUN.number" />',
+'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />'
 };
 </script>

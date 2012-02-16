@@ -65,28 +65,28 @@
                   var resourceMap = {
                     0: {
                       id: 'user_vm',
-                      label: 'Max. User VMs'
+                      label: 'label.max.vms'
                     },
                     1: {
                       id: 'public_ip',
-                      label: 'Max. Public IPs'
+                      label: 'label.max.public.ips'
                     },
                     2: {
                       id: 'volume',
-                      label: 'Max. Volumes'
+                      label: 'label.max.volumes'
                     },
                     3: {
                       id: 'snapshot',
-                      label: 'Max. Snapshots'
+                      label: 'label.max.snapshots'
                     },
                     4: {
                       id: 'template',
-                      label: 'Max. Templates'
+                      label: 'label.max.templates'
                     }
                   };
                   return {
                     id: resourceMap[resource.resourcetype].id,
-                    label: resourceMap[resource.resourcetype].label,
+                    label: _l(resourceMap[resource.resourcetype].label),
                     type: resource.resourcetype,
                     value: resource.max
                   };
@@ -281,13 +281,13 @@
       noHeaderActionsColumn: true,
       ignoreEmptyFields: true,
       fields: {
-        'email': { edit: true, label: 'E-mail' },
-        'account': { edit: true, label: 'Account' },
-        'state': { edit: 'ignore', label: 'Status' },
+        'email': { edit: true, label: 'label.email' },
+        'account': { edit: true, label: 'label.account' },
+        'state': { edit: 'ignore', label: 'label.status' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Invite',
+        label: 'label.invite',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),
@@ -542,7 +542,7 @@
     title: 'label.projects',
     id: 'projects',
     sectionSelect: {
-      label: 'Select view'
+      label: 'label.select-view'
     },
     sections: {
       projects: {
@@ -558,9 +558,9 @@
             state: {
               converter: function(str) {
                 // For localization
-                return str;
+                return 'state.' + str;
               },
-              label: 'Status', indicator: {
+              label: 'label.status', indicator: {
                 converter: function(str) {
                   return 'state.' + str;
                 },
@@ -752,7 +752,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -838,7 +838,7 @@
             project: { label: 'label.project' },
             domain: { label: 'label.domain' },
             state: {
-              label: 'Status',
+              label: 'label.status',
               converter: function(str) {
                 // For localization
                 return 'state.' + str;

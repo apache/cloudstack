@@ -5346,6 +5346,10 @@ label.error {
   border-radius: 4px 4px 4px 4px;
 }
 
+.multi-wizard.zone-wizard .setup-storage-traffic .info-desc {
+  margin-bottom: 10px;
+}
+
 .multi-wizard.zone-wizard .setup-public-traffic .info-desc,
 .multi-wizard.zone-wizard .setup-guest-traffic .info-desc,
 .multi-wizard.zone-wizard .setup-physical-network .info-desc {
@@ -6008,6 +6012,9 @@ label.error {
 /*** Review / launch*/
 .multi-wizard.zone-wizard .review .launch-container {
   width: 98%;
+  max-height: 438px;
+  overflow: auto;
+  overflow-x: hidden;
   float: left;
   background: #FFFFFF;
   margin: 11px 0 0 7px;

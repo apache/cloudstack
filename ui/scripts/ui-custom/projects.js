@@ -23,7 +23,7 @@
         
         $multi.prepend(
           $('<div>').addClass('add-by')
-            .append($('<span>').html('Add by:'))
+            .append($('<span>').html(_l('label.add.by') + ':'))
             .append(
               $('<div>').addClass('selection')
                 .append(
@@ -39,7 +39,7 @@
                     return true;
                   }).click()
                 )
-                .append($('<label>').html('Account'))
+                .append($('<label>').html(_l('label.account')))
                 .append(
                   $('<input>').attr({
                     type: 'radio',
@@ -52,7 +52,7 @@
                     return true;
                   })
                 )
-                .append($('<label>').html('E-mail'))
+                .append($('<label>').html(_l('label.email')))
             )
         );
       }
@@ -63,7 +63,7 @@
     dashboardTabs: {
       overview: function() {
         var $dashboard = $('#template').find('.project-dashboard-view').clone();
-        $dashboard.data('tab-title', 'Dashboard');
+        $dashboard.data('tab-title', _l('label.menu.dashboard'));
 
         var getData = function() {
           // Populate data
@@ -127,21 +127,21 @@
       },
 
       users: function() {
-        return $('<div>').addClass('management').data('tab-title', 'Accounts');
+        return $('<div>').addClass('management').data('tab-title', _l('label.menu.accounts'));
       },
 
       invitations: function() {
-        return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
+        return $('<div>').addClass('management-invite').data('tab-title', _l('label.invitations'));
       },
 
       resources: function(options) {
         if (!options) options = {};
         
-        var $resources = $('<div>').addClass('resources').data('tab-title', 'Resources');
+        var $resources = $('<div>').addClass('resources').data('tab-title', _l('label.resources'));
         var $form = $('<form>');
         var $submit = $('<input>').attr({
           type: 'submit'
-        }).val('Apply');
+        }).val(_l('label.apply'));
 
         cloudStack.projects.resourceManagement.dataProvider({
           response: {
@@ -177,7 +177,7 @@
                       $loading.remove();
                       $('.notifications').notifications('add', {
                         section: 'dashboard',
-                        desc: 'Updated project resources',
+                        desc: 'label.update.project.resources',
                         interval: 1000,
                         poll: function(args) {
                           args.complete();
@@ -281,24 +281,24 @@
      */
     newProjectForm: function() {
       var $newProject = $('<div>').addClass('new-project');
-      $newProject.append($('<div>').addClass('title').html('Create a project'));
+      $newProject.append($('<div>').addClass('title').html(_l('label.create.project')));
 
       var $form = $('<form>');
       var $formDesc = $('<div>').addClass('form-desc');
       var $projectName = $('<div>').addClass('field name')
-            .append($('<label>').attr('for', 'project-name').html('Project name'))
+            .append($('<label>').attr('for', 'project-name').html(_l('label.project.name')))
             .append($('<input>').addClass('required').attr({
               type: 'text',
               name: 'project-name'
             }));
       var $projectDesc = $('<div>').addClass('field desc')
-            .append($('<label>').attr('for', 'project-desc').html('Display text'))
+            .append($('<label>').attr('for', 'project-desc').html(_l('label.display.text')))
             .append($('<input>').attr({
               type: 'text',
               name: 'project-display-text'
             }));
-      var $submit = $('<input>').attr({ type: 'submit' }).val('Create Project');
-      var $cancel = $('<div>').addClass('button cancel').html('Cancel');
+      var $submit = $('<input>').attr({ type: 'submit' }).val(_l('label.create.project'));
+      var $cancel = $('<div>').addClass('button cancel').html(_l('label.cancel'));
       var $loading = $('<div>').addClass('loading-overlay');
 
       // Form events/validation
@@ -339,7 +339,7 @@
                 );
 
                 var $buttons = $('<div>').addClass('buttons');
-                var $addAccountButton = $('<div>').addClass('button confirm').html('Add Accounts');
+                var $addAccountButton = $('<div>').addClass('button confirm').html(_l('label.add.accounts'));
 
                 $addAccountButton.click(function() {
                   // Show add user form
@@ -350,15 +350,15 @@
                       }),
                       useInvites: cloudStack.projects.requireInvitation()
                     });
-                    var $nextButton = $('<div>').addClass('button confirm next').html('Next');
+                    var $nextButton = $('<div>').addClass('button confirm next').html(_l('label.next'));
 
                     $newProject.find('.title').html(
                       cloudStack.projects.requireInvitation() ?
-                        'Invite to ' + args.data.name :
-                        'Add Accounts to ' + args.data.name
+                        _l('label.invite.to') + ' ' + args.data.name :
+                        _l('label.add.accounts.to') + ' ' + args.data.name
                     );
                     $nextButton.appendTo($userManagement).click(function() {
-                      $newProject.find('.title').html('Review');
+                      $newProject.find('.title').html(_l('label.review'));
                       $userManagement.replaceWith(function() {
                         var $review = $('<div>').addClass('review');
                         var $projectData = $('<div>').addClass('project-data');
@@ -384,7 +384,7 @@
                                 $('<li>').addClass('first').append(
                                   $('<a>').attr({ href: '#new-project-review-tabs-users'}).html(
                                     cloudStack.projects.requireInvitation() ?
-                                      'Invitations' : 'Accounts'
+                                      _l('label.invitations') : _l('label.accounts')
                                   )
                                 )
                               );
@@ -393,7 +393,7 @@
                           $ul.append(
                             // Resources tab
                             $('<li>').addClass('last').append(
-                              $('<a>').attr({ href: '#new-project-review-tabs-resouces'}).html('Resources')
+                              $('<a>').attr({ href: '#new-project-review-tabs-resouces'}).html(_l('label.resources'))
                             )
                           );
                         }
@@ -416,9 +416,9 @@
                             id: 'project-accounts',
                             disableInfiniteScrolling: true,
                             fields: !cloudStack.projects.requireInvitation() ? {
-                              username: { label: 'Account' }
+                              username: { label: _l('label.account') }
                             } : {
-                              account: { label: 'Invited Accounts'}
+                              account: { label: _l('label.invited.accounts') }
                             },
                             dataProvider: function(args) {
                               setTimeout(function() {
@@ -439,7 +439,7 @@
 
                         // Save button
                         var $saveButton = $nextButton.clone().appendTo($review);
-                        $saveButton.html('Save');
+                        $saveButton.html(_l('label.save'));
                         $saveButton.click(function() {
                           $('#new-project-review-tabs-resouces').find('form').submit();
                           $('.ui-dialog, .overlay').remove();
@@ -456,7 +456,7 @@
 
                       $(':ui-dialog').dialog('option', 'position', 'center');
                     });
-                    $laterButton.html('Close').appendTo($userManagement);
+                    $laterButton.html(_l('label.close')).appendTo($userManagement);
 
                     return $userManagement;
                   });
@@ -466,7 +466,7 @@
                   return false;
                 });
 
-                var $laterButton = $('<div>').addClass('button later').html('Remind me later');
+                var $laterButton = $('<div>').addClass('button later').html(_l('label.remind.later'));
                 $laterButton.click(function() {
                   $(':ui-dialog, .overlay').remove();
 
@@ -511,7 +511,7 @@
       var $selector = $('<div>').addClass('project-selector');
       var $toolbar = $('<div>').addClass('toolbar');
       var $list = $('<div>').addClass('listing')
-            .append($('<div>').addClass('header').html('Name'))
+            .append($('<div>').addClass('header').html(_l('label.name')))
             .append($('<div>').addClass('data').append($('<ul>')));
       var $searchForm = $('<form>');
       var $search = $('<div>').appendTo($toolbar).addClass('search')
@@ -661,7 +661,7 @@
 
     $browser.cloudBrowser('removeAllPanels');
     $browser.cloudBrowser('addPanel', {
-      title: 'Project Dashboard',
+      title: _l('label.project.dashboard'),
       complete: function($newPanel) {
         $('#navigation li.dashboard').addClass('active').siblings().removeClass('active');
         $newPanel.append(pageElems.dashboard);

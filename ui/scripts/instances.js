@@ -21,7 +21,7 @@
             else
               return false;
           },
-          label: 'ui.listView.filters.destroyed'
+          label: 'state.Destroyed'
         }
       },
       fields: {
@@ -1016,10 +1016,10 @@
           },
 
           attachISO: {
-            label: 'label.attach.iso',
+            label: 'label.action.attach.iso',
             createForm: {
-              title: 'label.attach.iso',
-              desc: 'label.attach.iso',
+              title: 'label.action.attach.iso',
+              desc: 'label.action.attach.iso',
               fields: {
                 iso: {
                   label: 'ISO',
@@ -1077,13 +1077,13 @@
           },
 
           detachISO: {
-            label: 'label.detach.iso',
+            label: 'label.action.detach.iso',
             messages: {
               confirm: function(args) {
                 return 'message.detach.iso.confirm';
               },
               notification: function(args) {
-                return 'label.detach.iso';
+                return 'label.action.detach.iso';
               }
             },
             action: function(args) {
@@ -1569,7 +1569,7 @@
                 isdefault: {
                   label: 'label.is.default',
                   converter: function(data) {
-                    return data ? 'label.yes' : 'label.no';
+                    return data ? _l('label.yes') : _l('label.no');
                   }
                 }
               }
@@ -1579,7 +1579,7 @@
                 var name = 'NIC ' + (index + 1);
 
                 if (nic.isdefault) {
-                  name += ' (Default)';
+                  name += ' (' + _l('label.default') + ')';
                 }
                 return $.extend(nic, {
                   name: name
@@ -1610,12 +1610,12 @@
            * Statistics tab
            */
           stats: {
-            title: 'Statistics',
+            title: 'label.statistics',
             fields: {
-              totalCPU: { label: 'Total CPU' },
-              cpuused: { label: 'CPU Utilized' },
-              networkkbsread: { label: 'Network Read' },
-              networkkbswrite: { label: 'Network Write' }
+              totalCPU: { label: 'label.total.cpu' },
+              cpuused: { label: 'label.cpu.utilized' },
+              networkkbsread: { label: 'label.network.read' },
+              networkkbswrite: { label: 'label.network.write' }
             },
             dataProvider: function(args) {
               var jsonObj = args.context.instances[0];

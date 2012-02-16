@@ -13,7 +13,15 @@
     ).filter(':not(.disabled)');
     var $publicTrafficItems = $wizard.find(
       '.steps .setup-public-traffic .data-body .data-item');
+    var $storageTrafficItems = $wizard.find(
+      '.steps .setup-storage-traffic .data-body .data-item');
     var groupedForms = {};
+
+    if ($physicalNetworkItems.find('li.traffic-type-draggable.storage').size()) {
+      $wizard.find('li.conditional.storage-traffic').show();
+    } else {
+      $wizard.find('li.conditional.storage-traffic').hide();
+    }
 
     if (options.all) {
       return cloudStack.serializeForm($forms, { escapeSlashes: true });
@@ -60,7 +68,7 @@
       $publicTrafficItems,
       function(publicTrafficItem) {
         var $publicTrafficItem = $(publicTrafficItem);
-        publicTrafficData = {};
+        var publicTrafficData = {};
         var fields = [
           'gateway',
           'netmask',
@@ -75,6 +83,28 @@
         });
 
         return publicTrafficData;
+      }
+    );
+
+    // Get storage traffic data (multi-edit)
+    groupedForms.storageTraffic = $.map(
+      $storageTrafficItems,
+      function(storageTrafficItem) {
+        var $storageTrafficItem = $(storageTrafficItem);
+        var storageTrafficData = {};
+        var fields = [
+          'netmask',
+          'vlanid',
+          'startip',
+          'endip'
+        ];
+
+        $(fields).each(function() {
+          storageTrafficData[this] =
+            $storageTrafficItem.find('td.' + this + ' span').html();
+        });
+
+        return storageTrafficData;
       }
     );
 
@@ -451,7 +481,7 @@
         });
 
         $physicalNetworkItem.find('li.traffic-type-draggable.clone').remove();
-        physicalNetwork.update($physicalNetworkItem.parent().find('.multi')); 
+        physicalNetwork.update($physicalNetworkItem.parent().find('.multi'));
       });
 
       $physicalNetworkItem.addClass('disabled'); // Since there are no traffic types yet
@@ -648,13 +678,16 @@
               $('<span>').addClass('icon').html('&nbsp;'),
               $('<span>').addClass('text').html(message)
             );
+          var $launchContainer = $launchStep.find('.launch-container');
 
           $launchStep.find('ul').append($li);
           $li.prev().removeClass('loading');
+          $launchContainer.scrollTop($launchContainer.height());
 
           if (isError) {
             $li.prev().addClass('error');
           }
+          
         };
 
         args.action({
@@ -840,7 +873,7 @@
         if ($targetStep.index() == $steps.size() - 1 || options.nextStep) {
           $nextButton.find('span').html(options.nextStep ? 'Save changes' : 'Launch zone');
           $nextButton.addClass('final');
-          
+
           if (options.nextStep) { $nextButton.addClass('post-launch'); }
         }
 
@@ -1015,7 +1048,7 @@
           } else if (!ui.draggable.closest('.traffic-types-drag-area').size()) {
             ui.draggable.remove();
           }
-          
+
           return true;
         }
       });

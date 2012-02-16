@@ -14,7 +14,7 @@
             .append(
               $('<div>').addClass('title').append(
                 $('<span>').html(
-                  options.error ? options.error : _l('Task completed')
+                  options.error ? options.error : _l('label.task.completed')
                 )
               )
             )
@@ -159,7 +159,7 @@
               .addClass('notification-box')
               .append(
                 // Header
-                $('<h3>').html(_l('Notifications'))
+                $('<h3>').html(_l('label.notifications'))
               )
               .append(
                 // Container
@@ -176,13 +176,13 @@
                     // Clear list
                     $('<div>').addClass('button clear-list')
                       .append(
-                        $('<span>').html(_l('Clear List'))
+                        $('<span>').html(_l('label.clear.list'))
                       )
                   )
                   .append(
                     $('<div>').addClass('button close')
                       .append(
-                        $('<span>').html(_l('Close'))
+                        $('<span>').html(_l('label.close'))
                       )
                   )
               )

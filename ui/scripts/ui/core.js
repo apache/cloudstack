@@ -246,13 +246,13 @@
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
           .appendTo($('#header'));
-    $(['Logout', 'Help']).each(function() {
+    $(['label.logout', 'label.help']).each(function() {
       var $link = $('<a>')
         .attr({ href: '#' })
         .html(_l(this.toString()))
         .appendTo($options);
 
-      if (this == 'Help') {
+      if (this == 'label.help') {
         $link.click(function() {
           var helpURL = 'http://docs.cloud.com/CloudStack_Documentation';
 

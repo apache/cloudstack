@@ -31,7 +31,7 @@
                 var $loading = $('.list-view').listView('prependItem', {
                   data: [
                     {
-                      name: data.displayname ? data.displayname : 'New VM',
+                      name: data.displayname ? data.displayname : _l('label.new.vm'),
                       zonename: $wizard.find('select[name=zoneid] option').filter(function() {
                         return $(this).val() == data.zoneid;
                       }).html(),
@@ -531,7 +531,7 @@
                     if (fieldName) {
                       $(this).html(fieldName);
                     } else {
-                      $(this).html('(None)');
+                      $(this).html('(' + _l('label.none') + ')');
                     }
                   });
                 }
@@ -574,10 +574,10 @@
 
           // Show launch vm button if last step
           var $nextButton = $wizard.find('.button.next');
-          $nextButton.find('span').html('Next');
+          $nextButton.find('span').html(_l('label.next'));
           $nextButton.removeClass('final');
           if ($targetStep.hasClass('review')) {
-            $nextButton.find('span').html('Launch VM');
+            $nextButton.find('span').html(_l('label.launch.vm'));
             $nextButton.addClass('final');
           }
 
@@ -693,7 +693,7 @@
         });
 
         return $wizard.dialog({
-          title: 'Add instance',
+          title: _l('label.vm.add'),
           width: 800,
           height: 570,
           zIndex: 5000
