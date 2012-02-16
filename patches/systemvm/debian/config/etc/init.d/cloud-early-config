@@ -194,6 +194,11 @@ setup_interface() {
      fi
   fi
 
+  if [ "$ip" == "0.0.0.0" -o "$ip" == "" ]
+  then
+      ifconfig $intf down
+  fi
+
   if [ "$force" == "force" ]
   then
       ifdown $intf
