@@ -926,7 +926,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             // find the load balancer device allocated for the network
             ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig);
             if (lbDeviceVO == null) {
-                s_logger.warn("network shutdwon requested on external load balancer, which did not implement the network." +
+                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network." +
                         " Either network implement failed half way through or already network shutdown is completed. So just returning.");
                 return true;
             }
@@ -952,6 +952,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } else {
             // get the self-ip used by the load balancer
             NicVO selfipNic = getPlaceholderNic(guestConfig);
+            if (selfipNic == null) {
+                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network." +
+                        " Either network implement failed half way through or already network shutdown is completed. So just returning.");
+                return true;
+            }
             selfIp = selfipNic.getIp4Address();
         }
 
