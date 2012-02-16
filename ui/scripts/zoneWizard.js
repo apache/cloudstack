@@ -15,15 +15,15 @@
           context: args.context,
           noSelect: true,
           fields: {
-            'gateway': { edit: true, label: 'Gateway' },
-            'netmask': { edit: true, label: 'Netmask' },
-            'vlanid': { edit: true, label: 'VLAN', isOptional: true },
-            'startip': { edit: true, label: 'Start IP' },
-            'endip': { edit: true, label: 'End IP' },
-            'add-rule': { label: 'Add', addButton: true }
+            'gateway': { edit: true, label: 'label.gateway' },
+            'netmask': { edit: true, label: 'label.netmask' },
+            'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
+            'startip': { edit: true, label: 'start.IP' },
+            'endip': { edit: true, label: 'end.IP' },
+            'add-rule': { label: 'label.add', addButton: true }
           },
           add: {
-            label: 'Add',
+            label: 'label.add',
             action: function(args) {
               multiEditData.push($.extend(args.data, {
                 index: totalIndex
@@ -35,7 +35,7 @@
           },
           actions: {
             destroy: {
-              label: 'Remove Rule',
+              label: 'label.remove.rule',
               action: function(args) {
                 multiEditData = $.grep(multiEditData, function(item) {
                   return item.index != args.context.multiRule[0].index;
@@ -60,14 +60,14 @@
           context: args.context,
           noSelect: true,
           fields: {
-            'netmask': { edit: true, label: 'Netmask' },
-            'vlanid': { edit: true, label: 'VLAN', isOptional: true },
-            'startip': { edit: true, label: 'Start IP' },
-            'endip': { edit: true, label: 'End IP' },
-            'add-rule': { label: 'Add', addButton: true }
+            'netmask': { edit: true, label: 'label.netmask' },
+            'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
+            'startip': { edit: true, label: 'start.IP' },
+            'endip': { edit: true, label: 'end.IP' },
+            'add-rule': { label: 'label.add', addButton: true }
           },
           add: {
-            label: 'Add',
+            label: 'label.add',
             action: function(args) {
               multiEditData.push($.extend(args.data, {
                 index: totalIndex
@@ -79,7 +79,7 @@
           },
           actions: {
             destroy: {
-              label: 'Remove Rule',
+              label: 'label.remove.rule',
               action: function(args) {
                 multiEditData = $.grep(multiEditData, function(item) {
                   return item.index != args.context.multiRule[0].index;
@@ -174,27 +174,27 @@
         },
         fields: {
           name: {
-            label: 'Name', validation: { required: true },
-            desc: 'A name for the zone.'
+            label: 'label.name', validation: { required: true },
+            desc: 'tooltip.zone.name'
           },
           dns1: {
-            label: 'DNS 1', validation: { required: true },
-            desc: 'Name of a DNS server for use by VMs in the zone. The public IP addresses for the zone must have a route to this server.'
+            label: 'label.dns.1', validation: { required: true },
+            desc: 'tooltip.dns.1'
           },
           dns2: {
-            label: 'DNS 2',
-            desc: 'A second DNS server name for use by VMs in the zone. The public IP addresses for the zone must have a route to this server.'
+            label: 'label.dns.2',
+            desc: 'tooltip.dns.2'
           },
           internaldns1: {
-            label: 'Internal DNS 1', validation: { required: true },
-            desc: 'Name of a DNS server for use by CloudStack\'s internal system VMs in the zone. The private IP address for the pods must have a route to this server.'
+            label: 'label.internal.dns.1', validation: { required: true },
+            desc: 'tooltip.internal.dns.1'
           },
           internaldns2: {
-            label: 'Internal DNS 2',
-            desc: 'Name of a DNS server for use by CloudStack\'s internal system VMs in the zone. The private IP address for the pods must have a route to this server.'
+            label: 'label.internal.dns.2',
+            desc: 'tooltip.internal.dns.2'
           },
           networkOfferingId: {
-            label: 'Network Offering',
+            label: 'label.network.offering',
             select: function(args) {
               $.ajax({
                 url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
@@ -253,22 +253,22 @@
             }
           },
           networkdomain: {
-            label: 'Network Domain',
-            desc: 'A DNS suffix that will create a custom domain name for the network that is accessed by guest VMs.'
+            label: 'label.network.domain',
+            desc: 'tooltip.network.domain'
           },
           guestcidraddress: {
-            label: 'Guest CIDR',
+            label: 'label.guest.cidr',
             defaultValue: '10.1.1.0/24',
             validation: { required: false }
           },
           ispublic: {
             isReverse: true,
             isBoolean: true,
-            label: 'Public',
+            label: 'label.public',
             isChecked: true //checked by default (public zone)
           },
           domain: {
-            label: 'Domain',
+            label: 'label.domain',
             dependsOn: 'ispublic',
             isHidden: true,
             select: function(args) {
@@ -297,22 +297,22 @@
       pod: {
         fields: {
           name: {
-            label: 'Pod name',
+            label: 'pod.name',
             validation: { required: true },
-            desc: 'A name for this pod.'
+            desc: 'tooltip.pod.name'
           },
           reservedSystemGateway: {
-            label: 'Reserved system gateway',
+            label: 'reserved.system.gateway',
             validation: { required: true },
-            desc: 'The gateway for the hosts in the pod.'
+            desc: 'tooltip.reserved.system.gateway'
           },
           reservedSystemNetmask: {
-            label: 'Reserved system netmask',
+            label: 'reserved.system.netmask',
             validation: { required: true },
-            desc: 'The network prefix that defines the pod\'s subnet. Uses CIDR notation.'
+            desc: 'tooltip.reserved.system.netmask'
           },
           reservedSystemStartIp: {
-            label: 'Start Reserved system IP',
+            label: 'start.reserved.system.IP',
             validation: { required: true }
           },
           reservedSystemEndIp: {
@@ -325,17 +325,17 @@
       basicPhysicalNetwork: { //"Netscaler" now
         fields: {
          ip: {
-            label: 'IP address'
+            label: 'label.ip.address'
           },
           username: {
-            label: 'Username'
+            label: 'label.username'
           },
           password: {
-            label: 'Password',
+            label: 'label.password',
             isPassword: true
           },
           networkdevicetype: {
-            label: 'Type',
+            label: 'label.type',
             select: function(args) {
               var items = [];
               items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
@@ -345,30 +345,21 @@
             }
           },
           publicinterface: {
-            label: 'Public interface'
+            label: 'label.public.interface'
           },
           privateinterface: {
-            label: 'Private interface'
+            label: 'label.private.interface'
           },
           numretries: {
-            label: 'Number of retries',
+            label: 'number.of.retries',
             defaultValue: '2'
-          },
-          inline: {
-            label: 'Mode',
-            select: function(args) {
-              var items = [];
-              items.push({id: "false", description: "side by side"});
-              items.push({id: "true", description: "inline"});
-              args.response.success({data: items});
-            }
-          },
+          },          
           capacity: {
-            label: 'Capacity',
+            label: 'capacity',
             validation: { required: false, number: true }
           },
           dedicated: {
-            label: 'Dedicated',
+            label: 'dedicated',
             isBoolean: true,
             isChecked: false
           }
@@ -409,15 +400,15 @@
 
         fields: {
           //Basic (start)
-          guestGateway: { label: 'Guest gateway' },
-          guestNetmask: { label: 'Guest netmask' },
-          guestStartIp: { label: 'Guest start IP' },
-          guestEndIp: { label: 'Guest end IP' },
+          guestGateway: { label: 'label.guest.gateway' },
+          guestNetmask: { label: 'label.guest.netmask' },
+          guestStartIp: { label: 'guest.start.IP' },
+          guestEndIp: { label: 'guest.end.IP' },
           //Basic (end)
 
           //Advanced (start)
           vlanRange: {
-            label: 'VLAN Range',
+            label: 'label.vlan.range',
             range: ['vlanRangeStart', 'vlanRangeEnd'],
             validation: { required: false, digits: true }  //Bug 13517 - AddZone wizard->Configure guest traffic: Vlan is optional
           }
@@ -427,7 +418,7 @@
       cluster: {
         fields: {
           hypervisor: {
-            label: 'Hypervisor',
+            label: 'label.hypervisor',
             select: function(args) {
               $.ajax({
                 url: createURL("listHypervisors"),
@@ -467,26 +458,26 @@
             }
           },
           name: {
-            label: 'Cluster Name',
+            label: 'cluster.name',
             validation: { required: true }
           },
 
           //hypervisor==VMWare begins here
           vCenterHost: {
-            label: 'vCenter Host',
+            label: 'label.vcenter.host',
             validation: { required: true }
           },
           vCenterUsername: {
-            label: 'vCenter Username',
+            label: 'label.vcenter.username',
             validation: { required: true }
           },
           vCenterPassword: {
-            label: 'vCenter Password',
+            label: 'label.vcenter.password',
             validation: { required: true },
             isPassword: true
           },
           vCenterDatacenter: {
-            label: 'vCenter Datacenter',
+            label: 'label.vcenter.datacenter',
             validation: { required: true }
           }
           //hypervisor==VMWare ends here
@@ -580,19 +571,19 @@
         },
         fields: {
           hostname: {
-            label: 'Host name',
+            label: 'label.host.name',
             validation: { required: true },
             isHidden: true
           },
 
           username: {
-            label: 'User name',
+            label: 'label.username',
             validation: { required: true },
             isHidden: true
           },
 
           password: {
-            label: 'Password',
+            label: 'label.password',
             validation: { required: true },
             isHidden: true,
             isPassword: true
@@ -601,7 +592,7 @@
 
           //input_group="VMWare" starts here
           vcenterHost: {
-            label: 'ESX/ESXi Host',
+            label: 'label.esx.host',
             validation: { required: true },
             isHidden: true
           },
@@ -609,22 +600,22 @@
 
           //input_group="BareMetal" starts here
           baremetalCpuCores: {
-            label: '# of CPU Cores',
+            label: 'label.num.cpu.cores',
             validation: { required: true },
             isHidden: true
           },
           baremetalCpu: {
-            label: 'CPU (in MHz)',
+            label: 'label.cpu.mhz',
             validation: { required: true },
             isHidden: true
           },
           baremetalMemory: {
-            label: 'Memory (in MB)',
+            label: 'label.memory.mb',
             validation: { required: true },
             isHidden: true
           },
           baremetalMAC: {
-            label: 'Host MAC',
+            label: 'host.MAC',
             validation: { required: true },
             isHidden: true
           },
@@ -632,12 +623,12 @@
 
           //input_group="OVM" starts here
           agentUsername: {
-            label: 'Agent Username',
+            label: 'agent.username',
             validation: { required: false },
             isHidden: true
           },
           agentPassword: {
-            label: 'Agent Password',
+            label: 'agent.password',
             validation: { required: true },
             isHidden: true,
             isPassword: true
@@ -646,23 +637,23 @@
 
           //always appear (begin)
           hosttags: {
-            label: 'Host tags',
+            label: 'label.host.tags',
             validation: { required: false }
           }
           //always appear (end)
         }
       },
-      primaryStorage: {
+      primaryStorage: {  
         preFilter: function(args) {},
 
         fields: {
           name: {
-            label: 'Name',
+            label: 'label.name',
             validation: { required: false }  // Primary storage is not required. User can use local storage instead of primary storage.
           },
 
           protocol: {
-            label: 'Protocol',
+            label: 'label.protocol',
             validation: { required: false }, // Primary storage is not required. User can use local storage instead of primary storage.
             select: function(args) {
               var selectedClusterObj = {
@@ -879,52 +870,52 @@
             }
           },
           server: {
-            label: 'Server',
+            label: 'label.server',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //nfs
           path: {
-            label: 'Path',
+            label: 'label.path',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //iscsi
           iqn: {
-            label: 'Target IQN',
+            label: 'label.target.iqn',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
           lun: {
-            label: 'LUN #',
+            label: 'LUN.number',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //clvm
           volumegroup: {
-            label: 'Volume Group',
+            label: 'label.volgroup',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //vmfs
           vCenterDataCenter: {
-            label: 'vCenter Datacenter',
+            label: 'label.vcenter.datacenter',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
           vCenterDataStore: {
-            label: 'vCenter Datastore',
+            label: 'label.vcenter.datastore',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
 
           //always appear (begin)
           storageTags: {
-            label: 'Storage Tags',
+            label: 'label.storage.tags',
             validation: { required: false }   // Primary storage is not required. User can use local storage instead of primary storage.
           }
           //always appear (end)
@@ -933,11 +924,11 @@
       secondaryStorage: {
         fields: {
           nfsServer: {
-            label: 'NFS Server',
+            label: 'label.nfs.server',
             validation: { required: true }
           },
           path: {
-            label: 'Path',
+            label: 'label.path',
             validation: { required: true }
           }
         }
@@ -956,7 +947,7 @@
 
       var stepFns = {
         addZone: function() {
-          message('Creating zone');
+          message('creating.zone'); 
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
@@ -1005,7 +996,7 @@
         },
 
         addPhysicalNetworks: function(args) {
-          message('Creating physical network(s)');
+          message('creating.physical.networks');
 
           var returnedPhysicalNetworks = [];
 
@@ -1288,7 +1279,7 @@
 
         //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
         configurePhysicalNetwork: function(args) {
-          message('Configuring physical network(s)');
+          message('configuring.physical.networks'); 
 
           if(args.data.zone.networkType == "Basic") {
             $.ajax({
@@ -1716,7 +1707,7 @@
         },
 
         addNetscalerDevice: function(args) {
-          message('Adding Netscaler device');
+          message('adding.Netscaler.device'); 
 
           var array1 = [];
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -1897,7 +1888,7 @@
         },
 
         addPod: function(args) {
-          message('Creating pod');
+          message('creating.pod'); 
 
           var array3 = [];
           array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -1931,7 +1922,8 @@
         configurePublicTraffic: function(args) {
           if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
            ||(args.data.zone.networkType == "Advanced")) {
-            message('Configuring public traffic');
+					 
+            message('configuring.public.traffic'); 
 
             var stopNow = false;
 
@@ -2017,7 +2009,7 @@
             return complete({});
           }
 
-          message('Configuring storage traffic');
+          message('configuring.storage.traffic');  
           
           var storageIPRanges = args.data.storageTraffic;
           var tasks = [];
@@ -2096,7 +2088,7 @@
         },
 
         configureGuestTraffic: function(args) {
-          message('Configuring guest traffic');
+          message('configuring.guest.traffic');  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
             var array1 = [];
@@ -2199,7 +2191,7 @@
         },
 
         addCluster: function(args) {
-          message('Creating cluster');
+          message('creating.cluster'); 
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -2263,7 +2255,7 @@
         },
 
         addHost: function(args) {
-          message('Adding host');
+          message('adding.host'); 
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2336,7 +2328,7 @@
             return;
           }
 
-          message('Creating primary storage');
+          message('creating.primary.storage');
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2426,7 +2418,7 @@
         },
 
         addSecondaryStorage: function(args) {
-          message('Creating secondary storage');
+          message('creating.secondary.storage');
 
           var nfs_server = args.data.secondaryStorage.nfsServer;
           var path = args.data.secondaryStorage.path;
@@ -2451,7 +2443,7 @@
       };
 
       var complete = function(args) {
-        message('Zone creation complete!');
+        message('Zone.creation.complete');
         success(args);
       };
 
