@@ -1724,6 +1724,7 @@
 <script language="javascript">
 dictionary = {
 <<<<<<< HEAD
+<<<<<<< HEAD
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
@@ -1773,12 +1774,17 @@ dictionary = {
 'label.nat.port.range': '<fmt:message key="label.nat.port.range"/>',
 'label.static.nat.vm.details': '<fmt:message key="label.static.nat.vm.details"/>',
 'label.edit.lb.rule': '<fmt:message key="label.edit.lb.rule"/>',
+=======
+>>>>>>> 4b2709c... Add missing localization for instances.js
 'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
 'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',
 'label.migrate.instance.to.ps': '<fmt:message key="label.migrate.instance.to.ps"/>',
+<<<<<<< HEAD
 =======
 >>>>>>> 6d8a11c... Complete localization for quick install wizard
+=======
+>>>>>>> 4b2709c... Add missing localization for instances.js
 'label.corrections.saved': '<fmt:message key="label.corrections.saved"/>',
 'message.installWizard.copy.whatIsSecondaryStorage': '<fmt:message key="message.installWizard.copy.whatIsSecondaryStorage"/>',
 'message.installWizard.copy.whatIsPrimaryStorage': '<fmt:message key="message.installWizard.copy.whatIsPrimaryStorage"/>',
