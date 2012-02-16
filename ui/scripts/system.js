@@ -3511,7 +3511,7 @@
                 }
               },
               allocationstate: {
-                label: 'allocation.state',
+                label: 'label.allocation.state',
                 converter: function(str) {
                   // For localization
                   return str;
@@ -5203,7 +5203,7 @@
                     },
                     {
                       id: { label: 'label.id' },
-                      allocationstate: { label: 'allocation.state' },
+                      allocationstate: { label: 'label.allocation.state' },
                       dns1: { label: 'label.dns.1', isEditable: true },
                       dns2: { label: 'label.dns.2', isEditable: true },
                       internaldns1: { label: 'label.internal.dns.1', isEditable: true },
@@ -6518,10 +6518,14 @@
                         return str;
                       },
 <<<<<<< HEAD
+<<<<<<< HEAD
                       label: 'label.allocation.state'
 =======
                       label: 'allocation.state'
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+                      label: 'label.allocation.state'
+>>>>>>> c05a040... cloudstack 3.0 new UI - add more localization labels.
                     }
                   }
                 ],
@@ -7057,10 +7061,14 @@
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
 <<<<<<< HEAD
+<<<<<<< HEAD
                     //allocationstate: { label: 'label.allocation.state' },
 =======
                     //allocationstate: { label: 'allocation.state' },
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+                    //allocationstate: { label: 'label.allocation.state' },
+>>>>>>> c05a040... cloudstack 3.0 new UI - add more localization labels.
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
                   }
