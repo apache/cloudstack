@@ -239,7 +239,7 @@
 						},						
 						{
 							id: 'virtualRouter',
-							name: 'label.virtual.router',
+							name: 'Virtual Router',
 							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
 						}
 					];
@@ -2168,7 +2168,7 @@
             },
             actions: {
               enable: {
-                label: 'enable.provider', 
+                label: 'label.enable.provider', 
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
@@ -2189,16 +2189,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.enable.provider';
+									  return 'message.confirm.enable.provider';
 									},
                   notification: function() { 
-									  return 'enable.provider'; 
+									  return 'label.enable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'disable.provider',
+                label: 'label.disable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
@@ -2219,10 +2219,10 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.disable.provider';
+									  return 'message.confirm.disable.provider';
 									},
                   notification: function() { 
-									  return 'disable.provider'; 
+									  return 'label.disable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2234,8 +2234,8 @@
           netscaler: {
             type: 'detailView',
             id: 'netscalerProviders',
-            label: 'NetScaler',
-            viewAll: { label: 'providers', path: '_zone.netscalerProviders' },
+            label: 'label.netScaler',
+            viewAll: { label: 'label.providers', path: '_zone.netscalerProviders' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2257,9 +2257,9 @@
             },
             actions: {
               add: {
-                label: 'add.new.NetScaler',
+                label: 'label.add.new.NetScaler',
                 createForm: {
-                  title: 'add.new.NetScaler',
+                  title: 'label.add.new.NetScaler',
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2288,7 +2288,7 @@
                       label: 'label.private.interface'
                     },
                     numretries: {
-                      label: 'number.of.retries',
+                      label: 'label.numretries',
                       defaultValue: '2'
                     },
                     // inline: {
@@ -2301,11 +2301,11 @@
                     //   }
                     // },
                     capacity: {
-                      label: 'capacity',
+                      label: 'label.capacity',
                       validation: { required: false, number: true }
                     },
                     dedicated: {
-                      label: 'dedicated',
+                      label: 'label.dedicated',
                       isBoolean: true,
                       isChecked: false
                     }
@@ -2313,7 +2313,7 @@
                 },
 								messages: {
                   notification: function(args) {
-                    return 'add.new.NetScaler';
+                    return 'label.add.new.NetScaler';
                   }
                 },
                 action: function(args) {
@@ -2363,7 +2363,7 @@
                 }
               },
               enable: {
-                label: 'enable.provider',
+                label: 'label.enable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Enabled"),
@@ -2384,16 +2384,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.enable.provider';
+									  return 'message.confirm.enable.provider';
 									},
                   notification: function() { 
-									  return 'enable.provider'; 
+									  return 'label.enable.provider'; 
 								  }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'disable.provider',
+                label: 'label.disable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Disabled"),
@@ -2414,16 +2414,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.disable.provider';
+									  return 'message.confirm.disable.provider';
 									},
                   notification: function() { 
-									  return 'disable.provider'; 
+									  return 'label.disable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               destroy: {
-                label: 'shutdown.provider', 
+                label: 'label.shutdown.provider', 
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["netscaler"].id),
@@ -2447,7 +2447,7 @@
 									  return 'confirm.shutdown.provider';
 									},
                   notification: function(args) { 
-									  return 'shutdown.provider'; 
+									  return 'label.shutdown.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2458,8 +2458,8 @@
           f5: {
             type: 'detailView',
             id: 'f5Providers',
-            label: 'F5',
-            viewAll: { label: 'providers', path: '_zone.f5Providers' },
+            label: 'label.f5',
+            viewAll: { label: 'label.providers', path: '_zone.f5Providers' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2481,9 +2481,9 @@
             },
             actions: {
               add: {
-                label: 'add.new.F5',
+                label: 'label.add.new.F5',
                 createForm: {
-                  title: 'add.new.F5',
+                  title: 'label.add.new.F5',
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2510,7 +2510,7 @@
                       label: 'label.private.interface'
                     },
                     numretries: {
-                      label: 'number.of.retries',
+                      label: 'label.numretries',
                       defaultValue: '2'
                     },
                     // inline: {
@@ -2523,11 +2523,11 @@
                     //   }
                     // },
                     capacity: {
-                      label: 'capacity',
+                      label: 'label.capacity',
                       validation: { required: false, number: true }
                     }
                     // dedicated: {
-                    //   label: 'dedicated',
+                    //   label: 'label.dedicated',
                     //   isBoolean: true,
                     //   isChecked: false
                     // }
@@ -2577,7 +2577,7 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'add.new.F5';
+                    return 'label.add.new.F5';
                   }
                 },
                 notification: {
@@ -2585,7 +2585,7 @@
                 }
               },
               enable: {
-                label: 'enable.provider',
+                label: 'label.enable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"),
@@ -2606,16 +2606,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.enable.provider';
+									  return 'message.confirm.enable.provider';
 									},
                   notification: function() { 
-									  return 'enable.provider'; 
+									  return 'label.enable.provider'; 
 								  }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'disable.provider',
+                label: 'label.disable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Disabled"),
@@ -2636,16 +2636,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.disable.provider';
+									  return 'message.confirm.disable.provider';
 									},
                   notification: function() { 
-									  return 'disable.provider'; 
+									  return 'label.disable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               destroy: {
-                label: 'shutdown.provider',
+                label: 'label.shutdown.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["f5"].id),
@@ -2666,10 +2666,10 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.shutdown.provider';
+									  return 'message.confirm.shutdown.provider';
 									},
                   notification: function(args) { 
-									  return 'shutdown.provider'; 
+									  return 'label.shutdown.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2681,8 +2681,8 @@
           srx: {
             type: 'detailView',
             id: 'srxProviders',
-            label: 'SRX',
-            viewAll: { label: 'providers', path: '_zone.srxProviders' },
+            label: 'label.srx',
+            viewAll: { label: 'label.providers', path: '_zone.srxProviders' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2704,9 +2704,9 @@
             },
             actions: {
               add: {
-                label: 'add.new.SRX',
+                label: 'label.add.new.SRX',
                 createForm: {
-                  title: 'add.new.SRX',
+                  title: 'label.add.new.SRX',
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2736,11 +2736,11 @@
                       label: 'Usage interface'
                     },
                     numretries: {
-                      label: 'number.of.retries',
+                      label: 'label.numretries',
                       defaultValue: '2'
                     },
                     timeout: {
-                      label: 'timeout',
+                      label: 'label.timeout',
                       defaultValue: '300'
                     },
                     // inline: {
@@ -2753,19 +2753,19 @@
                     //   }
                     // },
                     publicnetwork: {
-                      label: 'public.network',
+                      label: 'label.public.network',
                       defaultValue: 'untrusted'
                     },
                     privatenetwork: {
-                      label: 'private.network',
+                      label: 'label.private.network',
                       defaultValue: 'trusted'
                     },
                     capacity: {
-                      label: 'capacity',
+                      label: 'label.capacity',
                       validation: { required: false, number: true }
                     },
                     dedicated: {
-                      label: 'dedicated',
+                      label: 'label.dedicated',
                       isBoolean: true,
                       isChecked: false
                     }
@@ -2815,7 +2815,7 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'add.new.SRX';
+                    return 'label.add.new.SRX';
                   }
                 },
                 notification: {
@@ -2823,7 +2823,7 @@
                 }
               },
               enable: {
-                label: 'enable.provider',
+                label: 'label.enable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Enabled"),
@@ -2844,16 +2844,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.enable.provider';
+									  return 'message.confirm.enable.provider';
 									},
                   notification: function() { 
-									  return 'enable.provider'; 
+									  return 'label.enable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'disable.provider',
+                label: 'label.disable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Disabled"),
@@ -2874,16 +2874,16 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.disable.provider';
+									  return 'message.confirm.disable.provider';
 									},
                   notification: function() { 
-									  return 'disable.provider'; 
+									  return 'label.disable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               destroy: {
-                label: 'shutdown.provider',
+                label: 'label.shutdown.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["srx"].id),
@@ -2904,10 +2904,10 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.shutdown.provider';
+									  return 'message.confirm.shutdown.provider';
 									},
                   notification: function(args) { 
-									  return 'shutdown.provider'; 
+									  return 'label.shutdown.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2952,7 +2952,7 @@
             },
             actions: {
               enable: {
-                label: 'enable.provider',
+                label: 'label.enable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Enabled"),
@@ -2973,16 +2973,16 @@
                 },
                 messages: {
                   confirm: function(args) {
-									  return 'confirm.enable.provider';
+									  return 'message.confirm.enable.provider';
 									},
                   notification: function() { 
-									  return 'enable.provider'; 
+									  return 'label.enable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'disable.provider',
+                label: 'label.disable.provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Disabled"),
@@ -3003,10 +3003,10 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.disable.provider';
+									  return 'message.confirm.disable.provider';
 									},
                   notification: function() { 
-									  return 'disable.provider'; 
+									  return 'label.disable.provider'; 
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3034,7 +3034,7 @@
               name: { label: 'label.zone' },
               networktype: { label: 'label.network.type' },
               domainid: {
-                label: 'public',
+                label: 'label.public',
                 converter: function(args) {
                   if(args == null)
                     return "Yes";
@@ -3079,7 +3079,7 @@
 
               // Enable swift
               enableSwift: {
-                label: 'enable.swift',
+                label: 'label.enable.swift',
                 isHeader: true,
                 addRow: false,
                 preFilter: function(args) {
@@ -3104,16 +3104,16 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'enable.swift';
+                    return 'label.enable.swift';
                   }
                 },
                 createForm: {
                   desc: 'confirm.enable.swift',
                   fields: {
-                    url: { label: 'URL', validation: { required: true } },
+                    url: { label: 'label.url', validation: { required: true } },
                     account: { label: 'label.account' },
                     username: { label: 'label.username' },
-                    key: { label: 'key' }
+                    key: { label: 'label.key' }
                   }
                 },
                 action: function(args) {
@@ -3306,7 +3306,7 @@
                       dns2: { label: 'label.dns.2', isEditable: true },
                       internaldns1: { label: 'label.internal.dns.1', isEditable: true },
                       internaldns2: { label: 'label.internal.dns.2', isEditable: true },
-                      domainname: { label: 'domain' },
+                      domainname: { label: 'label.domain' },
 											networktype: { label: 'label.network.type' },     
                       guestcidraddress : { label: 'label.guest.cidr' },											
                       domain: {
@@ -3691,7 +3691,7 @@
       // Provider list views
       netscalerProviders: {
         id: 'netscalerProviders',
-        title: 'NetScaler',
+        title: 'label.netScaler',
         listView: {
           id: 'netscalerProviders',
           fields: {
@@ -3717,9 +3717,9 @@
           },
           actions: {
             add: {
-              label: 'add.new.NetScaler',
+              label: 'label.add.new.NetScaler',
               createForm: {
-                title: 'add.new.NetScaler',
+                title: 'label.add.new.NetScaler',
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -3748,7 +3748,7 @@
                     label: 'label.private.interface'
                   },
                   numretries: {
-                    label: 'number.of.retries',
+                    label: 'label.numretries',
                     defaultValue: '2'
                   },
                   // inline: {
@@ -3761,11 +3761,11 @@
                   //   }
                   // },
                   capacity: {
-                    label: 'capacity',
+                    label: 'label.capacity',
                     validation: { required: false, number: true }
                   },
                   dedicated: {
-                    label: 'dedicated',
+                    label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
                   }
@@ -3815,7 +3815,7 @@
               },
               messages: {
                 notification: function(args) {
-                  return 'add.new.NetScaler';
+                  return 'label.add.new.NetScaler';
                 }
               },
               notification: {
@@ -3827,13 +3827,13 @@
             name: 'NetScaler details',
             actions: {
               'delete': {
-                label: 'delete.NetScaler', 
+                label: 'label.delete.NetScaler', 
                 messages: {
                   confirm: function(args) {
-                    return 'confirm.delete.NetScaler';
+                    return 'message.confirm.delete.NetScaler';
                   },                
                   notification: function(args) {
-                    return 'delete.NetScaler';
+                    return 'label.delete.NetScaler';
                   }
                 },
                 action: function(args) {
@@ -3869,9 +3869,9 @@
                     ipaddress: { label: 'label.ip.address' },
                     lbdevicestate: { label: 'label.status' },
                     lbdevicename: { label: 'label.type' },
-                    lbdevicecapacity: { label: 'capacity' },
+                    lbdevicecapacity: { label: 'label.capacity' },
                     lbdevicededicated: {
-                      label: 'dedicated',
+                      label: 'label.dedicated',
                       converter: cloudStack.converters.toBooleanText
                     }
                   }
@@ -3887,7 +3887,7 @@
 
       f5Providers: { 
         id: 'f5Providers',
-        title: 'F5',
+        title: 'label.f5',
         listView: {
           id: 'f5Providers',
           fields: {
@@ -3902,9 +3902,9 @@
           },
           actions: {
             add: {
-              label: 'add.new.F5',
+              label: 'label.add.new.F5',
               createForm: {
-                title: 'add.new.F5',
+                title: 'label.add.new.F5',
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -3931,7 +3931,7 @@
                     label: 'label.private.interface'
                   },
                   numretries: {
-                    label: 'number.of.retries',
+                    label: 'label.numretries',
                     defaultValue: '2'
                   },
                   // inline: {
@@ -3944,11 +3944,11 @@
                   //   }
                   // },
                   capacity: {
-                    label: 'capacity',
+                    label: 'label.capacity',
                     validation: { required: false, number: true }
                   }
                   // dedicated: {
-                  //   label: 'dedicated',
+                  //   label: 'label.dedicated',
                   //   isBoolean: true,
                   //   isChecked: false
                   // }
@@ -4021,13 +4021,13 @@
             name: 'F5 details',
             actions: {
               'delete': {
-                label: 'delete.F5',
+                label: 'label.delete.F5',
                 messages: {
                   confirm: function(args) {
-                    return 'confirm.delete.F5';
+                    return 'message.confirm.delete.F5';
                   },                 
                   notification: function(args) {
-                    return 'delete.F5';
+                    return 'label.delete.F5';
                   }
                 },
                 action: function(args) {
@@ -4059,9 +4059,9 @@
                     ipaddress: { label: 'label.ip.address' },
                     lbdevicestate: { label: 'label.status' },
                     lbdevicename: { label: 'label.type' },
-                    lbdevicecapacity: { label: 'capacity' },
+                    lbdevicecapacity: { label: 'label.capacity' },
                     lbdevicededicated: {
-                      label: 'dedicated',
+                      label: 'label.dedicated',
                       converter: cloudStack.converters.toBooleanText
                     }
                   }
@@ -4077,7 +4077,7 @@
 
       srxProviders: {  
         id: 'srxProviders',
-        title: 'SRX',
+        title: 'label.srx',
         listView: {
           id: 'srxProviders',
           fields: {
@@ -4092,9 +4092,9 @@
           },
           actions: {
             add: {
-              label: 'add.new.SRX',
+              label: 'label.add.new.SRX',
               createForm: {
-                title: 'add.new.SRX',
+                title: 'label.add.new.SRX',
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4124,11 +4124,11 @@
                     label: 'label.usage.interface'
                   },
                   numretries: {
-                    label: 'number.of.retries',
+                    label: 'label.numretries',
                     defaultValue: '2'
                   },
                   timeout: {
-                    label: 'timeout',
+                    label: 'label.timeout',
                     defaultValue: '300'
                   },
                   // inline: {
@@ -4141,19 +4141,19 @@
                   //   }
                   // },
                   publicnetwork: {
-                    label: 'public.network',
+                    label: 'label.public.network',
                     defaultValue: 'untrusted'
                   },
                   privatenetwork: {
-                    label: 'private.network',
+                    label: 'label.private.network',
                     defaultValue: 'trusted'
                   },
                   capacity: {
-                    label: 'capacity',
+                    label: 'label.capacity',
                     validation: { required: false, number: true }
                   },
                   dedicated: {
-                    label: 'dedicated',
+                    label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
                   }
@@ -4203,7 +4203,7 @@
               },
               messages: {
                 notification: function(args) {
-                  return 'add.new.SRX';
+                  return 'label.add.new.SRX';
                 }
               },
               notification: {
@@ -4226,13 +4226,13 @@
             name: 'SRX details',
             actions: {
               'delete': {
-                label: 'delete.SRX',  
+                label: 'label.delete.SRX',  
                 messages: {
                   confirm: function(args) {
-                    return 'confirm.delete.SRX';
+                    return 'message.confirm.delete.SRX';
                   },                  
                   notification: function(args) {
-                    return 'delete.SRX';
+                    return 'label.delete.SRX';
                   }
                 },
                 action: function(args) {
@@ -4264,8 +4264,8 @@
                     ipaddress: { label: 'label.ip.address' },
                     fwdevicestate: { label: 'label.status' },
                     fwdevicename: { label: 'label.type' },
-                    fwdevicecapacity: { label: 'capacity' },
-                    timeout: { label: 'timeout' }
+                    fwdevicecapacity: { label: 'label.capacity' },
+                    timeout: { label: 'label.timeout' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -4330,7 +4330,7 @@
                 title: 'label.add.pod',
                 fields: {
                   podname: {
-                    label: 'pod.name',
+                    label: 'label.pod.name',
                     validation: { required: true }
                   },
                   reservedSystemGateway: {
@@ -4338,15 +4338,15 @@
                     validation: { required: true }
                   },
                   reservedSystemNetmask: {
-                    label: 'reserved.system.netmask',
+                    label: 'label.reserved.system.netmask',
                     validation: { required: true }
                   },
                   reservedSystemStartIp: {
-                    label: 'start.reserved.system.IP',
+                    label: 'label.start.reserved.system.IP',
                     validation: { required: true }
                   },
                   reservedSystemEndIp: {
-                    label: 'end.reserved.system.IP',
+                    label: 'label.end.reserved.system.IP',
                     validation: { required: false }
                   }
                 }
@@ -4714,7 +4714,7 @@
                     }
                   },
                   name: {
-                    label: 'cluster.name',
+                    label: 'label.cluster.name',
                     validation: { required: true }
                   },
 
@@ -5229,7 +5229,7 @@
                     isHidden: true
                   },
                   baremetalMAC: {
-                    label: 'host.MAC',
+                    label: 'label.host.MAC',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -5237,12 +5237,12 @@
 
                   //input_group="OVM" starts here
                   agentUsername: {
-                    label: 'agent.username',
+                    label: 'label.agent.username',
                     validation: { required: false },
                     isHidden: true
                   },
                   agentPassword: {
-                    label: 'agent.password',
+                    label: 'label.agent.password',
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -5466,7 +5466,7 @@
                 },
                 messages: {
                   confirm: function(args) {
-                    return 'confirm.action.force.reconnect';
+                    return 'message.confirm.action.force.reconnect';
                   },                 
                   notification: function(args) {
                     return 'label.action.force.reconnect';
@@ -5532,7 +5532,7 @@
                   },
                   {
                     id: { label: 'label.id' },
-                    resourcestate: { label: 'resource.state' },
+                    resourcestate: { label: 'label.resource.state' },
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },
                     zonename: { label: 'label.zone' },
@@ -5925,7 +5925,7 @@
                     isHidden: true
                   },
                   lun: {
-                    label: 'LUN.number',
+                    label: 'label.LUN.number',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -6454,7 +6454,7 @@
               label: 'label.remove.ip.range' , 
               messages: {
                 confirm: function(args) {
-                  return 'confirm.remove.IP.range';
+                  return 'message.confirm.remove.IP.range';
                 },                
                 notification: function(args) {
                   return 'label.remove.ip.range';

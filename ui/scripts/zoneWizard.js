@@ -297,26 +297,26 @@
       pod: {
         fields: {
           name: {
-            label: 'pod.name',
+            label: 'label.pod.name',
             validation: { required: true },
             desc: 'tooltip.pod.name'
           },
           reservedSystemGateway: {
-            label: 'reserved.system.gateway',
+            label: 'label.reserved.system.gateway',
             validation: { required: true },
             desc: 'tooltip.reserved.system.gateway'
           },
           reservedSystemNetmask: {
-            label: 'reserved.system.netmask',
+            label: 'label.reserved.system.netmask',
             validation: { required: true },
             desc: 'tooltip.reserved.system.netmask'
           },
           reservedSystemStartIp: {
-            label: 'start.reserved.system.IP',
+            label: 'label.start.reserved.system.IP',
             validation: { required: true }
           },
           reservedSystemEndIp: {
-            label: 'End Reserved system IP',
+            label: 'label.end.reserved.system.IP',
             validation: { required: false }
           }
         }
@@ -351,15 +351,15 @@
             label: 'label.private.interface'
           },
           numretries: {
-            label: 'number.of.retries',
+            label: 'label.numretries',
             defaultValue: '2'
           },          
           capacity: {
-            label: 'capacity',
+            label: 'label.capacity',
             validation: { required: false, number: true }
           },
           dedicated: {
-            label: 'dedicated',
+            label: 'label.dedicated',
             isBoolean: true,
             isChecked: false
           }
@@ -458,7 +458,7 @@
             }
           },
           name: {
-            label: 'cluster.name',
+            label: 'label.cluster.name',
             validation: { required: true }
           },
 
@@ -615,7 +615,7 @@
             isHidden: true
           },
           baremetalMAC: {
-            label: 'host.MAC',
+            label: 'label.host.MAC',
             validation: { required: true },
             isHidden: true
           },
@@ -623,12 +623,12 @@
 
           //input_group="OVM" starts here
           agentUsername: {
-            label: 'agent.username',
+            label: 'label.agent.username',
             validation: { required: false },
             isHidden: true
           },
           agentPassword: {
-            label: 'agent.password',
+            label: 'label.agent.password',
             validation: { required: true },
             isHidden: true,
             isPassword: true
@@ -889,7 +889,7 @@
             isHidden: true
           },
           lun: {
-            label: 'LUN.number',
+            label: 'label.LUN.number',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
