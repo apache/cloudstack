@@ -88,6 +88,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
+import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
@@ -1299,14 +1300,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     }
 
                     // cleanup inactive projects
-                    List<? extends Project> inactiveProjects = _projectDao.listByState(Project.State.Disabled);
+                    List<ProjectVO> inactiveProjects = _projectDao.listByState(Project.State.Disabled);
                     s_logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
-                    for (Project project : inactiveProjects) {
+                    for (ProjectVO project : inactiveProjects) {
                         try {
                             Account projectAccount = getAccount(project.getProjectAccountId());
                             if (projectAccount == null) {
                                 s_logger.debug("Removing inactive project id=" + project.getId());
-                                _projectMgr.deleteProject(project.getId());
+                                _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project);
                             } else {
                                 s_logger.debug("Can't remove disabled project " + project + " as it has non removed account id=" + project.getId());
                             }
