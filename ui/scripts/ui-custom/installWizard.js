@@ -27,7 +27,7 @@
       cloudStack.installWizard.copy[id]({
         response: {
           success: function(args) {
-            $elem.append(args.text);
+            $elem.append(_l(args.text));
           }
         }
       });
@@ -79,7 +79,7 @@
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html(subtitle);
         var $copy = getCopy(copyID, $('<p></p>'));
-        var $prev = elems.prevButton('Go back');
+        var $prev = elems.prevButton(_l('label.back'));
         var $continue = elems.nextButton('OK');
 
         $continue.click(function() {
@@ -121,9 +121,9 @@
 
         var $container = $('<div></div>').addClass(id);
         var $form = $('<div>').addClass('setup-form');
-        var $save = elems.nextButton('Continue', { type: 'submit' });
-        var $prev = elems.prevButton('Go back');
-        var $title = $('<div></div>').addClass('title').html(title);
+        var $save = elems.nextButton(_l('label.continue'), { type: 'submit' });
+        var $prev = elems.prevButton(_l('label.back'));
+        var $title = $('<div></div>').addClass('title').html(_l(title));
 
         // Generate form
         form = cloudStack.dialog.createForm({
@@ -190,8 +190,8 @@
       tooltip: function(title, content) {
         return $('<div>').addClass('tooltip-info').append(
           $('<div>').addClass('arrow'),
-          $('<div>').addClass('title').html(title),
-          $('<div>').addClass('content').append($('<p>').html(content))
+          $('<div>').addClass('title').html(_l(title)),
+          $('<div>').addClass('content').append($('<p>').html(_l(content)))
         );
       },
 
@@ -203,7 +203,7 @@
           .append(
             $.merge(
               $('<h2></h2>').html(_l('label.installWizard.title')),
-              $('<h3></h3>').html('This tour will aid you in setting up your CloudStack installation')
+              $('<h3></h3>').html(_l('label.installWizard.subtitle'))
             )
         );
       },
@@ -257,7 +257,7 @@
      * Show tooltip for focused form elements
      */
     var showTooltip = function($formContainer, sectionID) {
-      var $tooltip = elems.tooltip('Hints', '');
+      var $tooltip = elems.tooltip(_l('label.hints'), '');
 
       $formContainer.find('input[type=text]').focus(function() {
         var $input = $(this);
@@ -303,11 +303,11 @@
       
       intro: function(args) {
         var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
-        var $title = $('<div></div>').addClass('title').html('What is CloudStack&#8482?');
-        var $subtitle = $('<div></div>').addClass('subtitle').html('Introduction to CloudStack&#8482');
+        var $title = $('<div></div>').addClass('title').html(_l('label.what.is.cloudstack'));
+        var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.introduction.to.cloudstack'));
         var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
-        var $continue = elems.nextButton('Continue with basic installation');
-        var $advanced = elems.nextButton('I have used Cloudstack before, skip this guide').addClass('advanced-installation');
+        var $continue = elems.nextButton(_l('label.continue.basic.install'));
+        var $advanced = elems.nextButton(_l('label.skip.guide')).addClass('advanced-installation');
 
         $continue.click(function() {
           goTo('changeUser');
@@ -332,17 +332,25 @@
         var $form = $('<form></form>').appendTo($changeUser);
 
         // Fields
-        var $password = $('<input>').addClass('required').attr({ id: 'password', type: 'password', name: 'password' });
-        var $passwordConfirm = $('<input>').addClass('required').attr({ id: 'password-confirm', type: 'password', name: 'password-confirm' });
-        var $save = elems.nextButton('Save and continue', { type: 'submit' });
+        var $password = $('<input>').addClass('required').attr({
+          id: 'password',
+          type: 'password',
+          name: 'password'
+        });
+        var $passwordConfirm = $('<input>').addClass('required').attr({
+          id: 'password-confirm',
+          type: 'password',
+          name: 'password-confirm'
+        });
+        var $save = elems.nextButton(_l('label.save.and.continue'), { type: 'submit' });
 
         $form.append(
-          $('<div></div>').addClass('title').html('Please change your password.'),
+          $('<div></div>').addClass('title').html(_l('message.change.password')),
           $('<div></div>').addClass('field').append(
-            $('<label>New Password:</label>'), $password
+            $('<label>' + _l('label.new.password') + ':</label>'), $password
           ),
           $('<div></div>').addClass('field').append(
-            $('<label>Confirm Password:</label>'), $passwordConfirm
+            $('<label>' + _l('label.confirm.password') + ':</label>'), $passwordConfirm
           ),
           $save
         );
@@ -355,7 +363,7 @@
           },
           messages: {
             'password-confirm': {
-              equalTo: 'The password fields do not match.'
+              equalTo: _l('error.password.not.match')
             }
           }
         });
@@ -385,8 +393,8 @@
        * @param args
        */
       addZoneIntro: elems.stepIntro({
-        title: "Let's add a zone",
-        subtitle: 'What is a zone?',
+        title: _l('label.installWizard.addZoneIntro.title'),
+        subtitle: _l('label.installWizard.addZoneIntro.subtitle'),
         copyID: 'whatIsAZone',
         prevStepID: 'changeUser',
         nextStepID: 'addZone',
@@ -397,7 +405,7 @@
        * Add zone form
        */
       addZone: elems.step({
-        title: 'Add zone',
+        title: _l('label.installWizard.addZone.title'),
         id: 'add-zone',
         stateID: 'zone',
         tooltipID: 'addZone',
@@ -405,11 +413,11 @@
         prevStepID: 'addZoneIntro',
         nextStepID: 'addPodIntro',
         form: {
-          name: { label: 'Name', validation: { required: true } },
-          dns1: { label: 'DNS 1', validation: { required: true } },
-          dns2: { label: 'DNS 2' },
-          internaldns1: { label: 'Internal DNS 1', validation: { required: true } },
-          internaldns2: { label: 'Internal DNS 2' }
+          name: { label: 'label.name', validation: { required: true } },
+          dns1: { label: 'label.dns.1', validation: { required: true } },
+          dns2: { label: 'label.dns.2' },
+          internaldns1: { label: 'label.internal.dns.1', validation: { required: true } },
+          internaldns2: { label: 'label.internal.dns.2' }
         }
       }),
 
@@ -418,8 +426,8 @@
        * @param args
        */
       addPodIntro: elems.stepIntro({
-        title: "Let's add a pod.",
-        subtitle: 'What is a pod?',
+        title: _l('label.installWizard.addPodIntro.title'),
+        subtitle: _l('label.installWizard.addPodIntro.subtitle'),
         copyID: 'whatIsAPod',
         prevStepID: 'addZone',
         nextStepID: 'addPod',
@@ -431,7 +439,7 @@
        * @param args
        */
       addPod: elems.step({
-        title: 'Add pod',
+        title: _l('label.add.pod'),
         id: 'add-pod',
         stateID: 'pod',
         tooltipID: 'addPod',
@@ -439,11 +447,11 @@
         prevStepID: 'addPodIntro',
         nextStepID: 'configureGuestTraffic',
         form: {
-          name: { label: 'Name', validation: { required: true }},
-          reservedSystemGateway: { label: 'Gateway', validation: { required: true }},
-          reservedSystemNetmask: { label: 'Netmask', validation: { required: true }},
+          name: { label: 'label.name', validation: { required: true }},
+          reservedSystemGateway: { label: 'label.gateway', validation: { required: true }},
+          reservedSystemNetmask: { label: 'label.netmask', validation: { required: true }},
           ipRange: {
-            label: 'IP Range',
+            label: 'label.ip.range',
             range: ['reservedSystemStartIp', 'reservedSystemEndIp'],
             validation: { required: true }
           }
@@ -454,7 +462,7 @@
        * Add guest network form
        */
       configureGuestTraffic: elems.step({
-        title: 'Add guest network',
+        title: _l('label.add.guest.network'),
         id: 'add-guest-network',
         stateID: 'guestTraffic',
         tooltipID: 'configureGuestTraffic',
@@ -462,9 +470,9 @@
         prevStepID: 'addPod',
         nextStepID: 'addClusterIntro',
         form: {
-          guestGateway: { label: 'Gateway', validation: { required: true } },
-          guestNetmask: { label: 'Netmask', validation: { required: true } },
-          guestIPRange: { label: 'IP Range', range: ['guestStartIp', 'guestEndIp'], validation: { required: true } }
+          guestGateway: { label: 'label.gateway', validation: { required: true } },
+          guestNetmask: { label: 'label.netmask', validation: { required: true } },
+          guestIPRange: { label: 'label.ip.range', range: ['guestStartIp', 'guestEndIp'], validation: { required: true } }
         }
       }),
 
@@ -473,8 +481,8 @@
        * @param args
        */
       addClusterIntro: elems.stepIntro({
-        title: "Let's add a cluster.",
-        subtitle: 'What is a cluster?',
+        title: _l('label.installWizard.addClusterIntro.title'),
+        subtitle: _l('label.installWizard.addClusterIntro.subtitle'),
         copyID: 'whatIsACluster',
         prevStepID: 'configureGuestTraffic',
         nextStepID: 'addCluster',
@@ -486,7 +494,7 @@
        * @param args
        */
       addCluster: elems.step({
-        title: 'Add cluster',
+        title: _l('label.add.cluster'),
         id: 'add-cluster',
         stateID: 'cluster',
         tooltipID: 'addCluster',
@@ -495,7 +503,7 @@
         diagram: '.part.zone, .part.cluster',
         form: {
           hypervisor: {
-            label: 'Hypervisor',
+            label: 'label.hypervisor',
             select: function(args) {
               args.response.success({ data: [
                 { id: 'XenServer', description: 'XenServer' },
@@ -503,7 +511,7 @@
               ]});
             }
           },
-          name: { label: 'Name', validation: { required: true }}
+          name: { label: 'label.name', validation: { required: true }}
         }
       }),
 
@@ -512,8 +520,8 @@
        * @param args
        */
       addHostIntro: elems.stepIntro({
-        title: "Let's add a host.",
-        subtitle: 'What is a host?',
+        title: _l('label.installWizard.addHostIntro.title'),
+        subtitle: _l('label.installWizard.addHostIntro.subtitle'),
         copyID: 'whatIsAHost',
         prevStepID: 'addCluster',
         nextStepID: 'addHost',
@@ -525,7 +533,7 @@
        * @param args
        */
       addHost: elems.step({
-        title: 'Add host',
+        title: _l('label.add.host'),
         id: 'add-host',
         stateID: 'host',
         tooltipID: 'addHost',
@@ -534,17 +542,17 @@
         diagram: '.part.zone, .part.host',
         form: {
           hostname: {
-            label: 'Host name',
+            label: 'label.host.name',
             validation: { required: true }
           },
 
           username: {
-            label: 'User name',
+            label: 'label.username',
             validation: { required: true }
           },
 
           password: {
-            label: 'Password',
+            label: 'label.password',
             validation: { required: true },
             isPassword: true
           }
@@ -556,8 +564,8 @@
        * @param args
        */
       addPrimaryStorageIntro: elems.stepIntro({
-        title: "Let's add primary storage.",
-        subtitle: 'What is primary storage?',
+        title: _l('label.installWizard.addPrimaryStorageIntro.title'),
+        subtitle: _l('label.installWizard.addPrimaryStorageIntro.subtitle'),
         copyID: 'whatIsPrimaryStorage',
         prevStepID: 'addHost',
         nextStepID: 'addPrimaryStorage',
@@ -569,7 +577,7 @@
        * @param args
        */
       addPrimaryStorage: elems.step({
-        title: 'Add primary storage',
+        title: _l('label.add.primary.storage'),
         id: 'add-primary-storage',
         stateID: 'primaryStorage',
         tooltipID: 'addPrimaryStorage',
@@ -578,12 +586,12 @@
         diagram: '.part.zone, .part.primaryStorage',
         form: {
           name: {
-            label: 'Name',
+            label: 'label.name',
             validation: { required: true }
           },
 
           protocol: {
-            label: 'Protocol',
+            label: 'label.protocol',
             select: function(args) {
               args.response.success({
                 data: { id: 'nfs', description: 'NFS' }
@@ -592,12 +600,12 @@
           },
 
           server: {
-            label: 'Server',
+            label: 'label.server',
             validation: { required: true }
           },
 
           path: {
-            label: 'Path',
+            label: 'label.path',
             validation: { required: true }
           }
         }
@@ -608,8 +616,8 @@
        * @param args
        */
       addSecondaryStorageIntro: elems.stepIntro({
-        title: "Let's add secondary storage.",
-        subtitle: 'What is secondary storage?',
+        title: _l('label.installWizard.addSecondaryStorageIntro.title'),
+        subtitle: _l('label.installWizard.addSecondaryStorageIntro.subtitle'),
         copyID: 'whatIsSecondaryStorage',
         prevStepID: 'addPrimaryStorage',
         nextStepID: 'addSecondaryStorage',
@@ -621,7 +629,7 @@
        * @param args
        */
       addSecondaryStorage: elems.step({
-        title: 'Add secondary storage',
+        title: _l('label.add.secondary.storage'),
         id: 'add-secondary-storage',
         stateID: 'secondaryStorage',
         tooltipID: 'addSecondaryStorage',
@@ -630,11 +638,11 @@
         diagram: '.part.zone, .part.secondaryStorage',
         form: {
           nfsServer: {
-            label: 'NFS Server',
+            label: 'label.nfs.server',
             validation: { required: true }
           },
           path: {
-            label: 'Path',
+            label: 'label.path',
             validation: { required: true }
           }
         }
@@ -646,11 +654,11 @@
       launchInfo: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-          .html('Congratulations!.');
+          .html(_l('label.congratulations'));
         var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('Click the launch button.');
-        var $continue = elems.nextButton('Launch');
-        var $prev = elems.prevButton('Go back');
+          .html(_l('label.installWizard.click.launch'));
+        var $continue = elems.nextButton(_l('label.launch'));
+        var $prev = elems.prevButton(_l('label.back'));
 
         $continue.click(function() {
           goTo('launch');
@@ -676,10 +684,10 @@
       launchInfoError: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-              .html('Corrections saved.');
+              .html(_l('label.corrections.saved'));
         var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('Click the button to retry launch.');
-        var $continue = elems.nextButton('Launch');
+              .html(_l('message.installWizard.click.retry'));
+        var $continue = elems.nextButton(_l('label.launch'));
 
         $continue.click(function() {
           goTo('launch');
@@ -701,7 +709,7 @@
       launch: function(args) {
         var $intro = $('<div>').addClass('intro');
         var $title = $('<div>').addClass('title')
-              .html('Now building your cloud...');
+              .html(_l('message.installWizard.now.building'));
         var $subtitle = $('<div></div>').addClass('subtitle');
 
         showDiagram('.part.loading');
@@ -714,7 +722,7 @@
           startFn: launchStart,
           response: {
             message: function(msg) {
-              var $li = $('<li>').html(msg);
+              var $li = $('<li>').html(_l(msg));
 
               $subtitle.append($li);
               $li.siblings().addClass('complete');
@@ -728,11 +736,11 @@
 
               $subtitle.append(
                 $('<p>').html(
-                  'Something went wrong; you may go back and correct any errors:<br/>'
+                  _l('error.installWizard.message') + ':<br/>'
                     + message
                 ),
                 $('<div>').addClass('button').append(
-                  $('<span>').html('Go back')
+                  $('<span>').html(_l('label.back'))
                 ).click(function() {
                   goTo(stepID, null, null, {
                     nextStep: 'launchInfoError'
@@ -749,10 +757,10 @@
       complete: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-              .html('Cloud setup successful');
+              .html(_l('message.setup.successful'));
         var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('You may now continue.');
-        var $continue = elems.nextButton('Launch');
+              .html(_l('label.may.continue'));
+        var $continue = elems.nextButton(_l('label.launch'));
 
         showDiagram('');
 
