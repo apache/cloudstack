@@ -3,8 +3,8 @@
     var context = args.context;
     var $installWizard = $('<div>').addClass('install-wizard');
     var $container = args.$container;
+    var eulaHTML = args.eula;
     var state = {}; // Hold wizard form state
-
     var launchStart; // Holds last launch callback, in case of error
     var $launchState;
 
@@ -287,7 +287,7 @@
         var $intro = $('<div></div>').addClass('intro eula');
         var $title = $('<div></div>').addClass('title').html(_l('label.license.agreement'));
         var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.license.agreement.subtitle'));
-        var $copy = getCopy('eula', $('<div></div>').addClass('eula-copy'));
+        var $copy = $('<div></div>').addClass('eula-copy').html(eulaHTML);
         var $continue = elems.nextButton(_l('label.agree'));
 
         $continue.click(function() {
@@ -776,7 +776,9 @@
       }
     };
 
-    var initialStep = steps.eula().addClass('step');
+    var initialStep = eulaHTML ?
+          steps.eula().addClass('step') : steps.intro().addClass('step');
+
     showDiagram('');
     $('html body').addClass('install-wizard');
 

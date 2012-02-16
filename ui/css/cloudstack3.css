@@ -503,12 +503,13 @@ body.login {
   -webkit-box-shadow: 0px 4px 10px #B9B9B9;
   -o-box-shadow: 0px 4px 10px #B9B9B9;
   box-shadow: 0px 4px 10px #B9B9B9;
-  padding: 0;
+  padding: 5px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
+  overflow: auto;
 }
 
 .install-wizard .eula-copy p {

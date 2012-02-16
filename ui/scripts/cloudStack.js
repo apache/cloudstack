@@ -281,12 +281,27 @@
           response: {
             success: function(args) {
               if (args.doInstall && cloudStack.context.users[0].role == 'admin') {
-                cloudStack.uiCustom.installWizard({
-                  $container: $container,
-                  context: context,
-                  complete: function() {
-                    // Show cloudStack main UI
-                    $container.cloudStack(cloudStackArgs);
+                var initInstallWizard = function(eulaHTML) {
+                  cloudStack.uiCustom.installWizard({
+                    $container: $container,
+                    context: context,
+                    eula: eulaHTML,
+                    complete: function() {
+                      // Show cloudStack main UI
+                      $container.cloudStack(cloudStackArgs);
+                    }
+                  });
+                };
+
+                // EULA check
+                $.ajax({
+                  url: 'eula.html',
+                  dataType: 'html',
+                  success: function(html) {
+                    initInstallWizard(html);
+                  },
+                  error: function() {
+                    initInstallWizard(null);
                   }
                 });
               } else {
