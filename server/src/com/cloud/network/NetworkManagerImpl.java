@@ -4639,7 +4639,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 int existingEndVnet = Integer.parseInt(existingRange[1]);
 
                 // check if vnet is being extended
-                if (!(newStartVnet.intValue() > existingStartVnet && newEndVnet.intValue() < existingEndVnet)) {
+                if (newStartVnet.intValue() > existingStartVnet || newEndVnet.intValue() < existingEndVnet) {
                     throw new InvalidParameterValueException("Can't shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
                 }
 
