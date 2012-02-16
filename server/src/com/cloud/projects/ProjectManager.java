@@ -17,4 +17,6 @@ public interface ProjectManager extends ProjectService {
 
     boolean allowUserToCreateProject();
 
+    boolean deleteProject(Account caller, long callerUserId, ProjectVO project);
+
 }
