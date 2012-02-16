@@ -3043,7 +3043,7 @@
                 }
               },
               allocationstate: {
-                label: 'allocation.state',
+                label: 'label.allocation.state',
                 converter: function(str) {
                   // For localization
                   return str;
@@ -3301,7 +3301,7 @@
                     },
                     {
                       id: { label: 'label.id' },
-                      allocationstate: { label: 'allocation.state' },
+                      allocationstate: { label: 'label.allocation.state' },
                       dns1: { label: 'label.dns.1', isEditable: true },
                       dns2: { label: 'label.dns.2', isEditable: true },
                       internaldns1: { label: 'label.internal.dns.1', isEditable: true },
@@ -4291,7 +4291,7 @@
                 // For localization
                 return str;
               },
-              label: 'allocation.state'
+              label: 'label.allocation.state'
             }
           },
 
@@ -4542,7 +4542,7 @@
                         // For localization
                         return str;
                       },
-                      label: 'allocation.state'
+                      label: 'label.allocation.state'
                     }
                   }
                 ],
@@ -4591,7 +4591,7 @@
             name: { label: 'label.name' },
             podname: { label: 'label.pod' },
             hypervisortype: { label: 'label.hypervisor' },
-            //allocationstate: { label: 'allocation.state' },
+            //allocationstate: { label: 'label.allocation.state' },
             //managedstate: { label: 'Managed State' },
 						state: {
               converter: function(str) {
@@ -4969,7 +4969,7 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
-                    //allocationstate: { label: 'allocation.state' },
+                    //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
                   }
