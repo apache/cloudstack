@@ -3033,7 +3033,40 @@ dictionary = {
 >>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
 =======
 'LUN.number': '<fmt:message key="LUN.number" />',
+<<<<<<< HEAD
 'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />'
 >>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
+=======
+'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />',
+'tooltip.zone.name': '<fmt:message key="tooltip.zone.name" />',
+'tooltip.dns.1': '<fmt:message key="tooltip.dns.1" />',
+'tooltip.dns.2': '<fmt:message key="tooltip.dns.2" />',
+'tooltip.internal.dns.1': '<fmt:message key="tooltip.internal.dns.1" />',
+'tooltip.internal.dns.2': '<fmt:message key="tooltip.internal.dns.2" />',
+'tooltip.network.domain': '<fmt:message key="tooltip.network.domain" />',
+'tooltip.pod.name': '<fmt:message key="tooltip.pod.name" />',
+'tooltip.reserved.system.gateway': '<fmt:message key="tooltip.reserved.system.gateway" />',
+'tooltip.reserved.system.netmask': '<fmt:message key="tooltip.reserved.system.netmask" />',
+'creating.zone': '<fmt:message key="creating.zone" />',
+'creating.physical.networks': '<fmt:message key="creating.physical.networks" />',
+'configuring.physical.networks': '<fmt:message key="configuring.physical.networks" />',
+'adding.Netscaler.device': '<fmt:message key="adding.Netscaler.device" />',
+'creating.pod': '<fmt:message key="creating.pod" />',
+'configuring.public.traffic': '<fmt:message key="configuring.public.traffic" />',
+'configuring.storage.traffic': '<fmt:message key="configuring.storage.traffic" />',
+'configuring.guest.traffic': '<fmt:message key="configuring.guest.traffic" />',
+'creating.cluster': '<fmt:message key="creating.cluster" />',
+'adding.host': '<fmt:message key="adding.host" />',
+'creating.primary.storage': '<fmt:message key="creating.primary.storage" />',
+'creating.secondary.storage': '<fmt:message key="creating.secondary.storage" />',
+'Zone.creation.complete': '<fmt:message key="Zone.creation.complete" />',
+'message.enabling.zone': '<fmt:message key="message.enabling.zone" />',
+'error.something.went.wrong.please.correct.the.following': '<fmt:message key="error.something.went.wrong.please.correct.the.following" />',
+'error.could.not.enable.zone': '<fmt:message key="error.could.not.enable.zone" />',
+'message.zone.creation.complete.would.you.like.to.enable.this.zone': '<fmt:message key="message.zone.creation.complete.would.you.like.to.enable.this.zone" />',
+'message.please.add.at.lease.one.traffic.range': '<fmt:message key="message.please.add.at.lease.one.traffic.range" />',
+'message.you.must.have.at.least.one.physical.network': '<fmt:message key="message.you.must.have.at.least.one.physical.network" />',
+'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />'
+>>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
 };
 </script>

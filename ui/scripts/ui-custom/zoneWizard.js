@@ -679,8 +679,30 @@
       var $container = $physicalNetworkItem.closest('.setup-physical-network .content.input-area form');
       var $trafficTypes = $physicalNetworkItem.find('li.traffic-type-draggable');
 
+<<<<<<< HEAD
       $trafficTypes.each(function() {
         var trafficTypeID = $(this).attr('traffic-type-id');
+=======
+      if (!$item.siblings().size()) {
+        cloudStack.dialog.notice({
+          message: dictionary['message.you.must.have.at.least.one.physical.network']
+        });
+      } else if ($item.find('input[type=radio]:checked').size()) {
+        cloudStack.dialog.notice({
+          message: dictionary['message.please.select.a.different.public.and.management.network.before.removing']
+        });
+      } else {
+        // Put any traffic type symbols back in original container
+        $item.find('li.traffic-type-draggable').each(function() {
+          var $draggable = $(this);
+          var $originalContainer = $('.traffic-types-drag-area:visible > ul > li')
+            .filter(function() {
+              return $(this).hasClass($draggable.attr('traffic-type-id'));
+            });
+
+          $draggable.appendTo($item.prev());
+        });
+>>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
 
         physicalNetwork.assignTrafficType(
           trafficTypeID,
