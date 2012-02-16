@@ -360,8 +360,10 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				        + "in which there are " + hostOsInCluster + " hosts added");
 			}
 		}
-
-		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.KVM, null, null);
+		
+		_hostDao.loadDetails(host);
+		
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.KVM, host.getDetails(), null);
     }
 
 	@Override
