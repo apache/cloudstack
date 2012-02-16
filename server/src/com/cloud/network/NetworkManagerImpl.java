@@ -6040,13 +6040,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services) {
-        long physicalNtwkId = findPhysicalNetworkId(zoneId, tags, null);
+    public boolean areServicesEnabledInZone(long zoneId, NetworkOffering offering, List<Service> services) {
+        long physicalNtwkId = findPhysicalNetworkId(zoneId, offering.getTags(), offering.getTrafficType());
         boolean result = true;
         List<String> checkedProvider = new ArrayList<String>();
         for (Service service : services) {
             // get all the providers, and check if each provider is enabled
-            List<String> providerNames = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(networkOfferingId, service);
+            List<String> providerNames = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), service);
             for (String providerName : providerNames) {
                 if (!checkedProvider.contains(providerName)) {
                     result = result && isProviderEnabledInPhysicalNetwork(physicalNtwkId, providerName);

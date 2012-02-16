@@ -3525,7 +3525,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         checkForProviders = _networkMgr.listNetworkOfferingServices(offering.getId());
                     }
 
-                    addOffering = addOffering && _networkMgr.areServicesEnabledInZone(zoneId, offering.getId(), offering.getTags(), checkForProviders);
+                    addOffering = addOffering && _networkMgr.areServicesEnabledInZone(zoneId, offering, checkForProviders);
                 }
 
                 if (sourceNatSupported != null) {

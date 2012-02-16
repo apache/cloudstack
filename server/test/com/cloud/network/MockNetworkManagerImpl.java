@@ -739,7 +739,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean areServicesEnabledInZone(long zoneId, long networkOfferingId, String tags, List<Service> services) {
+    public boolean areServicesEnabledInZone(long zoneId, NetworkOffering offering, List<Service> services) {
         // TODO Auto-generated method stub
         return false;
     }
