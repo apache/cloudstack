@@ -431,6 +431,7 @@
 <<<<<<< HEAD
             label: 'label.internal.dns.2',
             desc: 'message.tooltip.internal.dns.2'
+<<<<<<< HEAD
           },
           hypervisor: {
             label: 'label.hypervisor',
@@ -465,6 +466,8 @@
               });
 <<<<<<< HEAD
             }
+=======
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
           },
           networkOfferingId: {
             label: 'label.network.offering',
@@ -1440,8 +1443,12 @@
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
 =======
         addZone: function() {				
+<<<<<<< HEAD
           message(dictionary['creating.zone']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.zone']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
@@ -1500,6 +1507,7 @@
         addPhysicalNetworks: function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.creating.physical.networks']);
 =======
           message('Creating physical network(s)');
@@ -1507,6 +1515,9 @@
 =======
           message(dictionary['creating.physical.networks']);
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.physical.networks']);
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var returnedPhysicalNetworks = [];
 
@@ -1975,6 +1986,7 @@
         //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
         configurePhysicalNetwork: function(args) {
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.configuring.physical.networks']); 
 
           if(args.data.zone.networkType == "Basic") {
@@ -2393,6 +2405,9 @@
 =======
           message(dictionary['configuring.physical.networks']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.configuring.physical.networks']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           if(args.data.zone.networkType == "Basic") {
             $.ajax({
@@ -2821,11 +2836,15 @@
 
         addNetscalerDevice: function(args) {
 <<<<<<< HEAD
+<<<<<<< HEAD
           message('Adding Netscaler device');
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
 =======
           message(dictionary['adding.Netscaler.device']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.adding.Netscaler.device']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array1 = [];
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -3053,11 +3072,15 @@
 
         addPod: function(args) {
 <<<<<<< HEAD
+<<<<<<< HEAD
           message('Creating pod');
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
 =======
           message(dictionary['creating.pod']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.pod']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array3 = [];
           array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -3094,6 +3117,7 @@
 <<<<<<< HEAD
 					 
 <<<<<<< HEAD
+<<<<<<< HEAD
             message(dictionary['message.configuring.public.traffic']); 
 =======
             message('Configuring public traffic');
@@ -3101,6 +3125,9 @@
 =======
             message(dictionary['configuring.public.traffic']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+            message(dictionary['message.configuring.public.traffic']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
             var stopNow = false;
 
@@ -3206,11 +3233,15 @@
           }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
           message('Configuring storage traffic');
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
 =======
           message(dictionary['configuring.storage.traffic']);  
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.configuring.storage.traffic']);  
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
           
           var storageIPRanges = args.data.storageTraffic;
           var tasks = [];
@@ -3291,6 +3322,7 @@
         configureGuestTraffic: function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.configuring.guest.traffic']);  
 =======
           message('Configuring guest traffic');
@@ -3298,6 +3330,9 @@
 =======
           message(dictionary['configuring.guest.traffic']);  
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.configuring.guest.traffic']);  
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
             var array1 = [];
@@ -3406,6 +3441,7 @@
         addCluster: function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.creating.cluster']);
 					
           // Have cluster use zone's hypervisor
@@ -3417,6 +3453,9 @@
 =======
           message(dictionary['creating.cluster']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.cluster']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -3486,6 +3525,7 @@
         addHost: function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.adding.host']); 
 =======
           message('Adding host');
@@ -3493,6 +3533,9 @@
 =======
           message(dictionary['adding.host']); 
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.adding.host']); 
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -3602,6 +3645,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.creating.primary.storage']);
 =======
           message('Creating primary storage');
@@ -3609,6 +3653,9 @@
 =======
           message(dictionary['creating.primary.storage']);
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.primary.storage']);
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -3704,6 +3751,7 @@
         addSecondaryStorage: function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           message(dictionary['message.creating.secondary.storage']);
 =======
           message('Creating secondary storage');
@@ -3711,6 +3759,9 @@
 =======
           message(dictionary['creating.secondary.storage']);
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+          message(dictionary['message.creating.secondary.storage']);
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
 
           var nfs_server = args.data.secondaryStorage.nfsServer;
           var path = args.data.secondaryStorage.path;
@@ -3737,6 +3788,7 @@
       var complete = function(args) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         message(dictionary['message.Zone.creation.complete']);
 =======
         message('Zone creation complete!');
@@ -3744,6 +3796,9 @@
 =======
         message(dictionary['Zone.creation.complete']);
 >>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
+=======
+        message(dictionary['message.Zone.creation.complete']);
+>>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
         success(args);
       };
 
