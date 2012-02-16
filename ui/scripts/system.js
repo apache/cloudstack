@@ -237,17 +237,7 @@
 							id: 'netscaler',
 							name: 'NetScaler',
 							state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
-						},
-						{
-							id: 'srx',
-							name: 'SRX',
-							state: nspMap.srx ? nspMap.srx.state : 'Disabled'
-						},
-						{
-							id: 'f5',
-							name: 'F5',
-							state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
-						},
+						},						
 						{
 							id: 'virtualRouter',
 							name: 'Virtual Router',
@@ -256,11 +246,28 @@
 					];
 					
 					if(selectedZoneObj.networktype == "Basic") {
-					  networkProviderData.push({
+					  networkProviderData.push(
+						  {
                 id: 'securityGroups',
                 name: 'Security Groups',
                 state: nspMap.securityGroups ? nspMap.securityGroups.state : 'Disabled'
               }
+						);
+					}
+					else if(selectedZoneObj.networktype == "Advanced"){					  
+						networkProviderData.push(
+						  {
+								id: 'f5',
+								name: 'F5',
+								state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
+							}						
+						);					
+					  networkProviderData.push(
+						  {
+								id: 'srx',
+								name: 'SRX',
+								state: nspMap.srx ? nspMap.srx.state : 'Disabled'
+							}		
 						);
 					}
 
