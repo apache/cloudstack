@@ -52,6 +52,7 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("Asianux 3(64-bit)", VirtualMachineGuestOsIdentifier.asianux3_64Guest);
 		
 		s_mapper.put("Debian GNU/Linux 5(64-bit)", VirtualMachineGuestOsIdentifier.debian5_64Guest);
+        s_mapper.put("Debian GNU/Linux 5.0 (32-bit)", VirtualMachineGuestOsIdentifier.debian5Guest);
 		s_mapper.put("Debian GNU/Linux 4(32-bit)", VirtualMachineGuestOsIdentifier.debian4Guest);
 		s_mapper.put("Debian GNU/Linux 4(64-bit)", VirtualMachineGuestOsIdentifier.debian4_64Guest);
 		
