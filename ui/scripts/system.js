@@ -25,22 +25,22 @@
     });
 
 		if(trafficType.xennetworklabel == null || trafficType.xennetworklabel == 0)
-		  trafficType.xennetworklabel = dictionary['network.label.display.for.blank.value'];
+		  trafficType.xennetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		if(trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
-		  trafficType.kvmnetworklabel = dictionary['network.label.display.for.blank.value'];
+		  trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
-		  trafficType.vmwarenetworklabel = dictionary['network.label.display.for.blank.value'];
+		  trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		
     return trafficType;
   };
 
   var updateTrafficLabels = function(trafficType, labels, complete) {
     var array1 = [];
-		if(labels.xennetworklabel != dictionary['network.label.display.for.blank.value'])
+		if(labels.xennetworklabel != dictionary['label.network.label.display.for.blank.value'])
 		  array1.push("&xennetworklabel=" + labels.xennetworklabel);
-		if(labels.kvmnetworklabel != dictionary['network.label.display.for.blank.value'])
+		if(labels.kvmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
 		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
-		if(labels.vmwarenetworklabel != dictionary['network.label.display.for.blank.value'])
+		if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
 		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
 				
 		$.ajax({
@@ -308,9 +308,9 @@
                     broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
+                    xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -346,8 +346,8 @@
                       'gateway': { edit: true, label: 'label.gateway' },
                       'netmask': { edit: true, label: 'label.netmask' },
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
-                      'startip': { edit: true, label: 'start.IP' },
-                      'endip': { edit: true, label: 'end.IP' },
+                      'startip': { edit: true, label: 'label.start.IP' },
+                      'endip': { edit: true, label: 'label.end.IP' },
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -377,7 +377,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'IP.range.is.added',
+                                label: 'label.add.ip.range',
                                 poll: function(args) {
                                   args.complete();
                                 }
@@ -393,7 +393,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'remove.IP.range',
+                        label: 'label.remove.ip.range',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
@@ -402,7 +402,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'remove.IP.range',
+                                  label: 'label.remove.ip.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -456,9 +456,9 @@
                     broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
+                    xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -508,8 +508,8 @@
 											},										
                       'netmask': { edit: true, label: 'label.netmask' },
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
-                      'startip': { edit: true, label: 'start.IP' },
-                      'endip': { edit: true, label: 'end.IP' },
+                      'startip': { edit: true, label: 'label.start.IP' },
+                      'endip': { edit: true, label: 'label.end.IP' },
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -536,7 +536,7 @@
 																jobId: json.createstoragenetworkiprangeresponse.jobid
 															},
 															notification: {
-																label: 'IP.range.is.added',
+																label: 'label.add.ip.range',
 																poll: pollAsyncJobResult
 															}
 														});
@@ -559,7 +559,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'remove.IP.range',
+                                  label: 'label.remove.ip.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -613,9 +613,9 @@
                     broadcastdomaintype: { label: 'label.broadcast.domain.type' }
                   },
                   {
-                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
+                    xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -643,8 +643,8 @@
 										name: { label: 'label.pod' }, //pod name
 										gateway: { label: 'label.gateway' },  //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
 										netmask: { label: 'label.netmask' },  //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
-										startip: { label: 'start.IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
-										endip: { label: 'end.IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
+										startip: { label: 'label.start.IP' }, //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
+										endip: { label: 'label.end.IP' }      //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
 									},
 									dataProvider: function(args) {	                    
 										var array1 = [];  
@@ -743,9 +743,9 @@
                   },
                   {
                     tags: { label: 'Tags', isEditable: true },
-                    xennetworklabel: { label: 'Xen.traffic.label', isEditable: true },
-                    kvmnetworklabel: { label: 'KVM.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'VMware.traffic.label', isEditable: true }
+                    xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
+                    kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -810,8 +810,8 @@
 											},
                       'gateway': { edit: true, label: 'label.gateway' },
                       'netmask': { edit: true, label: 'label.netmask' },                     
-                      'startip': { edit: true, label: 'start.IP' },
-                      'endip': { edit: true, label: 'end.IP' },
+                      'startip': { edit: true, label: 'label.start.IP' },
+                      'endip': { edit: true, label: 'label.end.IP' },
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -835,7 +835,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'IP.range.is.added',
+                                label: 'label.add.ip.range',
                                 poll: function(args) {
                                   args.complete();
                                 }
@@ -851,7 +851,7 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'remove.IP.range',
+                        label: 'label.remove.ip.range',
                         action: function(args) {
                           $.ajax({
                             url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),
@@ -860,7 +860,7 @@
                             success: function(json) {
                               args.response.success({
                                 notification: {
-                                  label: 'remove.IP.range',
+                                  label: 'label.remove.ip.range',
                                   poll: function(args) {
                                     args.complete();
                                   }
@@ -4543,8 +4543,8 @@
                   {
                     id: { label: 'label.id' },
                     netmask: { label: 'label.netmask', isEditable: true },
-                    startip: { label: 'start.IP', isEditable: true },
-                    endip: { label: 'end.IP', isEditable: true },
+                    startip: { label: 'label.start.IP', isEditable: true },
+                    endip: { label: 'label.end.IP', isEditable: true },
                     gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
@@ -4572,8 +4572,8 @@
                     id: { label: 'label.id' },
                     gateway: { label: 'label.gateway' },
                     netmask: { label: 'label.netmask' },
-                    startip: { label: 'start.IP' },
-                    endip: { label: 'end.IP' }
+                    startip: { label: 'label.start.IP' },
+                    endip: { label: 'label.end.IP' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -6402,8 +6402,8 @@
         listView: {
           section: 'guest-IP-range',
           fields: {            
-            startip: { label: 'start.IP' },
-            endip: { label: 'end.IP' }
+            startip: { label: 'label.start.IP' },
+            endip: { label: 'label.end.IP' }
           },
 
           dataProvider: function(args) {				
@@ -6460,13 +6460,13 @@
             },
 
             'delete': {
-              label: 'remove.IP.range' , 
+              label: 'label.remove.ip.range' , 
               messages: {
                 confirm: function(args) {
                   return 'confirm.remove.IP.range';
                 },                
                 notification: function(args) {
-                  return 'remove.IP.range';
+                  return 'label.remove.ip.range';
                 }
               },
               action: function(args) {							
