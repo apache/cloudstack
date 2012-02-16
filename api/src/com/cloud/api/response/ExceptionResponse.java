@@ -17,10 +17,14 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ExceptionResponse extends BaseResponse {
+	@SerializedName("uuid") @Param(description="uuid associated with this error")
+	private IdentityProxy id;
+	
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
 
@@ -42,4 +46,15 @@ public class ExceptionResponse extends BaseResponse {
     public void setErrorText(String errorText) {
         this.errorText = errorText;
     }
+    
+    public void setProxyObject(String table_name, Long id) {
+		this.id = new IdentityProxy();
+		this.id.setTableName(table_name);
+		this.id.setValue(id);
+		return;
+	}
+	
+	public IdentityProxy getProxyObject() {
+		return id;
+	}
 }

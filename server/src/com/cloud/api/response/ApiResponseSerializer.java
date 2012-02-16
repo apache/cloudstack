@@ -78,7 +78,7 @@ public class ApiResponseSerializer {
                 if ((responses != null) && !responses.isEmpty()) {
 
                     Integer count = ((ListResponse) result).getCount();
-                    String jsonStr = gson.toJson(responses.get(0));
+                    String jsonStr = gson.toJson(responses.get(0));                    
                     jsonStr = unescape(jsonStr);
 
                     if (count != null && count != 0) {
@@ -96,9 +96,10 @@ public class ApiResponseSerializer {
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"" + ((SuccessResponse) result).getSuccess() + "\"} ");
             } else if (result instanceof ExceptionResponse) {
-            	String jsonErrorText =gson.toJson(((ExceptionResponse) result).getErrorText());
-            	jsonErrorText = unescape(jsonErrorText);
-                sb.append("{\"errorcode\" : " + ((ExceptionResponse) result).getErrorCode() + ", \"errortext\" : " + jsonErrorText + "} ");
+            	// Convert into json the whole exception object and not just the error text.
+            	String jsonErrorText = gson.toJson((ExceptionResponse) result);
+            	jsonErrorText = unescape(jsonErrorText);            
+                sb.append(jsonErrorText);
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
