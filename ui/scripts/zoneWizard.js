@@ -175,23 +175,23 @@
         fields: {
           name: {
             label: 'label.name', validation: { required: true },
-            desc: 'tooltip.zone.name'
+            desc: 'message.tooltip.zone.name'
           },
           dns1: {
             label: 'label.dns.1', validation: { required: true },
-            desc: 'tooltip.dns.1'
+            desc: 'message.tooltip.dns.1'
           },
           dns2: {
             label: 'label.dns.2',
-            desc: 'tooltip.dns.2'
+            desc: 'message.tooltip.dns.2'
           },
           internaldns1: {
             label: 'label.internal.dns.1', validation: { required: true },
-            desc: 'tooltip.internal.dns.1'
+            desc: 'message.tooltip.internal.dns.1'
           },
           internaldns2: {
             label: 'label.internal.dns.2',
-            desc: 'tooltip.internal.dns.2'
+            desc: 'message.tooltip.internal.dns.2'
           },
           networkOfferingId: {
             label: 'label.network.offering',
@@ -254,7 +254,7 @@
           },
           networkdomain: {
             label: 'label.network.domain',
-            desc: 'tooltip.network.domain'
+            desc: 'message.tooltip.network.domain'
           },
           guestcidraddress: {
             label: 'label.guest.cidr',
@@ -299,17 +299,17 @@
           name: {
             label: 'label.pod.name',
             validation: { required: true },
-            desc: 'tooltip.pod.name'
+            desc: 'message.tooltip.pod.name'
           },
           reservedSystemGateway: {
             label: 'label.reserved.system.gateway',
             validation: { required: true },
-            desc: 'tooltip.reserved.system.gateway'
+            desc: 'message.tooltip.reserved.system.gateway'
           },
           reservedSystemNetmask: {
             label: 'label.reserved.system.netmask',
             validation: { required: true },
-            desc: 'tooltip.reserved.system.netmask'
+            desc: 'message.tooltip.reserved.system.netmask'
           },
           reservedSystemStartIp: {
             label: 'label.start.reserved.system.IP',
@@ -947,7 +947,7 @@
 
       var stepFns = {
         addZone: function() {				
-          message(dictionary['creating.zone']); 
+          message(dictionary['message.creating.zone']); 
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
@@ -996,7 +996,7 @@
         },
 
         addPhysicalNetworks: function(args) {
-          message(dictionary['creating.physical.networks']);
+          message(dictionary['message.creating.physical.networks']);
 
           var returnedPhysicalNetworks = [];
 
@@ -1279,7 +1279,7 @@
 
         //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
         configurePhysicalNetwork: function(args) {
-          message(dictionary['configuring.physical.networks']); 
+          message(dictionary['message.configuring.physical.networks']); 
 
           if(args.data.zone.networkType == "Basic") {
             $.ajax({
@@ -1707,7 +1707,7 @@
         },
 
         addNetscalerDevice: function(args) {
-          message(dictionary['adding.Netscaler.device']); 
+          message(dictionary['message.adding.Netscaler.device']); 
 
           var array1 = [];
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -1888,7 +1888,7 @@
         },
 
         addPod: function(args) {
-          message(dictionary['creating.pod']); 
+          message(dictionary['message.creating.pod']); 
 
           var array3 = [];
           array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -1923,7 +1923,7 @@
           if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
            ||(args.data.zone.networkType == "Advanced")) {
 					 
-            message(dictionary['configuring.public.traffic']); 
+            message(dictionary['message.configuring.public.traffic']); 
 
             var stopNow = false;
 
@@ -2009,7 +2009,7 @@
             return complete({});
           }
 
-          message(dictionary['configuring.storage.traffic']);  
+          message(dictionary['message.configuring.storage.traffic']);  
           
           var storageIPRanges = args.data.storageTraffic;
           var tasks = [];
@@ -2088,7 +2088,7 @@
         },
 
         configureGuestTraffic: function(args) {
-          message(dictionary['configuring.guest.traffic']);  
+          message(dictionary['message.configuring.guest.traffic']);  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
             var array1 = [];
@@ -2191,7 +2191,7 @@
         },
 
         addCluster: function(args) {
-          message(dictionary['creating.cluster']); 
+          message(dictionary['message.creating.cluster']); 
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -2255,7 +2255,7 @@
         },
 
         addHost: function(args) {
-          message(dictionary['adding.host']); 
+          message(dictionary['message.adding.host']); 
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2328,7 +2328,7 @@
             return;
           }
 
-          message(dictionary['creating.primary.storage']);
+          message(dictionary['message.creating.primary.storage']);
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2418,7 +2418,7 @@
         },
 
         addSecondaryStorage: function(args) {
-          message(dictionary['creating.secondary.storage']);
+          message(dictionary['message.creating.secondary.storage']);
 
           var nfs_server = args.data.secondaryStorage.nfsServer;
           var path = args.data.secondaryStorage.path;
@@ -2443,7 +2443,7 @@
       };
 
       var complete = function(args) {
-        message(dictionary['Zone.creation.complete']);
+        message(dictionary['message.Zone.creation.complete']);
         success(args);
       };
 
