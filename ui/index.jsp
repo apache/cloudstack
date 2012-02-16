@@ -492,6 +492,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
             <div class="info-desc">
               When adding an advanced zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the management server. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined.<br/><br/><strong>Drag and drop one or more traffic types</strong> onto each physical network.
@@ -565,6 +566,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">Please specify Netscaler info</div>
@@ -581,6 +583,7 @@
               <li class="public-network active">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
@@ -597,6 +600,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod active">Pod</li>
               <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
@@ -617,6 +621,7 @@
               <li class="public-network">Public traffic</li>
               <li class="pod">Pod</li>
               <li class="guest-traffic active">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
             </ul>
 
             <div class="info-desc">
@@ -625,6 +630,23 @@
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
+          </div>
+
+          <!-- Step 3.5: Configure storage traffic -->
+          <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
+               zone-wizard-step-id="configureStorageTraffic">
+            <ul class="subnav">
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="storage-traffic active">Storage Traffic</li>
+            </ul>
+
+            <div class="info-desc">
+              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
+            </div>
+            <div ui-custom="storageTrafficIPRange"></div>
           </div>
 
           <!-- Step 4.1: Add cluster -->
