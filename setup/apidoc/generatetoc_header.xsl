@@ -8,7 +8,7 @@ version="1.0">
 <link rel= "stylesheet" href="includes/main.css" type="text/css" />
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
-<title>CloudStack | The Power Behind Your Cloud</title>
+<title>CloudStack API Reference</title>
 </head>
 
 <body>
@@ -34,7 +34,7 @@ version="1.0">
                 <div class="inside_apileftpanel">
                 	<div class="inside_contentpanel" style="width:930px;">
               		  	<!-- Modify this line for the release version -->
-                    	<h1>CloudStack API Documentation (v2.2.13 - 2.2.14)</h1>
+                    	<h1>CloudStack API Documentation (v2.2.14)</h1>
                         <div class="apiannouncement_box">
                         	<div class="apiannouncement_contentarea">
                                 <h3>Using the CloudStack API</h3>

@@ -8,7 +8,7 @@ version="1.0">
 <link rel= "stylesheet" href="../includes/main.css" type="text/css" />
 <link rel="shortcut icon" href="../favicon.ico" type="image/x-icon" />
 
-<title>CloudStack | The Power Behind Your Cloud</title>
+<title>CloudStack API Reference</title>
 </head>
 
 <body>
@@ -39,7 +39,7 @@ version="1.0">
 				<xsl:for-each select="command/command">
                            		<!-- Modify this line for the release version -->
                            		<span>
-									CloudStack v2.2.13 - 2.2.14 User API Reference
+									CloudStack v2.2.14 User API Reference
 								</span>
 								<p></p>
                                 <h1><xsl:value-of select="name"/></h1>
