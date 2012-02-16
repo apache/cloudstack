@@ -1254,6 +1254,8 @@ public class VirtualMachineMO extends BaseMO {
 					        String result = command.execute();
 					        if(result == null) {
 					            success = true;
+					        } else {
+					            s_logger.error("failed to execute command: " + command.toString());
 					        }
 						}
 					}
@@ -1270,6 +1272,7 @@ public class VirtualMachineMO extends BaseMO {
 					
 					if(!success) {
 					    new File(exportDir + File.separator + exportName + ".ova").delete();
+					    throw new Exception("Unable to finish the whole process to package as a OVA file");
 					} 
 				}
 			}
