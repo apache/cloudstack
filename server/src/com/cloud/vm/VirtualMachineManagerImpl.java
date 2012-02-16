@@ -1802,23 +1802,31 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             return map;
         }
         Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
-
+        boolean is_alien_vm = true;
+        long alien_vm_count = -1;
         for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
+        	is_alien_vm = true;
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
                 VMInstanceVO vm = vmGuru.findByName(name);
                 if (vm != null) {
                     map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second(), entry.getValue().first()));
+                    is_alien_vm = false;
                     break;
                 }
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
                     map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second(), entry.getValue().first()));
+                    is_alien_vm = false;
                     break;
                 }
             }
+            // alien VMs
+            if (is_alien_vm){
+            	map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, null, entry.getValue().second(), entry.getValue().first()));
+            	s_logger.warn("Found an alien VM " + entry.getKey());
+            }
         }
-
         return map;
     }
 
