@@ -368,7 +368,7 @@
 						},						
 						{
 							id: 'virtualRouter',
-							name: 'virtual.router',
+							name: 'label.virtual.router',
 							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
 						}
 					];
@@ -423,7 +423,10 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
+<<<<<<< HEAD
 
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 }
               }
             },
@@ -465,7 +468,10 @@
               },
 
               ipAddresses: {
+<<<<<<< HEAD
 
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -638,7 +644,10 @@
               },
 
               ipAddresses: {
+<<<<<<< HEAD
 
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -793,8 +802,12 @@
                 }
               },
               ipAddresses: { //read-only listView (no actions) filled with pod info (not VlanIpRange info)
+<<<<<<< HEAD
 
                 title: 'label.ip.ranges',
+=======
+                title: 'label.ip.ranges',               
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 								listView: {
 									fields: {
 										name: { label: 'label.pod' }, //pod name
@@ -891,7 +904,10 @@
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
                     startVlan: {
+<<<<<<< HEAD
 
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                       label: 'label.start.vlan',
                       isEditable: true
                     },
@@ -899,8 +915,12 @@
                       label: 'label.end.vlan',
                       isEditable: true
                     },
+<<<<<<< HEAD
 										tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
+=======
+                    broadcastdomainrange: { label: 'label.broadcast.domain.range' }                    
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   },
 <<<<<<< HEAD
                   { //updateTrafficType API
@@ -1206,7 +1226,10 @@
                               args.response.success({data: items});
                             }
                           },
+<<<<<<< HEAD
 
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                           subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
                           account: { label: 'label.account' },
 
@@ -1499,11 +1522,19 @@
 
                   detailView: {
                     name: 'Guest network details',
+<<<<<<< HEAD
                     viewAll: {
 										  path: '_zone.guestIpRanges',
 											label: 'label.ip.ranges',
                       preFilter: function(args) {
 												if(selectedGuestNetworkObj.type == "Isolated") {
+=======
+                    viewAll: { 
+										  path: '_zone.guestIpRanges', 
+											label: 'label.ip.ranges',
+                      preFilter: function(args) {                        
+												if(selectedGuestNetworkObj.type == "Isolated") {												  
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 													var services = selectedGuestNetworkObj.service;
 													if(services != null) {
 														for(var i=0; i < services.length; i++) {
@@ -1791,8 +1822,13 @@
                             },
 
 														domain: { label: 'label.domain' },
+<<<<<<< HEAD
                             subdomainaccess: {
 														  label: 'label.subdomain.access',
+=======
+                            subdomainaccess: { 
+														  label: 'label.subdomain.access', 
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 															converter: function(data) {
 																return data ? 'Yes' : 'No';
 															}
@@ -1954,9 +1990,25 @@
                     id: { label: 'label.id' },
                     state: { label: 'label.state' },
                     physicalnetworkid: { label: 'label.physical.network.ID' },
+<<<<<<< HEAD
                     destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
 										supportedServices: { label: 'label.supported.services' }
 
+=======
+                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' }
+                  },
+                  {
+                    Vpn: { label: 'VPN' },
+                    Dhcp: { label: 'label.dhcp' },
+                    Dns: { label: 'DNS' },
+                    Gateway: { label: 'label.gateway' },
+                    Firewall: { label: 'Firewall' },
+                    Lb: { label: 'Load Balancer' },
+                    UserData: { label: 'UserData' },
+                    SourceNat: { label: 'Source NAT' },
+                    StaticNat: { label: 'Static NAT' },
+                    PortForwarding: { label: 'Port Forwarding' }
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   }
                 ],
                 dataProvider: function(args) { 					 
@@ -2127,9 +2179,15 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
+<<<<<<< HEAD
                       },
 
 											'remove': {
+=======
+                      },      
+											
+											'destroy': {
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 												label: 'label.destroy.router',
 												messages: {
 													confirm: function(args) {
@@ -2161,7 +2219,11 @@
 
                       /*
                       changeService: {
+<<<<<<< HEAD
                         label: 'label.change.service.offering',
+=======
+                        label: 'label.change.service.offering',                       
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                         createForm: {
                           title: 'label.change.service.offering',
                           desc: '',
@@ -3164,7 +3226,13 @@
                     name: { label: 'label.name' }
                   },
                   {
+<<<<<<< HEAD
                     state: { label: 'label.state' }
+=======
+                    state: { label: 'label.state' },
+                    id: { label: 'label.id' },
+                    physicalnetworkid: { label: 'label.physical.network.ID' }
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   }
                 ],
                 dataProvider: function(args) {
@@ -5001,8 +5069,68 @@
                               }
                             });
                           },
+<<<<<<< HEAD
                           getActionFilter: function() {
                             return systemvmActionfilter;
+=======
+                          notification: {
+                            poll: pollAsyncJobResult
+                          }
+                        },
+
+                        viewConsole: {
+                          label: 'label.view.console',  
+                          action: {
+                            externalLink: {
+                              url: function(args) {
+                                return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
+                              },
+                              title: function(args) {						
+																return args.context.systemVMs[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+															},
+                              width: 820,
+                              height: 640
+                            }
+                          }
+                        }
+                      },
+                      tabs: {
+                        details: {
+                          title: 'label.details',
+                          fields: [
+                            {
+                              name: { label: 'label.name' }
+                            },
+                            {
+                              id: { label: 'label.id' },
+                              state: { label: 'label.state' },
+                              systemvmtype: {
+                                label: 'label.type',
+                                converter: function(args) {
+                                  if(args == "consoleproxy")
+                                    return "Console Proxy VM";
+                                  else if(args == "secondarystoragevm")
+                                    return "Secondary Storage VM";
+																	else
+																	  return args;
+                                }
+                              },
+                              zonename: { label: 'label.zone' },
+                              publicip: { label: 'label.public.ip' },
+                              privateip: { label: 'label.private.ip' },
+                              linklocalip: { label: 'label.linklocal.ip' },
+                              hostname: { label: 'label.host' },
+                              gateway: { label: 'label.gateway' },
+                              created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                              activeviewersessions: { label: 'label.active.sessions' }
+                            }
+                          ],
+                          dataProvider: function(args) {
+                            args.response.success({
+                              actionFilter: systemvmActionfilter,
+                              data: args.jsonObj
+                            });
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                           }
                         }
                       });
@@ -8431,8 +8559,8 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {   
-                  guestStartIp: { label: 'guest.start.IP' },
-                  guestEndIp: { label: 'guest.end.IP' }
+                  guestStartIp: { label: 'label.guest.start.ip' },
+                  guestEndIp: { label: 'label.guest.end.ip' }
                 }
               },
               action: function(args) {		                

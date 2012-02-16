@@ -2898,10 +2898,14 @@ dictionary = {
 'label.end.IP': '<fmt:message key="label.end.IP" />',
 'label.remove.ip.range': '<fmt:message key="label.remove.ip.range" />',
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 'label.ip.ranges': '<fmt:message key="label.ip.ranges" />',
 'label.start.vlan': '<fmt:message key="label.start.vlan" />',
 'label.end.vlan': '<fmt:message key="label.end.vlan" />',
 'label.broadcast.domain.range': '<fmt:message key="label.broadcast.domain.range" />',
+<<<<<<< HEAD
 =======
 'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
 'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
@@ -2912,6 +2916,8 @@ dictionary = {
 'end.Vlan': '<fmt:message key="end.Vlan" />',
 'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
 >>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 'label.compute': '<fmt:message key="label.compute" />',
 'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
 'label.subdomain.access': '<fmt:message key="label.subdomain.access" />',
@@ -2926,6 +2932,7 @@ dictionary = {
 'label.change.service.offering': '<fmt:message key="label.change.service.offering" />',
 'label.view.console': '<fmt:message key="label.view.console" />',
 'label.redundant.state': '<fmt:message key="label.redundant.state" />',
+<<<<<<< HEAD
 'label.enable.provider': '<fmt:message key="label.enable.provider" />',
 'message.confirm.enable.provider': '<fmt:message key="message.confirm.enable.provider" />',
 'label.disable.provider': '<fmt:message key="label.disable.provider" />',
@@ -2945,6 +2952,29 @@ dictionary = {
 'label.public.network': '<fmt:message key="label.public.network" />',
 'label.private.network': '<fmt:message key="label.private.network" />',
 'label.enable.swift': '<fmt:message key="label.enable.swift" />',
+=======
+'enable.provider': '<fmt:message key="enable.provider" />',
+'confirm.enable.provider': '<fmt:message key="confirm.enable.provider" />',
+'disable.provider': '<fmt:message key="disable.provider" />',
+'confirm.disable.provider': '<fmt:message key="confirm.disable.provider" />',
+'shutdown.provider': '<fmt:message key="shutdown.provider" />',
+'confirm.shutdown.provider': '<fmt:message key="confirm.shutdown.provider" />',
+'NetScaler': '<fmt:message key="NetScaler" />',
+'add.new.NetScaler': '<fmt:message key="add.new.NetScaler" />',
+'number.of.retries': '<fmt:message key="number.of.retries" />',
+'capacity': '<fmt:message key="capacity" />',
+'dedicated': '<fmt:message key="dedicated" />',
+'F5': '<fmt:message key="F5" />',
+'add.new.F5': '<fmt:message key="add.new.F5" />',
+'SRX': '<fmt:message key="SRX" />',
+'providers': '<fmt:message key="providers" />',
+'add.new.SRX': '<fmt:message key="add.new.SRX" />',
+'timeout': '<fmt:message key="timeout" />',
+'public.network': '<fmt:message key="public.network" />',
+'private.network': '<fmt:message key="private.network" />',
+'public': '<fmt:message key="public" />',
+'enable.swift': '<fmt:message key="enable.swift" />',
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
 'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
 'label.key': '<fmt:message key="label.key" />',

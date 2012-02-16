@@ -823,12 +823,15 @@
           guestNetmask: { label: 'label.guest.netmask' },
           guestStartIp: { label: 'label.guest.start.ip' },
           guestEndIp: { label: 'label.guest.end.ip' },
+<<<<<<< HEAD
 =======
           guestGateway: { label: 'Guest gateway' },
           guestNetmask: { label: 'Guest netmask' },
           guestStartIp: { label: 'Guest start IP' },
           guestEndIp: { label: 'Guest end IP' },
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
+=======
+>>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
           //Basic (end)
 
           //Advanced (start)
