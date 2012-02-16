@@ -1197,11 +1197,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         List<DomainRouterVO> routers;
         Long podId = null;
+        if (isPodBased) {
+            Pod pod = dest.getPod();
+            if (pod != null) {
+                podId = pod.getId();
+            }
+        }
+        
         if (publicNetwork) {
             routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
         } else {
-            if (isPodBased) {
-                podId = dest.getPod().getId();
+            if (isPodBased && podId != null) {
                 routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.VIRTUAL_ROUTER);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
             } else {
@@ -1224,7 +1230,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
-            if (routers.size() >= routerCount) {
+            if (routers.size() >= routerCount || (isPodBased && podId == null)) {
                 return routers;
             }
 
