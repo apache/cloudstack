@@ -402,8 +402,8 @@
           //Basic (start)
           guestGateway: { label: 'label.guest.gateway' },
           guestNetmask: { label: 'label.guest.netmask' },
-          guestStartIp: { label: 'guest.start.IP' },
-          guestEndIp: { label: 'guest.end.IP' },
+          guestStartIp: { label: 'label.guest.start.ip' },
+          guestEndIp: { label: 'label.guest.end.ip' },
           //Basic (end)
 
           //Advanced (start)

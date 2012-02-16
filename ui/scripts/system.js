@@ -239,7 +239,7 @@
 						},						
 						{
 							id: 'virtualRouter',
-							name: 'virtual.router',
+							name: 'label.virtual.router',
 							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
 						}
 					];
@@ -293,9 +293,6 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
-                },
-                messages: {
-                  notification: 'public.traffic.type.is.updated'
                 }
               }
             },
@@ -337,7 +334,7 @@
               },
 
               ipAddresses: {
-                title: 'IP.ranges',
+                title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
@@ -441,9 +438,6 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
-                },
-                messages: {
-                  notification: 'storage.traffic.type.is.updated'
                 }
               }
             },
@@ -483,7 +477,7 @@
               },
 
               ipAddresses: {
-                title: 'IP.ranges',
+                title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
@@ -598,9 +592,6 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
-                },
-                messages: {
-                  notification: 'management.traffic.type.is.updated'
                 }
               }
             },
@@ -637,7 +628,7 @@
                 }
               },
               ipAddresses: { //read-only listView (no actions) filled with pod info (not VlanIpRange info)
-                title: 'IP.ranges',               
+                title: 'label.ip.ranges',               
 								listView: {
 									fields: {
 										name: { label: 'label.pod' }, //pod name
@@ -732,14 +723,14 @@
                   {                    
                     state: { label: 'label.state' },
                     startVlan: {
-                      label: 'start.Vlan',
+                      label: 'label.start.vlan',
                       isEditable: true
                     },
                     endVlan: {
-                      label: 'end.Vlan',
+                      label: 'label.end.vlan',
                       isEditable: true
                     },
-                    broadcastdomainrange: { label: 'broadcast.domain.range' }                    
+                    broadcastdomainrange: { label: 'label.broadcast.domain.range' }                    
                   },
                   {
                     tags: { label: 'Tags', isEditable: true },
@@ -785,7 +776,7 @@
               },
 
               ipAddresses: {
-                title: 'IP.ranges',
+                title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
                     context: args.context,
@@ -1025,7 +1016,7 @@
                               args.response.success({data: items});
                             }
                           },
-                          subdomainaccess: { label: 'subdomain.access', isBoolean: true, isHidden: true },
+                          subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
                           account: { label: 'label.account' },
                           
 													projectId: {
@@ -1142,8 +1133,8 @@
 
                           guestGateway: { label: 'label.guest.gateway' },
                           guestNetmask: { label: 'label.guest.netmask' },
-                          guestStartIp: { label: 'guest.start.IP' },
-                          guestEndIp: { label: 'guest.end.IP' },
+                          guestStartIp: { label: 'label.guest.start.ip' },
+                          guestEndIp: { label: 'label.guest.end.ip' },
                           networkdomain: { label: 'label.network.domain' }
                         }
                       },
@@ -1286,7 +1277,7 @@
                     name: 'Guest network details',
                     viewAll: { 
 										  path: '_zone.guestIpRanges', 
-											label: 'IP.ranges',
+											label: 'label.ip.ranges',
                       preFilter: function(args) {                        
 												if(selectedGuestNetworkObj.type == "Isolated") {												  
 													var services = selectedGuestNetworkObj.service;
@@ -1499,7 +1490,7 @@
                               label: 'label.state'
                             },                           
                             restartrequired: {
-                              label: 'restart.required',
+                              label: 'label.restart.required',
                               converter: function(booleanValue) {
                                 if(booleanValue == true)
                                   return "<font color='red'>Yes</font>";
@@ -1558,7 +1549,7 @@
 														
 														domain: { label: 'label.domain' },
                             subdomainaccess: { 
-														  label: 'subdomain.access', 
+														  label: 'label.subdomain.access', 
 															converter: function(data) {
 																return data ? 'Yes' : 'No';
 															} 
@@ -1772,7 +1763,7 @@
         types: {          
           virtualRouter: {
             id: 'virtualRouterProviders',
-            label: 'virtual.router',
+            label: 'label.virtual.router',
             isMaximized: true,
             type: 'detailView',
             fields: {
@@ -1790,12 +1781,12 @@
                   {
                     id: { label: 'label.id' },
                     state: { label: 'label.state' },
-                    physicalnetworkid: { label: 'physical.network.ID' },
-                    destinationphysicalnetworkid: { label: 'destination.physical.network.ID' }
+                    physicalnetworkid: { label: 'label.physical.network.ID' },
+                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' }
                   },
                   {
                     Vpn: { label: 'VPN' },
-                    Dhcp: { label: 'DHCP' },
+                    Dhcp: { label: 'label.dhcp' },
                     Dns: { label: 'DNS' },
                     Gateway: { label: 'label.gateway' },
                     Firewall: { label: 'Firewall' },
@@ -1958,13 +1949,13 @@
                       },      
 											
 											'destroy': {
-												label: 'destroy.router',
+												label: 'label.destroy.router',
 												messages: {
 													confirm: function(args) {
-														return 'confirm.destroy.router';
+														return 'message.confirm.destroy.router';
 													},
 													notification: function(args) {
-														return 'destroy.router';
+														return 'label.destroy.router';
 													}
 												},
 												action: function(args) {
@@ -1988,9 +1979,9 @@
 											},
 																						
                       changeService: {
-                        label: 'change.service.offering',                       
+                        label: 'label.change.service.offering',                       
                         createForm: {
-                          title: 'change.service.offering',
+                          title: 'label.change.service.offering',
                           desc: '',
                           fields: {
                             serviceOfferingId: {
@@ -2017,7 +2008,7 @@
                         },
 												messages: {                                                
                           notification: function(args) {
-                            return 'change.service.offering';
+                            return 'label.change.service.offering';
                           }
                         },
                         action: function(args) {
@@ -2117,7 +2108,7 @@
                       },
 
                       viewConsole: {
-                        label: 'view.console',
+                        label: 'label.view.console',
                         action: {
                           externalLink: {
                             url: function(args) {
@@ -2155,7 +2146,7 @@
                               label: 'label.redundant.router',
                               converter: cloudStack.converters.toBooleanText
                             },
-                            redundantRouterState: { label: 'redundant.state' }
+                            redundantRouterState: { label: 'label.redundant.state' }
                           }
                         ],
                         dataProvider: function(args) {
@@ -2940,7 +2931,7 @@
                   {
                     state: { label: 'label.state' },
                     id: { label: 'label.id' },
-                    physicalnetworkid: { label: 'physical.network.ID' }
+                    physicalnetworkid: { label: 'label.physical.network.ID' }
                   }
                 ],
                 dataProvider: function(args) {
@@ -3633,7 +3624,7 @@
                         },
 
                         viewConsole: {
-                          label: 'view.console',  
+                          label: 'label.view.console',  
                           action: {
                             externalLink: {
                               url: function(args) {
@@ -6424,8 +6415,8 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {   
-                  guestStartIp: { label: 'guest.start.IP' },
-                  guestEndIp: { label: 'guest.end.IP' }
+                  guestStartIp: { label: 'label.guest.start.ip' },
+                  guestEndIp: { label: 'label.guest.end.ip' }
                 }
               },
               action: function(args) {		                

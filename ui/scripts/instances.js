@@ -1464,7 +1464,7 @@
           },
 
           viewConsole: {
-            label: 'View console',
+            label: 'label.view.console',  
             action: {
               externalLink: {
                 url: function(args) {

@@ -1145,7 +1145,7 @@
                             // Sanitize names
                             switch (serviceName) {
                             case 'Vpn': serviceDisplayName = 'VPN'; break;
-                            case 'Dhcp': serviceDisplayName = 'DHCP'; break;
+                            case 'Dhcp': serviceDisplayName = dictionary['label.dhcp']; break;
                             case 'Dns': serviceDisplayName = 'DNS'; break;
                             case 'Lb': serviceDisplayName = 'Load Balancer'; break;
                             case 'SourceNat': serviceDisplayName = 'Source NAT'; break;
