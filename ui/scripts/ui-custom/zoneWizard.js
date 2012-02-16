@@ -121,7 +121,10 @@
         var $storageTrafficItem = $(storageTrafficItem);
         var storageTrafficData = {};
         var fields = [
+<<<<<<< HEAD
           'gateway',
+=======
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
           'netmask',
           'vlanid',
           'startip',
@@ -648,7 +651,18 @@
 
       // Remove network action
       $physicalNetworkItem.find('.button.remove.physical-network').click(function() {
+<<<<<<< HEAD
         physicalNetwork.remove($physicalNetworkItem);
+=======
+        $physicalNetworkItem.find('li.traffic-type-draggable').each(function() {
+          var trafficTypeID = $(this).attr('traffic-type-id');
+
+          physicalNetwork.assignTrafficType(trafficTypeID, $physicalNetworkItem.prev());
+        });
+
+        $physicalNetworkItem.find('li.traffic-type-draggable.clone').remove();
+        physicalNetwork.update($physicalNetworkItem.parent().find('.multi'));
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
       });
 
       $physicalNetworkItem.addClass('disabled'); // Since there are no traffic types yet
@@ -831,11 +845,19 @@
 
         var makeMessage = function(message, isError) {
           var $li = $('<li>')
+<<<<<<< HEAD
                 .addClass(!isError ? 'loading' : 'info')
                 .append(
                   $('<span>').addClass('icon').html('&nbsp;'),
                   $('<span>').addClass('text').html(message)
                 );
+=======
+            .addClass(!isError ? 'loading' : 'info')
+            .append(
+              $('<span>').addClass('icon').html('&nbsp;'),
+              $('<span>').addClass('text').html(message)
+            );
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
           var $launchContainer = $launchStep.find('.launch-container');
 
           $launchStep.find('ul').append($li);
@@ -845,7 +867,11 @@
           if (isError) {
             $li.prev().addClass('error');
           }
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
         };
 
         args.action({
@@ -1207,6 +1233,22 @@
         drop: function(event, ui) {
           physicalNetwork.unassignTrafficType(ui.draggable);
 
+<<<<<<< HEAD
+=======
+          if (!physicalNetwork.isTrafficTypeClone(ui.draggable)) {
+            if ($.inArray(trafficTypeID, physicalNetwork.requiredTrafficTypes) == -1) {
+              physicalNetwork.unassignTrafficType(trafficTypeID, $wizard);
+            } else {
+              physicalNetwork.assignTrafficType(
+                trafficTypeID,
+                $wizard.find('.select-container.multi:first')
+              );
+            }
+          } else if (!ui.draggable.closest('.traffic-types-drag-area').size()) {
+            ui.draggable.remove();
+          }
+
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
           return true;
         }
       });

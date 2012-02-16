@@ -490,11 +490,19 @@
                zone-wizard-step-id="setupPhysicalNetwork"
                zone-wizard-prefilter="setupPhysicalNetwork">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="physical-network active"><fmt:message key="label.physical.network"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+=======
+              <li class="physical-network active">Physical Network</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
             <div class="info-desc conditional advanced">
               <fmt:message key="message.setup.physical.network.during.zone.creation"/>
@@ -591,11 +599,19 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network active"><fmt:message key="label.netScaler"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+=======
+              <li class="conditional elb physical-network active">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc"><fmt:message key="label.please.specify.netscaler.info"/></div>
@@ -608,11 +624,19 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
               <li class="public-network active"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+=======
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network active">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc" id="add_zone_public_traffic_desc">
@@ -626,11 +650,19 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod active"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+=======
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod active">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc">
@@ -647,11 +679,19 @@
                zone-wizard-step-id="configureGuestTraffic"
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic active"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+=======
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic active">Guest Traffic</li>
+              <li class="conditional storage-traffic">Storage Traffic</li>
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc" id="add_zone_guest_traffic_desc">
@@ -667,6 +707,7 @@
           <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
                zone-wizard-step-id="configureStorageTraffic">
             <ul class="subnav">
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/><</li>
@@ -676,6 +717,17 @@
 
             <div class="info-desc">
               <fmt:message key="message.storage.traffic"/>
+=======
+              <li class="conditional elb physical-network">Netscaler</li>
+              <li class="public-network">Public traffic</li>
+              <li class="pod">Pod</li>
+              <li class="guest-traffic">Guest Traffic</li>
+              <li class="storage-traffic active">Storage Traffic</li>
+            </ul>
+
+            <div class="info-desc">
+              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
+>>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </div>
             <div ui-custom="storageTrafficIPRange"></div>
           </div>
