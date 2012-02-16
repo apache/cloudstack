@@ -530,7 +530,11 @@ body.login {
   -webkit-box-shadow: 0px 4px 10px #B9B9B9;
   -o-box-shadow: 0px 4px 10px #B9B9B9;
   box-shadow: 0px 4px 10px #B9B9B9;
+<<<<<<< HEAD
   padding: 5px;
+=======
+  padding: 0;
+>>>>>>> 6d8a11c... Complete localization for quick install wizard
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;

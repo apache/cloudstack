@@ -1723,6 +1723,7 @@
 
 <script language="javascript">
 dictionary = {
+<<<<<<< HEAD
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
@@ -1776,6 +1777,8 @@ dictionary = {
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
 'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',
 'label.migrate.instance.to.ps': '<fmt:message key="label.migrate.instance.to.ps"/>',
+=======
+>>>>>>> 6d8a11c... Complete localization for quick install wizard
 'label.corrections.saved': '<fmt:message key="label.corrections.saved"/>',
 'message.installWizard.copy.whatIsSecondaryStorage': '<fmt:message key="message.installWizard.copy.whatIsSecondaryStorage"/>',
 'message.installWizard.copy.whatIsPrimaryStorage': '<fmt:message key="message.installWizard.copy.whatIsPrimaryStorage"/>',
