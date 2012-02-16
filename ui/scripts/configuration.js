@@ -934,6 +934,7 @@
                   }
                 ],
 
+<<<<<<< HEAD
                 dataProvider: function(args) {								 
 									$.ajax({
 										url: createURL("listDiskOfferings&id=" + args.context.diskOfferings[0].id),
@@ -947,6 +948,103 @@
 											});
 										}
 									});										              
+=======
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      actionFilter: diskOfferingActionfilter,
+                      data:args.context.diskOfferings[0]
+                    }
+                  );
+                }
+              }
+            }
+          }
+        }
+      },
+
+      hypervisorCapabilities: {
+        type: 'select',
+        title: 'label.hypervisor.capabilities',
+        listView: {
+          id: 'hypervisorCapabilities',
+          label: 'label.hypervisor.capabilities',
+          fields: {
+            hypervisor: { label: 'label.hypervisor' },
+            hypervisorversion: { label: 'label.hypervisor.version' },
+            maxguestslimit: { label: 'label.max.guest.limit' }
+          },
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}				
+					
+            $.ajax({
+              url: createURL("listHypervisorCapabilities&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
+                args.response.success({data:items});
+              },
+              error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
+              }
+            });
+          },
+
+          detailView: {
+            name: 'label.details',
+            actions: {
+              edit: {
+                label: 'label.edit',
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));
+                  $.ajax({
+                    url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var item = json.updatehypervisorcapabilitiesresponse['null'];
+                      args.response.success({data: item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                }
+              }
+            },
+
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    id: { label: 'label.id' },
+                    hypervisor: { label: 'label.hypervisor' },
+                    hypervisorversion: { label: 'label.hypervisor.version' },
+                    maxguestslimit: {
+                      label: 'label.max.guest.limit',
+                      isEditable: true
+                    }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      data:args.context.hypervisorCapabilities[0]
+                    }
+                  );
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                 }
               }
             }
@@ -1019,7 +1117,11 @@
 
 							createForm: {
                 title: 'label.add.network.offering',               														
+<<<<<<< HEAD
 								preFilter: function(args) {								  									
+=======
+								preFilter: function(args) {
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                   var $availability = args.$form.find('.form-item[rel=availability]');
                   var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');
                   var hasAdvancedZones = false;
@@ -1378,12 +1480,22 @@
                   },
 									"service.Lb.elasticLbCheckbox" : {
                     label: "label.elastic.LB",
+<<<<<<< HEAD
                     isHidden: true,                    
+=======
+                    isHidden: true,
+                    dependsOn: 'service.Lb.isEnabled',
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     isBoolean: true
                   },
                   "service.Lb.lbIsolationDropdown": {
                     label: 'label.LB.isolation',
+<<<<<<< HEAD
                     isHidden: true,                   
+=======
+                    isHidden: true,
+                    dependsOn: 'service.Lb.isEnabled',
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1395,7 +1507,12 @@
                   },									
 									"service.StaticNat.elasticIpCheckbox" : {
 										label: "label.elastic.IP",
+<<<<<<< HEAD
 										isHidden: true,										
+=======
+										isHidden: true,
+										dependsOn: 'service.StaticNat.isEnabled',
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
 										isBoolean: true
 									},	
                   //show or hide upon checked services and selected providers above (end)

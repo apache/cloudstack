@@ -2881,7 +2881,10 @@ dictionary = {
 'label.created.by.system': '<fmt:message key="label.created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
 'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
+<<<<<<< HEAD
 
+=======
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
 'label.redundant.router.capability': '<fmt:message key="label.redundant.router.capability" />',
 'label.supported.source.NAT.type': '<fmt:message key="label.supported.source.NAT.type" />',
 'label.elastic.LB': '<fmt:message key="label.elastic.LB" />',
@@ -2894,10 +2897,21 @@ dictionary = {
 'label.start.IP': '<fmt:message key="label.start.IP" />',
 'label.end.IP': '<fmt:message key="label.end.IP" />',
 'label.remove.ip.range': '<fmt:message key="label.remove.ip.range" />',
+<<<<<<< HEAD
 'label.ip.ranges': '<fmt:message key="label.ip.ranges" />',
 'label.start.vlan': '<fmt:message key="label.start.vlan" />',
 'label.end.vlan': '<fmt:message key="label.end.vlan" />',
 'label.broadcast.domain.range': '<fmt:message key="label.broadcast.domain.range" />',
+=======
+'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
+'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
+'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
+'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
+'IP.ranges': '<fmt:message key="IP.ranges" />',
+'start.Vlan': '<fmt:message key="start.Vlan" />',
+'end.Vlan': '<fmt:message key="end.Vlan" />',
+'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
 'label.compute': '<fmt:message key="label.compute" />',
 'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
 'label.subdomain.access': '<fmt:message key="label.subdomain.access" />',

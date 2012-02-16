@@ -477,6 +477,7 @@
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
                       'startip': { edit: true, label: 'label.start.IP' },
                       'endip': { edit: true, label: 'label.end.IP' },
+<<<<<<< HEAD
                       'account': {
                         label: 'label.account',
                         custom: {
@@ -484,6 +485,8 @@
                           action: cloudStack.publicIpRangeAccount.dialog()
                         }
                       },
+=======
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -899,7 +902,12 @@
 										tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
                   },
+<<<<<<< HEAD
                   { //updateTrafficType API
+=======
+                  {
+                    tags: { label: 'Tags', isEditable: true },
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
@@ -975,7 +983,11 @@
 												}
 											},
                       'gateway': { edit: true, label: 'label.gateway' },
+<<<<<<< HEAD
                       'netmask': { edit: true, label: 'label.netmask' },
+=======
+                      'netmask': { edit: true, label: 'label.netmask' },                     
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                       'startip': { edit: true, label: 'label.start.IP' },
                       'endip': { edit: true, label: 'label.end.IP' },
                       'add-rule': { label: 'label.add', addButton: true }
@@ -5991,12 +6003,17 @@
                     id: { label: 'label.id' },
                     netmask: { label: 'label.netmask', isEditable: true },
 <<<<<<< HEAD
+<<<<<<< HEAD
                     startip: { label: 'label.start.IP', isEditable: true },
                     endip: { label: 'label.end.IP', isEditable: true },
 =======
                     startip: { label: 'start.IP', isEditable: true },
                     endip: { label: 'end.IP', isEditable: true },
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+                    startip: { label: 'label.start.IP', isEditable: true },
+                    endip: { label: 'label.end.IP', isEditable: true },
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
@@ -6041,12 +6058,17 @@
                     gateway: { label: 'label.gateway' },
                     netmask: { label: 'label.netmask' },
 <<<<<<< HEAD
+<<<<<<< HEAD
                     startip: { label: 'label.start.IP' },
                     endip: { label: 'label.end.IP' }
 =======
                     startip: { label: 'start.IP' },
                     endip: { label: 'end.IP' }
 >>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
+=======
+                    startip: { label: 'label.start.IP' },
+                    endip: { label: 'label.end.IP' }
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                   }
                 ],
                 dataProvider: function(args) {
@@ -8335,9 +8357,14 @@
             endip: { label: 'label.end.IP' }
 =======
           fields: {            
+<<<<<<< HEAD
             startip: { label: 'start.IP' },
             endip: { label: 'end.IP' }
 >>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
+=======
+            startip: { label: 'label.start.IP' },
+            endip: { label: 'label.end.IP' }
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
           },
 
           dataProvider: function(args) {				
@@ -8451,14 +8478,18 @@
                   return 'label.remove.ip.range';
 =======
             'delete': {
-              label: 'remove.IP.range' , 
+              label: 'label.remove.ip.range' , 
               messages: {
                 confirm: function(args) {
                   return 'confirm.remove.IP.range';
                 },                
                 notification: function(args) {
+<<<<<<< HEAD
                   return 'remove.IP.range';
 >>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
+=======
+                  return 'label.remove.ip.range';
+>>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                 }
               },
               action: function(args) {
