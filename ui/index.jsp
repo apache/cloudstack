@@ -153,16 +153,6 @@
                     <div class="select-container">
                     </div>
                   </div>
-
-                  <!--
-                  <ul>
-                    <li class="first last"><a href="#instance-wizard-all-isos">All ISOs</a></li>
-                  </ul>
-                  <div id="instance-wizard-all-isos">
-                    <div class="select-container">
-                    </div>
-                  </div>
-                  -->
                 </div>
               </div>
             </div>
@@ -430,18 +420,18 @@
       <div class="multi-wizard zone-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span>Zone Type</span><span class="arrow"></span></li>
-            <li><span class="number">2</span><span>Setup Zone</span><span class="arrow"></span></li>
-            <li><span class="number">3</span><span>Setup Network</span><span class="arrow"></span></li>
+            <li class="first"><span class="number">1</span><span><fmt:message key="label.zone.type"/></span><span class="arrow"></span></li>
+            <li><span class="number">2</span><span><fmt:message key="label.setup.zone"/></span><span class="arrow"></span></li>
+            <li><span class="number">3</span><span><fmt:message key="label.setup.network"/></span><span class="arrow"></span></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
-            <li><span class="number">4</span><span>Add Resources</span><span class="arrow"></span></li>
+            <li><span class="number">4</span><span><fmt:message key="label.add.resources"/></span><span class="arrow"></span></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
-            <li class="last"><span class="number">5</span><span>Launch</span></li>
+            <li class="last"><span class="number">5</span><span><fmt:message key="label.launch"/></span></li>
           </ul>
         </div>
         <div class="steps">
@@ -451,21 +441,21 @@
               <div class="content">
                 <!-- Select template -->
                 <div class="section select-network-model">
-                  <h3>Set up zone type</h3>
-                  <p>Please select a configuration for your zone.</p>
+                  <h3><fmt:message key="label.set.up.zone.type"/></h3>
+                  <p><fmt:message key="message.please.select.a.configuration.for.your.zone"/></p>
                   <div class="select-area">
                     <div class="desc">
-                      Provide a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)
+                      <fmt:message key="message.desc.basic.zone"/>
                     </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
-                    <label>Basic</label>
+                    <label><fmt:message key="label.basic"/></label>
                   </div>
                   <div class="select-area">
                     <div class="desc">
-                      For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.
-                    </div>
+                      <fmt:message key="message.desc.advanced.zone"/>  
+										</div>
                     <input type="radio" name="network-model" value="Advanced" />
-                    <label>Advanced</label>
+                    <label><fmt:message key="label.advanced"/></label>
                   </div>
                 </div>
               </div>
@@ -476,8 +466,8 @@
           <div class="setup-zone" zone-wizard-form="zone"
                zone-wizard-step-id="addZone">
             <div class="info-desc">
-              A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
-            </div>
+              <fmt:message key="message.desc.zone"/> 
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -488,20 +478,20 @@
                zone-wizard-step-id="setupPhysicalNetwork"
                zone-wizard-prefilter="setupPhysicalNetwork">
             <ul class="subnav">
-              <li class="physical-network active">Physical Network</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="physical-network active"><fmt:message key="label.physical.network"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
             <div class="info-desc">
-              When adding an advanced zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the management server. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined.<br/><br/><strong>Drag and drop one or more traffic types</strong> onto each physical network.
+              <fmt:message key="message.setup.physical.network.during.zone.creation"/>
             </div>
-            <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span>Add physical network</span></div>
+            <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span><fmt:message key="label.add.physical.network"/></span></div>
 
             <!-- Traffic types drag area -->
             <div class="traffic-types-drag-area">
-              <div class="header">Traffic Types</div>
+              <div class="header"><fmt:message key="label.traffic.types"/></div>
               <ul>
                 <li class="management">
                   <ul class="container">
@@ -510,8 +500,8 @@
                         class="traffic-type-draggable management"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Management</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.management"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="public">
@@ -521,8 +511,8 @@
                         class="traffic-type-draggable public"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Public</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.public"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="guest">
@@ -532,8 +522,8 @@
                         class="traffic-type-draggable guest clone"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Guest</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.guest"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="storage">
@@ -543,8 +533,8 @@
                         class="traffic-type-draggable storage"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Storage</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.storage"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
               </ul>
@@ -562,14 +552,14 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
-              <li class="conditional elb physical-network active">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network active"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">Please specify Netscaler info</div>
+            <div class="info-desc"><fmt:message key="label.please.specify.netscaler.info"/></div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -579,15 +569,15 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network active">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network active"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">
-              Public traffic is generated when VMs in the cloud access the internet. Publicly-accessible IPs must be allocated for this purpose. End users can use the CloudStack UI to acquire these IPs to implement NAT between their guest network and their public network.<br/><br/>Provide at lease one range of IP addresses for internet traffic.
+            <div class="info-desc" id="add_zone_public_traffic_desc">
+              
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
@@ -596,15 +586,15 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod active">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod active"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
             <div class="info-desc">
-              Each zone must contain in one or more pods, and we will add the first pod now. A pod contains hosts and primary storage servers, which you will add in a later step. First, configure a range of reserved IP addresses for CloudStack's internal management traffic. The reserved IP range must be unique for each zone in the cloud.
+              <fmt:message key="message.add.pod.during.zone.creation"/>
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -617,15 +607,15 @@
                zone-wizard-step-id="configureGuestTraffic"
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic active">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic active"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">
-              Guest network traffic is communication between end-user virtual machines.
+            <div class="info-desc" id="add_zone_guest_traffic_desc">
+             
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -636,15 +626,15 @@
           <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
                zone-wizard-step-id="configureStorageTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="storage-traffic active">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/><</li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="storage-traffic active"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
             <div class="info-desc">
-              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
+              <fmt:message key="message.storage.traffic"/>
             </div>
             <div ui-custom="storageTrafficIPRange"></div>
           </div>
@@ -653,15 +643,15 @@
           <div class="add-cluster" zone-wizard-form="cluster"
                zone-wizard-step-id="addCluster">
             <ul class="subnav">
-              <li class="cluster active">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster active"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
 
             <div class="info-desc">
-              Each pod must contain one or more clusters, and we will add the first cluster now. A cluster provides a way to group hosts. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared storage. Each cluster consists of one or more hosts and one or more primary storage servers.
-            </div>
+              <fmt:message key="message.desc.cluster"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -671,14 +661,14 @@
           <div class="add-cluster" zone-wizard-form="host"
                zone-wizard-step-id="addHost" zone-wizard-prefilter="addHost">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host active">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host active"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each cluster must contain at lease one host (computer) for guest VMs to run on, and we will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server.<br/><br/>Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.
-            </div>
+              <fmt:message key="message.desc.host"/>         
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -688,14 +678,14 @@
           <div class="add-cluster" zone-wizard-form="primaryStorage"
                zone-wizard-step-id="addPrimaryStorage">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage active">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage active"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each cluster must contain one or more primary storage servers, and we will add the first one now. Primary storage contains the disk volumes for all the VMs running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.
-            </div>
+              <fmt:message key="message.desc.primary.storage"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -705,14 +695,14 @@
           <div class="add-cluster" zone-wizard-form="secondaryStorage"
                zone-wizard-step-id="addSecondaryStorage">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage active">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage active"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each zone must have at lease one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.
-            </div>
+              <fmt:message key="message.desc.secondary.storage"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -720,9 +710,9 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-            <div class="main-desc">Launch zone</div>
+            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
             <div class="main-desc launch" style="display:none;">
-              Please wait while your zone is being created; this may take a while...
+              <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
             <form>
             </form>
@@ -734,9 +724,9 @@
 
         <!-- Buttons -->
         <div class="buttons">
-          <div class="button previous"><span>Previous</span></div>
-          <div class="button cancel"><span>Cancel</span></div>
-          <div class="button next"><span>Next</span></div>
+          <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
+          <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
+          <div class="button next"><span><fmt:message key="label.next"/></span></div>
         </div>
       </div>
 
