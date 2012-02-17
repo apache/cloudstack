@@ -734,16 +734,16 @@
       <div class="network-chart normal">
         <ul>
           <li class="firewall">
-            <div class="name"><span>Firewall</span></div>
-            <div class="view-details" net-target="firewall">View All</div>
+            <div class="name"><span><fmt:message key="label.firewall"/></span></div>
+            <div class="view-details" net-target="firewall"><fmt:message key="label.view.all"/></div>
           </li>
           <li class="loadBalancing">
-            <div class="name"><span>Load Balancing</span></div>
-            <div class="view-details" net-target="loadBalancing">View All</div>
+            <div class="name"><span><fmt:message key="label.load.balancing"/></span></div>
+            <div class="view-details" net-target="loadBalancing"><fmt:message key="label.view.all"/></div>
           </li>
           <li class="portForwarding">
-            <div class="name"><span>Port Forwarding</span></div>
-            <div class="view-details" net-target="portForwarding">View All</div>
+            <div class="name"><span><fmt:message key="label.port.forwarding"/></span></div>
+            <div class="view-details" net-target="portForwarding"><fmt:message key="label.view.all"/></div>
           </li>
         </ul>
       </div>
@@ -752,12 +752,12 @@
       <div class="network-chart static-nat">
         <ul>
           <li class="static-nat-enabled">
-            <div class="name"><span>Static NAT Enabled</span></div>
+            <div class="name"><span><fmt:message key="label.static.nat.enabled"/></span></div>
             <div class="vmname"></div>
           </li>
           <li class="firewall">
-            <div class="name"><span>Firewall</span></div>
-            <div class="view-details" net-target="staticNAT">View All</div>
+            <div class="name"><span><fmt:message key="label.firewall"/></span></div>
+            <div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>
           </li>
         </ul>
       </div>
@@ -897,31 +897,31 @@
       <div class="system-dashboard-view">
         <div class="toolbar">
           <div class="button refresh">
-            <span>Refresh</span>
+            <span><fmt:message key="label.refresh"/></span>
           </div>
         </div>
 
         <!-- Zone dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span>Zones</span>
-            <div class="view-more"><span>View more</span></div>
+            <span><fmt:message key="label.zones"/></span>
+            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
-              <span class="header">Number of Zones</span>
+              <span class="header"><fmt:message key="label.number.of.zones"/></span>
               <span class="overview total" data-item="zoneCount"></span>
             </li>
             <li class="block">
-              <span class="header">Number of Pods</span>
+              <span class="header"><fmt:message key="label.number.of.pods"/></span>
               <span class="overview total" data-item="podCount"></span>
             </li>
             <li class="block">
-              <span class="header">Number of Clusters</span>
+              <span class="header"><fmt:message key="label.number.of.clusters"/></span>
               <span class="overview total" data-item="clusterCount"></span>
             </li>
             <li class="block last">
-              <span class="header">Number of Hosts</span>
+              <span class="header"><fmt:message key="label.number.of.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
             </li>
           </ul>
@@ -930,24 +930,24 @@
         <!-- Host dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span>Hosts</span>
-            <div class="view-more"><span>View more</span></div>
+            <span<fmt:message key="label.hosts"/></span>
+            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
-              <span class="header">Total Hosts</span>
+              <span class="header"><fmt:message key="label.total.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
             </li>
             <li class="block capacity">
-              <span class="header">Total CPU</span>
+              <span class="header"><fmt:message key="label.total.CPU"/></span>
               <span class="overview total" data-item="cpuCapacityTotal"></span>
             </li>
             <li class="block capacity">
-              <span class="header">Total Memory</span>
+              <span class="header"><fmt:message key="label.total.memory"/></span>
               <span class="overview total" data-item="memCapacityTotal"></span>
             </li>
             <li class="block last capacity">
-              <span class="header">Total Storage</span>
+              <span class="header"><fmt:message key="label.total.storage"/></span>
               <span class="overview total" data-item="storageCapacityTotal"></span>
             </li>
           </ul>
