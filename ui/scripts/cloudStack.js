@@ -369,6 +369,7 @@
                 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 initInstallWizard(loginArgs.eula);
 =======
                 // EULA check
@@ -383,6 +384,9 @@
                   }
                 });
 >>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
+=======
+                initInstallWizard(loginArgs.eula);
+>>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
               } else {
                 // Show cloudStack main UI
                 $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
@@ -399,20 +403,31 @@
         });
       }
     };
+<<<<<<< HEAD
 		
     // EULA check
     $.ajax({
       url: 'eula.' + g_lang + '.html',
+=======
+
+    // EULA check
+    $.ajax({
+      url: 'eula.html',
+>>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
       dataType: 'html',
       success: function(html) {
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
       },
       error: function() {
         cloudStack.uiCustom.login(loginArgs);
+<<<<<<< HEAD
       },	
 			beforeSend : function(XMLHttpResponse) {
 				return true;
 			}		
+=======
+      }
+>>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     });
 
     // Localization

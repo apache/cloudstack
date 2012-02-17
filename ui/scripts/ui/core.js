@@ -312,12 +312,21 @@
             });
           }
         }
+<<<<<<< HEAD
       });
     }
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header .controls').addClass('nologo');
 
+=======
+      }
+    });
+
+    // Hide logo conditionally
+    if (!args.hasLogo) $('#header .controls').addClass('nologo');
+    
+>>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     return this;
   };
 

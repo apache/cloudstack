@@ -61,7 +61,11 @@
 
     if (!args.hasLogo) $login.addClass('nologo');
 
+<<<<<<< HEAD
     // Labels cause related input to be focused
+=======
+   // Labels cause related input to be focused
+>>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     $login.find('label').click(function() {
       var $input = $inputs.filter('[name=' + $(this).attr('for') + ']');
 
