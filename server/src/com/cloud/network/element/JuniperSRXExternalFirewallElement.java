@@ -167,7 +167,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return manageGuestNetworkWithExternalFirewall(true, network);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for
-// the network
+            // the network
+            s_logger.error("Fail to implement the JuniperSRX for network " + network, capacityException);
             return false;
         }
     }
