@@ -1614,6 +1614,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.edit.lb.rule': '<fmt:message key="label.edit.lb.rule"/>',
 'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
 'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',
