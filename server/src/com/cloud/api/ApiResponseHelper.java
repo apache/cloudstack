@@ -3309,6 +3309,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneUuid(result.getZoneUuid());
         response.setNetworkUuid(result.getNetworkUuid());
         response.setNetmask(result.getNetmask());
+        response.setGateway(result.getGateway());
         response.setObjectName("storagenetworkiprange");
         return response;
     }

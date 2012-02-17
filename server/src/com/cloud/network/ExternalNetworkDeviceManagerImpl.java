@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityService;
 import com.cloud.api.PlugService;
 import com.cloud.api.commands.AddNetworkDeviceCmd;
 import com.cloud.api.commands.DeleteNetworkDeviceCmd;
@@ -69,12 +70,14 @@ import com.cloud.network.resource.NetscalerResource;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -116,6 +119,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
+    private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
     
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
     protected String _name;
@@ -151,8 +155,10 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
         if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
+            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
+            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
+        	Long zoneId = Long.valueOf((String) params.get(ApiConstants.ZONE_ID));
+        	Long podId = Long.valueOf((String)params.get(ApiConstants.POD_ID));
             String type = (String) params.get(ApiConstants.DHCP_SERVER_TYPE);
             String url = (String) params.get(ApiConstants.URL);
             String username = (String) params.get(ApiConstants.USERNAME);
@@ -162,6 +168,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.PxeServer.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
+            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
+            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
             String type = (String) params.get(ApiConstants.PXE_SERVER_TYPE);
             String url = (String) params.get(ApiConstants.URL);
             String username = (String) params.get(ApiConstants.USERNAME);

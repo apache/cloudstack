@@ -6,7 +6,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class StorageNetworkIpRangeResponse extends BaseResponse {
-    @SerializedName(ApiConstants.VLAN) @Param(description="the uuid of storage network IP range.")
+    @SerializedName(ApiConstants.ID) @Param(description="the uuid of storage network IP range.")
     private String uuid;
     
     @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
@@ -20,6 +20,9 @@ public class StorageNetworkIpRangeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the storage network IP range")
     private String endIp;
+    
+    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the storage network IP range")
+    private String gateway;
     
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network uuid of storage network IP range")
     private String networkUuid;
@@ -60,5 +63,9 @@ public class StorageNetworkIpRangeResponse extends BaseResponse {
     
     public void setNetmask(String netmask) {
     	this.netmask = netmask;
+    }
+    
+    public void setGateway(String gateway) {
+    	this.gateway = gateway;
     }
 }

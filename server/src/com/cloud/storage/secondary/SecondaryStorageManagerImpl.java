@@ -1090,6 +1090,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             } else if (nic.getTrafficType() == TrafficType.Storage) {
             	buf.append(" storageip=").append(nic.getIp4Address());
             	buf.append(" storagenetmask=").append(nic.getNetmask());
+            	buf.append(" storagegateway=").append(nic.getGateway());
             }
         }
 

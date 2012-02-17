@@ -29,6 +29,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
@@ -385,6 +387,10 @@ public class BareMetalResourceBase implements ServerResource {
 	    
 	}
 	
+	protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+		return new CheckNetworkAnswer(cmd, true, "Success");
+	}
+	
 	@Override
 	public Answer executeRequest(Command cmd) {
 		if (cmd instanceof ReadyCommand) {
@@ -407,6 +413,8 @@ public class BareMetalResourceBase implements ServerResource {
 			return execute((CheckVirtualMachineCommand)cmd);
 		} else if (cmd instanceof IpmiBootorResetCommand) {
 		    return execute((IpmiBootorResetCommand)cmd);
+		} else if (cmd instanceof CheckNetworkCommand) {
+			return execute((CheckNetworkCommand)cmd);
 		} else {
 			return Answer.createUnsupportedCommandAnswer(cmd);
 		}
