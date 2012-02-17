@@ -165,7 +165,12 @@
                   }
                 );
               },
-              error: function(args) {
+              error: function(args) {		//args here is parsed errortext from API response	
+							  if(args != null & args.length > 0) {
+									cloudStack.dialog.notice({
+										message: args
+									});			
+								}
                 $loading.remove();
               }
             }
