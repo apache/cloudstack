@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
@@ -109,5 +110,10 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     		throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
     	}
         return lb.getNetworkId();
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.FirewallRule;
     }
 }
