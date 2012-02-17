@@ -202,14 +202,14 @@
             .append($('<span>').addClass('icon'))
             .attr({ title: _l(action.label) })
             .click(function() {
-              var performAction = function(options) {
-                if (!options) options = {};
+              var performAction = function(actionOptions) {
+                if (!actionOptions) actionOptions = {};
                 
                 action.action({
                   context: $.extend(true, {}, options.context, {
                     multiRule: [data]
                   }),
-                  data: options.data,
+                  data: actionOptions.data,
                   response: {
                     success: function(args) {
                       var notification = args ? args.notification : null;
@@ -236,7 +236,7 @@
 
                                 complete();
 
-                                if (options.complete) options.complete();
+                                if (actionOptions.complete) actionOptions.complete();
                               },
                               error: function(args) {
                                 error(args);
