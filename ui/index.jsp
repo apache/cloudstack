@@ -491,11 +491,15 @@
                zone-wizard-prefilter="setupPhysicalNetwork">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="physical-network active"><fmt:message key="label.physical.network"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
 =======
               <li class="physical-network active">Physical Network</li>
               <li class="public-network">Public traffic</li>
@@ -510,6 +514,12 @@
             <div class="info-desc conditional basic">
               <fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>
             </div>
+=======
+            </ul>
+            <div class="info-desc">
+              <fmt:message key="message.setup.physical.network.during.zone.creation"/>
+            </div>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span><fmt:message key="label.add.physical.network"/></span></div>
 
             <!-- Traffic types drag area -->
@@ -600,11 +610,16 @@
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network active"><fmt:message key="label.netScaler"/></li>
+=======
+              <li class="conditional elb physical-network active"><fmt:message key="label.netScaler"/></li>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
 =======
               <li class="conditional elb physical-network active">Netscaler</li>
               <li class="public-network">Public traffic</li>
@@ -612,6 +627,8 @@
               <li class="guest-traffic">Guest Traffic</li>
               <li class="conditional storage-traffic">Storage Traffic</li>
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
+=======
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </ul>
 
             <div class="info-desc"><fmt:message key="label.please.specify.netscaler.info"/></div>
@@ -625,11 +642,16 @@
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
+=======
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network active"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
 =======
               <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network active">Public traffic</li>
@@ -642,6 +664,12 @@
             <div class="info-desc" id="add_zone_public_traffic_desc">
               <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
 							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
+=======
+            </ul>
+
+            <div class="info-desc" id="add_zone_public_traffic_desc">
+              
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
@@ -651,11 +679,16 @@
                zone-wizard-step-id="addPod">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
+=======
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod active"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
 =======
               <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
@@ -663,6 +696,8 @@
               <li class="guest-traffic">Guest Traffic</li>
               <li class="conditional storage-traffic">Storage Traffic</li>
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
+=======
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </ul>
 
             <div class="info-desc">
@@ -680,11 +715,16 @@
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
+=======
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic active"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
 =======
               <li class="conditional elb physical-network">Netscaler</li>
               <li class="public-network">Public traffic</li>
@@ -697,6 +737,12 @@
             <div class="info-desc" id="add_zone_guest_traffic_desc">
               <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
 							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
+=======
+            </ul>
+
+            <div class="info-desc" id="add_zone_guest_traffic_desc">
+             
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -708,11 +754,16 @@
                zone-wizard-step-id="configureStorageTraffic">
             <ul class="subnav">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
+=======
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/><</li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="storage-traffic active"><fmt:message key="label.storage.traffic"/></li>
+<<<<<<< HEAD
             </ul>
 
             <div class="info-desc">
@@ -728,6 +779,12 @@
             <div class="info-desc">
               Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
 >>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
+=======
+            </ul>
+
+            <div class="info-desc">
+              <fmt:message key="message.storage.traffic"/>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </div>
             <div ui-custom="storageTrafficIPRange"></div>
           </div>
@@ -803,7 +860,11 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
+<<<<<<< HEAD
             <div class="main-desc pre-setup"><fmt:message key="message.launch.zone"/></div>
+=======
+            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
+>>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             <div class="main-desc launch" style="display:none;">
               <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
