@@ -2018,7 +2018,7 @@ public class ManagementServerImpl implements ManagementServer {
                 for (DataCenterVO dc : dcList) {
                     CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());
                     if (capacity.getTotalCapacity() != 0) {
-                        capacity.setUsedPercentage(capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                        capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
                     } else {
                         capacity.setUsedPercentage(0);
                     }
