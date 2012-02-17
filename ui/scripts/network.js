@@ -83,7 +83,7 @@
       preFilter: function(args) {
         var havingSecurityGroupNetwork = false;
         $.ajax({
-          url: createURL('listNetworks'),
+          url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
             listAll: true
