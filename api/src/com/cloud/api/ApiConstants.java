@@ -331,6 +331,7 @@ public class ApiConstants {
     public static final String IS_STATIC_NAT = "isstaticnat";
     public static final String SORT_BY = "sortby";
     public static final String CHANGE_CIDR = "changecidr";
+    public static final String PURPOSE = "purpose";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

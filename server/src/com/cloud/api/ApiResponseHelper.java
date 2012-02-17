@@ -759,6 +759,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             ipResponse.setVlanId(ipAddress.getVlanId());
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
         }
+        
+        if (ipAddress.getElastic()) {
+            if (ipAddress.isOneToOneNat()) {
+                ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
+            } else {
+                ipResponse.setPurpose(IpAddress.Purpose.Lb.toString());
+            }
+        }
+        
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
     }
