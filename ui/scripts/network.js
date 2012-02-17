@@ -1815,7 +1815,7 @@
                                     jobId: jobID
                                   },
                                   notification: {
-                                    label: 'Add load balancer rule',
+                                    label: 'label.add.load.balancer',
                                     poll: function(args) {
                                       var complete = args.complete;
                                       var error = args.error;
@@ -1868,7 +1868,7 @@
                               args.response.success({
                                 _custom: { jobId: json.updateloadbalancerruleresponse.jobid },
                                 notification: {
-                                  label: 'Edit LB rule',
+                                  label: 'label.edit.lb.rule',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -1924,7 +1924,7 @@
                                   _custom: {
                                     jobId: json.assigntoloadbalancerruleresponse.jobid
                                   },
-                                  desc: 'Add VM(s) to load balancer rule',
+                                  desc: 'label.add.vms.to.lb',
                                   poll: pollAsyncJobResult
                                 }
                               });
