@@ -179,7 +179,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     String instance = "DEFAULT";
                     String component = c.getComponent();
                     String value = c.getDefaultValue();
-                    value = ("Hidden".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
+                    value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
                     _configDao.persist(configVO);

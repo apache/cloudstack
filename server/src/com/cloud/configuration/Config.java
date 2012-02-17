@@ -43,7 +43,7 @@ public enum Config {
 	AlertEmailAddresses("Alert", ManagementServer.class, String.class, "alert.email.addresses", null, "Comma separated list of email addresses used for sending alerts.", null),
 	AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
 	AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
-	AlertSMTPPassword("Alert", ManagementServer.class, String.class, "alert.smtp.password", null, "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
+	AlertSMTPPassword("Secure", ManagementServer.class, String.class, "alert.smtp.password", null, "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
 	AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
 	AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
 	AlertSMTPUsername("Alert", ManagementServer.class, String.class, "alert.smtp.username", null, "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
@@ -84,7 +84,7 @@ public enum Config {
 	// Network
 	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default", null),
 	NetworkLBHaproxyStatsUri("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.uri","/admin?stats","Load Balancer(haproxy) uri.",null),
-	NetworkLBHaproxyStatsAuth("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.auth","admin1:AdMiN123","Load Balancer(haproxy) authetication string in the format username:password",null),
+	NetworkLBHaproxyStatsAuth("Secure", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.auth","admin1:AdMiN123","Load Balancer(haproxy) authetication string in the format username:password",null),
 	NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port","8081","Load Balancer(haproxy) stats port number.",null),		
 	NetworkRouterRpFilter("Network", ManagementServer.class, Integer.class, "network.disable.rpfilter", "true", "disable rp_filter on Domain Router VM public interfaces.", null),
     
@@ -327,7 +327,7 @@ public enum Config {
     
     ProjectEmailSender("Project Defaults", ManagementServer.class, String.class, "project.email.sender", null, "Sender of project invitation email (will be in the From header of the email)", null),
     ProjectSMTPHost("Project Defaults", ManagementServer.class, String.class, "project.smtp.host", null, "SMTP hostname used for sending out email project invitations", null),
-    ProjectSMTPPassword("Project Defaults", ManagementServer.class, String.class, "project.smtp.password", null, "Password for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
+    ProjectSMTPPassword("Secure", ManagementServer.class, String.class, "project.smtp.password", null, "Password for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
     ProjectSMTPUseAuth("Project Defaults", ManagementServer.class, String.class, "project.smtp.useAuth", null, "If true, use SMTP authentication when sending emails", null),
     ProjectSMTPUsername("Project Defaults", ManagementServer.class, String.class, "project.smtp.username", null, "Username for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
@@ -360,6 +360,7 @@ public enum Config {
     	_configs.put("Hidden", new ArrayList<Config>());
     	_configs.put("Account Defaults", new ArrayList<Config>());
     	_configs.put("Project Defaults", new ArrayList<Config>());
+    	_configs.put("Secure", new ArrayList<Config>());
     	
     	// Add values into HashMap
         for (Config c : Config.values()) {
