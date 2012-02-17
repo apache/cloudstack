@@ -423,7 +423,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
         }
-        return deleteExternalFirewall(fwDeviceId);
+        return deleteExternalFirewall(fwDeviceVO.getHostId());
     }
 
     @Override
