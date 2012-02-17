@@ -805,7 +805,7 @@
                                       jobId: jobID
                                     },
                                     notification: {
-                                      label: 'Add load balancer rule',
+                                      label: 'label.add.load.balancer',
                                       poll: function(args) {
                                         var complete = args.complete;
                                         var error = args.error;
@@ -819,7 +819,7 @@
 
                                             lbCreationComplete = true;
                                             cloudStack.dialog.notice({
-                                              message: "The load balancer rule has been added under IP " +
+                                              message: _l('message.add.load.balancer.under.ip') +
                                                 args.data.loadbalancer.publicip
                                             });
 
@@ -1312,7 +1312,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     ipaddress: { label: 'IP' }

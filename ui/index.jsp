@@ -1614,6 +1614,13 @@
 
 <script language="javascript">
 dictionary = {
+'message.add.load.balancer.under.ip': '<fmt:message key="message.add.load.balancer.under.ip"/>',
+'message.select.instance': '<fmt:message key="message.select.instance"/>',
+'label.select': '<fmt:message key="label.select"/>',
+'label.select.vm.for.static.nat': '<fmt:message key="label.select.vm.for.static.nat"/>',
+'label.select.instance': '<fmt:message key="label.select.instance"/>',
+'label.nat.port.range': '<fmt:message key="label.nat.port.range"/>',
+'label.static.nat.vm.details': '<fmt:message key="label.static.nat.vm.details"/>',
 'label.edit.lb.rule': '<fmt:message key="label.edit.lb.rule"/>',
 'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
