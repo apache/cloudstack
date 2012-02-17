@@ -163,12 +163,12 @@ class deployDataCenters():
     def configureProviders(self, phynetwrk, zone):
         pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
         pnetprov.physicalnetworkid = phynetwrk.id
-        pnetprov.state = "Enabled"
+        pnetprov.state = "Disabled"
         pnetprov.name = "VirtualRouter"
-        vrprov = self.apiClient.listNetworkServiceProviders(pnetprov)
+        pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
 
         vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
-        vrprov.nspid = vrprov.id
+        vrprov.nspid = pnetprovres[0].id
         vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
         vrprovid = vrprovresponse[0].id
 
