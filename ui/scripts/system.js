@@ -4240,7 +4240,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteSrcFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
+                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
