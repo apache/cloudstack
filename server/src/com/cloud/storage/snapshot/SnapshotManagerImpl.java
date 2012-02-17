@@ -739,7 +739,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Account caller = UserContext.current().getCaller();
 
         // Verify parameters
-        Snapshot snapshotCheck = _snapshotDao.findByIdIncludingRemoved(snapshotId);
+        Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
