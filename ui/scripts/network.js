@@ -2586,7 +2586,8 @@
                       success: function(data) {
                         args.response.success({
                           data: $.map(
-                            data.listsecuritygroupsresponse.securitygroup[0].ingressrule,
+                            data.listsecuritygroupsresponse.securitygroup[0].ingressrule ? 
+                              data.listsecuritygroupsresponse.securitygroup[0].ingressrule : [],
                             function(elem) {
                               return {
                                 id: elem.ruleid,
@@ -2762,7 +2763,8 @@
                       success: function(data) {
                         args.response.success({
                           data: $.map(
-                            data.listsecuritygroupsresponse.securitygroup[0].egressrule,
+                            data.listsecuritygroupsresponse.securitygroup[0].egressrule ? 
+                              data.listsecuritygroupsresponse.securitygroup[0].egressrule : [],
                             function(elem) {
                               return {
                                 id: elem.ruleid,
