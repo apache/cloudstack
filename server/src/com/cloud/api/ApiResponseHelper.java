@@ -1239,6 +1239,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             if (userVm.getDisplayName() != null) {
                 userVmResponse.setDisplayName(userVm.getDisplayName());
+            } else {
+                userVmResponse.setDisplayName(userVm.getHostName());
             }
 
             if (userVm.getPassword() != null) {
