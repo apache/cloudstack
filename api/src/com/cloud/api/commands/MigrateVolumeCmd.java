@@ -27,7 +27,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     private Long volumeId;
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="destination storage pool ID to migrate the volume to")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=true, description="destination storage pool ID to migrate the volume to")
     private Long storageId;
     
     /////////////////////////////////////////////////////
