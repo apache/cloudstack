@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS `cloud_usage`.`usage_port_forwarding`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_network_offering`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_event`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vpn_user`;
+DROP TABLE IF EXISTS `cloud_usage`.`usage_security_group`;
 
 CREATE TABLE  `cloud_usage`.`cloud_usage` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -263,6 +264,19 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
 
+CREATE TABLE  `cloud_usage`.`usage_security_group` (
+  `zone_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `vm_instance_id` bigint unsigned NOT NULL,
+  `security_group_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `deleted` DATETIME NULL  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
 
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',

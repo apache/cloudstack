@@ -318,6 +318,10 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
                     //VPN User ID
                     usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+                    
+                } else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
+                	//Security Group Id
+                	usageRecResponse.setUsageId(identityDao.getIdentityUuid("security_group", usageRecord.getUsageId().toString()));
                 }
                 
                 if (usageRecord.getRawUsage() != null) {
