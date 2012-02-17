@@ -52,10 +52,11 @@ public class RuntimeCloudException extends RuntimeException {
 		super();
 	}
 
-	public void setProxyObject(String table_name, Long id) {
+	public void setProxyObject(String table_name, String idFieldName, Long id) {
 		this.id = new IdentityProxy();
 		this.id.setTableName(table_name);
 		this.id.setValue(id);
+		this.id.setidFieldName(idFieldName);
 		return;
 	}
 	

@@ -15,6 +15,7 @@ package com.cloud.utils;
 public class IdentityProxy {
     private String _tableName;
     private Long _value;
+    private String _idFieldName;
 
     public IdentityProxy() {
     }
@@ -37,5 +38,13 @@ public class IdentityProxy {
 
     public void setValue(Long value) {
         _value = value;
+    }
+    
+    public void setidFieldName(String value) {
+    	_idFieldName = value;
+    }
+    
+    public String getidFieldName() {
+    	return _idFieldName;
     }
 }

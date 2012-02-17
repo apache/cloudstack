@@ -94,6 +94,16 @@ public class ApiResponseSerializer {
             	String jsonErrorText = gson.toJson((ExceptionResponse) result);
             	jsonErrorText = unescape(jsonErrorText);            
                 sb.append(jsonErrorText);
+                // Since the IdentityTypeAdapter only converts the uuid, let's append the idFieldName explicitly.
+                IdentityProxy ref = ((ExceptionResponse) result).getProxyObject();
+                if (ref != null) {
+                	// bump off the } at the end. We'll re-add it after the idFieldName.
+                	sb.deleteCharAt(sb.length()-1);
+                	String idFieldName = ref.getidFieldName();
+                	if (idFieldName != null) {
+                		sb.append(",\"uuidProperty\":" + "\"" + idFieldName + "\"}");
+                	}
+                }
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
@@ -224,6 +234,11 @@ public class ApiResponseSerializer {
                 	}
                 	if(id != null && !id.isEmpty())
                 		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
+                	// Append the new idFieldName property also.
+                	String idFieldName = idProxy.getidFieldName();
+                	if (idFieldName != null) {
+                		sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
+                	}
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {

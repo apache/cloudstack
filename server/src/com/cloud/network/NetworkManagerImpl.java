@@ -400,12 +400,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (podId != null) {
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
             	// for now, we hardcode the table names, but we should ideally do a lookup for the tablename from the VO object.
-            	ex.setProxyObject("Pod", podId);
+            	ex.setProxyObject("Pod", "podId", podId);
             	throw ex;
             }
             s_logger.warn(errorMessage.toString());
             InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
-            ex.setProxyObject("data_center", dcId);
+            ex.setProxyObject("data_center", "dcId", dcId);
         	throw ex;
         }
 
@@ -492,7 +492,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             	// this ownerId comes from owner or type Account. See the class "AccountVO" and the annotations in that class
             	// to get the table name and field name that is queried to fill this ownerid.
             	ConcurrentOperationException ex = new ConcurrentOperationException("Unable to lock account");
-            	ex.setProxyObject("account", ownerId);
+            	ex.setProxyObject("account", "ownerId", ownerId);
             	throw ex;
             }
             if (s_logger.isDebugEnabled()) {
@@ -574,7 +574,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     PermissionDeniedException ex = new PermissionDeniedException("Invalid domain id given, permission denied");
-                    ex.setProxyObject("domain", domainId);
+                    ex.setProxyObject("domain", "domainId", domainId);
                     throw ex;
                 }
                 if (accountName != null) {
@@ -583,7 +583,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         account = userAccount;
                     } else {
                     	PermissionDeniedException ex = new PermissionDeniedException("Unable to find account " + accountName + " in specified domain, permission denied");
-                    	ex.setProxyObject("domain", domainId);
+                    	ex.setProxyObject("domain", "domainId", domainId);
                     	throw ex;
                     }
                 }
@@ -679,7 +679,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     } else {
                     	CloudRuntimeException ex = new CloudRuntimeException("Multiple generic soure NAT IPs provided for network");
                     	// see the IPAddressVO.java class.
-                    	ex.setProxyObject("user_ip_address", ip.getAssociatedWithNetworkId());
+                    	ex.setProxyObject("user_ip_address", "networkId", ip.getAssociatedWithNetworkId());
                     	throw ex;
                     }
                 }
@@ -986,7 +986,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Network network = _networksDao.findById(networkId);
         if (network == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Network id is invalid");
-            ex.setProxyObject("networks", networkId);
+            ex.setProxyObject("networks", "networkId", networkId);
         }
 
         // check permissions
@@ -1019,7 +1019,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled");
-            ex.setProxyObject("data_center", zone.getId());
+            ex.setProxyObject("data_center", "zoneId", zone.getId());
             throw ex;
         }
 
@@ -1065,7 +1065,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (ip == null) {
             	InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone.getId());
-            	ex.setProxyObject("data_center", zone.getId());
+            	ex.setProxyObject("data_center", "zoneId", zone.getId());
             	throw ex;
             }
             UserContext.current().setEventDetails("Ip Id: " + ip.getId());
@@ -1509,7 +1509,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networks.size() < 1) {
             	// see networkOfferingVO.java
             	CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering to network profile");
-            	ex.setProxyObject("network_offerings", offering.getId());
+            	ex.setProxyObject("network_offerings", "networkOfferingId", offering.getId());
             	throw ex;
             }
 
@@ -1714,7 +1714,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
         	// see NetworkVO.java
         	ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
-        	ex.setProxyObject("networks", networkId);
+        	ex.setProxyObject("networks", "networkId", networkId);
         	throw ex;
         }
 
@@ -1791,7 +1791,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
                 	// see NetworkVO.java. 
                 	CloudRuntimeException ex = new CloudRuntimeException("Service provider " + element.getProvider().getName() + "either doesn't exist or is not enabled in specified physical network id");
-                	ex.setProxyObject("networks", network.getPhysicalNetworkId());
+                	ex.setProxyObject("networks", "physicalNetworkId", network.getPhysicalNetworkId());
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
@@ -1808,7 +1808,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
             // see DataCenterVO.java
             ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
-            ex.setProxyObject("data_center", network.getDataCenterId());
+            ex.setProxyObject("data_center", "dataCenterId", network.getDataCenterId());
             throw ex;
         }
     }
@@ -2015,7 +2015,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
         if (ipVO == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find ip address by id");
-        	ex.setProxyObject("user_ip_address", ipAddressId);
+        	ex.setProxyObject("user_ip_address", "ipAddressId", ipAddressId);
         	throw ex;
         }
 
@@ -2044,7 +2044,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {
         	//see IPaddressVO.java
         	InvalidParameterValueException ex = new InvalidParameterValueException("Sepcified IP address uuid belongs to Account wide IP pool and cannot be disassociated");
-        	ex.setProxyObject("user_ip_address", ipAddressId);
+        	ex.setProxyObject("user_ip_address", "ipAddressId", ipAddressId);
         	throw ex;
         }
 
@@ -2090,7 +2090,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String mac = _networksDao.getNextAvailableMacAddress(networkId);
         if (mac == null) {
         	InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
-        	ex.setProxyObject("networks", networkId);
+        	ex.setProxyObject("networks", "networkId", networkId);
         	throw ex;
         }
         return mac;
@@ -2188,7 +2188,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (cidrSubnet.equals(ntwkCidrSubnet)) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Warning: The specified existing network has conflict CIDR subnets with new network!");
-            	ex.setProxyObject("networks", networkId);
+            	ex.setProxyObject("networks", "networkId", networkId);
             	throw ex;
             }
         }
@@ -2220,7 +2220,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         if (ntwkOff == null || ntwkOff.isSystemOnly()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
-        	ex.setProxyObject("network_offerings", networkOfferingId);
+        	ex.setProxyObject("network_offerings", "networkOfferingId", networkOfferingId);
         	throw ex;
         }
         // validate physical network and zone
@@ -2230,7 +2230,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
             if (pNtwk == null) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a physical network having the given id");
-            	ex.setProxyObject("physical_network", physicalNetworkId);
+            	ex.setProxyObject("physical_network", "physicalNetworkId", physicalNetworkId);
             	throw ex;
             }
         }
@@ -2243,7 +2243,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
         	// See DataCenterVO.java
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
-        	ex.setProxyObject("data_center", zone.getId());
+        	ex.setProxyObject("data_center", "zoneId", zone.getId());
         	throw ex;
         }
 
@@ -2301,7 +2301,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (domain == null) {
                 	// see DomainVO.java
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain by specified if");
-                	ex.setProxyObject("domain", domainId);
+                	ex.setProxyObject("domain", "domainId", domainId);
                 	throw ex;
                 }
                 _accountMgr.checkAccess(caller, domain);
@@ -2446,7 +2446,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
         	// see NetworkOfferingVO
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
-        	ex.setProxyObject("network_offerings", networkOfferingId);
+        	ex.setProxyObject("network_offerings", "networkOfferingId", networkOfferingId);
         	throw ex;
         }
 
@@ -2454,7 +2454,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
         	// see PhysicalNetworkVO.java
         	InvalidParameterValueException ex = new InvalidParameterValueException("Specified physical network id is in incorrect state:" + pNtwk.getState());
-        	ex.setProxyObject("physical_network", pNtwk.getId());
+        	ex.setProxyObject("physical_network", "physicalNetworkId", pNtwk.getId());
         	throw ex;
         }
 
@@ -2672,7 +2672,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (domain == null) {
             	// see DomainVO.java
             	InvalidParameterValueException ex = new InvalidParameterValueException("Specified domain id doesn't exist in the system");
-            	ex.setProxyObject("domain", domainId);
+            	ex.setProxyObject("domain", "domainId", domainId);
             	throw ex;
             }
 
@@ -2682,7 +2682,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (owner == null) {
                 	// see DomainVO.java
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
-                	ex.setProxyObject("domain", domainId);
+                	ex.setProxyObject("domain", "domainId", domainId);
                 	throw ex;
                 }
 
@@ -2711,13 +2711,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (project == null) {
                 	// see ProjectVO.java
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by specified id");
-                	ex.setProxyObject("projects", projectId);
+                	ex.setProxyObject("projects", "projectId", projectId);
                 	throw ex;
                 }
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
                 	// see ProjectVO.java
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Account " + caller + " cannot access specified project id");
-                	ex.setProxyObject("projects", projectId);
+                	ex.setProxyObject("projects", "projectId", projectId);
                 	throw ex;
                 }
                 permittedAccounts.add(project.getProjectAccountId());
@@ -3323,7 +3323,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {        	
             InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
-            ex.setProxyObject("networks", networkId);
+            ex.setProxyObject("networks", "networkId", networkId);
             throw ex;
         }
 
@@ -4035,7 +4035,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	// see NetworkVO.java
             //throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         	InvalidParameterValueException ex = new InvalidParameterValueException("Specified network id doesn't exist in the system");
-        	ex.setProxyObject("networks", networkId);
+        	ex.setProxyObject("networks", "networkId", networkId);
         	throw ex;
         }
 
