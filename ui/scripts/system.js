@@ -499,7 +499,8 @@
 														}
 													});
 												}											
-											},										
+											},	
+                      'gateway': { edit: true, label: 'label.gateway' },											
                       'netmask': { edit: true, label: 'label.netmask' },
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
                       'startip': { edit: true, label: 'label.start.IP' },
@@ -513,6 +514,8 @@
                         array1.push("&zoneId=" + args.context.zones[0].id);												
 												array1.push("&podid=" + args.data.podid);
 
+												array1.push("&gateway=" + args.data.gateway);
+												
                         if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
                                                
