@@ -187,6 +187,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             HostVO host = _hostDao.findById(vm.getLastHostId());
             if(host == null){
                 s_logger.debug("The last host of this VM cannot be found");
+            }else if(avoid.shouldAvoid(host)){
+                s_logger.debug("The last host of this VM is in avoid set");
             }else{
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor, true)){
