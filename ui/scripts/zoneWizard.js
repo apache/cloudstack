@@ -10,17 +10,7 @@
       publicTrafficIPRange: function(args) {
         var multiEditData = [];
         var totalIndex = 0;
-								
-				var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');	 
-				if (args.data['network-model'] == 'Basic') {
-					$publicTrafficDesc.find('#for_basic_zone').css('display', 'inline');
-					$publicTrafficDesc.find('#for_advanced_zone').hide();
-				}
-				else { //args.data['network-model'] == 'Advanced'
-					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
-					$publicTrafficDesc.find('#for_basic_zone').hide();
-				}		
-								
+
         return $('<div>').multiEdit({
           context: args.context,
           noSelect: true,															
@@ -109,6 +99,16 @@
 
     preFilters: {
       addPublicNetwork: function(args) {
+				var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');	 
+				if (args.data['network-model'] == 'Basic') {
+					$publicTrafficDesc.find('#for_basic_zone').css('display', 'inline');
+					$publicTrafficDesc.find('#for_advanced_zone').hide();
+				}
+				else { //args.data['network-model'] == 'Advanced'
+					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
+					$publicTrafficDesc.find('#for_basic_zone').hide();
+				}
+        
         var isShown;
         if(args.data['network-model'] == 'Basic') {
           if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
