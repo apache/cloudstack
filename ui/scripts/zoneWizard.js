@@ -110,7 +110,25 @@
 
         return $('<div>').multiEdit({
           context: args.context,
+<<<<<<< HEAD
           noSelect: true,															
+=======
+          noSelect: true,
+										
+					preFilter: function(args) {	//Brian, preFilter doesn't get picked up here			                 		
+						var $publicTrafficDesc = $("#add_zone_public_traffic_desc");	      
+						//debugger;					
+						if (args.data['network-model'] == 'Basic') {
+							$publicTrafficDesc.find("#for_basic_zone").css('display', 'inline');
+							$publicTrafficDesc.find("#for_advanced_zone").hide();
+						}
+						else { //args.data['network-model'] == 'Advanced'
+							$publicTrafficDesc.find("#for_advanced_zone").css('display', 'inline');
+							$publicTrafficDesc.find("#for_basic_zone").hide();
+						}		
+					},
+										
+>>>>>>> a56d465... cloudstack 3.0 new UI - add zone wizard - public traffic - show different description for basic zone and advanced zone.
           fields: {
             'gateway': { edit: true, label: 'label.gateway' },
             'netmask': { edit: true, label: 'label.netmask' },
@@ -802,7 +820,7 @@
 					}		
 =======
           var $guestTrafficDesc = $("#add_zone_guest_traffic_desc");	      
-          //debugger;					
+          //debugger;				//Brian, please take a look here	
           if (args.data['network-model'] == 'Basic') {
             $guestTrafficDesc.find("#for_basic_zone").css('display', 'inline');
 						$guestTrafficDesc.find("#for_advanced_zone").hide();
