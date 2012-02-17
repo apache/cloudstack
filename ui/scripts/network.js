@@ -433,11 +433,27 @@
                 createForm: {
                   title: 'label.restart.network',
                   desc: 'message.restart.network',
-                  fields: {
+                  preFilter: function(args) {									  
+										var zoneObj;
+										$.ajax({
+										  url: createURL("listZones&id=" + args.context.networks[0].zoneid),
+											dataType: "json",
+											async: false,
+											success: function(json){											  
+											  zoneObj = json.listzonesresponse.zone[0];												
+											}
+										});																				
+										if(zoneObj.networktype == "Basic")
+										  args.$form.find('.form-item[rel=cleanup]').hide();
+										else
+										  args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block');									
+									},
+									fields: {
                     cleanup: {
                       label: 'label.clean.up',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+											isHidden: true
                     }
                   }
                 },
@@ -447,7 +463,7 @@
                   }
                 },
                 action: function(args) {
-                  var array1 = [];
+                  var array1 = [];									
                   array1.push("&cleanup=" + (args.data.cleanup == "on"));
                   $.ajax({
                     url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
