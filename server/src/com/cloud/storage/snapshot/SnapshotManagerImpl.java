@@ -334,7 +334,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
                 
                 //If the volume is moved around, backup a full snapshot to secondary storage
-                if (volume.getLastPoolId() != null && volume.getPoolId() != volume.getLastPoolId()) {
+                if (volume.getLastPoolId() != null && !volume.getLastPoolId().equals(volume.getPoolId())) {
                 	preSnapshotId = 0;
                 	volume.setLastPoolId(volume.getPoolId());
                 }
