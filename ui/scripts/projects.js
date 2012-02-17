@@ -583,6 +583,11 @@
             }
 
             var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true';
+
+            if (isDomainAdmin()) {
+                apiCmd += '&domainid=' + args.context.users[0].domainid;
+            }
+            
             $.ajax({
               url: createURL(apiCmd, { ignoreProject: true }),
               dataType: 'json',
@@ -767,8 +772,13 @@
                 dataProvider: function(args) {
                   var projectID = args.context.projects[0].id;
 
+                  var url = 'listProjects';
+                  
+                  if (isDomainAdmin()) {
+                    url += '&domainid=' + args.context.users[0].domainid;
+                  }                  
                   $.ajax({
-                    url: createURL('listProjects'),
+                    url: createURL(url),
                     data: {
                       listAll: true,
                       id: projectID
