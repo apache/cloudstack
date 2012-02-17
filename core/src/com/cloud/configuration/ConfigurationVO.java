@@ -91,7 +91,7 @@ public class ConfigurationVO implements Configuration{
 	}
 
 	public String getValue() {
-		return ("Hidden".equals(getCategory()) ? DBEncryptionUtil.decrypt(value) : value);
+		return (("Hidden".equals(getCategory()) || "Secure".equals(getCategory())) ? DBEncryptionUtil.decrypt(value) : value);
 	}
 	
 	public void setValue(String value) {

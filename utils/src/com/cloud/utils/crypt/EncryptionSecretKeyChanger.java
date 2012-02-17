@@ -271,7 +271,7 @@ public class EncryptionSecretKeyChanger {
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try {
-			pstmt = conn.prepareStatement("select name, value from configuration where category = 'Hidden'");
+			pstmt = conn.prepareStatement("select name, value from configuration where category in ('Hidden', 'Secure')");
 			rs = pstmt.executeQuery();
 			while (rs.next()) {
 				String name = rs.getString(1);
