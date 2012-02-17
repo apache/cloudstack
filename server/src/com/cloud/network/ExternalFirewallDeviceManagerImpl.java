@@ -363,6 +363,11 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         } else {
             ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+            if (fwDeviceVO == null) {
+                s_logger.warn("Network shutdown requested on external firewall element, which did not implement the network." +
+                              " Either network implement failed half way through or already network shutdown is completed.");
+                return true;
+            }
             externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
         }
 
