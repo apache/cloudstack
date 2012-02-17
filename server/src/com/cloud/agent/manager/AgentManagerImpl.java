@@ -823,7 +823,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         s_logger.debug("Cant not find host " + agent.getId());
                     }
                 } else {
-                    agentStatusTransitTo(host, Event.ManagementServerDown, _nodeId);
+                	if (!agent.forForward()) {
+                		agentStatusTransitTo(host, Event.ManagementServerDown, _nodeId);
+                	}
                 }
             }
         }
