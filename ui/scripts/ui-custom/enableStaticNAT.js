@@ -18,7 +18,7 @@
 
         instances.listView.actions = {
           select: {
-            label: 'Select instance',
+            label: _l('label.select.instance'),
             type: 'radio',
             action: {
               uiCustom: function(args) {
@@ -42,7 +42,7 @@
         $listView = $('<div>').listView(instances);
 
         // Change action label
-        $listView.find('th.actions').html('Select');
+        $listView.find('th.actions').html(_l('label.select'));
 
         return $listView;
       };
@@ -52,16 +52,16 @@
       }).dialog({
         dialogClass: 'multi-edit-add-list panel',
         width: 825,
-        title: 'Select VM for Static NAT',
+        title: _l('label.select.vm.for.static.nat'),
         buttons: [
           {
-            text: 'Apply',
+            text: _l('label.apply'),
             'class': 'ok',
             click: function() {
               if (!$dataList.find(
                 'input[type=radio]:checked, input[type=checkbox]:checked'
               ).size()) {
-                cloudStack.dialog.notice({ message: 'Please select an instance '});
+                cloudStack.dialog.notice({ message: _l('message.select.instance')});
                 
                 return false;
               }
@@ -95,7 +95,7 @@
             }
           },
           {
-            text: 'Cancel',
+            text: _l('label.cancel'),
             'class': 'cancel',
             click: function() {
               $dataList.fadeOut(function() {

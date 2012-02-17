@@ -62,7 +62,7 @@
 
               $vmName.click(function() {
                 $browser.cloudBrowser('addPanel', {
-                  title: 'Static NAT VM Details',
+                  title: _l('label.static.nat.vm.details'),
                   complete: function($newPanel) {
                     vmDataProvider({
                       context: context,
@@ -94,7 +94,7 @@
 			
 				if(includingFirewall == true) {
 				  $chart.find('li.firewall .view-details').click(function() {
-						makeMultiEditPanel($(this), { title: 'NAT Port Range'});
+						makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
 					});				
 				}
 				else {				
