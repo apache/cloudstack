@@ -50,6 +50,7 @@ import com.cloud.usage.dao.UsageLoadBalancerPolicyDao;
 import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
+import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
@@ -59,6 +60,7 @@ import com.cloud.usage.parser.LoadBalancerUsageParser;
 import com.cloud.usage.parser.NetworkOfferingUsageParser;
 import com.cloud.usage.parser.NetworkUsageParser;
 import com.cloud.usage.parser.PortForwardingUsageParser;
+import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
@@ -104,6 +106,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     private final UsagePortForwardingRuleDao m_usagePortForwardingRuleDao = _locator.getDao(UsagePortForwardingRuleDao.class);
     private final UsageNetworkOfferingDao m_usageNetworkOfferingDao = _locator.getDao(UsageNetworkOfferingDao.class);
     private final UsageVPNUserDao m_usageVPNUserDao = _locator.getDao(UsageVPNUserDao.class);
+    private final UsageSecurityGroupDao m_usageSecurityGroupDao = _locator.getDao(UsageSecurityGroupDao.class);
     private final UsageJobDao m_usageJobDao = _locator.getDao(UsageJobDao.class);
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
@@ -721,6 +724,13 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             }
         }
 
+        parsed = SecurityGroupUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("Security Group usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
+        
         parsed = LoadBalancerUsageParser.parse(account, currentStartDate, currentEndDate);
         if (s_logger.isDebugEnabled()) {
             if (!parsed) {
@@ -779,6 +789,8 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             createNetworkOfferingEvent(event);
         } else if (isVPNUserEvent(eventType)) {
             createVPNUserEvent(event);
+        } else if (isSecurityGroupEvent(eventType)) {
+            createSecurityGroupEvent(event);
         }
 	}
 
@@ -839,6 +851,12 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     private boolean isVPNUserEvent(String eventType) {
         if (eventType == null) return false;
         return eventType.startsWith("VPN.USER");
+    }
+
+    private boolean isSecurityGroupEvent(String eventType) {
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_SECURITY_GROUP_ASSIGN) ||
+                eventType.equals(EventTypes.EVENT_SECURITY_GROUP_REMOVE));
     }
     
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1351,6 +1369,41 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 }
                 vuVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 m_usageVPNUserDao.update(vuVO);
+            }
+        }
+    }
+
+    private void createSecurityGroupEvent(UsageEventVO event) {
+
+        long zoneId = -1L;
+
+        long vmId = event.getResourceId();
+        long sgId = event.getOfferingId();
+
+        if (EventTypes.EVENT_SECURITY_GROUP_ASSIGN.equals(event.getType())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Assigning : security group"+ sgId +" to Vm: " + vmId + " for account: " + event.getAccountId());
+            }
+            zoneId = event.getZoneId();
+            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            UsageSecurityGroupVO securityGroup = new UsageSecurityGroupVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, sgId,event.getCreateDate(), null);
+            m_usageSecurityGroupDao.persist(securityGroup);
+        } else if (EventTypes.EVENT_SECURITY_GROUP_REMOVE.equals(event.getType())) {
+            SearchCriteria<UsageSecurityGroupVO> sc = m_usageSecurityGroupDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
+            sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, sgId);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageSecurityGroupVO> sgVOs = m_usageSecurityGroupDao.search(sc, null);
+            if (sgVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for security group: "+ sgId +" for Vm: " + vmId+" assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageSecurityGroupVO sgVO : sgVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting security group: " + sgVO.getSecurityGroupId() + " from Vm: " + sgVO.getVmInstanceId());
+                }
+                sgVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageSecurityGroupDao.update(sgVO);
             }
         }
     }

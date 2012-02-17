@@ -48,6 +48,7 @@
     	<dao name="Usage Port Forwarding Rule" class="com.cloud.usage.dao.UsagePortForwardingRuleDaoImpl"/>
     	<dao name="Usage Network Offering" class="com.cloud.usage.dao.UsageNetworkOfferingDaoImpl"/>
     	<dao name="Usage VPN User" class="com.cloud.usage.dao.UsageVPNUserDaoImpl"/>
+    	<dao name="Usage Security Group" class="com.cloud.usage.dao.UsageSecurityGroupDaoImpl"/>
         <dao name="Usage Job" class="com.cloud.usage.dao.UsageJobDaoImpl"/>
         <dao name="Configuration" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
         <dao name="Alert" class="com.cloud.alert.dao.AlertDaoImpl"/>

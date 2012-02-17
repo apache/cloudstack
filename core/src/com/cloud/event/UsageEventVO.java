@@ -116,6 +116,16 @@ public class UsageEventVO implements UsageEvent {
 	    this.resourceType = resourceType;
 	}
 	
+	//Security Group usage event
+	public UsageEventVO(String usageType, long accountId,
+			long zoneId, long vmId, long securityGroupId) {
+	    this.type = usageType;
+	    this.accountId = accountId;
+	    this.zoneId = zoneId;
+	    this.resourceId = vmId;
+	    this.offeringId = securityGroupId;
+	}
+
 	@Override
     public long getId() {
 		return id;

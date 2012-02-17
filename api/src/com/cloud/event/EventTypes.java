@@ -184,6 +184,8 @@ public class EventTypes {
     public static final String EVENT_SECURITY_GROUP_REVOKE_EGRESS = "SG.REVOKE.EGRESS";
     public static final String EVENT_SECURITY_GROUP_CREATE = "SG.CREATE";
     public static final String EVENT_SECURITY_GROUP_DELETE = "SG.DELETE";
+    public static final String EVENT_SECURITY_GROUP_ASSIGN = "SG.ASSIGN";
+    public static final String EVENT_SECURITY_GROUP_REMOVE = "SG.REMOVE";
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
