@@ -577,7 +577,8 @@
             </ul>
 
             <div class="info-desc" id="add_zone_public_traffic_desc">
-              
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
