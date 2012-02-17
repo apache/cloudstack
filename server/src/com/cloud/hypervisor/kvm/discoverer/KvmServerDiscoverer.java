@@ -183,25 +183,21 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			
 			List<PhysicalNetworkSetupInfo> networks = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
 			if (networks.size() < 1) {
-				_kvmPublicNic = "cloudbr0";
-				_kvmPrivateNic = "cloudbr0";
-				_kvmGuestNic = "cloudbr0";
-				s_logger.debug("Can't find physical network devices on zone: " + dcId + ", use the default cloudbr0");
+				s_logger.debug("Can't find physical network devices on zone: " + dcId + ", use the default from kvm.{private|public|guest}.devices");
 			} else {
 				PhysicalNetworkSetupInfo network = networks.get(0);
-				_kvmPublicNic = network.getPublicNetworkName();
-				if (_kvmPublicNic == null) {
-					_kvmPublicNic = "cloudbr0";
+				String pubNetName = network.getPublicNetworkName();
+				if (pubNetName != null) {
+					_kvmPublicNic = pubNetName;
 				}
-				_kvmPrivateNic = network.getPrivateNetworkName();
-				if (_kvmPrivateNic == null) {
-					_kvmPrivateNic = _kvmPublicNic;
+				String prvNetName = network.getPrivateNetworkName();
+				if (prvNetName != null) {
+					_kvmPrivateNic = prvNetName;
 				}
-				_kvmGuestNic = network.getGuestNetworkName();
-				if (_kvmGuestNic == null) {
-					_kvmGuestNic = _kvmPrivateNic;
+				String guestNetName = network.getGuestNetworkName();
+				if (guestNetName != null) {
+					_kvmGuestNic = guestNetName;
 				}
-				
 			}
 			
 			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
