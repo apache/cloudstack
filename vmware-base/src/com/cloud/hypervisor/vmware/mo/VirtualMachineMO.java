@@ -1243,6 +1243,12 @@ public class VirtualMachineMO extends BaseMO {
 						
 						// tar files into OVA
 						if(packToOva) {
+						    // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+                            s_logger.info("Sync file system before we package OVA...");
+                            
+						    Script commandSync = new Script(true, "sync", 0, s_logger);
+                            commandSync.execute();
+						    
 					        Script command = new Script(false, "tar", 0, s_logger);
 					        command.setWorkDir(exportDir);
 					        command.add("-cf", exportName + ".ova");
@@ -1251,11 +1257,14 @@ public class VirtualMachineMO extends BaseMO {
                                 command.add((new File(name).getName()));
                             }
 					        
-					        String result = command.execute();
-					        if(result == null) {
+                            s_logger.info("Package OVA with commmand: " + command.toString());
+					        command.execute();
+					        
+					        // to be safe, physically test existence of the target OVA file
+					        if((new File(exportDir + File.separator + exportName + ".ova")).exists()) {
 					            success = true;
 					        } else {
-					            s_logger.error("failed to execute command: " + command.toString());
+					            s_logger.error(exportDir + File.separator + exportName + ".ova is not created as expected");
 					        }
 						}
 					}
@@ -1270,10 +1279,8 @@ public class VirtualMachineMO extends BaseMO {
                         }
 					}
 					
-					if(!success) {
-					    new File(exportDir + File.separator + exportName + ".ova").delete();
+					if(!success)
 					    throw new Exception("Unable to finish the whole process to package as a OVA file");
-					} 
 				}
 			}
 		} finally {
