@@ -81,7 +81,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
             "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
             "security_group.description, nics.id, nics.ip4_address, nics.default_nic, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
-            "networks.traffic_type, networks.guest_type from vm_instance " +
+            "networks.traffic_type, networks.guest_type, user_ip_address.id, user_ip_address.public_ip_address from vm_instance " +
             "left join account on vm_instance.account_id=account.id  " +
             "left join domain on vm_instance.domain_id=domain.id " +
             "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
@@ -99,6 +99,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
             "left join nics on vm_instance.id=nics.instance_id " +
             "left join networks on nics.network_id=networks.id " +
+            "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " +
             "where vm_instance.id in (";
             
     private static final int VM_DETAILS_BATCH_SIZE=100;
@@ -516,6 +517,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicResponse.setObjectName("nic");
             userVmData.addNic(nicResponse);
         }
+        
+        long publicIpId = rs.getLong("user_ip_address.id");
+        if (publicIpId > 0){
+            userVmData.setPublicIpId(publicIpId);
+            userVmData.setPublicIp(rs.getString("user_ip_address.public_ip_address"));
+        }
+        
         return userVmData;
     }
     
