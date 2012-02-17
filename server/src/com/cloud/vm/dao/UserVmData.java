@@ -68,6 +68,8 @@ public class UserVmData {
     private Set<NicData> nics;
     private String hypervisor;
     private long accountId;
+    private Long publicIpId;
+    private String publicIp;
     
     private boolean initialized;
     
@@ -684,10 +686,21 @@ public class UserVmData {
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }
-    
-   
-    
-    
-    
+
+    public Long getPublicIpId() {
+        return publicIpId;
+    }
+
+    public void setPublicIpId(Long publicIpId) {
+        this.publicIpId = publicIpId;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    } 
 }
 
