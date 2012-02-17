@@ -684,6 +684,13 @@
                       if (args.context.networks[0].state == 'Destroyed')
                         return [];
 
+                      if (args.context.networks[0].type == 'Shared' ||
+                          !$.grep(args.context.networks[0].service, function(service) {
+                            return service.name == 'SourceNat';
+                          }).length) {
+                        return ['edit', 'restart'];
+                      }
+
                       return args.context.actions;
                     },
                     data: args.context.networks[0]
