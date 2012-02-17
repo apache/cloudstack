@@ -790,6 +790,7 @@
 
       guestTraffic: {
         preFilter: function(args) {				                 		
+<<<<<<< HEAD
           var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 		     
 					if (args.data['network-model'] == 'Basic') {
 						$guestTrafficDesc.find('#for_basic_zone').css('display', 'inline');
@@ -799,6 +800,18 @@
 						$guestTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 						$guestTrafficDesc.find('#for_basic_zone').hide();
 					}		
+=======
+          var $guestTrafficDesc = $("#add_zone_guest_traffic_desc");	      
+          //debugger;					
+          if (args.data['network-model'] == 'Basic') {
+            $guestTrafficDesc.find("#for_basic_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_advanced_zone").hide();
+          }
+          else { //args.data['network-model'] == 'Advanced'
+            $guestTrafficDesc.find("#for_advanced_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_basic_zone").hide();
+          }		
+>>>>>>> f0e3cad... cloudstack 3.0 new UI - add zone wizard - guest traffic - show different description for basic zone and advanced zone.
 				
           var selectedZoneObj = {
             networktype: args.data['network-model']

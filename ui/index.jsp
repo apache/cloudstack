@@ -741,8 +741,13 @@
             </ul>
 
             <div class="info-desc" id="add_zone_guest_traffic_desc">
+<<<<<<< HEAD
              
 >>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
+=======
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
+>>>>>>> f0e3cad... cloudstack 3.0 new UI - add zone wizard - guest traffic - show different description for basic zone and advanced zone.
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
