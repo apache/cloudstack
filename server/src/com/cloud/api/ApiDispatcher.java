@@ -142,51 +142,51 @@ public class ApiDispatcher {
             	// earlier, we'd log the db id as part of the log message, but now since we've pushed
             	// the id into a IdentityProxy object, we would need to dump that object alongwith the
             	// message.
-            	InvalidParameterValueException ref = (InvalidParameterValueException)t;
+            	InvalidParameterValueException ref = (InvalidParameterValueException) t;
             	ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getProxyObject();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
-                	s_logger.info(t.getMessage() + " uuid: " + id.getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                	s_logger.info(t.getMessage() + " db_id: " + id.getValue());
                 } else {
                 	s_logger.info(t.getMessage());
-                }
+                }                
                 throw ex;
-            } else if(t instanceof IllegalArgumentException) {
+            } else if(t instanceof IllegalArgumentException) {            	
             	throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
-            } else if (t instanceof PermissionDeniedException) {
+            } else if (t instanceof PermissionDeniedException) {            	
             	PermissionDeniedException ref = (PermissionDeniedException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getProxyObject();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
                 	s_logger.info("PermissionDenied: " + t.getMessage() + "uuid: " + id.getValue());
                 } else {
                 	s_logger.info("PermissionDenied: " + t.getMessage());
                 }
                 throw ex;
-            } else if (t instanceof AccountLimitException) {
+            } else if (t instanceof AccountLimitException) {            	
             	AccountLimitException ref = (AccountLimitException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getProxyObject();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
-                	s_logger.info(t.getMessage() + "uuid: " + id.getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                	s_logger.info(t.getMessage() + "db_id: " + id.getValue());
                 } else {
                 	s_logger.info(t.getMessage());
                 }
                 throw ex;
-            } else if (t instanceof InsufficientCapacityException) {
+            } else if (t instanceof InsufficientCapacityException) {            	
             	InsufficientCapacityException ref = (InsufficientCapacityException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getIdProxy();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
-                	s_logger.info(t.getMessage() + "uuid: " + id.getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                	s_logger.info(t.getMessage() + "db_id: " + id.getValue());
                 } else {
                 	s_logger.info(t.getMessage());
                 }
@@ -197,8 +197,8 @@ public class ApiDispatcher {
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getIdProxy();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
-                	s_logger.warn("Exception: " + t.getMessage() + "uuid: " + ref.getIdProxy().getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                	s_logger.warn("Exception: " + t.getMessage() + "db_id: " + ref.getIdProxy().getValue());
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }
@@ -209,8 +209,8 @@ public class ApiDispatcher {
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getIdProxy();
                 if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getValue());
-                	s_logger.warn("Exception: " + t.getMessage() + "uuid: " + ref.getIdProxy().getValue());
+                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                	s_logger.warn("Exception: " + t.getMessage() + "db_id: " + ref.getIdProxy().getValue());
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }

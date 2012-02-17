@@ -350,7 +350,7 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);
+                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);                
                 writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
                 sb.append(" " + se.getErrorCode() + " " + se.getDescription());
             } catch (RuntimeException e) {
@@ -432,8 +432,8 @@ public class ApiServer implements HttpRequestHandler {
             	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getProxyObject();
-                if (id != null) {
-                	e.setProxyObject(id.getTableName(), id.getValue());
+                if (id != null) {                	
+                	e.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
                 }                
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
@@ -442,7 +442,7 @@ public class ApiServer implements HttpRequestHandler {
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 IdentityProxy id = ref.getProxyObject();
                 if (id != null) {
-                	e.setProxyObject(id.getTableName(), id.getValue());
+                	e.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
                 }
                 throw e;
             } else if (ex instanceof ServerApiException) {
@@ -1004,7 +1004,6 @@ public class ApiServer implements HttpRequestHandler {
                     }
                 }
             }
-
             ExceptionResponse apiResponse = new ExceptionResponse();
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
@@ -1018,23 +1017,23 @@ public class ApiServer implements HttpRequestHandler {
             	if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
             			|| ex instanceof InvalidParameterValueException) {
             		// Cast the exception appropriately and retrieve the IdentityProxy
-            		if (ex instanceof ServerApiException) {
+            		if (ex instanceof ServerApiException) {            			
             			ServerApiException ref = (ServerApiException) ex;
             			IdentityProxy uuidproxy = ref.getProxyObject();
             			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());            				
             			}
             		} else if (ex instanceof PermissionDeniedException) {
             			PermissionDeniedException ref = (PermissionDeniedException) ex;
             			IdentityProxy uuidproxy = ref.getProxyObject();
             			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());            				
             			}
             		} else if (ex instanceof InvalidParameterValueException) {
             			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
             			IdentityProxy uuidproxy = ref.getProxyObject();
             			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getValue());
+            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());
             			}
             		}
             	}

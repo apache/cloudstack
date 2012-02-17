@@ -48,7 +48,7 @@ public class IdentityTypeAdapter implements JsonSerializer<IdentityProxy>, JsonD
 				if(uuid == null)
 					return context.serialize(null);
 				
-				return new JsonPrimitive(uuid);
+				return new JsonPrimitive(uuid);				
 			} else {
 				return new JsonPrimitive(String.valueOf(src.getValue()));
 			}
