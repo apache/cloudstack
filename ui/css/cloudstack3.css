@@ -236,6 +236,27 @@ body.login {
   box-shadow: 0px 3px 5px #D5D5D5;
 }
 
+.login .select-language {
+  margin-top: 10px;
+  float: left;
+}
+
+.login .select-language select {
+  width: 125px;
+  border: 1px solid #808080;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  font-size: 12px;
+  /*+box-shadow:inset 0px 1px 1px #838383;*/
+  -moz-box-shadow: inset 0px 1px 1px #838383;
+  -webkit-box-shadow: inset 0px 1px 1px #838383;
+  -o-box-shadow: inset 0px 1px 1px #838383;
+  box-shadow: inset 0px 1px 1px #838383;
+}
+
 .login .fields {
   width: 409px;
   float: left;

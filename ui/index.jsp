@@ -50,6 +50,14 @@
 
             <!-- Submit (login) -->
             <input type="submit" value="" />
+
+            <!-- Select language -->
+            <div class="select-language">
+              <select name="language">
+                <option value="en"><fmt:message key="label.lang.english"/></option>
+                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+              </select>
+            </div>
           </div>
         </form>
       </div>
