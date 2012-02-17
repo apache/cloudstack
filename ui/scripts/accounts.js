@@ -1,6 +1,7 @@
 (function(cloudStack) {
-
-  var rootDomainId = 1;
+  
+	var domainObjs;
+	var rootDomainId;
 
   var systemAccountId = 1;
   var adminAccountId = 2;
@@ -100,10 +101,13 @@
                         async: false,
                         success: function(json) {
                           var items = [];
-                          var domainObjs = json.listdomainsresponse.domain;
+                          domainObjs = json.listdomainsresponse.domain;													
                           $(domainObjs).each(function() {
                             items.push({id: this.id, description: this.path});
-                          });
+														
+														if(this.level == 0)
+														  rootDomainId = this.id;														
+                          });													
                           args.response.success({data: items});
                         }
                       });
@@ -159,8 +163,8 @@
                   account = args.data.username;
                 array1.push("&account=" + todb(account));
 
-                var accountType = args.data.accounttype;
-                if (args.data.accounttype == "1" && parseInt(args.data.domainid) != rootDomainId) //if account type is admin, but domain is not Root domain
+                var accountType = args.data.accounttype;							
+                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) //if account type is admin, but domain is not Root domain
                   accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
                 array1.push("&accounttype=" + accountType);
 
