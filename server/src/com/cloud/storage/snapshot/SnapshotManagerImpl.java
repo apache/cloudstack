@@ -668,8 +668,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             } else {
                 s_logger.warn("Failed to back up snapshot on secondary storage, deleting the record from the DB");
                 _snapshotDao.remove(snapshotId);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
-                _usageEventDao.persist(usageEvent);
             }
             txn.commit();
 
