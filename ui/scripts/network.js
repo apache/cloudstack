@@ -583,6 +583,7 @@
                     hiddenFields.push("networkofferingdisplaytext");
                     hiddenFields.push("networkdomaintext");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("networkofferingname");
                     //hiddenFields.push("netmask");
                   }
                   else { //selectedGuestNetworkObj.type == "Shared"
@@ -621,6 +622,8 @@
                       }
                     },
                     vlan: { label: 'VLAN ID' },
+
+                    networkofferingname: { label: 'label.network.offering' },
 
                     networkofferingid: {
                       label: 'label.network.offering',
