@@ -1230,32 +1230,24 @@
           },
 
           createTemplate: {
-            label: 'Create template',
+            label: 'label.create.template',
             messages: {
               confirm: function(args) {
-                /*
-                 if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
-                 $dialogCreateTemplate.find("#create_template_public_container").show();
-                 }
-                 */
-                return 'Are you sure you want to create template?';
-              },
-              success: function(args) {
-                return 'Template is being created.';
+                return 'message.create.template';
               },
               notification: function(args) {
-                return 'Creating template';
+                return 'label.create.template';
               }
             },
             createForm: {
-              title: 'Create Template',
-              desc: '',
+              title: 'label.create.template',
+              desc: 'label.create.template',
               preFilter: cloudStack.preFilter.createTemplate,
               fields: {
-                name: { label: 'Name', validation: { required: true }},
-                displayText: { label: 'Description', validation: { required: true }},
+                name: { label: 'label.name', validation: { required: true }},
+                displayText: { label: 'label.description', validation: { required: true }},
                 osTypeId: {
-                  label: 'OS Type',
+                  label: 'label.os.type',
                   select: function(args) {
                     $.ajax({
                       url: createURL("listOsTypes"),
@@ -1272,8 +1264,8 @@
                     });
                   }
                 },
-                isPublic: { label: 'Public', isBoolean: true },
-                url: { label: 'Image directory', validation: { required: true } }
+                isPublic: { label: 'label.public', isBoolean: true },
+                url: { label: 'image.directory', validation: { required: true } }
               }
             },
             action: function(args) {
@@ -1324,21 +1316,21 @@
           },
 
           migrate: {
-            label: 'Migrate instance to another host',
+            label: 'label.migrate.instance.to.host',
             messages: {
               confirm: function(args) {
-                return 'Please confirm that you want to migrate instance to another host.';
+                return 'message.migrate.instance.to.host';
               },
               notification: function(args) {
-                return 'Migrating instance to another host.';
+                return 'label.migrate.instance.to.host';
               }
             },
             createForm: {
-              title: 'Migrate instance',
+              title: 'label.migrate.instance.to.host',
               desc: '',
               fields: {
                 hostId: {
-                  label: 'Host',
+                  label: 'label.host',
                   validation: { required: true },
                   select: function(args) {
                     $.ajax({
@@ -1402,21 +1394,21 @@
           },
 
           migrateToAnotherStorage: {
-            label: 'Migrate instance to another primary storage',
+            label: 'label.migrate.instance.to.ps',
             messages: {
               confirm: function(args) {
-                return 'Please confirm that you want to migrate instance to another primary storage.';
+                return 'message.migrate.instance.to.ps';
               },
               notification: function(args) {
-                return 'Migrating instance to another primary storage.';
+                return 'label.migrate.instance.to.ps';
               }
             },
             createForm: {
-              title: 'Migrate instanceto another primary storage',
+              title: 'label.migrate.instance.to.ps',
               desc: '',
               fields: {
                 storageId: {
-                  label: 'Primary storage',
+                  label: 'label.primary.storage',
                   validation: { required: true },
                   select: function(args) {
                     $.ajax({
@@ -1464,7 +1456,7 @@
           },
 
           viewConsole: {
-            label: 'View console',
+            label: 'label.view.console',  
             action: {
               externalLink: {
                 url: function(args) {
@@ -1592,13 +1584,13 @@
            * Security Groups tab
            */
           securityGroups: {
-            title: 'Security groups',
+            title: 'label.menu.security.groups',
             multiple: true,
             fields: [
               {
                 id: { label: 'ID' },
-                name: { label: 'Name' },
-                description: { label: 'Description' }
+                name: { label: 'label.name' },
+                description: { label: 'label.description' }
               }
             ],
             dataProvider: function(args) {

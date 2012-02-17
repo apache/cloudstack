@@ -896,14 +896,14 @@
 
       hypervisorCapabilities: {
         type: 'select',
-        title: 'hypervisor.capabilities',
+        title: 'label.hypervisor.capabilities',
         listView: {
           id: 'hypervisorCapabilities',
-          label: 'hypervisor.capabilities',
+          label: 'label.hypervisor.capabilities',
           fields: {
             hypervisor: { label: 'label.hypervisor' },
-            hypervisorversion: { label: 'hypervisor.version' },
-            maxguestslimit: { label: 'max.guest.limit' }
+            hypervisorversion: { label: 'label.hypervisor.version' },
+            maxguestslimit: { label: 'label.max.guest.limit' }
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -962,14 +962,10 @@
                   {
                     id: { label: 'label.id' },
                     hypervisor: { label: 'label.hypervisor' },
-                    hypervisorversion: { label: 'hypervisor.version' },
+                    hypervisorversion: { label: 'label.hypervisor.version' },
                     maxguestslimit: {
-                      label: 'max.guest.limit',
+                      label: 'label.max.guest.limit',
                       isEditable: true
-                    },
-                    securitygroupenabled: {
-                      label: 'security.group.enabled',
-                      converter: cloudStack.converters.toBooleanText
                     }
                   }
                 ],
@@ -1047,10 +1043,10 @@
 
           actions: {
             add: {
-              label: 'add.network.offering',
+              label: 'label.add.network.offering',
 
 							createForm: {
-                title: 'add.network.offering',               														
+                title: 'label.add.network.offering',               														
 								preFilter: function(args) {
                   var $availability = args.$form.find('.form-item[rel=availability]');
                   var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');
@@ -1107,7 +1103,7 @@
                   },
 
                   guestIpType: {
-                    label: 'guest.type',
+                    label: 'label.guest.type',
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1131,7 +1127,7 @@
                   specifyVlan: { label: 'label.specify.vlan', isBoolean: true },																
 								
                   supportedServices: {
-                    label: 'supported.services',
+                    label: 'label.supported.services',
 
                     dynamic: function(args) {
                       $.ajax({
@@ -1149,7 +1145,7 @@
                             // Sanitize names
                             switch (serviceName) {
                             case 'Vpn': serviceDisplayName = 'VPN'; break;
-                            case 'Dhcp': serviceDisplayName = 'DHCP'; break;
+                            case 'Dhcp': serviceDisplayName = dictionary['label.dhcp']; break;
                             case 'Dns': serviceDisplayName = 'DNS'; break;
                             case 'Lb': serviceDisplayName = 'Load Balancer'; break;
                             case 'SourceNat': serviceDisplayName = 'Source NAT'; break;
@@ -1281,14 +1277,14 @@
                   },
 									
                   "service.SourceNat.redundantRouterCapabilityCheckbox" : {
-                    label: "redundant.router.capability",
+                    label: "label.redundant.router.capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
                     isBoolean: true
                   },
 
                   "service.SourceNat.sourceNatTypeDropdown": {
-                    label: 'supported.source.NAT.type',
+                    label: 'label.supported.source.NAT.type',
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
@@ -1301,13 +1297,13 @@
                     }
                   },
 									"service.Lb.elasticLbCheckbox" : {
-                    label: "elastic.LB",
+                    label: "label.elastic.LB",
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
                     isBoolean: true
                   },
                   "service.Lb.lbIsolationDropdown": {
-                    label: 'LB.isolation',
+                    label: 'label.LB.isolation',
                     isHidden: true,
                     dependsOn: 'service.Lb.isEnabled',
                     select: function(args) {
@@ -1320,7 +1316,7 @@
                     }
                   },									
 									"service.StaticNat.elasticIpCheckbox" : {
-										label: "elastic.IP",
+										label: "label.elastic.IP",
 										isHidden: true,
 										dependsOn: 'service.StaticNat.isEnabled',
 										isBoolean: true
@@ -1328,7 +1324,7 @@
                   //show or hide upon checked services and selected providers above (end)
 									
 									
-									conservemode: { label: 'conserve.mode', isBoolean: true },
+									conservemode: { label: 'label.conserve.mode', isBoolean: true },
 									
                   tags: { label: 'label.tags' },
 									
@@ -1633,7 +1629,7 @@
                     },
                     state: { label: 'label.state' },
                     guestiptype: {
-                      label: 'guest.type'
+                      label: 'label.guest.type'
                     },
                     availability: {
                       label: 'label.availability',
@@ -1647,7 +1643,7 @@
                       }
                     },
                     isdefault: { //created by system by default
-                      label: 'created.by.system',
+                      label: 'label.created.by.system',
                       converter: cloudStack.converters.toBooleanText
                     },
                     specifyvlan: {
@@ -1655,11 +1651,11 @@
                       converter: cloudStack.converters.toBooleanText
                     },
 										specifyipranges: { 
-										  label: 'specify.IP.ranges', 
+										  label: 'label.specify.IP.ranges', 
 											converter: cloudStack.converters.toBooleanText
 										},
 										conservemode: {
-                      label: 'conserve.mode',
+                      label: 'label.conserve.mode',
                       converter: cloudStack.converters.toBooleanText
                     },
                     networkrate: {
@@ -1679,10 +1675,10 @@
                       label: 'label.traffic.type'
                     },
                     supportedServices: {
-                      label: 'supported.services'
+                      label: 'label.supported.services'
                     },
                     serviceCapabilities: {
-                      label: 'service.capabilities'
+                      label: 'label.service.capabilities'
                     }
                   }
                 ],

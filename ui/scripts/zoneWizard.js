@@ -14,12 +14,26 @@
         return $('<div>').multiEdit({
           context: args.context,
           noSelect: true,
+										
+					preFilter: function(args) {	//Brian, preFilter doesn't get picked up here			                 		
+						var $publicTrafficDesc = $("#add_zone_public_traffic_desc");	      
+						//debugger;					
+						if (args.data['network-model'] == 'Basic') {
+							$publicTrafficDesc.find("#for_basic_zone").css('display', 'inline');
+							$publicTrafficDesc.find("#for_advanced_zone").hide();
+						}
+						else { //args.data['network-model'] == 'Advanced'
+							$publicTrafficDesc.find("#for_advanced_zone").css('display', 'inline');
+							$publicTrafficDesc.find("#for_basic_zone").hide();
+						}		
+					},
+										
           fields: {
             'gateway': { edit: true, label: 'label.gateway' },
             'netmask': { edit: true, label: 'label.netmask' },
             'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
-            'startip': { edit: true, label: 'start.IP' },
-            'endip': { edit: true, label: 'end.IP' },
+            'startip': { edit: true, label: 'label.start.IP' },
+            'endip': { edit: true, label: 'label.end.IP' },
             'add-rule': { label: 'label.add', addButton: true }
           },
           add: {
@@ -62,8 +76,8 @@
           fields: {
             'netmask': { edit: true, label: 'label.netmask' },
             'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
-            'startip': { edit: true, label: 'start.IP' },
-            'endip': { edit: true, label: 'end.IP' },
+            'startip': { edit: true, label: 'label.start.IP' },
+            'endip': { edit: true, label: 'label.end.IP' },
             'add-rule': { label: 'label.add', addButton: true }
           },
           add: {
@@ -175,23 +189,23 @@
         fields: {
           name: {
             label: 'label.name', validation: { required: true },
-            desc: 'tooltip.zone.name'
+            desc: 'message.tooltip.zone.name'
           },
           dns1: {
             label: 'label.dns.1', validation: { required: true },
-            desc: 'tooltip.dns.1'
+            desc: 'message.tooltip.dns.1'
           },
           dns2: {
             label: 'label.dns.2',
-            desc: 'tooltip.dns.2'
+            desc: 'message.tooltip.dns.2'
           },
           internaldns1: {
             label: 'label.internal.dns.1', validation: { required: true },
-            desc: 'tooltip.internal.dns.1'
+            desc: 'message.tooltip.internal.dns.1'
           },
           internaldns2: {
             label: 'label.internal.dns.2',
-            desc: 'tooltip.internal.dns.2'
+            desc: 'message.tooltip.internal.dns.2'
           },
           networkOfferingId: {
             label: 'label.network.offering',
@@ -254,7 +268,7 @@
           },
           networkdomain: {
             label: 'label.network.domain',
-            desc: 'tooltip.network.domain'
+            desc: 'message.tooltip.network.domain'
           },
           guestcidraddress: {
             label: 'label.guest.cidr',
@@ -297,26 +311,26 @@
       pod: {
         fields: {
           name: {
-            label: 'pod.name',
+            label: 'label.pod.name',
             validation: { required: true },
-            desc: 'tooltip.pod.name'
+            desc: 'message.tooltip.pod.name'
           },
           reservedSystemGateway: {
-            label: 'reserved.system.gateway',
+            label: 'label.reserved.system.gateway',
             validation: { required: true },
-            desc: 'tooltip.reserved.system.gateway'
+            desc: 'message.tooltip.reserved.system.gateway'
           },
           reservedSystemNetmask: {
-            label: 'reserved.system.netmask',
+            label: 'label.reserved.system.netmask',
             validation: { required: true },
-            desc: 'tooltip.reserved.system.netmask'
+            desc: 'message.tooltip.reserved.system.netmask'
           },
           reservedSystemStartIp: {
-            label: 'start.reserved.system.IP',
+            label: 'label.start.reserved.system.IP',
             validation: { required: true }
           },
           reservedSystemEndIp: {
-            label: 'End Reserved system IP',
+            label: 'label.end.reserved.system.IP',
             validation: { required: false }
           }
         }
@@ -351,15 +365,15 @@
             label: 'label.private.interface'
           },
           numretries: {
-            label: 'number.of.retries',
+            label: 'label.numretries',
             defaultValue: '2'
           },          
           capacity: {
-            label: 'capacity',
+            label: 'label.capacity',
             validation: { required: false, number: true }
           },
           dedicated: {
-            label: 'dedicated',
+            label: 'label.dedicated',
             isBoolean: true,
             isChecked: false
           }
@@ -367,7 +381,18 @@
       },
 
       guestTraffic: {
-        preFilter: function(args) {
+        preFilter: function(args) {				                 		
+          var $guestTrafficDesc = $("#add_zone_guest_traffic_desc");	      
+          //debugger;				//Brian, please take a look here	
+          if (args.data['network-model'] == 'Basic') {
+            $guestTrafficDesc.find("#for_basic_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_advanced_zone").hide();
+          }
+          else { //args.data['network-model'] == 'Advanced'
+            $guestTrafficDesc.find("#for_advanced_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_basic_zone").hide();
+          }		
+				
           var selectedZoneObj = {
             networktype: args.data['network-model']
           };
@@ -402,8 +427,8 @@
           //Basic (start)
           guestGateway: { label: 'label.guest.gateway' },
           guestNetmask: { label: 'label.guest.netmask' },
-          guestStartIp: { label: 'guest.start.IP' },
-          guestEndIp: { label: 'guest.end.IP' },
+          guestStartIp: { label: 'label.guest.start.ip' },
+          guestEndIp: { label: 'label.guest.end.ip' },
           //Basic (end)
 
           //Advanced (start)
@@ -458,7 +483,7 @@
             }
           },
           name: {
-            label: 'cluster.name',
+            label: 'label.cluster.name',
             validation: { required: true }
           },
 
@@ -615,7 +640,7 @@
             isHidden: true
           },
           baremetalMAC: {
-            label: 'host.MAC',
+            label: 'label.host.MAC',
             validation: { required: true },
             isHidden: true
           },
@@ -623,12 +648,12 @@
 
           //input_group="OVM" starts here
           agentUsername: {
-            label: 'agent.username',
+            label: 'label.agent.username',
             validation: { required: false },
             isHidden: true
           },
           agentPassword: {
-            label: 'agent.password',
+            label: 'label.agent.password',
             validation: { required: true },
             isHidden: true,
             isPassword: true
@@ -889,7 +914,7 @@
             isHidden: true
           },
           lun: {
-            label: 'LUN.number',
+            label: 'label.LUN.number',
             validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
             isHidden: true
           },
@@ -946,8 +971,8 @@
       var data = args.data;
 
       var stepFns = {
-        addZone: function() {
-          message('creating.zone'); 
+        addZone: function() {				
+          message(dictionary['message.creating.zone']); 
 
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
@@ -996,7 +1021,7 @@
         },
 
         addPhysicalNetworks: function(args) {
-          message('creating.physical.networks');
+          message(dictionary['message.creating.physical.networks']);
 
           var returnedPhysicalNetworks = [];
 
@@ -1279,7 +1304,7 @@
 
         //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
         configurePhysicalNetwork: function(args) {
-          message('configuring.physical.networks'); 
+          message(dictionary['message.configuring.physical.networks']); 
 
           if(args.data.zone.networkType == "Basic") {
             $.ajax({
@@ -1707,7 +1732,7 @@
         },
 
         addNetscalerDevice: function(args) {
-          message('adding.Netscaler.device'); 
+          message(dictionary['message.adding.Netscaler.device']); 
 
           var array1 = [];
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -1888,7 +1913,7 @@
         },
 
         addPod: function(args) {
-          message('creating.pod'); 
+          message(dictionary['message.creating.pod']); 
 
           var array3 = [];
           array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -1923,7 +1948,7 @@
           if((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true))
            ||(args.data.zone.networkType == "Advanced")) {
 					 
-            message('configuring.public.traffic'); 
+            message(dictionary['message.configuring.public.traffic']); 
 
             var stopNow = false;
 
@@ -2009,7 +2034,7 @@
             return complete({});
           }
 
-          message('configuring.storage.traffic');  
+          message(dictionary['message.configuring.storage.traffic']);  
           
           var storageIPRanges = args.data.storageTraffic;
           var tasks = [];
@@ -2088,7 +2113,7 @@
         },
 
         configureGuestTraffic: function(args) {
-          message('configuring.guest.traffic');  
+          message(dictionary['message.configuring.guest.traffic']);  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
             var array1 = [];
@@ -2191,7 +2216,7 @@
         },
 
         addCluster: function(args) {
-          message('creating.cluster'); 
+          message(dictionary['message.creating.cluster']); 
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -2255,7 +2280,7 @@
         },
 
         addHost: function(args) {
-          message('adding.host'); 
+          message(dictionary['message.adding.host']); 
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2328,7 +2353,7 @@
             return;
           }
 
-          message('creating.primary.storage');
+          message(dictionary['message.creating.primary.storage']);
 
           var array1 = [];
           array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -2418,7 +2443,7 @@
         },
 
         addSecondaryStorage: function(args) {
-          message('creating.secondary.storage');
+          message(dictionary['message.creating.secondary.storage']);
 
           var nfs_server = args.data.secondaryStorage.nfsServer;
           var path = args.data.secondaryStorage.path;
@@ -2443,7 +2468,7 @@
       };
 
       var complete = function(args) {
-        message('Zone.creation.complete');
+        message(dictionary['message.Zone.creation.complete']);
         success(args);
       };
 

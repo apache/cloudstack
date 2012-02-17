@@ -50,6 +50,14 @@
 
             <!-- Submit (login) -->
             <input type="submit" value="" />
+
+            <!-- Select language -->
+            <div class="select-language">
+              <select name="language">
+                <option value="en"><fmt:message key="label.lang.english"/></option>
+                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+              </select>
+            </div>
           </div>
         </form>
       </div>
@@ -153,16 +161,6 @@
                     <div class="select-container">
                     </div>
                   </div>
-
-                  <!--
-                  <ul>
-                    <li class="first last"><a href="#instance-wizard-all-isos">All ISOs</a></li>
-                  </ul>
-                  <div id="instance-wizard-all-isos">
-                    <div class="select-container">
-                    </div>
-                  </div>
-                  -->
                 </div>
               </div>
             </div>
@@ -430,18 +428,18 @@
       <div class="multi-wizard zone-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span>Zone Type</span><span class="arrow"></span></li>
-            <li><span class="number">2</span><span>Setup Zone</span><span class="arrow"></span></li>
-            <li><span class="number">3</span><span>Setup Network</span><span class="arrow"></span></li>
+            <li class="first"><span class="number">1</span><span><fmt:message key="label.zone.type"/></span><span class="arrow"></span></li>
+            <li><span class="number">2</span><span><fmt:message key="label.setup.zone"/></span><span class="arrow"></span></li>
+            <li><span class="number">3</span><span><fmt:message key="label.setup.network"/></span><span class="arrow"></span></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
-            <li><span class="number">4</span><span>Add Resources</span><span class="arrow"></span></li>
+            <li><span class="number">4</span><span><fmt:message key="label.add.resources"/></span><span class="arrow"></span></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
             <li style="display:none;"></li>
-            <li class="last"><span class="number">5</span><span>Launch</span></li>
+            <li class="last"><span class="number">5</span><span><fmt:message key="label.launch"/></span></li>
           </ul>
         </div>
         <div class="steps">
@@ -451,21 +449,21 @@
               <div class="content">
                 <!-- Select template -->
                 <div class="section select-network-model">
-                  <h3>Set up zone type</h3>
-                  <p>Please select a configuration for your zone.</p>
+                  <h3><fmt:message key="label.set.up.zone.type"/></h3>
+                  <p><fmt:message key="message.please.select.a.configuration.for.your.zone"/></p>
                   <div class="select-area">
                     <div class="desc">
-                      Provide a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)
+                      <fmt:message key="message.desc.basic.zone"/>
                     </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
-                    <label>Basic</label>
+                    <label><fmt:message key="label.basic"/></label>
                   </div>
                   <div class="select-area">
                     <div class="desc">
-                      For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.
-                    </div>
+                      <fmt:message key="message.desc.advanced.zone"/>  
+										</div>
                     <input type="radio" name="network-model" value="Advanced" />
-                    <label>Advanced</label>
+                    <label><fmt:message key="label.advanced"/></label>
                   </div>
                 </div>
               </div>
@@ -476,8 +474,8 @@
           <div class="setup-zone" zone-wizard-form="zone"
                zone-wizard-step-id="addZone">
             <div class="info-desc">
-              A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
-            </div>
+              <fmt:message key="message.desc.zone"/> 
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -488,20 +486,20 @@
                zone-wizard-step-id="setupPhysicalNetwork"
                zone-wizard-prefilter="setupPhysicalNetwork">
             <ul class="subnav">
-              <li class="physical-network active">Physical Network</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="physical-network active"><fmt:message key="label.physical.network"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
             <div class="info-desc">
-              When adding an advanced zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the management server. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined.<br/><br/><strong>Drag and drop one or more traffic types</strong> onto each physical network.
+              <fmt:message key="message.setup.physical.network.during.zone.creation"/>
             </div>
-            <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span>Add physical network</span></div>
+            <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span><fmt:message key="label.add.physical.network"/></span></div>
 
             <!-- Traffic types drag area -->
             <div class="traffic-types-drag-area">
-              <div class="header">Traffic Types</div>
+              <div class="header"><fmt:message key="label.traffic.types"/></div>
               <ul>
                 <li class="management">
                   <ul class="container">
@@ -510,8 +508,8 @@
                         class="traffic-type-draggable management"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Management</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.management"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="public">
@@ -521,8 +519,8 @@
                         class="traffic-type-draggable public"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Public</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.public"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="guest">
@@ -532,8 +530,8 @@
                         class="traffic-type-draggable guest clone"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Guest</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.guest"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
                 <li class="storage">
@@ -543,8 +541,8 @@
                         class="traffic-type-draggable storage"></li>
                   </ul>
                   <div class="info">
-                    <div class="title">Storage</div>
-                    <div class="desc">Set up the network for traffic between end-user VMs.</div>
+                    <div class="title"><fmt:message key="label.storage"/></div>
+                    <div class="desc"></div>
                   </div>
                 </li>
               </ul>
@@ -562,14 +560,14 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
-              <li class="conditional elb physical-network active">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network active"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">Please specify Netscaler info</div>
+            <div class="info-desc"><fmt:message key="label.please.specify.netscaler.info"/></div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -579,15 +577,16 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network active">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network active"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">
-              Public traffic is generated when VMs in the cloud access the internet. Publicly-accessible IPs must be allocated for this purpose. End users can use the CloudStack UI to acquire these IPs to implement NAT between their guest network and their public network.<br/><br/>Provide at lease one range of IP addresses for internet traffic.
+            <div class="info-desc" id="add_zone_public_traffic_desc">
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
@@ -596,15 +595,15 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod active">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod active"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
             <div class="info-desc">
-              Each zone must contain in one or more pods, and we will add the first pod now. A pod contains hosts and primary storage servers, which you will add in a later step. First, configure a range of reserved IP addresses for CloudStack's internal management traffic. The reserved IP range must be unique for each zone in the cloud.
+              <fmt:message key="message.add.pod.during.zone.creation"/>
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -617,15 +616,16 @@
                zone-wizard-step-id="configureGuestTraffic"
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic active">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/></li>
+              <li class="guest-traffic active"><fmt:message key="label.guest.traffic"/></li>
+              <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
-            <div class="info-desc">
-              Guest network traffic is communication between end-user virtual machines.
+            <div class="info-desc" id="add_zone_guest_traffic_desc">
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -636,15 +636,15 @@
           <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
                zone-wizard-step-id="configureStorageTraffic">
             <ul class="subnav">
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="storage-traffic active">Storage Traffic</li>
+              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
+              <li class="public-network"><fmt:message key="label.public.traffic"/></li>
+              <li class="pod"><fmt:message key="label.pod"/><</li>
+              <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
+              <li class="storage-traffic active"><fmt:message key="label.storage.traffic"/></li>
             </ul>
 
             <div class="info-desc">
-              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
+              <fmt:message key="message.storage.traffic"/>
             </div>
             <div ui-custom="storageTrafficIPRange"></div>
           </div>
@@ -653,15 +653,15 @@
           <div class="add-cluster" zone-wizard-form="cluster"
                zone-wizard-step-id="addCluster">
             <ul class="subnav">
-              <li class="cluster active">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster active"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
 
             <div class="info-desc">
-              Each pod must contain one or more clusters, and we will add the first cluster now. A cluster provides a way to group hosts. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared storage. Each cluster consists of one or more hosts and one or more primary storage servers.
-            </div>
+              <fmt:message key="message.desc.cluster"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -671,14 +671,14 @@
           <div class="add-cluster" zone-wizard-form="host"
                zone-wizard-step-id="addHost" zone-wizard-prefilter="addHost">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host active">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host active"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each cluster must contain at lease one host (computer) for guest VMs to run on, and we will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server.<br/><br/>Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.
-            </div>
+              <fmt:message key="message.desc.host"/>         
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -688,14 +688,14 @@
           <div class="add-cluster" zone-wizard-form="primaryStorage"
                zone-wizard-step-id="addPrimaryStorage">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage active">Primary Storage</li>
-              <li class="secondary-storage">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage active"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each cluster must contain one or more primary storage servers, and we will add the first one now. Primary storage contains the disk volumes for all the VMs running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.
-            </div>
+              <fmt:message key="message.desc.primary.storage"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -705,14 +705,14 @@
           <div class="add-cluster" zone-wizard-form="secondaryStorage"
                zone-wizard-step-id="addSecondaryStorage">
             <ul class="subnav">
-              <li class="cluster">Cluster</li>
-              <li class="host">Host</li>
-              <li class="primary-storage">Primary Storage</li>
-              <li class="secondary-storage active">Secondary Storage</li>
+              <li class="cluster"><fmt:message key="label.cluster"/></li>
+              <li class="host"><fmt:message key="label.host"/></li>
+              <li class="primary-storage"><fmt:message key="label.primary.storage"/></li>
+              <li class="secondary-storage active"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              Each zone must have at lease one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.
-            </div>
+              <fmt:message key="message.desc.secondary.storage"/>
+						</div>
             <div class="content input-area">
               <div class="select-container"></div>
             </div>
@@ -720,9 +720,9 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-            <div class="main-desc">Launch zone</div>
+            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
             <div class="main-desc launch" style="display:none;">
-              Please wait while your zone is being created; this may take a while...
+              <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
             <form>
             </form>
@@ -734,9 +734,9 @@
 
         <!-- Buttons -->
         <div class="buttons">
-          <div class="button previous"><span>Previous</span></div>
-          <div class="button cancel"><span>Cancel</span></div>
-          <div class="button next"><span>Next</span></div>
+          <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
+          <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
+          <div class="button next"><span><fmt:message key="label.next"/></span></div>
         </div>
       </div>
 
@@ -744,16 +744,16 @@
       <div class="network-chart normal">
         <ul>
           <li class="firewall">
-            <div class="name"><span>Firewall</span></div>
-            <div class="view-details" net-target="firewall">View All</div>
+            <div class="name"><span><fmt:message key="label.firewall"/></span></div>
+            <div class="view-details" net-target="firewall"><fmt:message key="label.view.all"/></div>
           </li>
           <li class="loadBalancing">
-            <div class="name"><span>Load Balancing</span></div>
-            <div class="view-details" net-target="loadBalancing">View All</div>
+            <div class="name"><span><fmt:message key="label.load.balancing"/></span></div>
+            <div class="view-details" net-target="loadBalancing"><fmt:message key="label.view.all"/></div>
           </li>
           <li class="portForwarding">
-            <div class="name"><span>Port Forwarding</span></div>
-            <div class="view-details" net-target="portForwarding">View All</div>
+            <div class="name"><span><fmt:message key="label.port.forwarding"/></span></div>
+            <div class="view-details" net-target="portForwarding"><fmt:message key="label.view.all"/></div>
           </li>
         </ul>
       </div>
@@ -762,12 +762,12 @@
       <div class="network-chart static-nat">
         <ul>
           <li class="static-nat-enabled">
-            <div class="name"><span>Static NAT Enabled</span></div>
+            <div class="name"><span><fmt:message key="label.static.nat.enabled"/></span></div>
             <div class="vmname"></div>
           </li>
           <li class="firewall">
-            <div class="name"><span>Firewall</span></div>
-            <div class="view-details" net-target="staticNAT">View All</div>
+            <div class="name"><span><fmt:message key="label.firewall"/></span></div>
+            <div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>
           </li>
         </ul>
       </div>
@@ -907,31 +907,31 @@
       <div class="system-dashboard-view">
         <div class="toolbar">
           <div class="button refresh">
-            <span>Refresh</span>
+            <span><fmt:message key="label.refresh"/></span>
           </div>
         </div>
 
         <!-- Zone dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span>Zones</span>
-            <div class="view-more"><span>View more</span></div>
+            <span><fmt:message key="label.zones"/></span>
+            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
-              <span class="header">Number of Zones</span>
+              <span class="header"><fmt:message key="label.number.of.zones"/></span>
               <span class="overview total" data-item="zoneCount"></span>
             </li>
             <li class="block">
-              <span class="header">Number of Pods</span>
+              <span class="header"><fmt:message key="label.number.of.pods"/></span>
               <span class="overview total" data-item="podCount"></span>
             </li>
             <li class="block">
-              <span class="header">Number of Clusters</span>
+              <span class="header"><fmt:message key="label.number.of.clusters"/></span>
               <span class="overview total" data-item="clusterCount"></span>
             </li>
             <li class="block last">
-              <span class="header">Number of Hosts</span>
+              <span class="header"><fmt:message key="label.number.of.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
             </li>
           </ul>
@@ -940,24 +940,24 @@
         <!-- Host dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span>Hosts</span>
-            <div class="view-more"><span>View more</span></div>
+            <span<fmt:message key="label.hosts"/></span>
+            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
-              <span class="header">Total Hosts</span>
+              <span class="header"><fmt:message key="label.total.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
             </li>
             <li class="block capacity">
-              <span class="header">Total CPU</span>
+              <span class="header"><fmt:message key="label.total.CPU"/></span>
               <span class="overview total" data-item="cpuCapacityTotal"></span>
             </li>
             <li class="block capacity">
-              <span class="header">Total Memory</span>
+              <span class="header"><fmt:message key="label.total.memory"/></span>
               <span class="overview total" data-item="memCapacityTotal"></span>
             </li>
             <li class="block last capacity">
-              <span class="header">Total Storage</span>
+              <span class="header"><fmt:message key="label.total.storage"/></span>
               <span class="overview total" data-item="storageCapacityTotal"></span>
             </li>
           </ul>
@@ -1614,6 +1614,76 @@
 
 <script language="javascript">
 dictionary = {
+'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
+'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
+'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',
+'label.migrate.instance.to.ps': '<fmt:message key="label.migrate.instance.to.ps"/>',
+'label.corrections.saved': '<fmt:message key="label.corrections.saved"/>',
+'message.installWizard.copy.whatIsSecondaryStorage': '<fmt:message key="message.installWizard.copy.whatIsSecondaryStorage"/>',
+'message.installWizard.copy.whatIsPrimaryStorage': '<fmt:message key="message.installWizard.copy.whatIsPrimaryStorage"/>',
+'message.installWizard.copy.whatIsAHost': '<fmt:message key="message.installWizard.copy.whatIsAHost"/>',
+'message.installWizard.copy.whatIsACluster': '<fmt:message key="message.installWizard.copy.whatIsACluster"/>',
+'message.installWizard.copy.whatIsACluster': '<fmt:message key="message.installWizard.copy.whatIsACluster"/>',
+'message.installWizard.copy.whatIsAPod': '<fmt:message key="message.installWizard.copy.whatIsAPod"/>',
+'message.installWizard.copy.whatIsAZone': '<fmt:message key="message.installWizard.copy.whatIsAZone"/>',
+'message.installWizard.copy.whatIsCloudStack': '<fmt:message key="message.installWizard.copy.whatIsCloudStack"/>',
+'message.installWizard.tooltip.addSecondaryStorage.path': '<fmt:message key="message.installWizard.tooltip.addSecondaryStorage.path"/>',
+'message.installWizard.tooltip.addSecondaryStorage.nfsServer': '<fmt:message key="message.installWizard.tooltip.addSecondaryStorage.nfsServer"/>',
+'message.installWizard.tooltip.addPrimaryStorage.path': '<fmt:message key="message.installWizard.tooltip.addPrimaryStorage.path"/>',
+'message.installWizard.tooltip.addPrimaryStorage.server': '<fmt:message key="message.installWizard.tooltip.addPrimaryStorage.server"/>',
+'message.installWizard.tooltip.addPrimaryStorage.name': '<fmt:message key="message.installWizard.tooltip.addPrimaryStorage.name"/>',
+'message.installWizard.tooltip.addHost.password': '<fmt:message key="message.installWizard.tooltip.addHost.password"/>',
+'message.installWizard.tooltip.addHost.username': '<fmt:message key="message.installWizard.tooltip.addHost.username"/>',
+'message.installWizard.tooltip.addHost.hostname': '<fmt:message key="message.installWizard.tooltip.addHost.hostname"/>',
+'message.installWizard.tooltip.addCluster.name': '<fmt:message key="message.installWizard.tooltip.addCluster.name"/>',
+'message.installWizard.tooltip.addPod.reservedSystemEndIp': '<fmt:message key="message.installWizard.tooltip.addPod.reservedSystemEndIp"/>',
+'message.installWizard.tooltip.addPod.reservedSystemStartIp': '<fmt:message key="message.installWizard.tooltip.addPod.reservedSystemStartIp"/>',
+'message.installWizard.tooltip.addPod.reservedSystemNetmask': '<fmt:message key="message.installWizard.tooltip.addPod.reservedSystemNetmask"/>',
+'message.installWizard.tooltip.addPod.reservedSystemGateway': '<fmt:message key="message.installWizard.tooltip.addPod.reservedSystemGateway"/>',
+'message.installWizard.tooltip.addPod.name': '<fmt:message key="message.installWizard.tooltip.addPod.name"/>',
+'message.installWizard.tooltip.configureGuestTraffic.guestEndIp': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.guestEndIp"/>',
+'message.installWizard.tooltip.configureGuestTraffic.guestStartIp': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.guestStartIp"/>',
+'message.installWizard.tooltip.configureGuestTraffic.guestNetmask': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.guestNetmask"/>',
+'message.installWizard.tooltip.configureGuestTraffic.guestGateway': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.guestGateway"/>',
+'message.installWizard.tooltip.configureGuestTraffic.description': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.description"/>',
+'message.installWizard.tooltip.configureGuestTraffic.name': '<fmt:message key="message.installWizard.tooltip.configureGuestTraffic.name"/>',
+'message.installWizard.tooltip.addZone.internaldns2': '<fmt:message key="message.installWizard.tooltip.addZone.internaldns2"/>',
+'message.installWizard.tooltip.addZone.internaldns1': '<fmt:message key="message.installWizard.tooltip.addZone.internaldns1"/>',
+'message.installWizard.tooltip.addZone.dns2': '<fmt:message key="message.installWizard.tooltip.addZone.dns2"/>',
+'message.installWizard.tooltip.addZone.dns1': '<fmt:message key="message.installWizard.tooltip.addZone.dns1"/>',
+'message.installWizard.tooltip.addZone.name': '<fmt:message key="message.installWizard.tooltip.addZone.name"/>',
+'label.launch': '<fmt:message key="label.launch"/>',
+'label.hints': '<fmt:message key="label.hints"/>',
+'label.continue': '<fmt:message key="label.continue"/>',
+'message.setup.successful': '<fmt:message key="message.setup.successful"/>',
+'label.may.continue': '<fmt:message key="label.may.continue"/>',
+'error.installWizard.message': '<fmt:message key="error.installWizard.message"/>',
+'message.installWizard.now.building': '<fmt:message key="message.installWizard.now.building"/>',
+'message.installWizard.click.retry': '<fmt:message key="message.installWizard.click.retry"/>',
+'label.installWizard.click.launch': '<fmt:message key="label.installWizard.click.launch"/>',
+'label.congratulations': '<fmt:message key="label.congratulations"/>',
+'label.installWizard.addSecondaryStorageIntro.subtitle': '<fmt:message key="label.installWizard.addSecondaryStorageIntro.subtitle"/>',
+'label.installWizard.addSecondaryStorageIntro.title': '<fmt:message key="label.installWizard.addSecondaryStorageIntro.title"/>',
+'label.installWizard.addPrimaryStorageIntro.subtitle': '<fmt:message key="label.installWizard.addPrimaryStorageIntro.subtitle"/>',
+'label.installWizard.addPrimaryStorageIntro.title': '<fmt:message key="label.installWizard.addPrimaryStorageIntro.title"/>',
+'label.installWizard.addHostIntro.subtitle': '<fmt:message key="label.installWizard.addHostIntro.subtitle"/>',
+'label.installWizard.addHostIntro.title': '<fmt:message key="label.installWizard.addHostIntro.title"/>',
+'label.installWizard.addClusterIntro.subtitle': '<fmt:message key="label.installWizard.addClusterIntro.subtitle"/>',
+'label.installWizard.addClusterIntro.title': '<fmt:message key="label.installWizard.addClusterIntro.title"/>',
+'label.installWizard.addPodIntro.subtitle': '<fmt:message key="label.installWizard.addPodIntro.subtitle"/>',
+'label.installWizard.addPodIntro.title': '<fmt:message key="label.installWizard.addPodIntro.title"/>',
+'label.installWizard.addZone.title': '<fmt:message key="label.installWizard.addZone.title"/>',
+'error.password.not.match': '<fmt:message key="error.password.not.match"/>',
+'label.installWizard.addZoneIntro.subtitle': '<fmt:message key="label.installWizard.addZoneIntro.subtitle"/>',
+'label.installWizard.addZoneIntro.title': '<fmt:message key="label.installWizard.addZoneIntro.title"/>',
+'label.confirm.password': '<fmt:message key="label.confirm.password"/>',
+'message.change.password': '<fmt:message key="message.change.password"/>',
+'label.save.and.continue': '<fmt:message key="label.save.and.continue"/>',
+'label.continue.basic.install': '<fmt:message key="label.continue.basic.install"/>',
+'label.skip.guide': '<fmt:message key="label.skip.guide"/>',
+'label.introduction.to.cloudstack': '<fmt:message key="label.introduction.to.cloudstack"/>',
+'label.what.is.cloudstack': '<fmt:message key="label.what.is.cloudstack"/>',
+'label.installWizard.subtitle': '<fmt:message key="label.installWizard.subtitle"/>',
 'label.installWizard.title': '<fmt:message key="label.installWizard.title"/>',
 'label.agree': '<fmt:message key="label.agree"/>',
 'label.license.agreement.subtitle': '<fmt:message key="label.license.agreement.subtitle"/>',
@@ -1849,7 +1919,7 @@ dictionary = {
 'label.action.unmanage.cluster': '<fmt:message key="label.action.unmanage.cluster" />',
 'message.action.unmanage.cluster': '<fmt:message key="message.action.unmanage.cluster" />',
 'label.action.unmanage.cluster.processing': '<fmt:message key="label.action.unmanage.cluster.processing" />',
-'allocation.state': '<fmt:message key="allocation.state" />',
+'label.allocation.state': '<fmt:message key="label.allocation.state" />',
 'managed.state': '<fmt:message key="managed.state" />',
 'label.default.use': '<fmt:message key="label.default.use" />',
 'label.host.tags': '<fmt:message key="label.host.tags" />',
@@ -2644,123 +2714,119 @@ dictionary = {
 'message.add.system.service.offering': '<fmt:message key="message.add.system.service.offering" />', //Jes
 'message.action.delete.system.service.offering': '<fmt:message key="message.action.delete.system.service.offering" />',
 'label.action.delete.system.service.offering': '<fmt:message key="label.action.delete.system.service.offering" />',
-'hypervisor.capabilities': '<fmt:message key="hypervisor.capabilities" />',
-'hypervisor.version': '<fmt:message key="hypervisor.version" />',
-'max.guest.limit': '<fmt:message key="max.guest.limit" />',
-'security.group.enabled': '<fmt:message key="security.group.enabled" />',
-'add.network.offering': '<fmt:message key="add.network.offering" />',
-'supported.services': '<fmt:message key="supported.services" />',
-'service.capabilities': '<fmt:message key="service.capabilities" />',
-'guest.type': '<fmt:message key="guest.type" />',
-'specify.IP.ranges': '<fmt:message key="specify.IP.ranges" />',
-'conserve.mode': '<fmt:message key="conserve.mode" />',
-'created.by.system': '<fmt:message key="created.by.system" />',
+'label.hypervisor.capabilities': '<fmt:message key="label.hypervisor.capabilities" />',
+'label.hypervisor.version': '<fmt:message key="label.hypervisor.version" />',
+'label.max.guest.limit': '<fmt:message key="label.max.guest.limit" />',
+'label.add.network.offering': '<fmt:message key="label.add.network.offering" />',
+'label.supported.services': '<fmt:message key="label.supported.services" />',
+'label.service.capabilities': '<fmt:message key="label.service.capabilities" />',
+'label.guest.type': '<fmt:message key="label.guest.type" />',
+'label.specify.IP.ranges': '<fmt:message key="label.specify.IP.ranges" />',
+'label.conserve.mode': '<fmt:message key="label.conserve.mode" />',
+'label.created.by.system': '<fmt:message key="label.created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
 'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
-'redundant.router.capability': '<fmt:message key="redundant.router.capability" />',
-'supported.source.NAT.type': '<fmt:message key="supported.source.NAT.type" />',
-'elastic.LB': '<fmt:message key="elastic.LB" />',
-'LB.isolation': '<fmt:message key="LB.isolation" />',
-'elastic.IP': '<fmt:message key="elastic.IP" />',
-'network.label.display.for.blank.value': '<fmt:message key="network.label.display.for.blank.value" />',
-'Xen.traffic.label': '<fmt:message key="Xen.traffic.label" />',
-'KVM.traffic.label': '<fmt:message key="KVM.traffic.label" />',
-'VMware.traffic.label': '<fmt:message key="VMware.traffic.label" />',
-'start.IP': '<fmt:message key="start.IP" />',
-'end.IP': '<fmt:message key="end.IP" />',
-'IP.range.is.added': '<fmt:message key="IP.range.is.added" />',
-'remove.IP.range': '<fmt:message key="remove.IP.range" />',
-'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
-'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
-'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
-'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
-'IP.ranges': '<fmt:message key="IP.ranges" />',
-'start.Vlan': '<fmt:message key="start.Vlan" />',
-'end.Vlan': '<fmt:message key="end.Vlan" />',
-'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
+'label.redundant.router.capability': '<fmt:message key="label.redundant.router.capability" />',
+'label.supported.source.NAT.type': '<fmt:message key="label.supported.source.NAT.type" />',
+'label.elastic.LB': '<fmt:message key="label.elastic.LB" />',
+'label.LB.isolation': '<fmt:message key="label.LB.isolation" />',
+'label.elastic.IP': '<fmt:message key="label.elastic.IP" />',
+'label.network.label.display.for.blank.value': '<fmt:message key="label.network.label.display.for.blank.value" />',
+'label.xen.traffic.label': '<fmt:message key="label.xen.traffic.label" />',
+'label.kvm.traffic.label': '<fmt:message key="label.kvm.traffic.label" />',
+'label.vmware.traffic.label': '<fmt:message key="label.vmware.traffic.label" />',
+'label.start.IP': '<fmt:message key="label.start.IP" />',
+'label.end.IP': '<fmt:message key="label.end.IP" />',
+'label.remove.ip.range': '<fmt:message key="label.remove.ip.range" />',
+'label.ip.ranges': '<fmt:message key="label.ip.ranges" />',
+'label.start.vlan': '<fmt:message key="label.start.vlan" />',
+'label.end.vlan': '<fmt:message key="label.end.vlan" />',
+'label.broadcast.domain.range': '<fmt:message key="label.broadcast.domain.range" />',
 'label.compute': '<fmt:message key="label.compute" />',
 'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
-'subdomain.access': '<fmt:message key="subdomain.access" />',
-'guest.start.IP': '<fmt:message key="guest.start.IP" />',
-'guest.end.IP': '<fmt:message key="guest.end.IP" />',
-'restart.required': '<fmt:message key="restart.required" />',
-'virtual.router': '<fmt:message key="virtual.router" />',
-'physical.network.ID': '<fmt:message key="physical.network.ID" />',
-'destination.physical.network.ID': '<fmt:message key="destination.physical.network.ID" />',
-'DHCP': '<fmt:message key="DHCP" />',
-'destroy.router': '<fmt:message key="destroy.router" />',
-'confirm.destroy.router': '<fmt:message key="confirm.destroy.router" />',
-'change.service.offering': '<fmt:message key="change.service.offering" />',
-'view.console': '<fmt:message key="view.console" />',
-'redundant.state': '<fmt:message key="redundant.state" />',
-'enable.provider': '<fmt:message key="enable.provider" />',
-'confirm.enable.provider': '<fmt:message key="confirm.enable.provider" />',
-'disable.provider': '<fmt:message key="disable.provider" />',
-'confirm.disable.provider': '<fmt:message key="confirm.disable.provider" />',
-'shutdown.provider': '<fmt:message key="shutdown.provider" />',
-'confirm.shutdown.provider': '<fmt:message key="confirm.shutdown.provider" />',
-'NetScaler': '<fmt:message key="NetScaler" />',
-'add.new.NetScaler': '<fmt:message key="add.new.NetScaler" />',
-'number.of.retries': '<fmt:message key="number.of.retries" />',
-'capacity': '<fmt:message key="capacity" />',
-'dedicated': '<fmt:message key="dedicated" />',
-'F5': '<fmt:message key="F5" />',
-'add.new.F5': '<fmt:message key="add.new.F5" />',
-'SRX': '<fmt:message key="SRX" />',
-'providers': '<fmt:message key="providers" />',
-'add.new.SRX': '<fmt:message key="add.new.SRX" />',
-'timeout': '<fmt:message key="timeout" />',
-'public.network': '<fmt:message key="public.network" />',
-'private.network': '<fmt:message key="private.network" />',
-'public': '<fmt:message key="public" />',
-'enable.swift': '<fmt:message key="enable.swift" />',
+'label.subdomain.access': '<fmt:message key="label.subdomain.access" />',
+'label.guest.start.ip': '<fmt:message key="label.guest.start.ip" />',
+'label.guest.end.ip': '<fmt:message key="label.guest.end.ip" />',
+'label.virtual.router': '<fmt:message key="label.virtual.router" />',
+'label.physical.network.ID': '<fmt:message key="label.physical.network.ID" />',
+'label.destination.physical.network.id': '<fmt:message key="label.destination.physical.network.id" />',
+'label.dhcp': '<fmt:message key="label.dhcp" />',
+'label.destroy.router': '<fmt:message key="label.destroy.router" />',
+'message.confirm.destroy.router': '<fmt:message key="message.confirm.destroy.router" />',
+'label.change.service.offering': '<fmt:message key="label.change.service.offering" />',
+'label.view.console': '<fmt:message key="label.view.console" />',
+'label.redundant.state': '<fmt:message key="label.redundant.state" />',
+'label.enable.provider': '<fmt:message key="label.enable.provider" />',
+'message.confirm.enable.provider': '<fmt:message key="message.confirm.enable.provider" />',
+'label.disable.provider': '<fmt:message key="label.disable.provider" />',
+'message.confirm.disable.provider': '<fmt:message key="message.confirm.disable.provider" />',
+'label.shutdown.provider': '<fmt:message key="label.shutdown.provider" />',
+'message.confirm.shutdown.provider': '<fmt:message key="message.confirm.shutdown.provider" />',
+'label.netScaler': '<fmt:message key="label.netScaler" />',
+'label.add.new.NetScaler': '<fmt:message key="label.add.new.NetScaler" />',
+'label.capacity': '<fmt:message key="label.capacity" />',
+'label.dedicated': '<fmt:message key="label.dedicated" />',
+'label.f5': '<fmt:message key="label.f5" />',
+'label.add.new.F5': '<fmt:message key="label.add.new.F5" />',
+'label.srx': '<fmt:message key="label.srx" />',
+'label.providers': '<fmt:message key="label.providers" />',
+'label.add.new.SRX': '<fmt:message key="label.add.new.SRX" />',
+'label.timeout': '<fmt:message key="label.timeout" />',
+'label.public.network': '<fmt:message key="label.public.network" />',
+'label.private.network': '<fmt:message key="label.private.network" />',
+'label.enable.swift': '<fmt:message key="label.enable.swift" />',
 'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
 'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
-'URL': '<fmt:message key="URL" />',
-'key': '<fmt:message key="key" />',
-'domain': '<fmt:message key="domain" />',
-'delete.NetScaler': '<fmt:message key="delete.NetScaler" />',
-'confirm.delete.NetScaler': '<fmt:message key="confirm.delete.NetScaler" />',
-'delete.F5': '<fmt:message key="delete.F5" />',
-'confirm.delete.F5': '<fmt:message key="confirm.delete.F5" />',
-'delete.SRX': '<fmt:message key="delete.SRX" />',
-'confirm.delete.SRX': '<fmt:message key="confirm.delete.SRX" />',
+'label.key': '<fmt:message key="label.key" />',
+'label.delete.NetScaler': '<fmt:message key="label.delete.NetScaler" />',
+'message.confirm.delete.NetScaler': '<fmt:message key="message.confirm.delete.NetScaler" />',
+'label.delete.F5': '<fmt:message key="label.delete.F5" />',
+'message.confirm.delete.F5': '<fmt:message key="message.confirm.delete.F5" />',
+'label.delete.SRX': '<fmt:message key="label.delete.SRX" />',
+'message.confirm.delete.SRX': '<fmt:message key="message.confirm.delete.SRX" />',
 'label.pods': '<fmt:message key="label.pods" />',
-'pod.name': '<fmt:message key="pod.name" />',
-'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
-'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
-'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
-'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />',
+'label.pod.name': '<fmt:message key="label.pod.name" />',
+'label.reserved.system.gateway': '<fmt:message key="label.reserved.system.gateway" />',
+'label.reserved.system.netmask': '<fmt:message key="label.reserved.system.netmask" />',
+'label.start.reserved.system.IP': '<fmt:message key="label.start.reserved.system.IP" />',
+'label.end.reserved.system.IP': '<fmt:message key="label.end.reserved.system.IP" />',
 'label.clusters': '<fmt:message key="label.clusters" />',
-'cluster.name': '<fmt:message key="cluster.name" />',
-'host.MAC': '<fmt:message key="host.MAC" />',
-'agent.username': '<fmt:message key="agent.username" />',
-'agent.password': '<fmt:message key="agent.password" />',
-'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
-'resource.state': '<fmt:message key="resource.state" />',
-'LUN.number': '<fmt:message key="LUN.number" />',
-'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />',
-'tooltip.zone.name': '<fmt:message key="tooltip.zone.name" />',
-'tooltip.dns.1': '<fmt:message key="tooltip.dns.1" />',
-'tooltip.dns.2': '<fmt:message key="tooltip.dns.2" />',
-'tooltip.internal.dns.1': '<fmt:message key="tooltip.internal.dns.1" />',
-'tooltip.internal.dns.2': '<fmt:message key="tooltip.internal.dns.2" />',
-'tooltip.network.domain': '<fmt:message key="tooltip.network.domain" />',
-'tooltip.pod.name': '<fmt:message key="tooltip.pod.name" />',
-'tooltip.reserved.system.gateway': '<fmt:message key="tooltip.reserved.system.gateway" />',
-'tooltip.reserved.system.netmask': '<fmt:message key="tooltip.reserved.system.netmask" />',
-'creating.zone': '<fmt:message key="creating.zone" />',
-'creating.physical.networks': '<fmt:message key="creating.physical.networks" />',
-'configuring.physical.networks': '<fmt:message key="configuring.physical.networks" />',
-'adding.Netscaler.device': '<fmt:message key="adding.Netscaler.device" />',
-'creating.pod': '<fmt:message key="creating.pod" />',
-'configuring.public.traffic': '<fmt:message key="configuring.public.traffic" />',
-'configuring.storage.traffic': '<fmt:message key="configuring.storage.traffic" />',
-'configuring.guest.traffic': '<fmt:message key="configuring.guest.traffic" />',
-'creating.cluster': '<fmt:message key="creating.cluster" />',
-'adding.host': '<fmt:message key="adding.host" />',
-'creating.primary.storage': '<fmt:message key="creating.primary.storage" />',
-'creating.secondary.storage': '<fmt:message key="creating.secondary.storage" />',
-'Zone.creation.complete': '<fmt:message key="Zone.creation.complete" />'
+'label.cluster.name': '<fmt:message key="label.cluster.name" />',
+'label.host.MAC': '<fmt:message key="label.host.MAC" />',
+'label.agent.username': '<fmt:message key="label.agent.username" />',
+'label.agent.password': '<fmt:message key="label.agent.password" />',
+'message.confirm.action.force.reconnect': '<fmt:message key="message.confirm.action.force.reconnect" />',
+'label.resource.state': '<fmt:message key="label.resource.state" />',
+'label.LUN.number': '<fmt:message key="label.LUN.number" />',
+'message.confirm.remove.IP.range': '<fmt:message key="message.confirm.remove.IP.range" />',
+'message.tooltip.zone.name': '<fmt:message key="message.tooltip.zone.name" />',
+'message.tooltip.dns.1': '<fmt:message key="message.tooltip.dns.1" />',
+'message.tooltip.dns.2': '<fmt:message key="message.tooltip.dns.2" />',
+'message.tooltip.internal.dns.1': '<fmt:message key="message.tooltip.internal.dns.1" />',
+'message.tooltip.internal.dns.2': '<fmt:message key="message.tooltip.internal.dns.2" />',
+'message.tooltip.network.domain': '<fmt:message key="message.tooltip.network.domain" />',
+'message.tooltip.pod.name': '<fmt:message key="message.tooltip.pod.name" />',
+'message.tooltip.reserved.system.gateway': '<fmt:message key="message.tooltip.reserved.system.gateway" />',
+'message.tooltip.reserved.system.netmask': '<fmt:message key="message.tooltip.reserved.system.netmask" />',
+'message.creating.zone': '<fmt:message key="message.creating.zone" />',
+'message.creating.physical.networks': '<fmt:message key="message.creating.physical.networks" />',
+'message.configuring.physical.networks': '<fmt:message key="message.configuring.physical.networks" />',
+'message.adding.Netscaler.device': '<fmt:message key="message.adding.Netscaler.device" />',
+'message.creating.pod': '<fmt:message key="message.creating.pod" />',
+'message.configuring.public.traffic': '<fmt:message key="message.configuring.public.traffic" />',
+'message.configuring.storage.traffic': '<fmt:message key="message.configuring.storage.traffic" />',
+'message.configuring.guest.traffic': '<fmt:message key="message.configuring.guest.traffic" />',
+'message.creating.cluster': '<fmt:message key="message.creating.cluster" />',
+'message.adding.host': '<fmt:message key="message.adding.host" />',
+'message.creating.primary.storage': '<fmt:message key="message.creating.primary.storage" />',
+'message.creating.secondary.storage': '<fmt:message key="message.creating.secondary.storage" />',
+'message.Zone.creation.complete': '<fmt:message key="message.Zone.creation.complete" />',
+'message.enabling.zone': '<fmt:message key="message.enabling.zone" />',
+'error.something.went.wrong.please.correct.the.following': '<fmt:message key="error.something.went.wrong.please.correct.the.following" />',
+'error.could.not.enable.zone': '<fmt:message key="error.could.not.enable.zone" />',
+'message.zone.creation.complete.would.you.like.to.enable.this.zone': '<fmt:message key="message.zone.creation.complete.would.you.like.to.enable.this.zone" />',
+'message.please.add.at.lease.one.traffic.range': '<fmt:message key="message.please.add.at.lease.one.traffic.range" />',
+'message.you.must.have.at.least.one.physical.network': '<fmt:message key="message.you.must.have.at.least.one.physical.network" />',
+'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />'
 };
 </script>

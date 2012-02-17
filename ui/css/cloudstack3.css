@@ -236,6 +236,27 @@ body.login {
   box-shadow: 0px 3px 5px #D5D5D5;
 }
 
+.login .select-language {
+  margin-top: 10px;
+  float: left;
+}
+
+.login .select-language select {
+  width: 125px;
+  border: 1px solid #808080;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  font-size: 12px;
+  /*+box-shadow:inset 0px 1px 1px #838383;*/
+  -moz-box-shadow: inset 0px 1px 1px #838383;
+  -webkit-box-shadow: inset 0px 1px 1px #838383;
+  -o-box-shadow: inset 0px 1px 1px #838383;
+  box-shadow: inset 0px 1px 1px #838383;
+}
+
 .login .fields {
   width: 409px;
   float: left;
@@ -304,6 +325,10 @@ body.login {
   float: left;
   margin: 72px 0 0 209px;
   background: url(../images/logo-login.png) no-repeat;
+}
+
+.login.nologo .logo {
+  background-image: url(../images/logo-login-oss.png);
 }
 
 .login form {
@@ -494,9 +519,8 @@ body.login {
 
 /*** EULA*/
 .install-wizard .eula-copy {
-  width: 645px;
+  width: 688px;
   height: 480px;
-  overflow: auto;
   background: #FFFFFF;
   border: 1px solid #BCBCBC;
   /*+box-shadow:0px 4px 10px #B9B9B9;*/
@@ -504,12 +528,13 @@ body.login {
   -webkit-box-shadow: 0px 4px 10px #B9B9B9;
   -o-box-shadow: 0px 4px 10px #B9B9B9;
   box-shadow: 0px 4px 10px #B9B9B9;
-  padding: 8px 20px;
+  padding: 5px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
+  overflow: auto;
 }
 
 .install-wizard .eula-copy p {
@@ -705,6 +730,12 @@ body.login {
 }
 
 .install-wizard .step.intro {
+}
+
+.install-wizard .step.intro iframe {
+  width: 99%;
+  height: 99%;
+  margin: 4px;
 }
 
 .install-wizard .step.intro .title {
@@ -1617,6 +1648,10 @@ div.detail-group.actions td {
   display: inline-block;
   background: url(../images/citrix-logo-darkbg.png) no-repeat 97% 8px;
   padding: 0 96px 0 0;
+}
+
+#header div.controls.nologo {
+  background-image: none;
 }
 
 .button {
