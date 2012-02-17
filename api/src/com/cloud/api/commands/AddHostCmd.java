@@ -142,7 +142,7 @@ public class AddHostCmd extends BaseCmd {
             List<? extends Host> result = _resourceService.discoverHosts(this);
             ListResponse<HostResponse> response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-            if (result != null) {
+            if (result != null && result.size() > 0) {
                 for (Host host : result) {
                     HostResponse hostResponse = _responseGenerator.createHostResponse(host);
                     hostResponses.add(hostResponse);
