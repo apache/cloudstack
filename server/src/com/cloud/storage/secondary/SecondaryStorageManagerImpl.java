@@ -335,12 +335,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public boolean deleteHost(Long hostId) {
         List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
         if( snapshots != null && !snapshots.isEmpty()) {
-            throw new CloudRuntimeException("Can not delete this secondary storage due to there are still snapshots on it ");
+            throw new CloudRuntimeException("Can not delete this secondary storage since it contains atleast one or more snapshots ");
         }
         if (!_swiftMgr.isSwiftEnabled()) {
             List<Long> list = _templateDao.listPrivateTemplatesByHost(hostId);
             if (list != null && !list.isEmpty()) {
-                throw new CloudRuntimeException("Can not delete this secondary storage due to there are still private template on it ");
+                throw new CloudRuntimeException("Can not delete this secondary storage since it contains private templates ");
             }
         }
         _vmTemplateHostDao.deleteByHost(hostId);
