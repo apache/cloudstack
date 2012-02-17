@@ -1737,17 +1737,18 @@
                     }),
                     multipleAdd: true,
                     fields: {
-                      'name': { edit: true, label: 'label.name' },
+                      'name': { edit: true, label: 'label.name', isEditable: true },
                       'publicport': { edit: true, label: 'label.public.port' },
                       'privateport': { edit: true, label: 'label.private.port' },
                       'algorithm': {
                         label: 'label.algorithm',
+                        isEditable: true,
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { name: 'roundrobin', description: _l('label.round.robin') },
-                              { name: 'leastconn', description: _l('label.least.connections') },
-                              { name: 'source', description: _l('label.source') }
+                              { id: 'roundrobin', name: 'roundrobin', description: _l('label.round.robin') },
+                              { id: 'leastconn', name: 'leastconn', description: _l('label.least.connections') },
+                              { id: 'source', name: 'source', description: _l('label.source') }
                             ]
                           });
                         }
@@ -1855,6 +1856,26 @@
                       }
                     },
                     actions: {
+                      edit: {
+                        label: 'label.edit',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('updateLoadBalancerRule'),
+                            data: $.extend(args.data, {
+                              id: args.context.multiRule[0].id
+                            }),
+                            success: function(json) {
+                              args.response.success({
+                                _custom: { jobId: json.updateloadbalancerruleresponse.jobid },
+                                notification: {
+                                  label: 'Edit LB rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            }
+                          });             
+                        }
+                      },
                       destroy:  {
                         label: 'label.action.delete.load.balancer',
                         action: function(args) {
