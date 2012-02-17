@@ -3561,6 +3561,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering.isDefault() == true) {
             throw new InvalidParameterValueException("Default network offering can't be deleted");
         }
+        
+        //don't allow to delete network offering if it's in use by existing networks (the offering can be disabled though)
+        int networkCount = _networkDao.getNetworkCountByNetworkOffId(offeringId);
+        if (networkCount > 0) {
+            throw new InvalidParameterValueException("Can't delete network offering " + offeringId + " as its used by " + networkCount + " networks. " +
+            		"To make the network offering unavaiable, disable it");
+        }
 
         if (_networkOfferingDao.remove(offeringId)) {
             return true;

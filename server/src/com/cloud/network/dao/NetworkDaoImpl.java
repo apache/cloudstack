@@ -60,12 +60,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
     final GenericSearchBuilder<NetworkVO, Long> CountByOfferingId;
     final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
-    final SearchBuilder<NetworkVO> securityGroupSearch;
+    final SearchBuilder<NetworkVO> SecurityGroupSearch;
+    private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
+
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
     NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
+
 
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -132,11 +135,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
         PhysicalNetworkSearch.done();
 
-        securityGroupSearch = createSearchBuilder();
+        SecurityGroupSearch = createSearchBuilder();
         SearchBuilder<NetworkServiceMapVO> join3 = _ntwkSvcMap.createSearchBuilder();
         join3.and("service", join3.entity().getService(), Op.EQ);
-        securityGroupSearch.join("services", join3, securityGroupSearch.entity().getId(), join3.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
-        securityGroupSearch.done();
+        SecurityGroupSearch.join("services", join3, SecurityGroupSearch.entity().getId(), join3.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        SecurityGroupSearch.done();
+        
+        NetworksCount = createSearchBuilder(Integer.class);
+        NetworksCount.select(null, Func.COUNT, NetworksCount.entity().getId());
+        NetworksCount.and("networkOfferingId", NetworksCount.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        NetworksCount.done();
 
         _tgMacAddress = _tgs.get("macAddress");
 
@@ -344,7 +352,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
     @Override
     public List<NetworkVO> listSecurityGroupEnabledNetworks() {
-        SearchCriteria<NetworkVO> sc = securityGroupSearch.create();
+        SearchCriteria<NetworkVO> sc = SecurityGroupSearch.create();
         sc.setJoinParameters("services", "service", Service.SecurityGroup.getName());
         return listBy(sc);
     }
@@ -399,6 +407,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("trafficType", trafficType);
 
         return listBy(sc, null);
+    }
+    
+    @Override
+    public int getNetworkCountByNetworkOffId(long networkOfferingId) {
+        SearchCriteria<Integer> sc = NetworksCount.create();
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
     }
 
 }
