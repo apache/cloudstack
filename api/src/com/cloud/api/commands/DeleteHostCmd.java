@@ -62,7 +62,7 @@ public class DeleteHostCmd extends BaseCmd {
     }
     
     public boolean isForceDestoryLocalStorage() {
-        return (forceDestroyLocalStorage != null) ? forceDestroyLocalStorage : false;
+        return (forceDestroyLocalStorage != null) ? forceDestroyLocalStorage : true;
     }
 
     // ///////////////////////////////////////////////////
