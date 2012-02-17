@@ -47,6 +47,8 @@
       return true;
     });
 
+    if (!args.hasLogo) $login.addClass('nologo');
+
    // Labels cause related input to be focused
     $login.find('label').click(function() {
       var $input = $inputs.filter('[name=' + $(this).attr('for') + ']');

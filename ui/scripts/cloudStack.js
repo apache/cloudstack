@@ -293,20 +293,10 @@
                   });
                 };
 
-                // EULA check
-                $.ajax({
-                  url: 'eula.html',
-                  dataType: 'html',
-                  success: function(html) {
-                    initInstallWizard(html);
-                  },
-                  error: function() {
-                    initInstallWizard(null);
-                  }
-                });
+                initInstallWizard(loginArgs.eula);
               } else {
                 // Show cloudStack main UI
-                $container.cloudStack(cloudStackArgs);
+                $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
               }
             }
           }
@@ -321,7 +311,17 @@
       }
     };
 
-    cloudStack.uiCustom.login(loginArgs);
+    // EULA check
+    $.ajax({
+      url: 'eula.html',
+      dataType: 'html',
+      success: function(html) {
+        cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
+      },
+      error: function() {
+        cloudStack.uiCustom.login(loginArgs);
+      }
+    });
 
     // Localization
     cloudStack.localizationFn = function(str) {

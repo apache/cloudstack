@@ -306,6 +306,10 @@ body.login {
   background: url(../images/logo-login.png) no-repeat;
 }
 
+.login.nologo .logo {
+  background-image: url(../images/logo-login-oss.png);
+}
+
 .login form {
   display: block;
   width: 1000px;
@@ -1623,6 +1627,10 @@ div.detail-group.actions td {
   display: inline-block;
   background: url(../images/citrix-logo-darkbg.png) no-repeat 97% 8px;
   padding: 0 96px 0 0;
+}
+
+#header div.controls.nologo {
+  background-image: none;
 }
 
 .button {

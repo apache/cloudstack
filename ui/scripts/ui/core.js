@@ -293,6 +293,9 @@
         }
       }
     });
+
+    // Hide logo conditionally
+    if (!args.hasLogo) $('#header .controls').addClass('nologo');
     
     return this;
   };
