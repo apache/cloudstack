@@ -60,6 +60,7 @@
           context: args.context,
           noSelect: true,
           fields: {
+					  'gateway': { edit: true, label: 'label.gateway' },			
             'netmask': { edit: true, label: 'label.netmask' },
             'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
             'startip': { edit: true, label: 'label.start.IP' },
