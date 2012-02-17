@@ -324,4 +324,7 @@ deleteStorageNetworkIpRange=com.cloud.api.commands.DeleteStorageNetworkIpRangeCm
 listStorageNetworkIpRange=com.cloud.api.commands.listStorageNetworkIpRangeCmd;1
 updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;1
 
-
+### Network Devices commands
+addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
+listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
+deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1

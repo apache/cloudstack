@@ -16,4 +16,6 @@ public interface StorageNetworkIpRange {
     String getZoneUuid();
     
     String getNetmask();
+    
+    String getGateway();
 }

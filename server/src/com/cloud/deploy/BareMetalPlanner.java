@@ -81,8 +81,8 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			return new DeployDestination(dc, pod, c, h);
 		}
 		
-		if (offering.getTags() != null) {
-			String[] tags = offering.getTags().split(",");
+		if (offering.getHostTag() != null) {
+			String[] tags = offering.getHostTag().split(",");
 			if (tags.length > 0) {
 				hostTag = tags[0];
 			}

@@ -41,6 +41,9 @@ public class StorageNetworkIpAddressVO {
 	
 	@Column(name = "vlan", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
 	Integer vlan;
+	
+	@Column(name = "gateway", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+	String gateway;
 
 	protected StorageNetworkIpAddressVO() {
 	}
@@ -91,5 +94,9 @@ public class StorageNetworkIpAddressVO {
 	
 	public Integer getVlan() {
 		return vlan;
+	}
+	
+	public String getGateway() {
+		return gateway;
 	}
 }

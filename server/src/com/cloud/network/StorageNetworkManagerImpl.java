@@ -227,7 +227,7 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
 		StorageNetworkIpRangeVO range = null;
 
 		txn.start();
-		range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIp, vlan, netmask);
+		range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIp, vlan, netmask, cmd.getGateWay());
 		_sNwIpRangeDao.persist(range);
 		try {
 			createStorageIpEntires(txn, range.getId(), startIp, endIp, zoneId);

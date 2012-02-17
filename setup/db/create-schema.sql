@@ -586,6 +586,7 @@ CREATE TABLE `cloud`.`dc_storage_network_ip_range` (
   `uuid` varchar(40),
   `start_ip` char(40) NOT NULL COMMENT 'start ip address',
   `end_ip` char(40) NOT NULL COMMENT 'end ip address',
+  `gateway` varchar(15) NOT NULL COMMENT 'gateway ip address',
   `vlan` int unsigned DEFAULT NULL COMMENT 'vlan the storage network on',
   `netmask` varchar(15) NOT NULL COMMENT 'netmask for storage network',
   `data_center_id` bigint unsigned NOT NULL,

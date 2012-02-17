@@ -1738,7 +1738,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         element.prepare(network, profile, vmProfile, dest, context);
-        if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+        if (vmProfile.getType() == Type.User && vmProfile.getHypervisorType() != HypervisorType.BareMetal && element.getProvider() != null) {
             if (areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     (element instanceof DhcpServiceProvider)) {
