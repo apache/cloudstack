@@ -105,12 +105,15 @@
       $.cookie('lang', $(this).val());
       document.location.reload();
     });
+<<<<<<< HEAD
 
     // Set default language
     if (!$.cookie('lang')) {
       $.cookie('lang', 'en');
     }
 
+=======
+>>>>>>> d3cc43e... bug 13815
     $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);

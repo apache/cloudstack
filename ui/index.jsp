@@ -59,7 +59,10 @@
               <select name="language">
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+<<<<<<< HEAD
 								<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
+=======
+>>>>>>> d3cc43e... bug 13815
               </select>
             </div>
           </div>
