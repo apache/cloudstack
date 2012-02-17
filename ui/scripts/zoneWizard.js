@@ -367,7 +367,18 @@
       },
 
       guestTraffic: {
-        preFilter: function(args) {
+        preFilter: function(args) {				                 		
+          var $guestTrafficDesc = $("#add_zone_guest_traffic_desc");	      
+          //debugger;					
+          if (args.data['network-model'] == 'Basic') {
+            $guestTrafficDesc.find("#for_basic_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_advanced_zone").hide();
+          }
+          else { //args.data['network-model'] == 'Advanced'
+            $guestTrafficDesc.find("#for_advanced_zone").css('display', 'inline');
+						$guestTrafficDesc.find("#for_basic_zone").hide();
+          }		
+				
           var selectedZoneObj = {
             networktype: args.data['network-model']
           };
