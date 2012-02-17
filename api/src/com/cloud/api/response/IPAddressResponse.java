@@ -93,7 +93,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String state;
     
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");    
+    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    
+    @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Elastic IPs only, and can have either StaticNat or LB value")
+    private String purpose;
 
 /*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
@@ -207,11 +210,11 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
-    public long getphysicalNetworkId() {
-        return physicalNetworkId.getValue();
-    }
-
 	public void setIsElastic(Boolean isElastic) {
 		this.isElastic = isElastic;
 	}
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
 }
