@@ -122,6 +122,9 @@ public class AsyncJobResponse extends BaseResponse {
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetworkServiceProvider.toString())) {
                 this.jobInstanceId.setTableName("physical_network_service_providers");
             } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
+        	    this.jobInstanceId.setTableName("firewall_rules");
+        	} else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
         	}

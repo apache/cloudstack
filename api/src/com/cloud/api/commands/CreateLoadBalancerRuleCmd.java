@@ -31,6 +31,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
@@ -346,6 +347,11 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
 
     public void setSourceIpAddressId(Long ipId) {
         this.publicIpId = ipId;
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.FirewallRule;
     }
 
 }
