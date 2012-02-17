@@ -19,8 +19,6 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
@@ -119,6 +117,10 @@ public class AsyncJobResponse extends BaseResponse {
         		this.jobInstanceId.setTableName("security_group");
         	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetwork.toString())) {
         		this.jobInstanceId.setTableName("physical_network");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.TrafficType.toString())) {
+                this.jobInstanceId.setTableName("physical_network_traffic_types");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetworkServiceProvider.toString())) {
+                this.jobInstanceId.setTableName("physical_network_service_providers");
         	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
         	    this.jobInstanceId.setTableName("firewall_rules");
         	} else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){

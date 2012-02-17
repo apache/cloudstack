@@ -37,6 +37,8 @@ public interface AsyncJob extends Identity {
         IpAddress,
         SecurityGroup,
         PhysicalNetwork,
+        TrafficType,
+        PhysicalNetworkServiceProvider,
         FirewallRule
     }
 

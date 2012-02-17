@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
@@ -88,5 +89,9 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
         return EventTypes.EVENT_TRAFFIC_TYPE_DELETE;
     }
 
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.TrafficType;
+    }
 
 }
