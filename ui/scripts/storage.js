@@ -220,13 +220,8 @@
                       var jid = json.createsnapshotresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {
-                            return json.queryasyncjobresultresponse.jobresult.snapshot;
-                          },
-                          getActionFilter: function() {
-                            return volumeActionfilter;
-                          }
+                         {
+												   jobId: jid //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume. 
                          }
                         }
                       );
