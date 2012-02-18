@@ -560,7 +560,7 @@
               return 'message.action.start.instance';
             },
             notification: function(args) {
-              return 'message.notification.start.instance';
+              return 'label.action.start.instance';
             }
           },
           notification: {
@@ -611,7 +611,7 @@
             },
 
             notification: function(args) {
-              return 'message.notification.stop.instance';
+              return 'label.action.stop.instance';
             }
           },
           notification: {
@@ -647,7 +647,7 @@
               return 'message.action.reboot.instance';
             },
             notification: function(args) {
-              return 'message.notification.reboot.instance';
+              return 'instances.actions.reboot.label';
             }
           },
           notification: {
