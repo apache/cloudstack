@@ -179,7 +179,7 @@ class deployDataCenters():
         vrconfigresponse = \
         self.apiClient.configureVirtualRouterElement(vrconfig)
 
-        if zone.securitygroupenabled:
+        if zone.networktype == "Basic" and zone.securitygroupenabled:
             sgprovider = configGenerator.provider()
             sgprovider.name = "SecurityGroupProvider"
             zone.providers.append(sgprovider)
