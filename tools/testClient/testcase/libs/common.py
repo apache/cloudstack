@@ -54,6 +54,156 @@ def get_template(apiclient, zoneid, ostypeid=12, services=None):
         if template.ostypeid == ostypeid:
             return template
 
+def download_systemplates_sec_storage(server, services):
+    """Download System templates on sec storage"""
+
+    # Login to management server
+    ssh = remoteSSHClient.remoteSSHClient(
+                                          server["ipaddress"],
+                                          server["port"],
+                                          server["username"],
+                                          server["password"]
+                                          )
+    print ssh
+    # Mount Secondary Storage on Management Server
+    cmds = [
+            "mkdir -p %s" % services["mnt_dir"],
+            "mount -t nfs %s:/%s %s" % (
+                                        services["sec_storage"],
+                                        services["path"],
+                                        services["mnt_dir"]
+                                        ),
+            "%s -m %s -u %s -h %s -F" % (
+                                         services["command"],
+                                         services["mnt_dir"],
+                                         services["download_url"],
+                                         services["hypervisor"]
+                                        )
+            ]
+    for c in cmds:
+        print c
+        result = ssh.execute(c)
+        print result
+
+    res = str(result)
+
+    # Unmount the Secondary storage
+    ssh.execute("umount %s" % (services["mnt_dir"]))
+
+    if res.count("Successfully installed system VM template") == 1:
+        return
+    else:
+        self.debug("Failed to download System Templates on Sec Storage")
+    return
+
+def wait_for_ssvms(apiclient, zoneid, podid):
+    """After setup wait for SSVMs to come Up"""
+
+    time.sleep(180)
+    timeout = 20
+    while True:
+            list_ssvm_response = list_ssvms(
+                                        apiclient,
+                                        systemvmtype='secondarystoragevm',
+                                        zoneid=zoneid,
+                                        podid=podid
+                                        )
+            ssvm = list_ssvm_response[0]
+            if ssvm.state != 'Running':
+                # Sleep to ensure SSVMs are Up and Running
+                time.sleep(120)
+                timeout = timeout - 1
+            elif ssvm.state == 'Running':
+                break
+            elif timeout == 0:
+                self.debug("SSVMs failed to start")
+                break
+
+    timeout = 20
+    while True:
+            list_ssvm_response = list_ssvms(
+                                        apiclient,
+                                        systemvmtype='consoleproxy',
+                                        zoneid=zoneid,
+                                        podid=podid
+                                        )
+            cpvm = list_ssvm_response[0]
+            if cpvm.state != 'Running':
+                # Sleep to ensure SSVMs are Up and Running
+                time.sleep(120)
+                timeout = timeout - 1
+            elif cpvm.state == 'Running':
+                break
+            elif timeout == 0:
+                self.debug("SSVMs failed to start")
+                break
+    return
+
+def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip):
+    """After setup wait till builtin templates are downloaded"""
+
+    # Change IPTABLES Rules
+    result = get_process_status(
+                                host["ipaddress"],
+                                host["port"],
+                                host["username"],
+                                host["password"],
+                                linklocalip,
+                                "iptables -P INPUT ACCEPT"
+                            )
+
+    # Find the BUILTIN Templates for given Zone, Hypervisor
+    list_template_response = list_templates(
+                                    apiclient,
+                                    hypervisor=hypervisor,
+                                    zoneid=zoneid,
+                                    templatefilter='self'
+                                    )
+
+    # Ensure all BUILTIN templates are downloaded
+    templateid = None
+    for template in list_template_response:
+        if template.templatetype == "BUILTIN":
+                templateid = template.id
+
+    # Sleep to ensure that template is in downloading state after adding
+    # Sec storage
+    time.sleep(120)
+    while True:
+        template_response = list_templates(
+                                    apiclient,
+                                    id=templateid,
+                                    zoneid=zoneid,
+                                    templatefilter='self'
+                                    )
+        template = template_response[0]
+        # If template is ready,
+        # template.status = Download Complete
+        # Downloading - x% Downloaded
+        # Error - Any other string 
+        if template.status == 'Download Complete'  :
+            break
+        elif 'Downloaded' not in template.status.split():
+            raise Exception
+        elif 'Downloaded' in template.status.split():
+            time.sleep(120)
+    return
+
+def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,
+                          max=None):
+    """Updates the resource limit to 'max' for given account"""
+
+    cmd = updateResourceLimit.updateResourceLimitCmd()
+    cmd.resourcetype = resourcetype
+    if account:
+        cmd.account = account
+    if domainid:
+        cmd.domainid = domainid
+    if max:
+        cmd.max = max
+    apiclient.updateResourceLimit(cmd)
+    return
+
 def list_routers(apiclient, **kwargs):
     """List all Routers matching criteria"""
 
@@ -180,6 +330,13 @@ def list_templates(apiclient, **kwargs):
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listTemplates(cmd))
 
+def list_domains(apiclient, **kwargs):
+    """Lists domains"""
+
+    cmd = listDomains.listDomainsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listDomains(cmd))
+
 def list_accounts(apiclient, **kwargs):
     """Lists accounts and provides detailed account information for
     listed accounts"""
@@ -187,6 +344,14 @@ def list_accounts(apiclient, **kwargs):
     cmd = listAccounts.listAccountsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listAccounts(cmd))
+
+def list_users(apiclient, **kwargs):
+    """Lists users and provides detailed account information for
+    listed users"""
+
+    cmd = listUsers.listUsersCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listUsers(cmd))
 
 def list_snapshot_policy(apiclient, **kwargs):
     """Lists snapshot policies."""

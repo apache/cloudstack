@@ -51,7 +51,6 @@ class Services:
                 "medium":   # Create a medium virtual machine instance 
                 {
                     "displayname": "testserver",
-                    "account":"admin",
                     "username": "root",
                     "password": "password",
                     "ssh_port": 22,

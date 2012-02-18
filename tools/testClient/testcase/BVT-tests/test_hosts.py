@@ -44,8 +44,7 @@ class Services:
                                         "password": 'fr3sca',
                                         "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
                                         # Format:http://vCenter Host/Datacenter/Cluster
-                                        "clustername": '192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
-                                        # Format: http://IP_Address/Datacenter/Cluster
+                                        "clustername": 'VMWare Cluster',
                                         },
                                     },
                        "hosts": {
