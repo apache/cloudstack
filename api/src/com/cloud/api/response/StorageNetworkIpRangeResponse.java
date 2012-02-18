@@ -33,7 +33,7 @@ public class StorageNetworkIpRangeResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the storage network IP range")
     private String netmask;
      
-	public void setUuid(String uuId) {
+	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
 	
