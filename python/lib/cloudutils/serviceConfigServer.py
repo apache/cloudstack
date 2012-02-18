@@ -64,7 +64,13 @@ class cloudManagementConfig(serviceCfgBase):
         
         #distro like sl 6.1 needs this folder, or tomcat6 failed to start
         bash("mkdir /var/log/cloud-management/")
-
+        #set max process per account is unlimited
+        if os.path.exists("/etc/security/limits.conf"):
+            cfo = configFileOps("/etc/security/limits.conf")
+            cfo.add_lines("cloud soft nproc -1\n")
+            cfo.add_lines("cloud hard nproc -1\n")
+            cfo.save()
+        
         try:
             self.syscfg.svo.disableService("tomcat6")
         except:

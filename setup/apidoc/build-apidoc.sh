@@ -24,6 +24,11 @@ TARGETJARDIR="$1"
 shift
 DEPSDIR="$1"
 shift
+DISTDIR="$1"
+shift
+
+thisdir=$(readlink -f $(dirname "$0"))
+
 
 PATHSEP=':'
 if [[ $OSTYPE == "cygwin" ]] ; then
@@ -41,9 +46,35 @@ for file in $DEPSDIR/*.jar; do
   CP=${CP}$PATHSEP$file
 done
 
-java -cp $CP com.cloud.api.doc.ApiXmlDocWriter $*
+java -cp $CP com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
 
 if [ $? -ne 0 ]
 then
 	exit 1
 fi
+
+set -e
+(cd "$DISTDIR/xmldoc"
+ cp "$thisdir"/*.java .
+ cp "$thisdir"/*.xsl .
+ sed -e 's,%API_HEADER%,User API,g' "$thisdir/generatetoc_header.xsl" >generatetocforuser.xsl
+ sed -e 's,%API_HEADER%,Root Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocforadmin.xsl
+ sed -e 's,%API_HEADER%,Domain Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocfordomainadmin.xsl
+
+ python "$thisdir/gen_toc.py" $(find -type f)
+
+ cat generatetocforuser_include.xsl >>generatetocforuser.xsl
+ cat generatetocforadmin_include.xsl >>generatetocforadmin.xsl
+ cat generatetocfordomainadmin_include.xsl >>generatetocfordomainadmin.xsl
+
+ cat "$thisdir/generatetoc_footer.xsl" >>generatetocforuser.xsl
+ cat "$thisdir/generatetoc_footer.xsl" >>generatetocforadmin.xsl
+ cat "$thisdir/generatetoc_footer.xsl" >>generatetocfordomainadmin.xsl
+
+ mkdir -p html/user html/domain_admin html/root_admin
+ cp -r "$thisdir/includes" html
+ cp -r "$thisdir/images" html
+
+ javac -cp . *.java
+ java -cp . XmlToHtmlConverter
+)
