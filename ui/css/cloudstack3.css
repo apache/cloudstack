@@ -4492,6 +4492,12 @@ label.error {
   border: 1px solid #E0DFDF;
 }
 
+.multi-wizard.instance-wizard .service-offering .content {
+  width: 463px;
+  max-height: 365px;
+  overflow: auto;
+}
+
 .multi-wizard .content .section .select-area {
   width: 334px;
   height: 45px;
