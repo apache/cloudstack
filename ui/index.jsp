@@ -685,7 +685,7 @@
           </div>
 
           <!-- Step 4.3: Add primary storage -->
-          <div class="add-cluster" zone-wizard-form="primaryStorage"
+          <div class="add-cluster" zone-wizard-form="primaryStorage" zone-wizard-prefilter="addPrimaryStorage"
                zone-wizard-step-id="addPrimaryStorage">
             <ul class="subnav">
               <li class="cluster"><fmt:message key="label.cluster"/></li>
