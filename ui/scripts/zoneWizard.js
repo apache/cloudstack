@@ -4,7 +4,8 @@
   var selectedNetworkOfferingHavingEIP = false;
   var selectedNetworkOfferingHavingELB = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
-
+  var configurationUseLocalStorage = false;
+	
   cloudStack.zoneWizard = {
     customUI: {
       publicTrafficIPRange: function(args) {
@@ -157,7 +158,33 @@
 
       addHost: function(args) {
         return (args.groupedData.cluster.hypervisor != "VMware");
-      }
+      },
+						
+			addPrimaryStorage: function(args) {		
+				$.ajax({
+				  url: createURL("listConfigurations&name=" + todb("use.local.storage")),
+					dataType: 'json',
+					async: false,
+					success: function(json) {					  
+					  var items = json.listconfigurationsresponse.configuration; //unfortunately, it returns 2 items("system.vm.use.local.storage", "use.local.storage") instead of 1 item. 						
+						if(items != null && items.length > 0) { 
+						  for(var i = 0; i < items.length; i++) {
+							  item = items[i];
+							  if(item.name == "use.local.storage") {								  
+								  break; //break for loop
+								}
+							}
+						}
+					}
+				});		
+
+				if(item == null || item.value == "false")
+				  configurationUseLocalStorage = false;
+				else				
+          configurationUseLocalStorage = true;
+					
+				return (!configurationUseLocalStorage);
+      }	
     },
 
     forms: {
@@ -667,13 +694,13 @@
         fields: {
           name: {
             label: 'label.name',
-            validation: { required: false }  // Primary storage is not required. User can use local storage instead of primary storage.
-          },
+            validation: { required: true }  
+					},
 
           protocol: {
             label: 'label.protocol',
-            validation: { required: false }, // Primary storage is not required. User can use local storage instead of primary storage.
-            select: function(args) {
+            validation: { required: true }, 
+						select: function(args) {
               var selectedClusterObj = {
                 hypervisortype: args.context.zones[0].hypervisor
               };
@@ -889,53 +916,53 @@
           },
           server: {
             label: 'label.server',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //nfs
           path: {
             label: 'label.path',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //iscsi
           iqn: {
             label: 'label.target.iqn',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
           lun: {
             label: 'label.LUN.number',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //clvm
           volumegroup: {
             label: 'label.volgroup',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //vmfs
           vCenterDataCenter: {
             label: 'label.vcenter.datacenter',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
           vCenterDataStore: {
             label: 'label.vcenter.datastore',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //always appear (begin)
           storageTags: {
             label: 'label.storage.tags',
-            validation: { required: false }   // Primary storage is not required. User can use local storage instead of primary storage.
-          }
+            validation: { required: true }   
+					}
           //always appear (end)
         }
       },
@@ -2337,9 +2364,8 @@
           });
         },
 
-        addPrimaryStorage: function(args) {
-          var server = args.data.primaryStorage.server;
-          if(server == null || server.length == 0) {
+        addPrimaryStorage: function(args) {     
+					if(configurationUseLocalStorage == true) { //use local storage, don't need primary storage. So, skip this step.
             stepFns.addSecondaryStorage({
               data: args.data
             });
