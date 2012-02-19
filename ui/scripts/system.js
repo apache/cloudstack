@@ -1591,11 +1591,11 @@
             vlan: { label: 'label.vlan.range' }
           }
         },
-        dataProvider: function(args) {          
-          cloudStack.sections.system.naas.networkProviders.statusCheck({
-            context: args.context
-          });
-
+        dataProvider: function(args) {     
+				  //Comment out next line which causes Bug 13852 (Unable to configure multiple physical networks with service providers of the same device type).
+          //cloudStack.sections.system.naas.networkProviders.statusCheck({ context: args.context}); 
+					//Bug 13852 appears when there are multiple physical networks. Shouldn't call statusCheck() to render network provider chart before a physical network is selected. 
+										
           $.ajax({
             url: createURL('listPhysicalNetworks'),
 						data: {
@@ -1644,17 +1644,8 @@
             securityGroups: 'not-configured'
           };
 
-          selectedZoneObj = args.context.physicalResources[0];
-          $.ajax({
-            url: createURL("listPhysicalNetworks&zoneId=" + selectedZoneObj.id),
-            dataType: "json",
-            async: false,
-            success: function(json) {
-              var items = json.listphysicalnetworksresponse.physicalnetwork;
-              selectedPhysicalNetworkObj = items[0];
-            }
-          });
-
+          //selectedZoneObj = args.context.physicalResources[0];
+					
           $.ajax({
             url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
             dataType: "json",
