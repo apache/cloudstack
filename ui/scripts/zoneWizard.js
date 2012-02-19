@@ -2380,6 +2380,7 @@
           array1.push("&clusterid=" + args.data.returnedCluster.id);
           array1.push("&name=" + todb(args.data.primaryStorage.name));
 
+					var server = args.data.primaryStorage.server;
           var url = null;
           if (args.data.primaryStorage.protocol == "nfs") {
             //var path = trim($thisDialog.find("#add_pool_path").val());
