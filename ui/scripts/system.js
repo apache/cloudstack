@@ -1146,7 +1146,8 @@
                         var $form = args.$form;
 												
 												var array1 = [];
-                        array1.push("&zoneId=" + selectedZoneObj.id);
+                        array1.push("&zoneId=" + selectedZoneObj.id);												
+												array1.push("&physicalnetworkid=" + selectedPhysicalNetworkObj.id);		
                         array1.push("&name=" + todb(args.data.name));
                         array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);
@@ -1223,10 +1224,10 @@
 											}
 										}
 										
-										//need to make 2 listNetworks API call to get all networks
+										//need to make 2 listNetworks API call to get all guest networks from one physical network in Advanced zone
 										var items = [];
 										$.ajax({
-                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1241,7 +1242,7 @@
 										});
 																			
 										$.ajax({
-                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
