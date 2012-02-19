@@ -166,8 +166,6 @@
                         }
                       });
                     }
-
-
                   },
                   networkOfferingId: {
                     label: 'label.network.offering',
@@ -1050,8 +1048,7 @@
 
               var disabledTabs = [];
               var ipAddress = args.context.ipAddresses[0];
-              if (!ipAddress.issourcenat ||
-                  (ipAddress.issourcenat && !ipAddress.vpnenabled)) {
+              if (!ipAddress.vpnenabled) {
                 disabledTabs.push('vpn');
               }
               if(ipAddress.iselastic == true) {
