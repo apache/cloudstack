@@ -961,7 +961,7 @@
           //always appear (begin)
           storageTags: {
             label: 'label.storage.tags',
-            validation: { required: true }   
+            validation: { required: false }   
 					}
           //always appear (end)
         }
