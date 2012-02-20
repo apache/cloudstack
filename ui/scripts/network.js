@@ -896,9 +896,8 @@
               }
             },
             zonename: { label: 'label.zone' },
-            //vlanname: { label: 'VLAN' },
-            iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
-            account: { label: 'label.account' },
+            //vlanname: { label: 'VLAN' },   					  
+						virtualmachinedisplayname: { label: 'label.vm.name' },						 
             state: {
               converter: function(str) {
                 // For localization
@@ -1320,6 +1319,25 @@
             tabs: {
               details: {
                 title: 'label.details',
+								
+								preFilter: function(args) {
+								  var hiddenFields = [];								
+									var zoneObj;
+									$.ajax({
+									  url: createURL("listZones&id=" + args.context.ipAddresses[0].zoneid),
+										dataType: "json",
+										async: false,
+										success: function(json) {										  
+											zoneObj = json.listzonesresponse.zone[0];											
+										}
+									});							
+									if(zoneObj.networktype == "Advanced") {
+									  hiddenFields.push("iselastic");
+										hiddenFields.push("purpose");
+									}																	
+									return hiddenFields;								
+								},
+								
                 fields: [
                   {
                     ipaddress: { label: 'IP' }
@@ -1333,7 +1351,8 @@
                     state: { label: 'label.state' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
                     isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
-                    iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
+                    iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
+										purpose: { label: 'label.purpose' }, //(basic zone only) When an IP is elastic, the purpose it serves can be Lb or static nat.
                     virtualmachinedisplayname: { label: 'label.vm.name' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' },
