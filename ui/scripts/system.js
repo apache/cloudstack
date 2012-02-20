@@ -499,7 +499,8 @@
 														}
 													});
 												}											
-											},										
+											},	
+                      'gateway': { edit: true, label: 'label.gateway' },											
                       'netmask': { edit: true, label: 'label.netmask' },
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
                       'startip': { edit: true, label: 'label.start.IP' },
@@ -513,6 +514,8 @@
                         array1.push("&zoneId=" + args.context.zones[0].id);												
 												array1.push("&podid=" + args.data.podid);
 
+												array1.push("&gateway=" + args.data.gateway);
+												
                         if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
                                                
@@ -1143,7 +1146,8 @@
                         var $form = args.$form;
 												
 												var array1 = [];
-                        array1.push("&zoneId=" + selectedZoneObj.id);
+                        array1.push("&zoneId=" + selectedZoneObj.id);												
+												array1.push("&physicalnetworkid=" + selectedPhysicalNetworkObj.id);		
                         array1.push("&name=" + todb(args.data.name));
                         array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);
@@ -1220,10 +1224,10 @@
 											}
 										}
 										
-										//need to make 2 listNetworks API call to get all networks
+										//need to make 2 listNetworks API call to get all guest networks from one physical network in Advanced zone
 										var items = [];
 										$.ajax({
-                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1238,7 +1242,7 @@
 										});
 																			
 										$.ajax({
-                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1588,11 +1592,11 @@
             vlan: { label: 'label.vlan.range' }
           }
         },
-        dataProvider: function(args) {          
-          cloudStack.sections.system.naas.networkProviders.statusCheck({
-            context: args.context
-          });
-
+        dataProvider: function(args) {     
+				  //Comment out next line which causes Bug 13852 (Unable to configure multiple physical networks with service providers of the same device type).
+          //cloudStack.sections.system.naas.networkProviders.statusCheck({ context: args.context}); 
+					//Bug 13852 appears when there are multiple physical networks. Shouldn't call statusCheck() to render network provider chart before a physical network is selected. 
+										
           $.ajax({
             url: createURL('listPhysicalNetworks'),
 						data: {
@@ -1641,17 +1645,8 @@
             securityGroups: 'not-configured'
           };
 
-          selectedZoneObj = args.context.physicalResources[0];
-          $.ajax({
-            url: createURL("listPhysicalNetworks&zoneId=" + selectedZoneObj.id),
-            dataType: "json",
-            async: false,
-            success: function(json) {
-              var items = json.listphysicalnetworksresponse.physicalnetwork;
-              selectedPhysicalNetworkObj = items[0];
-            }
-          });
-
+          //selectedZoneObj = args.context.physicalResources[0];
+					
           $.ajax({
             url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
             dataType: "json",
@@ -4237,7 +4232,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteSrcFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
+                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {

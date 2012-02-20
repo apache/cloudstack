@@ -24,8 +24,7 @@
           label: 'state.Destroyed'
         }
       },
-      fields: {
-        name: { label: 'label.name', editable: true },
+      fields: {        
         displayname: { label: 'label.display.name' },
         zonename: { label: 'label.zone.name' },
         state: {
@@ -560,7 +559,7 @@
               return 'message.action.start.instance';
             },
             notification: function(args) {
-              return 'message.notification.start.instance';
+              return 'label.action.start.instance';
             }
           },
           notification: {
@@ -611,7 +610,7 @@
             },
 
             notification: function(args) {
-              return 'message.notification.stop.instance';
+              return 'label.action.stop.instance';
             }
           },
           notification: {
@@ -647,7 +646,7 @@
               return 'message.action.reboot.instance';
             },
             notification: function(args) {
-              return 'message.notification.reboot.instance';
+              return 'instances.actions.reboot.label';
             }
           },
           notification: {
@@ -1488,12 +1487,9 @@
             },
 
             fields: [
-              {
-                name: { label: 'label.name', isEditable: false }
-              },
-              {
+              {                       
                 id: { label: 'label.id', isEditable: false },
-                displayname: { label: 'label.display.name', isEditable: true },
+                displayname: { label: 'label.display.name', isEditable: true },								   
                 state: { label: 'label.state', isEditable: false },
                 zonename: { label: 'label.zone.name', isEditable: false },
                 hypervisor: { label: 'label.hypervisor', isEditable: false },
@@ -1531,7 +1527,8 @@
                 },
                 domain: { label: 'label.domain', isEditable: false },
                 account: { label: 'label.account', isEditable: false },
-                created: { label: 'label.created', isEditable: false, converter: cloudStack.converters.toLocalDate }
+                created: { label: 'label.created', isEditable: false, converter: cloudStack.converters.toLocalDate },
+								name: { label: 'label.name', isEditable: false }
               }
             ],
 

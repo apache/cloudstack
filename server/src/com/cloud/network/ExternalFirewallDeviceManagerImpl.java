@@ -138,11 +138,13 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject HostDetailsDao _hostDetailDao;
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalFirewallDeviceManagerImpl.class);
+    private long _defaultFwCapacity;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+        _defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);
         return true;
     }
 
@@ -211,6 +213,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
             boolean dedicatedUse = (configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED)) : false;
             long capacity =  NumbersUtil.parseLong((String)configParams.get(ApiConstants.FIREWALL_DEVICE_CAPACITY), 0);
+            if (capacity == 0) {
+                capacity = _defaultFwCapacity;
+            }
 
             ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), 
                     deviceName, capacity, dedicatedUse);
@@ -298,6 +303,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         for (ExternalFirewallDeviceVO fwDevice: fwDevices) {
             // max number of guest networks that can be mapped to this device
             long fullCapacity = fwDevice.getCapacity();
+            if (fullCapacity == 0) {
+                fullCapacity = _defaultFwCapacity; // if capacity not configured then use the default
+            }
 
             // get the list of guest networks that are mapped to this load balancer
             List<NetworkExternalFirewallVO> mappedNetworks = _networkExternalFirewallDao.listByFirewallDeviceId(fwDevice.getId()); 
@@ -308,7 +316,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         }
         throw new InsufficientNetworkCapacityException("Unable to find a firewall provider with sufficient capcity " +
-                " to implement the network", Network.class, network.getId());
+                " to implement the network", DataCenter.class, network.getDataCenterId());
     }
 
     public String getExternalNetworkResourceGuid(long physicalNetworkId, String deviceName, String ip) {
@@ -363,6 +371,11 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         } else {
             ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+            if (fwDeviceVO == null) {
+                s_logger.warn("Network shutdown requested on external firewall element, which did not implement the network." +
+                              " Either network implement failed half way through or already network shutdown is completed.");
+                return true;
+            }
             externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
         }
 

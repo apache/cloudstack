@@ -82,5 +82,13 @@
 
       return false;
     });
+
+    // Select language
+    var $languageSelect = $login.find('select[name=language]');
+    $languageSelect.change(function() {
+      $.cookie('lang', $(this).val());
+      document.location.reload();
+    });
+    $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);

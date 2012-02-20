@@ -83,7 +83,7 @@
       preFilter: function(args) {
         var havingSecurityGroupNetwork = false;
         $.ajax({
-          url: createURL('listNetworks'),
+          url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
             listAll: true
@@ -166,8 +166,6 @@
                         }
                       });
                     }
-
-
                   },
                   networkOfferingId: {
                     label: 'label.network.offering',
@@ -433,11 +431,27 @@
                 createForm: {
                   title: 'label.restart.network',
                   desc: 'message.restart.network',
-                  fields: {
+                  preFilter: function(args) {									  
+										var zoneObj;
+										$.ajax({
+										  url: createURL("listZones&id=" + args.context.networks[0].zoneid),
+											dataType: "json",
+											async: false,
+											success: function(json){											  
+											  zoneObj = json.listzonesresponse.zone[0];												
+											}
+										});																				
+										if(zoneObj.networktype == "Basic")
+										  args.$form.find('.form-item[rel=cleanup]').hide();
+										else
+										  args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block');									
+									},
+									fields: {
                     cleanup: {
                       label: 'label.clean.up',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+											isHidden: true
                     }
                   }
                 },
@@ -447,7 +461,7 @@
                   }
                 },
                 action: function(args) {
-                  var array1 = [];
+                  var array1 = [];									
                   array1.push("&cleanup=" + (args.data.cleanup == "on"));
                   $.ajax({
                     url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
@@ -567,6 +581,7 @@
                     hiddenFields.push("networkofferingdisplaytext");
                     hiddenFields.push("networkdomaintext");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("networkofferingname");
                     //hiddenFields.push("netmask");
                   }
                   else { //selectedGuestNetworkObj.type == "Shared"
@@ -605,6 +620,8 @@
                       }
                     },
                     vlan: { label: 'VLAN ID' },
+
+                    networkofferingname: { label: 'label.network.offering' },
 
                     networkofferingid: {
                       label: 'label.network.offering',
@@ -664,6 +681,13 @@
                     actionFilter: function(args) {
                       if (args.context.networks[0].state == 'Destroyed')
                         return [];
+
+                      if (args.context.networks[0].type == 'Shared' ||
+                          !$.grep(args.context.networks[0].service, function(service) {
+                            return service.name == 'SourceNat';
+                          }).length) {
+                        return ['edit', 'restart'];
+                      }
 
                       return args.context.actions;
                     },
@@ -789,7 +813,7 @@
                                       jobId: jobID
                                     },
                                     notification: {
-                                      label: 'Add load balancer rule',
+                                      label: 'label.add.load.balancer',
                                       poll: function(args) {
                                         var complete = args.complete;
                                         var error = args.error;
@@ -803,7 +827,7 @@
 
                                             lbCreationComplete = true;
                                             cloudStack.dialog.notice({
-                                              message: "The load balancer rule has been added under IP " +
+                                              message: _l('message.add.load.balancer.under.ip') +
                                                 args.data.loadbalancer.publicip
                                             });
 
@@ -1024,8 +1048,7 @@
 
               var disabledTabs = [];
               var ipAddress = args.context.ipAddresses[0];
-              if (!ipAddress.issourcenat ||
-                  (ipAddress.issourcenat && !ipAddress.vpnenabled)) {
+              if (!ipAddress.vpnenabled) {
                 disabledTabs.push('vpn');
               }
               if(ipAddress.iselastic == true) {
@@ -1296,7 +1319,7 @@
             },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'label.details',
                 fields: [
                   {
                     ipaddress: { label: 'IP' }
@@ -1721,17 +1744,18 @@
                     }),
                     multipleAdd: true,
                     fields: {
-                      'name': { edit: true, label: 'label.name' },
+                      'name': { edit: true, label: 'label.name', isEditable: true },
                       'publicport': { edit: true, label: 'label.public.port' },
                       'privateport': { edit: true, label: 'label.private.port' },
                       'algorithm': {
                         label: 'label.algorithm',
+                        isEditable: true,
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { name: 'roundrobin', description: _l('label.round.robin') },
-                              { name: 'leastconn', description: _l('label.least.connections') },
-                              { name: 'source', description: _l('label.source') }
+                              { id: 'roundrobin', name: 'roundrobin', description: _l('label.round.robin') },
+                              { id: 'leastconn', name: 'leastconn', description: _l('label.least.connections') },
+                              { id: 'source', name: 'source', description: _l('label.source') }
                             ]
                           });
                         }
@@ -1798,7 +1822,7 @@
                                     jobId: jobID
                                   },
                                   notification: {
-                                    label: 'Add load balancer rule',
+                                    label: 'label.add.load.balancer',
                                     poll: function(args) {
                                       var complete = args.complete;
                                       var error = args.error;
@@ -1839,6 +1863,26 @@
                       }
                     },
                     actions: {
+                      edit: {
+                        label: 'label.edit',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('updateLoadBalancerRule'),
+                            data: $.extend(args.data, {
+                              id: args.context.multiRule[0].id
+                            }),
+                            success: function(json) {
+                              args.response.success({
+                                _custom: { jobId: json.updateloadbalancerruleresponse.jobid },
+                                notification: {
+                                  label: 'label.edit.lb.rule',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            }
+                          });             
+                        }
+                      },
                       destroy:  {
                         label: 'label.action.delete.load.balancer',
                         action: function(args) {
@@ -1887,7 +1931,7 @@
                                   _custom: {
                                     jobId: json.assigntoloadbalancerruleresponse.jobid
                                   },
-                                  desc: 'Add VM(s) to load balancer rule',
+                                  desc: 'label.add.vms.to.lb',
                                   poll: pollAsyncJobResult
                                 }
                               });

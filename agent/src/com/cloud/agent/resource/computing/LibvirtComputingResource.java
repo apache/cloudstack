@@ -243,6 +243,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	private String _dcId;
 	private String _pod;
 	private String _clusterId;
+	private int _migrateSpeed;
 
 	private long _hvVersion;
 	private KVMHAMonitor _monitor;
@@ -722,7 +723,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (_mountPoint == null) {
 			_mountPoint = "/mnt";
 		}
-
+		
+		value = (String) params.get("vm.migrate.speed");
+		_migrateSpeed = NumbersUtil.parseInt(value, -1);
+		if (_migrateSpeed == -1) {
+			//get guest network device speed
+			_migrateSpeed = 0;
+			String speed = Script.runSimpleBashScript("ethtool " + _pifs.second() + " |grep Speed | cut -d \\  -f 2");
+			if (speed != null) {
+				String[] tokens = speed.split("M");
+				if (tokens.length == 2) {
+					try {
+						_migrateSpeed = Integer.parseInt(tokens[0]);
+					} catch (Exception e) {
+						
+					}
+					s_logger.debug("device " + _pifs.second() + " has speed: " + String.valueOf(_migrateSpeed));
+				}
+			}
+			params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
+		}
 		saveProperties(params);
 
 		return true;
@@ -2004,7 +2024,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			 * VIR_MIGRATE_PERSIST_DEST(1<<3)
 			 */
 			destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), vmName, "tcp:"
-					+ cmd.getDestinationIp(), 0);
+					+ cmd.getDestinationIp(), _migrateSpeed);
 		} catch (LibvirtException e) {
 			s_logger.debug("Can't migrate domain: " + e.getMessage());
 			result = e.getMessage();

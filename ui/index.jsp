@@ -50,6 +50,14 @@
 
             <!-- Submit (login) -->
             <input type="submit" value="" />
+
+            <!-- Select language -->
+            <div class="select-language">
+              <select name="language">
+                <option value="en"><fmt:message key="label.lang.english"/></option>
+                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+              </select>
+            </div>
           </div>
         </form>
       </div>
@@ -577,7 +585,8 @@
             </ul>
 
             <div class="info-desc" id="add_zone_public_traffic_desc">
-              
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
@@ -615,7 +624,8 @@
             </ul>
 
             <div class="info-desc" id="add_zone_guest_traffic_desc">
-             
+              <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
+							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -675,7 +685,7 @@
           </div>
 
           <!-- Step 4.3: Add primary storage -->
-          <div class="add-cluster" zone-wizard-form="primaryStorage"
+          <div class="add-cluster" zone-wizard-form="primaryStorage" zone-wizard-prefilter="addPrimaryStorage"
                zone-wizard-step-id="addPrimaryStorage">
             <ul class="subnav">
               <li class="cluster"><fmt:message key="label.cluster"/></li>
@@ -1604,6 +1614,15 @@
 
 <script language="javascript">
 dictionary = {
+'state.Stopping': '<fmt:message key="state.Stopping"/>',
+'message.add.load.balancer.under.ip': '<fmt:message key="message.add.load.balancer.under.ip"/>',
+'message.select.instance': '<fmt:message key="message.select.instance"/>',
+'label.select': '<fmt:message key="label.select"/>',
+'label.select.vm.for.static.nat': '<fmt:message key="label.select.vm.for.static.nat"/>',
+'label.select.instance': '<fmt:message key="label.select.instance"/>',
+'label.nat.port.range': '<fmt:message key="label.nat.port.range"/>',
+'label.static.nat.vm.details': '<fmt:message key="label.static.nat.vm.details"/>',
+'label.edit.lb.rule': '<fmt:message key="label.edit.lb.rule"/>',
 'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
 'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',

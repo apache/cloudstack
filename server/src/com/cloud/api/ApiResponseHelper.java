@@ -759,6 +759,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             ipResponse.setVlanId(ipAddress.getVlanId());
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
         }
+        
+        if (ipAddress.getElastic()) {
+            if (ipAddress.isOneToOneNat()) {
+                ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
+            } else {
+                ipResponse.setPurpose(IpAddress.Purpose.Lb.toString());
+            }
+        }
+        
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
     }
@@ -1239,6 +1248,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             if (userVm.getDisplayName() != null) {
                 userVmResponse.setDisplayName(userVm.getDisplayName());
+            } else {
+                userVmResponse.setDisplayName(userVm.getHostName());
             }
 
             if (userVm.getPassword() != null) {
@@ -1439,6 +1450,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                     nicResponses.add(nicResponse);
                 }
                 userVmResponse.setNics(nicResponses);
+            }
+            
+            IpAddress ip = ApiDBUtils.findIpByAssociatedVmId(userVm.getId());
+            if (ip != null) {
+                userVmResponse.setPublicIpId(ip.getId());
+                userVmResponse.setPublicIp(ip.getAddress().addr());
             }
 
             userVmResponse.setObjectName(objectName);
@@ -2867,6 +2884,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (userVm.getDisplayName() != null) {
             userVmData.setDisplayName(userVm.getDisplayName());
+        } else {
+            userVmData.setDisplayName(userVm.getHostName());
         }
         userVmData.setDomainId(userVm.getDomainId());
 
@@ -2889,6 +2908,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setHypervisor(userVmData.getHypervisor());
         userVmResponse.setId(userVmData.getId());
         userVmResponse.setName(userVmData.getName());
+
         userVmResponse.setDisplayName(userVmData.getDisplayName());
 
         populateAccount(userVmResponse, userVmData.getAccountId());
@@ -2966,6 +2986,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             nicResponses.add(nr);
         }
         userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
+        userVmResponse.setPublicIpId(userVmData.getPublicIpId());
+        userVmResponse.setPublicIp(userVmData.getPublicIp());
 
         return userVmResponse;
     }
@@ -3287,6 +3309,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneUuid(result.getZoneUuid());
         response.setNetworkUuid(result.getNetworkUuid());
         response.setNetmask(result.getNetmask());
+        response.setGateway(result.getGateway());
         response.setObjectName("storagenetworkiprange");
         return response;
     }

@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TrafficTypeResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
@@ -111,5 +112,8 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
         return EventTypes.EVENT_TRAFFIC_TYPE_UPDATE;
     }
 
-
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.TrafficType;
+    }
 }

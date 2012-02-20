@@ -52,6 +52,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -729,5 +730,9 @@ public class ApiDBUtils {
     public static long findDefaultRouterServiceOffering() {
         ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName("Cloud.Com-SoftwareRouter");
         return serviceOffering.getId();
+    }
+    
+    public static IpAddress findIpByAssociatedVmId(long vmId) {
+        return _ipAddressDao.findByAssociatedVmId(vmId);
     }
 }

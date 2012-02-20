@@ -202,10 +202,69 @@
             .append($('<span>').addClass('icon'))
             .attr({ title: _l(action.label) })
             .click(function() {
+              var performAction = function(actionOptions) {
+                if (!actionOptions) actionOptions = {};
+                
+                action.action({
+                  context: $.extend(true, {}, options.context, {
+                    multiRule: [data]
+                  }),
+                  data: actionOptions.data,
+                  response: {
+                    success: function(args) {
+                      var notification = args ? args.notification : null;
+                      var _custom = args ? args._custom : null;
+                      if (notification) {
+                        $('.notifications').notifications('add', {
+                          section: 'network',
+                          desc: notification.label,
+                          interval: 3000,
+                          _custom: _custom,
+                          poll: function(args) {
+                            var complete = args.complete;
+                            var error = args.error;
+
+                            notification.poll({
+                              _custom: args._custom,
+                              complete: function(args) {
+                                if (isDestroy) {
+                                  $loading.remove();
+                                  $dataItem.remove();
+                                } else {
+                                  $multi.trigger('refresh');
+                                }
+
+                                complete();
+
+                                if (actionOptions.complete) actionOptions.complete();
+                              },
+                              error: function(args) {
+                                error(args);
+                                $loading.remove();
+                                $dataItem.show();
+
+                                return cloudStack.dialog.error;
+                              }
+                            });
+                          }
+                        });
+                      } else {
+                        $loading.remove();
+                        if (isDestroy) {
+                          $dataItem.remove();
+                        }
+                      }
+                    },
+                    error: cloudStack.dialog.error
+                  }
+                });
+              };
+              
               var $target = $(this);
               var $dataItem = $target.closest('.data-item');
               var $expandable = $dataItem.find('.expandable-listing');
               var isDestroy = $target.hasClass('destroy');
+              var isEdit = $target.hasClass('edit');
 
               if (isDestroy) {
                 var $loading = _medit.loadingItem($multi, _l('label.removing') + '...');
@@ -222,56 +281,32 @@
                 }
               }
 
-              action.action({
-                context: $.extend(true, {}, options.context, {
-                  multiRule: [data]
-                }),
-                response: {
-                  success: function(args) {
-                    var notification = args ? args.notification : null;
-                    var _custom = args ? args._custom : null;
-                    if (notification) {
-                      $('.notifications').notifications('add', {
-                        section: 'network',
-                        desc: notification.label,
-                        interval: 3000,
-                        _custom: _custom,
-                        poll: function(args) {
-                          var complete = args.complete;
-                          var error = args.error;
+              if (!isEdit) {
+                performAction();
+              } else {
+                // Get editable fields
+                var editableFields = {};
 
-                          notification.poll({
-                            _custom: args._custom,
-                            complete: function(args) {
-                              if (isDestroy) {
-                                $loading.remove();
-                                $dataItem.remove();
-                              } else {
-                                $multi.trigger('refresh');
-                              }
+                $.each(fields, function(key, field) {
+                  if (field.isEditable) editableFields[key] = $.extend(true, {}, field, {
+                    defaultValue: data[key]
+                  });
+                });
 
-                              complete();
-                            },
-                            error: function(args) {
-                              error(args);
-                              $loading.remove();
-                              $dataItem.show();
-
-                              return cloudStack.dialog.error;
-                            }
-                          });
-                        }
-                      });
-                    } else {
-                      $loading.remove();
-                      if (isDestroy) {
-                        $dataItem.remove();
-                      }
-                    }
+                cloudStack.dialog.createForm({
+                  form: {
+                    title: 'Edit rule',
+                    desc: '',
+                    fields: editableFields
                   },
-                  error: cloudStack.dialog.error
-                }
-              });
+                  after: function(args) {
+                    var $loading = $('<div>').addClass('loading-overlay').prependTo($dataItem);
+                    performAction({ data: args.data, complete: function() {
+                      $multi.multiEdit('refresh');
+                    } });
+                  }
+                });
+              }
             })
         );
       });

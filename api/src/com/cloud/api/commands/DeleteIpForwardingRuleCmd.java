@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
@@ -114,6 +115,11 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return _rulesService.getFirewallRule(id).getNetworkId();
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.FirewallRule;
     }
 
 }

@@ -142,7 +142,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public boolean update(String name, String category, String value) {
     	Transaction txn = Transaction.currentTxn();
 		try {
-			value = "Hidden".equals(category) ? DBEncryptionUtil.encrypt(value) : value;
+			value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
 			stmt.setString(1, value);
 			stmt.setString(2, name);
@@ -176,7 +176,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 				returnValue =  rs.getString(1);
 				if(returnValue != null) {
 					txn.commit();
-					if("Hidden".equals(category)){
+					if("Hidden".equals(category) || "Secure".equals(category)){
 						return DBEncryptionUtil.decrypt(returnValue);
 					} else {
 						return returnValue;
@@ -188,7 +188,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 			}
 			stmt.close();
 
-			if("Hidden".equals(category)){
+			if("Hidden".equals(category) || "Secure".equals(category)){
 				initValue = DBEncryptionUtil.encrypt(initValue);
 			}
 			stmtInsert = txn.prepareAutoCloseStatement(

@@ -1220,7 +1220,7 @@
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
     if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
-        || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")) {
+        || (jsonObj.account ==	"system")) {
       //do nothing
     }
     else {
@@ -1279,7 +1279,7 @@
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
     if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
-        || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
+        || (jsonObj.account ==	"system")
        ) {
          //do nothing
        }

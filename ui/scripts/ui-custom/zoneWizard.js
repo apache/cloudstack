@@ -93,6 +93,7 @@
         var $storageTrafficItem = $(storageTrafficItem);
         var storageTrafficData = {};
         var fields = [
+				  'gateway',
           'netmask',
           'vlanid',
           'startip',

@@ -43,6 +43,9 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for storage network")
     private String netmask;
     
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for storage network")
+    private String gateway;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -65,6 +68,10 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             
     public String getNetmask() {
     	return netmask;
+    }
+    
+    public String getGateWay() {
+    	return gateway;
     }
 
 	@Override

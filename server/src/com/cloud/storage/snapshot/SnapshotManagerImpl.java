@@ -668,8 +668,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             } else {
                 s_logger.warn("Failed to back up snapshot on secondary storage, deleting the record from the DB");
                 _snapshotDao.remove(snapshotId);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
-                _usageEventDao.persist(usageEvent);
             }
             txn.commit();
 
@@ -741,7 +739,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Account caller = UserContext.current().getCaller();
 
         // Verify parameters
-        Snapshot snapshotCheck = _snapshotDao.findByIdIncludingRemoved(snapshotId);
+        Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }

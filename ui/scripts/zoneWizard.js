@@ -4,7 +4,8 @@
   var selectedNetworkOfferingHavingEIP = false;
   var selectedNetworkOfferingHavingELB = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
-
+  var configurationUseLocalStorage = false;
+	
   cloudStack.zoneWizard = {
     customUI: {
       publicTrafficIPRange: function(args) {
@@ -13,7 +14,7 @@
 
         return $('<div>').multiEdit({
           context: args.context,
-          noSelect: true,
+          noSelect: true,															
           fields: {
             'gateway': { edit: true, label: 'label.gateway' },
             'netmask': { edit: true, label: 'label.netmask' },
@@ -60,6 +61,7 @@
           context: args.context,
           noSelect: true,
           fields: {
+					  'gateway': { edit: true, label: 'label.gateway' },			
             'netmask': { edit: true, label: 'label.netmask' },
             'vlanid': { edit: true, label: 'label.vlan', isOptional: true },
             'startip': { edit: true, label: 'label.start.IP' },
@@ -98,8 +100,9 @@
     },
 
     preFilters: {
-      addPublicNetwork: function(args) {
+      addPublicNetwork: function(args) {		
         var isShown;
+				var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');	 
         if(args.data['network-model'] == 'Basic') {
           if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
             $('.conditional.elb').show();
@@ -108,11 +111,17 @@
           else {
             $('.conditional.elb').hide();
             isShown = false;
-          }
+          }			
+					
+					$publicTrafficDesc.find('#for_basic_zone').css('display', 'inline');
+					$publicTrafficDesc.find('#for_advanced_zone').hide();					
         }
         else { //args.data['network-model'] == 'Advanced'
           $('.conditional.elb').hide();
-          isShown = true;
+          isShown = true;					
+					
+					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
+					$publicTrafficDesc.find('#for_basic_zone').hide();					
         }
         return isShown;
       },
@@ -149,7 +158,33 @@
 
       addHost: function(args) {
         return (args.groupedData.cluster.hypervisor != "VMware");
-      }
+      },
+						
+			addPrimaryStorage: function(args) {		
+				$.ajax({
+				  url: createURL("listConfigurations&name=" + todb("use.local.storage")),
+					dataType: 'json',
+					async: false,
+					success: function(json) {					  
+					  var items = json.listconfigurationsresponse.configuration; //unfortunately, it returns 2 items("system.vm.use.local.storage", "use.local.storage") instead of 1 item. 						
+						if(items != null && items.length > 0) { 
+						  for(var i = 0; i < items.length; i++) {
+							  item = items[i];
+							  if(item.name == "use.local.storage") {								  
+								  break; //break for loop
+								}
+							}
+						}
+					}
+				});		
+
+				if(item == null || item.value == "false")
+				  configurationUseLocalStorage = false;
+				else				
+          configurationUseLocalStorage = true;
+					
+				return (!configurationUseLocalStorage);
+      }	
     },
 
     forms: {
@@ -367,7 +402,17 @@
       },
 
       guestTraffic: {
-        preFilter: function(args) {
+        preFilter: function(args) {				                 		
+          var $guestTrafficDesc = $('.zone-wizard:visible').find('#add_zone_guest_traffic_desc');	 		     
+					if (args.data['network-model'] == 'Basic') {
+						$guestTrafficDesc.find('#for_basic_zone').css('display', 'inline');
+						$guestTrafficDesc.find('#for_advanced_zone').hide();
+					}
+					else { //args.data['network-model'] == 'Advanced'
+						$guestTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
+						$guestTrafficDesc.find('#for_basic_zone').hide();
+					}		
+				
           var selectedZoneObj = {
             networktype: args.data['network-model']
           };
@@ -649,13 +694,13 @@
         fields: {
           name: {
             label: 'label.name',
-            validation: { required: false }  // Primary storage is not required. User can use local storage instead of primary storage.
-          },
+            validation: { required: true }  
+					},
 
           protocol: {
             label: 'label.protocol',
-            validation: { required: false }, // Primary storage is not required. User can use local storage instead of primary storage.
-            select: function(args) {
+            validation: { required: true }, 
+						select: function(args) {
               var selectedClusterObj = {
                 hypervisortype: args.context.zones[0].hypervisor
               };
@@ -871,53 +916,53 @@
           },
           server: {
             label: 'label.server',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //nfs
           path: {
             label: 'label.path',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //iscsi
           iqn: {
             label: 'label.target.iqn',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
           lun: {
             label: 'label.LUN.number',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //clvm
           volumegroup: {
             label: 'label.volgroup',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //vmfs
           vCenterDataCenter: {
             label: 'label.vcenter.datacenter',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
           vCenterDataStore: {
             label: 'label.vcenter.datastore',
-            validation: { required: false },  // Primary storage is not required. User can use local storage instead of primary storage.
-            isHidden: true
+            validation: { required: true },  
+						isHidden: true
           },
 
           //always appear (begin)
           storageTags: {
             label: 'label.storage.tags',
-            validation: { required: false }   // Primary storage is not required. User can use local storage instead of primary storage.
-          }
+            validation: { required: false }   
+					}
           //always appear (end)
         }
       },
@@ -2319,9 +2364,8 @@
           });
         },
 
-        addPrimaryStorage: function(args) {
-          var server = args.data.primaryStorage.server;
-          if(server == null || server.length == 0) {
+        addPrimaryStorage: function(args) {     
+					if(configurationUseLocalStorage == true) { //use local storage, don't need primary storage. So, skip this step.
             stepFns.addSecondaryStorage({
               data: args.data
             });
@@ -2336,6 +2380,7 @@
           array1.push("&clusterid=" + args.data.returnedCluster.id);
           array1.push("&name=" + todb(args.data.primaryStorage.name));
 
+					var server = args.data.primaryStorage.server;
           var url = null;
           if (args.data.primaryStorage.protocol == "nfs") {
             //var path = trim($thisDialog.find("#add_pool_path").val());

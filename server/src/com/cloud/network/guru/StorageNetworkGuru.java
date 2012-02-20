@@ -120,6 +120,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 		nic.setFormat(AddressFormat.Ip4);
 		nic.setNetmask(ip.getNetmask());
 		nic.setBroadcastType(BroadcastDomainType.Storage);
+		nic.setGateway(ip.getGateway());
 		if (vlan != null) {
 			nic.setBroadcastUri(BroadcastDomainType.Storage.toUri(vlan));
 		} else {

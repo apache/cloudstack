@@ -167,7 +167,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return manageGuestNetworkWithExternalFirewall(true, network);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for
-// the network
+            // the network
+            s_logger.error("Fail to implement the JuniperSRX for network " + network, capacityException);
             return false;
         }
     }
@@ -422,7 +423,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
         }
-        return deleteExternalFirewall(fwDeviceId);
+        return deleteExternalFirewall(fwDeviceVO.getHostId());
     }
 
     @Override

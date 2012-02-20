@@ -147,6 +147,11 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
     
+    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="public IP address id associated with vm via Static nat rule")
+    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
+    
+    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
+    private String publicIp;
 
 	public void setHypervisor(String hypervisor) {
 		this.hypervisor = hypervisor;
@@ -321,5 +326,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setPublicIpId(Long publicIpId) {
+        this.publicIpId.setValue(publicIpId);
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
     }
 }
