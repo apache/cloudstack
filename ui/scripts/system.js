@@ -2169,16 +2169,17 @@
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
                     dataType: "json",
                     success: function(json) {
-                      var jid = json.updatenetworkserviceproviderresponse.jobid;
-                      args.response.success(
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;                      
+											args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2199,16 +2200,17 @@
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
                     dataType: "json",
                     success: function(json) {
-                      var jid = json.updatenetworkserviceproviderresponse.jobid;
-                      args.response.success(
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;                      
+											args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );                  										
                     }
                   });
                 },
@@ -2368,12 +2370,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2398,12 +2401,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2589,13 +2593,14 @@
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {
-                           jobId: jid
-                         }
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2619,13 +2624,14 @@
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {
-                           jobId: jid
-                         }
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2828,12 +2834,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2858,12 +2865,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2957,12 +2965,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2987,12 +2996,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
