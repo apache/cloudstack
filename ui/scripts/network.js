@@ -42,10 +42,16 @@
         disallowedActions.push('disableStaticNAT');
       }
 
-      if (item.vpnenabled) {
-        disallowedActions.push('enableVPN');
+      if ($.inArray('Vpn', $.map(args.context.networks[0].service,
+                                 function(service) { return service.name; })) > -1) {
+        if (item.vpnenabled) {
+          disallowedActions.push('enableVPN');
+        } else {
+          disallowedActions.push('disableVPN');
+        }
       } else {
         disallowedActions.push('disableVPN');
+        disallowedActions.push('enableVPN');
       }
 
       if (item.issourcenat){
