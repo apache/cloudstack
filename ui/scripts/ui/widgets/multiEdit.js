@@ -670,7 +670,7 @@
           var $range = $('<div>').addClass('range').appendTo($td);
 
           $(field.range).each(function() {
-            $('<input>')
+            var $input = $('<input>')
               .attr({
                 name: this,
                 type: 'text'
@@ -680,9 +680,11 @@
               .appendTo(
                 $('<div>').addClass('range-item').appendTo($range)
               );
+
+            if (field.isDisabled) $input.hide();
           });
         } else {
-          $('<input>')
+          var $input = $('<input>')
             .attr({
               name: fieldName,
               type: field.isPassword ? 'password' : 'text'
@@ -690,6 +692,8 @@
             .addClass(!field.isOptional ? 'required' : null)
             .attr('disabled', field.isDisabled ? 'disabled' : false)
             .appendTo($td);
+
+          if (field.isDisabled) $input.hide();
         }
       } else if (field.custom) {
         $('<div>').addClass('button add-vm custom-action')

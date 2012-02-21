@@ -1473,11 +1473,18 @@
                             });
 
                             if ($(this).val() == 'icmp') {
+                              $icmpFields.show();
                               $icmpFields.attr('disabled', false);
                               $otherFields.attr('disabled', 'disabled');
+                              $otherFields.hide();
+                              $otherFields.parent().find('label.error').hide();
                             } else {
+                              $otherFields.show();
+                              $otherFields.parent().find('label.error').hide();
                               $otherFields.attr('disabled', false);
                               $icmpFields.attr('disabled', 'disabled');
+                              $icmpFields.hide();
+                              $icmpFields.parent().find('label.error').hide();
                             }
                           });
 
