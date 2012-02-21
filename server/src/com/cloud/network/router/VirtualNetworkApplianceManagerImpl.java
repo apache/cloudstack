@@ -1188,7 +1188,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         boolean publicNetwork = false;
-        if (_networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SourceNat)) {
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
             publicNetwork = true;
         }
         if (isRedundant && !publicNetwork) {
