@@ -1614,6 +1614,18 @@
 
 <script language="javascript">
 dictionary = {
+'label.sticky.domain': '<fmt:message key="label.sticky.domain"/>',
+'label.sticky.postonly': '<fmt:message key="label.sticky.postonly"/>',
+'label.sticky.indirect': '<fmt:message key="label.sticky.indirect"/>',
+'label.sticky.nocache': '<fmt:message key="label.sticky.nocache"/>',
+'label.sticky.prefix': '<fmt:message key="label.sticky.prefix"/>',
+'label.sticky.request-learn': '<fmt:message key="label.sticky.request-learn"/>',
+'label.sticky.holdtime': '<fmt:message key="label.sticky.holdtime"/>',
+'label.sticky.length': '<fmt:message key="label.sticky.length"/>',
+'label.sticky.mode': '<fmt:message key="label.sticky.mode"/>',
+'label.sticky.cookie-name': '<fmt:message key="label.sticky.cookie-name"/>',
+'label.sticky.expire': '<fmt:message key="label.sticky.expire"/>',
+'label.sticky.tablesize': '<fmt:message key="label.sticky.tablesize"/>',
 'state.Migrating': '<fmt:message key="state.Migrating"/>',
 'state.Allocating': '<fmt:message key="state.Allocating"/>',
 'label.total.of.ip': '<fmt:message key="label.total.of.ip"/>',
