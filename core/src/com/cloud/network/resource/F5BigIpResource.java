@@ -27,8 +27,11 @@ import iControl.CommonVirtualServerDefinition;
 import iControl.Interfaces;
 import iControl.LocalLBLBMethod;
 import iControl.LocalLBNodeAddressBindingStub;
+import iControl.LocalLBPersistenceMode;
 import iControl.LocalLBPoolBindingStub;
 import iControl.LocalLBProfileContextType;
+import iControl.LocalLBProfilePersistenceBindingStub;
+import iControl.LocalLBProfileULong;
 import iControl.LocalLBVirtualServerBindingStub;
 import iControl.LocalLBVirtualServerVirtualServerPersistence;
 import iControl.LocalLBVirtualServerVirtualServerProfile;
@@ -78,6 +81,7 @@ import com.cloud.host.Host;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 
@@ -128,6 +132,7 @@ public class F5BigIpResource implements ServerResource {
 	private NetworkingSelfIPBindingStub _selfIpApi;
 	private NetworkingRouteDomainBindingStub _routeDomainApi;
 	private SystemConfigSyncBindingStub _configSyncApi;
+	private LocalLBProfilePersistenceBindingStub  _persistenceProfileApi;
 	private String _objectNamePathSep = "-";
 	private String _routeDomainIdentifier = "%";
 	
@@ -614,6 +619,7 @@ public class F5BigIpResource implements ServerResource {
 			_selfIpApi = _interfaces.getNetworkingSelfIP();
 			_routeDomainApi = _interfaces.getNetworkingRouteDomain();
 			_configSyncApi = _interfaces.getSystemConfigSync();
+			_persistenceProfileApi = _interfaces.getLocalLBProfilePersistence();
 		} catch (Exception e) {
 		    throw new ExecutionException("Failed to log in to BigIp appliance due to " + e.getMessage());
 		}
@@ -635,9 +641,28 @@ public class F5BigIpResource implements ServerResource {
             if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
                 StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
                 if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                    _virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("cookie"));
-                } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                    _virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("source_addr"));
+
+                    String[] profileNames = genStringArray("Cookie-profile-" + virtualServerName);
+                    if (!persistenceProfileExists(profileNames[0])) {
+                        LocalLBPersistenceMode[] lbPersistenceMode = new iControl.LocalLBPersistenceMode[1];
+                        lbPersistenceMode[0] = iControl.LocalLBPersistenceMode.PERSISTENCE_MODE_COOKIE;
+                        _persistenceProfileApi.create(profileNames, lbPersistenceMode);
+                        _virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile(profileNames[0]));
+                    }
+
+                    List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
+                    for(Pair<String,String> param : paramsList) {
+                        if ("holdtime".equalsIgnoreCase(param.first())) {
+                            long timeout = 180; //F5 default
+                            if (param.second() != null) {
+                                timeout = Long.parseLong(param.second());
+                            }
+                            LocalLBProfileULong[] cookieTimeout =  new LocalLBProfileULong[1];
+                            cookieTimeout[0] = new LocalLBProfileULong();
+                            cookieTimeout[0].setValue(timeout);
+                            _persistenceProfileApi.set_cookie_expiration(profileNames, cookieTimeout);
+                        }
+                    }
                 }
             } else {
                 _virtualServerApi.remove_all_persistence_profiles(genStringArray(virtualServerName));
@@ -697,7 +722,24 @@ public class F5BigIpResource implements ServerResource {
 			throw new ExecutionException(e.getMessage());
 		}
 	}
-	
+
+    private boolean persistenceProfileExists(String profileName) throws ExecutionException {
+        try {
+            String[] persistenceProfileArray = _persistenceProfileApi.get_list();
+            if (persistenceProfileArray == null) {
+                return false;
+            }
+            for (String profile: persistenceProfileArray) {
+                if (profile.equalsIgnoreCase(profileName)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (RemoteException e) {
+            throw new ExecutionException(e.getMessage());
+        }
+    }
+
 	private iControl.CommonVirtualServerDefinition[] genVirtualServerDefinition(String name, LbProtocol protocol, String srcIp, long srcPort) {
 		CommonVirtualServerDefinition vsDefs[] = {new CommonVirtualServerDefinition()};
 		vsDefs[0].setName(name);
