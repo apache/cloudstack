@@ -229,11 +229,13 @@ public class TrafficSentinelResource implements ServerResource {
                 in.close();
             } catch (MalformedURLException e1) {
                 s_logger.info("Invalid Traffic Sentinel URL",e1);
+                throw new ExecutionException(e1.getMessage());
             } catch (IOException e) {
                 s_logger.debug("Error in direct network usage accounting",e);
+                throw new ExecutionException(e.getMessage());
             } 
 		} catch (Exception e) {
-			s_logger.error(e);
+			s_logger.debug(e);
 			throw new ExecutionException(e.getMessage());
 		}
 		return answer;
