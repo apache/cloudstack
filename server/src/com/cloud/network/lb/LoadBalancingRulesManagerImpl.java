@@ -728,6 +728,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
+                if (ex instanceof NetworkRuleConflictException) {
+                    throw (NetworkRuleConflictException) ex;
+                }
             } finally {
                 if (result == null && ip != null) {
                     s_logger.debug("Releasing elastic IP address " + ip + " as corresponding lb rule failed to create");
