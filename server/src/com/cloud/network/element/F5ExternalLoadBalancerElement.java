@@ -213,11 +213,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased, "This is cookie based sticky method, can be used only for http");
         methodList.add(method);
-        method.addParam("holdtime", false, "time period for which persistence is in effect.", false);
-
-        method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based sticky method, can be used for any type of protocol.");
-        methodList.add(method);
-        method.addParam("holdtime", false, "time period for which persistence is in effect.", false);
+        method.addParam("holdtime", false, "time period (in seconds) for which persistence is in effect.", false);
 
         Gson gson = new Gson();
         String stickyMethodList = gson.toJson(methodList);
