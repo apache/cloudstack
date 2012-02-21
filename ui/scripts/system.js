@@ -1857,6 +1857,20 @@
                         });
                       }
                     });
+
+                    // Get project routers
+                    $.ajax({
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                      dataType: 'json',
+                      async: true,
+                      success: function(json) {
+                        var items = json.listroutersresponse.router;
+                        args.response.success({
+                          actionFilter: routerActionfilter,
+                          data: items
+                        });
+                      }
+                    });
                   },
                   detailView: {
                     name: 'Virtual applicance details',
@@ -2121,12 +2135,20 @@
                     tabs: {
                       details: {
                         title: 'label.details',
+                        preFilter: function(args) {
+                          if (!args.context.routers[0].project)
+                              return ['project', 'projectid'];
+
+                          return [];
+                        },
                         fields: [
                           {
-                            name: { label: 'label.name' }
+                            name: { label: 'label.name' },
+                            project: { label: 'label.project' }
                           },
                           {
                             id: { label: 'label.id' },
+                            projectid: { label: 'label.project.id' },
                             state: { label: 'label.state' },
                             publicip: { label: 'label.public.ip' },
                             guestipaddress: { label: 'label.guest.ip' },
