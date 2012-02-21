@@ -3391,6 +3391,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String guestIpType = cmd.getGuestIpType();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Object specifyIpRanges = cmd.getSpecifyIpRanges();
+        String tags = cmd.getTags();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3482,6 +3483,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (tags != null) {
+            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
         }
 
         List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);

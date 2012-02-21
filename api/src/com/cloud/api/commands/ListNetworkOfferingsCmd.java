@@ -84,10 +84,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.SOURCE_NAT_SUPPORTED, type=CommandType.BOOLEAN, description="true if need to list only netwok offerings where source nat is supported, false otherwise")
     private Boolean sourceNatSupported;
     
-
-    
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only network offerings which support specifying ip ranges")
     private Boolean specifyIpRanges;
+    
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="list network offerings by tags", length=4096)
+    private String tags; 
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -149,7 +150,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     	return specifyIpRanges;
     }
 
-	/////////////////////////////////////////////////////
+	public String getTags() {
+        return tags;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
