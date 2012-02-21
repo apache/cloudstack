@@ -112,7 +112,7 @@
               }).find('option').filter(function() {
                 return $(this).val() == data[fieldName];
               }).html()));
-          } else if (field.addButton && $.isArray(itemData) && !options.noSelect) {
+          } else if (field.addButton && !options.noSelect) {
             if (options.multipleAdd) {              
               $addButton.click(function() {
                 _medit.vmList($multi,
