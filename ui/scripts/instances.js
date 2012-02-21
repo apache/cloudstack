@@ -1485,6 +1485,11 @@
               else {
                 hiddenFields = ["hypervisor"];
               }
+
+              if (!args.context.instances[0].publicip) {
+                hiddenFields.push('publicip');
+              }
+              
               return hiddenFields;
             },
 
@@ -1493,6 +1498,7 @@
                 id: { label: 'label.id', isEditable: false },
                 displayname: { label: 'label.display.name', isEditable: true },								   
                 state: { label: 'label.state', isEditable: false },
+                publicip: { label: 'label.public.ip', isEditable: false },
                 zonename: { label: 'label.zone.name', isEditable: false },
                 hypervisor: { label: 'label.hypervisor', isEditable: false },
                 templatename: { label: 'label.template', isEditable: false },
