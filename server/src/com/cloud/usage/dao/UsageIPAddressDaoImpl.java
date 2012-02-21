@@ -41,15 +41,15 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
 	public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
 
 	protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_elastic, assigned, released " +
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
                                                                  "FROM usage_ip_address " +
                                                                  "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
                                                                  "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_elastic, assigned, released " +
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
                                                                 "FROM usage_ip_address " +
                                                                 "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
                                                                 "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_elastic, assigned, released " +
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
                                                           "FROM usage_ip_address " +
                                                           "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
                                                           "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
@@ -119,7 +119,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
                 Long zId = Long.valueOf(rs.getLong(4));
                 String addr = rs.getString(5);
                 Boolean isSourceNat = Boolean.valueOf(rs.getBoolean(6));
-                Boolean isElastic = Boolean.valueOf(rs.getBoolean(7));
+                Boolean isSystem = Boolean.valueOf(rs.getBoolean(7));
                 Date assignedDate = null;
                 Date releasedDate = null;
                 String assignedTS = rs.getString(8);
@@ -132,7 +132,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
                     releasedDate = DateUtil.parseDateString(s_gmtTimeZone, releasedTS);
                 }
 
-                usageRecords.add(new UsageIPAddressVO(id, acctId, dId, zId, addr, isSourceNat, isElastic, assignedDate, releasedDate));
+                usageRecords.add(new UsageIPAddressVO(id, acctId, dId, zId, addr, isSourceNat, isSystem, assignedDate, releasedDate));
             }
         } catch (Exception e) {
             txn.rollback();

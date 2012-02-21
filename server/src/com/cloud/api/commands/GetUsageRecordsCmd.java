@@ -261,8 +261,8 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 } else if(usageRecord.getUsageType() == UsageTypes.IP_ADDRESS){
                 	//isSourceNAT
                     usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat"))?true:false);
-                    //isElastic
-                    usageRecResponse.setElastic((usageRecord.getSize() == 1)?true:false);
+                    //isSystem
+                    usageRecResponse.setSystem((usageRecord.getSize() == 1)?true:false);
                     //IP Address ID
                     usageRecResponse.setUsageId(identityDao.getIdentityUuid("user_ip_address", usageRecord.getUsageId().toString()));
                     

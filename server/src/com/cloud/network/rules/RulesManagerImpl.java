@@ -1028,8 +1028,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
 
-        if (ipAddress.getElastic()) {
-            throw new InvalidParameterValueException("Can't disable static nat for elastic IP address " + ipAddress);
+        if (ipAddress.getSystem()) {
+            throw new InvalidParameterValueException("Can't disable static nat for system IP address " + ipAddress);
         }
 
         Long vmId = ipAddress.getAssociatedWithVmId();
@@ -1043,7 +1043,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            enableElasticIpAndStaticNatForVm(_vmDao.findById(vmId), true);
+            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
             return true;
         } else {
             return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
@@ -1080,17 +1080,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (success) {
-            boolean isIpElastic = ipAddress.getElastic();
+            boolean isIpSystem = ipAddress.getSystem();
 
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
-            if (isIpElastic && !releaseIpIfElastic) {
-                ipAddress.setElastic(false);
+            if (isIpSystem && !releaseIpIfElastic) {
+                ipAddress.setSystem(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
 
-            if (isIpElastic && releaseIpIfElastic && !_networkMgr.handleElasticIpRelease(ipAddress)) {
-                s_logger.warn("Failed to release elastic ip address " + ipAddress);
+            if (isIpSystem && releaseIpIfElastic && !_networkMgr.handleSystemIpRelease(ipAddress)) {
+                s_logger.warn("Failed to release system ip address " + ipAddress);
                 success = false;
             }
 
@@ -1177,7 +1177,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException {
+    public void getSystemIpAndEnableStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException {
         boolean success = true;
 
         // enable static nat if eIp capability is supported
@@ -1189,17 +1189,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
-                    s_logger.debug("Vm " + vm + " already has elastic ip associated with it in guest network " + guestNetwork);
+                    s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
                     continue;
                 }
 
-                s_logger.debug("Allocating elastic ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
-                IpAddress ip = _networkMgr.assignElasticIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
+                s_logger.debug("Allocating system ip and enabling static nat for it for the vm " + vm + " in guest network " + guestNetwork);
+                IpAddress ip = _networkMgr.assignSystemIp(guestNetwork.getId(), _accountMgr.getAccount(vm.getAccountId()), false, true);
                 if (ip == null) {
-                    throw new CloudRuntimeException("Failed to allocate elastic ip for vm " + vm + " in guest network " + guestNetwork);
+                    throw new CloudRuntimeException("Failed to allocate system ip for vm " + vm + " in guest network " + guestNetwork);
                 }
 
-                s_logger.debug("Allocated elastic ip " + ip + ", now enabling static nat on it for vm " + vm);
+                s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId());
@@ -1212,11 +1212,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 }
 
                 if (!success) {
-                    s_logger.warn("Failed to enable static nat on elastic ip " + ip + " for the vm " + vm + ", releasing the ip...");
-                    _networkMgr.handleElasticIpRelease(ip);
-                    throw new CloudRuntimeException("Failed to enable static nat on elastic ip for the vm " + vm);
+                    s_logger.warn("Failed to enable static nat on system ip " + ip + " for the vm " + vm + ", releasing the ip...");
+                    _networkMgr.handleSystemIpRelease(ip);
+                    throw new CloudRuntimeException("Failed to enable static nat on system ip for the vm " + vm);
                 } else {
-                    s_logger.warn("Succesfully enabled static nat on elastic ip " + ip + " for the vm " + vm);
+                    s_logger.warn("Succesfully enabled static nat on system ip " + ip + " for the vm " + vm);
                 }
             }
         }

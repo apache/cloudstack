@@ -91,8 +91,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @SerializedName("issourcenat") @Param(description="True if the IPAddress is source NAT")
     private Boolean isSourceNat;
 
-    @SerializedName("iselastic") @Param(description="True if the IPAddress is elastic")
-    private Boolean isElastic;
+    @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="True if the IPAddress is system IP - allocated during vm deploy or lb rule create")
+    private Boolean isSystem;
     
     @SerializedName("networkid") @Param(description="id of the network")
     private String networkId;
@@ -174,8 +174,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
         this.isSourceNat = isSourceNat;
     }
 
-    public void setElastic(Boolean isElastic) {
-        this.isElastic = isElastic;
+    public void setSystem(Boolean isSystem) {
+        this.isSystem = isSystem;
     }
     
     @Override

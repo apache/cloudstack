@@ -921,7 +921,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
   `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
-  `is_elastic` int(1) unsigned NOT NULL default '0',
+  `is_system` int(1) unsigned NOT NULL default '0',
   PRIMARY KEY (`id`),
   UNIQUE (`public_ip_address`, `source_network_id`),
   CONSTRAINT `fk_user_ip_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
