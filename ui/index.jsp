@@ -1614,6 +1614,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.total.of.ip': '<fmt:message key="label.total.of.ip"/>',
 'state.Stopping': '<fmt:message key="state.Stopping"/>',
 'message.add.load.balancer.under.ip': '<fmt:message key="message.add.load.balancer.under.ip"/>',
 'message.select.instance': '<fmt:message key="message.select.instance"/>',
