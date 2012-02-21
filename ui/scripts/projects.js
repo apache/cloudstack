@@ -932,7 +932,7 @@
             },
             
             accept: {
-              label: 'message.accept.project.invitation',
+              label: 'label.accept.project.invitation',
               action: function(args) {
                 $.ajax({
                   url: createURL('updateProjectInvitation'),
@@ -954,7 +954,7 @@
               },
               messages: {
                 confirm: function() { return 'message.confirm.join.project'; },
-                notification: function() { return 'message.accept.project.invitation'; }
+                notification: function() { return 'label.accept.project.invitation'; }
               },
               notification: { poll: pollAsyncJobResult }
             },
