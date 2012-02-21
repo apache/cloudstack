@@ -1,6 +1,6 @@
 (function($, cloudStack) {
 
-  var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs;
+  var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
@@ -1046,24 +1046,60 @@
                             label: 'label.network.offering',
                             dependsOn: 'scope',
                             select: function(args) {
-                              var array1 = [];
                               var apiCmd = "listNetworkOfferings&state=Enabled&zoneid=" + selectedZoneObj.id; 
-																														
+															var array1 = [];
+																																											
+															if(physicalNetworkObjs.length > 1) { //multiple physical networks
+															  var guestTrafficTypeTotal = 0;
+															  for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
+																  if(guestTrafficTypeTotal > 1)
+																	  break; 																	
+																  $.ajax({
+																	  url: createURL("listTrafficTypes&physicalnetworkid=" + physicalNetworkObjs[i].id),
+																		dataType: "json",
+																		async: false,
+																		success: function(json) {																		  
+																			var items = json.listtraffictypesresponse.traffictype;
+																			for(var k = 0; k < items.length; k++) {
+																			  if(items[k].traffictype == "Guest") {
+																				  guestTrafficTypeTotal++;
+																				  break; 
+																				}
+																			}
+																		}																	
+																	});
+																}															 											
+															
+															  if(guestTrafficTypeTotal > 1) {
+																	if(args.context.physicalNetworks[0].tags != null && args.context.physicalNetworks[0].tags.length > 0) {
+																		array1.push("&tags=" + args.context.physicalNetworks[0].tags);
+																	}
+																	else {																	  
+																		alert("Network offerings is not available until you specify tags for this physical network");		
+																		return;																	
+																	}
+																}																
+															}		
+															
                               //this tab (Network tab in guest network) only shows when it's under an Advanced zone
 															if(args.scope == "zone-wide" || args.scope == "domain-specific") {
-																apiCmd += "&guestiptype=Shared";
+																array1.push("&guestiptype=Shared");
 															}                               
                               
+															var networkOfferingArray = [];
                               $.ajax({
-                                url: createURL(apiCmd),
+                                url: createURL(apiCmd + array1.join("")),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {																  
-                                  networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                  networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;																	
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
                                     for (var i = 0; i < networkOfferingObjs.length; i++) {
+																		
                                       //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
-                                      if(nspMap["securityGroups"].state == "Disabled"){ 
+                                      //comment the following section becaues nspMap is empty unless network providers has been clicked.
+																			/*
+																			if(nspMap["securityGroups"].state == "Disabled"){ 
                                         var includingSGP = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -1075,6 +1111,7 @@
                                         if(includingSGP == true)
                                           continue; //skip to next network offering
                                       }
+																			*/																			
 																																						
 																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
 																			if(args.scope == "account-specific" || args.scope == "project-specific") {
@@ -1090,13 +1127,13 @@
                                           continue; //skip to next network offering
 																			}		
 																			
-                                      array1.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
+                                      networkOfferingArray.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
                                   }
                                 }
                               });
 															
-                              args.response.success({data: array1});
+                              args.response.success({data: networkOfferingArray});
                               												
 															
 															args.$select.change(function(){															 
@@ -1603,6 +1640,7 @@
               zoneid: args.context.zones[0].id
 						},
             success: function(json) {
+						  physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
               args.response.success({
                 data: json.listphysicalnetworksresponse.physicalnetwork
               });
