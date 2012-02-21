@@ -374,6 +374,7 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
         
         def copyToPrimary(secMountPoint, volumeFolderOnSecStorage, volumePath, primaryMountPath):
             srcPath = join(secMountPoint, volumeFolderOnSecStorage.lstrip("/"), volumePath.lstrip("/"))
+            if not srcPath.endswith(".raw"): srcPath = srcPath + ".raw"
             if not isfile(srcPath): raise Exception("Cannot find volume at %s"%srcPath)
             if not exists(primaryMountPath): raise Exception("Primary storage(%s) seems to have gone"%primaryMountPath)
             OvmStoragePool()._checkDirSizeForImage(primaryMountPath, srcPath)
