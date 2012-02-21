@@ -997,8 +997,10 @@
           edit: {
             label: 'Edit',
             action: function(args) {
-              var array1 = [];
-              array1.push("&displayName=" + args.data.displayname);
+              var array1 = [];							
+							if(args.data.displayname != args.context.instances[0].name)
+                array1.push("&displayName=" + args.data.displayname);
+								
               array1.push("&group=" + args.data.group);
               array1.push("&ostypeid=" + args.data.guestosid);
               //array1.push("&haenable=" + haenable);
