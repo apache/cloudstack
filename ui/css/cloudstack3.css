@@ -6102,7 +6102,8 @@ label.error {
 
 /*Tree view*/
 .tree-view {
-  height: 100%;
+  width: 24%;
+  height: 98%;
   overflow: auto;
 }
 
