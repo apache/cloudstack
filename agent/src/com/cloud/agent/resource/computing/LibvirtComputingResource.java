@@ -305,6 +305,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String _localStoragePath;
 	protected String _localStorageUUID;
 	private Pair<String, String> _pifs;
+	private int _migrateSpeed;
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 	
 	
@@ -690,7 +691,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		    _mountPoint = "/mnt";
 		}
 		
-        _storageResource = new LibvirtStorageResource(this, _storage, _createvmPath, _timeout, _mountPoint, _monitor);
+		value = (String) params.get("vm.migrate.speed");
+		_migrateSpeed = NumbersUtil.parseInt(value, -1);
+		if (_migrateSpeed == -1) {
+			//get guest network device speed
+			_migrateSpeed = 0;
+			String speed = Script.runSimpleBashScript("ethtool " + _pifs.second() + " |grep Speed | cut -d \\  -f 2");
+			if (speed != null) {
+				String[] tokens = speed.split("M");
+				if (tokens.length == 2) {
+					try {
+						_migrateSpeed = Integer.parseInt(tokens[0]);
+					} catch (Exception e) {
+
+					}
+					s_logger.debug("device " + _pifs.second() + " has speed: " + String.valueOf(_migrateSpeed));
+				}
+			}
+			params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
+		}
+
+		_storageResource = new LibvirtStorageResource(this, _storage, _createvmPath, _timeout, _mountPoint, _monitor);
 
         saveProperties(params);
         
@@ -1856,7 +1877,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
 			dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
 			/*Hard code lm flags: VIR_MIGRATE_LIVE(1<<0) and VIR_MIGRATE_PERSIST_DEST(1<<3)*/
-			destDomain = dm.migrate(dconn, (1<<0)|(1<<3), vmName, "tcp:" + cmd.getDestinationIp(), 0);
+			destDomain = dm.migrate(dconn, (1<<0)|(1<<3), vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
 		} catch (LibvirtException e) {
 			s_logger.debug("Can't migrate domain: " + e.getMessage());
 			result = e.getMessage();
