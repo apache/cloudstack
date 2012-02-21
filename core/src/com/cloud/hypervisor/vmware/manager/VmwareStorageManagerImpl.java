@@ -124,7 +124,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
 				copyTemplateFromSecondaryToPrimary(hyperHost,
 					primaryStorageDatastoreMo, secondaryStorageUrl,
-					mountPoint, templateUuidName);
+					mountPoint, templateName, templateUuidName);
 			} else {
 				s_logger.info("Template " + templateName + " has already been setup, skip the template setup process in primary storage");
 			}
@@ -411,8 +411,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
 	}
 	
+    // templateName: name in secondary storage
+    // templateUuid: will be used at hypervisor layer
     private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-        String templatePathAtSecondaryStorage, String templateName) throws Exception {
+        String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
         
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " 
             + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
@@ -426,29 +428,44 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         
         String srcFileName = getOVFFilePath(srcOVAFileName);
         if(srcFileName == null) {
+            Script command = new Script("tar", 0, s_logger);
+            command.add("--no-same-owner");
+            command.add("-xf", srcOVAFileName);
+            command.setWorkDir(secondaryMountPoint + "/" +  templatePathAtSecondaryStorage);
+            s_logger.info("Executing command: " + command.toString());
+            String result = command.execute();
+            if(result != null) {
+                String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
+        
+        srcFileName = getOVFFilePath(srcOVAFileName);
+        if(srcFileName == null) {    
             String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName; 
             s_logger.error(msg);
             throw new Exception(msg);
         }
         
-        String vmName = templateName;
+        String vmName = templateUuid;
         hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
         
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         if(vmMo == null) {
             String msg = "Failed to import OVA template. secondaryStorage: " 
                 + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
-                + ", templateName: " + templateName;
+                + ", templateName: " + templateName + ", templateUuid: " + templateUuid;
             s_logger.error(msg);
             throw new Exception(msg);
         }
         
         if(vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
-            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
+            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateUuid);
             vmMo.markAsTemplate();
         } else {
             vmMo.destroy();
-            String msg = "Unable to create base snapshot for template: " + templateName; 
+            String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid; 
             s_logger.error(msg);
             throw new Exception(msg);
         }
