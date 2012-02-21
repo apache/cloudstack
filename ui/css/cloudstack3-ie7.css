@@ -13,18 +13,34 @@ div.panel div.list-view div.fixed-header {
   top: expression(this.offsetParent.scrollTop + 30);
 }
 
+.detail-view div.list-view div.fixed-header {
+  top: 29px !important;
+  left: 12px !important;
+}
+
 div.panel div.list-view div.data-table table.body {
   top: 78px;
 }
 
 .detail-view .main-groups {
-  width: 554px;
+  width: 96%;
+  height: 416px;
   position: relative;
   overflow-x: hidden;
+  margin-top: -18px;
 }
 
 .detail-view .ui-widget-content {
   overflow-x: hidden !important;
+}
+
+.tree-view {
+  position: relative;
+  top: expression(this.offsetParent.scrollTop);
+}
+
+.tree-view li .name {
+  margin: 0px !important;
 }
 
 .detail-view .button.done {
@@ -90,5 +106,30 @@ table th {
   font-size: 12px;
   overflow: hidden;
   vertical-align: middle;
+}
+
+.detail-view > .toolbar {
+  position: relative;
+  float: left;
+  left: -14px;
+}
+
+.detail-view .list-view > .toolbar {
+  width: 100% !important;
+}
+
+.system-chart ul.resources li .label {
+  /*+placement:shift 3px 9px;*/
+  position: relative;
+  left: 3px;
+  top: 9px;
+  position: absolute;
+}
+
+.system-chart ul.resources li .button.view-all .view-all-label {
+  /*+placement:shift 6px 5px;*/
+  position: relative;
+  left: 6px;
+  top: 5px;
 }
 
