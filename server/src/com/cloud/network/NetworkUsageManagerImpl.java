@@ -372,8 +372,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             }
 
             List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
-
-            //Get usage for Ips for which were assigned for the entire duration
+            
+            //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
                 DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now);
                 DirectNetworkUsageAnswer answer = (DirectNetworkUsageAnswer) _agentMgr.easySend(host.getId(), cmd);
@@ -381,6 +381,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
                     String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
                     s_logger.error(msg);
+                    return false;
                 } else {
                     for(UsageIPAddressVO usageIp : fullDurationIpUsage){
                         String publicIp = usageIp.getAddress();
@@ -403,7 +404,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                 }
             }
 
-            //Get usage for Ips for which were assigned for part of the duration period
+            //Get usage for Ips which were assigned for part of the duration period
             for(UsageIPAddressVO usageIp : IpPartialUsage){
                 IpList = new ArrayList<String>() ;
                 IpList.add(usageIp.getAddress());
@@ -413,6 +414,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
                     String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
                     s_logger.error(msg);
+                    return false;
                 } else {
                     String publicIp = usageIp.getAddress();
                     long[] bytesSentRcvd = answer.get(publicIp);
@@ -434,6 +436,10 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                 }
             }
 
+            if(collectedStats.size() == 0){
+            	s_logger.debug("No new direct network stats. No need to persist");
+            	return false;
+            }
             //Persist all the stats and last_collection time in a single transaction
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
