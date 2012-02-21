@@ -695,7 +695,14 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
         
         try {
-        	OvmVm.Details vm = OvmVm.getDetails(_conn, vmName);   
+        	OvmVm.Details vm = null;
+        	try {
+        		vm = OvmVm.getDetails(_conn, vmName);   
+        	} catch (XmlRpcException e) {
+        		s_logger.debug("Unable to get details of vm: " + vmName + ", treating it as stopped", e);
+        		return new StopAnswer(cmd, "success", 0, 0L, 0L);
+        	}
+        	
         	deleteAllNetworkRulesForVm(vmName);    
         	OvmVm.stop(_conn, vmName);
         	cleanup(vm);
