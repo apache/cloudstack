@@ -298,8 +298,13 @@ class OvmVm(OvmObject):
                 return SUCC()
                 
             logger.info(OvmVm.stop, "Stop vm %s"%vmName)
-            vmPath = OvmHost()._vmNameToPath(vmName)
-            # set the VM to RUNNING before starting, OVS agent will check this status
+            try:
+                vmPath = OvmHost()._vmNameToPath(vmName)
+            except Exception, e:
+                errmsg = fmt_err_msg(e)
+                logger.info(OvmVm.stop, "Cannot find link for vm %s on primary storage, treating it as stopped\n %s"%(vmName, errmsg))
+                return SUCC()
+            # set the VM to RUNNING before stopping, OVS agent will check this status
             set_vm_status(vmPath, 'RUNNING')
             raiseExceptionIfFail(stop_vm(vmPath))
             return SUCC()
