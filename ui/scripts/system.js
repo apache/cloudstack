@@ -2524,12 +2524,12 @@
                     capacity: {
                       label: 'label.capacity',
                       validation: { required: false, number: true }
+                    },
+                    dedicated: {
+                      label: 'label.dedicated',
+                      isBoolean: true,
+                      isChecked: false
                     }
-                    // dedicated: {
-                    //   label: 'label.dedicated',
-                    //   isBoolean: true,
-                    //   isChecked: false
-                    // }
                   }
                 },
                 action: function(args) {
@@ -3951,12 +3951,12 @@
                   capacity: {
                     label: 'label.capacity',
                     validation: { required: false, number: true }
+                  },
+                  dedicated: {
+                    label: 'label.dedicated',
+                    isBoolean: true,
+                    isChecked: false
                   }
-                  // dedicated: {
-                  //   label: 'label.dedicated',
-                  //   isBoolean: true,
-                  //   isChecked: false
-                  // }
                 }
               },
               action: function(args) {
