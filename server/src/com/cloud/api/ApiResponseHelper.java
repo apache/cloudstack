@@ -715,7 +715,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setZoneId(zoneId);
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
-        ipResponse.setIsElastic(ipAddress.getElastic());
+        ipResponse.setIsSystem(ipAddress.getSystem());
 
         // get account information
         populateOwner(ipResponse, ipAddress);
@@ -764,7 +764,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
         }
         
-        if (ipAddress.getElastic()) {
+        if (ipAddress.getSystem()) {
             if (ipAddress.isOneToOneNat()) {
                 ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
             } else {

@@ -81,7 +81,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
 
-    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isElastic) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
 
     /**
      * assigns a source nat ip address to an account within a network.
@@ -289,11 +289,11 @@ public interface NetworkManager extends NetworkService {
 
     Provider getDefaultUniqueProviderForService(String serviceName);
 
-    IpAddress assignElasticIp(long networkId, Account owner,
+    IpAddress assignSystemIp(long networkId, Account owner,
             boolean forElasticLb, boolean forElasticIp)
             throws InsufficientAddressCapacityException;
 
-    boolean handleElasticIpRelease(IpAddress ip);
+    boolean handleSystemIpRelease(IpAddress ip);
 
     void checkNetworkPermissions(Account owner, Network network);
 

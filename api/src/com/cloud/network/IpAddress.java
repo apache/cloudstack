@@ -83,6 +83,6 @@ public interface IpAddress extends ControlledEntity {
 
     Long getAllocatedInDomainId();
 
-    boolean getElastic();
+    boolean getSystem();
 
 }

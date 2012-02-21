@@ -146,7 +146,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         address.setAssociatedWithVmId(null);
         address.setState(State.Free);
         address.setAssociatedWithNetworkId(null);
-        address.setElastic(false);
+        address.setSystem(false);
         update(ipAddressId, address);
     }
 

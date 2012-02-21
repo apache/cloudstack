@@ -354,12 +354,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isElastic) throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isElastic);
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem);
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign, String requestedIp, boolean isElastic)
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem)
             throws InsufficientAddressCapacityException {
         StringBuilder errorMessage = new StringBuilder("Unable to get ip adress in ");
         Transaction txn = Transaction.currentTxn();
@@ -414,7 +414,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setAllocatedTime(new Date());
         addr.setAllocatedInDomainId(owner.getDomainId());
         addr.setAllocatedToAccountId(owner.getId());
-        addr.setElastic(isElastic);
+        addr.setSystem(isSystem);
 
         if (assign) {
             markPublicIpAsAllocated(addr);
@@ -459,7 +459,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             String guestType = vlan.getVlanType().toString();
             
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getElastic());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem());
             _usageEventDao.persist(usageEvent);
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
@@ -946,7 +946,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(long networkId, Account ipOwner, boolean isElastic) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress allocateIP(long networkId, Account ipOwner, boolean isSystem) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
 
@@ -1025,7 +1025,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
 
-            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null, isElastic);
+            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null, isSystem);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone.getId());
@@ -1953,9 +1953,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
         }
 
-        // don't allow releasing elastic ip address
-        if (ipVO.getElastic()) {
-            throw new InvalidParameterValueException("Can't release elastic IP address " + ipVO);
+        // don't allow releasing system ip address
+        if (ipVO.getSystem()) {
+            throw new InvalidParameterValueException("Can't release system IP address " + ipVO);
         }
 
         boolean success = releasePublicIpAddress(ipAddressId, userId, caller);
@@ -1964,7 +1964,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             Long vmId = ipVO.getAssociatedWithVmId();
             if (offering.getElasticIp() && vmId != null) {
-                _rulesMgr.enableElasticIpAndStaticNatForVm(_userVmDao.findById(vmId), true);
+                _rulesMgr.getSystemIpAndEnableStaticNatForVm(_userVmDao.findById(vmId), true);
                 return true;
             }
             return true;
@@ -3569,7 +3569,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 addr.setAllocatedTime(new Date());
                 addr.setAllocatedInDomainId(owner.getDomainId());
                 addr.setAllocatedToAccountId(owner.getId());
-                addr.setElastic(false);
+                addr.setSystem(false);
                 addr.setState(IpAddress.State.Allocating);
                 markPublicIpAsAllocated(addr);
             }
@@ -3798,7 +3798,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 String guestType = vlan.getVlanType().toString();
 
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(), guestType, ip.getElastic());
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(), guestType, ip.getSystem());
                 _usageEventDao.persist(usageEvent);
             }
 
@@ -6130,28 +6130,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    public IpAddress assignElasticIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException {
+    public IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException {
         Network guestNetwork = getNetwork(networkId);
         NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         IpAddress ip = null;
         if ((off.getElasticLb() && forElasticLb) || (off.getElasticIp() && forElasticIp)) {
 
             try {
-                s_logger.debug("Allocating elastic IP address for load balancer rule...");
+                s_logger.debug("Allocating system IP address for load balancer rule...");
                 // allocate ip
                 ip = allocateIP(networkId, owner, true);
                 // apply ip associations
                 ip = associateIP(ip.getId());
             } catch (ResourceAllocationException ex) {
-                throw new CloudRuntimeException("Failed to allocate elastic ip due to ", ex);
+                throw new CloudRuntimeException("Failed to allocate system ip due to ", ex);
             } catch (ConcurrentOperationException ex) {
-                throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+                throw new CloudRuntimeException("Failed to allocate system lb ip due to ", ex);
             } catch (ResourceUnavailableException ex) {
-                throw new CloudRuntimeException("Failed to allocate elastic lb ip due to ", ex);
+                throw new CloudRuntimeException("Failed to allocate system lb ip due to ", ex);
             }
 
             if (ip == null) {
-                throw new CloudRuntimeException("Failed to allocate elastic ip");
+                throw new CloudRuntimeException("Failed to allocate system ip");
             }
         }
 
@@ -6159,17 +6159,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean handleElasticIpRelease(IpAddress ip) {
+    public boolean handleSystemIpRelease(IpAddress ip) {
         boolean success = true;
         Long networkId = ip.getAssociatedWithNetworkId();
         if (networkId != null) {
-            if (ip.getElastic()) {
+            if (ip.getSystem()) {
                 UserContext ctx = UserContext.current();
                 if (!releasePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
-                    s_logger.warn("Unable to release elastic ip address id=" + ip.getId());
+                    s_logger.warn("Unable to release system ip address id=" + ip.getId());
                     success = false;
                 } else {
-                    s_logger.warn("Successfully released elastic ip address id=" + ip.getId());
+                    s_logger.warn("Successfully released system ip address id=" + ip.getId());
                 }
             }
         }

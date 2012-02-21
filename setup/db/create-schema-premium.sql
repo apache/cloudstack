@@ -96,7 +96,7 @@ CREATE TABLE  `cloud_usage`.`usage_ip_address` (
   `zone_id` bigint unsigned NOT NULL,
   `public_ip_address` varchar(15) NOT NULL,
   `is_source_nat` smallint(1) NOT NULL,
-  `is_elastic` smallint(1) NOT NULL,
+  `is_system` smallint(1) NOT NULL,
   `assigned` DATETIME NOT NULL,
   `released` DATETIME NULL,
   UNIQUE KEY (`id`, `assigned`)

@@ -3486,7 +3486,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (tags != null) {
-            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+            if (tags.isEmpty()) {
+                sc.addAnd("tags", SearchCriteria.Op.NULL);
+            } else {
+                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+            }
         }
 
         List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);

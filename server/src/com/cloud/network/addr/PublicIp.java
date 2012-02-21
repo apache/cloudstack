@@ -183,7 +183,7 @@ public class PublicIp implements PublicIpAddress {
 	}
 	
 	@Override
-    public boolean getElastic() {
-        return _addr.getElastic();
+    public boolean getSystem() {
+        return _addr.getSystem();
     }
 }
