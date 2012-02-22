@@ -1205,7 +1205,7 @@ div.list-view td.state.off span {
 .ui-tabs li a {
   float: left;
   padding: 15px;
-  width: 91px;
+  min-width: 91px;
   text-align: center;
   font-size: 11px;
   margin-right: 1px;
