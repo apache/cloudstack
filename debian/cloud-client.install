@@ -15,6 +15,7 @@
 /etc/cloud/management/web.xml
 /etc/cloud/management/server-nonssl.xml
 /etc/cloud/management/tomcat6-nonssl.conf
+/etc/cloud/management/virtualrouter_commands.properties
 /etc/cloud/management/Catalina
 /etc/cloud/management/Catalina/localhost
 /etc/cloud/management/Catalina/localhost/client
