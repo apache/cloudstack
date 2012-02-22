@@ -79,7 +79,7 @@
   };
 
   cloudStack.sections.system = {
-    title: 'label.menu.system',
+    title: 'label.menu.infrastructure',
     id: 'system',
 
     // System dashboard
@@ -2032,7 +2032,7 @@
                           desc: '',
                           fields: {
                             serviceOfferingId: {
-                              label: 'label.service.offering',
+                              label: 'label.compute.offering',
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
@@ -2192,7 +2192,7 @@
                             guestipaddress: { label: 'label.guest.ip' },
                             linklocalip: { label: 'label.linklocal.ip' },
                             hostname: { label: 'label.host' },
-                            serviceofferingname: { label: 'label.service.offering' },
+                            serviceofferingname: { label: 'label.compute.offering' },
                             networkdomain: { label: 'label.network.domain' },
                             domain: { label: 'label.domain' },
                             account: { label: 'label.account' },
@@ -3395,7 +3395,7 @@
                 },
 
                 compute: {
-                  title: 'label.compute',
+                  title: 'label.compute.and.storage',
                   custom: cloudStack.uiCustom.systemChart('compute')
                 },
                 network: {
