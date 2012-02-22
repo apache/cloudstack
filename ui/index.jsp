@@ -720,7 +720,7 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
+            <div class="main-desc pre-setup"><fmt:message key="message.launch.zone"/></div>
             <div class="main-desc launch" style="display:none;">
               <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
@@ -1614,6 +1614,7 @@
 
 <script language="javascript">
 dictionary = {
+'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
 'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
 'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',
 'label.compute.offerings': '<fmt:message key="label.compute.offerings"/>',

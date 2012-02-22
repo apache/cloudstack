@@ -5373,6 +5373,24 @@ label.error {
   margin: 23px 0 0px 6px;
 }
 
+.multi-wizard.zone-wizard .review .main-desc.pre-setup {
+  width: 100%;
+  font-size: 18px;
+  color: #2C4159;
+  background: url(../images/icons.png) no-repeat 104px -224px;
+  padding: 2px 0 1px;
+  text-align: center;
+  /*+placement:shift 0px 153px;*/
+  position: relative;
+  left: 0px;
+  top: 153px;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+}
+
 .multi-wizard.zone-wizard .info-desc {
   font-size: 11px;
   float: left;
