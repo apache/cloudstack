@@ -1183,7 +1183,7 @@
               desc: '',
               fields: {
                 serviceOffering: {
-                  label: 'label.service.offering',
+                  label: 'label.compute.offering',
                   select: function(args) {
                     $.ajax({
                       url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
@@ -1522,7 +1522,7 @@
                   }
                 },
 
-                serviceofferingname: { label: 'label.service.offering', isEditable: false },
+                serviceofferingname: { label: 'label.compute.offering', isEditable: false },
                 group: { label: 'label.group', isEditable: true },
                 hostname: { label: 'label.host', isEditable: false},
                 haenable: { label: 'label.ha.enabled', isEditable: false, converter:cloudStack.converters.toBooleanText },

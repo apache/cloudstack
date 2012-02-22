@@ -4,15 +4,15 @@
   var networkServiceObjs = [], serviceCheckboxNames = [];
 	
   cloudStack.sections.configuration = {
-    title: 'label.configuration',
+    title: 'label.menu.service.offerings',
     id: 'configuration',
     sectionSelect: {
-      label: 'label.select-view'
+      label: 'label.select.offering'
     },
     sections: {
       serviceOfferings: {
         type: 'select',
-        title: 'label.menu.service.offerings',
+        title: 'label.compute.offerings',
         listView: {
           id: 'serviceOfferings',
           label: 'label.menu.service.offerings',
@@ -25,19 +25,19 @@
 
           actions: {
             add: {
-              label: 'label.add.service.offering',
+              label: 'label.add.compute.offering',
 
               messages: {
                 confirm: function(args) {
                   return 'message.add.service.offering';
                 },
                 notification: function(args) {
-                  return 'label.add.service.offering';
+                  return 'label.add.compute.offering';
                 }
               },
 
               createForm: {
-                title: 'label.add.service.offering',
+                title: 'label.add.compute.offering',
                 fields: {
                   name: {
                     label: 'label.name',
@@ -892,95 +892,7 @@
             }
           }
         }
-      },
-
-      hypervisorCapabilities: {
-        type: 'select',
-        title: 'label.hypervisor.capabilities',
-        listView: {
-          id: 'hypervisorCapabilities',
-          label: 'label.hypervisor.capabilities',
-          fields: {
-            hypervisor: { label: 'label.hypervisor' },
-            hypervisorversion: { label: 'label.hypervisor.version' },
-            maxguestslimit: { label: 'label.max.guest.limit' }
-          },
-          dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}				
-					
-            $.ajax({
-              url: createURL("listHypervisorCapabilities&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
-                args.response.success({data:items});
-              },
-              error: function(data) {
-                args.response.error(parseXMLHttpResponse(data));
-              }
-            });
-          },
-
-          detailView: {
-            name: 'label.details',
-            actions: {
-              edit: {
-                label: 'label.edit',
-                action: function(args) {
-                  var array1 = [];
-                  array1.push("&maxguestslimit=" + todb(args.data.maxguestslimit));
-                  $.ajax({
-                    url: createURL("updateHypervisorCapabilities&id=" + args.context.hypervisorCapabilities[0].id + array1.join("")),
-                    dataType: "json",
-                    success: function(json) {
-                      var item = json.updatehypervisorcapabilitiesresponse['null'];
-                      args.response.success({data: item});
-                    },
-                    error: function(data) {
-                      args.response.error(parseXMLHttpResponse(data));
-                    }
-                  });
-                }
-              }
-            },
-
-            tabs: {
-              details: {
-                title: 'label.details',
-                fields: [
-                  {
-                    id: { label: 'label.id' },
-                    hypervisor: { label: 'label.hypervisor' },
-                    hypervisorversion: { label: 'label.hypervisor.version' },
-                    maxguestslimit: {
-                      label: 'label.max.guest.limit',
-                      isEditable: true
-                    }
-                  }
-                ],
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      data:args.context.hypervisorCapabilities[0]
-                    }
-                  );
-                }
-              }
-            }
-          }
-        }
-      },
+      },      
 
       networkOfferings: {
         type: 'select',
@@ -1245,7 +1157,7 @@
 
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
-                    label: 'label.service.offering',
+                    label: 'label.compute.offering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true'),

@@ -68,7 +68,7 @@
           <ul>
             <li class="first"><span class="number">1</span><span><fmt:message key="label.setup"/></span><span class="arrow"></span></li>
             <li><span class="number">2</span><span class="multiline"><fmt:message key="label.select.a.template"/></span><span class="arrow"></span></li>
-            <li><span class="number">3</span><span class="multiline"><fmt:message key="label.service.offering"/></span><span class="arrow"></span></li>
+            <li><span class="number">3</span><span class="multiline"><fmt:message key="label.compute.offering"/></span><span class="arrow"></span></li>
             <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
             <li><span class="number">5</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
             <li class="last"><span class="number">6</span><span><fmt:message key="label.review"/></span></li>
@@ -260,7 +260,7 @@
 
                                 <!-- Service offering -->
                                 <div class="select-desc field service-offering hide-if-unselected">
-                                  <div class="name"><fmt:message key="label.service.offering"/></div>
+                                  <div class="name"><fmt:message key="label.compute.offering"/></div>
                                   <div class="desc">
                                     <select name="new-network-networkofferingid">
                                     </select>
@@ -362,7 +362,7 @@
                   <!-- Service offering -->
                   <div class="select odd">
                     <div class="name">
-                      <span><fmt:message key="label.service.offering"/></span>
+                      <span><fmt:message key="label.compute.offering"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="service-offering"></span>
@@ -1614,6 +1614,11 @@
 
 <script language="javascript">
 dictionary = {
+'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
+'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',
+'label.compute.offerings': '<fmt:message key="label.compute.offerings"/>',
+'label.select.offering': '<fmt:message key="label.select.offering"/>',
+'label.menu.infrastructure': '<fmt:message key="label.menu.infrastructure"/>',
 'label.sticky.domain': '<fmt:message key="label.sticky.domain"/>',
 'label.sticky.postonly': '<fmt:message key="label.sticky.postonly"/>',
 'label.sticky.indirect': '<fmt:message key="label.sticky.indirect"/>',
