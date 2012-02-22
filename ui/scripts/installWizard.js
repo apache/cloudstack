@@ -252,13 +252,14 @@
               var services = $.map(networkOffering.service, function(service) {
                 return service.name;
               });
-
-              return $.inArray('SecurityGroup', services) == -1;
+							
+              //pick the network offering including SecurityGroup, but excluding Lb and StaticNat. (bug 13665)
+              return (($.inArray('SecurityGroup', services) != -1) && ($.inArray('Lb', services) == -1) && ($.inArray('StaticNat', services) == -1)) ;
             }
-          )[0];
+          )[0];					
         }
       });
-      
+     
       cloudStack.zoneWizard.action($.extend(true, {}, args, {
         // Plug in hard-coded values specific to quick install
         data: {
@@ -266,7 +267,11 @@
             networkType: 'Basic',
             domain: 1,
             networkOfferingId: selectedNetworkOffering.id
-          }
+          },
+					pluginFrom: {
+					  name: 'installWizard',
+						selectedNetworkOfferingHavingSG: true
+					}						
         },
         response: {
           success: function(args) {

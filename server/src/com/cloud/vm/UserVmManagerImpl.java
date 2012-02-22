@@ -2727,8 +2727,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        //enable elastic ip for vm
-         _rulesMgr.enableElasticIpAndStaticNatForVm(profile.getVirtualMachine(), false);
+        //get system ip and create static nat rule for the vm
+         _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
          
          return true;
     }
@@ -2790,12 +2790,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
     	//release elastic IP here
     	IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
-    	if (ip != null && ip.getElastic()) {
+    	if (ip != null && ip.getSystem()) {
     		UserContext ctx = UserContext.current();
     		try {
             	_rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
     		} catch (Exception ex) {
-    			s_logger.warn("Failed to disable static nat and release elastic ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+    			s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
     		}
     	}
     }

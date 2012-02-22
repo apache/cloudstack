@@ -4,13 +4,6 @@
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
          </dao>
-         <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
-             <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
-             <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
-             <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
-             <checker name="DatabaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
-         </system-integrity-checker>
-
         <adapters key="com.cloud.ha.Investigator">
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
             <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>

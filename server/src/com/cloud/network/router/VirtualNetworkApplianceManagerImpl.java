@@ -1188,7 +1188,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         boolean publicNetwork = false;
-        if (_networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SourceNat)) {
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
             publicNetwork = true;
         }
         if (isRedundant && !publicNetwork) {
@@ -1882,7 +1882,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (!staticNatFirewallRules.isEmpty()) {
                     List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
                     for (FirewallRule rule : staticNatFirewallRules) {
-                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule));
+                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
                     }
                     createApplyStaticNatRulesCommands(staticNatRules, router, cmds);
                 }

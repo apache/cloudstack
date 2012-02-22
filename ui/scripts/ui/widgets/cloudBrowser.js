@@ -357,6 +357,7 @@
      * Clear all panels
      */
     removeAllPanels: function(args) {
+      $('div.panel').stop(); // Prevent destroyed panels from animating
       this.element.find('div.panel').remove();
       $('#breadcrumbs').find('ul li').remove();
       $('#breadcrumbs').find('ul div.end').remove();

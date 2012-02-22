@@ -622,7 +622,7 @@ public class JuniperSrxResource implements ServerResource {
             String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);    
             
             Long publicVlanTag = null;
-            if (!ip.getVlanId().equals("untagged")) {
+            if (ip.getVlanId() != null && !ip.getVlanId().equals("untagged")) {
             	try {
             		publicVlanTag = Long.parseLong(ip.getVlanId());
             	} catch (Exception e) {

@@ -96,8 +96,8 @@ public class IPAddressVO implements IpAddress, Identity {
     @Column(name="physical_network_id")
     private Long physicalNetworkId;
     
-    @Column(name="is_elastic")
-    private boolean elastic;
+    @Column(name="is_system")
+    private boolean system;
     
 	@Column(name="account_id")
 	@Transient
@@ -269,14 +269,12 @@ public class IPAddressVO implements IpAddress, Identity {
         this.physicalNetworkId = physicalNetworkId;
     }
     
-    
-
     @Override
-	public boolean getElastic() {
-		return elastic;
+	public boolean getSystem() {
+		return system;
 	}
 
-	public void setElastic(boolean isElastic) {
-		this.elastic = isElastic;
+	public void setSystem(boolean isSystem) {
+		this.system = isSystem;
 	}
 }

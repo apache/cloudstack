@@ -8,18 +8,20 @@
     var $newRow;
     var jsonObj = $row.data('json-obj');
 
-    $listView.listView('replaceItem', {
-      $row: $row,
-      data: $.extend(jsonObj, newData),
-      after: function($newRow) {
-        $detailView.data('list-view-row', $newRow);
+		if($listView.length > 0 ) { //$listView.length is 0 after calling $(window).trigger('cloudStack.fullRefresh')
+			$listView.listView('replaceItem', {
+				$row: $row,
+				data: $.extend(jsonObj, newData),
+				after: function($newRow) {
+					$detailView.data('list-view-row', $newRow);
 
-        setTimeout(function() {
-          $('.data-table').dataTable('selectRow', $newRow.index());
-        }, 100);
-      }
-    });
-
+					setTimeout(function() {
+						$('.data-table').dataTable('selectRow', $newRow.index());
+					}, 100);
+				}
+			});
+    }
+		
     // Refresh detail view context
     $.extend(
       $detailView.data('view-args').context[

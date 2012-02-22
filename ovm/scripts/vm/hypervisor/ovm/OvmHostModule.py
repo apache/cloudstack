@@ -205,10 +205,14 @@ class OvmHost(OvmObject):
             dct = {}
             host = OvmHost()
             for name, id in l:
-                vmPath = host._getVmPathFromPrimaryStorage(name)
-                vmStatus = db_get_vm(vmPath)
-                dct[name] = vmStatus['status']
-                
+                try:
+                    vmPath = host._getVmPathFromPrimaryStorage(name)
+                    vmStatus = db_get_vm(vmPath)
+                    dct[name] = vmStatus['status']
+                except Exception, e:
+                    logger.debug(OvmHost.getAllVms, "Cannot find link for %s on primary storage, treat it as Error"%name)
+                    dct[name] = 'ERROR'
+                        
             scanStoppedVmOnPrimaryStorage(dct)
             rs = toGson(dct)
             logger.info(OvmHost.getAllVms, rs)

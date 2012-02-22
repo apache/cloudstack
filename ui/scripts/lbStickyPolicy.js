@@ -19,20 +19,23 @@
         )[0].value);
 
         var baseFields = {
-          stickyName: { label: 'Sticky Name', validation: { required: true } },
-          name: { label: 'Name', validation: { required: true }, isHidden: true },
-          mode: { label: 'Mode', isHidden: true },
-          length: { label: 'Length', validation: { required: true }, isHidden: true },
-          holdtime: { label: 'Hold Time', validation: { required: true }, isHidden: true },
-          tablesize: { label: 'Table size', isHidden: true },
-          expire: { label: 'Expire', isHidden: true },
-          requestlearn: { label: 'Request-Learn', isBoolean: true, isHidden: true },
-          prefix: { label: 'Prefix', isBoolean: true, isHidden: true },
-          nocache: { label: 'No cache', isBoolean: true, isHidden: true },
-          indirect: { label: 'Indirect', isBoolean: true, isHidden: true },
-          postonly: { label: 'Is post-only', isBoolean: true, isHidden: true },
-          domain: { label: 'Domain', isBoolean: true, isHidden: true }
+          stickyName: { label: 'Sticky Name', validation: { required: true } }
         };
+
+        $.map(
+          $.map(
+            stickinessCapabilities,
+            function(c) { return c.paramlist; }
+          ),
+          function(p) {
+            baseFields[p.paramname] = {
+              label: _l('label.sticky.' + p.paramname),
+              isHidden: true,
+              isBoolean: p.isflag,
+              validation: { required: p.required }
+            };
+          }
+        );
 
         var conditionalFields = {
           methodname: {
@@ -123,7 +126,7 @@
           },
           after: function(args) {
             // Remove fields not applicable to sticky method
-            args.$form.find('.form-item:hidden').remove()
+            args.$form.find('.form-item:hidden').remove();
             
             var data = cloudStack.serializeForm(args.$form);
 

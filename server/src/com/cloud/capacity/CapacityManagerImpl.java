@@ -633,7 +633,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                 releaseVmCapacity(vm, false, false, oldHostId);
             }
         } else if (oldState == State.Stopped) {
-            if (event == Event.DestroyRequested) {
+            if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
                 releaseVmCapacity(vm, true, false, vm.getLastHostId());
             } else if(event == Event.AgentReportMigrated) {
                 releaseVmCapacity(vm, false, false, oldHostId);

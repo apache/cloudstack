@@ -48,6 +48,22 @@ ip_to_dev() {
   return 1
 }
 
+doHairpinNat () {
+  local vrGuestIPNetwork=$(sudo ip addr show dev eth0 | grep inet | grep eth0 | awk '{print $2}' )
+  local vrGuestIP=$(echo $vrGuestIPNetwork | awk -F'/' '{print $1}')
+
+  local publicIp=$1
+  local prot=$2
+  local port=$3
+  local guestVmIp=$4
+  local guestPort=$(echo $5 | sed 's/:/-/')
+  local op=$6
+  logger -t cloud "$(basename $0): create HairPin entry : public ip=$publicIp \
+  instance ip=$guestVmIp proto=$proto portRange=$guestPort op=$op"
+
+  (sudo iptables -t nat $op PREROUTING -d $publicIp -i eth0 -p $prot --dport $port -j DNAT --to-destination $guestVmIp:$guestPort &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  (sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -p $prot --dport $port -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
+}
 
 #Port (address translation) forwarding for tcp or udp
 tcp_or_udp_entry() {
@@ -78,6 +94,7 @@ tcp_or_udp_entry() {
            --destination-port $port -j MARK --set-mark $tableNo &>> $OUTFILE || [ "$op" == "-D" ]) && 
   (sudo iptables -t mangle $op PREROUTING --proto $proto -i $dev -d $publicIp \
            --destination-port $port -m state --state NEW -j CONNMARK --save-mark &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  (doHairpinNat $publicIp $proto $port $instIp $dport0 $op) &&
   (sudo iptables -t nat $op OUTPUT  --proto $proto -d $publicIp  \
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
@@ -141,6 +158,7 @@ one_to_one_fw_entry() {
   (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp --proto $proto \
            --destination-port $portRange -j DNAT \
            --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+  (doHairpinNat $publicIp $proto $portRange $instIp $portRange $op) &&
   (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp --proto $proto \
            --destination-port $portRange -m state \
            --state NEW -j ACCEPT &>>  $OUTFILE )

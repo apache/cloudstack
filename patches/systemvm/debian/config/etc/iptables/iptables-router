@@ -22,6 +22,8 @@ COMMIT
 -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A FORWARD -i eth0 -o eth2 -j ACCEPT
 -A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -i eth0 -o eth0 -m state --state NEW -j ACCEPT
+-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 COMMIT
 *mangle
 :PREROUTING ACCEPT [0:0]

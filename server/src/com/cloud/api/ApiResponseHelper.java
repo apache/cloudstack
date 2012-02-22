@@ -715,7 +715,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setZoneId(zoneId);
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
-        ipResponse.setIsElastic(ipAddress.getElastic());
+        ipResponse.setIsSystem(ipAddress.getSystem());
 
         // get account information
         populateOwner(ipResponse, ipAddress);
@@ -727,7 +727,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
             ipResponse.setVirtualMachineName(vm.getHostName());
-            ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+            if (vm.getDisplayName() != null) {
+                ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+            } else {
+                ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+            }
         }
 
         ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
@@ -760,7 +764,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
         }
         
-        if (ipAddress.getElastic()) {
+        if (ipAddress.getSystem()) {
             if (ipAddress.isOneToOneNat()) {
                 ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
             } else {
@@ -972,7 +976,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 volResponse.setVirtualMachineName(vm.getHostName());
                 UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
                 if (userVm != null) {
-                    volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+                    if (userVm.getDisplayName() != null) {
+                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+                    } else {
+                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
+                    }
                     volResponse.setVirtualMachineState(vm.getState().toString());
                 } else {
                     s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
@@ -1175,7 +1183,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vm != null) {
                 response.setVirtualMachineId(vm.getId());
                 response.setVirtualMachineName(vm.getHostName());
-                response.setVirtualMachineDisplayName(vm.getDisplayName());
+                
+                if (vm.getDisplayName() != null) {
+                    response.setVirtualMachineDisplayName(vm.getDisplayName());
+                } else {
+                    response.setVirtualMachineDisplayName(vm.getHostName());
+                }
             }
         }
         FirewallRule.State state = fwRule.getState();
@@ -1203,7 +1216,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vm != null) {// vm might be destroyed
                 response.setVirtualMachineId(vm.getId());
                 response.setVirtualMachineName(vm.getHostName());
-                response.setVirtualMachineDisplayName(vm.getDisplayName());
+                if (vm.getDisplayName() != null) {
+                    response.setVirtualMachineDisplayName(vm.getDisplayName());
+                } else {
+                    response.setVirtualMachineDisplayName(vm.getHostName());
+                }
             }
         }
         FirewallRule.State state = fwRule.getState();

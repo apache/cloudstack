@@ -3213,7 +3213,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     boolean perAccount = value.contains("peraccount");
                     boolean perZone = value.contains("perzone");
                     if ((perAccount && perZone) || (!perAccount && !perZone)) {
-                        throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
+                        throw new InvalidParameterValueException("Either peraccount or perzone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
                     }
                 } else if (capability == Capability.RedundantRouter) {
                     boolean enabled = value.contains("true");
@@ -3311,7 +3311,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
         if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) {
-            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
             if (sourceNatType != null) {
                 _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, sourceNatType);
                 sharedSourceNat = sourceNatType.contains("perzone");
@@ -3391,6 +3391,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String guestIpType = cmd.getGuestIpType();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Object specifyIpRanges = cmd.getSpecifyIpRanges();
+        String tags = cmd.getTags();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3482,6 +3483,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (tags != null) {
+            if (tags.isEmpty()) {
+                sc.addAnd("tags", SearchCriteria.Op.NULL);
+            } else {
+                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+            }
         }
 
         List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);

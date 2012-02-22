@@ -71,8 +71,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
     
-    @SerializedName(ApiConstants.IS_ELASTIC) @Param(description="true if this ip is elastic ip (was allocated as a part of deployVm or createLbRule)")
-    private Boolean isElastic;
+    @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if this ip is system ip (was allocated as a part of deployVm or createLbRule)")
+    private Boolean isSystem;
     
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
@@ -95,7 +95,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
-    @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Elastic IPs only, and can have either StaticNat or LB value")
+    @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
 
 /*    
@@ -210,8 +210,8 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
-	public void setIsElastic(Boolean isElastic) {
-		this.isElastic = isElastic;
+	public void setIsSystem(Boolean isSystem) {
+		this.isSystem = isSystem;
 	}
 
     public void setPurpose(String purpose) {

@@ -997,8 +997,10 @@
           edit: {
             label: 'Edit',
             action: function(args) {
-              var array1 = [];
-              array1.push("&displayName=" + args.data.displayname);
+              var array1 = [];							
+							if(args.data.displayname != args.context.instances[0].name)
+                array1.push("&displayName=" + args.data.displayname);
+								
               array1.push("&group=" + args.data.group);
               array1.push("&ostypeid=" + args.data.guestosid);
               //array1.push("&haenable=" + haenable);
@@ -1181,7 +1183,7 @@
               desc: '',
               fields: {
                 serviceOffering: {
-                  label: 'label.service.offering',
+                  label: 'label.compute.offering',
                   select: function(args) {
                     $.ajax({
                       url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
@@ -1483,6 +1485,11 @@
               else {
                 hiddenFields = ["hypervisor"];
               }
+
+              if (!args.context.instances[0].publicip) {
+                hiddenFields.push('publicip');
+              }
+              
               return hiddenFields;
             },
 
@@ -1491,6 +1498,7 @@
                 id: { label: 'label.id', isEditable: false },
                 displayname: { label: 'label.display.name', isEditable: true },								   
                 state: { label: 'label.state', isEditable: false },
+                publicip: { label: 'label.public.ip', isEditable: false },
                 zonename: { label: 'label.zone.name', isEditable: false },
                 hypervisor: { label: 'label.hypervisor', isEditable: false },
                 templatename: { label: 'label.template', isEditable: false },
@@ -1514,7 +1522,7 @@
                   }
                 },
 
-                serviceofferingname: { label: 'label.service.offering', isEditable: false },
+                serviceofferingname: { label: 'label.compute.offering', isEditable: false },
                 group: { label: 'label.group', isEditable: true },
                 hostname: { label: 'label.host', isEditable: false},
                 haenable: { label: 'label.ha.enabled', isEditable: false, converter:cloudStack.converters.toBooleanText },

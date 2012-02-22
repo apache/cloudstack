@@ -213,7 +213,7 @@ class deployDataCenters():
 
     def enableZone(self, zoneid, allocation_state="Enabled"):
         zoneCmd = updateZone.updateZoneCmd()
-        zoneCmd.zoneid = zoneid
+        zoneCmd.id = zoneid
         zoneCmd.allocationstate = allocation_state
         return self.apiClient.updateZone(zoneCmd)
 
@@ -227,22 +227,19 @@ class deployDataCenters():
             createzone.name = zone.name
             createzone.securitygroupenabled = zone.securitygroupenabled
             createzone.networktype = zone.networktype
+            createzone.guestcidraddress = zone.guestcidraddress
 
             zoneresponse = self.apiClient.createZone(createzone)
             zoneId = zoneresponse.id
 
             phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
-                                                   zoneId, zone.vlan)
+                                                   zoneId)
 
-            if zone.networktype == "Advanced":
-                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
+            self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
                                                     "Management"])
-            elif zone.networktype == "Basic":
-                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
-                                                    "Management", "Storage"])
 
             self.configureProviders(phynetwrk, zone)
-            self.updatePhysicalNetwork(phynetwrk.id, "Enabled")
+            self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=zone.vlan)
 
             if zone.networktype == "Basic":
                 listnetworkoffering = \

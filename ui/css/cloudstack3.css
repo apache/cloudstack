@@ -1205,7 +1205,7 @@ div.list-view td.state.off span {
 .ui-tabs li a {
   float: left;
   padding: 15px;
-  width: 91px;
+  min-width: 91px;
   text-align: center;
   font-size: 11px;
   margin-right: 1px;
@@ -2040,6 +2040,9 @@ div.detail-group.actions td {
 
 .detail-view .ui-tabs-panel div.toolbar {
   width: 768px;
+  background: none;
+  border: none;
+  margin-top: 8px;
 }
 
 .project-view div.toolbar {
@@ -6099,7 +6102,8 @@ label.error {
 
 /*Tree view*/
 .tree-view {
-  height: 100%;
+  width: 24%;
+  height: 98%;
   overflow: auto;
 }
 

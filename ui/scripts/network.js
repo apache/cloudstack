@@ -1,3 +1,4 @@
+
 (function(cloudStack, $) {
   var ipChangeNotice = function() {
     cloudStack.dialog.confirm({
@@ -32,7 +33,7 @@
           status == 'Creating' ||
           status == 'Allocating' ||
           item.account == 'system' ||
-          item.iselastic == true ) {
+          item.issystem == true ) {
         disallowedActions = allowedActions;
       }
 
@@ -42,10 +43,16 @@
         disallowedActions.push('disableStaticNAT');
       }
 
-      if (item.vpnenabled) {
-        disallowedActions.push('enableVPN');
+      if ($.inArray('Vpn', $.map(args.context.networks[0].service,
+                                 function(service) { return service.name; })) > -1) {
+        if (item.vpnenabled) {
+          disallowedActions.push('enableVPN');
+        } else {
+          disallowedActions.push('disableVPN');
+        }
       } else {
         disallowedActions.push('disableVPN');
+        disallowedActions.push('enableVPN');
       }
 
       if (item.issourcenat){
@@ -896,9 +903,8 @@
               }
             },
             zonename: { label: 'label.zone' },
-            //vlanname: { label: 'VLAN' },
-            iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
-            account: { label: 'label.account' },
+            //vlanname: { label: 'VLAN' },   					  
+						virtualmachinedisplayname: { label: 'label.vm.name' },						 
             state: {
               converter: function(str) {
                 // For localization
@@ -1051,7 +1057,7 @@
               if (!ipAddress.vpnenabled) {
                 disabledTabs.push('vpn');
               }
-              if(ipAddress.iselastic == true) {
+              if(ipAddress.issystem == true) {
                 disabledTabs.push('vpn');
 
                 if(ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null)
@@ -1320,6 +1326,25 @@
             tabs: {
               details: {
                 title: 'label.details',
+								
+								preFilter: function(args) {
+								  var hiddenFields = [];								
+									var zoneObj;
+									$.ajax({
+									  url: createURL("listZones&id=" + args.context.ipAddresses[0].zoneid),
+										dataType: "json",
+										async: false,
+										success: function(json) {										  
+											zoneObj = json.listzonesresponse.zone[0];											
+										}
+									});							
+									if(zoneObj.networktype == "Advanced") {
+									  hiddenFields.push("issystem");
+										hiddenFields.push("purpose");
+									}																	
+									return hiddenFields;								
+								},
+								
                 fields: [
                   {
                     ipaddress: { label: 'IP' }
@@ -1333,7 +1358,8 @@
                     state: { label: 'label.state' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
                     isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
-                    iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText },
+                    issystem: { label: 'label.is.system', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
+										purpose: { label: 'label.purpose' }, //(basic zone only) When an IP is system-generated, the purpose it serves can be Lb or static nat.
                     virtualmachinedisplayname: { label: 'label.vm.name' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' },
@@ -1454,11 +1480,18 @@
                             });
 
                             if ($(this).val() == 'icmp') {
+                              $icmpFields.show();
                               $icmpFields.attr('disabled', false);
                               $otherFields.attr('disabled', 'disabled');
+                              $otherFields.hide();
+                              $otherFields.parent().find('label.error').hide();
                             } else {
+                              $otherFields.show();
+                              $otherFields.parent().find('label.error').hide();
                               $otherFields.attr('disabled', false);
                               $icmpFields.attr('disabled', 'disabled');
+                              $icmpFields.hide();
+                              $icmpFields.parent().find('label.error').hide();
                             }
                           });
 
@@ -1684,6 +1717,7 @@
                         $.ajax({
                           url: createURL('listIpForwardingRules'),
                           data: {
+                            listAll: true,
                             ipaddressid: args.context.ipAddresses[0].id
                           },
                           dataType: 'json',

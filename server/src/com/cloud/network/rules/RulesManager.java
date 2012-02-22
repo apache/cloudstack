@@ -33,7 +33,7 @@ public interface RulesManager extends RulesService {
 
     boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError, Account caller);
 
-    boolean applyStaticNatRules(long sourceIpId, boolean continueOnError, Account caller);
+    boolean applyStaticNatRulesForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
 
     boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
 
@@ -74,7 +74,7 @@ public interface RulesManager extends RulesService {
 
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
-    void enableElasticIpAndStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
+    void getSystemIpAndEnableStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
 
     boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 

@@ -522,7 +522,7 @@
                     },
 
                     vmtotal: { label: 'label.total.of.vm' },
-                    iptotal: { label: 'label.totoal.of.ip' },
+                    iptotal: { label: 'label.total.of.ip' },
                     receivedbytes: {
                       label: 'label.bytes.received',
                       converter: function(args) {

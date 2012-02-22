@@ -1,6 +1,6 @@
 (function($, cloudStack) {
 
-  var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs;
+  var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
@@ -79,7 +79,7 @@
   };
 
   cloudStack.sections.system = {
-    title: 'label.menu.system',
+    title: 'label.menu.infrastructure',
     id: 'system',
 
     // System dashboard
@@ -1046,24 +1046,60 @@
                             label: 'label.network.offering',
                             dependsOn: 'scope',
                             select: function(args) {
-                              var array1 = [];
                               var apiCmd = "listNetworkOfferings&state=Enabled&zoneid=" + selectedZoneObj.id; 
-																														
+															var array1 = [];
+																																											
+															if(physicalNetworkObjs.length > 1) { //multiple physical networks
+															  var guestTrafficTypeTotal = 0;
+															  for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
+																  if(guestTrafficTypeTotal > 1)
+																	  break; 																	
+																  $.ajax({
+																	  url: createURL("listTrafficTypes&physicalnetworkid=" + physicalNetworkObjs[i].id),
+																		dataType: "json",
+																		async: false,
+																		success: function(json) {																		  
+																			var items = json.listtraffictypesresponse.traffictype;
+																			for(var k = 0; k < items.length; k++) {
+																			  if(items[k].traffictype == "Guest") {
+																				  guestTrafficTypeTotal++;
+																				  break; 
+																				}
+																			}
+																		}																	
+																	});
+																}															 											
+															
+															  if(guestTrafficTypeTotal > 1) {
+																	if(args.context.physicalNetworks[0].tags != null && args.context.physicalNetworks[0].tags.length > 0) {
+																		array1.push("&tags=" + args.context.physicalNetworks[0].tags);
+																	}
+																	else {																	  
+																		alert(dictionary['error.please.specify.physical.network.tags']);		
+																		return;																	
+																	}
+																}																
+															}		
+															
                               //this tab (Network tab in guest network) only shows when it's under an Advanced zone
 															if(args.scope == "zone-wide" || args.scope == "domain-specific") {
-																apiCmd += "&guestiptype=Shared";
+																array1.push("&guestiptype=Shared");
 															}                               
                               
+															var networkOfferingArray = [];
                               $.ajax({
-                                url: createURL(apiCmd),
+                                url: createURL(apiCmd + array1.join("")),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {																  
-                                  networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                  networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;																	
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
                                     for (var i = 0; i < networkOfferingObjs.length; i++) {
+																		
                                       //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
-                                      if(nspMap["securityGroups"].state == "Disabled"){ 
+                                      //comment the following section becaues nspMap is empty unless network providers has been clicked.
+																			/*
+																			if(nspMap["securityGroups"].state == "Disabled"){ 
                                         var includingSGP = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -1075,6 +1111,7 @@
                                         if(includingSGP == true)
                                           continue; //skip to next network offering
                                       }
+																			*/																			
 																																						
 																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
 																			if(args.scope == "account-specific" || args.scope == "project-specific") {
@@ -1090,13 +1127,13 @@
                                           continue; //skip to next network offering
 																			}		
 																			
-                                      array1.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
+                                      networkOfferingArray.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
                                   }
                                 }
                               });
 															
-                              args.response.success({data: array1});
+                              args.response.success({data: networkOfferingArray});
                               												
 															
 															args.$select.change(function(){															 
@@ -1603,6 +1640,7 @@
               zoneid: args.context.zones[0].id
 						},
             success: function(json) {
+						  physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
               args.response.success({
                 data: json.listphysicalnetworksresponse.physicalnetwork
               });
@@ -1857,6 +1895,20 @@
                         });
                       }
                     });
+
+                    // Get project routers
+                    $.ajax({
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                      dataType: 'json',
+                      async: true,
+                      success: function(json) {
+                        var items = json.listroutersresponse.router;
+                        args.response.success({
+                          actionFilter: routerActionfilter,
+                          data: items
+                        });
+                      }
+                    });
                   },
                   detailView: {
                     name: 'Virtual applicance details',
@@ -1980,7 +2032,7 @@
                           desc: '',
                           fields: {
                             serviceOfferingId: {
-                              label: 'label.service.offering',
+                              label: 'label.compute.offering',
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
@@ -2121,18 +2173,26 @@
                     tabs: {
                       details: {
                         title: 'label.details',
+                        preFilter: function(args) {
+                          if (!args.context.routers[0].project)
+                              return ['project', 'projectid'];
+
+                          return [];
+                        },
                         fields: [
                           {
-                            name: { label: 'label.name' }
+                            name: { label: 'label.name' },
+                            project: { label: 'label.project' }
                           },
                           {
                             id: { label: 'label.id' },
+                            projectid: { label: 'label.project.id' },
                             state: { label: 'label.state' },
                             publicip: { label: 'label.public.ip' },
                             guestipaddress: { label: 'label.guest.ip' },
                             linklocalip: { label: 'label.linklocal.ip' },
                             hostname: { label: 'label.host' },
-                            serviceofferingname: { label: 'label.service.offering' },
+                            serviceofferingname: { label: 'label.compute.offering' },
                             networkdomain: { label: 'label.network.domain' },
                             domain: { label: 'label.domain' },
                             account: { label: 'label.account' },
@@ -2169,16 +2229,17 @@
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
                     dataType: "json",
                     success: function(json) {
-                      var jid = json.updatenetworkserviceproviderresponse.jobid;
-                      args.response.success(
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;                      
+											args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2199,16 +2260,17 @@
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
                     dataType: "json",
                     success: function(json) {
-                      var jid = json.updatenetworkserviceproviderresponse.jobid;
-                      args.response.success(
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;                      
+											args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );                  										
                     }
                   });
                 },
@@ -2368,12 +2430,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2398,12 +2461,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2520,12 +2584,12 @@
                     capacity: {
                       label: 'label.capacity',
                       validation: { required: false, number: true }
+                    },
+                    dedicated: {
+                      label: 'label.dedicated',
+                      isBoolean: true,
+                      isChecked: false
                     }
-                    // dedicated: {
-                    //   label: 'label.dedicated',
-                    //   isBoolean: true,
-                    //   isChecked: false
-                    // }
                   }
                 },
                 action: function(args) {
@@ -2589,13 +2653,14 @@
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {
-                           jobId: jid
-                         }
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2619,13 +2684,14 @@
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {
-                           jobId: jid
-                         }
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2828,12 +2894,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2858,12 +2925,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2957,12 +3025,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -2987,12 +3056,13 @@
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid
+                            jobId: jid,
+														getUpdatedItem: function(json) {														  
+															$(window).trigger('cloudStack.fullRefresh');
+														}
                           }
                         }
-                      );
-
-                      $(window).trigger('cloudStack.fullRefresh');
+                      );  
                     }
                   });
                 },
@@ -3325,7 +3395,7 @@
                 },
 
                 compute: {
-                  title: 'label.compute',
+                  title: 'label.compute.and.storage',
                   custom: cloudStack.uiCustom.systemChart('compute')
                 },
                 network: {
@@ -3941,12 +4011,12 @@
                   capacity: {
                     label: 'label.capacity',
                     validation: { required: false, number: true }
+                  },
+                  dedicated: {
+                    label: 'label.dedicated',
+                    isBoolean: true,
+                    isChecked: false
                   }
-                  // dedicated: {
-                  //   label: 'label.dedicated',
-                  //   isBoolean: true,
-                  //   isChecked: false
-                  // }
                 }
               },
               action: function(args) {

@@ -52,8 +52,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.ExternalLoadBalancerUsageManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LBStickinessPolicyVO;
@@ -161,7 +161,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     ConfigurationManager _configMgr;
     @Inject
-    ExternalLoadBalancerDeviceManager _externalLBMgr;
+    ExternalLoadBalancerUsageManager _externalLBUsageMgr;
     @Inject 
     NetworkServiceMapDao _ntwkSrvcDao;
 
@@ -637,7 +637,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         NetworkVO network = _networkDao.findById(lb.getNetworkId());
         if (network != null) {
             if (_networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
-                _externalLBMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
+                _externalLBUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
             }
         }
 
@@ -721,17 +721,20 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
             NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (off.getElasticLb() && ipAddressVo == null) {
-                ip = _networkMgr.assignElasticIp(lb.getNetworkId(), lbOwner, true, false);
+                ip = _networkMgr.assignSystemIp(lb.getNetworkId(), lbOwner, true, false);
                 lb.setSourceIpAddressId(ip.getId());
             }
             try {
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
+                if (ex instanceof NetworkRuleConflictException) {
+                    throw (NetworkRuleConflictException) ex;
+                }
             } finally {
                 if (result == null && ip != null) {
-                    s_logger.debug("Releasing elastic IP address " + ip + " as corresponding lb rule failed to create");
-                    _networkMgr.handleElasticIpRelease(ip);
+                    s_logger.debug("Releasing system IP address " + ip + " as corresponding lb rule failed to create");
+                    _networkMgr.handleSystemIpRelease(ip);
                 }
             }
         }
@@ -911,13 +914,13 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                     long count = _firewallDao.countRulesByIpId(lb.getSourceIpAddressId());
                     if (count == 0) {
                         try {
-                            success = handleElasticLBIpRelease(lb);
+                            success = handleSystemLBIpRelease(lb);
                         } catch (Exception ex) {
-                            s_logger.warn("Failed to release elastic ip as a part of lb rule " + lb + " deletion due to exception ", ex);
+                            s_logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion due to exception ", ex);
                             success = false;
                         } finally {
                             if (!success) {
-                                s_logger.warn("Failed to release elastic ip as a part of lb rule " + lb + " deletion");
+                                s_logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion");
                             }
                         }
                     }
@@ -928,16 +931,16 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return true;
     }
 
-    protected boolean handleElasticLBIpRelease(LoadBalancerVO lb) {
+    protected boolean handleSystemLBIpRelease(LoadBalancerVO lb) {
         IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
         boolean success = true;
-        if (ip.getElastic()) {
-            s_logger.debug("Releasing elastic ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+        if (ip.getSystem()) {
+            s_logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
             if (!_networkMgr.releasePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current().getCallerUserId(), UserContext.current().getCaller())) {
-                s_logger.warn("Unable to release elastic ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+                s_logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
                 success = false;
             } else {
-                s_logger.warn("Successfully released elastic ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+                s_logger.warn("Successfully released system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
             }
         }
 

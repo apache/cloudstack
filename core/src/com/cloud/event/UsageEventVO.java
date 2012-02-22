@@ -94,7 +94,7 @@ public class UsageEventVO implements UsageEvent {
     }
 	
     //IPAddress usage event
-	public UsageEventVO(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType, boolean isElastic) {
+	public UsageEventVO(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType, boolean isSystem) {
 	    this.type = usageType;
         this.accountId = accountId;
         this.zoneId = zoneId;
@@ -102,7 +102,7 @@ public class UsageEventVO implements UsageEvent {
         this.resourceName = ipAddress;
         this.size = (isSourceNat ? 1L : 0L);
         this.resourceType = guestType;
-        this.templateId = (isElastic ? 1L : 0L);
+        this.templateId = (isSystem ? 1L : 0L);
     }
 	
 	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, String resourceType) {
