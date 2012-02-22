@@ -412,8 +412,12 @@
 
     // EULA check
     $.ajax({
+<<<<<<< HEAD
       url: 'eula.html',
 >>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
+=======
+      url: 'eula.' + $.cookie('lang') + '.html',
+>>>>>>> 4f35fb7... Get EULA specific to selected language
       dataType: 'html',
       success: function(html) {
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
