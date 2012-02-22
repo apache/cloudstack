@@ -178,7 +178,7 @@
 					}
 				});		
 
-				if(item == null || item.value == "false")
+				if(item == null || item.value == null || item.value == "false" || item.value == false)
 				  configurationUseLocalStorage = false;
 				else				
           configurationUseLocalStorage = true;
