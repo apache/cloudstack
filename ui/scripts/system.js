@@ -3723,6 +3723,7 @@
                   }
                 },
 
+<<<<<<< HEAD
                 disable: {
                   label: 'label.action.disable.zone',
                   messages: {
@@ -3752,6 +3753,19 @@
                       args.complete();
                     }
                   }
+=======
+                compute: {
+                  title: 'label.compute.and.storage',
+                  custom: cloudStack.uiCustom.systemChart('compute')
+                },
+                network: {
+                  title: 'label.network',
+                  custom: cloudStack.uiCustom.systemChart('network')
+                },
+                resources: {
+                  title: 'label.resources',
+                  custom: cloudStack.uiCustom.systemChart('resources')
+>>>>>>> 240dabe... Navigation organizational changes
                 },
 
                 'remove': {

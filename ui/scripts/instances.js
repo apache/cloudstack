@@ -1575,10 +1575,20 @@
                       }
                     });
                   }
+<<<<<<< HEAD
                 },              
                                 
                 /*
 								isoid: {
+=======
+                },
+
+                serviceofferingname: { label: 'label.compute.offering', isEditable: false },
+                group: { label: 'label.group', isEditable: true },
+                hostname: { label: 'label.host', isEditable: false},
+                haenable: { label: 'label.ha.enabled', isEditable: false, converter:cloudStack.converters.toBooleanText },
+                isoid: {
+>>>>>>> 240dabe... Navigation organizational changes
                   label: 'label.attached.iso',
                   isEditable: false,
                   converter: function(isoid) {

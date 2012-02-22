@@ -961,6 +961,7 @@
             }
           }
         }
+<<<<<<< HEAD
       },
 
       hypervisorCapabilities: {
@@ -1050,6 +1051,8 @@
             }
           }
         }
+=======
+>>>>>>> 240dabe... Navigation organizational changes
       },      
 
       networkOfferings: {
@@ -1427,7 +1430,11 @@
 
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
+<<<<<<< HEAD
                     label: 'label.system.offering',
+=======
+                    label: 'label.compute.offering',
+>>>>>>> 240dabe... Navigation organizational changes
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true&systemvmtype=domainrouter'),

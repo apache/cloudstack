@@ -267,7 +267,11 @@
 
                                 <!-- Service offering -->
                                 <div class="select-desc field service-offering hide-if-unselected">
+<<<<<<< HEAD
                                   <div class="name"><fmt:message key="label.network.offering"/></div>
+=======
+                                  <div class="name"><fmt:message key="label.compute.offering"/></div>
+>>>>>>> 240dabe... Navigation organizational changes
                                   <div class="desc">
                                     <select name="new-network-networkofferingid">
                                     </select>
@@ -1857,6 +1861,7 @@
 dictionary = {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
@@ -1877,6 +1882,8 @@ dictionary = {
 'label.guest': '<fmt:message key="label.guest"/>',
 'label.network.service.providers': '<fmt:message key="label.network.service.providers"/>',
 'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
+=======
+>>>>>>> 240dabe... Navigation organizational changes
 'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
 'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',
 'label.compute.offerings': '<fmt:message key="label.compute.offerings"/>',
