@@ -1,3 +1,4 @@
+
 (function(cloudStack, $) {
   var ipChangeNotice = function() {
     cloudStack.dialog.confirm({
@@ -32,7 +33,7 @@
           status == 'Creating' ||
           status == 'Allocating' ||
           item.account == 'system' ||
-          item.iselastic == true ) {
+          item.issystem == true ) {
         disallowedActions = allowedActions;
       }
 
@@ -1056,7 +1057,7 @@
               if (!ipAddress.vpnenabled) {
                 disabledTabs.push('vpn');
               }
-              if(ipAddress.iselastic == true) {
+              if(ipAddress.issystem == true) {
                 disabledTabs.push('vpn');
 
                 if(ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null)
@@ -1338,7 +1339,7 @@
 										}
 									});							
 									if(zoneObj.networktype == "Advanced") {
-									  hiddenFields.push("iselastic");
+									  hiddenFields.push("issystem");
 										hiddenFields.push("purpose");
 									}																	
 									return hiddenFields;								
@@ -1357,8 +1358,8 @@
                     state: { label: 'label.state' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
                     isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
-                    iselastic: { label: 'label.elastic', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
-										purpose: { label: 'label.purpose' }, //(basic zone only) When an IP is elastic, the purpose it serves can be Lb or static nat.
+                    issystem: { label: 'label.is.system', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
+										purpose: { label: 'label.purpose' }, //(basic zone only) When an IP is system-generated, the purpose it serves can be Lb or static nat.
                     virtualmachinedisplayname: { label: 'label.vm.name' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' },
