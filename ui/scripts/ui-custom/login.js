@@ -89,6 +89,12 @@
       $.cookie('lang', $(this).val());
       document.location.reload();
     });
+
+    // Set default language
+    if (!$.cookie('lang')) {
+      $.cookie('lang', 'en');
+    }
+        
     $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);

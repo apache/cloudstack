@@ -313,7 +313,7 @@
 
     // EULA check
     $.ajax({
-      url: 'eula.html',
+      url: 'eula.' + $.cookie('lang') + '.html',
       dataType: 'html',
       success: function(html) {
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
