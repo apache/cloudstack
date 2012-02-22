@@ -1075,7 +1075,7 @@
 																		array1.push("&tags=" + args.context.physicalNetworks[0].tags);
 																	}
 																	else {																	  
-																		alert("Network offerings is not available until you specify tags for this physical network");		
+																		alert(dictionary['error.please.specify.physical.network.tags']);		
 																		return;																	
 																	}
 																}																
