@@ -65,7 +65,6 @@
    * @param args CloudStack3 configuration
    */
   var showSection = function(sectionID, args) {
-    var $panel;
     var $browser = $('#browser div.container');
     var $navItem = $('#navigation').find('li').filter(function() {
       return $(this).hasClass(sectionID);
@@ -78,24 +77,24 @@
 
     // Reset browser panels
     $browser.cloudBrowser('removeAllPanels');
-    $panel = $browser.cloudBrowser('addPanel', {
+    $browser.cloudBrowser('addPanel', {
       title: _l(data.title),
-      data: ''
+      data: '',
+      complete: function($panel) {
+        // Hide breadcrumb if this is the home section
+        if (args.home === sectionID) {
+          $('#breadcrumbs').find('li:first, div.end:last').hide();
+        }
+
+        // Append specified widget to view
+        if (data.show)
+          $panel.append(data.show(data));
+        else if (data.treeView)
+          $panel.treeView(data, { context: args.context });
+        else
+          $panel.listView(data, { context: args.context });      
+      }
     });
-
-    // Hide breadcrumb if this is the home section
-    if (args.home === sectionID) {
-      $('#breadcrumbs').find('li:first, div.end:last').hide();
-    }
-
-    // Append specified widget to view
-    if (data.show)
-      $panel.append(data.show(data));
-    else if (data.treeView)
-      $panel.treeView(data, { context: args.context });
-    else
-      $panel.listView(data, { context: args.context });
-
 
     return $navItem;
   };
