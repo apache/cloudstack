@@ -1049,11 +1049,11 @@
 															$.ajax({
 																url: createURL('listPhysicalNetworks'),
 																data: {
-																	zoneid: selectedZoneObj.id
+																	id: args.context.physicalNetworks[0].id
 																},
 																async: false,
-																success: function(json) {																  
-																	physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;																	
+																success: function(json) {		
+																	args.context.physicalNetworks[0] = json.listphysicalnetworksresponse.physicalnetwork[0];													
 																}
 															});		
 
@@ -1080,7 +1080,7 @@
 																		}																	
 																	});
 																}															 											
-															
+													
 															  if(guestTrafficTypeTotal > 1) {
 																	if(args.context.physicalNetworks[0].tags != null && args.context.physicalNetworks[0].tags.length > 0) {
 																		array1.push("&tags=" + args.context.physicalNetworks[0].tags);
