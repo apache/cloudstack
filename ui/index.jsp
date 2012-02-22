@@ -2852,6 +2852,7 @@ dictionary = {
 'message.please.add.at.lease.one.traffic.range': '<fmt:message key="message.please.add.at.lease.one.traffic.range" />',
 'message.you.must.have.at.least.one.physical.network': '<fmt:message key="message.you.must.have.at.least.one.physical.network" />',
 'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />',
-'label.purpose': '<fmt:message key="label.purpose" />'
+'label.purpose': '<fmt:message key="label.purpose" />',
+'error.please.specify.physical.network.tags': '<fmt:message key="error.please.specify.physical.network.tags" />'
 };
 </script>
