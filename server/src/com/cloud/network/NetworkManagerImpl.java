@@ -2924,7 +2924,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
         for (UserVmVO vm : userVms) {
-            if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
+            if (!(vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null)) {
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
                 return false;
             }
