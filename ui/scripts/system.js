@@ -1045,10 +1045,21 @@
                           networkOfferingId: { 
                             label: 'label.network.offering',
                             dependsOn: 'scope',
-                            select: function(args) {
+                            select: function(args) {                              		                              													
+															$.ajax({
+																url: createURL('listPhysicalNetworks'),
+																data: {
+																	zoneid: selectedZoneObj.id
+																},
+																async: false,
+																success: function(json) {																  
+																	physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;																	
+																}
+															});		
+
                               var apiCmd = "listNetworkOfferings&state=Enabled&zoneid=" + selectedZoneObj.id; 
-															var array1 = [];
-																																											
+															var array1 = [];																															
+																																	
 															if(physicalNetworkObjs.length > 1) { //multiple physical networks
 															  var guestTrafficTypeTotal = 0;
 															  for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
