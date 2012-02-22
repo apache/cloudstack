@@ -216,6 +216,7 @@
                   'providers': {
                     label: 'Network Service Providers',
                     ignoreChart: true,
+										dependsOn: 'guest',
                     configure: {
                       action: actions.providerListView(targetContext)
                     }
@@ -227,8 +228,18 @@
                 });
 
                 // Make traffic type elems
-                $.each(trafficTypes, function(id, trafficType) {
-                  if ($.inArray(id, validTrafficTypes) == -1 && !trafficType.ignoreChart) return true;
+                $.each(trafficTypes, function(id, trafficType) {                					
+                  if ($.inArray(id, validTrafficTypes) == -1) { //if it is not a valid traffic type									 
+										if(trafficType.dependsOn != null && trafficType.dependsOn.length > 0) { //if it has dependsOn 
+										  if($.inArray(trafficType.dependsOn, validTrafficTypes) == -1) { //if its dependsOn is not a valid traffic type, either
+											  return true; //skip this item
+											}		
+                      //else, if its dependsOn is a valid traffic type, continue to Make list item	(e.g. providers.dependsOn is 'guest')									
+										}
+										else {
+									    return true; //if it doesn't have dependsOn, skip this item
+										}
+									}
 
                   // Make list item
                   var $li = $('<li>').addClass(id);
@@ -244,7 +255,8 @@
                   $li.appendTo($trafficTypes);
 
                   // Make chart
-                  if (trafficType.ignoreChart) return true;
+                  if (trafficType.ignoreChart) 
+									  return true;
 
                   var $targetChartItem = $('<div>').addClass('network-chart-item').addClass(id);
                   $targetChartItem.appendTo($networkChart);

@@ -1063,7 +1063,7 @@
 															if(physicalNetworkObjs.length > 1) { //multiple physical networks
 															  var guestTrafficTypeTotal = 0;
 															  for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
-																  if(guestTrafficTypeTotal > 1)
+																  if(guestTrafficTypeTotal > 1) //as long as guestTrafficTypeTotal > 1, break for loop, don't need to continue to count. It doesn't matter whether guestTrafficTypeTotal is 2 or 3 or 4 or 5 or more. We only care whether guestTrafficTypeTotal is greater than 1.
 																	  break; 																	
 																  $.ajax({
 																	  url: createURL("listTrafficTypes&physicalnetworkid=" + physicalNetworkObjs[i].id),
