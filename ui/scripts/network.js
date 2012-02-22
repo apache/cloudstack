@@ -1225,7 +1225,9 @@
                       }
                     });
 
-                    ipChangeNotice();
+                    if (args._custom.$detailView.is(':visible')) {
+                      ipChangeNotice();
+                    }
                   }
                 }
               },
@@ -1254,7 +1256,11 @@
                               return ['enableStaticNAT'];
                             };
                           },
-                          onComplete: ipChangeNotice
+                          onComplete: function(args, _custom) {
+                            if (_custom.$detailView.is(':visible')) {
+                              ipChangeNotice();
+                            }
+                          }
                         }
                       });
                     },

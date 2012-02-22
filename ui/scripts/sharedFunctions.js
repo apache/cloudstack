@@ -41,7 +41,7 @@ var pollAsyncJobResult = function(args) {
         return; //Job has not completed
       } 
       else {
-        if (result.jobstatus == 1) { // Succeeded         
+        if (result.jobstatus == 1) { // Succeeded
           if(args._custom.getUpdatedItem != null && args._custom.getActionFilter != null) {
             args.complete({
               data: args._custom.getUpdatedItem(json),
@@ -64,7 +64,7 @@ var pollAsyncJobResult = function(args) {
 					}
 
           if (args._custom.onComplete) {
-            args._custom.onComplete(json);
+            args._custom.onComplete(json, args._custom);
           }
         }
         else if (result.jobstatus == 2) { // Failed          
