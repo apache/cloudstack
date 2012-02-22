@@ -106,14 +106,21 @@
       document.location.reload();
     });
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> cebbce4... Make default language English, if no cookie set
 
     // Set default language
     if (!$.cookie('lang')) {
       $.cookie('lang', 'en');
     }
+<<<<<<< HEAD
 
 =======
 >>>>>>> d3cc43e... bug 13815
+=======
+        
+>>>>>>> cebbce4... Make default language English, if no cookie set
     $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);
