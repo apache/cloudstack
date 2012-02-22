@@ -495,7 +495,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         boolean success = false;
 
         if (apply) {
-            success = applyStaticNatRules(rule.getSourceIpAddressId(), true, caller);
+            success = applyStaticNatRulesForIp(rule.getSourceIpAddressId(), true, caller, true);
         } else {
             success = true;
         }
@@ -563,7 +563,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         // apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
             s_logger.debug("Applying static nat rules for ip address id=" + ipId + " as a part of vm expunge");
-            if (!applyStaticNatRules(ipId, true, _accountMgr.getSystemAccount())) {
+            if (!applyStaticNatRulesForIp(ipId, true, _accountMgr.getSystemAccount(), true)) {
                 success = false;
                 s_logger.warn("Failed to apply static nat rules for ip id=" + ipId);
             }
@@ -654,7 +654,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean applyStaticNatRules(long sourceIpId, boolean continueOnError, Account caller) {
+    public boolean applyStaticNatRulesForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
         List<? extends FirewallRule> rules = _firewallDao.listByIpAndPurpose(sourceIpId, Purpose.StaticNat);
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
 
@@ -664,7 +664,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         for (FirewallRule rule : rules) {
-            staticNatRules.add(buildStaticNatRule(rule));
+            staticNatRules.add(buildStaticNatRule(rule, forRevoke));
         }
 
         if (caller != null) {
@@ -722,7 +722,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         for (FirewallRuleVO rule : rules) {
-            staticNatRules.add(buildStaticNatRule(rule));
+            staticNatRules.add(buildStaticNatRule(rule, false));
         }
 
         try {
@@ -833,7 +833,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "applying static nat rule", async = true)
     public boolean applyStaticNatRules(long ipId, Account caller) throws ResourceUnavailableException {
-        if (!applyStaticNatRules(ipId, false, caller)) {
+        if (!applyStaticNatRulesForIp(ipId, false, caller, false)) {
             throw new CloudRuntimeException("Failed to apply static nat rule");
         }
         return true;
@@ -869,7 +869,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         success = success && applyPortForwardingRules(ipId, true, caller);
 
         // revoke all all static nat rules
-        success = success && applyStaticNatRules(ipId, true, caller);
+        success = success && applyStaticNatRulesForIp(ipId, true, caller, true);
 
         // revoke static nat for the ip address
         success = success && applyStaticNatForIp(ipId, false, caller, true);
@@ -1112,15 +1112,20 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public StaticNatRule buildStaticNatRule(FirewallRule rule) {
+    public StaticNatRule buildStaticNatRule(FirewallRule rule, boolean forRevoke) {
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
         FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
 
         if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
             throw new InvalidParameterValueException("Source ip address of the rule id=" + rule.getId() + " is not static nat enabled");
         }
-
-        String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
+        
+        String dstIp;
+        if (forRevoke) {
+            dstIp = _networkMgr.getIpInNetworkIncludingRemoved(ip.getAssociatedWithVmId(), rule.getNetworkId());
+        } else {
+            dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
+        }
 
         return new StaticNatRuleImpl(ruleVO, dstIp);
     }

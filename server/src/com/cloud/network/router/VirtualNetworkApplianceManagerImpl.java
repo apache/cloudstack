@@ -1882,7 +1882,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (!staticNatFirewallRules.isEmpty()) {
                     List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
                     for (FirewallRule rule : staticNatFirewallRules) {
-                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule));
+                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
                     }
                     createApplyStaticNatRulesCommands(staticNatRules, router, cmds);
                 }
