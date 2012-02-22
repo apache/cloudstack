@@ -87,7 +87,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
         for (FirewallRule rule : result) {
-            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
+            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule, false);
             IpForwardingRuleResponse resp = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             if (resp != null) {
                 ipForwardingResponses.add(resp);

@@ -77,7 +77,7 @@ public interface RulesService {
 
     boolean applyStaticNatRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
 
-    StaticNatRule buildStaticNatRule(FirewallRule rule);
+    StaticNatRule buildStaticNatRule(FirewallRule rule, boolean forRevoke);
 
     List<String> getSourceCidrs(long ruleId);
 

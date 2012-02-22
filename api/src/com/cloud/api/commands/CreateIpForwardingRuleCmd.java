@@ -124,7 +124,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             
             result = result && _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
-            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
+            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule, false);
             IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             fwResponse.setResponseName(getCommandName());
             this.setResponseObject(fwResponse);
