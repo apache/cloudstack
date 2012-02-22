@@ -101,11 +101,4 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
     public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, 
             InsufficientCapacityException;
     
-    /**
-     * updates the network usage stats for a LB rule, associated with an external LB device, that is being revoked as part of Delete LB rule or release IP actions
-     * @param loadBalancerRuleId
-     */
-    public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId);
-    
-
 }
