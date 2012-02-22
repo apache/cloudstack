@@ -394,7 +394,7 @@ public class ApiXmlDocWriter {
         apiCommand.setRequest(request);
 
         // Generate response
-        response.add(new Argument("success", "success if the logout action succeeded"));
+        response.add(new Argument("description", "success if the logout action succeeded"));
         apiCommand.setResponse(response);
 
         out.writeObject(apiCommand);
