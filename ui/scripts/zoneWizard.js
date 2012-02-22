@@ -1423,7 +1423,10 @@
                                                     $("body").stopTime(updateNetworkServiceProviderTimer);
                                                     if (result.jobstatus == 1) {
                                                       //alert("Virtual Router Provider is enabled");
-
+																											
+																											if(args.data.pluginFrom != null && args.data.pluginFrom.name == "installWizard") {
+																											  selectedNetworkOfferingHavingSG = args.data.pluginFrom.selectedNetworkOfferingHavingSG;
+																											}
                                                       if(selectedNetworkOfferingHavingSG == true) { //need to Enable security group provider first
                                                         // get network service provider ID of Security Group
                                                         var securityGroupProviderId;
