@@ -1717,6 +1717,7 @@
                         $.ajax({
                           url: createURL('listIpForwardingRules'),
                           data: {
+                            listAll: true,
                             ipaddressid: args.context.ipAddresses[0].id
                           },
                           dataType: 'json',
