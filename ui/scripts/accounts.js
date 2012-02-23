@@ -964,12 +964,19 @@
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: userActionfilter,
-                      data:args.context.users[0]
+                  $.ajax({
+                    url: createURL('listUsers'),
+                    data: {
+                      id: args.context.users[0].id,
+                      listAll: true
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        actionFilter: userActionfilter,
+                        data: json.listusersresponse.user[0]
+                      });
                     }
-                  );
+                  });
                 }
               }
             }
