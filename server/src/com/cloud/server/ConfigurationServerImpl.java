@@ -583,7 +583,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             return;
         }
         String already = _configDao.getValue("ssh.privatekey");
-        String homeDir = Script.runSimpleBashScript("echo ~");
+        String homeDir = Script.runSimpleBashScript("echo ~cloud");
+        if (homeDir == null) {
+        	throw new CloudRuntimeException("Cannot get home directory for account: cloud");
+        }
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Processing updateKeyPairs");
         }
