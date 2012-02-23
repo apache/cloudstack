@@ -169,15 +169,20 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
-        Connection conn = getConnection();
-        if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
-            String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
-            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+        try {
+            Connection conn = getConnection();
+            if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+                String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
+                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+                return answer;
+            }
+            long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
+            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
             return answer;
+        } catch (Exception ex) {
+            s_logger.warn("Failed to get network usage stats due to ", ex);
+            return new NetworkUsageAnswer(cmd, ex); 
         }
-        long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
-        NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-        return answer;
     }
 
     @Override
