@@ -304,7 +304,7 @@ UPDATE `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
-ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_elastic` smallint(1) NOT NULL default '0';
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_system` smallint(1) NOT NULL default '0';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 
 DELETE FROM `cloud`.`configuration` WHERE name='host.capacity.checker.wait';
