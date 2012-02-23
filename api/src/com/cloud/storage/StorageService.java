@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 
-public interface StorageService {
+public interface StorageService{
     /**
      * Create StoragePool based on uri
      * 
