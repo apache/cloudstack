@@ -3101,6 +3101,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // populate providers
         Map<Provider, Set<Service>> providerCombinationToVerify = new HashMap<Provider, Set<Service>>();
         Map<String, List<String>> svcPrv = cmd.getServiceProviders();
+        boolean isSrx = false;
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
@@ -3117,11 +3118,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
 
-                        // Only VirtualRouter can be specified as a firewall provider
-                        if (service == Service.Firewall && provider != Provider.VirtualRouter) {
-                            throw new InvalidParameterValueException("Only Virtual router can be specified as a provider for the Firewall service");
+                        if (provider == Provider.JuniperSRX) {
+                            isSrx = true;
                         }
-
+                            
                         providers.add(provider);
 
                         Set<Service> serviceSet = null;
@@ -3169,6 +3169,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
+        
+        //if Firewall service is missing, and Juniper is a provider for any other service, add Firewall service/provider combination
+        if (isSrx)  {
+            s_logger.debug("Adding Firewall service with provider " + Provider.JuniperSRX.getName());
+            Set<Provider> firewallProvider = new HashSet<Provider>();
+            firewallProvider.add(Provider.JuniperSRX);
+            serviceProviderMap.put(Service.Firewall, firewallProvider);
+        }
 
         return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
                 false, serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
