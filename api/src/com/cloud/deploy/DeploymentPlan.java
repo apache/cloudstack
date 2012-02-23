@@ -18,6 +18,7 @@
 package com.cloud.deploy;
 
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.vm.ReservationContext;
 
 /**
  * Describes how a VM should be deployed.
@@ -65,4 +66,6 @@ public interface DeploymentPlan {
     public ExcludeList getAvoids();
 
     Long getPhysicalNetworkId();
+
+    ReservationContext getReservationContext();
 }
