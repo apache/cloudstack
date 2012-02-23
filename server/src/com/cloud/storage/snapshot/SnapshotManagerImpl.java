@@ -181,6 +181,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private ResourceManager _resourceMgr;
     @Inject
     private DomainManager _domainMgr;
+    @Inject
+    private VolumeDao _volumeDao;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -282,7 +284,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         String preSnapshotPath = null;
         SnapshotVO preSnapshotVO = null;
-        if (preId != 0) {
+        if (preId != 0 && !(volume.getLastPoolId() != null && !volume.getLastPoolId().equals(volume.getPoolId()))) {
             preSnapshotVO = _snapshotDao.findByIdIncludingRemoved(preId);
             if (preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
                 preSnapshotPath = preSnapshotVO.getPath();
@@ -337,6 +339,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 if (volume.getLastPoolId() != null && !volume.getLastPoolId().equals(volume.getPoolId())) {
                 	preSnapshotId = 0;
                 	volume.setLastPoolId(volume.getPoolId());
+                	_volumeDao.update(volume.getId(), volume);
                 }
                 snapshot = updateDBOnCreate(snapshotId, answer.getSnapshotPath(), preSnapshotId);
             }
