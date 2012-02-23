@@ -3446,7 +3446,8 @@
                         indicator: {
                           'Running': 'on',
                           'Stopped': 'off',
-                          'Error': 'off'
+                          'Error': 'off',
+                          'Destroyed': 'off'
                         }
                       }
                     },
@@ -3589,7 +3590,7 @@
                           }
                         },
 
-                        'delete': {
+                        destroy: {
                           label: 'label.action.destroy.systemvm',
                           messages: {
                             confirm: function(args) {
@@ -3608,13 +3609,10 @@
                                 var jid = json.destroysystemvmresponse.jobid;
                                 args.response.success({
                                   _custom: {
-                                    jobId: jid,
-                                    getUpdatedItem: function(json) {
-                                      //return {}; //nothing in this systemVM needs to be updated, in fact, this whole systemVM has being destroyed
+                                    getUpdatedItem: function() {
+                                      return { state: 'Destroyed' };
                                     },
-                                    getActionFilter: function() {
-                                      return systemvmActionfilter;
-                                    }
+                                    jobId: jid
                                   }
                                 });
                               }
@@ -7307,17 +7305,17 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
     }
     else if (jsonObj.state == 'Error') {
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
     }
     return allowedActions;
   }
