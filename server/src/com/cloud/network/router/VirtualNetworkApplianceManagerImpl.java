@@ -806,7 +806,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
                             continue;
                         }
+                        
                         if (answer != null) {
+                            if (!answer.getResult()) {
+                                s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+                                continue;
+                            }
                             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                             try {
                                 if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {

@@ -667,11 +667,9 @@ public class XenServerConnectionPool {
                     } 
                     PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
                 } catch (Exception e) {
-                    String msg = "Master can not talk to Slave " + hostUuid + " IP " + ipAddress;
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(msg);                           
-                    }
-                    throw new CloudRuntimeException(msg);
+                    String msg = "Echo test failed on host " + hostUuid + " IP " + ipAddress;
+                    s_logger.warn(msg, e);                           
+                    throw new CloudRuntimeException(msg, e);
                 }
             }
         }
