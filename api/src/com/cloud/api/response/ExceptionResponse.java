@@ -20,10 +20,11 @@ package com.cloud.api.response;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
 
 public class ExceptionResponse extends BaseResponse {
 	@SerializedName("uuid") @Param(description="uuid associated with this error")
-	private IdentityProxy id;
+	private ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
 	
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
@@ -46,16 +47,13 @@ public class ExceptionResponse extends BaseResponse {
     public void setErrorText(String errorText) {
         this.errorText = errorText;
     }
-    
-    public void setProxyObject(String table_name, String idFieldName, Long id) {
-		this.id = new IdentityProxy();
-		this.id.setTableName(table_name);
-		this.id.setValue(id);
-		this.id.setidFieldName(idFieldName);
+	
+	public void addProxyObject(String tableName, Long id, String idFieldName) {
+		idList.add(new IdentityProxy(tableName, id, idFieldName));
 		return;
 	}
 	
-	public IdentityProxy getProxyObject() {
-		return id;
+	public ArrayList<IdentityProxy> getIdProxyList() {
+		return idList;
 	}
 }

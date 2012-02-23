@@ -145,13 +145,17 @@ public class ApiDispatcher {
             	InvalidParameterValueException ref = (InvalidParameterValueException) t;
             	ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getProxyObject();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.info(t.getMessage() + " db_id: " + id.getValue());
+                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                		IdentityProxy id = idList.get(i);
+                		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                		s_logger.info(t.getMessage() + " db_id: " + id.getValue());
+                	}
                 } else {
                 	s_logger.info(t.getMessage());
-                }                
+                }                           
                 throw ex;
             } else if(t instanceof IllegalArgumentException) {            	
             	throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
@@ -159,22 +163,30 @@ public class ApiDispatcher {
             	PermissionDeniedException ref = (PermissionDeniedException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getProxyObject();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.info("PermissionDenied: " + t.getMessage() + "uuid: " + id.getValue());
-                } else {
-                	s_logger.info("PermissionDenied: " + t.getMessage());
-                }
-                throw ex;
+            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                 		IdentityProxy id = idList.get(i);
+                 		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                 		s_logger.info("PermissionDenied: " + t.getMessage() + "db_id: " + id.getValue());
+                 	}
+                 } else {
+                	 s_logger.info("PermissionDenied: " + t.getMessage());
+                 }                           
+                 throw ex;
             } else if (t instanceof AccountLimitException) {            	
             	AccountLimitException ref = (AccountLimitException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getProxyObject();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.info(t.getMessage() + "db_id: " + id.getValue());
+            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                 		IdentityProxy id = idList.get(i);
+                 		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                 		s_logger.info(t.getMessage() + "db_id: " + id.getValue());
+                	}
                 } else {
                 	s_logger.info(t.getMessage());
                 }
@@ -183,10 +195,14 @@ public class ApiDispatcher {
             	InsufficientCapacityException ref = (InsufficientCapacityException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getIdProxy();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.info(t.getMessage() + "db_id: " + id.getValue());
+            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                 		IdentityProxy id = idList.get(i);
+                 		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                 		s_logger.info(t.getMessage() + "db_id: " + id.getValue());
+                	}
                 } else {
                 	s_logger.info(t.getMessage());
                 }
@@ -195,10 +211,14 @@ public class ApiDispatcher {
             	ResourceAllocationException ref = (ResourceAllocationException)t;
                 ServerApiException ex = new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getIdProxy();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.warn("Exception: " + t.getMessage() + "db_id: " + ref.getIdProxy().getValue());
+                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                 		IdentityProxy id = idList.get(i);
+                 		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                 		s_logger.warn("Exception: " + t.getMessage() + "db_id: " + id.getValue());
+                	}
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }
@@ -207,10 +227,14 @@ public class ApiDispatcher {
             	ResourceUnavailableException ref = (ResourceUnavailableException)t;
                 ServerApiException ex = new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getIdProxy();
-                if (id != null) {
-                	ex.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
-                	s_logger.warn("Exception: " + t.getMessage() + "db_id: " + ref.getIdProxy().getValue());
+                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                 		IdentityProxy id = idList.get(i);
+                 		ex.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                 		s_logger.warn("Exception: " + t.getMessage() + "db_id: " + id.getValue());
+                	}
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }

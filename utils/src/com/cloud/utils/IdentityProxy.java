@@ -29,6 +29,12 @@ public class IdentityProxy {
         _tableName = tableName;
     }
 
+    public IdentityProxy(String tableName, Long id, String fieldName) {
+    	_tableName = tableName;
+    	_value = id;
+    	_idFieldName = fieldName;
+    }
+    
     public String getTableName() {
         return _tableName;
     }

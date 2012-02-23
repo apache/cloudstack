@@ -431,18 +431,26 @@ public class ApiServer implements HttpRequestHandler {
             	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
             	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getProxyObject();
-                if (id != null) {                	
-                	e.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                		IdentityProxy obj = idList.get(i);
+                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                	}
                 }                
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
             	PermissionDeniedException ref = (PermissionDeniedException)ex;
             	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-                IdentityProxy id = ref.getProxyObject();
-                if (id != null) {
-                	e.setProxyObject(id.getTableName(), id.getidFieldName(), id.getValue());
+            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                if (idList != null) {
+                	// Iterate through entire arraylist and copy over each proxy id.
+                	for (int i = 0 ; i < idList.size(); i++) {
+                		IdentityProxy obj = idList.get(i);
+                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                	}
                 }
                 throw e;
             } else if (ex instanceof ServerApiException) {
@@ -1008,32 +1016,41 @@ public class ApiServer implements HttpRequestHandler {
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
             apiResponse.setResponseName(responseName);
-            // Also copy over the IdentityProxy object into this new apiResponse, from
+            // Also copy over the IdentityProxy object List into this new apiResponse, from
             // the exception caught. When invoked from handle(), the exception here can
             // be either ServerApiException, PermissionDeniedException or InvalidParameterValue
             // Exception. When invoked from ApiServlet's processRequest(), this can be
-            // a standard exception like NumberFormatException. We'll leave standard ones alone.
+            // a standard exception like NumberFormatException. We'll leave the standard ones alone.
             if (ex != null) {
             	if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
             			|| ex instanceof InvalidParameterValueException) {
             		// Cast the exception appropriately and retrieve the IdentityProxy
-            		if (ex instanceof ServerApiException) {            			
+            		if (ex instanceof ServerApiException) {
             			ServerApiException ref = (ServerApiException) ex;
-            			IdentityProxy uuidproxy = ref.getProxyObject();
-            			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());            				
+            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			if (idList != null) {
+            				for (int i=0; i < idList.size(); i++) {
+            					IdentityProxy id = idList.get(i);
+            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            				}            				
             			}
             		} else if (ex instanceof PermissionDeniedException) {
             			PermissionDeniedException ref = (PermissionDeniedException) ex;
-            			IdentityProxy uuidproxy = ref.getProxyObject();
-            			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());            				
+            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			if (idList != null) {
+            				for (int i=0; i < idList.size(); i++) {
+            					IdentityProxy id = idList.get(i);
+            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            				}            				
             			}
             		} else if (ex instanceof InvalidParameterValueException) {
             			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-            			IdentityProxy uuidproxy = ref.getProxyObject();
-            			if (uuidproxy != null) {
-            				apiResponse.setProxyObject(uuidproxy.getTableName(), uuidproxy.getidFieldName(), uuidproxy.getValue());
+            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+            			if (idList != null) {
+            				for (int i=0; i < idList.size(); i++) {
+            					IdentityProxy id = idList.get(i);
+            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+            				}            				
             			}
             		}
             	}

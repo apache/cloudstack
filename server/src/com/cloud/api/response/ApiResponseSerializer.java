@@ -95,19 +95,36 @@ public class ApiResponseSerializer {
                 }
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"" + ((SuccessResponse) result).getSuccess() + "\"} ");
-            } else if (result instanceof ExceptionResponse) {
-            	// Convert into json the whole exception object and not just the error text.
-            	String jsonErrorText = gson.toJson((ExceptionResponse) result);
-            	jsonErrorText = unescape(jsonErrorText);            
-                sb.append(jsonErrorText);
-                // Since the IdentityTypeAdapter only converts the uuid, let's append the idFieldName explicitly.
-                IdentityProxy ref = ((ExceptionResponse) result).getProxyObject();
-                if (ref != null) {
-                	// bump off the } at the end. We'll re-add it after the idFieldName.
-                	sb.deleteCharAt(sb.length()-1);
-                	String idFieldName = ref.getidFieldName();
-                	if (idFieldName != null) {
-                		sb.append(",\"uuidProperty\":" + "\"" + idFieldName + "\"}");
+            } else if (result instanceof ExceptionResponse) {            	
+            	String jsonErrorText = gson.toJson(((ExceptionResponse) result).getErrorText());
+            	jsonErrorText = unescape(jsonErrorText);
+            	sb.append("{\"errorcode\" : " + ((ExceptionResponse) result).getErrorCode() + ", \"errortext\" : " + jsonErrorText + "}");            	
+            	// Since the IdentityTypeAdapter only converts the uuid, let's append each idFieldName explicitly.
+                // Iterate through the list of IdentityProxy objects if any, in the exception.
+                ArrayList<IdentityProxy> idListref = ((ExceptionResponse) result).getIdProxyList();
+                if (idListref != null) {
+                	// Get each uuid from the list IdentityProxy objects.
+                	if (!idListref.isEmpty()) {
+                		// bump off the } at the end. We'll re-add it after the idFieldName.
+                    	sb.deleteCharAt(sb.length()-1);                    	
+                    	sb.append(",");
+                		for (int i=0; i < idListref.size(); i++) {
+                			IdentityProxy id = idListref.get(i);
+                			String idFieldName = id.getidFieldName();
+                			String jsonuuidText = gson.toJson(id);                			
+                			jsonuuidText = unescape(jsonuuidText);
+                			sb.append("{\"uuid\":" + jsonuuidText);
+                			if (idFieldName != null) {
+                				sb.append(",\"uuidProperty\":" + "\"" + idFieldName + "\"" + "}");
+                			}
+                			if(i < (idListref.size()-1)) {
+                				// more elements to come
+                				sb.append(",");	
+                			}
+                		}
+                		// At the end of this, we'll have a response that looks like {"errorcode: " <blah>, "errortext" : <blah>, {"uuid":<blah>, "uuidProperty":<blah>} {"uuid":<blah>, "uuidProperty":<blah>}}
+                        // re-add the } at the end.
+                		sb.append("}");                    	
                 	}
                 }
             } else {
@@ -123,7 +140,7 @@ public class ApiResponseSerializer {
                     sb.append("{ }");
                 }
             }
-            sb.append(" }");
+            sb.append(" }");            
             return sb.toString();
         }
         return null;
@@ -222,29 +239,24 @@ public class ApiResponseSerializer {
                                 subObj.setObjectName(serializedName.value());
                             }
                             serializeResponseObjXML(sb, subObj);
+                        } else if (value instanceof IdentityProxy) {
+                        	IdentityProxy idProxy = (IdentityProxy)value;
+                        	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
+                        	if(!id.isEmpty()) {
+                        		IdentityDao identityDao = new IdentityDaoImpl();
+                        		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                        	}
+                        	if(id != null && !id.isEmpty())
+                        		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
+                        	// Append the new idFieldName property also.
+                        	String idFieldName = idProxy.getidFieldName();
+                        	if (idFieldName != null) {
+                        		sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
+                        	}
                         }
                     }
-
                 } else if (fieldValue instanceof Date) {
-                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
-                } else if (fieldValue instanceof IdentityProxy) { 
-                	IdentityProxy idProxy = (IdentityProxy)fieldValue;
-                	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
-                	if(!id.isEmpty()) {
-                		IdentityDao identityDao = new IdentityDaoImpl();
-                		if(idProxy.getTableName() != null) {
-                		    id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
-                		} else {
-                		    s_logger.warn("IdentityProxy sanity check issue, invalid IdentityProxy table name found in class: " + obj.getClass().getName());
-                		}
-                	}
-                	if(id != null && !id.isEmpty())
-                		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
-                	// Append the new idFieldName property also.
-                	String idFieldName = idProxy.getidFieldName();
-                	if (idFieldName != null) {
-                		sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
-                	}
+                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");                
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
