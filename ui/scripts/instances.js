@@ -318,7 +318,7 @@
 											}
 										});		
 
-										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"; 
+										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false"; 
 										var array1 = [];																															
 																												
 										if(physicalNetworkObjs != null && physicalNetworkObjs.length > 1) { //multiple physical networks
