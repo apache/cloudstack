@@ -633,7 +633,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<PortForwardingRuleVO> rules = _portForwardingDao.listForApplication(ipId);
 
         if (rules.size() == 0) {
-            s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
+            s_logger.debug("There are no port forwarding rules to apply for ip id=" + ipId);
             return true;
         }
 
@@ -646,7 +646,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            s_logger.warn("Failed to apply port forwarding rules for ip due to ", ex);
             return false;
         }
 
@@ -659,7 +659,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
 
         if (rules.size() == 0) {
-            s_logger.debug("There are no firwall rules to apply for ip id=" + sourceIpId);
+            s_logger.debug("There are no static nat rules to apply for ip id=" + sourceIpId);
             return true;
         }
 
@@ -676,7 +676,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply static nat rules due to ", ex);
+            s_logger.warn("Failed to apply static nat rules for ip due to ", ex);
             return false;
         }
 
@@ -700,7 +700,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            s_logger.warn("Failed to apply port forwarding rules for network due to ", ex);
             return false;
         }
 
@@ -730,7 +730,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            s_logger.warn("Failed to apply static nat rules for network due to ", ex);
             return false;
         }
 
@@ -762,7 +762,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to create static nat rule due to ", ex);
+            s_logger.warn("Failed to create static nat for network due to ", ex);
             return false;
         }
 
