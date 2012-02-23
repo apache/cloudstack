@@ -1,6 +1,6 @@
 (function($, cloudStack) {
 
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
@@ -160,8 +160,7 @@
                         
 												featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
-                        myisos: myIsoObjs //???
-												//isos: isoObjs
+                        myisos: myIsoObjs 										
                       },
                       hypervisors: hypervisorObjs
                     }
@@ -306,15 +305,58 @@
                       }
                     });
 
+																				
+										//get network offerings (begin)	***									
+										$.ajax({
+											url: createURL('listPhysicalNetworks'),
+											data: {
+												zoneid: args.currentData.zoneid
+											},
+											async: false,
+											success: function(json) {		
+												physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;													
+											}
+										});		
+
+										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"; 
+										var array1 = [];																															
+																												
+										if(physicalNetworkObjs != null && physicalNetworkObjs.length > 1) { //multiple physical networks
+											var guestTrafficTypeTotal = 0;
+											for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
+												if(guestTrafficTypeTotal > 1) //as long as guestTrafficTypeTotal > 1, break for loop, don't need to continue to count. It doesn't matter whether guestTrafficTypeTotal is 2 or 3 or 4 or 5 or more. We only care whether guestTrafficTypeTotal is greater than 1.
+													break; 																	
+												$.ajax({
+													url: createURL("listTrafficTypes&physicalnetworkid=" + physicalNetworkObjs[i].id),
+													dataType: "json",
+													async: false,
+													success: function(json) {																		  
+														var items = json.listtraffictypesresponse.traffictype;
+														for(var k = 0; k < items.length; k++) {
+															if(items[k].traffictype == "Guest") {
+																guestTrafficTypeTotal++;
+																break; 
+															}
+														}
+													}																	
+												});
+											}															 											
+								
+											if(guestTrafficTypeTotal > 1) {
+											  array1.push("&istagged=true");
+											}																
+										}																		
                     $.ajax({
-                      url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
+                      url: createURL(apiCmd + array1.join("")), //get the network offering for isolated network with sourceNat
                       dataType: "json",
                       async: false,
                       success: function(json) {
                         networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;
                       }
                     });
-
+                    //get network offerings (end)	***			
+										
+										
                     args.response.success({
                       type: 'select-network',
                       data: {
