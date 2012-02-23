@@ -18,7 +18,7 @@ class cloudConnection(object):
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
-        self.connection = httplib.HTTPConnection("%s:%d"%(mgtSvr,port))
+        self.connection = httplib.HTTPConnection("%s:%d"%(mgtSvr,port), timeout=180)
         self.port = port
         self.logging = logging
         if port == 8096:
