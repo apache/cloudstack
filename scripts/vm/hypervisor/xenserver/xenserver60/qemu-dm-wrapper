@@ -1,0 +1,111 @@
+#!/usr/bin/python
+#
+# Copyright (c) Citrix Systems 2007-2011
+# Author: Gianni Tedesco and Dave Scott
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation; version 2.1 only. with the special
+# exception on linking described in file LICENSE.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+
+from xen.lowlevel import xs
+
+def do_cloexec(fd):
+	from fcntl import fcntl, F_GETFD, F_SETFD, FD_CLOEXEC
+
+	ret = fcntl(fd, F_GETFD, FD_CLOEXEC)
+	if ret < 0:
+		return
+	fcntl(fd, F_SETFD, ret|FD_CLOEXEC)
+
+def write_dm_pid(domid, pid):
+	store = xs.xs()
+	store.write('', '/local/domain/%d/qemu-pid'%domid, '%d'%pid)
+
+def is_sdk():
+	try:
+		store = xs.xs(socket=True)
+		domid_as_dom0 = int(store.read('', 'domid'))
+		store.close()
+		assert domid_as_dom0 == 0
+		store = xs.xs(xenbus=True)
+		domid_on_host = int(store.read('', 'domid'))
+		store.close()
+		return domid_on_host != domid_as_dom0
+	except:
+		return False
+
+def fake_dm(domid):
+	from time import sleep
+	from os import getpid
+
+	store = xs.xs()
+
+	store.write('', '/local/domain/%d/qemu-pid'%domid, '%d'%getpid())
+	store.write('', '/local/domain/%d/device-misc/dm-ready'%domid, '1')
+	store.write('', '/local/domain/%d/console/vnc-port'%domid, '%d'%(domid))
+
+	while True:
+		sleep(600)
+
+	return 0
+
+def cleanup(domid):
+	from xen.lowlevel import xc
+	hcall = xc.xc()
+
+	print 'Unexpected termination, cleaning up...'
+
+	try:
+		hcall.domain_destroy(domid)
+	except xc.Error:
+		# we could have raced with another domain shutdown
+		pass
+
+def enable_core_dumps():
+	from resource import getrlimit, RLIMIT_CORE, setrlimit
+
+	limit = 64 * 1024 * 1024
+	oldlimits = getrlimit(RLIMIT_CORE)
+	setrlimit(RLIMIT_CORE, (limit, oldlimits[1]))
+	return limit
+
+def main(argv):
+	import os
+
+	qemu_env = os.environ
+	qemu_dm = '/usr/lib/xen/bin/qemu-dm'
+	domid = int(argv[1])
+	qemu_args = ['qemu-dm-%d'%domid] + argv[2:]
+        try:
+            vnc_idx = qemu_args.index("-vnc")
+            del qemu_args[vnc_idx: vnc_idx+2]
+            qemu_args.insert(vnc_idx, "0.0.0.0:1")
+            qemu_args.insert(vnc_idx, "-vnc")
+        except ValueError, IndexError:
+            pass
+
+	if is_sdk() is True:
+		return fake_dm(domid)
+
+	print "qemu-dm-wrapper in python:"
+	print "Using domid: %d" % domid
+	print "Arguments: %s" % " ".join(argv[1:])
+	print "everything else is from qemu-dm:"
+
+	core_dump_limit = enable_core_dumps()
+	print "core dump limit: %d" % core_dump_limit
+
+	write_dm_pid(domid, os.getpid())
+
+	os.dup2(1, 2)
+	os.execve(qemu_dm, qemu_args, qemu_env)
+
+if __name__ == '__main__':
+	from sys import argv
+	raise SystemExit, main(argv)
