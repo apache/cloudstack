@@ -3614,9 +3614,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			return false;
 		}
 		String guestOSName = KVMGuestOsMapper.getGuestOsName(guestOS);
-		if (guestOSName.startsWith("Ubuntu 10.04")
-				|| guestOSName.startsWith("Ubuntu 9")
-				|| guestOSName.startsWith("Ubuntu 8.10")
+		if (guestOS.startsWith("Ubuntu")
 				|| guestOSName.startsWith("Fedora 13")
 				|| guestOSName.startsWith("Fedora 12")
 				|| guestOSName.startsWith("Fedora 11")
@@ -3625,11 +3623,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				|| guestOSName.startsWith("CentOS 5.3")
 				|| guestOSName.startsWith("CentOS 5.4")
 				|| guestOSName.startsWith("CentOS 5.5")
+				|| guestOS.startsWith("CentOS")
+				|| guestOS.startsWith("Fedora")
 				|| guestOSName.startsWith("Red Hat Enterprise Linux 5.3")
 				|| guestOSName.startsWith("Red Hat Enterprise Linux 5.4")
 				|| guestOSName.startsWith("Red Hat Enterprise Linux 5.5")
 				|| guestOSName.startsWith("Red Hat Enterprise Linux 6")
-				|| guestOSName.startsWith("Debian GNU/Linux")
+				|| guestOS.startsWith("Debian GNU/Linux")
 				|| guestOSName.startsWith("Other PV")) {
 			return true;
 		} else {
