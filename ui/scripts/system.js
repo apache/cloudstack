@@ -4410,7 +4410,7 @@
                     validation: { required: true }
                   },
                   reservedSystemGateway: {
-                    label: 'reserved.system.gateway',
+                    label: 'label.reserved.system.gateway',
                     validation: { required: true }
                   },
                   reservedSystemNetmask: {
