@@ -773,7 +773,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         String host_guid = startAnswer.getHost_guid();
                         if( host_guid != null ) {
                             HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
-                            if ( finalHost == null ) {
+                            if (finalHost == null ) {
                                 throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
                             }
                             destHostId = finalHost.getId();
@@ -788,14 +788,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                             return startedVm;
                         } else {
+                            canRetry = false;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
                             StopCommand cmd = new StopCommand(vm.getInstanceName());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
-                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
-                                canRetry = false;
+                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers")); 
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
@@ -899,7 +899,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 return false;
             }
 
-            if (step == Step.Started || step == Step.Starting) {
+            if (step == Step.Started || step == Step.Starting || step == Step.Release) {
                 if (vm.getHostId() != null) {
                     if (!sendStop(guru, profile, force)) {
                         s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
