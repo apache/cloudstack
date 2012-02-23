@@ -703,11 +703,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @DB
     public void postCreateSnapshot(Long volumeId, Long snapshotId, Long policyId, boolean backedUp) {
         Long userId = getSnapshotUserId();
-        SnapshotVO snapshot = _snapshotDao.findByIdIncludingRemoved(snapshotId);
-        // Even if the current snapshot failed, we should schedule the next
-        // recurring snapshot for this policy.
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         
-        if (snapshot.isRecursive()) {
+        if (snapshot != null && snapshot.isRecursive()) {
             postCreateRecurringSnapshotForPolicy(userId, volumeId, snapshotId, policyId);
         }
     }
