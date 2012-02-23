@@ -316,6 +316,7 @@
 
 																				
 <<<<<<< HEAD
+<<<<<<< HEAD
 										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false&zoneid=" + args.currentData.zoneid ; 
 										var array1 = [];
                     var guestTrafficTypeTotal = 0;
@@ -364,6 +365,12 @@
 											}																
 										}																		
 >>>>>>> ee6dc03... bug 13965
+=======
+										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false"; 
+										var array1 = [];
+                    var guestTrafficTypeTotal = 0;
+
+>>>>>>> 3c61e20... bug 13965
                     $.ajax({
                       url: createURL(apiCmd + array1.join("")), //get the network offering for isolated network with sourceNat
                       dataType: "json",
