@@ -18,6 +18,7 @@
 package com.cloud.utils.exception;
 
 import com.cloud.utils.IdentityProxy;
+import java.util.ArrayList;
 
 /**
  * RuntimeCloudException is a generic exception class that has an IdentityProxy
@@ -30,14 +31,13 @@ import com.cloud.utils.IdentityProxy;
 
 public class RuntimeCloudException extends RuntimeException {
     
-	protected IdentityProxy id;
+	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
 	
-	public RuntimeCloudException(String table_name, Long id) {
-		this.id = new IdentityProxy();
-        this.id.setTableName(table_name);
-        this.id.setValue(id);
-    }
-
+	public void addProxyObject(String tableName, Long id, String idFieldName) {
+		idList.add(new IdentityProxy(tableName, id, idFieldName));
+		return;
+	}
+	
 	public RuntimeCloudException(String message) {
 		super(message);		
 	}
@@ -47,20 +47,10 @@ public class RuntimeCloudException extends RuntimeException {
     }
     	
 	public RuntimeCloudException() {
-		//this.id = new IdentityProxy(); ??
-		//this.id = NULL; ??
 		super();
 	}
-
-	public void setProxyObject(String table_name, String idFieldName, Long id) {
-		this.id = new IdentityProxy();
-		this.id.setTableName(table_name);
-		this.id.setValue(id);
-		this.id.setidFieldName(idFieldName);
-		return;
-	}
 	
-	public IdentityProxy getProxyObject() {
-		return id;
+	public ArrayList<IdentityProxy> getIdProxyList() {
+		return idList;
 	}
 }

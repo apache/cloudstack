@@ -18,6 +18,7 @@
 package com.cloud.exception;
 
 import com.cloud.utils.IdentityProxy;
+import java.util.ArrayList;
 
 /**
  * CloudException is a generic exception class that has an IdentityProxy
@@ -30,37 +31,26 @@ import com.cloud.utils.IdentityProxy;
 
 public class CloudException extends Exception {
     
-	protected IdentityProxy id;
-	
-	public CloudException(String table_name, Long id) {
-		this.id = new IdentityProxy();
-        this.id.setTableName(table_name);
-        this.id.setValue(id);
-	}
+	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
 	
 	public CloudException(String message) {
-		super(message);		
+		super(message);
 	}
 
     public CloudException(String message, Throwable cause) {
-        super(message, cause);        
+        super(message, cause);
     }
     
 	public CloudException() {
-		//this.id = new IdentityProxy(); ??
-		//this.id = NULL; ??
 		super();
 	}
 	
-	public void setProxyObject(String table_name, String idFieldName, Long id) {
-		this.id = new IdentityProxy();
-		this.id.setTableName(table_name);
-		this.id.setValue(id);
-		this.id.setidFieldName(idFieldName);
+	public void addProxyObject(String tableName, Long id, String idFieldName) {
+		idList.add(new IdentityProxy(tableName, id, idFieldName));
 		return;
 	}
 	
-	public IdentityProxy getIdProxy() {
-		return id;
+	public ArrayList<IdentityProxy> getIdProxyList() {
+		return idList;
 	}	
 }

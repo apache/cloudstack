@@ -13,6 +13,7 @@
 package com.cloud.api;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.uuididentity.dao.IdentityDaoImpl;
@@ -51,7 +52,7 @@ public class IdentityTypeAdapter implements JsonSerializer<IdentityProxy>, JsonD
 	        return new Gson().toJsonTree(src);
 		}
 	}
-
+	
 	@Override
 	public IdentityProxy deserialize(JsonElement src, Type srcType,
 			JsonDeserializationContext context) throws JsonParseException {
