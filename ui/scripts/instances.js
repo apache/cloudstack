@@ -306,17 +306,19 @@
                     });
 
 																				
-										//get network offerings (begin)	***									
-										$.ajax({
-											url: createURL('listPhysicalNetworks'),
-											data: {
-												zoneid: args.currentData.zoneid
-											},
-											async: false,
-											success: function(json) {		
-												physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;													
-											}
-										});		
+										//get network offerings (begin)	***
+                    if (isAdmin()) {
+										  $.ajax({
+											  url: createURL('listPhysicalNetworks'),
+											  data: {
+												  zoneid: args.currentData.zoneid
+											  },
+											  async: false,
+											  success: function(json) {		
+												  physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;													
+											  }
+										  });
+                    }
 
 										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false"; 
 										var array1 = [];																															
