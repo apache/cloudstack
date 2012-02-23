@@ -42,7 +42,7 @@
         return true;
       };
 
-      var staticNATChart = function(args) {
+      var staticNATChart = function(args, includingFirewall) {
         var $chart = $('#template').find('.network-chart.static-nat').clone();
         var $vmName = $chart.find('li.static-nat-enabled .vmname');
         var $browser = $('#browser .container');
@@ -91,10 +91,15 @@
             }
           }
         });
-							
-				$chart.find('li.firewall .view-details').click(function() {
-					makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
-				});					
+			
+				if(includingFirewall == true) {
+				  $chart.find('li.firewall .view-details').click(function() {
+						makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
+					});				
+				}
+				else {				
+					$chart.find('li.firewall').hide(); 
+				}
 
         return $chart;
       };
@@ -109,8 +114,13 @@
 
         // 1. choose between staticNAT chart and non-staticNAT chart  2. filter disabled tabs  
         if (preFilter.length) {				 
-					if($.inArray('nonStaticNATChart', preFilter) != -1) { //choose static NAT chart					
-					  return staticNATChart(args); 		
+					if($.inArray('nonStaticNATChart', preFilter) != -1) { //choose static NAT chart
+					  if($.inArray('firewall', preFilter) == -1) {           
+						  return staticNATChart(args, true); //static NAT including Firewall 
+						}
+						else { 
+						  return staticNATChart(args, false); //static NAT excluding Firewall 
+						}						
 					}
 					else {  //choose non-static NAT chart
             $(preFilter).each(function() {
@@ -120,7 +130,25 @@
                 return $(this).hasClass(id);
               }).addClass('disabled');
             });
-          }		
+          }
+					
+					/*
+          if (preFilter.length == 3) { // 'firewall', 'portForwarding', 'loadBalancing'            
+            return staticNATChart(args, true); //static NAT including Firewall 
+          }
+          else if (preFilter.length == 4) { // 'firewall', 'portForwarding', 'loadBalancing', 'staticnatFirewall'            
+            return staticNATChart(args, false); //static NAT excluding Firewall 
+          }				
+					else {
+            $(preFilter).each(function() {
+              var id = this;
+
+              var $li = $chart.find('li').filter(function() {
+                return $(this).hasClass(id);
+              }).addClass('disabled');
+            });
+          }
+					*/
         }
 
         $chart.find('.view-details').click(function() {
