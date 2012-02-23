@@ -1725,8 +1725,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             {
             	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-           		vm.setState(State.Running); // set it as running and let HA take care of it
+           		
+                // Bug 13850- grab outstanding work item if any for this VM state so that we mark it as DONE after we change VM state, else it will remain pending
+                ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
+                if (work != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found an outstanding work item for this vm " + vm + " in state:" + vm.getState() + ", work id:" + work.getId());
+                    }
+                }
+                vm.setState(State.Running); // set it as running and let HA take care of it
            		_vmDao.persist(vm);
+           		
+                if (work != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Updating outstanding work item to Done, id:" + work.getId());
+                    }
+                    work.setStep(Step.Done);
+                    _workDao.update(work.getId(), work);
+                }
+           		
                 castedVm = info.guru.findById(vm.getId());
                 try {
                     Host host = _hostDao.findByGuid(info.getHostUuid());
