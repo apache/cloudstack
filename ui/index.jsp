@@ -272,7 +272,7 @@
 
                                 <div class="secondary-input hide-if-unselected">
                                   <input type="radio" name="defaultNetwork" value="new-network" />
-                                  <div class="name"><fmt:message key="label.default"/></div></div>
+                                  <div class="name"><fmt:message key="label.default"/></div>
                                 </div>
                               </div>
                             </div>
@@ -943,7 +943,7 @@
         <!-- Host dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span<fmt:message key="label.hosts"/></span>
+            <span><fmt:message key="label.hosts"/></span>
             <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
@@ -2447,7 +2447,7 @@ dictionary = {
 'label.none': '<fmt:message key="label.none" />',
 'label.not.found': '<fmt:message key="label.not.found" />',
 'label.num.cpu.cores': '<fmt:message key="label.num.cpu.cores" />',
-'label.numretries ': '<fmt:message key="label.numretries " />',
+'label.numretries': '<fmt:message key="label.numretries" />',
 'label.offer.ha': '<fmt:message key="label.offer.ha" />',
 'label.optional': '<fmt:message key="label.optional" />',
 'label.os.preference': '<fmt:message key="label.os.preference" />',
