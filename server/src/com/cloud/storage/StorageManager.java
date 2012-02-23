@@ -44,7 +44,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-public interface StorageManager extends Manager {
+public interface StorageManager extends StorageService, Manager {
     boolean canVmRestartOnAnotherServer(long vmId);
 
     /** Returns the absolute path of the specified ISO

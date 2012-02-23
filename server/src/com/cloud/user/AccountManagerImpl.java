@@ -531,7 +531,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             for (VolumeVO volume : volumes) {
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
-                        _storageMgr.destroyVolume(volume);
+                        _storageMgr.deleteVolume(volume.getId());
                     } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
