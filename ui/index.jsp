@@ -14,6 +14,9 @@
     <title>CloudStack</title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+    <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
+      <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
+    </c:if>
 
     <!--[if IE 7]>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
@@ -1614,6 +1617,10 @@
 
 <script language="javascript">
 dictionary = {
+'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
+'label.management': '<fmt:message key="label.management"/>',
+'label.guest': '<fmt:message key="label.guest"/>',
+'label.network.service.providers': '<fmt:message key="label.network.service.providers"/>',
 'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
 'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
 'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',

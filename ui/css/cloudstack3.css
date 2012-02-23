@@ -3381,8 +3381,10 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container .stats ul li .name {
-  width: 135px;
+  width: 178px;
   float: left;
+  font-size: 11px;
+  font-weight: bold;
   margin: 15px 15px 0 0;
 }
 
@@ -3946,7 +3948,7 @@ Dialogs*/
 }
 
 .system-chart.dashboard.admin .dashboard-container .stats .chart {
-  width: 286px;
+  width: 242px;
 }
 
 /** Compute*/
@@ -7375,7 +7377,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 0px;
   top: -10px;
-  margin-right: 10px;
+  margin-right: 9px;
 }
 
 #header div.view-switcher.alt {
@@ -7386,9 +7388,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
   /*[empty]display:;*/
   width: 126px;
-  padding: 12px 0 0;
+  padding: 13px 0 0;
   margin: 0;
-  text-indent: 21px;
+  text-indent: 17px;
   position: relative;
   /*+text-shadow:0px -1px 1px #2D2D2D;*/
   -moz-text-shadow: 0px -1px 1px #2D2D2D;
