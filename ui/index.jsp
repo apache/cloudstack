@@ -1178,20 +1178,20 @@
       <!-- User dashboard-->
       <div class="dashboard user">
         <div class="vm-status">
-          <div class="title"><span>Virtual Machines</span></div>
+          <div class="title"><span><fmt:message key="label.virtual.machines"/></span></div>
 
           <div class="content">
             <ul>
               <li class="running">
-                <div class="name">Running VMs</div>
+                <div class="name"><fmt:message key="label.running.vms"/></div>
                 <div class="value" data-item="runningInstances"></div>
               </li>
               <li class="stopped">
-                <div class="name">Stopped VMs</div>
+                <div class="name"><fmt:message key="label.stopped.vms"/></div>
                 <div class="value" data-item="stoppedInstances"></div>
               </li>
               <li class="total">
-                <div class="name">Total VMs</div>
+                <div class="name"><fmt:message key="label.total.vms"/></div>
                 <div class="value" data-item="totalInstances"></div>
               </li>
             </ul>
@@ -1204,7 +1204,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Latest events <div class="button view-all events">view all</div></th>
+                    <th><fmt:message key="label.latest.events"/> <div class="button view-all events"><fmt:message key="label.view.all"/></div></th>
                   </tr>
                 </thead>
               </table>
@@ -1221,7 +1221,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Network <div class="button view-all network">view all</div></th>
+                    <th><fmt:message key="label.network"/> <div class="button view-all network"><fmt:message key="label.view.all"/></div></th>
                   </tr>
                 </thead>
               </table>
@@ -1229,13 +1229,13 @@
                 <tbody>
                   <tr>
                     <td>
-                      <div class="desc"><span>Owned isolated networks:</span></div>
+                      <div class="desc"><span><fmt:message key="label.isolated.networks"/>:</span></div>
                       <div class="value"><span data-item="netTotal"></span></div>
                     </td>
                   </tr>
                   <tr class="odd">
                     <td>
-                      <div class="desc"><span>Owned public IP addresses:</span></div>
+                      <div class="desc"><span><fmt:message key="label.public.ips"/>:</span></div>
                       <div class="value"><span data-item="ipTotal"></span></div>
                     </td>
                   </tr>
@@ -1617,6 +1617,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.latest.events': '<fmt:message key="label.latest.events"/>',
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
 'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
 'label.management': '<fmt:message key="label.management"/>',
