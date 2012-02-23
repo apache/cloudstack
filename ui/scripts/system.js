@@ -6321,7 +6321,18 @@
           section: 'seconary-storage',
           fields: {
             name: { label: 'label.name' },
-						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
+						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+            resourcestate: {
+              label: 'label.state',
+              indicator: {
+                'Enabled': 'on',
+                'Disabled': 'off',
+                'Destroyed': 'off'
+              },
+              converter: function(str) {
+                return 'state.' + str;
+              }
+            }
           },
 
           dataProvider: function(args) {
@@ -6410,7 +6421,7 @@
           detailView: {
             name: 'Secondary storage details',
             actions: {
-              'delete': {
+              destroy: {
                 label: 'label.action.delete.secondary.storage' ,  
                 messages: {
                   confirm: function(args) {
@@ -6426,12 +6437,12 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      args.response.success({data:{}});
+                      args.response.success();
                     }
                   });
                 },
                 notification: {
-                  poll: function(args) { args.complete(); }
+                  poll: function(args) { args.complete({ data: { resourcestate: 'Destroyed' } }); }
                 }
               }
 
@@ -7258,7 +7269,7 @@
   var secondarystorageActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-    allowedActions.push("delete");
+    allowedActions.push("destroy");
     return allowedActions;
   }
 

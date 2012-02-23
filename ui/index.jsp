@@ -1617,6 +1617,7 @@
 
 <script language="javascript">
 dictionary = {
+'state.Enabled': '<fmt:message key="state.Enabled"/>',
 'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
 'label.management': '<fmt:message key="label.management"/>',
 'label.guest': '<fmt:message key="label.guest"/>',
