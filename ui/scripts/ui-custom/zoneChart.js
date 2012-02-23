@@ -186,35 +186,35 @@
 
                 var trafficTypes = {
                   'public': {
-                    label: 'Public',
+                    label: _l('label.public'),
                     configure: {
                       action: actions.trafficTypeDetails('public', targetContext)
                     }
                   },
 
                   'guest': {
-                    label: 'Guest',
+                    label: _l('label.guest'),
                     configure: {
                       action: actions.trafficTypeDetails('guest', targetContext)
                     }
                   },
 
                   'management': {
-                    label: 'Management',
+                    label: _l('label.management'),
                     configure: {
                       action: actions.trafficTypeDetails('management', targetContext)
                     }
                   },
 
                   'storage': {
-                    label: 'Storage',
+                    label: _l('label.storage'),
                     configure: {
                       action: actions.trafficTypeDetails('storage', targetContext)
                     }
                   },
 
                   'providers': {
-                    label: 'Network Service Providers',
+                    label: _l('label.network.service.providers'),
                     ignoreChart: true,
 										dependsOn: 'guest',
                     configure: {
@@ -245,7 +245,7 @@
                   var $li = $('<li>').addClass(id);
                   var $label = $('<span>').addClass('label').html(trafficType.label);
                   var $configureButton = viewAllButton($.extend(trafficType.configure, {
-                    label: 'Configure',
+                    label: _l('label.configure'),
                     title: trafficType.label,
                     $browser: $browser,
                     targetContext: targetContext
@@ -325,19 +325,19 @@
         var $stats = $('<div>').addClass('stats');
         var $container = $('<div>').addClass('dashboard-container head');
         var $top = $('<div>').addClass('top');
-        var $title = $('<div>').addClass('title').append($('<span>').html('System-wide capacity'));
+        var $title = $('<div>').addClass('title').append($('<span>').html(_l('label.system.wide.capacity')));
 
         var chartItems = {
           // The keys are based on the internal type ID associated with each capacity
-          0: { name: 'Memory' },
+          0: { name: _l('label.memory') },
           1: { name: 'CPU' },
-          2: { name: 'Storage' },
-          3: { name: 'Allocated Storage' },
-          6: { name: 'Secondary Storage' },
-          9: { name: 'Local Storage' },
-          4: { name: 'Public IP' },
-          5: { name: 'Private IP' },
-          8: { name: 'Direct Public IP' },
+          2: { name: _l('label.storage') },
+          3: { name: _l('label.primary.allocated') },
+          6: { name: _l('label.secondary.storage') },
+          9: { name: _l('label.local.storage') },
+          4: { name: _l('label.public.ip') },
+          5: { name: _l('label.private.ip') },
+          8: { name: _l('label.direct.ips') },
           7: { name: 'VLAN' }
         };
 
