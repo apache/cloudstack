@@ -28,7 +28,6 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
@@ -88,7 +87,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     private Boolean specifyIpRanges;
     
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="list network offerings by tags", length=4096)
-    private String tags; 
+    private String tags;
+    
+    @Parameter(name=ApiConstants.IS_TAGGED, type=CommandType.BOOLEAN, description="true if offering has tags specified")
+    private Boolean isTagged;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -152,6 +154,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
 	public String getTags() {
         return tags;
+    }
+
+    public Boolean isTagged() {
+        return isTagged;
     }
 
     /////////////////////////////////////////////////////

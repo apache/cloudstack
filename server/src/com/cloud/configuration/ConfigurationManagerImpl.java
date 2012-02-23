@@ -3392,6 +3392,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Object specifyIpRanges = cmd.getSpecifyIpRanges();
         String tags = cmd.getTags();
+        Boolean isTagged = cmd.isTagged();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3486,10 +3487,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (tags != null) {
-            if (tags.isEmpty()) {
-                sc.addAnd("tags", SearchCriteria.Op.NULL);
+            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+        }
+        
+        if (isTagged != null) {
+            if (isTagged) {
+                sc.addAnd("tags", SearchCriteria.Op.NNULL);
             } else {
-                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+                sc.addAnd("tags", SearchCriteria.Op.NULL);
             }
         }
 
