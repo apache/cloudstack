@@ -48,7 +48,7 @@ public class Script implements Callable<String> {
     public static final String ERR_EXECUTE = "execute.error";
     public static final String ERR_TIMEOUT = "timeout";
     private int _defaultTimeout = 3600 * 1000; /* 1 hour */
-    private long _createTime = System.currentTimeMillis();
+    private volatile boolean _isTimeOut = false;
 
     private boolean _passwordCommand = false;
 
@@ -117,10 +117,6 @@ public class Script implements Callable<String> {
     	_workDir = workDir;
     }
 
-    private boolean isTimeout() {
-    	return (System.currentTimeMillis() - _timeout) > _createTime;
-    }
-    
     protected String buildCommandLine(String[] command) {
         StringBuilder builder = new StringBuilder();
         boolean obscureParam = false;
@@ -213,7 +209,7 @@ public class Script implements Callable<String> {
 						break;
 					}
 				} catch (InterruptedException e) {
-					if (!isTimeout()) {
+					if (!_isTimeOut) {
 						/* This is not timeout, we are interrupted by others, continue */
 						_logger.debug("We are interrupted but it's not a timeout, just continue");
 						continue;
@@ -284,6 +280,7 @@ public class Script implements Callable<String> {
             _logger.trace("Script ran within the alloted time");
         } catch (IllegalThreadStateException e) {
             _logger.warn("Interrupting script.");
+            _isTimeOut = true;
             _thread.interrupt();
         }
         return null;
