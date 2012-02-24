@@ -1777,7 +1777,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         // Update router template/scripts version
         final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("getDomRVersion", command);
 
