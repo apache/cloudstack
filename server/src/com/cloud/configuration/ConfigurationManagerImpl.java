@@ -3508,6 +3508,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);
         Boolean sourceNatSupported = cmd.getSourceNatSupported();
+        List<String> pNtwkTags = new ArrayList<String>();
+        boolean checkForTags = false;
+        if (zone != null) {
+            List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+            if (pNtwks.size() > 1) {
+                checkForTags = true;
+                //go through tags
+                for (PhysicalNetworkVO pNtwk : pNtwks) {
+                    List<String> pNtwkTag = pNtwk.getTags();
+                    if (pNtwkTag == null || pNtwkTag.isEmpty()) {
+                        throw new CloudRuntimeException("Tags are not defined for physical network in the zone id=" + zoneId);
+                    }
+                    pNtwkTags.addAll(pNtwkTag);
+                }
+            }
+        }
 
         // filter by supported services
         boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
@@ -3535,7 +3551,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (NetworkOfferingVO offering : offerings) {
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
-
+                
+                if (checkForTags) {
+                    if (!pNtwkTags.contains(offering.getTags())) {
+                        continue;
+                    }
+                }
+                
                 if (listBySupportedServices) {
                     addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), supportedServices);
                 }
@@ -3553,10 +3575,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (sourceNatSupported != null) {
                     addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
                 }
+                
+               
 
                 if (addOffering) {
                     supportedOfferings.add(offering);
                 }
+                
+                
             }
 
             return supportedOfferings;
