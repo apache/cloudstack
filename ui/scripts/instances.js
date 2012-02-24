@@ -306,7 +306,7 @@
                     });
 
 																				
-										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false"; 
+										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false&zoneid=" + args.currentData.zoneid ; 
 										var array1 = [];
                     var guestTrafficTypeTotal = 0;
 
