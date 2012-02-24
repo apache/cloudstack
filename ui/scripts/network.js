@@ -177,9 +177,10 @@
                   networkOfferingId: {
                     label: 'label.network.offering',
                     validation: { required: true },
-                    select: function(args) {
+										dependsOn: 'zoneId',
+                    select: function(args) {										 
                       $.ajax({
-                        url: createURL('listNetworkOfferings'),
+                        url: createURL('listNetworkOfferings&zoneid=' + args.zoneId),
                         data: {
                           type: 'Isolated',
                           supportedServices: 'SourceNat',
