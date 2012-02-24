@@ -266,7 +266,8 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            return self.enableZone(zoneId, "Enabled")
+            self.enableZone(zoneId, "Enabled")
+        return
 
     def registerApiKey(self):
         listuser = listUsers.listUsersCmd()
