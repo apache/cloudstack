@@ -167,7 +167,8 @@ class deployDataCenters():
             self.createnetworks(zone.networks, zoneId)
             '''create secondary storage'''
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            
+        return
+
     def registerApiKey(self):
         listuser = listUsers.listUsersCmd()
         listuser.account = "admin"
