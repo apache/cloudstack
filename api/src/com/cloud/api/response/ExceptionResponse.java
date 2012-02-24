@@ -18,12 +18,15 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 
 public class ExceptionResponse extends BaseResponse {
-	@SerializedName("uuid") @Param(description="uuid associated with this error")
+	@SerializedName("uuidList") @Param(description="List of uuids associated with this error")
 	private ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
 	
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
 
+    @SerializedName("cserrorcode") @Param(description="cloudstack error code associated with this error")
+    private Integer cserrorCode;
+    
     @SerializedName("errortext") @Param(description="the text associated with this error")
     private String errorText = "Command failed due to Internal Server Error";
 
