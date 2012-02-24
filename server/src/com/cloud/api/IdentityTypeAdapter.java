@@ -49,7 +49,17 @@ public class IdentityTypeAdapter implements JsonSerializer<IdentityProxy>, JsonD
 				if(uuid == null)
 					return context.serialize(null);
 				
-				return new JsonPrimitive(uuid);				
+				// Exceptions set the _idFieldName in the IdentityProxy structure. So if this field is not
+				// null, prepare a structure of uuid and idFieldName and return the json representation of that.
+				String idName = src.getidFieldName();
+				if (idName != null) {
+					// Prepare a structure.
+					JsonObject jsonObj = new JsonObject();
+					jsonObj.add("uuid", new JsonPrimitive(uuid));
+					jsonObj.add("uuidProperty", new JsonPrimitive(idName));
+					return jsonObj;
+				}
+				return new JsonPrimitive(uuid);
 			} else {
 				return new JsonPrimitive(String.valueOf(src.getValue()));
 			}
