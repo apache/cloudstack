@@ -85,7 +85,8 @@ public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
     private Long storageId;
 
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]" )
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, " +
+    		"value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails; 
    
 

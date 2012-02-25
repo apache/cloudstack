@@ -49,7 +49,7 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network. Supported values are: Isolated and Shared")
     private String guestIpType;
     
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
