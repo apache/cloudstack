@@ -581,6 +581,11 @@
             $nextButton.addClass('final');
           }
 
+          // Hide previous button on first step
+          var $previousButton = $wizard.find('.button.previous');
+          if (index == 1) $previousButton.hide();
+          else $previousButton.show();
+
           // Update progress bar
           var $targetProgress = $progress.removeClass('active').filter(function() {
             return $(this).index() <= targetIndex;

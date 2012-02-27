@@ -1219,7 +1219,8 @@
         },
         listViewData.actions,
         {
-          context: $listView.data('view-args').context
+          context: $listView.data('view-args').context,
+          reorder: listViewData.reorder
         }
       );
     };

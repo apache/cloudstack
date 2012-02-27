@@ -1045,14 +1045,25 @@
                           networkOfferingId: { 
                             label: 'label.network.offering',
                             dependsOn: 'scope',
-                            select: function(args) {
+                            select: function(args) {                              		                              													
+															$.ajax({
+																url: createURL('listPhysicalNetworks'),
+																data: {
+																	id: args.context.physicalNetworks[0].id
+																},
+																async: false,
+																success: function(json) {		
+																	args.context.physicalNetworks[0] = json.listphysicalnetworksresponse.physicalnetwork[0];													
+																}
+															});		
+
                               var apiCmd = "listNetworkOfferings&state=Enabled&zoneid=" + selectedZoneObj.id; 
-															var array1 = [];
-																																											
+															var array1 = [];																															
+																																	
 															if(physicalNetworkObjs.length > 1) { //multiple physical networks
 															  var guestTrafficTypeTotal = 0;
 															  for(var i = 0; i < physicalNetworkObjs.length; i++) {																  
-																  if(guestTrafficTypeTotal > 1)
+																  if(guestTrafficTypeTotal > 1) //as long as guestTrafficTypeTotal > 1, break for loop, don't need to continue to count. It doesn't matter whether guestTrafficTypeTotal is 2 or 3 or 4 or 5 or more. We only care whether guestTrafficTypeTotal is greater than 1.
 																	  break; 																	
 																  $.ajax({
 																	  url: createURL("listTrafficTypes&physicalnetworkid=" + physicalNetworkObjs[i].id),
@@ -1069,7 +1080,7 @@
 																		}																	
 																	});
 																}															 											
-															
+													
 															  if(guestTrafficTypeTotal > 1) {
 																	if(args.context.physicalNetworks[0].tags != null && args.context.physicalNetworks[0].tags.length > 0) {
 																		array1.push("&tags=" + args.context.physicalNetworks[0].tags);
@@ -3435,7 +3446,8 @@
                         indicator: {
                           'Running': 'on',
                           'Stopped': 'off',
-                          'Error': 'off'
+                          'Error': 'off',
+                          'Destroyed': 'off'
                         }
                       }
                     },
@@ -3578,7 +3590,7 @@
                           }
                         },
 
-                        'delete': {
+                        destroy: {
                           label: 'label.action.destroy.systemvm',
                           messages: {
                             confirm: function(args) {
@@ -3597,13 +3609,10 @@
                                 var jid = json.destroysystemvmresponse.jobid;
                                 args.response.success({
                                   _custom: {
-                                    jobId: jid,
-                                    getUpdatedItem: function(json) {
-                                      //return {}; //nothing in this systemVM needs to be updated, in fact, this whole systemVM has being destroyed
+                                    getUpdatedItem: function() {
+                                      return { state: 'Destroyed' };
                                     },
-                                    getActionFilter: function() {
-                                      return systemvmActionfilter;
-                                    }
+                                    jobId: jid
                                   }
                                 });
                               }
@@ -4399,7 +4408,7 @@
                     validation: { required: true }
                   },
                   reservedSystemGateway: {
-                    label: 'reserved.system.gateway',
+                    label: 'label.reserved.system.gateway',
                     validation: { required: true }
                   },
                   reservedSystemNetmask: {
@@ -6312,7 +6321,18 @@
           section: 'seconary-storage',
           fields: {
             name: { label: 'label.name' },
-						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
+						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+            resourcestate: {
+              label: 'label.state',
+              indicator: {
+                'Enabled': 'on',
+                'Disabled': 'off',
+                'Destroyed': 'off'
+              },
+              converter: function(str) {
+                return 'state.' + str;
+              }
+            }
           },
 
           dataProvider: function(args) {
@@ -6401,7 +6421,7 @@
           detailView: {
             name: 'Secondary storage details',
             actions: {
-              'delete': {
+              destroy: {
                 label: 'label.action.delete.secondary.storage' ,  
                 messages: {
                   confirm: function(args) {
@@ -6417,12 +6437,12 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      args.response.success({data:{}});
+                      args.response.success();
                     }
                   });
                 },
                 notification: {
-                  poll: function(args) { args.complete(); }
+                  poll: function(args) { args.complete({ data: { resourcestate: 'Destroyed' } }); }
                 }
               }
 
@@ -7249,7 +7269,7 @@
   var secondarystorageActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-    allowedActions.push("delete");
+    allowedActions.push("destroy");
     return allowedActions;
   }
 
@@ -7296,17 +7316,17 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
     }
     else if (jsonObj.state == 'Error') {
-      allowedActions.push("delete");  //destroy
+      allowedActions.push("destroy");  //destroy
     }
     return allowedActions;
   }

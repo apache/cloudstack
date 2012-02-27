@@ -619,13 +619,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterIdToDeployIn() + " and podId: " + vm.getPodIdToDeployIn());
         }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
                         + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
             }
-            plan = (DataCenterDeployment) planToDeploy;
+            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId(), ctx);
         }
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
@@ -690,9 +690,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                                 + vm, Cluster.class, clusterIdSpecified);
                                     }
                                 }
-                                plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null);
+                                plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null, ctx);
                             }else{
-                                plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null);
+                                plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null, ctx);
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                                 }
@@ -773,7 +773,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         String host_guid = startAnswer.getHost_guid();
                         if( host_guid != null ) {
                             HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
-                            if ( finalHost == null ) {
+                            if (finalHost == null ) {
                                 throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
                             }
                             destHostId = finalHost.getId();
@@ -788,14 +788,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                             return startedVm;
                         } else {
+                            canRetry = false;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
                             StopCommand cmd = new StopCommand(vm.getInstanceName());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
-                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
-                                canRetry = false;
+                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers")); 
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
@@ -899,7 +899,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 return false;
             }
 
-            if (step == Step.Started || step == Step.Starting) {
+            if (step == Step.Started || step == Step.Starting || step == Step.Release) {
                 if (vm.getHostId() != null) {
                     if (!sendStop(guru, profile, force)) {
                         s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
@@ -1725,8 +1725,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             {
             	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-           		vm.setState(State.Running); // set it as running and let HA take care of it
+           		
+                // Bug 13850- grab outstanding work item if any for this VM state so that we mark it as DONE after we change VM state, else it will remain pending
+                ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
+                if (work != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found an outstanding work item for this vm " + vm + " in state:" + vm.getState() + ", work id:" + work.getId());
+                    }
+                }
+                vm.setState(State.Running); // set it as running and let HA take care of it
            		_vmDao.persist(vm);
+           		
+                if (work != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Updating outstanding work item to Done, id:" + work.getId());
+                    }
+                    work.setStep(Step.Done);
+                    _workDao.update(work.getId(), work);
+                }
+           		
                 castedVm = info.guru.findById(vm.getId());
                 try {
                     Host host = _hostDao.findByGuid(info.getHostUuid());

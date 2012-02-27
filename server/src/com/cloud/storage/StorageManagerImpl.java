@@ -198,7 +198,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { StorageManager.class, StorageService.class })
-public class StorageManagerImpl implements StorageManager, StorageService, Manager, ClusterManagerListener {
+public class StorageManagerImpl implements StorageManager, Manager, ClusterManagerListener {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;

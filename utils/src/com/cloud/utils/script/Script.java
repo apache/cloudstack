@@ -47,6 +47,8 @@ public class Script implements Callable<String> {
 
     public static final String ERR_EXECUTE = "execute.error";
     public static final String ERR_TIMEOUT = "timeout";
+    private int _defaultTimeout = 3600 * 1000; /* 1 hour */
+    private volatile boolean _isTimeOut = false;
 
     private boolean _passwordCommand = false;
 
@@ -64,6 +66,10 @@ public class Script implements Callable<String> {
         _command = new ArrayList<String>();
         _command.add(command);
         _timeout = timeout;
+        if (_timeout == 0) {
+        	/* always using default timeout 1 hour to avoid thread hang */
+        	_timeout = _defaultTimeout;
+        }
         _process = null;
         _logger = logger != null ? logger : s_logger;
     }
@@ -193,32 +199,42 @@ public class Script implements Callable<String> {
                 s_executors.execute(task);
             }
 
-            try {
-                if (_process.waitFor() == 0) {
-                    _logger.debug("Execution is successful.");
+			while (true) {
+				try {
+					if (_process.waitFor() == 0) {
+						_logger.debug("Execution is successful.");
 
-                    return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
-                }
-            } catch (InterruptedException e) {
-                TimedOutLogger log = new TimedOutLogger(_process);
-                Task timedoutTask = new Task(log, ir);
+						return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+					} else {
+						break;
+					}
+				} catch (InterruptedException e) {
+					if (!_isTimeOut) {
+						/* This is not timeout, we are interrupted by others, continue */
+						_logger.debug("We are interrupted but it's not a timeout, just continue");
+						continue;
+					}
+					
+					TimedOutLogger log = new TimedOutLogger(_process);
+					Task timedoutTask = new Task(log, ir);
 
-                timedoutTask.run();
-                if (!_passwordCommand) {
-                    _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
-                } else {
-                    _logger.warn("Timed out: " + buildCommandLine(command));
-                }
+					timedoutTask.run();
+					if (!_passwordCommand) {
+						_logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+					} else {
+						_logger.warn("Timed out: " + buildCommandLine(command));
+					}
 
-                return ERR_TIMEOUT;
-            } finally {
-                if (future != null) {
-                    future.cancel(false);
-                }
-                Thread.interrupted();
-            }
+					return ERR_TIMEOUT;
+				} finally {
+					if (future != null) {
+						future.cancel(false);
+					}
+					Thread.interrupted();
+				}
+			}
 
-            _logger.debug("Exit value is " + _process.exitValue());
+			_logger.debug("Exit value is " + _process.exitValue());
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
@@ -264,6 +280,7 @@ public class Script implements Callable<String> {
             _logger.trace("Script ran within the alloted time");
         } catch (IllegalThreadStateException e) {
             _logger.warn("Interrupting script.");
+            _isTimeOut = true;
             _thread.interrupt();
         }
         return null;

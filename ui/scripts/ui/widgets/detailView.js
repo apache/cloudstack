@@ -82,9 +82,11 @@
         if (customAction && !noAdd) {
           customAction({
             context: context,
+            $detailView: $detailView,
             complete: function(args) {
               // Set loading appearance
               var $loading = $('<div>').addClass('loading-overlay');
+
               $detailView.prepend($loading);
 
               args = args ? args : {};
@@ -92,20 +94,23 @@
               var $item = args.$item;
 
               notification.desc = messages.notification(args.messageArgs);
-              notification._custom = args._custom;
+              notification._custom = $.extend(args._custom ? args._custom : {}, {
+                $detailView: $detailView
+              });
 
               cloudStack.ui.notifications.add(
                 notification,
 
                 // Success
                 function(args) {
-                $loading.remove();
+                  if (!$detailView.is(':visible')) return;
+
+                  $loading.remove();
+                  replaceListViewItem($detailView, args.data);
 
                   if (!noRefresh) {
                     updateTabContent(args.data);
                   }
-                  
-                  replaceListViewItem($detailView, args.data);
                 },
 
                 {},
@@ -131,7 +136,9 @@
             response: {
               success: function(args) {
                 args = args ? args : {};
-                notification._custom = args._custom;
+                notification._custom = $.extend(args._custom ? args._custom : {}, {
+                  $detailView: $detailView
+                });
 
                 if (additional && additional.success) additional.success(args);
 

@@ -18,6 +18,7 @@
 package com.cloud.deploy;
 
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.vm.ReservationContext;
 
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
@@ -28,18 +29,24 @@ public class DataCenterDeployment implements DeploymentPlan {
     Long _physicalNetworkId;
     ExcludeList _avoids = null;
     boolean _recreateDisks;
+    ReservationContext _context;
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
     }
 
     public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId, Long physicalNetworkId) {
+        this(dataCenterId, podId, clusterId, hostId, poolId, physicalNetworkId, null);
+    }
+    
+    public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId, Long physicalNetworkId, ReservationContext context) {
         _dcId = dataCenterId;
         _podId = podId;
         _clusterId = clusterId;
         _hostId = hostId;
         _poolId = poolId;
         _physicalNetworkId = physicalNetworkId;
+        _context = context;
     }
 
     @Override
@@ -81,4 +88,10 @@ public class DataCenterDeployment implements DeploymentPlan {
     public Long getPhysicalNetworkId() {
         return _physicalNetworkId;
     }
+    
+    @Override
+    public ReservationContext getReservationContext() {
+        return _context;
+    }
+
 }

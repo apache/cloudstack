@@ -93,17 +93,18 @@
       if ($target.is('li .name')) {
         $treeView.find('li .name').removeClass('selected');
         $target.addClass('selected');
-        var $panel = $browser.cloudBrowser('addPanel', {
+        $browser.cloudBrowser('addPanel', {
           title: $target.html(),
           data: '',
-          parent: $treeView.closest('div.panel')
+          parent: $treeView.closest('div.panel'),
+          complete: function($panel) {
+            $panel.detailView($.extend(treeViewArgs.detailView, {
+              id: $li.data('tree-view-item-id'),
+              $browser: $browser,
+              context: { domains: [ $li.data('tree-view-item-obj') ] }
+            }));
+          }
         });
-
-        $panel.detailView($.extend(treeViewArgs.detailView, {
-          id: $li.data('tree-view-item-id'),
-          $browser: $browser,
-          context: { domains: [ $li.data('tree-view-item-obj') ] }
-        }));
       }
 
       return true;

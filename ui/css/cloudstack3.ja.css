@@ -1,0 +1,34 @@
+/*[fmt]1C20-1C0D-E*/
+#header div.view-switcher {
+  font-size: 9px;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .name {
+  font-size: 10px;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .percentage {
+  float: left;
+  font-size: 15px;
+  font-weight: bold;
+  margin: 13px 0 0;
+  /*+text-shadow:0px -2px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px -2px 1px #FFFFFF;
+  -webkit-text-shadow: 0px -2px 1px #FFFFFF;
+  -o-text-shadow: 0px -2px 1px #FFFFFF;
+  text-shadow: 0px -2px 1px #FFFFFF;
+}
+
+.dashboard.admin .dashboard-container .stats ul li .value .content {
+  font-size: 10px;
+}
+
+div.toolbar div.filters label {
+  font-size: 9px;
+}
+
+div.toolbar div.filters select {
+  width: 82px;
+  font-size: 11px;
+}
+

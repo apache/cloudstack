@@ -14,6 +14,9 @@
     <title>CloudStack</title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+    <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
+      <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
+    </c:if>
 
     <!--[if IE 7]>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
@@ -269,7 +272,7 @@
 
                                 <div class="secondary-input hide-if-unselected">
                                   <input type="radio" name="defaultNetwork" value="new-network" />
-                                  <div class="name"><fmt:message key="label.default"/></div></div>
+                                  <div class="name"><fmt:message key="label.default"/></div>
                                 </div>
                               </div>
                             </div>
@@ -720,7 +723,7 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
+            <div class="main-desc pre-setup"><fmt:message key="message.launch.zone"/></div>
             <div class="main-desc launch" style="display:none;">
               <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
@@ -940,7 +943,7 @@
         <!-- Host dashboard -->
         <div class="system-dashboard">
           <div class="head">
-            <span<fmt:message key="label.hosts"/></span>
+            <span><fmt:message key="label.hosts"/></span>
             <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
           </div>
           <ul class="status_box good">
@@ -1175,20 +1178,20 @@
       <!-- User dashboard-->
       <div class="dashboard user">
         <div class="vm-status">
-          <div class="title"><span>Virtual Machines</span></div>
+          <div class="title"><span><fmt:message key="label.virtual.machines"/></span></div>
 
           <div class="content">
             <ul>
               <li class="running">
-                <div class="name">Running VMs</div>
+                <div class="name"><fmt:message key="label.running.vms"/></div>
                 <div class="value" data-item="runningInstances"></div>
               </li>
               <li class="stopped">
-                <div class="name">Stopped VMs</div>
+                <div class="name"><fmt:message key="label.stopped.vms"/></div>
                 <div class="value" data-item="stoppedInstances"></div>
               </li>
               <li class="total">
-                <div class="name">Total VMs</div>
+                <div class="name"><fmt:message key="label.total.vms"/></div>
                 <div class="value" data-item="totalInstances"></div>
               </li>
             </ul>
@@ -1201,7 +1204,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Latest events <div class="button view-all events">view all</div></th>
+                    <th><fmt:message key="label.latest.events"/> <div class="button view-all events"><fmt:message key="label.view.all"/></div></th>
                   </tr>
                 </thead>
               </table>
@@ -1218,7 +1221,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Network <div class="button view-all network">view all</div></th>
+                    <th><fmt:message key="label.network"/> <div class="button view-all network"><fmt:message key="label.view.all"/></div></th>
                   </tr>
                 </thead>
               </table>
@@ -1226,13 +1229,13 @@
                 <tbody>
                   <tr>
                     <td>
-                      <div class="desc"><span>Owned isolated networks:</span></div>
+                      <div class="desc"><span><fmt:message key="label.isolated.networks"/>:</span></div>
                       <div class="value"><span data-item="netTotal"></span></div>
                     </td>
                   </tr>
                   <tr class="odd">
                     <td>
-                      <div class="desc"><span>Owned public IP addresses:</span></div>
+                      <div class="desc"><span><fmt:message key="label.public.ips"/>:</span></div>
                       <div class="value"><span data-item="ipTotal"></span></div>
                     </td>
                   </tr>
@@ -1614,6 +1617,13 @@
 
 <script language="javascript">
 dictionary = {
+'label.latest.events': '<fmt:message key="label.latest.events"/>',
+'state.Enabled': '<fmt:message key="state.Enabled"/>',
+'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
+'label.management': '<fmt:message key="label.management"/>',
+'label.guest': '<fmt:message key="label.guest"/>',
+'label.network.service.providers': '<fmt:message key="label.network.service.providers"/>',
+'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
 'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
 'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',
 'label.compute.offerings': '<fmt:message key="label.compute.offerings"/>',
@@ -2439,7 +2449,7 @@ dictionary = {
 'label.none': '<fmt:message key="label.none" />',
 'label.not.found': '<fmt:message key="label.not.found" />',
 'label.num.cpu.cores': '<fmt:message key="label.num.cpu.cores" />',
-'label.numretries ': '<fmt:message key="label.numretries " />',
+'label.numretries': '<fmt:message key="label.numretries" />',
 'label.offer.ha': '<fmt:message key="label.offer.ha" />',
 'label.optional': '<fmt:message key="label.optional" />',
 'label.os.preference': '<fmt:message key="label.os.preference" />',

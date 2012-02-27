@@ -806,7 +806,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
                             continue;
                         }
+                        
                         if (answer != null) {
+                            if (!answer.getResult()) {
+                                s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+                                continue;
+                            }
                             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                             try {
                                 if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
@@ -1772,7 +1777,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         // Update router template/scripts version
         final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("getDomRVersion", command);
 

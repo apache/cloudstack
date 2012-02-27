@@ -40,7 +40,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@Implementation(description="Attempts Migration of a user virtual machine to the host specified.", responseObject=UserVmResponse.class)
+@Implementation(description="Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool", responseObject=UserVmResponse.class)
 public class MigrateVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 
@@ -51,7 +51,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="destination Host ID to migrate VM to")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
     @IdentityMapper(entityTableName="vm_instance")
@@ -59,7 +59,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     private Long virtualMachineId;
 
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="destination storage pool ID to migrate VM to")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     /////////////////////////////////////////////////////

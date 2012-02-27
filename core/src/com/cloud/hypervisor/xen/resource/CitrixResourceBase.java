@@ -248,7 +248,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _name;
     protected String _username;
     protected Queue<String> _password=new LinkedList<String>();
-    protected final int _retry = 24;
+    protected final int _retry = 100;
     protected final int _sleep = 10000;
     protected long _dcId;
     protected String _pod;

@@ -177,9 +177,10 @@
                   networkOfferingId: {
                     label: 'label.network.offering',
                     validation: { required: true },
-                    select: function(args) {
+										dependsOn: 'zoneId',
+                    select: function(args) {										 
                       $.ajax({
-                        url: createURL('listNetworkOfferings'),
+                        url: createURL('listNetworkOfferings&zoneid=' + args.zoneId),
                         data: {
                           type: 'Isolated',
                           supportedServices: 'SourceNat',
@@ -1225,7 +1226,9 @@
                       }
                     });
 
-                    ipChangeNotice();
+                    if (args._custom.$detailView.is(':visible')) {
+                      ipChangeNotice();
+                    }
                   }
                 }
               },
@@ -1254,7 +1257,11 @@
                               return ['enableStaticNAT'];
                             };
                           },
-                          onComplete: ipChangeNotice
+                          onComplete: function(args, _custom) {
+                            if (_custom.$detailView.is(':visible')) {
+                              ipChangeNotice();
+                            }
+                          }
                         }
                       });
                     },

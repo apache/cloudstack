@@ -161,6 +161,7 @@
       },
 						
 			addPrimaryStorage: function(args) {		
+			  var item;
 				$.ajax({
 				  url: createURL("listConfigurations&name=" + todb("use.local.storage")),
 					dataType: 'json',
@@ -178,7 +179,7 @@
 					}
 				});		
 
-				if(item == null || item.value == "false")
+				if(item == null || item.value == null || item.value.length == 0 || item.value == "false")
 				  configurationUseLocalStorage = false;
 				else				
           configurationUseLocalStorage = true;

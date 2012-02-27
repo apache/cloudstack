@@ -3381,8 +3381,10 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container .stats ul li .name {
-  width: 135px;
+  width: 178px;
   float: left;
+  font-size: 11px;
+  font-weight: bold;
   margin: 15px 15px 0 0;
 }
 
@@ -3946,7 +3948,7 @@ Dialogs*/
 }
 
 .system-chart.dashboard.admin .dashboard-container .stats .chart {
-  width: 286px;
+  width: 242px;
 }
 
 /** Compute*/
@@ -5373,6 +5375,24 @@ label.error {
   margin: 23px 0 0px 6px;
 }
 
+.multi-wizard.zone-wizard .review .main-desc.pre-setup {
+  width: 100%;
+  font-size: 18px;
+  color: #2C4159;
+  background: url(../images/icons.png) no-repeat 104px -224px;
+  padding: 2px 0 1px;
+  text-align: center;
+  /*+placement:shift 0px 153px;*/
+  position: relative;
+  left: 0px;
+  top: 153px;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+}
+
 .multi-wizard.zone-wizard .info-desc {
   font-size: 11px;
   float: left;
@@ -6796,7 +6816,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .recurring-snapshots .ui-tabs ul li a {
   width: 76px;
   text-indent: 28px;
-  margin: 0 32px 0 0;
+  margin: 0 14px 0 0;
   padding: 8px 0 5px;
   background: url(../images/sprites.png) no-repeat -521px -540px;
   border: none;
@@ -7357,7 +7377,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 0px;
   top: -10px;
-  margin-right: 10px;
+  margin-right: 9px;
 }
 
 #header div.view-switcher.alt {
@@ -7368,9 +7388,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
   /*[empty]display:;*/
   width: 126px;
-  padding: 12px 0 0;
+  padding: 13px 0 0;
   margin: 0;
-  text-indent: 21px;
+  text-indent: 17px;
   position: relative;
   /*+text-shadow:0px -1px 1px #2D2D2D;*/
   -moz-text-shadow: 0px -1px 1px #2D2D2D;

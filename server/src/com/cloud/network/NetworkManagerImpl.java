@@ -2924,7 +2924,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
         for (UserVmVO vm : userVms) {
-            if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
+            if (!(vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null)) {
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
                 return false;
             }
@@ -5977,20 +5977,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getName() + "'");
             }
 
-            Set<Service> enabledServices = providersMap.get(provider);
+            Set<Service> enabledServices = new HashSet<Service>();
+            enabledServices.addAll(providersMap.get(provider));
 
             if (enabledServices != null && !enabledServices.isEmpty()) {
                 if (!element.canEnableIndividualServices()) {
-                    Set<Network.Service> requiredServices = element.getCapabilities().keySet();
+                    Set<Service> requiredServices = new HashSet<Service>();                    
+                    requiredServices.addAll(element.getCapabilities().keySet());
+                    
                     if (requiredServices.contains(Network.Service.Gateway)) {
                         requiredServices.remove(Network.Service.Gateway);
                     }
-
-                    // Remove firewall from the list of services-to-compare
+                    
                     if (requiredServices.contains(Network.Service.Firewall)) {
                         requiredServices.remove(Network.Service.Firewall);
                     }
-
+                    
                     if (enabledServices.contains(Network.Service.Firewall)) {
                         enabledServices.remove(Network.Service.Firewall);
                     }

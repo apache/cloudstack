@@ -3101,6 +3101,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // populate providers
         Map<Provider, Set<Service>> providerCombinationToVerify = new HashMap<Provider, Set<Service>>();
         Map<String, List<String>> svcPrv = cmd.getServiceProviders();
+        boolean isSrx = false;
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
@@ -3117,11 +3118,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
 
-                        // Only VirtualRouter can be specified as a firewall provider
-                        if (service == Service.Firewall && provider != Provider.VirtualRouter) {
-                            throw new InvalidParameterValueException("Only Virtual router can be specified as a provider for the Firewall service");
+                        if (provider == Provider.JuniperSRX) {
+                            isSrx = true;
                         }
-
+                            
                         providers.add(provider);
 
                         Set<Service> serviceSet = null;
@@ -3169,6 +3169,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
+        
+        //if Firewall service is missing, and Juniper is a provider for any other service, add Firewall service/provider combination
+        if (isSrx)  {
+            s_logger.debug("Adding Firewall service with provider " + Provider.JuniperSRX.getName());
+            Set<Provider> firewallProvider = new HashSet<Provider>();
+            firewallProvider.add(Provider.JuniperSRX);
+            serviceProviderMap.put(Service.Firewall, firewallProvider);
+        }
 
         return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
                 false, serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
@@ -3392,6 +3400,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Object specifyIpRanges = cmd.getSpecifyIpRanges();
         String tags = cmd.getTags();
+        Boolean isTagged = cmd.isTagged();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3486,15 +3495,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (tags != null) {
-            if (tags.isEmpty()) {
-                sc.addAnd("tags", SearchCriteria.Op.NULL);
+            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+        }
+        
+        if (isTagged != null) {
+            if (isTagged) {
+                sc.addAnd("tags", SearchCriteria.Op.NNULL);
             } else {
-                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+                sc.addAnd("tags", SearchCriteria.Op.NULL);
             }
         }
 
         List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);
         Boolean sourceNatSupported = cmd.getSourceNatSupported();
+        List<String> pNtwkTags = new ArrayList<String>();
+        boolean checkForTags = false;
+        if (zone != null) {
+            List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+            if (pNtwks.size() > 1) {
+                checkForTags = true;
+                //go through tags
+                for (PhysicalNetworkVO pNtwk : pNtwks) {
+                    List<String> pNtwkTag = pNtwk.getTags();
+                    if (pNtwkTag == null || pNtwkTag.isEmpty()) {
+                        throw new CloudRuntimeException("Tags are not defined for physical network in the zone id=" + zoneId);
+                    }
+                    pNtwkTags.addAll(pNtwkTag);
+                }
+            }
+        }
 
         // filter by supported services
         boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
@@ -3522,7 +3551,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (NetworkOfferingVO offering : offerings) {
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
-
+                
+                if (checkForTags) {
+                    if (!pNtwkTags.contains(offering.getTags())) {
+                        continue;
+                    }
+                }
+                
                 if (listBySupportedServices) {
                     addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), supportedServices);
                 }
@@ -3540,10 +3575,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (sourceNatSupported != null) {
                     addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
                 }
+                
+               
 
                 if (addOffering) {
                     supportedOfferings.add(offering);
                 }
+                
+                
             }
 
             return supportedOfferings;

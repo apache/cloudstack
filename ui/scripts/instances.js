@@ -1,6 +1,6 @@
 (function($, cloudStack) {
 
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
@@ -160,8 +160,7 @@
                         
 												featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
-                        myisos: myIsoObjs //???
-												//isos: isoObjs
+                        myisos: myIsoObjs 										
                       },
                       hypervisors: hypervisorObjs
                     }
@@ -306,15 +305,22 @@
                       }
                     });
 
+																				
+										var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false&zoneid=" + args.currentData.zoneid ; 
+										var array1 = [];
+                    var guestTrafficTypeTotal = 0;
+
                     $.ajax({
-                      url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
+                      url: createURL(apiCmd + array1.join("")), //get the network offering for isolated network with sourceNat
                       dataType: "json",
                       async: false,
                       success: function(json) {
                         networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;
                       }
                     });
-
+                    //get network offerings (end)	***			
+										
+										
                     args.response.success({
                       type: 'select-network',
                       data: {

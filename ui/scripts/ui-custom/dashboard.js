@@ -144,13 +144,15 @@
       if ($(this).hasClass('network')) $('#navigation li.network').click();
       else {
         $browser.cloudBrowser('addPanel', {
-          title: 'Alerts',
+          title: $dashboard.hasClass('admin') ? 'Alerts' : 'Events',
           maximizeIfSelected: true,
           complete: function($newPanel) {
             $newPanel.listView({
               $browser: $browser,
               context: cloudStack.context,
-              listView: cloudStack.sections.events.sections.alerts.listView
+              listView: $dashboard.hasClass('admin') ?
+                cloudStack.sections.events.sections.alerts.listView :
+                cloudStack.sections.events.sections.events.listView // Users cannot see events
             });
           }
         });
