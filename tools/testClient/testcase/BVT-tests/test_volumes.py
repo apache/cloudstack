@@ -37,8 +37,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -51,8 +51,8 @@ class Services:
                                 "domainid": 1,
                             },
                         },
-                        "customdisksize": 1, # GBs
-                        "username": "root", # Creds for SSH to VM
+                        "customdisksize": 1,    # GBs
+                        "username": "root",     # Creds for SSH to VM
                         "password": "password",
                         "ssh_port": 22,
                         "diskname": "TestDiskServ",
@@ -67,6 +67,8 @@ class Services:
                         # Optional, if specified the mentioned zone will be
                         # used for tests
                         "mode": 'advanced',
+                        "sleep": 60,
+                        "timeout": 10,
                     }
 
 
@@ -134,7 +136,7 @@ class TestCreateVolume(cloudstackTestCase):
 
         # Validate the following
         # 1. Create volumes from the different sizes
-        # 2. Verify the size of volume with acrual size allocated 
+        # 2. Verify the size of volume with actual size allocated
 
         self.volumes = []
         for k, v in self.services["volume_offerings"].items():
@@ -143,14 +145,20 @@ class TestCreateVolume(cloudstackTestCase):
                                    v,
                                    zoneid=self.zone.id,
                                    account=self.account.account.name,
+                                   domainid=self.account.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
+            self.debug("Created a volume with ID: %s" % volume.id)
             self.volumes.append(volume)
-            self.cleanup.append(volume)
 
-        volume = Volume.create_custom_disk(self.apiClient, self.services)
+        volume = Volume.create_custom_disk(
+                                    self.apiClient,
+                                    self.services,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    )
+        self.debug("Created a volume with custom offering: %s" % volume.id)
         self.volumes.append(volume)
-        self.cleanup.append(volume)
 
         #Attach a volume with different disk offerings
         #and check the memory allocated to each of them
@@ -159,31 +167,74 @@ class TestCreateVolume(cloudstackTestCase):
                                                 self.apiClient,
                                                 id=volume.id
                                                 )
+            self.assertEqual(
+                            isinstance(list_volume_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
+            self.debug(
+                "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                                                    volume.id,
+                                                    self.virtual_machine.id
+                                                    ))
+            self.virtual_machine.attach_volume(
+                                                self.apiClient,
+                                                volume
+                                               )
+            try:
+                ssh = self.virtual_machine.get_ssh_client()
 
-            attached_volume = self.virtual_machine.attach_volume(
-                                                        self.apiClient,
-                                                        volume
-                                                        )
+                ssh.execute("reboot")
 
-            ssh = self.virtual_machine.get_ssh_client()
+            except Exception as e:
+                self.fail("SSH access failed for VM %s - %s" %
+                                (self.virtual_machine.ipaddress, e))
 
-            ssh.execute("reboot")
-            #Sleep to ensure the machine is rebooted properly
-            time.sleep(120)
-            ssh = self.virtual_machine.get_ssh_client(
+            # Poll listVM to ensure VM is started properly
+            timeout = self.services["timeout"]
+            while True:
+                time.sleep(self.services["sleep"])
+
+                # Ensure that VM is in running state
+                list_vm_response = list_virtual_machines(
+                                            self.apiClient,
+                                            id=self.virtual_machine.id
+                                            )
+
+                if isinstance(list_vm_response, list):
+
+                    vm = list_vm_response[0]
+                    if vm.state == 'Running':
+                        self.debug("VM state: %s" % vm.state)
+                        break
+
+                if timeout == 0:
+                    raise Exception(
+                        "Failed to start VM (ID: %s) " % vm.id)
+
+                timeout = timeout - 1
+
+            try:
+                ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-            c = "fdisk -l"
-            res = ssh.execute(c)
+                c = "fdisk -l"
+                res = ssh.execute(c)
+
+            except Exception as e:
+                self.fail("SSH access failed for VM: %s - %s" %
+                                (self.virtual_machine.ipaddress, e))
+
             # Disk /dev/sda doesn't contain a valid partition table
             # Disk /dev/sda: 21.5 GB, 21474836480 bytes
-
             result = str(res)
+            self.debug("fdisk result: %s" % result)
+
             self.assertEqual(
                              str(list_volume_response[0].size) in result,
                              True,
@@ -203,6 +254,7 @@ class TestCreateVolume(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+
 
 class TestVolumes(cloudstackTestCase):
 
@@ -246,7 +298,9 @@ class TestVolumes(cloudstackTestCase):
 
         cls.volume = Volume.create(
                                    cls.api_client,
-                                   cls.services
+                                   cls.services,
+                                   account=cls.account.account.name,
+                                   domainid=cls.account.account.domainid
                                    )
         cls._cleanup = [
                         cls.service_offering,
@@ -273,15 +327,22 @@ class TestVolumes(cloudstackTestCase):
         # 2. "Attach Disk" pop-up box will display with list of  instances
         # 3. disk should be  attached to instance successfully
 
+        self.debug(
+                "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                                                    self.volume.id,
+                                                    self.virtual_machine.id
+                                                    ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
-
-        #Sleep to ensure the current state will reflected in other calls
-        time.sleep(60)
 
         list_volume_response = list_volumes(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
+        self.assertEqual(
+                            isinstance(list_volume_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -293,9 +354,15 @@ class TestVolumes(cloudstackTestCase):
                             None,
                             "Check if volume state (attached) is reflected"
                             )
+        try:
+            #Format the attached volume to a known fs
+            format_volume_to_ext3(self.virtual_machine.get_ssh_client())
 
-        #Format the attached volume to a known fs
-        format_volume_to_ext3(self.virtual_machine.get_ssh_client())
+        except Exception as e:
+
+            self.fail("SSH failed for VM: %s - %s" %
+                                    (self.virtual_machine.ipaddress, e))
+        return
 
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
@@ -304,6 +371,8 @@ class TestVolumes(cloudstackTestCase):
         # 1. download volume will fail with proper error message
         #    "Failed - Invalid state of the volume with ID:
         #    It should be either detached or the VM should be in stopped state
+
+        self.debug("Extract attached Volume ID: %s" % self.volume.id)
 
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
@@ -323,12 +392,14 @@ class TestVolumes(cloudstackTestCase):
         #    "Failed - Invalid state of the volume with ID:
         #    It should be either detached or the VM should be in stopped state
 
+        self.debug("Trying to delete attached Volume ID: %s" %
+                                                        self.volume.id)
+
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = self.volume.id
         #Proper exception should be raised; deleting attach VM is not allowed
         with self.assertRaises(Exception):
             self.apiClient.deleteVolume(cmd)
-
 
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
@@ -338,13 +409,25 @@ class TestVolumes(cloudstackTestCase):
         # Data disk should be detached from instance and detached data disk
         # details should be updated properly
 
+        self.debug(
+                "Detaching volume (ID: %s) from VM (ID: %s)" % (
+                                                    self.volume.id,
+                                                    self.virtual_machine.id
+                                                    ))
+
         self.virtual_machine.detach_volume(self.apiClient, self.volume)
         #Sleep to ensure the current state will reflected in other calls
-        time.sleep(60)
+        time.sleep(self.services["sleep"])
         list_volume_response = list_volumes(
                                                 self.apiClient,
                                                 id=self.volume.id
                                                 )
+        self.assertEqual(
+                            isinstance(list_volume_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -364,6 +447,8 @@ class TestVolumes(cloudstackTestCase):
         # Validate the following
         # 1. able to download the volume when its not attached to instance
 
+        self.debug("Extract detached Volume ID: %s" % self.volume.id)
+
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
         cmd.mode = "HTTP_DOWNLOAD"
@@ -380,8 +465,7 @@ class TestVolumes(cloudstackTestCase):
             fd.write(response.read())
             fd.close()
 
-        except Exception as e:
-            print e
+        except Exception:
             self.fail(
                 "Extract Volume Failed with invalid URL %s (vol id: %s)" \
                 % (extract_vol.url, self.volume.id)
@@ -397,11 +481,12 @@ class TestVolumes(cloudstackTestCase):
         #    (UI should not allow  to delete the volume when it is attached
         #    to instance by hiding the menu Item)
 
+        self.debug("Delete Volume ID: %s" % self.volume.id)
+
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = self.volume.id
         self.apiClient.deleteVolume(cmd)
 
-        time.sleep(60)
         list_volume_response = list_volumes(
                                             self.apiClient,
                                             id=self.volume.id,
@@ -412,3 +497,4 @@ class TestVolumes(cloudstackTestCase):
                         None,
                         "Check if volume exists in ListVolumes"
                     )
+        return

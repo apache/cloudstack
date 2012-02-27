@@ -57,10 +57,17 @@ class TestCreateDiskOffering(cloudstackTestCase):
                                         )
         self.cleanup.append(disk_offering)
 
+        self.debug("Created Disk offering with ID: %s" % disk_offering.id)
+
         list_disk_response = list_disk_offering(
                                                 self.apiclient,
                                                 id=disk_offering.id
                                                 )
+        self.assertEqual(
+                            isinstance(list_disk_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             len(list_disk_response),
                             0,
@@ -134,6 +141,9 @@ class TestDiskOfferings(cloudstackTestCase):
         random_displaytext = random_gen()
         random_name = random_gen()
 
+        self.debug("Updating Disk offering with ID: %s" % 
+                                    self.disk_offering_1.id)
+        
         cmd = updateDiskOffering.updateDiskOfferingCmd()
         cmd.id = self.disk_offering_1.id
         cmd.displaytext = random_displaytext
@@ -145,7 +155,11 @@ class TestDiskOfferings(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=self.disk_offering_1.id
                                                 )
-
+        self.assertEqual(
+                            isinstance(list_disk_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             len(list_disk_response),
                             0,
@@ -175,6 +189,8 @@ class TestDiskOfferings(cloudstackTestCase):
 
         self.disk_offering_2.delete(self.apiclient)
 
+        self.debug("Deleted Disk offering with ID: %s" % 
+                                    self.disk_offering_2.id)
         list_disk_response = list_disk_offering(
                                                 self.apiclient,
                                                 id=self.disk_offering_2.id

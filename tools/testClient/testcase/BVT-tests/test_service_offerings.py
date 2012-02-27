@@ -61,10 +61,18 @@ class TestCreateServiceOffering(cloudstackTestCase):
                                             )
         self.cleanup.append(service_offering)
 
+        self.debug("Created service offering with ID: %s" % service_offering.id)
+
         list_service_response = list_service_offering(
                                                       self.apiclient,
                                                       id=service_offering.id
                                                       )
+        self.assertEqual(
+                            isinstance(list_service_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+         
         self.assertNotEqual(
                         len(list_service_response),
                         0,
@@ -156,6 +164,8 @@ class TestServiceOfferings(cloudstackTestCase):
         random_displaytext = random_gen()
         random_name = random_gen()
 
+        self.debug("Updating service offering with ID: %s" % 
+                                        self.service_offering_1.id)
 
         cmd = updateServiceOffering.updateServiceOfferingCmd()
         #Add parameters for API call
@@ -168,7 +178,12 @@ class TestServiceOfferings(cloudstackTestCase):
                                             self.apiclient,
                                             id=self.service_offering_1.id
                                             )
-
+        self.assertEqual(
+                            isinstance(list_service_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        
         self.assertNotEqual(
                             len(list_service_response),
                             0,
@@ -195,6 +210,9 @@ class TestServiceOfferings(cloudstackTestCase):
         # 1. deleteServiceOffering should return
         #    a valid information for newly created offering
 
+        self.debug("Deleting service offering with ID: %s" % 
+                                        self.service_offering_2.id)
+
         self.service_offering_2.delete(self.apiclient)
 
         list_service_response = list_service_offering(
@@ -209,4 +227,3 @@ class TestServiceOfferings(cloudstackTestCase):
                     )
 
         return
-

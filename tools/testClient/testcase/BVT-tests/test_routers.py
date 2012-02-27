@@ -49,6 +49,8 @@ class Services:
                                         "password": "fr3sca",
                                         },
                          "ostypeid":12,
+                         "sleep": 60,
+                         "timeout": 10,
                          "zoneid": 1,
                          # Optional, if specified the mentioned zone will be
                          # used for tests
@@ -124,6 +126,11 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
 
         hosts = list_hosts(
@@ -132,9 +139,20 @@ class TestRouterServices(cloudstackTestCase):
                            type='Routing',
                            state='Up'
                            )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list host returns a valid list"
+                        )
         host = hosts[0]
-        # Sleep to ensure that router is in ready state before double hop
-        time.sleep(200)
+        
+        self.debug("Router ID: %s, state: %s" % (router.id, router.state))
+
+        self.assertEqual(
+                            router.state,
+                            'Running',
+                            "Check list router response for router state"
+                        )
 
         result = get_process_status(
                                 host.ipaddress,
@@ -145,6 +163,8 @@ class TestRouterServices(cloudstackTestCase):
                                 "service dnsmasq status"
                                 )
         res = str(result)
+        self.debug("Dnsmasq process status: %s" % res)
+
         self.assertEqual(
                             res.count("running"),
                             1,
@@ -166,6 +186,12 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        
         router = list_router_response[0]
 
         hosts = list_hosts(
@@ -174,9 +200,19 @@ class TestRouterServices(cloudstackTestCase):
                            type='Routing',
                            state='Up'
                            )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         host = hosts[0]
-        # Sleep to ensure that router is in ready state before double hop
-        time.sleep(200)
+
+        self.debug("Router ID: %s, state: %s" % (router.id, router.state))
+        self.assertEqual(
+                            router.state,
+                            'Running',
+                            "Check list router response for router state"
+                        )
 
         result = get_process_status(
                                 host.ipaddress,
@@ -187,6 +223,8 @@ class TestRouterServices(cloudstackTestCase):
                                 "service dnsmasq status"
                                 )
         res = str(result)
+        self.debug("Dnsmasq process status: %s" % res)
+        
         self.assertEqual(
                             res.count("running"),
                             1,
@@ -207,6 +245,7 @@ class TestRouterServices(cloudstackTestCase):
                             1,
                             "Check haproxy service is running or not"
                         )
+        self.debug("Haproxy process status: %s" % res)
         return
 
     def test_03_restart_network_cleanup(self):
@@ -224,6 +263,11 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
 
         #Store old values before restart
@@ -237,15 +281,25 @@ class TestRouterServices(cloudstackTestCase):
                                  account=self.account.account.name,
                                  domainid=self.account.account.domainid
                                  )
+            self.assertEqual(
+                            isinstance(networks, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             network = networks[0]
             if network.state in ["Implemented", "Setup"]:
                 break
             elif timeout == 0:
                 break
             else:
-                time.sleep(60)
+                time.sleep(self.services["sleep"])
                 timeout = timeout - 1
 
+        self.debug(
+            "Restarting network with ID: %s, Network state: %s" % (
+                                                                network.id,
+                                                                network.state
+                                                                ))
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = network.id
         cmd.cleanup = True
@@ -257,6 +311,11 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
 
         self.assertNotEqual(
@@ -283,15 +342,25 @@ class TestRouterServices(cloudstackTestCase):
                                  account=self.account.account.name,
                                  domainid=self.account.account.domainid
                                  )
+            self.assertEqual(
+                            isinstance(networks, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             network = networks[0]
             if network.state in ["Implemented", "Setup"]:
                 break
             elif timeout == 0:
                 break
             else:
-                time.sleep(60)
+                time.sleep(self.services["sleep"])
                 timeout = timeout - 1
 
+        self.debug(
+            "Restarting network with ID: %s, Network state: %s" % (
+                                                                network.id,
+                                                                network.state
+                                                                ))
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = network.id
         cmd.cleanup = False
@@ -303,6 +372,11 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
 
         hosts = list_hosts(
@@ -311,6 +385,11 @@ class TestRouterServices(cloudstackTestCase):
                            type='Routing',
                            state='Up'
                            )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         host = hosts[0]
 
         res = get_process_status(
@@ -321,9 +400,11 @@ class TestRouterServices(cloudstackTestCase):
                                 router.linklocalip,
                                 "uptime"
                                 )
+        
         # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
         # Split result to check the uptime
         result = res[0].split()
+        self.debug("Router Uptime: %s" % result)
         self.assertEqual(
                             str(result[1]),
                             'up',
@@ -357,7 +438,11 @@ class TestRouterServices(cloudstackTestCase):
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
-
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                              len(list_router_response),
                              0,
@@ -374,6 +459,11 @@ class TestRouterServices(cloudstackTestCase):
                                self.apiclient,
                                id=router.zoneid
                                )
+            self.assertEqual(
+                            isinstance(zones, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             zone = zones[0]
 
             self.assertEqual(
@@ -413,7 +503,11 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
-
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                              len(list_router_response),
                              0,
@@ -430,6 +524,11 @@ class TestRouterServices(cloudstackTestCase):
                                self.apiclient,
                                id=router.zoneid
                                )
+            self.assertEqual(
+                            isinstance(zones, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             zone = zones[0]
 
             self.assertEqual(
@@ -459,6 +558,11 @@ class TestRouterServices(cloudstackTestCase):
                                                    self.apiclient,
                                                    zoneid=router.zoneid
                                                    )
+            self.assertEqual(
+                            isinstance(ipranges_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             iprange = ipranges_response[0]
             self.assertEqual(
                             router.gateway,
@@ -479,8 +583,14 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
-
+        
+        self.debug("Stopping the router with ID: %s" % router.id)
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
@@ -491,7 +601,11 @@ class TestRouterServices(cloudstackTestCase):
                                     self.apiclient,
                                     id=router.id
                                     )
-
+        self.assertEqual(
+                            isinstance(router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         #List router should have router in stopped state
         self.assertEqual(
                             router_response[0].state,
@@ -512,7 +626,14 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
+
+        self.debug("Starting the router with ID: %s" % router.id)
 
         #Start the router
         cmd = startRouter.startRouterCmd()
@@ -524,7 +645,11 @@ class TestRouterServices(cloudstackTestCase):
                                     self.apiclient,
                                     id=router.id
                                     )
-
+        self.assertEqual(
+                            isinstance(router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         #List router should have router in running state
         self.assertEqual(
                             router_response[0].state,
@@ -545,10 +670,17 @@ class TestRouterServices(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
 
         public_ip = router.publicip
 
+        self.debug("Rebooting the router with ID: %s" % router.id)
+        
         #Reboot the router
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = router.id
@@ -559,7 +691,11 @@ class TestRouterServices(cloudstackTestCase):
                                     self.apiclient,
                                     id=router.id
                                     )
-
+        self.assertEqual(
+                            isinstance(router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         #List router should have router in running state and same public IP
         self.assertEqual(
                             router_response[0].state,
@@ -589,7 +725,11 @@ class TestRouterServices(cloudstackTestCase):
                                          account=self.account.account.name,
                                          domainid=self.account.account.domainid
                                          )
-
+        self.assertEqual(
+                            isinstance(list_vms, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             len(list_vms),
                             0,
@@ -597,6 +737,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
 
         for vm in list_vms:
+            self.debug("Stopping the VM with ID: %s" % vm.id)
             # Stop all virtual machines associated with that account
             cmd = stopVirtualMachine.stopVirtualMachineCmd()
             cmd.id = vm.id
@@ -606,24 +747,42 @@ class TestRouterServices(cloudstackTestCase):
                                      self.apiclient,
                                      name='network.gc.interval'
                                      )
-
+        self.assertEqual(
+                            isinstance(config, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         response = config[0]
 
         # Wait for network.gc.interval * 3 time
         time.sleep(int(response.value) * 3)
-
-        #Check status of network router
-        list_router_response = list_routers(
+        
+        timeout = self.services["timeout"]
+        while True:
+            #Check status of network router
+            list_router_response = list_routers(
                                     self.apiclient,
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+            if isinstance(list_router_response, list):
+                break
+            elif timeout == 0:
+                raise Exception("List router call failed!")
+            time.sleep(5)
+            timeout = timeout -1
+            
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         router = list_router_response[0]
-
+        
+        self.debug("Router state after network.gc.interval: %s" % router.state)
         self.assertEqual(
             router.state,
             'Stopped',
             "Check state of the router after stopping all VMs associated"
             )
         return
-

@@ -40,7 +40,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
             if loop_cnt == 0:
                 raise e
             loop_cnt = loop_cnt - 1
-            time.sleep(60)
+            time.sleep(30)
         else:
             return ssh
 
@@ -90,10 +90,12 @@ def get_process_status(hostip, port, username, password, linklocalip, process):
     # Ensure the SSH login is successful
     while True:
         res = ssh.execute(ssh_command)
+        
         if res[0] != "Host key verification failed.":
             break
         elif timeout == 0:
             break
+        
         time.sleep(5)
         timeout = timeout - 1
     return res

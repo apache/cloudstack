@@ -62,16 +62,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id)
 
-        self.services["nfs"][0]["zoneid"] = self.zone.id
-        self.services["nfs"][1]["zoneid"] = self.zone.id
-        self.services["nfs"][2]["zoneid"] = self.zone.id
-
-        self.services["nfs"][0]["podid"] = self.pod.id
-        self.services["nfs"][1]["podid"] = self.pod.id
-        self.services["nfs"][2]["podid"] = self.pod.id
-
-        self.services["iscsi"][0]["zoneid"] = self.zone.id
-        self.services["iscsi"][0]["podid"] = self.pod.id
         return
 
     def tearDown(self):
@@ -101,12 +91,22 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                                      zoneid=self.zone.id,
                                      hypervisortype=v["hypervisor"]
                                      )
+            self.assertEqual(
+                            isinstance(clusters, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             cluster = clusters[0]
             #Host should be present before adding primary storage
             list_hosts_response = list_hosts(
                                              self.apiclient,
                                              clusterid=cluster.id
                                              )
+            self.assertEqual(
+                            isinstance(list_hosts_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
 
             self.assertNotEqual(
                         len(list_hosts_response),
@@ -116,9 +116,13 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
             storage = StoragePool.create(self.apiclient,
                                          v,
-                                         clusterid=cluster.id
+                                         clusterid=cluster.id,
+                                         zoneid=self.zone.id,
+                                         podid=self.pod.id
                                          )
             self.cleanup.append(storage)
+
+            self.debug("Created storage pool in cluster: %s" % cluster.id)
 
             self.assertEqual(
                 storage.state,
@@ -137,6 +141,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                                                         self.apiclient,
                                                         id=storage.id,
                                                         )
+            self.assertEqual(
+                            isinstance(storage_pools_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             self.assertNotEqual(
                             len(storage_pools_response),
                             0,
@@ -165,14 +174,23 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                                      zoneid=self.zone.id,
                                      hypervisortype=v["hypervisor"]
                                      )
+            self.assertEqual(
+                            isinstance(clusters, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             cluster = clusters[0]
 
             storage = StoragePool.create(self.apiclient,
                                          v,
-                                         clusterid=cluster.id
+                                         clusterid=cluster.id,
+                                         zoneid=self.zone.id,
+                                         podid=self.pod.id
                                          )
             self.cleanup.append(storage)
 
+            self.debug("Created iSCSI storage pool in cluster: %s" % cluster.id)
+            
             self.assertEqual(
                 storage.state,
                 'Up',
@@ -184,7 +202,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                                                         self.apiclient,
                                                         id=storage.id,
                                                         )
-
+            self.assertEqual(
+                            isinstance(storage_pools_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             self.assertNotEqual(
                 len(storage_pools_response),
                 0,

@@ -27,8 +27,10 @@ class Services:
                         "firstname": "Test",
                         "lastname": "User",
                         "username": "test",
-                        "password": "password",
-                        },
+                        # Random characters are appended in create account to 
+                        # ensure unique username generated each time
+                        "password": "fr3sca",
+                },
             "iso_1":
                     {
                         "displaytext": "Test ISO 1",
@@ -80,7 +82,13 @@ class TestCreateIso(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.zone = get_zone(self.apiclient, self.services)
         self.services["iso_2"]["zoneid"] = self.zone.id
-        self.cleanup = []
+        
+        self.account = Account.create(
+                            self.apiclient,
+                            self.services["account"]
+                            )
+        
+        self.cleanup = [self.account]
         return
 
     def tearDown(self):
@@ -105,23 +113,37 @@ class TestCreateIso(cloudstackTestCase):
         # 2. UI should show the newly added ISO
         # 3. listIsos API should show the newly added ISO
 
-        iso = Iso.create(self.apiclient, self.services["iso_2"])
-        iso.download(self.apiclient)
-        self.cleanup.append(iso)
+        iso = Iso.create(
+                         self.apiclient, 
+                         self.services["iso_2"],
+                         account=self.account.account.name,
+                         domainid=self.account.account.domainid
+                         )
+        self.debug("ISO created with ID: %s" % iso.id)
+        
+        try:
+            iso.download(self.apiclient)
+        except Exception as e:
+            self.fail("Exception while downloading ISO %s: %s"\
+                      % (iso.id, e))
 
         list_iso_response = list_isos(
                                       self.apiclient,
                                       id=iso.id
                                       )
-
-        iso_response = list_iso_response[0]
+        self.assertEqual(
+                            isinstance(list_iso_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
 
         self.assertNotEqual(
                             len(list_iso_response),
                             0,
                             "Check template available in List ISOs"
                         )
-
+        iso_response = list_iso_response[0]
+        
         self.assertEqual(
                             iso_response.displaytext,
                             self.services["iso_2"]["displaytext"],
@@ -159,11 +181,31 @@ class TestISO(cloudstackTestCase):
                             cls.services["account"],
                             )
         cls.services["account"] = cls.account.account.name
-        cls.iso_1 = Iso.create(cls.api_client, cls.services["iso_1"])
-        cls.iso_1.download(cls.api_client)
-        cls.iso_2 = Iso.create(cls.api_client, cls.services["iso_2"])
-        cls.iso_2.download(cls.api_client)
-        cls._cleanup = [cls.iso_2, cls.account]
+        cls.iso_1 = Iso.create(
+                               cls.api_client, 
+                               cls.services["iso_1"],
+                               account=cls.account.account.name,
+                               domainid=cls.account.account.domainid
+                               )
+        try:
+            cls.iso_1.download(cls.api_client)
+        except Exception as e:
+            self.fail("Exception while downloading ISO %s: %s"\
+                      % (cls.iso_1.id, e))
+            
+        cls.iso_2 = Iso.create(
+                               cls.api_client, 
+                               cls.services["iso_2"],
+                               account=cls.account.account.name,
+                               domainid=cls.account.account.domainid
+                               )
+        try:
+            cls.iso_2.download(cls.api_client)
+        except Exception as e:
+            self.fail("Exception while downloading ISO %s: %s"\
+                      % (cls.iso_2.id, e))
+            
+        cls._cleanup = [cls.account]
         return
 
     @classmethod
@@ -206,6 +248,8 @@ class TestISO(cloudstackTestCase):
         new_displayText = random_gen()
         new_name = random_gen()
 
+        self.debug("Updating ISO permissions for ISO: %s", self.iso_1.id)
+        
         cmd = updateIso.updateIsoCmd()
         #Assign new values to attributes
         cmd.id = self.iso_1.id
@@ -222,7 +266,11 @@ class TestISO(cloudstackTestCase):
                                       self.apiclient,
                                       id=self.iso_1.id
                                       )
-
+        self.assertEqual(
+                            isinstance(list_iso_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             len(list_iso_response),
                             0,
@@ -261,6 +309,7 @@ class TestISO(cloudstackTestCase):
         # 1. UI should not show the deleted ISP
         # 2. database (vm_template table) should not contain deleted ISO
 
+        self.debug("Deleting ISO with ID: %s" % self.iso_1.id)
         self.iso_1.delete(self.apiclient)
 
         #ListIsos to verify deleted ISO is properly deleted
@@ -285,6 +334,8 @@ class TestISO(cloudstackTestCase):
         #    for all kind of users
         # 3 .ListIsos should not display the system templates
 
+        self.debug("Extracting ISO with ID: %s" % self.iso_2.id)
+        
         cmd = extractIso.extractIsoCmd()
         cmd.id = self.iso_2.id
         cmd.mode = self.services["iso_2"]["mode"]
@@ -326,6 +377,8 @@ class TestISO(cloudstackTestCase):
         # 2. permission changes should be reflected in vm_template
         #    table in database
 
+        self.debug("Updating permissions for ISO: %s" % self.iso_2.id)
+        
         cmd = updateIsoPermissions.updateIsoPermissionsCmd()
         cmd.id = self.iso_2.id
         #Update ISO permissions
@@ -341,7 +394,12 @@ class TestISO(cloudstackTestCase):
                                       account=self.account.account.name,
                                       domainid=self.account.account.domainid
                                       )
-
+        self.assertEqual(
+                            isinstance(list_iso_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        
         iso_response = list_iso_response[0]
 
         self.assertEqual(
@@ -369,6 +427,11 @@ class TestISO(cloudstackTestCase):
         #1. copy ISO should be successful and secondary storage
         #   should contain new copied ISO.
 
+        self.debug("Copy ISO from %s to %s" % (
+                                               self.zone.id,
+                                               self.services["destzoneid"]
+                                               ))
+        
         cmd = copyIso.copyIsoCmd()
         cmd.id = self.iso_2.id
         cmd.destzoneid = self.services["destzoneid"]
@@ -381,14 +444,19 @@ class TestISO(cloudstackTestCase):
                                       id=self.iso_2.id,
                                       zoneid=self.services["destzoneid"]
                                       )
-
-        iso_response = list_iso_response[0]
+        self.assertEqual(
+                            isinstance(list_iso_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
 
         self.assertNotEqual(
                             len(list_iso_response),
                             0,
                             "Check template extracted in List ISO"
                         )
+        iso_response = list_iso_response[0]
+        
         self.assertEqual(
                             iso_response.id,
                             self.iso_2.id,
@@ -400,6 +468,7 @@ class TestISO(cloudstackTestCase):
                             "Check zone ID of the copied ISO"
                         )
 
+        self.debug("Cleanup copied ISO: %s" % iso_response.id)
         # Cleanup- Delete the copied ISO
         cmd = deleteIso.deleteIsoCmd()
         cmd.id = iso_response.id

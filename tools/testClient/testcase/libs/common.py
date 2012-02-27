@@ -23,7 +23,13 @@ def get_zone(apiclient, services=None):
     if services:
         if "zoneid" in services:
             cmd.id = services["zoneid"]
-    return apiclient.listZones(cmd)[0]
+    
+    zones = apiclient.listZones(cmd)
+    
+    if isinstance(zones, list):
+        return zones[0]
+    else:
+        raise Exception("Failed to find specified zone.") 
 
 def get_pod(apiclient, zoneid, services=None):
     "Returns a default pod for specified zone"
@@ -34,8 +40,13 @@ def get_pod(apiclient, zoneid, services=None):
     if services:
         if "podid" in services:
             cmd.id = services["podid"]
-
-    return apiclient.listPods(cmd)[0]
+    
+    pods = apiclient.listPods(cmd)
+    
+    if isinstance(pods, list):
+        return pods[0]
+    else:
+        raise Exception("Exception: Failed to find specified pod.") 
 
 def get_template(apiclient, zoneid, ostypeid=12, services=None):
     "Returns a template"
@@ -53,18 +64,25 @@ def get_template(apiclient, zoneid, ostypeid=12, services=None):
     for template in list_templates:
         if template.ostypeid == ostypeid:
             return template
+        
+    raise Exception("Exception: Failed to find template with OSTypeID: %s" %
+                                                                    ostypeid) 
+    return
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
 
-    # Login to management server
-    ssh = remoteSSHClient.remoteSSHClient(
+    try:
+        # Login to management server
+        ssh = remoteSSHClient.remoteSSHClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],
                                           server["password"]
                                           )
-    print ssh
+    except Exception as e:
+        raise Exception("SSH access failted for server with IP address: %s" %
+                                                            server["ipaddess"])
     # Mount Secondary Storage on Management Server
     cmds = [
             "mkdir -p %s" % services["mnt_dir"],
@@ -93,14 +111,14 @@ def download_systemplates_sec_storage(server, services):
     if res.count("Successfully installed system VM template") == 1:
         return
     else:
-        self.debug("Failed to download System Templates on Sec Storage")
+        raise Exception("Failed to download System Templates on Sec Storage")
     return
 
 def wait_for_ssvms(apiclient, zoneid, podid):
     """After setup wait for SSVMs to come Up"""
 
-    time.sleep(180)
-    timeout = 20
+    time.sleep(30)
+    timeout = 40
     while True:
             list_ssvm_response = list_ssvms(
                                         apiclient,
@@ -111,12 +129,12 @@ def wait_for_ssvms(apiclient, zoneid, podid):
             ssvm = list_ssvm_response[0]
             if ssvm.state != 'Running':
                 # Sleep to ensure SSVMs are Up and Running
-                time.sleep(120)
+                time.sleep(30)
                 timeout = timeout - 1
             elif ssvm.state == 'Running':
                 break
             elif timeout == 0:
-                self.debug("SSVMs failed to start")
+                raise Exception("SSVM failled to come up")
                 break
 
     timeout = 20
@@ -130,18 +148,18 @@ def wait_for_ssvms(apiclient, zoneid, podid):
             cpvm = list_ssvm_response[0]
             if cpvm.state != 'Running':
                 # Sleep to ensure SSVMs are Up and Running
-                time.sleep(120)
+                time.sleep(30)
                 timeout = timeout - 1
             elif cpvm.state == 'Running':
                 break
             elif timeout == 0:
-                self.debug("SSVMs failed to start")
+                raise Exception("SSVM failled to come up")
                 break
     return
 
 def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip):
     """After setup wait till builtin templates are downloaded"""
-
+    
     # Change IPTABLES Rules
     result = get_process_status(
                                 host["ipaddress"],
@@ -159,7 +177,10 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
                                     zoneid=zoneid,
                                     templatefilter='self'
                                     )
-
+    
+    if not isinstance(list_template_response, list):
+        raise Exception("Failed to download BUILTIN templates")
+    
     # Ensure all BUILTIN templates are downloaded
     templateid = None
     for template in list_template_response:
@@ -168,7 +189,7 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
 
     # Sleep to ensure that template is in downloading state after adding
     # Sec storage
-    time.sleep(120)
+    time.sleep(30)
     while True:
         template_response = list_templates(
                                     apiclient,
@@ -184,9 +205,9 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
         if template.status == 'Download Complete'  :
             break
         elif 'Downloaded' not in template.status.split():
-            raise Exception
+            raise Exception("ErrorInDownload")
         elif 'Downloaded' in template.status.split():
-            time.sleep(120)
+            time.sleep(30)
     return
 
 def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,

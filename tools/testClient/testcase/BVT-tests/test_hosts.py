@@ -92,26 +92,6 @@ class TestHosts(cloudstackTestCase):
         self.services = Services().services
         self.cleanup = []
 
-        # Get Zone and pod
-        self.zone = get_zone(self.apiclient, self.services)
-        self.pod = get_pod(self.apiclient, self.zone.id)
-
-        self.services["clusters"][0]["zoneid"] = self.zone.id
-        self.services["clusters"][1]["zoneid"] = self.zone.id
-        self.services["clusters"][2]["zoneid"] = self.zone.id
-
-        self.services["clusters"][0]["podid"] = self.pod.id
-        self.services["clusters"][1]["podid"] = self.pod.id
-        self.services["clusters"][2]["podid"] = self.pod.id
-
-        self.services["hosts"]["xenserver"]["zoneid"] = self.zone.id
-        self.services["hosts"]["kvm"]["zoneid"] = self.zone.id
-        self.services["hosts"]["vmware"]["zoneid"] = self.zone.id
-
-        self.services["hosts"]["xenserver"]["podid"] = self.pod.id
-        self.services["hosts"]["kvm"]["podid"] = self.pod.id
-        self.services["hosts"]["vmware"]["podid"] = self.pod.id
-
         return
 
     def tearDown(self):
@@ -136,8 +116,17 @@ class TestHosts(cloudstackTestCase):
 
         #Create clusters with Hypervisor type XEN/KVM/VWare
         for k, v in self.services["clusters"].items():
-            cluster = Cluster.create(self.apiclient, v)
-
+            cluster = Cluster.create(
+                                     self.apiclient,
+                                     v,
+                                     zoneid=self.zone.id,
+                                     podid=self.pod.id
+                                     )
+            self.debug(
+                "Created Cluster for hypervisor type %s & ID: %s" %(
+                                                                    v["hypervisor"],
+                                                                    cluster.id     
+                                                                    ))
             self.assertEqual(
                     cluster.hypervisortype,
                     v["hypervisor"],
@@ -160,8 +149,15 @@ class TestHosts(cloudstackTestCase):
                 host = Host.create(
                                self.apiclient,
                                cluster,
-                               self.services["hosts"][hypervisor_type]
+                               self.services["hosts"][hypervisor_type],
+                               zoneid=self.zone.id,
+                               podid=self.pod.id
                                )
+                self.debug(
+                    "Created host (ID: %s) in cluster ID %s" %(
+                                                                host.id,
+                                                                cluster.id
+                                                                ))
 
             #Cleanup Host & Cluster
             self.cleanup.append(host)
@@ -171,7 +167,11 @@ class TestHosts(cloudstackTestCase):
                            self.apiclient,
                            clusterid=cluster.id
                            )
-
+            self.assertEqual(
+                            isinstance(list_hosts_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             self.assertNotEqual(
                             len(list_hosts_response),
                             0,
@@ -190,7 +190,11 @@ class TestHosts(cloudstackTestCase):
                                                   self.apiclient,
                                                   id=cluster.id
                                                   )
-
+            self.assertEqual(
+                            isinstance(list_cluster_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
             self.assertNotEqual(
                             len(list_cluster_response),
                             0,
