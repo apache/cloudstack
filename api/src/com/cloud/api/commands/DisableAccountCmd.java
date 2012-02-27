@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -121,10 +120,5 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account" );
         }
-    }
-    
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Account;
     }
 }

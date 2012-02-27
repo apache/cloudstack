@@ -28,7 +28,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -102,10 +101,5 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }
-    }
-    
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Account;
     }
 }
