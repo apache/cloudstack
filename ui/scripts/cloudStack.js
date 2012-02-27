@@ -280,7 +280,7 @@
           context: context,
           response: {
             success: function(args) {
-              if (args.doInstall && cloudStack.context.users[0].role == 'admin') {
+              if (args.doInstall && isAdmin()) {
                 var initInstallWizard = function(eulaHTML) {
                   cloudStack.uiCustom.installWizard({
                     $container: $container,
