@@ -1003,7 +1003,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         Pair<Boolean, String> result;
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            result = SshHelper.sshExecute(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+            String controlIp = getRouterSshControlIp(cmd);
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
                     "/root/checkrouter.sh ");
 
             if (!result.first()) {
@@ -1032,7 +1033,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         Pair<Boolean, String> result;
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            result = SshHelper.sshExecute(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+            String controlIp = getRouterSshControlIp(cmd);
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
                     "/opt/cloud/bin/get_template_version.sh ");
 
             if (!result.first()) {
@@ -1065,7 +1067,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         Pair<Boolean, String> result;
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            result = SshHelper.sshExecute(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+            String controlIp = getRouterSshControlIp(cmd);
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
                     "/root/bumpup_priority.sh ");
 
             if (!result.first()) {
