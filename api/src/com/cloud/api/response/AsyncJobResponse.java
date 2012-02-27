@@ -30,7 +30,6 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
-    private static final Logger s_logger = Logger.getLogger(AsyncJobResponse.class.getName());
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
@@ -125,7 +124,6 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("physical_network_traffic_types");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PhysicalNetworkServiceProvider.toString())) {
                 this.jobInstanceId.setTableName("physical_network_service_providers");
-            } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
         	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
         	    this.jobInstanceId.setTableName("firewall_rules");
         	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Account.toString())) {
@@ -133,7 +131,6 @@ public class AsyncJobResponse extends BaseResponse {
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
                 this.jobInstanceId.setTableName("user");
             } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
-                s_logger.warn("Failed to get async job instanceId for job instance type " + jobInstanceType);
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
         	}
