@@ -2514,7 +2514,7 @@
                 },
                 messages: {
 								  confirm: function(args) {
-									  return 'confirm.shutdown.provider';
+									  return 'message.confirm.shutdown.provider';
 									},
                   notification: function(args) { 
 									  return 'label.shutdown.provider'; 
