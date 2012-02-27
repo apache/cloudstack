@@ -14,6 +14,8 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
@@ -23,6 +25,10 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
+<<<<<<< HEAD
+=======
+    private static final Logger s_logger = Logger.getLogger(AsyncJobResponse.class.getName());
+>>>>>>> 856418e... bug 13860: Added async job types to Account/User Async api commands and more logging.
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
