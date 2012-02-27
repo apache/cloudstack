@@ -40,7 +40,6 @@ launch_hb.sh=..,0755,/opt/xensource/bin
 vhd-util=..,0755,/opt/xensource/bin
 vmopspremium=..,0755,/etc/xapi.d/plugins
 InterfaceReconfigure.py=.,0755,/opt/xensource/libexec
-fsimage.so=.,0755,/usr/lib/fs/ext2fs-lib
 create_privatetemplate_from_snapshot.sh=..,0755,/opt/xensource/bin
 upgrade_snapshot.sh=..,0755,/opt/xensource/bin
 cloud-clean-vlan.sh=..,0755,/opt/xensource/bin
