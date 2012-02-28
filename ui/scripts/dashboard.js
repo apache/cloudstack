@@ -38,7 +38,7 @@
               accountID: user.userid,
               accountName: user.account,
               userName: user.username,
-              accountType: cloudStack.converters.toRole(user.type),
+              accountType: user.role,
               accountDomainID: user.domainid
             }));
           },
