@@ -266,15 +266,6 @@ ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uu
 ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 
-CREATE TABLE `cloud`.`vm_template_details` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
-  `name` varchar(255) NOT NULL,
-  `value` varchar(1024) NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `created` datetime;
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `update_time` datetime;
 
@@ -334,7 +325,7 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL de
 --NAAS;
 --;
 
-CREATE TABLE  `ntwk_service_map` (
+CREATE TABLE  `cloud`.`ntwk_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -568,14 +559,14 @@ insert into `cloud`.`network_offerings` (`name`, `unique_name`, `display_text`, 
 UPDATE `cloud`.`network_offerings` set specify_ip_ranges=1 where name in ('System-Public-Network', 'System-Storage-Network', 'DefaultSharedNetworkOfferingWithSGService', 'DefaultSharedNetworkOffering', 'DefaultIsolatedNetworkOffering');
 
 
-CREATE TABLE  `ntwk_offering_service_map` (
+CREATE TABLE  `cloud`.`ntwk_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
   `provider` varchar(255) COMMENT 'service provider',
   `created` datetime COMMENT 'date created',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `cloud`.`network_offerings`(`id`) ON DELETE CASCADE,
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -623,7 +614,7 @@ UPDATE `cloud`.`networks` SET acl_type='Domain' where guest_type is not null and
 UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Virtual';
 UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Direct' and shared=0;
 ALTER TABLE `cloud`.`domain_network_ref` ADD COLUMN `subdomain_access` int(1) unsigned COMMENT '1 if network can be accessible from the subdomain';
-UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM network_offerings no where no.id=network_offering_id);
+UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM `cloud`.`network_offerings` no where no.id=network_offering_id);
 
 
 DELETE FROM `cloud`.`configuration` WHERE name='network.redundantrouter';
@@ -648,21 +639,3 @@ UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.guest.n
 
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `ovm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a Ovm host';
 ALTER TABLE `cloud`.`dc_storage_network_ip_range` ADD COLUMN `gateway` varchar(15) NOT NULL COMMENT 'gateway ip address';
-
-CREATE TABLE  `cloud_usage`.`usage_security_group` (
-  `zone_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  `domain_id` bigint unsigned NOT NULL,
-  `vm_instance_id` bigint unsigned NOT NULL,
-  `security_group_id` bigint unsigned NOT NULL,
-  `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL  
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);
-ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
-ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
-ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
-UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
-ALTER TABLE `cloud`.`volumes` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0;
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__update_count`(`update_count`);
