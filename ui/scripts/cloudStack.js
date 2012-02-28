@@ -48,7 +48,16 @@
       cache: false,
       error: function(data) {
         cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
-      }
+      },
+			beforeSend: function(XMLHttpRequest) {		
+				if (g_mySession == $.cookie("JSESSIONID")) {
+					return true;
+				} 
+				else {
+					cloudStack.dialog.notice({ message: _l('label.session.expired') });
+					return false;
+				}
+			}	
     });
 
     var $container = $('#cloudStack3-container');
@@ -57,7 +66,7 @@
       $container: $container,
 
       // Use this for checking the session, to bypass login screen
-      bypassLoginCheck: function(args) {
+      bypassLoginCheck: function(args) { //before login screen
         g_mySession = $.cookie("JSESSIONID");
         g_sessionKey = $.cookie("sessionKey");
         g_role = $.cookie("role");
@@ -104,9 +113,9 @@
           error: function(xmlHTTP) {
             logout(false);
           },
-          beforeSend: function(xmlHTTP) {
-            return true;
-          }
+          beforeSend : function(XMLHttpResponse) {					  
+						return true;
+					}	
         });
 
         if (userValid && isAdmin()) {
@@ -224,7 +233,7 @@
               },
               error: function(xmlHTTP) {
                 args.response.error();
-              }
+              }				
             });
 
             if (isAdmin()) {
@@ -248,7 +257,10 @@
           },
           error: function() {
             args.response.error();
-          }
+          },										
+					beforeSend : function(XMLHttpResponse) {				
+						return true;
+					}	
         });
       },
 
@@ -281,9 +293,11 @@
           },
           error: function() {
             document.location.reload();
-          }
+          },			
+					beforeSend : function(XMLHttpResponse) {
+						return true;
+					}							
         });
-
       },
 
       // Show cloudStack main UI widget
@@ -340,7 +354,10 @@
       },
       error: function() {
         cloudStack.uiCustom.login(loginArgs);
-      }
+      },	
+			beforeSend : function(XMLHttpResponse) {
+				return true;
+			}		
     });
 
     // Localization
