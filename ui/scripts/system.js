@@ -7791,7 +7791,6 @@
                     resourcestate: { label: 'label.resource.state' },
 >>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     state: { label: 'label.state' },
-                    type: { label: 'label.type' },
                     zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
