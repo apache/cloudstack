@@ -7,6 +7,9 @@ import logging
 from cloudstackAPI import * 
 from optparse import OptionParser
 
+module_logger = "testclient.deploy"
+
+
 class deployDataCenters():
     def __init__(self, cfgFile):
         self.configFile = cfgFile
@@ -192,7 +195,8 @@ class deployDataCenters():
         try:
             self.config =  configGenerator.get_setup_config(self.configFile)
         except:
-            raise cloudstackException.InvalidParameterException("Failed to load cofig" + sys.exc_info())
+            raise cloudstackException.InvalidParameterException( \
+                            "Failed to load config" + sys.exc_info())
 
         mgt = self.config.mgtSvr[0]
         
@@ -211,8 +215,9 @@ class deployDataCenters():
                 
         testClientLogger = None
         if testClientLogFile is not None:
-            testClientLogger = logging.getLogger("testClient")
+            testClientLogger = logging.getLogger("testclient.deploy.deployDataCenters")
             fh = logging.FileHandler(testClientLogFile)
+            fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.DEBUG)
         self.testClientLogger = testClientLogger
