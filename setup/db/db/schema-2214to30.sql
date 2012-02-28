@@ -662,3 +662,5 @@ CREATE TABLE  `cloud_usage`.`usage_security_group` (
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
+UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
