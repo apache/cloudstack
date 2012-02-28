@@ -62,7 +62,7 @@ class configFileOps:
                 match = re.match(matchString, line)
                 if match is not None:
                     if entry.op == "add" and entry.separator == "=":
-                        newline = entry.name + "=" + entry.value + "\n"
+                        newline = "\n" + entry.name + "=" + entry.value + "\n"
                         entry.setState("set")
                         newLines.append(newline)
                         self.backups.append([line, newline])

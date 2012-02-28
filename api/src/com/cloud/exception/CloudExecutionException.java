@@ -18,6 +18,7 @@
 package com.cloud.exception;
 
 import java.util.HashMap;
+import com.cloud.utils.exception.RuntimeCloudException;
 
 import com.cloud.utils.SerialVersionUID;
 
@@ -30,7 +31,7 @@ import com.cloud.utils.SerialVersionUID;
  * that one can find out what the error is simply by reading the error message.
  * 
  */
-public class CloudExecutionException extends RuntimeException {
+public class CloudExecutionException extends RuntimeCloudException {
     private final static long serialVersionUID = SerialVersionUID.CloudExecutionException;
     
     private final ErrorCode code;

@@ -47,8 +47,19 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.BaseResponse;
+import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.IPAddressResponse;
+import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.TemplateResponse;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VolumeResponse;
 import com.cloud.serializer.Param;
+import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
 
@@ -64,6 +75,23 @@ public class ApiXmlDocWriter {
     private static TreeMap<Object, String> domain_admin_api_commands_sorted = new TreeMap<Object, String>();
     private static TreeMap<Object, String> regular_user_api_commands_sorted = new TreeMap<Object, String>();
     private static String dirName = "";
+    private static final List<String> _asyncResponses = setAsyncResponses();
+            
+    private static List<String> setAsyncResponses() {
+        List<String> asyncResponses = new ArrayList<String>();
+        asyncResponses.add(TemplateResponse.class.getName());
+        asyncResponses.add(VolumeResponse.class.getName());
+        //asyncResponses.add(LoadBalancerResponse.class.getName());
+        asyncResponses.add(HostResponse.class.getName());
+        asyncResponses.add(IPAddressResponse.class.getName());
+        asyncResponses.add(StoragePoolResponse.class.getName());
+        asyncResponses.add(UserVmResponse.class.getName());
+        asyncResponses.add(SecurityGroupResponse.class.getName());
+        //asyncResponses.add(ExternalLoadBalancerResponse.class.getName());
+        asyncResponses.add(SnapshotResponse.class.getName());
+        
+        return asyncResponses;
+    }
 
     public static void main(String[] args) {
         LinkedProperties preProcessedCommands = new LinkedProperties();
@@ -312,30 +340,33 @@ public class ApiXmlDocWriter {
 
             // Get fields from superclass
             Class<?> superClass = clas.getSuperclass();
-            String superName = superClass.getName();
-            if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                Field[] superClassFields = superClass.getDeclaredFields();
-                if (superClassFields != null) {
-                    Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                    System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                    System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                    fields = tmpFields;
+            boolean isAsync = false;
+            while (superClass != null && superClass != Object.class) {
+                String superName = superClass.getName();
+                if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
+                    Field[] superClassFields = superClass.getDeclaredFields();
+                    if (superClassFields != null) {
+                        Field[] tmpFields = new Field[fields.length + superClassFields.length];
+                        System.arraycopy(fields, 0, tmpFields, 0, fields.length);
+                        System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
+                        fields = tmpFields;
+                    }
                 }
                 superClass = superClass.getSuperclass();
+                // Set Async information for the command
+                if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
+                    isAsync = true;
+                }
             }
+           
+            apiCommand.setAsync(isAsync);
+            
             request = setRequestFields(fields);
 
-            // Set Async information for the command
-            if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                apiCommand.setAsync(true);
-            } else {
-                apiCommand.setAsync(false);
-            }
-            
             // Get response parameters
             Class<?> responseClas = impl.responseObject();
             Field[] responseFields = responseClas.getDeclaredFields();
-            response = setResponseFields(responseFields);
+            response = setResponseFields(responseFields, responseClas);
 
             apiCommand.setRequest(request);
             apiCommand.setResponse(response);
@@ -447,7 +478,7 @@ public class ApiXmlDocWriter {
         return arguments;
     }
 
-    private static ArrayList<Argument> setResponseFields(Field[] responseFields) {
+    private static ArrayList<Argument> setResponseFields(Field[] responseFields, Class<?> responseClas) {
         ArrayList<Argument> arguments = new ArrayList<Argument>();
         ArrayList<Argument> sortedChildlessArguments = new ArrayList<Argument>();
         ArrayList<Argument> sortedArguments = new ArrayList<Argument>();
@@ -475,7 +506,7 @@ public class ApiXmlDocWriter {
                              if (superName.equals(BaseResponse.class.getName())) {
                                  ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
                                  Field[] fields = fieldClass.getDeclaredFields();
-                                 fieldArguments = setResponseFields(fields);
+                                 fieldArguments = setResponseFields(fields, fieldClass);
                                  respArg.setArguments(fieldArguments);
                                  hasChildren = true;
                              }
@@ -506,6 +537,17 @@ public class ApiXmlDocWriter {
         }
         arguments.addAll(sortedChildlessArguments);
         arguments.addAll(sortedArguments);
+        
+        if (responseClas.getName().equalsIgnoreCase(AsyncJobResponse.class.getName())) {
+            Argument jobIdArg = new Argument("jobid", "the ID of the async job");
+            arguments.add(jobIdArg);
+        } else if (_asyncResponses.contains(responseClas.getName())) {
+            Argument jobIdArg = new Argument("jobid", "the ID of the latest async job acting on this object");
+            Argument jobStatusArg = new Argument("jobstatus", "the current status of the latest async job acting on this object");
+            arguments.add(jobIdArg);
+            arguments.add(jobStatusArg);
+        }
+        
         return arguments;
     }
 

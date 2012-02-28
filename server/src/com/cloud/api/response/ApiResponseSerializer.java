@@ -35,7 +35,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -78,7 +78,7 @@ public class ApiResponseSerializer {
                 if ((responses != null) && !responses.isEmpty()) {
 
                     Integer count = ((ListResponse) result).getCount();
-                    String jsonStr = gson.toJson(responses.get(0));
+                    String jsonStr = gson.toJson(responses.get(0));                    
                     jsonStr = unescape(jsonStr);
 
                     if (count != null && count != 0) {
@@ -95,10 +95,10 @@ public class ApiResponseSerializer {
                 }
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"" + ((SuccessResponse) result).getSuccess() + "\"} ");
-            } else if (result instanceof ExceptionResponse) {
-            	String jsonErrorText =gson.toJson(((ExceptionResponse) result).getErrorText());
+            } else if (result instanceof ExceptionResponse) {            	
+            	String jsonErrorText = gson.toJson((ExceptionResponse) result);
             	jsonErrorText = unescape(jsonErrorText);
-                sb.append("{\"errorcode\" : " + ((ExceptionResponse) result).getErrorCode() + ", \"errortext\" : " + jsonErrorText + "} ");
+            	sb.append(jsonErrorText);            	
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
@@ -112,7 +112,7 @@ public class ApiResponseSerializer {
                     sb.append("{ }");
                 }
             }
-            sb.append(" }");
+            sb.append(" }");            
             return sb.toString();
         }
         return null;
@@ -203,7 +203,8 @@ public class ApiResponseSerializer {
                         sb.append("</jobresult>");
                     }
                 } else if (fieldValue instanceof List<?>) {
-                    List<?> subResponseList = (List<Object>) fieldValue;
+                    List<?> subResponseList = (List<Object>) fieldValue;                    
+                    boolean usedUuidList = false;
                     for (Object value : subResponseList) {
                         if (value instanceof ResponseObject) {
                             ResponseObject subObj = (ResponseObject) value;
@@ -211,20 +212,34 @@ public class ApiResponseSerializer {
                                 subObj.setObjectName(serializedName.value());
                             }
                             serializeResponseObjXML(sb, subObj);
-                        }
+                        } else if (value instanceof IdentityProxy) {
+                        	IdentityProxy idProxy = (IdentityProxy)value;                        	
+                        	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
+                        	if(!id.isEmpty()) {
+                        		IdentityDao identityDao = new IdentityDaoImpl();
+                        		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                        	}                        	
+                        	if(id != null && !id.isEmpty()) {
+                        		// If this is the first IdentityProxy field encountered, put in a uuidList tag.
+                        		if (!usedUuidList) {
+                        			sb.append("<" + serializedName.value() + ">");
+                        			usedUuidList = true;
+                        		}
+                        		sb.append("<" + "uuid" + ">" + id + "</" + "uuid" + ">");                        		
+                        	}
+                        	// Append the new idFieldName property also.
+                        	String idFieldName = idProxy.getidFieldName();
+                        	if (idFieldName != null) {
+                        		sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");                        		
+                        	}
+                        }                        
                     }
-
+                    if (usedUuidList) {
+                    	// close the uuidList.
+                    	sb.append("</" + serializedName.value() + ">");
+                    }
                 } else if (fieldValue instanceof Date) {
-                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
-                } else if (fieldValue instanceof IdentityProxy) { 
-                	IdentityProxy idProxy = (IdentityProxy)fieldValue;
-                	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
-                	if(!id.isEmpty()) {
-                		IdentityDao identityDao = new IdentityDaoImpl();
-                		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
-                	}
-                	if(id != null && !id.isEmpty())
-                		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
+                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");                
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {

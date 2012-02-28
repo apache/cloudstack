@@ -18,8 +18,9 @@
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.RuntimeCloudException;
 
-public class CloudAuthenticationException extends RuntimeException {
+public class CloudAuthenticationException extends RuntimeCloudException {
     private static final long serialVersionUID = SerialVersionUID.CloudAuthenticationException;
 
     public CloudAuthenticationException(String message) {

@@ -18,7 +18,9 @@
 
 package com.cloud.cluster;
 
-public class ActiveFencingException extends Exception {
+import com.cloud.exception.CloudException;
+
+public class ActiveFencingException extends CloudException {
     private static final long serialVersionUID = -3975376101728211726L;
 
     public ActiveFencingException(String message) {

@@ -995,6 +995,8 @@
 
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
                   });
+									
+									args.$form.change();
 								},				
                 fields: {
                   name: { label: 'label.name', validation: { required: true } },

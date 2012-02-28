@@ -168,7 +168,7 @@
           data: "command=login" + array1.join("") + "&response=json",					
           dataType: "json",
           async: false,
-          success: function(json) {
+          success: function(json) {			
             var loginresponse = json.loginresponse;
 
             g_mySession = $.cookie('JSESSIONID');
@@ -256,7 +256,27 @@
         $.ajax({
           url: createURL('logout'),
           async: false,
-          success: function() {
+          success: function() {					  
+						g_mySession = null;
+						g_sessionKey = null;
+						g_username = null;	
+						g_account = null;
+						g_domainid = null;	
+						g_timezoneoffset = null;
+						g_timezone = null;
+						g_supportELB = null;
+								
+						$.cookie('JSESSIONID', null);
+						$.cookie('sessionKey', null);
+						$.cookie('username', null);
+						$.cookie('account', null);
+						$.cookie('domainid', null);
+						$.cookie('role', null);
+						$.cookie('networktype', null); 
+						$.cookie('timezoneoffset', null);
+						$.cookie('timezone', null);
+						$.cookie('supportELB', null);
+						
             document.location.reload();
           },
           error: function() {
@@ -280,7 +300,7 @@
           context: context,
           response: {
             success: function(args) {
-              if (args.doInstall && cloudStack.context.users[0].role == 'admin') {
+              if (args.doInstall && isAdmin()) {
                 var initInstallWizard = function(eulaHTML) {
                   cloudStack.uiCustom.installWizard({
                     $container: $container,
@@ -310,7 +330,7 @@
         });
       }
     };
-
+		
     // EULA check
     $.ajax({
       url: 'eula.' + $.cookie('lang') + '.html',

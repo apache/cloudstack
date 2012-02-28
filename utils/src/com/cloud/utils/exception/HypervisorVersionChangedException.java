@@ -19,7 +19,7 @@ package com.cloud.utils.exception;
 
 import com.cloud.utils.SerialVersionUID;
 
-public class HypervisorVersionChangedException extends RuntimeException {
+public class HypervisorVersionChangedException extends RuntimeCloudException {
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
     

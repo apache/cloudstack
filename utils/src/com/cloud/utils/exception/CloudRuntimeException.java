@@ -25,7 +25,7 @@ import com.cloud.utils.SerialVersionUID;
  * wrap exceptions that you know there's no point in dealing with.
  * This will be filled in more later as needed.
  */
-public class CloudRuntimeException extends RuntimeException {
+public class CloudRuntimeException extends RuntimeCloudException {
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
     

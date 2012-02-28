@@ -18,7 +18,9 @@
 
 package com.cloud.cluster;
 
-public class ClusterInvalidSessionException extends Exception {
+import com.cloud.exception.CloudException;
+
+public class ClusterInvalidSessionException extends CloudException {
 
 	private static final long serialVersionUID = -6636524194520997512L;
 

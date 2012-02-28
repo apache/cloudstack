@@ -1836,7 +1836,9 @@ public class ManagementServerImpl implements ManagementServer {
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
 
             if (!domains.isEmpty() && !sameDomain) {
-                throw new InvalidParameterValueException("Failed to update domain id=" + domainId + "; domain with name " + domainName + " already exists in the system");
+                InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
+            	ex.addProxyObject("domain", domainId, "domainId");            	
+            	throw ex;
             }
         }
 

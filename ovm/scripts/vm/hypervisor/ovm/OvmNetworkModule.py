@@ -8,9 +8,10 @@ logger = OvmLogger("OvmNetwork")
 class Filter:
     class Network:
         IFNAME_LO     = r'(lo)'
-        IFNAME_PIF    = r'(eth\d+$)'
-        IFNAME_VLAN   = r'(eth\d+.\d+$)'
         IFNAME_BRIDGE = r'(xenbr\d+|vlan\d+)'
+        IFNAME_PIF    = r'(eth\d+$|bond\d+$)'
+        IFNAME_VLAN   = r'(eth\d+.\d+$|bond\d+.\d+$)'
+
 
 class Parser(object):
     '''

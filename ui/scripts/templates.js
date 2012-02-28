@@ -1001,7 +1001,7 @@
                   },
                   complete: function(args) {
                     var url = decodeURIComponent(args.url);
-                    var htmlMsg = _l('messge.download.ISO');
+                    var htmlMsg = _l('message.download.ISO');
                     var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                     return htmlMsg2;
                   }

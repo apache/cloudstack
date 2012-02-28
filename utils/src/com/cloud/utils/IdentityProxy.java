@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.api;
+package com.cloud.utils;
 
 public class IdentityProxy {
     private String _tableName;
     private Long _value;
+    private String _idFieldName;
 
     public IdentityProxy() {
     }
@@ -28,6 +29,12 @@ public class IdentityProxy {
         _tableName = tableName;
     }
 
+    public IdentityProxy(String tableName, Long id, String fieldName) {
+    	_tableName = tableName;
+    	_value = id;
+    	_idFieldName = fieldName;
+    }
+    
     public String getTableName() {
         return _tableName;
     }
@@ -42,5 +49,13 @@ public class IdentityProxy {
 
     public void setValue(Long value) {
         _value = value;
+    }
+    
+    public void setidFieldName(String value) {
+    	_idFieldName = value;
+    }
+    
+    public String getidFieldName() {
+    	return _idFieldName;
     }
 }

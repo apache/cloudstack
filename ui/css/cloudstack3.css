@@ -1324,7 +1324,7 @@ div.list-view td.state.off span {
 }
 
 .detail-view .main-groups {
-  max-height: 469px;
+  max-height: 455px;
   overflow: auto;
   margin-right: 12px;
 }

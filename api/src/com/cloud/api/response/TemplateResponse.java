@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.google.gson.annotations.SerializedName;

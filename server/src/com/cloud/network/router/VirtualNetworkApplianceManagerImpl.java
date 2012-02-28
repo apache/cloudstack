@@ -465,7 +465,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (sendPassword) {
                 Commands cmds = new Commands(OnError.Continue);
                 SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getHostName());
-                cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                 cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                 DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
                 cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -744,7 +744,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
@@ -942,7 +942,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     continue;
                 } else if (privateIP != null) {
                     final CheckRouterCommand command = new CheckRouterCommand();
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     command.setWait(60);
                     final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
@@ -2038,7 +2038,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
 
                 RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                 removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
                 removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
@@ -2084,7 +2084,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new CloudRuntimeException("Unable to stop " + router, e);
         }
     }
-
+    
     @Override
     public List<VirtualRouter> applyDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
@@ -2147,7 +2147,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             	dhcpCommand.setDefaultRouter(findGatewayIp(profile.getVirtualMachine().getId()));
             	dhcpCommand.setDefaultDns(findDefaultDnsIp(profile.getVirtualMachine().getId()));
                 
-                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
+                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
@@ -2281,7 +2281,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (password != null && nic.isDefaultNic()) {
                     final String encodedPassword = PasswordGenerator.rot13(password);
                     SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
-                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                     cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
                     cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dc.getNetworkType().toString());
@@ -2387,7 +2387,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
             cmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(router.getAccountId()));
             cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2540,7 +2540,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             }
             IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2562,7 +2562,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rulesTO);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2583,7 +2583,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2622,7 +2622,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
 
 
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2644,14 +2644,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
 
         RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -2702,7 +2702,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     dhcpCommand.setDefaultRouter(findGatewayIp(vm.getId()));
                     dhcpCommand.setDefaultRouter(findDefaultDnsIp(vm.getId()));
                     
-                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -2773,7 +2773,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //connRouterPR < disconnRouterPR, they won't equal at anytime
             if (!connectedRouter.getIsPriorityBumpUp()) {
                 final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, connectedRouter.getPrivateIpAddress());
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(connectedRouter.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, connectedRouter.getInstanceName());
                 final Answer answer = _agentMgr.easySend(connectedRouter.getHostId(), command);
                 if (!answer.getResult()) {
@@ -2972,7 +2972,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -3073,7 +3073,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -3149,4 +3149,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return 0;
     }
 
+    private String getRouterControlIp(long routerId) {
+        String routerControlIpAddress = null;
+        List<NicVO> nics = _nicDao.listByVmId(routerId);
+        for (NicVO n : nics) {
+            NetworkVO nc = _networkDao.findById(n.getNetworkId());
+            if (nc.getTrafficType() == TrafficType.Control) {
+                routerControlIpAddress = n.getIp4Address();
+            }
+        }
+        
+        if(routerControlIpAddress == null) {
+            s_logger.warn("Unable to find router's control ip in its attached NICs!. routerId: " + routerId);
+            DomainRouterVO router = _routerDao.findById(routerId);
+            return router.getPrivateIpAddress();
+        }
+            
+        return routerControlIpAddress;
+    }
 }

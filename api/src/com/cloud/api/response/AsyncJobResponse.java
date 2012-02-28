@@ -19,8 +19,10 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
-import com.cloud.api.IdentityProxy;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;
@@ -28,6 +30,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
+
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
 
@@ -123,7 +126,11 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("physical_network_service_providers");
         	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.FirewallRule.toString())) {
         	    this.jobInstanceId.setTableName("firewall_rules");
-        	} else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Account.toString())) {
+                this.jobInstanceId.setTableName("account");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
+                this.jobInstanceId.setTableName("user");
+            } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
         	}

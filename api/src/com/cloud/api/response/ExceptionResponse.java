@@ -17,13 +17,21 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
 
 public class ExceptionResponse extends BaseResponse {
+	@SerializedName("uuidList") @Param(description="List of uuids associated with this error")
+	private ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+	
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
 
+    @SerializedName("cserrorcode") @Param(description="cloudstack error code associated with this error")
+    private Integer cserrorCode;
+    
     @SerializedName("errortext") @Param(description="the text associated with this error")
     private String errorText;
 
@@ -42,4 +50,13 @@ public class ExceptionResponse extends BaseResponse {
     public void setErrorText(String errorText) {
         this.errorText = errorText;
     }
+	
+	public void addProxyObject(String tableName, Long id, String idFieldName) {
+		idList.add(new IdentityProxy(tableName, id, idFieldName));
+		return;
+	}
+	
+	public ArrayList<IdentityProxy> getIdProxyList() {
+		return idList;
+	}
 }
