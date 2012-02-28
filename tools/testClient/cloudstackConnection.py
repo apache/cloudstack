@@ -1,4 +1,4 @@
-import httplib
+import urllib2
 import urllib
 import base64
 import copy
@@ -18,7 +18,6 @@ class cloudConnection(object):
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
-        self.connection = httplib.HTTPConnection("%s:%d"%(mgtSvr,port), timeout=180)
         self.port = port
         self.logging = logging
         if port == 8096:
@@ -26,6 +25,7 @@ class cloudConnection(object):
         else:
             self.auth = True
             
+        self.retries = 5
         self.asyncTimeout = asyncTimeout
     
     def close(self):
@@ -41,33 +41,47 @@ class cloudConnection(object):
         requests["command"] = command
         requests["apiKey"] = self.apiKey
         requests["response"] = "json"
-        requests = zip(requests.keys(), requests.values())
-        requests.sort(key=lambda x: str.lower(x[0]))
+        request = zip(requests.keys(), requests.values())
+        request.sort(key=lambda x: str.lower(x[0]))
         
-        requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
-        hashStr = "&".join(["=".join([str.lower(request[0]), str.lower(urllib.quote_plus(str(request[1]))).replace("+", "%20")]) for request in requests])
+        requestUrl = "&".join(["=".join([r[0], urllib.quote_plus(str(r[1]))]) for r in request])
+        hashStr = "&".join(["=".join([str.lower(r[0]), str.lower(urllib.quote_plus(str(r[1]))).replace("+", "%20")]) for r in request])
 
         sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
-
         requestUrl += "&signature=%s"%sig
-        self.connection.request("GET", "/client/api?%s"%requestUrl)
 
         try:
-            response = self.connection.getresponse().read()
-        except httplib.HTTPException:
-            self.close()
-            self = copy.copy(self)
+            self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
+            self.logging.debug("sending request: %s"%requestUrl)
+            response = self.connection.read()
+            self.logging.debug("got response: %s"%response)
+        except IOError, e:
+            if hasattr(e, 'reason'):
+                self.logging.debug("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
+            elif hasattr(e, 'code'):
+                self.logging.debug("server returned %d error code"%e.code)
+        except HTTPException, h:
+            self.logging.debug("encountered http Exception %s"%h.args)
+            if self.retries > 0:
+                self.retries = self.retries - 1
+                self.make_request_with_auth(command, requests)
+            else:
+                self.retries = 5
+                raise h
         else:
             return response
-        return
- 
+        
     def make_request_without_auth(self, command, requests={}):
         requests["command"] = command
         requests["response"] = "json" 
         requests = zip(requests.keys(), requests.values())
         requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
-        self.connection.request("GET", "/&%s"%requestUrl)
-        return self.connection.getresponse().read()
+
+        self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
+        self.logging.debug("sending request without auth: %s"%requestUrl)
+        response = self.connection.read()
+        self.logging.debug("got response: %s"%response)
+        return response
     
     def pollAsyncJob(self, jobId, response):
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
