@@ -69,8 +69,7 @@
       bypassLoginCheck: function(args) { //before login screen
         g_mySession = $.cookie("JSESSIONID");
         g_sessionKey = $.cookie("sessionKey");
-        g_role = $.cookie("role");
-        g_type = $.cookie("type");
+        g_role = $.cookie("role");        
         g_username = $.cookie("username");
         g_account = $.cookie("account");
         g_domainid = $.cookie("domainid");
@@ -139,8 +138,7 @@
             username: g_username,
             account: g_account,
             name: g_userfullname,
-            role: g_role,
-            type: g_type,
+            role: g_role,            
             domainid: g_domainid
           }
         } : false;
@@ -182,8 +180,7 @@
 
             g_mySession = $.cookie('JSESSIONID');
             g_sessionKey = encodeURIComponent(loginresponse.sessionkey);
-            g_role = loginresponse.type;
-            g_type = loginresponse.type;
+            g_role = loginresponse.type;            
             g_username = loginresponse.username;
             g_userid = loginresponse.userid;
             g_account = loginresponse.account;
@@ -196,8 +193,7 @@
             $.cookie('username', g_username, { expires: 1});
             $.cookie('account', g_account, { expires: 1});
             $.cookie('domainid', g_domainid, { expires: 1});
-            $.cookie('role', g_role, { expires: 1});
-            $.cookie('type', g_type, { expires: 1});
+            $.cookie('role', g_role, { expires: 1});            
             $.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});
             $.cookie('timezone', g_timezone, { expires: 1});
             $.cookie('userfullname', g_userfullname, { expires: 1 });
