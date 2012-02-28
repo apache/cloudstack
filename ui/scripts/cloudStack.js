@@ -67,46 +67,57 @@
 
       // Use this for checking the session, to bypass login screen
       bypassLoginCheck: function(args) { //before login screen
-        g_mySession = $.cookie("JSESSIONID");
-        g_sessionKey = $.cookie("sessionKey");
-        g_role = $.cookie("role");        
-        g_username = $.cookie("username");
-        g_account = $.cookie("account");
-        g_domainid = $.cookie("domainid");
-        g_timezone = $.cookie("timezone");        
-        g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
-        g_userfullname = $.cookie('userfullname');
-        g_userid = $.cookie('userid');
-
-        if($.cookie("timezoneoffset") != null)
-          g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
-        else
-          g_timezoneoffset = null;     
-
-        if (g_userPublicTemplateEnabled == null || g_userPublicTemplateEnabled.length == 0)
-          g_userPublicTemplateEnabled = "true";
-
-        if(g_supportELB == null)
-          g_supportELB = $.cookie("supportELB");      
-
+			  if (g_loginResponse == null) { //not single-sign-on
+					g_mySession = $.cookie('JSESSIONID');
+					g_sessionKey = $.cookie('sessionKey');
+					g_role = $.cookie('role');        
+					g_username = $.cookie('username');
+					g_userid = $.cookie('userid');
+					g_account = $.cookie('account');
+					g_domainid = $.cookie('domainid');
+					g_userfullname = $.cookie('userfullname');		
+					g_timezone = $.cookie('timezone');  
+					if($.cookie('timezoneoffset') != null)
+						g_timezoneoffset = isNaN($.cookie('timezoneoffset'))? null: parseFloat($.cookie('timezoneoffset'));
+					else
+						g_timezoneoffset = null;   
+        }
+				else { //single-sign-on		
+					g_mySession = $.cookie('JSESSIONID');
+					g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
+					g_role = g_loginResponse.type;            
+					g_username = g_loginResponse.username;
+					g_userid = g_loginResponse.userid;
+					g_account = g_loginResponse.account;
+					g_domainid = g_loginResponse.domainid;
+					g_userfullname = g_loginResponse.firstname + ' ' + g_loginResponse.lastname;
+					g_timezone = g_loginResponse.timezone;										
+					if(g_loginResponse.timezoneoffset != null)
+						g_timezoneoffset = isNaN(g_loginResponse.timezoneoffset)? null: parseFloat(g_loginResponse.timezoneoffset);
+					else
+						g_timezoneoffset = null;   					
+				}
+								
         var userValid = false;
-
         $.ajax({
           url: createURL("listCapabilities"),
           dataType: "json",
           async: false,
           success: function(json) {
             g_capabilities = json.listcapabilitiesresponse.capability;
+						$.cookie('capabilities', g_capabilities, { expires: 1});
+						
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
             $.cookie('supportELB', g_supportELB, { expires: 1});
-          
-            g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-            $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
-
+                     
             if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
               g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
               $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
             }  
+						
+						g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
+            $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
+						
             userValid = true;
           },
           error: function(xmlHTTP) {
@@ -200,12 +211,13 @@
             $.cookie('userid', g_userid, { expires: 1 });
 
             $.ajax({
-              url: createURL("listCapabilities"),
-              //url: "command=/client/api?listCapabilities&sessionkey="+g_sessionKey,
+              url: createURL("listCapabilities"),              
               dataType: "json",
               async: false,
               success: function(json) {
                 g_capabilities = json.listcapabilitiesresponse.capability;
+								$.cookie('capabilities', g_capabilities, { expires: 1});
+								
                 g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
                 $.cookie('supportELB', g_supportELB, { expires: 1});
 
