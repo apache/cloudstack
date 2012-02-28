@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
---;
--- Schema upgrade from 2.2.14 to 3.0;
---;
+
+
+#Schema upgrade from 2.2.14 to 3.0;
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `hypervisor_version` varchar(32) COMMENT 'hypervisor version' AFTER hypervisor_type;
 
