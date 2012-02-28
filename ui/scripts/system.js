@@ -5608,7 +5608,6 @@
                     id: { label: 'label.id' },
                     resourcestate: { label: 'label.resource.state' },
                     state: { label: 'label.state' },
-                    type: { label: 'label.type' },
                     zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
