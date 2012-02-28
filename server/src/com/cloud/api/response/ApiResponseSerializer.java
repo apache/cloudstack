@@ -221,7 +221,11 @@ public class ApiResponseSerializer {
                 	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
                 	if(!id.isEmpty()) {
                 		IdentityDao identityDao = new IdentityDaoImpl();
-                		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                		if(idProxy.getTableName() != null) {
+                		    id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                		} else {
+                		    s_logger.warn("IdentityProxy sanity check issue, invalid IdentityProxy table name found in class: " + obj.getClass().getName());
+                		}
                 	}
                 	if(id != null && !id.isEmpty())
                 		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
