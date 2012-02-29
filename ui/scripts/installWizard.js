@@ -264,8 +264,7 @@
         // Plug in hard-coded values specific to quick install
         data: {
           zone: {
-            networkType: 'Basic',
-            domain: 1,
+            networkType: 'Basic',            
             networkOfferingId: selectedNetworkOffering.id
           },
 					pluginFrom: {
