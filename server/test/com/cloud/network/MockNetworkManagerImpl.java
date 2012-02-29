@@ -292,10 +292,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    	return false;
-    }
-
-    @Override
     public boolean destroyNetwork(long networkId, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
@@ -411,13 +407,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-	@Override
-	public Network updateGuestNetwork(long networkId, String name,
-			String displayText, Account callerAccount, User callerUser,
-			String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
-		// TODO Auto-generated method stub
-		return null;
-	}
     public Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId) {
         return null;
     }
