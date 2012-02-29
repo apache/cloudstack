@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Version @VERSION@
+# Version 2.2.8.2012-02-28T23:50:03Z
 #
 # A plugin for executing script needed by vmops cloud 
 
@@ -786,7 +786,7 @@ def default_network_rules(session, args):
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
         util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
         #allow dhcp
         for v in vifs:
@@ -894,16 +894,16 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
         delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
         delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
-        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
-        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
+        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
+        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
+        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
         
         ipts = []
         for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
@@ -920,6 +920,9 @@ def network_rules_for_rebooted_vm(session, vmName):
                 util.pread2(filter(None,ipt))
             except:
                 util.SMlog("Failed to rewrite antispoofing rules for vm " + vm_name)
+        
+        util.pread2(['/bin/bash', '-c', 'iptables -D ' + vmchain_default + " -j " + vmchain])
+        util.pread2(['/bin/bash', '-c', 'iptables -A ' + vmchain_default + " -j " + vmchain])
     except:
         util.SMlog("No rules found for vm " + vm_name)
 
