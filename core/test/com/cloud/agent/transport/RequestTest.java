@@ -131,7 +131,7 @@ public class RequestTest extends TestCase {
         req.logD("Debug for Download");
 
 
-        DownloadAnswer answer = new DownloadAnswer("jobId", 50, "errorString", Status.ABANDONED, "filesystempath", "installpath", 10000000, 20000000);
+        DownloadAnswer answer = new DownloadAnswer("jobId", 50, "errorString", Status.ABANDONED, "filesystempath", "installpath", 10000000, 20000000, "chksum");
         Response resp = new Response(req, answer);
         resp.logD("Debug for Download");
 
