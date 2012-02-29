@@ -51,13 +51,10 @@ public class Test2214To30DBUpgrade extends TestCase {
     public void tearDown() throws Exception {
     }
 
-    public void test2213to30Upgrade() throws SQLException {
+    public void test2214to30Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.2.14");
         DbTestUtils.executeScript(
-                "PreviousDatabaseSchema/2.2.14/cloud_usage_2214.sql", false,
-                true);
-        DbTestUtils.executeScript(
-                "PreviousDatabaseSchema/2.2.14/advance_zone_2.2.14.sql", false,
+                "PreviousDatabaseSchema/2.2.14/alena_2214.sql", false,
                 true);
 
         DatabaseUpgradeChecker checker = ComponentLocator
@@ -77,14 +74,13 @@ public class Test2214To30DBUpgrade extends TestCase {
             } catch (SQLException e) {
             }
         }
-
     }
 
     protected void checkPhysicalNetworks(Connection conn) throws SQLException {
         PreparedStatement pstmt;
 
         pstmt = conn
-                .prepareStatement("SELECT version FROM version ORDER BY id DESC LIMIT 1");
+                .prepareStatement("SELECT version FROM `cloud`.`version` ORDER BY id DESC LIMIT 1");
         ResultSet rs = pstmt.executeQuery();
         assert rs.next() : "No version selected";
         assert rs.getString(1).equals("3.0.0") : "VERSION stored is not 3.0.0: "
@@ -92,7 +88,7 @@ public class Test2214To30DBUpgrade extends TestCase {
         rs.close();
         pstmt.close();
 
-        pstmt = conn.prepareStatement("SELECT COUNT(*) FROM physical_network");
+        pstmt = conn.prepareStatement("SELECT COUNT(*) FROM `cloud`.`physical_network`");
         rs = pstmt.executeQuery();
         assert rs.next() : "No physical networks setup.";
         rs.close();
@@ -133,7 +129,7 @@ public class Test2214To30DBUpgrade extends TestCase {
         PreparedStatement pstmt;
         for (String field : fields) {
             pstmt = conn
-                    .prepareStatement("SHOW COLUMNS FROM network_offerings LIKE ?");
+                    .prepareStatement("SHOW COLUMNS FROM `cloud`.`network_offerings` LIKE ?");
             pstmt.setString(1, field);
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
@@ -183,11 +179,10 @@ public class Test2214To30DBUpgrade extends TestCase {
         fields.add("restart_required");
         fields.add("specify_ip_ranges");
         fields.add("acl_type");
-        fields.add("specified_cidr");
 
         PreparedStatement pstmt;
         for (String field : fields) {
-            pstmt = conn.prepareStatement("SHOW COLUMNS FROM networks LIKE ?");
+            pstmt = conn.prepareStatement("SHOW COLUMNS FROM `cloud`.`networks` LIKE ?");
             pstmt.setString(1, field);
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {

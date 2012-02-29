@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
---;
--- Schema upgrade from 2.2.14 to 3.0;
---;
+
+
+#Schema upgrade from 2.2.14 to 3.0;
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `hypervisor_version` varchar(32) COMMENT 'hypervisor version' AFTER hypervisor_type;
 
@@ -266,15 +266,6 @@ ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uu
 ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 
-CREATE TABLE `cloud`.`vm_template_details` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
-  `name` varchar(255) NOT NULL,
-  `value` varchar(1024) NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `created` datetime;
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `update_time` datetime;
 
@@ -334,7 +325,7 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL de
 --NAAS;
 --;
 
-CREATE TABLE  `ntwk_service_map` (
+CREATE TABLE  `cloud`.`ntwk_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
@@ -494,6 +485,8 @@ CREATE TABLE `cloud`.`virtual_router_providers` (
   CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router provider ID' AFTER id;
+ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`);
 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('physical_networks_seq', 200);
 ALTER TABLE `cloud`.`networks` ADD COLUMN `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on' AFTER network_offering_id;
@@ -568,14 +561,14 @@ insert into `cloud`.`network_offerings` (`name`, `unique_name`, `display_text`, 
 UPDATE `cloud`.`network_offerings` set specify_ip_ranges=1 where name in ('System-Public-Network', 'System-Storage-Network', 'DefaultSharedNetworkOfferingWithSGService', 'DefaultSharedNetworkOffering', 'DefaultIsolatedNetworkOffering');
 
 
-CREATE TABLE  `ntwk_offering_service_map` (
+CREATE TABLE  `cloud`.`ntwk_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
   `service` varchar(255) NOT NULL COMMENT 'service',
   `provider` varchar(255) COMMENT 'service provider',
   `created` datetime COMMENT 'date created',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `cloud`.`network_offerings`(`id`) ON DELETE CASCADE,
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -623,7 +616,7 @@ UPDATE `cloud`.`networks` SET acl_type='Domain' where guest_type is not null and
 UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Virtual';
 UPDATE `cloud`.`networks` SET acl_type='Account' where guest_type='Direct' and shared=0;
 ALTER TABLE `cloud`.`domain_network_ref` ADD COLUMN `subdomain_access` int(1) unsigned COMMENT '1 if network can be accessible from the subdomain';
-UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM network_offerings no where no.id=network_offering_id);
+UPDATE `cloud`.`networks` SET specify_ip_ranges=(SELECT specify_ip_ranges FROM `cloud`.`network_offerings` no where no.id=network_offering_id);
 
 
 DELETE FROM `cloud`.`configuration` WHERE name='network.redundantrouter';
@@ -648,6 +641,25 @@ UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.guest.n
 
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `ovm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a Ovm host';
 ALTER TABLE `cloud`.`dc_storage_network_ip_range` ADD COLUMN `gateway` varchar(15) NOT NULL COMMENT 'gateway ip address';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
+UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `is_system` int(1) unsigned NOT NULL default '0';
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__update_count`(`update_count`);
+ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `type` varchar(10) NOT NULL DEFAULT 'USER';
+
+CREATE TABLE `cloud`.`account_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_details__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud_usage`.`usage_security_group`;
 
 CREATE TABLE  `cloud_usage`.`usage_security_group` (
   `zone_id` bigint unsigned NOT NULL,

@@ -292,12 +292,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public boolean destroyNetwork(long networkId, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
@@ -413,13 +407,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    @Override
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId) {
         return null;
     }
@@ -843,6 +830,17 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType) {
         // TODO Auto-generated method stub
         return null;
+    }
+    @Override
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }
