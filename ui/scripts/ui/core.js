@@ -274,24 +274,26 @@
     $.extend($.validator.messages, { required: _l('label.required') });
 
     // Check for pending project invitations
-    cloudStack.projects.invitationCheck({
-      context: cloudStack.context,
-      response: {
-        success: function(args) {
-          if (!args.data.length) return;
-          
-          var projectList = $.map(args.data, function(invitation) {
-            return '<li>' + invitation.project + '</li>';
-          }).join('');
+    if (args.projects) {
+      args.projects.invitationCheck({
+        context: cloudStack.context,
+        response: {
+          success: function(args) {
+            if (!args.data.length) return;
+            
+            var projectList = $.map(args.data, function(invitation) {
+              return '<li>' + invitation.project + '</li>';
+            }).join('');
 
-          cloudStack.dialog.notice({
-            message: _l('message.pending.projects.1') +
-              '<ul>' + projectList + '</ul>' +
-              '<p>' + _l('message.pending.projects.2') + '</p>'
-          });
+            cloudStack.dialog.notice({
+              message: _l('message.pending.projects.1') +
+                '<ul>' + projectList + '</ul>' +
+                '<p>' + _l('message.pending.projects.2') + '</p>'
+            });
+          }
         }
-      }
-    });
+      });
+    }
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header .controls').addClass('nologo');
