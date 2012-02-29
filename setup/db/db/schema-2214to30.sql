@@ -639,3 +639,8 @@ UPDATE `cloud`.`configuration` SET category = 'Hidden' WHERE name = 'kvm.guest.n
 
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `ovm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a Ovm host';
 ALTER TABLE `cloud`.`dc_storage_network_ip_range` ADD COLUMN `gateway` varchar(15) NOT NULL COMMENT 'gateway ip address';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
+UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `is_system` int(1) unsigned NOT NULL default '0';
