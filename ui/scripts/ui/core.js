@@ -52,8 +52,7 @@
    * @param sectionID Section's ID to show
    * @param args CloudStack3 configuration
    */
-  var showSection = function(sectionID, args) {
-    var $browser = $('#browser div.container');
+  var showSection = function(sectionID, args, $browser) {
     var $navItem = $('#navigation').find('li').filter(function() {
       return $(this).hasClass(sectionID);
     });
@@ -244,7 +243,7 @@
 
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
-          .appendTo($('#header'));
+          .appendTo($container.find('#header'));
     $(['label.logout', 'label.help']).each(function() {
       var $link = $('<a>')
         .attr({ href: '#' })
@@ -263,8 +262,8 @@
     });
 
     // Initialize browser
-    $('#browser div.container').cloudBrowser();
-    $('#navigation li')
+    $container.find('#browser div.container').cloudBrowser();
+    $container.find('#navigation li')
       .filter(function() {
         return $(this).hasClass(args.home);
       })
@@ -317,6 +316,7 @@
       var $target = $(event.target);
       var $container = $target.closest('[cloudStack-container]');
       var args = $container.data('cloudStack-args');
+      var $browser = $container.find('#browser .container');
 
       if (!$container.size()) return true;
 
@@ -325,14 +325,14 @@
         var $navItem = $target.closest('li.navigation-item');
 
         if ($navItem.is('.disabled')) return false;
-        showSection($navItem.data('cloudStack-section-id'), args);
+        showSection($navItem.data('cloudStack-section-id'), args, $browser);
 
         return false;
       }
 
       // Browser expand
       if ($target.hasClass('control expand') && $target.closest('div.panel div.toolbar').size()) {
-        $('#browser div.container').cloudBrowser('toggleMaximizePanel', {
+        $browser.cloudBrowser('toggleMaximizePanel', {
           panel: $target.closest('div.panel')
         });
 
@@ -341,7 +341,7 @@
 
       // Home breadcrumb
       if ($target.is('#breadcrumbs div.home')) {
-        showSection(args.home, args);
+        showSection(args.home, args, $browser);
         return false;
       }
 
