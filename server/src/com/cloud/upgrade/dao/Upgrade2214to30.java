@@ -653,35 +653,6 @@ public class Upgrade2214to30 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-<<<<<<< HEAD
-        	int numRows = 0;
-        	pstmt = conn.prepareStatement("select count(id) from `cloud`.`vm_instance` where removed is null");
-            rs = pstmt.executeQuery();
-            if(rs.next()){
-            	numRows = rs.getInt(1);
-            }
-            rs.close();
-            pstmt.close();
-            int offset = 0;
-            while(offset < numRows){
-            	pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` where removed is null limit "+offset+", 500");
-            	rs = pstmt.executeQuery();
-            	while (rs.next()) {
-            		long id = rs.getLong(1);
-            		String value = rs.getString(2);
-            		if (value == null) {
-            			continue;
-            		}
-            		String encryptedValue = DBEncryptionUtil.encrypt(value);
-            		pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vnc_password=? where id=?");
-            		pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-            		pstmt.setLong(2, id);
-            		pstmt.executeUpdate();
-            		pstmt.close();
-            	}
-            	rs.close();
-            	offset+=500;
-=======
             pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance`");
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -695,7 +666,6 @@ public class Upgrade2214to30 implements DbUpgrade {
                 pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
                 pstmt.setLong(2, id);
                 pstmt.executeUpdate();
->>>>>>> 2eaefc4... Fixed unittest and some issues with 2.2.14-3.0 upgrade
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password ", e);
