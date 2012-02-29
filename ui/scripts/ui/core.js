@@ -300,7 +300,11 @@
         response: {
           success: function(args) {
             if (!args.data.length) return;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 6d9928b... Only show invitations if projects UI is initialized
             var projectList = $.map(args.data, function(invitation) {
               return '<li>' + invitation.project + '</li>';
             }).join('');
@@ -313,6 +317,7 @@
           }
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
       });
     }
 
@@ -322,6 +327,10 @@
 =======
       }
     });
+=======
+      });
+    }
+>>>>>>> 6d9928b... Only show invitations if projects UI is initialized
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header .controls').addClass('nologo');
