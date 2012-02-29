@@ -646,3 +646,5 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
 UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
 
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `is_system` int(1) unsigned NOT NULL default '0';
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__update_count`(`update_count`);
