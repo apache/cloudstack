@@ -322,9 +322,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public void updateConfiguration(long userId, String name, String category, String value) {
-        if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
-            value = null;
-        }
 
         String validationMsg = validateConfigurationValue(name, value);
 
@@ -448,29 +445,39 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (value == null) {
             return _configDao.findByName(name);
         }
+        
+        if (value.trim().isEmpty() || value.equals("null")) {
+            value = null;
+        }
 
         updateConfiguration(userId, name, config.getCategory(), value);
-        if (_configDao.getValue(name).equalsIgnoreCase(value)) {
+        String updatedValue = _configDao.getValue(name);
+        if ((value == null && updatedValue == null) || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
+
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
     }
 
     private String validateConfigurationValue(String name, String value) {
-        if (value == null) {
-            return null;
-        }
-
+    
         Config c = Config.getConfig(name);
-        value = value.trim();
-
         if (c == null) {
             s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
 
         Class<?> type = c.getType();
+        
+        if (value == null) {
+            if (type.equals(Boolean.class)) {
+                return "Please enter either 'true' or 'false'.";
+            }
+            return null;
+        }
+        value = value.trim();
+        
         if (type.equals(Boolean.class)) {
             if (!(value.equals("true") || value.equals("false"))) {
                 s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
