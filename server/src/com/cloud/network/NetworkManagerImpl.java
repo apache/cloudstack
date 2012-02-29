@@ -4771,6 +4771,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // delete vlans for this zone
         List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
         for (VlanVO vlan : vlans) {
@@ -4795,6 +4797,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
 
         boolean success = _physicalNetworkDao.remove(physicalNetworkId);
+        
+        txn.commit();
 
         return success;
     }
