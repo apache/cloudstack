@@ -485,6 +485,8 @@ CREATE TABLE `cloud`.`virtual_router_providers` (
   CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router provider ID' AFTER id;
+ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`);
 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('physical_networks_seq', 200);
 ALTER TABLE `cloud`.`networks` ADD COLUMN `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on' AFTER network_offering_id;

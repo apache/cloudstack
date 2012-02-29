@@ -84,6 +84,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         createNetworkServices(conn);
         //migrate user concentrated deployment planner choice to new global setting
         migrateUserConcentratedPlannerChoice(conn);
+        // update domain router table for element it;
+        updateRouters(conn);
     }
 
     @Override
@@ -669,6 +671,26 @@ public class Upgrade2214to30 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
+            }
+        }
+    }
+    
+    protected void updateRouters(Connection conn) {
+        PreparedStatement pstmt = null;
+        try {
+            s_logger.debug("Updating domain_router table");
+            pstmt = conn
+                    .prepareStatement("UPDATE domain_router, virtual_router_providers vrp LEFT JOIN (physical_network_service_providers pnsp INNER JOIN networks ntwk INNER JOIN domain_router vr) ON (vrp.nsp_id = pnsp.id and pnsp.physical_network_id = ntwk.physical_network_id and ntwk.id=vr.network_id) SET vr.element_id=vrp.id;");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update router table. ", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to close statement for router table. ", e);
             }
         }
     }
