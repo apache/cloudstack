@@ -1017,9 +1017,11 @@
           if (internaldns2 != null && internaldns2.length > 0)
             array1.push("&internaldns2=" + todb(internaldns2));
 
-          if(args.data.zone.ispublic == null) //public checkbox is unchecked
-            array1.push("&domainid=" + args.data.zone.domain);
-
+					if(args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
+						if(args.data.zone.ispublic == null) //public checkbox in zone wizard is unchecked 
+							array1.push("&domainid=" + args.data.zone.domain);
+          }
+					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
             array1.push("&domain=" + todb(args.data.zone.networkdomain));
 
