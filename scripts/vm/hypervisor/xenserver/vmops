@@ -720,7 +720,7 @@ def default_network_rules_systemvm(session, args):
     for vif in vifs:
         try:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
             util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', 'RETURN'])
         except:
             util.SMlog("Failed to program default rules")
@@ -786,7 +786,7 @@ def default_network_rules(session, args):
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
         util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
         #allow dhcp
         for v in vifs:
