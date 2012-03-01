@@ -1141,12 +1141,20 @@
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: snapshotActionfilter,
-                      data: args.context.snapshots[0]
-                    }
-                  );
+								  $.ajax({
+										url: createURL("listSnapshots&id=" + args.context.snapshots[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {								  
+											var jsonObj = json.listsnapshotsresponse.snapshot[0];   
+											args.response.success(
+												{
+													actionFilter: snapshotActionfilter,
+													data: jsonObj
+												}
+											);		
+										}
+									});		
                 }
               }
             }
