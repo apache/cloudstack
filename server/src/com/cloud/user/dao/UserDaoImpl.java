@@ -123,4 +123,11 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         sc.setParameters("registrationToken", registrationToken);
         return findOneBy(sc);
 	}
+	
+	@Override
+	public List<UserVO> findUsersByName(String username) {
+	    SearchCriteria<UserVO> sc = UsernameSearch.create();
+        sc.setParameters("username", username);
+        return listBy(sc);
+	}
 }

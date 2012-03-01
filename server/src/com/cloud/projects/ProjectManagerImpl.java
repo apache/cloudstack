@@ -386,9 +386,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
 
-    	if (domainId == null && accountId == null) {
+    	if (domainId == null && accountId == null && (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || !listAll)) {
     		accountId = caller.getId();
-    	} else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || (!isRecursive && !listAll)) {
+    	} else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || (isRecursive && !listAll)) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
         }
@@ -412,7 +412,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             sc.addAnd("id", Op.EQ, id);
         }
         
-        if (domainId != null) {
+        if (domainId != null && !isRecursive) {
             sc.addAnd("domainId", Op.EQ, domainId);
         }
         

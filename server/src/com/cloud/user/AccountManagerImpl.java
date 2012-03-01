@@ -797,7 +797,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         if (userName != null) {
             // don't allow to have same user names in the same domain
-            List<UserVO> duplicatedUsers = _userDao.findUsersLike(userName);
+            List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
             for (UserVO duplicatedUser : duplicatedUsers) {
                 if (duplicatedUser.getId() != user.getId()) {
                     Account duplicatedUserAccount = _accountDao.findById(duplicatedUser.getAccountId());
