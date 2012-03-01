@@ -39,6 +39,7 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCountVO;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -205,6 +206,12 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type) {
 
         long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
+        
+        //no limits for Admin accounts
+        if (_accountMgr.isAdmin(account.getType())) {
+            return max;
+        }
+        
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(account.getId(), ResourceOwnerType.Account, type);
 
         // Check if limit is configured for account
@@ -496,8 +503,13 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
 
         if (accountId != null) {
             Account account = _entityMgr.findById(Account.class, accountId);
-            if (account.getType() == Account.ACCOUNT_ID_SYSTEM) {
+            if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
                 throw new InvalidParameterValueException("Can't update system account");
+            }
+            
+            //only Unlimited value is accepted if account is Admin
+            if (_accountMgr.isAdmin(account.getType()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
+                throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Admin accounts");
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
