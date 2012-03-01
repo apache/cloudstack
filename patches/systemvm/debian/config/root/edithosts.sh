@@ -93,17 +93,23 @@ echo "$ip $host" >> $HOSTS
 
 if [ "$dflt" != "" ]
 then
-  logger -t cloud "$0: setting default router to $dflt"
   #make sure dnsmasq looks into options file
   sed -i /dhcp-optsfile/d /etc/dnsmasq.conf
   echo "dhcp-optsfile=$DHCP_OPTS" >> /etc/dnsmasq.conf
 
   tag=$(echo $ip | tr '.' '_')
   sed -i /$tag/d $DHCP_OPTS
-  echo "$tag,3,$dflt" >> $DHCP_OPTS
+  if [ "$dflt" != "0.0.0.0" ]
+  then
+      logger -t cloud "$0: setting default router for $ip to $dflt"
+      echo "$tag,3,$dflt" >> $DHCP_OPTS
+  else
+      logger -t cloud "$0: unset default router for $ip"
+      echo "$tag,3," >> $DHCP_OPTS
+  fi
   if [ "$dns" != "" ] 
   then
-    logger -t cloud "$0: setting dns server to $dns"
+    logger -t cloud "$0: setting dns server for $ip to $dns"
     echo "$tag,6,$dns" >> $DHCP_OPTS
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
