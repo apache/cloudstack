@@ -1884,6 +1884,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
         List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
         
+        Long podId = null;
+        if (isZoneBasic) {
+            podId = dest.getPod().getId();
+        }
+        boolean podLevelException = false;
+        //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
+        if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct) {
+            podLevelException = true;
+        }
         for (DomainRouterVO router : routers) {
             
             boolean sendPasswordAndVmData = true;
@@ -1897,7 +1906,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (router.isStopPending()) {
                 if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
                     throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
-                            VirtualRouter.class, router.getId());
+                            DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
                 s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is to be stopped");
                 continue;
@@ -1906,9 +1915,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //for basic zone: 
             //1) send vm data/password information only to the dhcp in the same pod
             //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
-            Long podId = null;
             if (isZoneBasic) {
-                podId = dest.getPod().getId();
                 if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
                     sendPasswordAndVmData = false;
                     if (_dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
@@ -1965,11 +1972,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             if (cmds.size() > 0) {
-                boolean podLevelException = false;
-                //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
-                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct) {
-                    podLevelException = true;
-                }
                 try {
                     _agentMgr.send(router.getHostId(), cmds);
                 } catch (AgentUnavailableException e){
@@ -2016,15 +2018,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         String msg = "Unable to add new VM into network on disconnected router ";
         if (!connectedRouters.isEmpty()) {
-            // These disconnected ones are out of sync now, stop them for synchronization
-            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+            if (!isZoneBasic) {
+                // These disconnected ones are out of sync now, stop them for synchronization
+                handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+            }
         } else if (!disconnectedRouters.isEmpty()) {
             for (VirtualRouter router : disconnectedRouters) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
                 }
             }
-            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+            if (podLevelException) {
+                throw new ResourceUnavailableException(msg, Pod.class, podId);
+            } 
+            throw new ResourceUnavailableException(msg, DataCenter.class, dc.getId());
         }
         
         return rets;
@@ -2469,7 +2476,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (router.isStopPending()) {
                     if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
                         throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
-                                VirtualRouter.class, router.getId());
+                            DataCenter.class, router.getDataCenterIdToDeployIn());
                     }
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
                     continue;
@@ -2488,7 +2495,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 //If ip fails to apply on one domR, no need to proceed with the rest
                 if (!result) {
-                    throw new ResourceUnavailableException("Unable to associate ip addresses on router ", VirtualRouter.class, router.getId());
+                    throw new ResourceUnavailableException("Unable to associate ip addresses on router ", DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
 
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
@@ -2509,7 +2516,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
                 }
             }
-            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterIdToDeployIn());
         }
         return result;
     }
@@ -2548,7 +2555,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (router.isStopPending()) {
                     if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
                         throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
-                                VirtualRouter.class, router.getId());
+                                DataCenter.class, router.getDataCenterIdToDeployIn());
                     }
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
                     continue;
@@ -2585,14 +2592,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
                 if (!result) {
-                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
                 s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() +
                         ", so not sending apply firewall rules commands to the backend");
             } else {
                 s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
-                throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", VirtualRouter.class, router.getId());
+                throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
             }
         }
         
@@ -2605,7 +2612,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
                 }
             }
-            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterIdToDeployIn());
         }
         
         return true;
@@ -2694,7 +2701,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (router.isStopPending()) {
                     if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
                         throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
-                                VirtualRouter.class, router.getId());
+                                DataCenter.class, router.getDataCenterIdToDeployIn());
                     }
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
                     continue;
@@ -2709,14 +2716,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
                 if (!result) {
-                    throw new ResourceUnavailableException("Unable to apply static nat on router ", VirtualRouter.class, router.getId());
+                    throw new ResourceUnavailableException("Unable to apply static nat on router ", DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
 
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
                 s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply static nat commands to the backend");
             } else {
                 s_logger.warn("Unable to apply static nat, virtual router is not in the right state " + router.getState());
-                throw new ResourceUnavailableException("Unable to apply static nat, virtual router is not in the right state", VirtualRouter.class, router.getId());
+                throw new ResourceUnavailableException("Unable to apply static nat, virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
             }
         }
         
@@ -2729,7 +2736,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
                 }
             }
-            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+            throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterIdToDeployIn());
         }
         
         return true;
