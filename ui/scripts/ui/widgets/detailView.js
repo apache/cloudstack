@@ -781,7 +781,7 @@
       jsonObj: jsonObj,
       context: args.context,
       response: {
-        success: function(args) {
+        success: function(args) {				
           if (options.newData) {
             $.extend(args.data, options.newData);
           }
@@ -791,6 +791,9 @@
           }
           var tabData = $tabContent.data('detail-view-tab-data');
           var data = args.data;
+					
+					$detailView.data('list-view-row').data('json-obj', data); //refresh embedded data in corresponding list view row
+					
           var isFirstPanel = $tabContent.index($detailView.find('div.detail-group.ui-tabs-panel')) == 0;
           var actionFilter = args.actionFilter;
 
