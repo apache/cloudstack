@@ -167,6 +167,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.Type;
@@ -2528,7 +2529,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private void createDhcpEntryCommand(VirtualRouter router, UserVm vm, NicVO nic, Commands cmds) {
         DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-        dhcpCommand.setDefaultRouter(findGatewayIp(vm.getId()));
+        String gatewayIp = findGatewayIp(vm.getId());
+        if (!gatewayIp.equals(nic.getGateway())) {
+            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
+            // Don't set dhcp:router option for non-default nic on CentOS/RHEL, because they would set routing on wrong interface
+            // This is tricky, we may need to update this when we have more information on various OS's behavior
+            if (guestOS.getDisplayName().startsWith("CentOS") || guestOS.getDisplayName().startsWith("Red Hat Enterprise")) {
+                gatewayIp = "0.0.0.0";
+            }
+        }
+        dhcpCommand.setDefaultRouter(gatewayIp);
         dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
