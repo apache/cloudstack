@@ -49,3 +49,5 @@ UPDATE `cloud`.`networks` SET guest_type=(SELECT guest_type FROM network_offerin
 UPDATE `cloud`.`networks` SET guru_name='ExternalGuestNetworkGuru' where guest_type='Isolated';
 
 DELETE FROM `cloud`.`configuration` WHERE name='use.user.concentrated.pod.allocation';
+
+UPDATE `cloud`.`domain_router` SET role='VIRTUAL_ROUTER' WHERE role = 'DHCP_FIREWALL_LB_PASSWD_USERDATA' or role = 'DHCP_USERDATA';
