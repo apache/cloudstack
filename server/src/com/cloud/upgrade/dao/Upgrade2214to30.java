@@ -793,6 +793,16 @@ public class Upgrade2214to30 implements DbUpgrade {
         ResultSet rs = null;
         ResultSet rs1 = null;
         try {
+            //check if switch_to_isolated is present; if not - skip this part of the code
+            try {
+                pstmt = conn
+                        .prepareStatement("select switch_to_isolated from `cloud`.`networks`");
+                rs = pstmt.executeQuery();
+            } catch (Exception ex) {
+                s_logger.debug("switch_to_isolated field is not present in networks table");
+                return ;
+            }
+            
             // get all networks that need to be updated to the redundant network offerings
             pstmt = conn
                     .prepareStatement("select id, network_offering_id from `cloud`.`networks` where switch_to_isolated=1");
