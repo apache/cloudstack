@@ -870,15 +870,22 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: volumeActionfilter,
-                      data: args.context.volumes[0]
-                    }
-                  );
+                dataProvider: function(args) {		
+								  $.ajax({
+										url: createURL("listVolumes&id=" + args.context.volumes[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {								  
+											var jsonObj = json.listvolumesresponse.volume[0];   
+											args.response.success(
+												{
+													actionFilter: volumeActionfilter,
+													data: jsonObj
+												}
+											);		
+										}
+									});								
                 }
-
               }
             }
           }
