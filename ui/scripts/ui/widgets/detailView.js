@@ -254,6 +254,10 @@
               panel: $panel.prev()
             });
           }
+										
+					if($detailView.data("list-view-row") != null) {					 
+					  $detailView.data("list-view-row").remove();
+					}					
         }
       });
     },
