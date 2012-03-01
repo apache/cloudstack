@@ -34,21 +34,34 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementService;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
 
     ServerResource _resource;
-    static ScheduledExecutorService s_executor = new ScheduledThreadPoolExecutor(500, new NamedThreadFactory("DirectAgent"));
+    static ScheduledExecutorService s_executor;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
     long _seq = 0;
 
+    static {
+    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+    	ConfigurationDao _configDao = locator.getDao(ConfigurationDao.class);
+    	Integer size = Integer.valueOf(_configDao.getValue(Config.DirectAgentPoolSize.key()));
+    	s_executor = new ScheduledThreadPoolExecutor(size, new NamedThreadFactory("DirectAgent"));
+    	s_logger.debug("Create DirectAgentAttache tool with size: " + size);
+    }
+    
     public DirectAgentAttache(AgentManager agentMgr, long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
         super(agentMgr, id, maintenance);
         _resource = resource;
