@@ -275,6 +275,7 @@
               async: false,
               success: function(data) {
                 args.response.success({
+								  actionFilter: networkActionfilter,
                   data: data.listnetworksresponse.network
                 });
               },
@@ -684,23 +685,21 @@
                     account: { label: 'label.account' }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: function(args) {
-                      if (args.context.networks[0].state == 'Destroyed')
-                        return [];
-
-                      if (args.context.networks[0].type == 'Shared' ||
-                          !$.grep(args.context.networks[0].service, function(service) {
-                            return service.name == 'SourceNat';
-                          }).length) {
-                        return ['edit', 'restart'];
-                      }
-
-                      return args.context.actions;
-                    },
-                    data: args.context.networks[0]
-                  });
+                dataProvider: function(args) {								 					
+								  $.ajax({
+										url: createURL("listNetworks&id=" + args.context.networks[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {								  
+											var jsonObj = json.listnetworksresponse.network[0];   
+											args.response.success(
+												{
+													actionFilter: networkActionfilter,
+													data: jsonObj
+												}
+											);		
+										}
+									});			
                 }
               },
 
@@ -2908,4 +2907,23 @@
       }
     }
   };
+	
+	 var networkActionfilter = function(args) {
+    var jsonObj = args.context.item;
+		var allowedActions = [];
+
+		if (jsonObj.state == 'Destroyed')
+			return [];
+
+		if (jsonObj.type == 'Shared' ||
+				!$.grep(jsonObj.service, function(service) {
+					return service.name == 'SourceNat';
+				}).length) {
+			 allowedActions.push('edit');
+			 allowedActions.push('restart');                        
+		}
+
+		return allowedActions;
+	}
+	
 })(cloudStack, jQuery);
