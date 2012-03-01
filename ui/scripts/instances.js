@@ -1546,13 +1546,21 @@
               }
             ],
 
-            dataProvider: function(args) {
-              args.response.success(
-                {
-                  actionFilter: vmActionfilter,
-                  data: args.context.instances[0]
-                }
-              );
+            dataProvider: function(args) {						 
+							$.ajax({
+								url: createURL("listVirtualMachines&id=" + args.context.instances[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {								  
+									var jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];   
+									args.response.success(
+										{
+											actionFilter: vmActionfilter,
+											data: jsonObj
+										}
+									);		
+								}
+							});
             }
           },
 
