@@ -61,4 +61,24 @@
     equal($breadcrumbs.find('ul li:first span').html(), 'testPanel123', 'First panel still has correct title');
     equal($breadcrumbs.find('ul li').size(), 1, 'Browser has 1 breadcrumb');
   });
+
+  test('Remove all panels', function() {
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel123' }), 'Add first panel');
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel456' }), 'Add second panel');
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel789' }), 'Add third panel');
+    equal($browserContainer.find('.panel').size(), 3, 'Correct # of panels');
+    ok($browserContainer.cloudBrowser('removeAllPanels'), 'Remove all panels');
+    equal($browserContainer.find('.panel').size(), 0, 'All panels removed');
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel123' }), 'Add 1 panel');
+    equal($browserContainer.find('.panel').size(), 1, 'Correct # of panels');
+  });
+
+  test('Maximize panel', function() {
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel123' }), 'Add first panel');
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel456' }), 'Add second panel');
+    equal($browserContainer.find('.panel').size(), 2, 'Correct # of panels');
+    ok($browserContainer.cloudBrowser('toggleMaximizePanel', { panel: $browserContainer.find('.panel:first')}), 'Maximize first panel');
+    ok($browserContainer.find('.panel:first').hasClass('maximized'), 'First panel has maximized style');
+    ok(!$browserContainer.find('.panel:last').hasClass('maximized'), 'Last panel has correct style');
+  });
 }(jQuery)); 
