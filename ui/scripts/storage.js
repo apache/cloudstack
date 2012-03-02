@@ -786,7 +786,7 @@
                 }
               },
 
-              'destroy': {
+              'remove': {
                 label: 'label.action.delete.volume',
                 messages: {
                   confirm: function(args) {
@@ -1089,7 +1089,7 @@
                 }
               },
 
-              'destroy': {
+              'remove': {
                 label: 'label.action.delete.snapshot',
                 messages: {
                   confirm: function(args) {
@@ -1195,7 +1195,7 @@
           }
         }
         else { // Disk not attached
-          allowedActions.push("destroy");
+          allowedActions.push("remove");
           allowedActions.push("migrateToAnotherStorage");
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
@@ -1218,7 +1218,7 @@
       allowedActions.push("createTemplate");
       allowedActions.push("createVolume");
     }
-    allowedActions.push("destroy");
+    allowedActions.push("remove");
     return allowedActions;
   }
 
