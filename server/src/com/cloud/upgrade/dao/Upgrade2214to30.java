@@ -70,6 +70,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
+        //update templete ID for system Vms
+        updateSystemVms(conn);
         // physical network setup
         setupPhysicalNetworks(conn);
         // update domain network ref
@@ -528,6 +530,27 @@ public class Upgrade2214to30 implements DbUpgrade {
         }
     }
 
+    private void updateSystemVms(Connection conn){
+    	//XenServer
+    	//Get 3.0.0 xenserer system Vm template Id
+    	 PreparedStatement pstmt = null;
+         ResultSet rs = null;
+         try {
+             pstmt = conn.prepareStatement("select id from vm_template where name = 'systemvm-xenserver-3.0.0' and removed is null");
+             rs = pstmt.executeQuery();
+             if(rs.next()){
+            	 long templateId = rs.getLong(1);
+            	 pstmt = conn.prepareStatement("update vm_instance set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
+            	 pstmt.setLong(1, templateId);
+            	 pstmt.executeUpdate();
+             } else {
+            	 throw new CloudRuntimeException("3.0.0 XenServer SystemVm template not found. Cannout upgrade system Vms");
+             }
+         } catch (SQLException e) {
+        	 throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
+         }
+    }
+    
     private void createNetworkOfferingServices(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
