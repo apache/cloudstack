@@ -2006,7 +2006,7 @@
                         }
                       },      
 											
-											'destroy': {
+											'remove': {
 												label: 'label.destroy.router',
 												messages: {
 													confirm: function(args) {
@@ -7302,7 +7302,7 @@
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-			allowedActions.push("destroy");
+	  allowedActions.push("remove");
       allowedActions.push("changeService");
     }
     return allowedActions;
