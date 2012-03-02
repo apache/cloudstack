@@ -31,7 +31,12 @@ import java.util.ArrayList;
 
 public class RuntimeCloudException extends RuntimeException {
     
+	// This holds a list of uuids and their names. Add uuid:fieldname pairs
+	// if required, to this list before throwing an exception, using addProxyObject().
 	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+	
+	// This holds an error code. Set this before throwing an exception, if applicable.
+	protected int csErrorCode;
 	
 	public void addProxyObject(String tableName, Long id, String idFieldName) {
 		idList.add(new IdentityProxy(tableName, id, idFieldName));
@@ -39,18 +44,29 @@ public class RuntimeCloudException extends RuntimeException {
 	}
 	
 	public RuntimeCloudException(String message) {
-		super(message);		
+		super(message);
+		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
 	
     public RuntimeCloudException(String message, Throwable cause) {
-        super(message, cause);        
+        super(message, cause);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
     	
 	public RuntimeCloudException() {
 		super();
+		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
 	
 	public ArrayList<IdentityProxy> getIdProxyList() {
 		return idList;
+	}
+	
+	public void setCSErrorCode(int cserrcode) {
+		this.csErrorCode = cserrcode;
+	}
+	
+	public int getCSErrorCode() {
+		return this.csErrorCode;
 	}
 }

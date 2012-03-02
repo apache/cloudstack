@@ -24,8 +24,8 @@ public class ExceptionResponse extends BaseResponse {
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
 
-    @SerializedName("cserrorcode") @Param(description="cloudstack error code associated with this error")
-    private Integer cserrorCode;
+    @SerializedName("cserrorcode") @Param(description="cloudstack exception error code associated with this error")
+    private Integer csErrorCode;    
     
     @SerializedName("errortext") @Param(description="the text associated with this error")
     private String errorText = "Command failed due to Internal Server Error";
@@ -53,5 +53,9 @@ public class ExceptionResponse extends BaseResponse {
 	
 	public ArrayList<IdentityProxy> getIdProxyList() {
 		return idList;
+	}
+	
+	public void setCSErrorCode(int cserrcode) {
+		this.csErrorCode = cserrcode;
 	}
 }

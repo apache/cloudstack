@@ -244,6 +244,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -1889,7 +1890,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-            	ex.addProxyObject("domain", domainId, "domainId");            	
+            	ex.addProxyObject("domain", domainId, "domainId");            	           	
             	throw ex;
             }
         }

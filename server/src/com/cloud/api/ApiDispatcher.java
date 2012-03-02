@@ -42,6 +42,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 
@@ -150,7 +151,9 @@ public class ApiDispatcher {
                 	}
                 } else {
                 	s_logger.info(t.getMessage());
-                }                           
+                }
+                // Also copy over the cserror code.
+    			ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if(t instanceof IllegalArgumentException) {            	
             	throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
@@ -168,8 +171,10 @@ public class ApiDispatcher {
                  	}
                  } else {
                 	 s_logger.info("PermissionDenied: " + t.getMessage());
-                 }                           
-                 throw ex;
+                 }
+                // Also copy over the cserror code.
+    			ex.setCSErrorCode(ref.getCSErrorCode());
+    			throw ex;
             } else if (t instanceof AccountLimitException) {            	
             	AccountLimitException ref = (AccountLimitException)t;
             	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
@@ -185,6 +190,8 @@ public class ApiDispatcher {
                 } else {
                 	s_logger.info(t.getMessage());
                 }
+                // Also copy over the cserror code.
+    			ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof InsufficientCapacityException) {            	
             	InsufficientCapacityException ref = (InsufficientCapacityException)t;
@@ -201,6 +208,8 @@ public class ApiDispatcher {
                 } else {
                 	s_logger.info(t.getMessage());
                 }
+                // Also copy over the cserror code
+    			ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof ResourceAllocationException) {
             	ResourceAllocationException ref = (ResourceAllocationException)t;
@@ -217,6 +226,8 @@ public class ApiDispatcher {
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }
+                // Also copy over the cserror code.
+    			ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof ResourceUnavailableException) {
             	ResourceUnavailableException ref = (ResourceUnavailableException)t;
@@ -233,19 +244,24 @@ public class ApiDispatcher {
                 } else {
                 	s_logger.warn("Exception: ", t);
                 }
+                // Also copy over the cserror code.
+    			ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
-            } else if (t instanceof AsyncCommandQueued) {
+            } else if (t instanceof AsyncCommandQueued) {            	
                 throw (AsyncCommandQueued) t;
             } else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
                 throw (ServerApiException) t;
             } else {
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
+                ServerApiException ex;
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                	ex = new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
                 } else {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-                }
+                    ex = new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+                }                
+                ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
+            	throw ex;
             }
         }
     }
@@ -261,7 +277,9 @@ public class ApiDispatcher {
             }
 
             if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && pageSize != BaseListCmd.PAGESIZE_UNLIMITED)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
+                ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");                
+                ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
+            	throw ex;
             } else if (pageSize == null && (unpackedParams.get(ApiConstants.PAGE) != null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
             }
