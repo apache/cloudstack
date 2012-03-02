@@ -436,7 +436,7 @@
                 }
               },
 
-              destroy: {
+              remove: {
                 label: 'label.action.delete.account',
                 messages: {
                   confirm: function(args) {
@@ -1006,7 +1006,7 @@
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
           allowedActions.push("enable");
         }
-        allowedActions.push("destroy");
+        allowedActions.push("remove");
       }
     }
     allowedActions.push("updateResourceCount");

@@ -495,7 +495,7 @@
                 }
               },
 
-              destroy: {
+              remove: {
                 label: 'label.action.delete.network',
                 messages: {
                   confirm: function(args) {
@@ -514,10 +514,7 @@
                       var jid = json.deletenetworkresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {
-                            return { state: 'Destroyed' }; //nothing in this network needs to be updated, in fact, this whole template has being deleted
-                          }
+                         {jobId: jid
                          }
                         }
                       );
@@ -2912,9 +2909,8 @@
     var jsonObj = args.context.item;
 		var allowedActions = [];
 
-		if (jsonObj.state == 'Destroyed')
-			return [];
-
+		allowedActions.push('remove');
+		
 		if (jsonObj.type == 'Shared' ||
 				!$.grep(jsonObj.service, function(service) {
 					return service.name == 'SourceNat';
