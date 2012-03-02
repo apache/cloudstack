@@ -545,45 +545,49 @@
                 ],
 
                 dataProvider: function(args) {
-                  var accountObj = args.context.accounts[0];
+									$.ajax({
+										url: createURL("listAccounts&id=" + args.context.accounts[0].id),
+										dataType: "json",										
+										success: function(json) {		
+											var accountObj = json.listaccountsresponse.account[0];
 
-                  $.ajax({
-                    url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      var limits = json.listresourcelimitsresponse.resourcelimit;
-                      if (limits != null) {
-                        for (var i = 0; i < limits.length; i++) {
-                          var limit = limits[i];
-                          switch (limit.resourcetype) {
-                            case "0":
-                              accountObj["vmLimit"] = limit.max;
-                              break;
-                            case "1":
-                              accountObj["ipLimit"] = limit.max;
-                              break;
-                            case "2":
-                              accountObj["volumeLimit"] = limit.max;
-                              break;
-                            case "3":
-                              accountObj["snapshotLimit"] = limit.max;
-                              break;
-                            case "4":
-                              accountObj["templateLimit"] = limit.max;
-                              break;
-                          }
-                        }
-                      }
-                    }
-                  });
-
-                  args.response.success(
-                    {
-                      actionFilter: accountActionfilter,
-                      data: accountObj
-                    }
-                  );
+											$.ajax({
+												url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+												dataType: "json",												
+												success: function(json) {
+													var limits = json.listresourcelimitsresponse.resourcelimit;													
+													if (limits != null) {
+														for (var i = 0; i < limits.length; i++) {
+															var limit = limits[i];
+															switch (limit.resourcetype) {
+																case "0":
+																	accountObj["vmLimit"] = limit.max;
+																	break;
+																case "1":
+																	accountObj["ipLimit"] = limit.max;
+																	break;
+																case "2":
+																	accountObj["volumeLimit"] = limit.max;
+																	break;
+																case "3":
+																	accountObj["snapshotLimit"] = limit.max;
+																	break;
+																case "4":
+																	accountObj["templateLimit"] = limit.max;
+																	break;
+															}
+														}
+													}																										
+													args.response.success(
+														{
+															actionFilter: accountActionfilter,
+															data: accountObj 
+														}
+													);							
+												}
+											});											
+										}
+									});		
                 }
               }
             }
