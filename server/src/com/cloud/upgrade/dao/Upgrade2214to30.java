@@ -131,7 +131,7 @@ public class Upgrade2214to30 implements DbUpgrade {
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
-                long domainId = rs.getLong(2);
+                Long domainId = rs.getLong(2);
                 String networkType = rs.getString(3);
                 String vnet = rs.getString(4);
                 String zoneName = rs.getString(5);
@@ -154,23 +154,31 @@ public class Upgrade2214to30 implements DbUpgrade {
                     broadcastDomainRange = "ZONE";
                 }
 
-                String values = null;
-                values = "('" + physicalNetworkId + "'";
-                values += ",'" + uuid + "'";
-                values += ",'" + zoneId + "'";
-                values += ",'" + vnet + "'";
-                values += ",'" + domainId + "'";
-                values += ",'" + broadcastDomainRange + "'";
-                values += ",'Enabled'";
-                values += ",'" + zoneName + "-pNtwk'";
-                values += ")";
-
                 s_logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
-
-                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, domain_id, broadcast_domain_range, state, name) VALUES " + values;
+                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, broadcast_domain_range, state, name) VALUES (?,?,?,?,?,?,?)";
+                
                 pstmtUpdate = conn.prepareStatement(sql);
+                pstmtUpdate.setLong(1, physicalNetworkId);
+                pstmtUpdate.setString(2, uuid);
+                pstmtUpdate.setLong(3, zoneId);
+                pstmtUpdate.setString(4, vnet);
+                pstmtUpdate.setString(5, broadcastDomainRange);
+                pstmtUpdate.setString(6, "Enabled");
+                zoneName = zoneName + "-pNtwk";
+                pstmtUpdate.setString(7, zoneName);
+                s_logger.warn("Statement is " + pstmtUpdate.toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
+                
+                if (domainId != null && domainId.longValue() != 0) {
+                    s_logger.debug("Updating domain_id for physical network id=" + physicalNetworkId);
+                    sql = "UPDATE `cloud`.`physical_network` set domain_id=? where id=?";
+                    pstmtUpdate = conn.prepareStatement(sql);
+                    pstmtUpdate.setLong(1, domainId);
+                    pstmtUpdate.setLong(2, physicalNetworkId);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+                }
 
                 // add traffic types
                 s_logger.debug("Adding PhysicalNetwork traffic types");

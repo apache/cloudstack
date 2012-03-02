@@ -486,16 +486,12 @@ CREATE TABLE `cloud`.`virtual_router_providers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router provider ID' AFTER id;
-ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`);
 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('physical_networks_seq', 200);
 ALTER TABLE `cloud`.`networks` ADD COLUMN `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on' AFTER network_offering_id;
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on';
-ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`);
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network the vnet belongs to';
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on';
-ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
@@ -603,6 +599,7 @@ update `cloud`.`networks` set guru_name='StorageNetworkGuru' where traffic_type=
 
 ALTER TABLE  `cloud`.`event` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
 ALTER TABLE  `cloud`.`op_host_capacity` ADD COLUMN `capacity_state` varchar(32) NOT NULL DEFAULT 'Enabled';
+UPDATE `cloud`.`event` set account_id=1, user_id=1 where account_id=0 and user_id=0;
 UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from `cloud`.`account` acc where acc.id = e.account_id) where e.domain_id = 0;
 
 update `cloud`.`vm_template` set removed=now() where id=2;
