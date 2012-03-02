@@ -242,7 +242,7 @@
       }
     },
 
-    destroy: function($detailView, args) {
+    remove: function($detailView, args) {
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
