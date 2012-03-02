@@ -1489,7 +1489,7 @@
                 }
               },
 
-              destroy: {
+              remove: {
                 label: 'Remove network offering',
                 action: function(args) {
                   $.ajax({
@@ -1662,7 +1662,7 @@
 			allowedActions.push("enable");
 		
 		if(jsonObj.isdefault == false) 
-			allowedActions.push("destroy");		
+			allowedActions.push("remove");		
 			
     return allowedActions;		
   };
