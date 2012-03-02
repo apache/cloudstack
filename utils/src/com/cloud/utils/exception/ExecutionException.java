@@ -18,6 +18,7 @@
 package com.cloud.utils.exception;
 
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 
 /**
  * ExecutionException is a generic exception to indicate that execution has
@@ -29,12 +30,23 @@ import com.cloud.utils.SerialVersionUID;
 public class ExecutionException extends Exception {
     private static final long serialVersionUID = SerialVersionUID.ExecutionException;
     
+	// This holds an error code. Set this before throwing an exception, if applicable.
+	protected int csErrorCode;
+	
     public ExecutionException(String msg, Throwable cause) {
         super(msg, cause);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
     
     public ExecutionException(String msg) {
         super(msg);
     }
-
+    
+	public void setCSErrorCode(int cserrcode) {
+		this.csErrorCode = cserrcode;
+	}
+	
+	public int getCSErrorCode() {
+		return this.csErrorCode;
+	}
 }

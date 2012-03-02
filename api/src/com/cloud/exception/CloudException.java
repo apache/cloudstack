@@ -19,6 +19,7 @@ package com.cloud.exception;
 
 import com.cloud.utils.IdentityProxy;
 import java.util.ArrayList;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 
 /**
  * CloudException is a generic exception class that has an IdentityProxy
@@ -31,18 +32,26 @@ import java.util.ArrayList;
 
 public class CloudException extends Exception {
     
+	// This holds a list of uuids and their names. Add uuid:fieldname pairs
+	// if required, to this list before throwing an exception, using addProxyObject().
 	protected ArrayList<IdentityProxy> idList = new ArrayList<IdentityProxy>();
 	
+	// This holds an error code. Set this before throwing an exception, if applicable.
+	protected Integer csErrorCode;	
+		
 	public CloudException(String message) {
 		super(message);
+		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
 
     public CloudException(String message, Throwable cause) {
         super(message, cause);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
     
 	public CloudException() {
 		super();
+		setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
 	}
 	
 	public void addProxyObject(String tableName, Long id, String idFieldName) {
@@ -52,5 +61,13 @@ public class CloudException extends Exception {
 	
 	public ArrayList<IdentityProxy> getIdProxyList() {
 		return idList;
-	}	
+	}
+	
+	public void setCSErrorCode(int cserrcode) {
+		this.csErrorCode = cserrcode;
+	}
+	
+	public int getCSErrorCode() {
+		return this.csErrorCode;
+	}
 }

@@ -187,6 +187,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -403,7 +404,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (podId != null) {
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
             	// for now, we hardcode the table names, but we should ideally do a lookup for the tablename from the VO object.
-            	ex.addProxyObject("Pod", podId, "podId");
+            	ex.addProxyObject("Pod", podId, "podId");            	
             	throw ex;
             }
             s_logger.warn(errorMessage.toString());
@@ -971,6 +972,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Network id is invalid");
             ex.addProxyObject("networks", networkId, "networkId");
+            throw ex;
         }
 
         // check permissions
@@ -1746,6 +1748,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 	// see NetworkVO.java. 
                 	CloudRuntimeException ex = new CloudRuntimeException("Service provider " + element.getProvider().getName() + "either doesn't exist or is not enabled in specified physical network id");
                 	ex.addProxyObject("networks", network.getPhysicalNetworkId(), "physicalNetworkId");
+                	throw ex;
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implemenet " + network);

@@ -115,6 +115,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -429,7 +430,7 @@ public class ApiServer implements HttpRequestHandler {
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
             	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
+            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<IdentityProxy> idList = ref.getIdProxyList();
                 if (idList != null) {
@@ -438,7 +439,9 @@ public class ApiServer implements HttpRequestHandler {
                 		IdentityProxy obj = idList.get(i);
                 		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
                 	}
-                }                
+                }
+                // Also copy over the cserror code and the function/layer in which it was thrown.
+            	e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
             	PermissionDeniedException ref = (PermissionDeniedException)ex;
@@ -452,12 +455,15 @@ public class ApiServer implements HttpRequestHandler {
                 		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
                 	}
                 }
+                e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
             } else if (ex instanceof ServerApiException) {
                 throw (ServerApiException) ex;
             } else {
                 s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal server error, unable to execute request.");
+                ServerApiException e = new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal server error, unable to execute request.");
+                e.setCSErrorCode(CSExceptionErrorCode.getCSErrCode("ServerApiException"));
+                throw e;
             }
         }
         return response;
@@ -1034,6 +1040,8 @@ public class ApiServer implements HttpRequestHandler {
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
             				}            				
             			}
+            			// Also copy over the cserror code and the function/layer in which it was thrown.
+            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof PermissionDeniedException) {
             			PermissionDeniedException ref = (PermissionDeniedException) ex;
             			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
@@ -1043,6 +1051,8 @@ public class ApiServer implements HttpRequestHandler {
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
             				}            				
             			}
+            			// Also copy over the cserror code and the function/layer in which it was thrown.
+            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		} else if (ex instanceof InvalidParameterValueException) {
             			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
             			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
@@ -1052,6 +1062,8 @@ public class ApiServer implements HttpRequestHandler {
             					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
             				}            				
             			}
+            			// Also copy over the cserror code and the function/layer in which it was thrown.
+            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
             		}
             	}
             }
