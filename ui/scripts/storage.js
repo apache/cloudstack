@@ -786,7 +786,7 @@
                 }
               },
 
-              'remove': {
+              remove: {
                 label: 'label.action.delete.volume',
                 messages: {
                   confirm: function(args) {
@@ -1089,7 +1089,7 @@
                 }
               },
 
-              'remove': {
+              remove: {
                 label: 'label.action.delete.snapshot',
                 messages: {
                   confirm: function(args) {
