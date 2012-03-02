@@ -26,6 +26,9 @@ public class VncClient {
 
   private VncClientPacketSender sender;
   private VncServerPacketReceiver receiver;
+  
+  private boolean noUI = false;
+  private VncClientListener clientListener = null;
 
   public static void main(String args[]) {
     if (args.length < 3) {
@@ -38,7 +41,7 @@ public class VncClient {
     String password = args[2];
 
     try {
-      new VncClient(host, Integer.parseInt(port), password);
+      new VncClient(host, Integer.parseInt(port), password, false, null);
     } catch (NumberFormatException e) {
       SimpleLogger.error("Incorrect VNC server port number: " + port + ".");
       System.exit(1);
@@ -59,7 +62,11 @@ public class VncClient {
     /* LOG */SimpleLogger.info("Usage: HOST PORT PASSWORD.");
   }
 
-  public VncClient(String host, int port, String password) throws UnknownHostException, IOException {
+  public VncClient(String host, int port, String password, boolean noUI, VncClientListener clientListener) 
+  	throws UnknownHostException, IOException {
+	  
+    this.noUI = noUI;
+    this.clientListener = clientListener;
     connectTo(host, port, password);
   }
 
@@ -111,20 +118,23 @@ public class VncClient {
     canvas.addMouseMotionListener(sender);
     canvas.addKeyListener(sender);
 
-    Frame frame = createVncClientMainWindow(canvas, screen.getDesktopName());
+    Frame frame = null;
+    if(!noUI)
+    	frame = createVncClientMainWindow(canvas, screen.getDesktopName());
 
     new Thread(sender).start();
 
     // Run server-to-client packet receiver
-    receiver = new VncServerPacketReceiver(is, canvas, screen, this, sender);
+    receiver = new VncServerPacketReceiver(is, canvas, screen, this, sender, clientListener);
     try {
       receiver.run();
     } finally {
-      frame.setVisible(false);
-      frame.dispose();
+      if(frame != null) {
+	    frame.setVisible(false);
+	    frame.dispose();
+      }
       this.shutdown();
     }
-
   }
 
   private Frame createVncClientMainWindow(BufferedImageCanvas canvas, String title) {
