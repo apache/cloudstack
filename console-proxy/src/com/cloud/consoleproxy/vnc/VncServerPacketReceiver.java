@@ -17,14 +17,16 @@ public class VncServerPacketReceiver implements Runnable {
   private boolean connectionAlive = true;
   private VncClient vncConnection;
   private final FrameBufferUpdateListener fburListener;
+  private final VncClientListener clientListener;
 
   public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection,
-      FrameBufferUpdateListener fburListener) {
+      FrameBufferUpdateListener fburListener, VncClientListener clientListener) {
     this.screen = screen;
     this.canvas = canvas;
     this.is = is;
     this.vncConnection = vncConnection;
     this.fburListener = fburListener;
+    this.clientListener = clientListener;
   }
 
   @Override
@@ -43,7 +45,7 @@ public class VncServerPacketReceiver implements Runnable {
           // so it can send another frame buffer update request
           fburListener.frameBufferPacketReceived();
           // Handle frame buffer update
-          new FramebufferUpdatePacket(canvas, screen, is);
+          new FramebufferUpdatePacket(canvas, screen, is, clientListener);
           break;
         }
 
