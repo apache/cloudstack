@@ -503,7 +503,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.template',
                 messages: {
                   confirm: function(args) {
@@ -526,13 +526,7 @@
                       var jid = json.deletetemplateresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {
-                            return {}; //nothing in this template needs to be updated, in fact, this whole template has being deleted
-                          },
-                          getActionFilter: function() {
-                            return templateActionfilter;
-                          }
+                         {jobId: jid
                          }
                         }
                       );
@@ -1037,7 +1031,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.ISO',
                 messages: {
                   confirm: function(args) {
@@ -1060,13 +1054,7 @@
                       var jid = json.deleteisosresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {
-                            return {}; //nothing in this ISO needs to be updated, in fact, this whole ISO has being deleted
-                          },
-                          getActionFilter: function() {
-                            return isoActionfilter;
-                          }
+                         {jobId: jid
                          }
                         }
                       );
@@ -1224,7 +1212,7 @@
       //do nothing
     }
     else {
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
 
     return allowedActions;
@@ -1284,7 +1272,7 @@
          //do nothing
        }
     else {
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
 
     return allowedActions;
