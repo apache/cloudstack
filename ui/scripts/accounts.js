@@ -886,7 +886,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.user',
                 messages: {
                   confirm: function(args) {
@@ -901,7 +901,9 @@
                     url: createURL("deleteUser&id=" + args.context.users[0].id),
                     dataType: "json",
                     async: true,
-                    success: function(json) {}
+                    success: function(json) {
+										  args.response.success();
+										}
                   });
                 },
                 notification: {
@@ -971,8 +973,7 @@
                   $.ajax({
                     url: createURL('listUsers'),
                     data: {
-                      id: args.context.users[0].id,
-                      listAll: true
+                      id: args.context.users[0].id
                     },
                     success: function(json) {
                       args.response.success({
@@ -1029,7 +1030,7 @@
           allowedActions.push("disable");
         if(jsonObj.state == "disabled")
           allowedActions.push("enable");
-        allowedActions.push("delete");
+        allowedActions.push("remove");
       }
     }
     return allowedActions;

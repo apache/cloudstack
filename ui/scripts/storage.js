@@ -808,11 +808,7 @@
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete({
-                      data: {
-                        state: 'Destroyed'
-                      }
-                    });
+                    args.complete();
                   }
                 }
               }
@@ -1117,7 +1113,7 @@
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete({ data: { state: 'Destroyed' } });
+                    args.complete();
                   }
                 }
               }
