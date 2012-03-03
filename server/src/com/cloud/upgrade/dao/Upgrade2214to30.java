@@ -228,27 +228,36 @@ public class Upgrade2214to30 implements DbUpgrade {
                 String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
                         "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
                         "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,1,1,1,1,1,1,1,1,1,1,0)";
 
                 pstmtUpdate = conn.prepareStatement(insertPNSP);
                 pstmtUpdate.setString(1, UUID.randomUUID().toString());
                 pstmtUpdate.setLong(2, physicalNetworkId);
                 pstmtUpdate.setString(3, "VirtualRouter");
                 pstmtUpdate.setString(4, "Enabled");
-                pstmtUpdate.setLong(5, 0);
-                pstmtUpdate.setInt(6, 1);
-                pstmtUpdate.setInt(7, 1);
-                pstmtUpdate.setInt(8, 1);
-                pstmtUpdate.setInt(9, 1);
-                pstmtUpdate.setInt(10, 1);
-                pstmtUpdate.setInt(11, 1);
-                pstmtUpdate.setInt(12, 1);
-                pstmtUpdate.setInt(13, 1);
-                pstmtUpdate.setInt(14, 1);
-                pstmtUpdate.setInt(15, 1);
-                pstmtUpdate.setInt(16, 0);
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
+                
+                //add security group service provider (if security group service is enabled for at least one guest network)
+                String selectSG = "SELECT * from `cloud`.`networks` where is_security_group_enabled=1 and data_center_id=?";
+                pstmt2 = conn.prepareStatement(selectSG);
+                pstmt2.setLong(1, zoneId);
+                ResultSet sgDcSet = pstmt2.executeQuery();
+                while (sgDcSet.next()) {
+                    s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
+                    insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
+                            "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+                            "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+                            "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,0,0,0,0,1)";
+                    pstmtUpdate = conn.prepareStatement(insertPNSP);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, physicalNetworkId);
+                    pstmtUpdate.setString(3, "SecurityGroupProvider");
+                    pstmtUpdate.setString(4, "Enabled");
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+                }
+                
 
                 // add virtual_router_element
                 String fetchNSPid = "SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId;
