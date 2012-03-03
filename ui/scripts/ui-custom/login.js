@@ -75,7 +75,7 @@
             });
           },
           error: function(args) {
-            cloudStack.dialog.notice({ message: 'Invalid username and/or password.' });
+            cloudStack.dialog.notice({ message: args });
           }
         }
       });
