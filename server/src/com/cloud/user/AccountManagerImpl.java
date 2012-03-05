@@ -609,6 +609,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
+            } else {
+                account.setNeedsCleanup(false);
+                _accountDao.update(accountId, account);
             }
         }
     }
@@ -632,9 +635,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
 
             if (success) {
-                if (!doDisableAccount(accountId)) {
-                    s_logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
-                    _accountDao.markForCleanup(accountId);
+                boolean disableAccountResult = false;
+                try {
+                    disableAccountResult = doDisableAccount(accountId);
+                } finally {
+                    if (!disableAccountResult) {
+                        s_logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
+                        _accountDao.markForCleanup(accountId);
+                    } else {
+                        acctForUpdate = _accountDao.createForUpdate();
+                        account.setNeedsCleanup(false);
+                        _accountDao.update(accountId, account);
+                    }
                 }
             }
         }
@@ -1256,14 +1268,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
                     for (AccountVO account : removedAccounts) {
                         s_logger.debug("Cleaning up " + account.getId());
-                        try {
-                            if (cleanupAccount(account, getSystemUser().getId(), getSystemAccount())) {
-                                account.setNeedsCleanup(false);
-                                _accountDao.update(account.getId(), account);
-                            }
-                        } catch (Exception e) {
-                            s_logger.error("Skipping due to error on account " + account.getId(), e);
-                        }
+                        cleanupAccount(account, getSystemUser().getId(), getSystemAccount());      
                     }
 
                     // cleanup disabled accounts
@@ -1272,10 +1277,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     for (AccountVO account : disabledAccounts) {
                         s_logger.debug("Disabling account " + account.getId());
                         try {
-                            if (disableAccount(account.getId())) {
-                                account.setNeedsCleanup(false);
-                                _accountDao.update(account.getId(), account);
-                            }
+                            disableAccount(account.getId());
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }
