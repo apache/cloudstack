@@ -322,11 +322,10 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL de
 --- Resource State;
 ---;
 
-ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources';
-UPDATE TABLE `cloud`.`host` SET resource_state='Enabled' WHERE status in ('Connecting', 'Up', 'Down', 'Disconnected', 'Alert', 'Removed', 'Rebalancing');
-UPDATE TABLE `cloud`.`host` SET resource_state='PrepareForMaintenance', status='Disconnected' WHERE status = 'PrepareForMaintenance';
-UPDATE TABLE `cloud`.`host` SET resource_state='ErrorInMaintenance', status='Disconnected' WHERE status = 'ErrorInMaintenance';
-UPDATE TABLE `cloud`.`host` SET resource_state='Maintenance', status='Disconnected' WHERE status = 'Maintenance';
+ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this host enabled for allocation for new resources';
+UPDATE `cloud`.`host` SET resource_state='PrepareForMaintenance', status='Disconnected' WHERE status = 'PrepareForMaintenance';
+UPDATE `cloud`.`host` SET resource_state='ErrorInMaintenance', status='Disconnected' WHERE status = 'ErrorInMaintenance';
+UPDATE `cloud`.`host` SET resource_state='Maintenance', status='Disconnected' WHERE status = 'Maintenance';
 
 ---;
 --- Storage network
