@@ -331,6 +331,8 @@ UPDATE `cloud`.`host` SET resource_state='Maintenance', status='Disconnected' WH
 --- Storage network
 ---;
 update `cloud`.`networks` set guru_name='StorageNetworkGuru' where traffic_type='Storage';
+update `cloud`.`configuration` set value=NULL where name='xen.storage.network.device1' and value='cloud-stor1';
+update `cloud`.`configuration` set value=NULL where name='xen.storage.network.device2' and value='cloud-stor2';
 
 --;
 --NAAS;
