@@ -2319,7 +2319,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         if (cidr != null && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
-            throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external firewall!");
+            throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
         }
 
         if (cidr != null) {
