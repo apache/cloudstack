@@ -314,12 +314,24 @@ ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `fk_security_group_rule
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_network_id`(`security_group_id`);
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_allowed_network`(`allowed_network_id`);
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `enable_sshkey` int(1) unsigned NOT NULL default 0 COMMENT 'true if this template supports sshkey reset';
-ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 
+---;
+--- Resource State;
+---;
 
+ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources';
+UPDATE TABLE `cloud`.`host` SET resource_state='Enabled' WHERE status in ('Connecting', 'Up', 'Down', 'Disconnected', 'Alert', 'Removed', 'Rebalancing');
+UPDATE TABLE `cloud`.`host` SET resource_state='PrepareForMaintenance', status='Disconnected' WHERE status = 'PrepareForMaintenance';
+UPDATE TABLE `cloud`.`host` SET resource_state='ErrorInMaintenance', status='Disconnected' WHERE status = 'ErrorInMaintenance';
+UPDATE TABLE `cloud`.`host` SET resource_state='Maintenance', status='Disconnected' WHERE status = 'Maintenance';
+
+---;
+--- Storage network
+---;
+update `cloud`.`networks` set guru_name='StorageNetworkGuru' where traffic_type='Storage';
 
 --;
 --NAAS;
@@ -595,7 +607,6 @@ CREATE TABLE `cloud`.`op_dc_storage_network_ip_address` (
   CONSTRAINT `fk_storage_ip_address__range_id` FOREIGN KEY (`range_id`) REFERENCES `dc_storage_network_ip_range`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-update `cloud`.`networks` set guru_name='StorageNetworkGuru' where traffic_type='Storage';
 
 ALTER TABLE  `cloud`.`event` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
 ALTER TABLE  `cloud`.`op_host_capacity` ADD COLUMN `capacity_state` varchar(32) NOT NULL DEFAULT 'Enabled';
