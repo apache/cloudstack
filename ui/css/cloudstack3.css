@@ -2809,6 +2809,7 @@ Dialogs*/
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
+  padding-bottom: 40px;
 }
 
 .ui-dialog span.message ul {
