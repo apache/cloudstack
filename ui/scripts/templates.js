@@ -677,7 +677,7 @@
             },
             mine: { label: 'ui.listView.filters.mine' },
             featured: { label: 'label.featured' },
-            community: { label: 'labelc.community' }
+            community: { label: 'label.community' }
           },
           fields: {
             displaytext: { label: 'label.name' },
