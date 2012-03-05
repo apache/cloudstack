@@ -70,6 +70,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
+        //update templete ID for system Vms
+        updateSystemVms(conn);
         // physical network setup
         setupPhysicalNetworks(conn);
         // update domain network ref
@@ -131,7 +133,7 @@ public class Upgrade2214to30 implements DbUpgrade {
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
-                long domainId = rs.getLong(2);
+                Long domainId = rs.getLong(2);
                 String networkType = rs.getString(3);
                 String vnet = rs.getString(4);
                 String zoneName = rs.getString(5);
@@ -154,23 +156,31 @@ public class Upgrade2214to30 implements DbUpgrade {
                     broadcastDomainRange = "ZONE";
                 }
 
-                String values = null;
-                values = "('" + physicalNetworkId + "'";
-                values += ",'" + uuid + "'";
-                values += ",'" + zoneId + "'";
-                values += ",'" + vnet + "'";
-                values += ",'" + domainId + "'";
-                values += ",'" + broadcastDomainRange + "'";
-                values += ",'Enabled'";
-                values += ",'" + zoneName + "-pNtwk'";
-                values += ")";
-
                 s_logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
-
-                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, domain_id, broadcast_domain_range, state, name) VALUES " + values;
+                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, broadcast_domain_range, state, name) VALUES (?,?,?,?,?,?,?)";
+                
                 pstmtUpdate = conn.prepareStatement(sql);
+                pstmtUpdate.setLong(1, physicalNetworkId);
+                pstmtUpdate.setString(2, uuid);
+                pstmtUpdate.setLong(3, zoneId);
+                pstmtUpdate.setString(4, vnet);
+                pstmtUpdate.setString(5, broadcastDomainRange);
+                pstmtUpdate.setString(6, "Enabled");
+                zoneName = zoneName + "-pNtwk";
+                pstmtUpdate.setString(7, zoneName);
+                s_logger.warn("Statement is " + pstmtUpdate.toString());
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
+                
+                if (domainId != null && domainId.longValue() != 0) {
+                    s_logger.debug("Updating domain_id for physical network id=" + physicalNetworkId);
+                    sql = "UPDATE `cloud`.`physical_network` set domain_id=? where id=?";
+                    pstmtUpdate = conn.prepareStatement(sql);
+                    pstmtUpdate.setLong(1, domainId);
+                    pstmtUpdate.setLong(2, physicalNetworkId);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+                }
 
                 // add traffic types
                 s_logger.debug("Adding PhysicalNetwork traffic types");
@@ -220,27 +230,36 @@ public class Upgrade2214to30 implements DbUpgrade {
                 String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
                         "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
                         "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,1,1,1,1,1,1,1,1,1,1,0)";
 
                 pstmtUpdate = conn.prepareStatement(insertPNSP);
                 pstmtUpdate.setString(1, UUID.randomUUID().toString());
                 pstmtUpdate.setLong(2, physicalNetworkId);
                 pstmtUpdate.setString(3, "VirtualRouter");
                 pstmtUpdate.setString(4, "Enabled");
-                pstmtUpdate.setLong(5, 0);
-                pstmtUpdate.setInt(6, 1);
-                pstmtUpdate.setInt(7, 1);
-                pstmtUpdate.setInt(8, 1);
-                pstmtUpdate.setInt(9, 1);
-                pstmtUpdate.setInt(10, 1);
-                pstmtUpdate.setInt(11, 1);
-                pstmtUpdate.setInt(12, 1);
-                pstmtUpdate.setInt(13, 1);
-                pstmtUpdate.setInt(14, 1);
-                pstmtUpdate.setInt(15, 1);
-                pstmtUpdate.setInt(16, 0);
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
+                
+                //add security group service provider (if security group service is enabled for at least one guest network)
+                String selectSG = "SELECT * from `cloud`.`networks` where is_security_group_enabled=1 and data_center_id=?";
+                pstmt2 = conn.prepareStatement(selectSG);
+                pstmt2.setLong(1, zoneId);
+                ResultSet sgDcSet = pstmt2.executeQuery();
+                while (sgDcSet.next()) {
+                    s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
+                    insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
+                            "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+                            "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+                            "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,0,0,0,0,1)";
+                    pstmtUpdate = conn.prepareStatement(insertPNSP);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, physicalNetworkId);
+                    pstmtUpdate.setString(3, "SecurityGroupProvider");
+                    pstmtUpdate.setString(4, "Enabled");
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+                }
+                
 
                 // add virtual_router_element
                 String fetchNSPid = "SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId;
@@ -511,6 +530,27 @@ public class Upgrade2214to30 implements DbUpgrade {
         }
     }
 
+    private void updateSystemVms(Connection conn){
+    	//XenServer
+    	//Get 3.0.0 xenserer system Vm template Id
+    	 PreparedStatement pstmt = null;
+         ResultSet rs = null;
+         try {
+             pstmt = conn.prepareStatement("select id from vm_template where name = 'systemvm-xenserver-3.0.0' and removed is null");
+             rs = pstmt.executeQuery();
+             if(rs.next()){
+            	 long templateId = rs.getLong(1);
+            	 pstmt = conn.prepareStatement("update vm_instance set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
+            	 pstmt.setLong(1, templateId);
+            	 pstmt.executeUpdate();
+             } else {
+            	 throw new CloudRuntimeException("3.0.0 XenServer SystemVm template not found. Cannout upgrade system Vms");
+             }
+         } catch (SQLException e) {
+        	 throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
+         }
+    }
+    
     private void createNetworkOfferingServices(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -680,7 +720,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         try {
             s_logger.debug("Updating domain_router table");
             pstmt = conn
-                    .prepareStatement("UPDATE domain_router, virtual_router_providers vrp LEFT JOIN (physical_network_service_providers pnsp INNER JOIN networks ntwk INNER JOIN domain_router vr) ON (vrp.nsp_id = pnsp.id and pnsp.physical_network_id = ntwk.physical_network_id and ntwk.id=vr.network_id) SET vr.element_id=vrp.id;");
+                    .prepareStatement("UPDATE domain_router, virtual_router_providers vrp LEFT JOIN (physical_network_service_providers pnsp INNER JOIN physical_network pntwk INNER JOIN vm_instance vm INNER JOIN domain_router vr) ON (vrp.nsp_id = pnsp.id AND pnsp.physical_network_id = pntwk.id AND pntwk.data_center_id = vm.data_center_id AND vm.id=vr.id) SET vr.element_id=vrp.id;");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update router table. ", e);

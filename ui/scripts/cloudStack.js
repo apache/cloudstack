@@ -263,8 +263,15 @@
             // TEMPORARY -- replace w/ output of capability response, etc., once implemented
             window.g_projectsInviteRequired = false;
           },
-          error: function() {
-            args.response.error();
+          error: function(XMLHttpRequest) {					  
+						var errorMsg = parseXMLHttpResponse(XMLHttpRequest);	
+            if(errorMsg.length == 0) {		
+						  if(XMLHttpRequest.status == 0) 
+                errorMsg = dictionary['error.unable.to.reach.management.server'];	       
+              else
+							  errorMsg = dictionary['label.error'];	     
+            }								
+            args.response.error(errorMsg);			
           },										
 					beforeSend : function(XMLHttpResponse) {				
 						return true;

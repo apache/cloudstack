@@ -326,6 +326,8 @@
       <classpath refid="test.classpath"/>
       <jvmarg value="${debug.jvmarg}"/>
       <jvmarg value="-ea"/>
+      <jvmarg value="-Xms1024m"/>
+      <jvmarg value="-Xmx1024m"/>
       <batchtest todir="${unittest.dir}">
         <formatter type="plain"/>
         <fileset dir="${utils.test.dir}">

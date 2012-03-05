@@ -242,7 +242,7 @@
       }
     },
 
-    destroy: function($detailView, args) {
+    remove: function($detailView, args) {
       uiActions.standard($detailView, args, {
         noRefresh: true,
         complete: function(args) {
@@ -254,6 +254,10 @@
               panel: $panel.prev()
             });
           }
+										
+					if($detailView.data("list-view-row") != null) {					 
+					  $detailView.data("list-view-row").remove();
+					}					
         }
       });
     },
@@ -791,8 +795,9 @@
           }
           var tabData = $tabContent.data('detail-view-tab-data');
           var data = args.data;
-					
-					$detailView.data('list-view-row').data('json-obj', data); //refresh embedded data in corresponding list view row
+										
+					if($detailView.data('list-view-row') != null)
+					  $detailView.data('list-view-row').data('json-obj', data); //refresh embedded data in corresponding list view row
 					
           var isFirstPanel = $tabContent.index($detailView.find('div.detail-group.ui-tabs-panel')) == 0;
           var actionFilter = args.actionFilter;

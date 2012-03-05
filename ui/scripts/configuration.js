@@ -229,7 +229,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.service.offering',
                 messages: {
                   confirm: function(args) {
@@ -542,7 +542,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.system.service.offering',
                 messages: {
                   confirm: function(args) {
@@ -814,7 +814,7 @@
                 }
               },
 
-              'delete': {
+              remove: {
                 label: 'label.action.delete.disk.offering',
                 messages: {
                   confirm: function(args) {
@@ -1489,7 +1489,7 @@
                 }
               },
 
-              destroy: {
+              remove: {
                 label: 'Remove network offering',
                 action: function(args) {
                   $.ajax({
@@ -1627,7 +1627,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
     allowedActions.push("edit");
-    allowedActions.push("delete");
+    allowedActions.push("remove");
     return allowedActions;
   };
 
@@ -1635,7 +1635,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
     allowedActions.push("edit");
-    allowedActions.push("delete");
+    allowedActions.push("remove");
     return allowedActions;
   };
 
@@ -1643,7 +1643,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
     allowedActions.push("edit");
-    allowedActions.push("delete");
+    allowedActions.push("remove");
     return allowedActions;
   };
 
@@ -1662,7 +1662,7 @@
 			allowedActions.push("enable");
 		
 		if(jsonObj.isdefault == false) 
-			allowedActions.push("destroy");		
+			allowedActions.push("remove");		
 			
     return allowedActions;		
   };

@@ -786,7 +786,7 @@
                 }
               },
 
-              'destroy': {
+              remove: {
                 label: 'label.action.delete.volume',
                 messages: {
                   confirm: function(args) {
@@ -808,11 +808,7 @@
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete({
-                      data: {
-                        state: 'Destroyed'
-                      }
-                    });
+                    args.complete();
                   }
                 }
               }
@@ -870,15 +866,22 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: volumeActionfilter,
-                      data: args.context.volumes[0]
-                    }
-                  );
+                dataProvider: function(args) {		
+								  $.ajax({
+										url: createURL("listVolumes&id=" + args.context.volumes[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {								  
+											var jsonObj = json.listvolumesresponse.volume[0];   
+											args.response.success(
+												{
+													actionFilter: volumeActionfilter,
+													data: jsonObj
+												}
+											);		
+										}
+									});								
                 }
-
               }
             }
           }
@@ -1082,7 +1085,7 @@
                 }
               },
 
-              'destroy': {
+              remove: {
                 label: 'label.action.delete.snapshot',
                 messages: {
                   confirm: function(args) {
@@ -1110,7 +1113,7 @@
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete({ data: { state: 'Destroyed' } });
+                    args.complete();
                   }
                 }
               }
@@ -1134,12 +1137,20 @@
                 ],
 
                 dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: snapshotActionfilter,
-                      data: args.context.snapshots[0]
-                    }
-                  );
+								  $.ajax({
+										url: createURL("listSnapshots&id=" + args.context.snapshots[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {								  
+											var jsonObj = json.listsnapshotsresponse.snapshot[0];   
+											args.response.success(
+												{
+													actionFilter: snapshotActionfilter,
+													data: jsonObj
+												}
+											);		
+										}
+									});		
                 }
               }
             }
@@ -1180,7 +1191,7 @@
           }
         }
         else { // Disk not attached
-          allowedActions.push("destroy");
+          allowedActions.push("remove");
           allowedActions.push("migrateToAnotherStorage");
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
@@ -1203,7 +1214,7 @@
       allowedActions.push("createTemplate");
       allowedActions.push("createVolume");
     }
-    allowedActions.push("destroy");
+    allowedActions.push("remove");
     return allowedActions;
   }
 

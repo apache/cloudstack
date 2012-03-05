@@ -49,4 +49,6 @@ public interface UserDao extends GenericDao<UserVO, Long>{
 	 */
 	UserVO findUserByRegistrationToken(String registrationToken);
 	
+	List<UserVO> findUsersByName(String username);
+	
 }
