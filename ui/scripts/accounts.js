@@ -619,16 +619,24 @@
             }
 
             var accountObj = args.context.accounts[0];
-            $.ajax({
-              url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + accountObj.name + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              success: function(json) {
-                args.response.success({
-                  actionFilter: userActionfilter,
-                  data: json.listusersresponse.user
-                });
-              }
-            })
+						if(isAdmin() || isDomainAdmin()) {
+							$.ajax({
+								url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + accountObj.name + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+								dataType: "json",
+								success: function(json) {
+									args.response.success({
+										actionFilter: userActionfilter,
+										data: json.listusersresponse.user
+									});
+								}
+							})
+						}
+						else { //normal user doesn't have access listUsers API until Bug 14127 is fixed.
+							args.response.success({
+								actionFilter: userActionfilter,
+								data: accountObj.user
+							});
+						}
           },
           actions: {
             add: {
@@ -970,18 +978,26 @@
                 ],
 
                 dataProvider: function(args) {
-                  $.ajax({
-                    url: createURL('listUsers'),
-                    data: {
-                      id: args.context.users[0].id
-                    },
-                    success: function(json) {
-                      args.response.success({
-                        actionFilter: userActionfilter,
-                        data: json.listusersresponse.user[0]
-                      });
-                    }
-                  });
+								  if(isAdmin() || isDomainAdmin()) {								
+										$.ajax({
+											url: createURL('listUsers'),
+											data: {
+												id: args.context.users[0].id
+											},
+											success: function(json) {
+												args.response.success({
+													actionFilter: userActionfilter,
+													data: json.listusersresponse.user[0]
+												});
+											}
+										});
+									}
+									else { //normal user doesn't have access listUsers API until Bug 14127 is fixed.							
+									  args.response.success({
+											actionFilter: userActionfilter,
+											data: args.context.users[0]
+										});		
+									}									
                 }
               }
             }
@@ -1013,8 +1029,11 @@
         }
         allowedActions.push("remove");
       }
-    }
-    allowedActions.push("updateResourceCount");
+			allowedActions.push("updateResourceCount");
+    }		
+		else if(isDomainAdmin()) {
+      allowedActions.push("updateResourceCount");
+		}	
     return allowedActions;
   }
 
