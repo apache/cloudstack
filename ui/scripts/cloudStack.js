@@ -10,10 +10,10 @@
         return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
       }
       else if (g_userProjectsEnabled) {
-        return ["dashboard", "instances", "storage", "network", "templates", "events", "projects"];
+        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
       }
       else { //normal user
-        return ["dashboard", "instances", "storage", "network", "templates", "events"];
+        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
       }
     },
     sections: {
