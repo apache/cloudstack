@@ -297,13 +297,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
-            List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
-            if(!disabledPods.isEmpty()){
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Removing from the podId list these pods that are disabled: "+ disabledPods);
+            if(!isRootAdmin(plan.getReservationContext())){
+                List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
+                if(!disabledPods.isEmpty()){
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Removing from the podId list these pods that are disabled: "+ disabledPods);
+                    }
+                    podsWithCapacity.removeAll(disabledPods);
                 }
-                podsWithCapacity.removeAll(disabledPods);
-            }
+           }
         }else{
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No pods found having a host with enough capacity, returning.");
@@ -357,18 +359,20 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
             
-            List<Long> disabledClusters = new ArrayList<Long>();
-            if(isZone){
-                disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
-            }else{
-                disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
-            }
-            if(!disabledClusters.isEmpty()){
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: "+ disabledClusters);
+            if(!isRootAdmin(plan.getReservationContext())){
+                List<Long> disabledClusters = new ArrayList<Long>();
+                if(isZone){
+                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
+                }else{
+                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
                 }
-                prioritizedClusterIds.removeAll(disabledClusters);
-            }            
+                if(!disabledClusters.isEmpty()){
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: "+ disabledClusters);
+                    }
+                    prioritizedClusterIds.removeAll(disabledClusters);
+                }
+            }
         }else{
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No clusters found having a host with enough capacity, returning.");
