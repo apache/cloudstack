@@ -5559,9 +5559,6 @@
               'delete': {  
                 label: 'label.action.remove.host' ,
                 messages: {
-                  confirm: function(args) {
-                    return 'message.action.remove.host';
-                  },                 
                   notification: function(args) {
                     return 'label.action.remove.host';
                   }
@@ -5573,6 +5570,7 @@
                 },
                 createForm: {
                   title: 'label.action.remove.host',
+                  desc: 'message.action.remove.host',
                   fields: {
                     isForced: {
                       label: 'force.remove',
