@@ -2185,10 +2185,15 @@
                       details: {
                         title: 'label.details',
                         preFilter: function(args) {
-                          if (!args.context.routers[0].project)
-                              return ['project', 'projectid'];
-
-                          return [];
+												  var hiddenFields = [];
+                          if (!args.context.routers[0].project) {
+													  hiddenFields.push('project');
+														hiddenFields.push('projectid');                              
+                          }													
+													if(selectedZoneObj.networktype == 'Basic') {
+													  hiddenFields.push('publicip'); //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
+											    }
+                          return hiddenFields;
                         },
                         fields: [
                           {
