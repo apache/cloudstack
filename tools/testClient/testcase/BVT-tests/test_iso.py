@@ -62,6 +62,8 @@ class Services:
             "isextractable": True,
             "bootable": True, # For edit template
             "passwordenabled": True,
+            "sleep": 60,
+            "timeout": 10,
             "ostypeid": 12,
             # CentOS 5.3 (64 bit)
             "domainid": 1,
@@ -190,7 +192,7 @@ class TestISO(cloudstackTestCase):
         try:
             cls.iso_1.download(cls.api_client)
         except Exception as e:
-            self.fail("Exception while downloading ISO %s: %s"\
+            raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_1.id, e))
             
         cls.iso_2 = Iso.create(
@@ -202,7 +204,7 @@ class TestISO(cloudstackTestCase):
         try:
             cls.iso_2.download(cls.api_client)
         except Exception as e:
-            self.fail("Exception while downloading ISO %s: %s"\
+            raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_2.id, e))
             
         cls._cleanup = [cls.account]
@@ -248,7 +250,7 @@ class TestISO(cloudstackTestCase):
         new_displayText = random_gen()
         new_name = random_gen()
 
-        self.debug("Updating ISO permissions for ISO: %s", self.iso_1.id)
+        self.debug("Updating ISO permissions for ISO: %s" % self.iso_1.id)
         
         cmd = updateIso.updateIsoCmd()
         #Assign new values to attributes
@@ -312,6 +314,9 @@ class TestISO(cloudstackTestCase):
         self.debug("Deleting ISO with ID: %s" % self.iso_1.id)
         self.iso_1.delete(self.apiclient)
 
+        # Sleep to ensure that ISO state is reflected in other calls
+        time.sleep(self.services["sleep"])
+
         #ListIsos to verify deleted ISO is properly deleted
         list_iso_response = list_isos(
                                       self.apiclient,
@@ -342,10 +347,16 @@ class TestISO(cloudstackTestCase):
         cmd.zoneid = self.services["iso_2"]["zoneid"]
         list_extract_response = self.apiclient.extractIso(cmd)
 
-        #Format URL to ASCII to retrieve response code
-        formatted_url = urllib.unquote_plus(list_extract_response.url)
-        url_response = urllib.urlopen(formatted_url)
-        response_code = url_response.getcode()
+        try:
+            #Format URL to ASCII to retrieve response code
+            formatted_url = urllib.unquote_plus(list_extract_response.url)
+            url_response = urllib.urlopen(formatted_url)
+            response_code = url_response.getcode()
+        except Exception:
+            self.fail(
+                "Extract ISO Failed with invalid URL %s (ISO id: %s)" \
+                % (formatted_url, self.iso_2.id)
+            )
 
         self.assertEqual(
                             list_extract_response.id,

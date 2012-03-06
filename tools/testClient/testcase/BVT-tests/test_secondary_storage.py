@@ -43,6 +43,7 @@ class Services:
                          "zoneid": 1,
                          # Optional, if specified the mentioned zone will be
                          # used for tests
+                         "domainid": 1,
                         }
 
 class TestSecStorageServices(cloudstackTestCase):
@@ -200,7 +201,7 @@ class TestSecStorageServices(cloudstackTestCase):
                            zoneid=self.zone.id,
                            )
 
-            if isinstance(list_hosts_response, list):
+            if not isinstance(list_hosts_response, list):
                 # Sleep to ensure Secondary storage is Up
                 time.sleep(int(self.services["sleep"]))
                 timeout = timeout - 1
@@ -237,7 +238,7 @@ class TestSecStorageServices(cloudstackTestCase):
                                         zoneid=self.zone.id,
                                         podid=self.pod.id
                                         )
-            if isinstance(list_ssvm_response, list):
+            if not isinstance(list_ssvm_response, list):
                 # Sleep to ensure SSVMs are Up and Running
                 time.sleep(int(self.services["sleep"]))
                 timeout = timeout - 1
@@ -282,7 +283,9 @@ class TestSecStorageServices(cloudstackTestCase):
                                     self.apiclient,
                                     hypervisor=v["hypervisor"],
                                     zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"]
+                                    templatefilter=v["templatefilter"],
+                                    account='system',
+                                    domainid=self.services["domainid"]
                                     )
 
             # Ensure all BUILTIN templates are downloaded
@@ -302,7 +305,9 @@ class TestSecStorageServices(cloudstackTestCase):
                                     self.apiclient,
                                     id=templateid,
                                     zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"]
+                                    templatefilter=v["templatefilter"],
+                                    account='system',
+                                    domainid=self.services["domainid"]
                                     )
                 
                     if isinstance(template_response, list):
@@ -335,7 +340,9 @@ class TestSecStorageServices(cloudstackTestCase):
                                     self.apiclient,
                                     id=templateid,
                                     zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"]
+                                    templatefilter=v["templatefilter"],
+                                    account='system',
+                                    domainid=self.services["domainid"]
                                     )
                 
                 if isinstance(template_response, list):

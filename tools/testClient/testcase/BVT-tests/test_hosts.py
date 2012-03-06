@@ -23,7 +23,7 @@ class Services:
                        "clusters": {
                                    0: {
                                         "clustername": "Xen Cluster",
-                                        "clustertype": "ExternalManaged",
+                                        "clustertype": "CloudManaged",
                                         # CloudManaged or ExternalManaged"
                                         "hypervisor": "XenServer",
                                         # Hypervisor type
@@ -53,10 +53,10 @@ class Services:
                                 # in cluster in small letters
                                           "hypervisor": 'XenServer',
                                           # Hypervisor type
-                                          "clustertype": 'ExternalManaged',
+                                          "clustertype": 'CloudManaged',
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.210',
-                                          "username": "administrator",
+                                          "username": "root",
                                           "password": "fr3sca",
                                           },
                                  "kvm": {
@@ -90,8 +90,10 @@ class TestHosts(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.services = Services().services
+        self.zone = get_zone(self.apiclient, self.services)
+        self.pod = get_pod(self.apiclient, self.zone.id, self.services)
         self.cleanup = []
-
+        
         return
 
     def tearDown(self):

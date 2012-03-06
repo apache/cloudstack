@@ -109,7 +109,7 @@ class Services:
             #Migrate VM to hostid
             "ostypeid": 12,
             # CentOS 5.3 (64-bit)
-            "zoneid": 1,
+            "zoneid": 2,
             # Optional, if specified the mentioned zone will be
             # used for tests
             "mode":'advanced',
@@ -498,7 +498,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         total_mem = [i for i in meminfo if "MemTotal" in i][0].split()[1]
         
         self.debug(
-            "CUP count: %s, CPU Speed: %s, Mem Info: %s" % (
+            "CPU count: %s, CPU Speed: %s, Mem Info: %s" % (
                                                             cpu_cnt,
                                                             cpu_speed,
                                                             total_mem
@@ -519,8 +519,6 @@ class TestVMLifeCycle(cloudstackTestCase):
                             self.small_offering.memory,
                             "Check Memory(kb) for small offering"
                         )
-        # Cleanup - Not required for further tests
-        self.cleanup.append(self.medium_virtual_machine)
         return
 
     def test_05_change_offering_medium(self):
@@ -620,7 +618,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         total_mem = [i for i in meminfo if "MemTotal" in i][0].split()[1]
         
         self.debug(
-            "CUP count: %s, CPU Speed: %s, Mem Info: %s" % (
+            "CPU count: %s, CPU Speed: %s, Mem Info: %s" % (
                                                             cpu_cnt,
                                                             cpu_speed,
                                                             total_mem
@@ -859,7 +857,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % 
-                                self.virtual_machine.ipaddress, e)
+                                (self.virtual_machine.ipaddress, e))
             
         # Res may contain more than one strings depending on environment
         # Split strings to form new list which is used for assertion on ISO size 
@@ -892,7 +890,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % 
-                                self.virtual_machine.ipaddress, e)
+                                (self.virtual_machine.ipaddress, e))
             
         #Detach from VM
         cmd = detachIso.detachIsoCmd()
@@ -904,7 +902,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % 
-                                self.virtual_machine.ipaddress, e)
+                                (self.virtual_machine.ipaddress, e))
             
         # Check if ISO is properly detached from VM (using fdisk)
         result = self.services["diskdevice"] in str(res)

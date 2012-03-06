@@ -70,7 +70,8 @@ class Services:
                         # Optional, if specified the mentioned zone will be
                         # used for tests
                         "sleep": 60,
-                        "mode":'advanced'
+                        "timeout": 10,
+                        "mode": 'advanced',
                     }
 
 class TestResourceLimitsAccount(cloudstackTestCase):
@@ -149,6 +150,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    for this account.
         # 3. Try to start 2 VMs account 2. Verify 2 SM are started properly
 
+        self.debug(
+            "Updating instance resource limit for account: %s" % 
+                                                self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -157,6 +161,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               domainid=self.account_1.account.domainid,
                               max=1
                               )
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_1.account.name)
 
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
@@ -183,6 +190,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 accountid=self.account_1.account.name,
                                 serviceofferingid=self.service_offering.id
                                 )
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_2.account.name)
         # Start 2 instances for account_2
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -199,6 +209,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
 
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_2.account.name)
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -227,7 +240,10 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    denied to acquire more than one IP.
         # 5. Acquire 2 IP in account 2. Verify account 2 should be able to
         #    Acquire IP without any warning
-
+        
+        self.debug(
+            "Updating public IP resource limit for account: %s" % 
+                                                self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -237,6 +253,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               max=2
                               )
 
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -252,6 +271,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
 
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_2.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
@@ -267,7 +289,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
-
+        self.debug(
+            "Associating public IP for account: %s" % 
+                                        virtual_machine_1.account)
         public_ip_1 = PublicIPAddress.create(
                                            self.apiclient,
                                            virtual_machine_1.account,
@@ -300,6 +324,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                            self.services["server"]
                                            )
 
+        self.debug(
+            "Associating public IP for account: %s" % 
+                                        virtual_machine_2.account)
         # Assign Public IP for account 2
         public_ip_3 = PublicIPAddress.create(
                                            self.apiclient,
@@ -319,6 +346,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             True,
                             "Check Public IP state is allocated or not"
                         )
+        self.debug(
+            "Associating public IP for account: %s" % 
+                                        virtual_machine_2.account)
         public_ip_4 = PublicIPAddress.create(
                                            self.apiclient,
                                            virtual_machine_2.account,
@@ -351,6 +381,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 5. Create 2 snapshot in account 2. Verify account 2 should be able to
         #    create snapshots without any warning
 
+        self.debug(
+            "Updating public IP resource limit for account: %s" % 
+                                                self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -360,6 +393,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               max=1
                               )
 
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -375,6 +411,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
 
+        self.debug(
+            "Deploying VM instance in account: %s" % 
+                                        self.account_1.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
@@ -397,8 +436,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
 
+        self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK (Account 1)
         snapshot_1 = Snapshot.create(self.apiclient,
                             volumes[0].id,
@@ -430,8 +475,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             virtualmachineid=virtual_machine_2.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
-
+        
+        self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK (Account 2)
         snapshot_2 = Snapshot.create(self.apiclient,
                             volumes[0].id,
@@ -448,6 +499,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             True,
                             "Check Snapshot state is Running or not"
                         )
+
+        self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a second snapshot from the ROOTDISK (Account 2)
         snapshot_3 = Snapshot.create(self.apiclient,
                             volumes[0].id,
@@ -479,6 +532,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 5. Create 2 volumes in account 2. Verify account 2 should be able to
         #    create Volume without any warning
 
+        self.debug(
+            "Updating volume resource limit for account: %s" % 
+                                                self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -487,6 +543,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               domainid=self.account_1.account.domainid,
                               max=3
                               )
+
+        self.debug(
+            "Deploying VM for account: %s" % self.account_1.account.name)
 
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -502,6 +561,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
+
+        self.debug(
+            "Deploying VM for account: %s" % self.account_2.account.name)
 
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
@@ -519,12 +581,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
 
+        self.debug(
+            "Create a data volume for account: %s" % self.account_1.account.name)
         volume_1 = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
                                    account=self.account_1.account.name,
-                                   domainid=self.account_2.account.domainid,
+                                   domainid=self.account_1.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
         self.cleanup.append(volume_1)
@@ -549,6 +613,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                           diskofferingid=self.disk_offering.id
                         )
 
+        self.debug(
+            "Create a data volume for account: %s" % self.account_2.account.name)
         # Create volume for Account 2
         volume_2 = Volume.create(
                                    self.apiclient,
@@ -569,6 +635,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Volume state is Ready or not"
                         )
 
+        self.debug(
+            "Create a data volume for account: %s" % self.account_2.account.name)
         # Create a second volume from the ROOTDISK (Account 2)
         volume_3 = Volume.create(
                                    self.apiclient,
@@ -601,6 +669,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 3. Try to create 2 templates in account 2. Verify account 2 should be
         #    able to create template without any error
 
+        self.debug(
+            "Updating template resource limit for account: %s" % 
+                                                self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -610,6 +681,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               max=1
                               )
 
+        self.debug(
+            "Updating volume resource limit for account: %s" % 
+                                                self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -625,6 +699,9 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
 
+        self.debug(
+            "Deploying virtual machine for account: %s" % 
+                                                self.account_2.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
@@ -648,9 +725,16 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
 
-        # Create a snapshot from the ROOTDISK (Account 1)
+        self.debug(
+            "Creating template from volume: %s" % volume.id)
+        # Create a template from the ROOTDISK (Account 1)
         template_1 = Template.create(
                             self.apiclient,
                             self.services["template"],
@@ -683,8 +767,15 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             virtualmachineid=virtual_machine_2.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
 
+        self.debug(
+            "Creating template from volume: %s" % volume.id)
         # Create a snapshot from the ROOTDISK (Account 1)
         template_2 = Template.create(
                             self.apiclient,
@@ -701,6 +792,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             True,
                             "Check Template is in ready state or not"
                         )
+        self.debug(
+            "Creating template from volume: %s" % volume.id)
         # Create a second volume from the ROOTDISK (Account 2)
         template_3 = Template.create(
                             self.apiclient,
@@ -800,6 +893,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 3. Try to create 3rd VM instance. The appropriate error or alert
         #    should be raised
 
+        self.debug(
+            "Updating instance resource limits for domain: %s" % 
+                                        self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -808,6 +904,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=2
                               )
 
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -823,6 +920,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -862,6 +960,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 5. Try to acquire 3rd IP in this domain. It should give the user an
         #    appropriate error and an alert should be generated.
 
+        self.debug(
+            "Updating public IP resource limits for domain: %s" % 
+                                        self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -870,6 +971,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=2
                               )
 
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -885,7 +987,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
-
+        self.debug("Associating public IP for account: %s" % self.account.account.name)
         public_ip_1 = PublicIPAddress.create(
                                            self.apiclient,
                                            virtual_machine_1.account,
@@ -928,6 +1030,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 5. Try to create another snapshot in this domain. It should give the
         #    user an appropriate error and an alert should be generated.
 
+        self.debug(
+            "Updating snapshot resource limits for domain: %s" % 
+                                        self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -936,6 +1041,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=1
                               )
 
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -958,8 +1064,14 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
 
+        self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK
         snapshot_1 = Snapshot.create(self.apiclient,
                             volumes[0].id,
@@ -998,6 +1110,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    appropriate error that Volume limit is exhausted and an alert
         #    should be generated.
 
+        self.debug(
+            "Updating volume resource limits for domain: %s" % 
+                                        self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -1006,6 +1121,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=1
                               )
 
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -1046,6 +1162,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 4. Try create 3rd template in the domain. It should give the user an
         #    appropriate error and an alert should be generated.
 
+        self.debug(
+            "Updating template resource limits for domain: %s" % 
+                                        self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
@@ -1054,6 +1173,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=2
                               )
 
+        self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -1076,8 +1196,14 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                        isinstance(volumes, list),
+                        True,
+                        "Check for list volume response return valid data"
+                        )
         volume = volumes[0]
 
+        self.debug("Creating template from volume: %s" % volume.id)
         # Create a template from the ROOTDISK
         template_1 = Template.create(
                             self.apiclient,
@@ -1094,7 +1220,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             True,
                             "Check Template is in ready state or not"
                         )
-
+        self.debug("Creating template from volume: %s" % volume.id)
         # Create a template from the ROOTDISK
         template_2 = Template.create(
                             self.apiclient,

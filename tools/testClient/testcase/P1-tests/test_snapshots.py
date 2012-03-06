@@ -89,8 +89,9 @@ class Services:
                         "zoneid": 1,
                         # Optional, if specified the mentioned zone will be
                         # used for tests
-                        "sleep": 200,
-                        "mode" : 'basic', # Networking mode: Advanced, Basic
+                        "sleep": 60,
+                        "timeout": 10,
+                        "mode" : 'advanced', # Networking mode: Advanced, Basic
                     }
 
 
@@ -180,7 +181,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 accountid=self.account.account.name,
                                 serviceofferingid=self.service_offering.id
                                 )
-
+        self.debug("Created VM with ID: %s" % self.virtual_machine.id)
         # Get the Root disk of VM 
         volumes = list_volumes(
                             self.apiclient,
@@ -191,12 +192,18 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
 
         # Create a snapshot from the ROOTDISK
         snapshot = Snapshot.create(self.apiclient, volumes[0].id)
+        self.debug("Snapshot created: ID - %s" % snapshot.id)
         self.cleanup.append(snapshot)
 
         snapshots = list_snapshots(
                                    self.apiclient,
                                    id=snapshot.id
                                    )
+        self.assertEqual(
+                            isinstance(snapshots, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             snapshots,
                             None,
@@ -230,6 +237,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                     snapshot,
                                     self.services["templates"]
                                     )
+        self.debug("Created template from snapshot: %s" % template.id)
         self.cleanup.append(template)
 
         templates = list_templates(
@@ -259,6 +267,10 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     serviceofferingid=self.service_offering.id
                                     )
+        self.debug("Created VM with ID: %s from template: %s" % (
+                                                        new_virtual_machine.id,
+                                                        template.id
+                                                        ))
         self.cleanup.append(new_virtual_machine)
 
         # Newly deployed VM should be 'Running'
@@ -268,7 +280,11 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 account=self.account.account.name,
                                 domainid=self.account.account.domainid
                                 )
-
+        self.assertEqual(
+                            isinstance(virtual_machines, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                              len(virtual_machines),
                              0,
@@ -280,21 +296,45 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                         'Running',
                         "Check list VM response for Running state"
                     )
+        # Get the Secondary Storage details from  list Hosts
+        hosts = list_hosts(
+                                 self.apiclient,
+                                 type='SecondaryStorage',
+                                 zoneid=self.zone.id
+                                 )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
 
+        # hosts[0].name = "nfs://192.168.100.21/export/test"
+        parse_url = (hosts[0].name).split('/')
+        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+
+        # Split IP address and export path from name
+        sec_storage_ip = parse_url[2]
+        # Sec Storage IP: 192.168.100.21
+
+        export_path = '/'.join(parse_url[3:])
+        # Export path: export/test
+        
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
-        # Login to VM to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
+        try:
+            # Login to VM to check snapshot present on sec disk
+            ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-        cmds = [    "mkdir -p %s" % self.services["mount_dir"],
+            cmds = [    
+                    "mkdir -p %s" % self.services["mount_dir"],
                     "mount %s:/%s %s" % (
-                                         self.services["sec_storage"],
-                                         self.services["exportpath"],
+                                         sec_storage_ip,
+                                         export_path,
                                          self.services["mount_dir"]
                                          ),
                     "ls %s/snapshots/%s/%s" % (
@@ -303,8 +343,14 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                                volume_id
                                                ),
                 ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+            for c in cmds:
+                self.debug("command: %s" % c)
+                result = ssh_client.execute(c)
+                self.debug("Result: %s" % result)
+                
+        except Exception as e:
+            self.fail("SSH failed for Management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
 
         res = str(result)
         self.assertEqual(
@@ -316,8 +362,15 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         cmds = [
                     "umount %s" % (self.services["mount_dir"]),
                 ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+        try:
+            for c in cmds:
+                self.debug("command: %s" % c)
+                result = ssh_client.execute(c)
+                self.debug("Result: %s" % result)
+
+        except Exception as e:
+            self.fail("SSH failed for Management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])        
         return
 
 
@@ -416,7 +469,11 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                  self.apiclient,
                                  id=self.account.account.id
                                  )
-
+        self.assertEqual(
+                            isinstance(accounts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                              len(accounts),
                              0,
@@ -428,13 +485,21 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                 self.apiclient,
                                 id=self.virtual_machine.id
                                 )
-
+        self.assertEqual(
+                            isinstance(virtual_machines, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                              len(virtual_machines),
                              0,
                              "Check list virtual machines response"
                              )
         for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s, VM state: %s" % (
+                                            virtual_machine.id,
+                                            virtual_machine.state    
+                                            ))
             self.assertEqual(
                         virtual_machine.state,
                         'Running',
@@ -446,6 +511,11 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                    self.apiclient,
                                    id=self.snapshot.id
                                    )
+        self.assertEqual(
+                            isinstance(snapshots, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             snapshots,
                             None,
@@ -462,6 +532,11 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                         "select backup_snap_id, account_id, volume_id from snapshots where id = %s;" \
                         % self.snapshot.id
                         )
+        self.assertEqual(
+                            isinstance(qresultset, list),
+                            True,
+                            "Check DB response returns a valid list"
+                        )
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -473,20 +548,45 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         account_id = qresult[1]
         volume_id = qresult[2]
 
+        # Get the Secondary Storage details from  list Hosts
+        hosts = list_hosts(
+                                 self.apiclient,
+                                 type='SecondaryStorage',
+                                 zoneid=self.zone.id
+                            )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        # hosts[0].name = "nfs://192.168.100.21/export/test"
+        parse_url = (hosts[0].name).split('/')
+        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+
+        # Split IP address and export path from name
+        sec_storage_ip = parse_url[2]
+        # Sec Storage IP: 192.168.100.21
+
+        export_path = '/'.join(parse_url[3:])
+        # Export path: export/test
+        
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
-        # Login to Secondary storage VM to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
+        try:
+            # Login to Secondary storage VM to check snapshot present on sec disk
+            ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-        cmds = [    "mkdir -p %s" % self.services["mount_dir"],
+            cmds = [
+                    "mkdir -p %s" % self.services["mount_dir"],
                     "mount %s:/%s %s" % (
-                                         self.services["sec_storage"],
-                                         self.services["exportpath"],
+                                         sec_storage_ip,
+                                         export_path,
                                          self.services["mount_dir"]
                                          ),
                     "ls %s/snapshots/%s/%s" % (
@@ -496,21 +596,29 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                                ),
                 ]
 
-        for c in cmds:
-            result = ssh_client.execute(c)
-        res = str(result)
-        self.assertEqual(
+            for c in cmds:
+                self.debug("command: %s" % c)
+                result = ssh_client.execute(c)
+                self.debug("Result: %s" % result)
+                
+            res = str(result)
+            self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
 
-        # Unmount the Sec Storage
-        cmds = [
+            # Unmount the Sec Storage
+            cmds = [
                     "umount %s" % (self.services["mount_dir"]),
                 ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+            for c in cmds:
+                result = ssh_client.execute(c)
+        except Exception:
+            self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
+        
+        self.debug("Deleting account: %s" % self.account.account.name)
         # Delete account
         self.account.delete(self.apiclient)
 
@@ -518,6 +626,13 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                     self.apiclient,
                                     name='account.cleanup.interval'
                                     )
+        self.assertEqual(
+                            isinstance(interval, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        self.debug("account.cleanup.interval: %s" % interval[0].value)
+        
         # Wait for account cleanup interval
         time.sleep(int(interval[0].value) * 2)
 
@@ -526,33 +641,44 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                  self.apiclient,
                                  id=self.account.account.id
                                  )
-
-        cmds = [    "mount %s:/%s %s" % (
-                                         self.services["sec_storage"],
-                                         self.services["exportpath"],
+        try:
+            cmds = [    
+                "mount %s:/%s %s" % (
+                                         sec_storage_ip,
+                                         export_path,
                                          self.services["mount_dir"]
                                          ),
-                    "ls %s/snapshots/%s/%s" % (
+                "ls %s/snapshots/%s/%s" % (
                                                self.services["mount_dir"],
                                                account_id,
                                                volume_id
                                                ),
                 ]
 
-        for c in cmds:
-            result = ssh_client.execute(c)
-        res = str(result)
-        self.assertNotEqual(
+            for c in cmds:
+                self.debug("command: %s" % c)
+                result = ssh_client.execute(c)
+                self.debug("Result: %s" % result)
+                
+            res = str(result)
+            
+            self.assertNotEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-        # Unmount the Sec Storage
-        cmds = [
+            # Unmount the Sec Storage
+            cmds = [
                     "umount %s" % (self.services["mount_dir"]),
-                ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+                    ]
+            for c in cmds:
+                self.debug("command: %s" % c)
+                result = ssh_client.execute(c)
+                self.debug("Result: %s" % result)
+
+        except Exception:
+            self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
         return
 
 
@@ -649,18 +775,24 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                virtualmachineid=self.virtual_machine.id,
                                type='DATADISK'
                                )
+        self.assertEqual(
+                            isinstance(volumes, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         volume = volumes[0]
         random_data_0 = random_gen(100)
         random_data_1 = random_gen(100)
+        try:
+            ssh_client = self.virtual_machine.get_ssh_client()
 
-        ssh_client = self.virtual_machine.get_ssh_client()
-
-        #Format partition using ext3
-        format_volume_to_ext3(
+            #Format partition using ext3
+            format_volume_to_ext3(
                               ssh_client,
                               self.services["diskdevice"]
                               )
-        cmds = [    "mkdir -p %s" % self.services["mount_dir"],
+            cmds = [
+                    "mkdir -p %s" % self.services["mount_dir"],
                     "mount %s1 %s" % (
                                       self.services["diskdevice"],
                                       self.services["mount_dir"]
@@ -684,46 +816,49 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                 self.services["random_data"]
                                             )
                 ]
-        for c in cmds:
-            self.debug(ssh_client.execute(c))
+            for c in cmds:
+                self.debug(ssh_client.execute(c))
 
-        #detach volume from VM
-        cmd = detachVolume.detachVolumeCmd()
-        cmd.id = volume.id
-        self.apiclient.detachVolume(cmd)
+            #detach volume from VM
+            cmd = detachVolume.detachVolumeCmd()
+            cmd.id = volume.id
+            self.apiclient.detachVolume(cmd)
 
-        #Create snapshot from detached volume
-        snapshot = Snapshot.create(self.apiclient, volume.id)
-        self.cleanup.append(snapshot)
+            #Create snapshot from detached volume
+            snapshot = Snapshot.create(self.apiclient, volume.id)
+            self.cleanup.append(snapshot)
 
-        volumes = list_volumes(
+            volumes = list_volumes(
                                self.apiclient,
                                virtualmachineid=self.virtual_machine.id,
                                type='DATADISK'
                                )
 
-        self.assertEqual(
+            self.assertEqual(
                             volumes,
                             None,
                             "Check Volume is detached"
                       )
 
-        # Verify the snapshot was created or not
-        snapshots = list_snapshots(
+            # Verify the snapshot was created or not
+            snapshots = list_snapshots(
                                    self.apiclient,
                                    id=snapshot.id
                                    )
-        self.assertNotEqual(
+            self.assertNotEqual(
                             snapshots,
                             None,
                             "Check if result exists in list snapshots call"
                             )
-        self.assertEqual(
+            self.assertEqual(
                             snapshots[0].id,
                             snapshot.id,
                             "Check snapshot id in list resources call"
                         )
-
+        except Exception as e:
+            self.fail("SSH failed for VM with IP: %s" %
+                                self.virtual_machine.ipaddress)
+            
         # Fetch values from database
         qresultset = self.dbclient.execute(
                         "select backup_snap_id, account_id, volume_id from snapshots where id = %s;" \
@@ -746,20 +881,45 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                             "Check if backup_snap_id is not null"
                         )
 
+        # Get the Secondary Storage details from  list Hosts
+        hosts = list_hosts(
+                                 self.apiclient,
+                                 type='SecondaryStorage',
+                                 zoneid=self.zone.id
+                                 )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        # hosts[0].name = "nfs://192.168.100.21/export/test"
+        parse_url = (hosts[0].name).split('/')
+        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+
+        # Split IP address and export path from name
+        sec_storage_ip = parse_url[2]
+        # Sec Storage IP: 192.168.100.21
+
+        export_path = '/'.join(parse_url[3:])
+        # Export path: export/test
+        
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
-        # Login to Management server to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
+        try:
+            # Login to Management server to check snapshot present on sec disk
+            ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-        cmds = [    "mkdir -p %s" % self.services["mount_dir"],
+            cmds = [
+                    "mkdir -p %s" % self.services["mount_dir"],
                     "mount %s:/%s %s" % (
-                                         self.services["sec_storage"],
-                                         self.services["exportpath"],
+                                         sec_storage_ip,
+                                         export_path,
                                          self.services["mount_dir"]
                                          ),
                     "ls %s/snapshots/%s/%s" % (
@@ -769,20 +929,23 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                ),
                 ]
 
-        for c in cmds:
-            result = ssh_client.execute(c)
-        res = str(result)
-        self.assertEqual(
+            for c in cmds:
+                result = ssh_client.execute(c)
+            res = str(result)
+            self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-        # Unmount the Sec Storage
-        cmds = [
+            # Unmount the Sec Storage
+            cmds = [
                     "umount %s" % (self.services["mount_dir"]),
-                ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+                    ]
+            for c in cmds:
+                result = ssh_client.execute(c)
+        except Exception as e:
+            self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
 
         return
 
@@ -870,6 +1033,11 @@ class TestSnapshotLimit(cloudstackTestCase):
                             virtualmachineid=self.virtual_machine.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                            isinstance(volumes, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         volume = volumes[0]
 
         # Create a snapshot policy
@@ -885,6 +1053,12 @@ class TestSnapshotLimit(cloudstackTestCase):
                                         id=recurring_snapshot.id,
                                         volumeid=volume.id
                                         )
+        self.assertEqual(
+                            isinstance(snapshot_policy, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        
         self.assertNotEqual(
                             snapshot_policy,
                             None,
@@ -915,7 +1089,12 @@ class TestSnapshotLimit(cloudstackTestCase):
                         self.services["recurring_snapshot"]["intervaltype"],
                         snapshottype='RECURRING'
                         )
-
+        
+        self.assertEqual(
+                            isinstance(snapshots, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                          len(snapshots),
                          self.services["recurring_snapshot"]["maxsnaps"],
@@ -929,6 +1108,11 @@ class TestSnapshotLimit(cloudstackTestCase):
                         "select backup_snap_id, account_id, volume_id from snapshots where id = %s;" \
                         % self.snapshot.id
                         )
+        self.assertEqual(
+                            isinstance(qresultset, list),
+                            True,
+                            "Check DBQuery returns a valid list"
+                        )
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -940,18 +1124,42 @@ class TestSnapshotLimit(cloudstackTestCase):
         account_id = qresult[1]
         volume_id = qresult[2]
 
-        # Login to VM to check snapshot present on sec disk
-        ssh_client = remoteSSHClient.remoteSSHClient(
+        # Get the Secondary Storage details from  list Hosts
+        hosts = list_hosts(
+                                 self.apiclient,
+                                 type='SecondaryStorage',
+                                 zoneid=self.zone.id
+                                 )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        # hosts[0].name = "nfs://192.168.100.21/export/test"
+        parse_url = (hosts[0].name).split('/')
+        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+
+        # Split IP address and export path from name
+        sec_storage_ip = parse_url[2]
+        # Sec Storage IP: 192.168.100.21
+
+        export_path = '/'.join(parse_url[3:])
+        # Export path: export/test
+        try:
+            # Login to VM to check snapshot present on sec disk
+            ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-        cmds = [    "mkdir -p %s" % self.services["mount_dir"],
+            cmds = [
+                    "mkdir -p %s" % self.services["mount_dir"],
                     "mount %s:/%s %s" % (
-                                         self.services["sec_storage"],
-                                         self.services["exportpath"],
+                                         sec_storage_ip,
+                                         export_path,
                                          self.services["mount_dir"]
                                          ),
                     "ls %s/snapshots/%s/%s" % (
@@ -961,22 +1169,25 @@ class TestSnapshotLimit(cloudstackTestCase):
                                                ),
                 ]
 
-        for c in cmds:
-            result = ssh_client.execute(c)
+            for c in cmds:
+                result = ssh_client.execute(c)
 
-        res = str(result)
-        self.assertEqual(
+            res = str(result)
+            self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
 
-        # Unmount the Sec Storage
-        cmds = [
+            # Unmount the Sec Storage
+            cmds = [
                     "umount %s" % (self.services["mount_dir"]),
                 ]
-        for c in cmds:
-            result = ssh_client.execute(c)
+            for c in cmds:
+                result = ssh_client.execute(c)
+        except Exception as e:
+            raise Exception("SSH access failed for management server: %s" %
+                                    self.services["mgmt_server"]["ipaddress"])
         return
 
 
@@ -1062,15 +1273,26 @@ class TestSnapshotEvents(cloudstackTestCase):
                             virtualmachineid=self.virtual_machine.id,
                             type='ROOT'
                             )
+        self.assertEqual(
+                            isinstance(volumes, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
         snapshot = Snapshot.create(self.apiclient, volumes[0].id)
+        self.debug("Snapshot created with ID: %s" % snapshot.id)
 
         snapshots = list_snapshots(
                                    self.apiclient,
                                    id=snapshot.id
                                    )
+        self.assertEqual(
+                            isinstance(snapshots, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             snapshots,
                             None,
@@ -1091,6 +1313,11 @@ class TestSnapshotEvents(cloudstackTestCase):
                              domainid=self.account.account.domainid,
                              type='SNAPSHOT.DELETE'
                              )
+        self.assertEqual(
+                            isinstance(events, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
         self.assertNotEqual(
                             events,
                             None,

@@ -79,8 +79,10 @@ class Services:
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
-                        "destzoneid": 13, # For Copy template (Destination zone)
+                        "destzoneid": 2, # For Copy template (Destination zone)
                         "ostypeid": 12,
+                        "sleep": 60,
+                        "timeout": 10,
                         "zoneid": 1,
                         # Optional, if specified the mentioned zone will be
                         # used for tests
@@ -88,7 +90,7 @@ class Services:
                      }
 
 
-# TODO : Testing 
+@unittest.skip("Testing is pending")
 class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):
@@ -171,28 +173,49 @@ class TestCreateTemplate(cloudstackTestCase):
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
+            self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                v["format"],
+                                                                template.id
+                                                                ))
             # Wait for template to download
             template.download(self.apiclient)
             self.cleanup.append(template)
 
             # Wait for template status to be changed across
-            time.sleep(60)
-            list_template_response = list_templates(
+            time.sleep(self.services["sleep"])
+            timeout = self.services["timeout"]
+            while True:
+                list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
                                     id=template.id,
-                                    zoneid=self.zone.id
+                                    zoneid=self.zone.id,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
                                     )
-
+                if isinstance(list_template_response, list):
+                    break
+                elif timeout == 0:
+                    raise Exception("List template failed!")
+                
+                time.sleep(5)
+                timeout = timeout - 1
             #Verify template response to check whether template added successfully
+            self.assertEqual(
+                        isinstance(list_template_response, list),
+                        True,
+                        "Check for list template response return valid data"
+                        )
+            
             self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template available in List Templates"
                         )
+            
             template_response = list_template_response[0]
-
             self.assertEqual(
                             template_response.isready,
                             True,
@@ -208,12 +231,18 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
+            self.debug("creating an instance with template ID: %s" % template.id)
             vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
+            self.assertEqual(
+                             isinstance(vm_response, list),
+                             True,
+                             "Check for list VMs response after VM deployment"
+                             )
             #Verify VM response to check whether VM deployment was successful
             self.assertNotEqual(
                             len(vm_response),
@@ -268,13 +297,24 @@ class TestTemplates(cloudstackTestCase):
         #Stop virtual machine
         cls.virtual_machine.stop(cls.api_client)
 
+        timeout = cls.services["timeout"]        
         #Wait before server has be successfully stopped
-        time.sleep(30)
-        list_volume = list_volumes(
+        time.sleep(cls.services["sleep"])
+        
+        while True:
+            list_volume = list_volumes(
                                    cls.api_client,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT'
                                    )
+            if isinstance(list_volume, list):
+                break
+            elif timeout == 0:
+                raise Exception("List volumes failed.")
+            
+            time.sleep(5)
+            timeout = timeout -1
+            
         cls.volume = list_volume[0]
 
         #Create template from volume
@@ -332,7 +372,8 @@ class TestTemplates(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     serviceofferingid=self.service_offering.id,
                                     )
-
+        
+        self.debug("creating an instance with template ID: %s" % self.template.id)
         self.cleanup.append(virtual_machine)
         vm_response = list_virtual_machines(
                                         self.apiclient,
@@ -360,7 +401,12 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. copy template should be successful and
         #    secondary storage should contain new copied template.
-
+        
+        self.debug(
+            "Copying template from zone: %s to %s" % (
+                                                self.template.id,
+                                                self.services["destzoneid"]
+                                                ))
         cmd = copyTemplate.copyTemplateCmd()
         cmd.id = self.template.id
         cmd.destzoneid = self.services["destzoneid"]
@@ -375,6 +421,12 @@ class TestTemplates(cloudstackTestCase):
                                     id=self.template.id,
                                     zoneid=self.services["destzoneid"]
                                     )
+        self.assertEqual(
+                        isinstance(list_template_response, list),
+                        True,
+                        "Check for list template response return valid list"
+                        )
+        
         self.assertNotEqual(
                             len(list_template_response),
                             0,
@@ -417,6 +469,12 @@ class TestTemplates(cloudstackTestCase):
                                     id=self.template.id,
                                     zoneid=self.zone.id
                                     )
+        self.assertEqual(
+                        isinstance(list_template_response, list),
+                        True,
+                        "Check for list template response return valid list"
+                        )
+        
         self.assertNotEqual(
                             len(list_template_response),
                             0,
@@ -429,8 +487,12 @@ class TestTemplates(cloudstackTestCase):
                             self.template.id,
                             "Check display text of updated template"
                         )
+        
+        self.debug("Deleting template: %s" % self.template)
+        # Delete the template
         self.template.delete(self.apiclient)
-
+        self.debug("Delete template: %s successful" % self.template)
+        
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter=\
@@ -461,11 +523,16 @@ class TestTemplates(cloudstackTestCase):
                         type='ROOT'
                         )
         volume = volumes[0]
-
+        
+        self.debug("Creating a snapshot from volume: %s" % volume.id)
         #Create a snapshot of volume
-        snapshot = Snapshot.create(self.apiclient, volume.id)
-        self.cleanup.append(snapshot)
-
+        snapshot = Snapshot.create(
+                                   self.apiclient,
+                                   volume.id,
+                                   account=self.account.account.name,
+                                   domainid=self.account.account.domainid
+                                   )
+        self.debug("Creating a template from snapshot: %s" % snapshot.id)
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
                                     self.apiclient,
@@ -491,7 +558,7 @@ class TestTemplates(cloudstackTestCase):
                             template.id,
                             "Check new template id in list resources call"
                         )
-
+        self.debug("Deploying a VM from template: %s" % template.id)
         # Deploy new virtual machine using template
         virtual_machine = VirtualMachine.create(
                                     self.apiclient,
@@ -508,6 +575,12 @@ class TestTemplates(cloudstackTestCase):
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
+        self.assertEqual(
+                        isinstance(vm_response, list),
+                        True,
+                        "Check for list VM response return valid list"
+                        )
+
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),

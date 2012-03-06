@@ -185,20 +185,10 @@ class VirtualMachine:
         elif "domainid" in services:
             cmd.domainid = services["domainid"]
 
-        # List Networks for that user
-        command = listNetworks.listNetworksCmd()
-        command.zoneid = services["zoneid"]
-        command.account = accountid or services["account"]
-        command.domainid = domainid or services["domainid"]
-        network = apiclient.listNetworks(command)
-
         if networkids:
             cmd.networkids = networkids
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
-        elif network:   #If user already has source NAT created, then use that
-            if hasattr(network[0], "account"):
-                cmd.networkids = network[0].id
 
         if templateid:
             cmd.templateid = templateid
@@ -209,7 +199,7 @@ class VirtualMachine:
             cmd.diskofferingid = services["diskoffering"]
         
         if securitygroupids:
-            cmd.securitygroupids = securitygroupids
+            cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
         
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
@@ -231,7 +221,7 @@ class VirtualMachine:
                             "TimeOutException: Failed to start VM (ID: %s)" % 
                                                         virtual_machine.id)
             
-            time.sleep(30)
+            time.sleep(10)
             timeout = timeout -1
       
         if mode.lower() == 'advanced':
@@ -1068,7 +1058,7 @@ class Host:
         host = apiclient.addHost(cmd)
         
         if isinstance(host, list):
-            return Host(host[0])
+            return Host(host[0].__dict__)
 
     def delete(self, apiclient):
         """Delete Host"""
@@ -1412,15 +1402,18 @@ class SecurityGroup:
             cmd.domainid = domainid
         if account:
             cmd.account = account
-            cmd.usersecuritygrouplist[0].account=account
-        else:
-            cmd.usersecuritygrouplist[0].account='admin'
                 
         cmd.securitygroupid=self.id
         cmd.protocol=services["protocol"]
-        cmd.startport = services["startport"]
-        cmd.endport = services["endport"]
-        cmd.usersecuritygrouplist[0].group=services["type"]
+        
+        if services["protocol"] == 'ICMP':
+            cmd.icmptype = -1
+            cmd.icmpcode = -1
+        else:
+            cmd.startport = services["startport"]
+            cmd.endport = services["endport"]
+        
+        cmd.cidrlist = services["cidrlist"]
         return (apiclient.authorizeSecurityGroupIngress(cmd).__dict__)
     
     def revoke(self, apiclient, id):
@@ -1428,7 +1421,7 @@ class SecurityGroup:
         
         cmd=revokeSecurityGroupIngress.revokeSecurityGroupIngressCmd()
         cmd.id=id
-        apiclient.revokeSecurityGroupIngress()
+        return apiclient.revokeSecurityGroupIngress(cmd)
     
     @classmethod
     def list(cls, apiclient, **kwargs):

@@ -514,7 +514,9 @@ class TestSnapshots(cloudstackTestCase):
                                                ),
                 ]
             for c in cmds:
+                self.debug(c)
                 result = ssh_client.execute(c)
+                self.debug(result)
 
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %
@@ -533,7 +535,7 @@ class TestSnapshots(cloudstackTestCase):
                 ]
         try:
             for c in cmds:
-                result = ssh_client.execute(c)
+                ssh_client.execute(c)
 
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %

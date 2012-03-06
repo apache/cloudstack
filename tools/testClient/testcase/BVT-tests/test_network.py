@@ -31,8 +31,8 @@ class Services:
                             # Networking mode: Basic or advanced
                             "lb_switch_wait": 10,
                             # Time interval after which LB switches the requests
-                            "sleep": 10,
-                            "timeout":20,
+                            "sleep": 60,
+                            "timeout":10,
                             "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -42,7 +42,7 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 200,
+                                    "cpuspeed": 100,
                                     # in MHz
                                     "memory": 256,
                                     # In MBs
@@ -1614,20 +1614,39 @@ class TestDeleteAccount(cloudstackTestCase):
                                                     self.account.account.name)
         # ListPortForwardingRules should not
         # list associated rules with deleted account
-        with self.assertRaises(Exception):
-            list_nat_rules(
-                          self.apiclient,
-                          account=self.account.account.name,
-                          domainid=self.account.account.domainid
+        try:
+            list_nat_reponse= list_nat_rules(
+                                    self.apiclient,
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid
                         )
-
+            self.assertEqual(
+                             list_nat_reponse,
+                             None,
+                             "Check load balancing rule is properly deleted."
+                   )
+        except Exception as e:
+            
+            raise Exception(
+                "Exception raised while fetching NAT rules for account: %s" %
+                                                    self.account.account.name)
         #Retrieve router for the user account
-        with self.assertRaises(Exception):
-            list_routers(
+        try:
+            routers = list_routers(
                           self.apiclient,
                           account=self.account.account.name,
                           domainid=self.account.account.domainid
                         )
+            self.assertEqual(
+                             routers,
+                             None,
+                             "Check routers are properly deleted."
+                   )
+        except Exception as e:
+            
+            raise Exception(
+                "Exception raised while fetching routers for account: %s" %
+                                                    self.account.account.name)
         return
 
     def tearDown(self):

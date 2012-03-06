@@ -141,10 +141,11 @@ class Services:
                         "domainid": 1,
                         "ostypeid": 12,
                         # Cent OS 5.3 (64 bit)
-                        "zoneid": 1,
+                        "zoneid": 2,
                         # Optional, if specified the mentioned zone will be
                         # used for tests
                         "sleep": 60,
+                        "timeout": 10,
                         "mode":'advanced'
                     }
 
@@ -208,11 +209,17 @@ class TestAccounts(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
+        self.debug("Created account: %s" % account.account.name)
         self.cleanup.append(account)
         list_accounts_response = list_accounts(
                                                self.apiclient,
                                                id=account.account.id
                                                )
+        self.assertEqual(
+                         isinstance(list_accounts_response, list),
+                         True,
+                         "Check list accounts for valid data"
+                         )
         self.assertNotEqual(
                             len(list_accounts_response),
                             0,
@@ -237,11 +244,16 @@ class TestAccounts(cloudstackTestCase):
                             account=account.account.name,
                             domainid=account.account.domainid
                             )
-
+        self.debug("Created user: %s" % user.id)
         list_users_response = list_users(
                                          self.apiclient,
                                          id=user.id
                                       )
+        self.assertEqual(
+                         isinstance(list_users_response, list),
+                         True,
+                         "Check list users for valid data"
+                         )
 
         self.assertNotEqual(
                             len(list_users_response),
@@ -334,13 +346,14 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             account=self.account.account.name,
                             domainid=self.account.account.domainid
                             )
-
+        self.debug("Created user: %s" % user_1.id)
         user_2 = User.create(
                             self.apiclient,
                             self.services["user"],
                             account=self.account.account.name,
                             domainid=self.account.account.domainid
                             )
+        self.debug("Created user: %s" % user_2.id)
         self.cleanup.append(user_2)
 
         vm_1 = VirtualMachine.create(
@@ -349,6 +362,10 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   accountid=self.account.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
+        self.debug("Deployed VM in account: %s, ID: %s" % (
+                                                           self.account.account.name,
+                                                           vm_1.id
+                                                           ))
         self.cleanup.append(vm_1)
 
         vm_2 = VirtualMachine.create(
@@ -357,9 +374,14 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   accountid=self.account.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
+        self.debug("Deployed VM in account: %s, ID: %s" % (
+                                                           self.account.account.name,
+                                                           vm_2.id
+                                                           ))
         self.cleanup.append(vm_2)
 
         # Remove one of the user
+        self.debug("Deleting user: %s" % user_1.id)
         user_1.delete(self.apiclient)
 
         # Account should exist after deleting user
@@ -367,6 +389,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                           self.apiclient,
                                           id=self.account.account.id
                                         )
+        self.assertEqual(
+                         isinstance(accounts_response, list), 
+                         True, 
+                         "Check for valid list accounts response"
+                         )
+
         self.assertNotEqual(
                             len(accounts_response),
                             0,
@@ -377,6 +405,11 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
+        self.assertEqual(
+                         isinstance(vm_response, list), 
+                         True, 
+                         "Check for valid list VM response"
+                         )
 
         self.assertNotEqual(
                             len(vm_response),
@@ -409,28 +442,34 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             account=self.account.account.name,
                             domainid=self.account.account.domainid
                             )
-
+        self.debug("Created user: %s" % user_1.id)
         user_2 = User.create(
                             self.apiclient,
                             self.services["user"],
                             account=self.account.account.name,
                             domainid=self.account.account.domainid
                             )
-
+        self.debug("Created user: %s" % user_2.id)
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
-
+        self.debug("Deployed VM in account: %s, ID: %s" % (
+                                                           self.account.account.name,
+                                                           vm_1.id
+                                                           ))
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.account.name,
                                   serviceofferingid=self.service_offering.id
                                   )
-
+        self.debug("Deployed VM in account: %s, ID: %s" % (
+                                                           self.account.account.name,
+                                                           vm_2.id
+                                                           ))
         # Get users associated with an account
         # (Total 3: 2 - Created & 1 default generated while account creation)
         users = list_users(
@@ -438,7 +477,14 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                           account=self.account.account.name,
                           domainid=self.account.account.domainid
                           )
+        self.assertEqual(
+                         isinstance(users, list), 
+                         True, 
+                         "Check for valid list users response"
+                         )
         for user in users:
+            
+            self.debug("Deleting user: %s" % user.id)
             cmd = deleteUser.deleteUserCmd()
             cmd.id = user.id
             self.apiclient.deleteUser(cmd)
@@ -447,6 +493,13 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                     self.apiclient,
                                     name='account.cleanup.interval'
                                     )
+        self.assertEqual(
+                         isinstance(interval, list), 
+                         True, 
+                         "Check for valid list configurations response"
+                         )
+        self.debug("account.cleanup.interval: %s" % interval[0].value)
+        
         # Sleep to ensure that all resources are deleted
         time.sleep(int(interval[0].value))
 
@@ -466,7 +519,6 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                     account=self.account.account.name,
                                     domainid=self.account.account.domainid
                                     )
-
         self.assertEqual(
                             vm_response,
                             None,
@@ -544,11 +596,13 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
+        self.debug("Created account: %s" % account_1.account.name)
         self.cleanup.append(account_1)
         account_2 = Account.create(
                             self.apiclient,
                             self.services["account"]
                             )
+        self.debug("Created account: %s" % account_2.account.name)
         self.cleanup.append(account_2)
 
         accounts_response = list_accounts(
@@ -556,6 +610,12 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                                           domainid=self.domain.id
                                           )
 
+        self.assertEqual(
+                         isinstance(accounts_response, list), 
+                         True, 
+                         "Check list accounts response for valid data"
+                        )
+        
         self.assertEqual(
                             len(accounts_response),
                             1,
@@ -651,6 +711,12 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
                                                   self.apiclient,
                                                   domainid=self.domain_1.id
                                                   )
+        self.assertEqual(
+                         isinstance(service_offerings, list), 
+                         True, 
+                         "Check if valid list service offerings response"
+                        )
+        
         self.assertNotEqual(
                             len(service_offerings),
                             0,
@@ -658,6 +724,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
                             )
 
         for service_offering in service_offerings:
+            self.debug("Validating service offering: %s" % service_offering.id)
             self.assertEqual(
                service_offering.id,
                self.service_offering.id,
@@ -676,7 +743,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
         return
 
 
-# TODO: Testing
+@unittest.skip("Not tested")
 class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     @classmethod
@@ -758,6 +825,11 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                                                   self.apiclient,
                                                   domainid=self.domain_1.id
                                                   )
+        self.assertEqual(
+                            isinstance(service_offerings, list),
+                            True,
+                            "Check List Service Offerings for a valid response"
+                        )
         self.assertNotEqual(
                             len(service_offerings),
                             0,
@@ -776,6 +848,11 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                                                   self.apiclient,
                                                   domainid=self.domain_2.id
                                                   )
+        self.assertEqual(
+                            isinstance(service_offerings, list),
+                            True,
+                            "Check List Service Offerings for a valid response"
+                        )
         self.assertNotEqual(
                             len(service_offerings),
                             0,
@@ -790,8 +867,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             )
         return
 
-# TODO: Testing
-
+@unittest.skip("Not tested")
 class TesttemplateHierarchy(cloudstackTestCase):
 
     @classmethod
@@ -883,6 +959,11 @@ class TesttemplateHierarchy(cloudstackTestCase):
                                     account=self.account_1.account.name,
                                     domainid=self.domain_1.id
                                 )
+        self.assertEqual(
+                            isinstance(templates, list),
+                            True,
+                            "Check List templates for a valid response"
+                        )
         self.assertNotEqual(
                             len(templates),
                             0,
@@ -903,6 +984,11 @@ class TesttemplateHierarchy(cloudstackTestCase):
                                     account=self.account_2.account.name,
                                     domainid=self.domain_2.id
                                 )
+        self.assertEqual(
+                            isinstance(templates, list),
+                            True,
+                            "Check List templates for a valid response"
+                        )
         self.assertNotEqual(
                             len(templates),
                             0,
@@ -917,7 +1003,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
             )
         return
 
-# TODO: Testing
+@unittest.skip("Not tested")
 class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
@@ -944,7 +1030,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.services["public_ip"]["zoneid"] = cls.zone.id
         cls.services["public_ip"]["podid"] = cls.pod.id
 
-        cls.public_ip_range = PublicIp.create(
+        cls.public_ip_range = PublicIpRange.create(
                                               cls.api_client,
                                               cls.services["public_ip"]
                                               )
@@ -1049,13 +1135,14 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     domainid=cls.account_1.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-
+        cls.sub_domain_path = str(cls.account_1.account.domainid) + '/' + \
+                                str(cls.account_2.account.domainid)
         cls.vm_2 = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
                                     accountid=cls.account_2.account.name,
-                                    domainid=cls.account_2.account.domainid,
+                                    domainid=cls.sub_domain_path,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls._cleanup = [
@@ -1107,6 +1194,11 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     self.apiclient,
                                     id=self.vm_1.id
                                 )
+        self.assertEqual(
+                            isinstance(vm_response, list),
+                            True,
+                            "Check List VM for a valid response"
+                        )
         self.assertNotEqual(
                             len(vm_response),
                             0,
@@ -1114,6 +1206,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                             )
 
         for vm in vm_response:
+            self.debug("VM ID: %s and state: %s" % (vm.id, vm.state))
             self.assertEqual(
                              vm.state,
                              'Running',
@@ -1131,6 +1224,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                             )
 
         for vm in vm_response:
+            self.debug("VM ID: %s and state: %s" % (vm.id, vm.state))
             self.assertEqual(
                              vm.state,
                              'Running',

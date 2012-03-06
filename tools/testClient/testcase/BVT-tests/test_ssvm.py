@@ -308,7 +308,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
         ssvm = list_ssvm_response[0]
 
-        self.debug("Cheking cloud process status")
+        self.debug("Checking cloud process status")
 
         result = get_process_status(
                                 host.ipaddress,
@@ -452,7 +452,10 @@ class TestSSVMs(cloudstackTestCase):
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
-
+        
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -460,7 +463,8 @@ class TestSSVMs(cloudstackTestCase):
                                         id=ssvm.id
                                         )
             if isinstance(list_ssvm_response, list):
-                break
+                if list_ssvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List SSVM call failed!")
             
@@ -523,6 +527,9 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm.id
         self.apiclient.stopSystemVm(cmd)
 
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+        
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -530,7 +537,8 @@ class TestSSVMs(cloudstackTestCase):
                                         id=cpvm.id
                                         )
             if isinstance(list_cpvm_response, list):
-                break
+                if list_cpvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List CPVM call failed!")
             
@@ -593,6 +601,9 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -600,7 +611,8 @@ class TestSSVMs(cloudstackTestCase):
                                         id=ssvm_response.id
                                         )
             if isinstance(list_ssvm_response, list):
-                break
+                if list_ssvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List SSVM call failed!")
             
@@ -672,6 +684,9 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -679,7 +694,8 @@ class TestSSVMs(cloudstackTestCase):
                                         id=cpvm_response.id
                                         )
             if isinstance(list_cpvm_response, list):
-                break
+                if list_cpvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List CPVM call failed!")
             
@@ -738,6 +754,9 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+        
         timeout = self.services["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -746,7 +765,8 @@ class TestSSVMs(cloudstackTestCase):
                                         systemvmtype='secondarystoragevm'
                                         )
             if isinstance(list_ssvm_response, list):
-                break
+                if list_ssvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List SSVM call failed!")
             
@@ -813,6 +833,9 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
+        # Sleep to ensure that VM is in proper state
+        time.sleep(self.services["sleep"])
+        
         timeout = self.services["timeout"]
         while True:
             list_cpvm_response = list_ssvms(
@@ -821,7 +844,8 @@ class TestSSVMs(cloudstackTestCase):
                                         zoneid=self.zone.id
                                         )
             if isinstance(list_cpvm_response, list):
-                break
+                if list_cpvm_response[0].state == 'Running':
+                    break
             elif timeout == 0:
                 raise Exception("List CPVM call failed!")
             

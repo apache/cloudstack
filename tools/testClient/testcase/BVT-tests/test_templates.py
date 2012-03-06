@@ -80,10 +80,10 @@ class Services:
                         "bootable": True,
                         "passwordenabled": True,
                         "ostypeid": 12,
-                        "zoneid": 1,
+                        "zoneid": 2,
                         # Optional, if specified the mentioned zone will be
                         # used for tests
-                        "mode": 'advanced',
+                        "mode": 'basic',
                         # Networking mode: Advanced, basic
                         "sleep": 30,
                         "timeout": 10,
@@ -534,11 +534,17 @@ class TestTemplates(cloudstackTestCase):
         cmd.zoneid = self.zone.id
         list_extract_response = self.apiclient.extractTemplate(cmd)
 
-        # Format URL to ASCII to retrieve response code
-        formatted_url = urllib.unquote_plus(list_extract_response.url)
-        url_response = urllib.urlopen(formatted_url)
-        response_code = url_response.getcode()
-
+        try:
+            # Format URL to ASCII to retrieve response code
+            formatted_url = urllib.unquote_plus(list_extract_response.url)
+            url_response = urllib.urlopen(formatted_url)
+            response_code = url_response.getcode()
+        
+        except Exception:
+            self.fail(
+                "Extract Template Failed with invalid URL %s (template id: %s)" \
+                % (formatted_url, self.template_2.id)
+            )
         self.assertEqual(
                             list_extract_response.id,
                             self.template_2.id,
