@@ -565,7 +565,7 @@
       if($.inArray(key, hiddenFields) != -1)
         return true;
       var field = this;
-      var $th = $('<th>').appendTo($thead.find('tr'));
+      var $th = $('<th>').addClass(key).appendTo($thead.find('tr'));
 
       if ($th.index()) $th.addClass('reduced-hide');
 
