@@ -37,6 +37,9 @@
   });
 
   $(function() {
+    // Get language
+    g_lang = $.cookie('lang') ? $.cookie('lang') : 'en';
+
     /**
      * Generic error handling
      */
@@ -362,7 +365,7 @@
 		
     // EULA check
     $.ajax({
-      url: 'eula.' + $.cookie('lang') + '.html',
+      url: 'eula.' + g_lang + '.html',
       dataType: 'html',
       success: function(html) {
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
