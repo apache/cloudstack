@@ -1030,6 +1030,7 @@
 
                     if (hasAdvancedZones && $guestTypeField.val() == 'Shared') {
                       $basicSharedFields.hide();
+                      $basicSharedFields.find('input[type=checkbox]').attr('checked', false);
                     } else {
                       $basicSharedFields.each(function() {
                         var $field = $(this);
