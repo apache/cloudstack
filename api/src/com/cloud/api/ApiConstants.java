@@ -332,6 +332,7 @@ public class ApiConstants {
     public static final String CHANGE_CIDR = "changecidr";
     public static final String PURPOSE = "purpose";
     public static final String IS_TAGGED = "istagged";
+    public static final String INSTANCE_NAME = "instancename";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

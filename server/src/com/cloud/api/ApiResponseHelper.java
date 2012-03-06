@@ -1268,7 +1268,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else {
                 userVmResponse.setDisplayName(userVm.getHostName());
             }
-
+            
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                userVmResponse.setInstanceName(userVm.getInstanceName());
+            }
+            
+ 
             if (userVm.getPassword() != null) {
                 userVmResponse.setPassword(userVm.getPassword());
             }
@@ -2904,6 +2909,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             userVmData.setDisplayName(userVm.getHostName());
         }
+        userVmData.setInstanceName(userVm.getInstanceName());
+        
         userVmData.setDomainId(userVm.getDomainId());
 
         Account caller = UserContext.current().getCaller();
@@ -2939,6 +2946,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setZoneId(userVmData.getZoneId());
         userVmResponse.setZoneName(userVmData.getZoneName());
         if (caller_is_admin) {
+            userVmResponse.setInstanceName(userVmData.getInstanceName());
             userVmResponse.setHostId(userVmData.getHostId());
             userVmResponse.setHostName(userVmData.getHostName());
         }
