@@ -152,6 +152,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
     private String publicIp;
+    
+    @SerializedName(ApiConstants.INSTANCE_NAME) @Param(description="instance name of the user vm; this parameter is returned to the ROOT admin only")
+    private String instanceName;
 
 	public void setHypervisor(String hypervisor) {
 		this.hypervisor = hypervisor;
@@ -334,5 +337,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
     }
 }

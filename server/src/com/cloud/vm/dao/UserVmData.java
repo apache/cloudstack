@@ -70,6 +70,7 @@ public class UserVmData {
     private long accountId;
     private Long publicIpId;
     private String publicIp;
+    private String instanceName;
     
     private boolean initialized;
     
@@ -701,6 +702,14 @@ public class UserVmData {
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
-    } 
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
 }
 
