@@ -105,7 +105,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -1869,7 +1868,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId());
+        return startVirtualMachine(cmd.getId(), cmd.getHostId());
     }
 
     @Override
@@ -2935,7 +2934,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -2950,8 +2949,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
+
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
+        
+        Host destinationHost = null;
+        if(hostId != null){
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter hostid can only be specified by a Root Admin, permission denied");
+            }
+            destinationHost = _hostDao.findById(hostId);
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+            }
+        }
 
         //check if vm is security group enabled
         if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId)) {
@@ -2967,8 +2978,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _securityGroupMgr.addInstanceToGroups(vmId, groupList);
             }
         }
+        
+        DataCenterDeployment plan = null;
+        if (destinationHost != null) {
+            s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
+        }
 
-        return _itMgr.start(vm, null, user, account);
+        return _itMgr.start(vm, null, user, account, plan);
     }
 
     @Override
