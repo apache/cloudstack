@@ -909,8 +909,11 @@
       <!-- System dashboard -->
       <div class="system-dashboard-view">
         <div class="toolbar">
-          <div class="button refresh">
+          <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
+          </div>
+					<div class="button refresh" id="update_ssl_button">
+            <span><fmt:message key="label.update.ssl"/></span>
           </div>
         </div>
 
