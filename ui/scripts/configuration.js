@@ -1132,6 +1132,7 @@
                   // Check whether there are any advanced zones
                   $.ajax({
                     url: createURL('listZones'),
+<<<<<<< HEAD
                     data: { listAll: true },
                     async: false,
                     success: function(json) {										  
@@ -1145,11 +1146,44 @@
                     }
                   });
 												
+=======
+                    data: { listAll: true, networktype: 'advanced' },
+                    async: false,
+                    success: function(json) {
+                      if (json.listzonesresponse.zone && json.listzonesresponse.zone.length) {
+                        hasAdvancedZones = true;
+                      }
+                    }
+                  });
+									
+>>>>>>> fb141dd... bug 14093
                   args.$form.bind('change', function() { //when any field in the dialog is changed
 									  //check whether to show or hide availability field
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
+<<<<<<< HEAD
                     		
+=======
+                    var $basicSharedFields = args.$form.find('.form-item').filter(function() {
+                      var basicSharedFields = [
+                        'service.SourceNat.isEnabled',
+                        'service.StaticNat.isEnabled',
+                        'service.PortForwarding.isEnabled',
+                        'service.Lb.isEnabled'
+                      ];
+
+                      if ($.inArray($(this).attr('rel'), basicSharedFields) > -1) {
+                        return true;
+                      }
+
+                      if ($.inArray($(this).attr('depends-on'), basicSharedFields) > -1) {
+                        return true;
+                      }
+
+                      return false;
+                    });
+
+>>>>>>> fb141dd... bug 14093
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
                         $guestTypeField.val() == 'Isolated') {
@@ -1179,6 +1213,7 @@
 
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 
+<<<<<<< HEAD
 										
 										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (begin) *****						
 										var serviceFieldsToHide = [];										
@@ -1261,6 +1296,23 @@
                       args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);											
 										}
 							
+=======
+                    if (hasAdvancedZones && $guestTypeField.val() == 'Shared') {
+                      $basicSharedFields.hide();
+                    } else {
+                      $basicSharedFields.each(function() {
+                        var $field = $(this);
+                        var $dependsOn = args.$form.find('.form-item').filter(function() {
+                          return $(this).attr('rel') == $field.attr('depends-on');
+                        });
+
+                        if (!$field.attr('depends-on') ||
+                            $dependsOn.find('input[type=checkbox]').is(':checked')) {
+                          $field.css('display', 'inline-block');
+                        }
+                      });
+                    }
+>>>>>>> fb141dd... bug 14093
                   });
 									
 									args.$form.change();
