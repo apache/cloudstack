@@ -1818,7 +1818,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId());
+        return startVirtualMachine(cmd.getId(), cmd.getHostId());
     }
 
     @Override
@@ -2807,7 +2807,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -2834,6 +2834,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
         
+        Host destinationHost = null;
+        if(hostId != null){
+            Account account = UserContext.current().getCaller();
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter hostid can only be specified by a Root Admin, permission denied");
+            }
+            destinationHost = _hostDao.findById(hostId);
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+            }
+        }
+        
         UserVO user = _userDao.findById(userId);
         
         //check if vm is security group enabled
@@ -2850,8 +2862,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _securityGroupMgr.addInstanceToGroups(vmId, groupList);
             }
         }
+        
+        DataCenterDeployment plan = null;
+        if (destinationHost != null) {
+            s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
+        }
 
-        return _itMgr.start(vm, null, user, caller);
+        return _itMgr.start(vm, null, user, caller, plan);
     }
 
     @Override
