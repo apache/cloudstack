@@ -53,6 +53,10 @@ public class StartVMCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName = "vm_instance")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the virtual machine")
     private Long id;
+    
+    @IdentityMapper(entityTableName="host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only")
+    private Long hostId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -61,6 +65,10 @@ public class StartVMCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
+    
+    public Long getHostId() {
+        return hostId;
+    }    
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////

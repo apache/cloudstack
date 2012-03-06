@@ -369,7 +369,7 @@ public interface UserVmService {
 
     UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException;
 
-    UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     void deletePrivateTemplateRecord(Long templateId);
 
