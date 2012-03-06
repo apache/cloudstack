@@ -205,13 +205,15 @@ add_routing() {
   return 0;
 }
 add_snat() {
+  local pubIp=$1
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   if [ "$sflag" == "0" ]
   then
+    logger -t cloud "$(basename $0):Remove SourceNAT $pubIp on interface $ethDev if it is present"
+    sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
     return 0;
   fi
 
-  local pubIp=$1
-  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
   sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;

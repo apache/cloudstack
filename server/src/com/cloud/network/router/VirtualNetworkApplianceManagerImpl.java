@@ -2186,6 +2186,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
                 boolean sourceNat = ipAddr.isSourceNat();
+                /* enable sourceNAT for the first ip of the public interface */
+                if (firstIP) {
+                    sourceNat = true;
+                }
                 String vlanId = ipAddr.getVlanTag();
                 String vlanGateway = ipAddr.getGateway();
                 String vlanNetmask = ipAddr.getNetmask();
