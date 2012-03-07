@@ -305,12 +305,6 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public void deletePrivateTemplateRecord(Long templateId) {
         // TODO Auto-generated method stub
 
@@ -390,6 +384,12 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
