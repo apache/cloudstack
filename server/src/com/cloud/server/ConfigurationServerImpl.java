@@ -903,7 +903,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         netscalerServiceProviders.put(Service.Lb, Provider.Netscaler);
 
         // The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only
-// first network offering has to be enabled, in Advance zone - the second one
+        // first network offering has to be enabled, in Advance zone - the second one
         Transaction txn = Transaction.currentTxn();
         txn.start();
 

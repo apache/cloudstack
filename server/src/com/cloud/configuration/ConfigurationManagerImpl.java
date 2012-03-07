@@ -3280,7 +3280,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // specifyVlan should always be true for Shared network offerings and Isolated network offerings with
-// specifyIpRanges = true
+        // specifyIpRanges = true
         if (!specifyVlan) {
             if (type == GuestType.Shared) {
                 throw new InvalidParameterValueException("SpecifyVlan should be true if network offering's type is " + type);

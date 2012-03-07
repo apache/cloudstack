@@ -1232,6 +1232,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
+        
+        Map<Network.Service, Set<Network.Provider>> netscalerServiceProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
+        vrProvider.add(Provider.VirtualRouter);
+        Set<Network.Provider> sgProvider = new HashSet<Network.Provider>();
+        sgProvider.add(Provider.SecurityGroupProvider);
+        Set<Network.Provider> nsProvider = new HashSet<Network.Provider>();
+        nsProvider.add(Provider.Netscaler);
+        netscalerServiceProviders.put(Service.Dhcp, vrProvider);
+        netscalerServiceProviders.put(Service.Dns, vrProvider);
+        netscalerServiceProviders.put(Service.UserData, vrProvider);
+        netscalerServiceProviders.put(Service.SecurityGroup, sgProvider);
+        netscalerServiceProviders.put(Service.StaticNat, nsProvider);
+        netscalerServiceProviders.put(Service.Lb, nsProvider);
+        
+        Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
+        Map<Capability, String> elb = new HashMap<Capability, String>();
+        elb.put(Capability.ElasticLb, "true");
+        Map<Capability, String> eip = new HashMap<Capability, String>();
+        eip.put(Capability.ElasticIp, "true");
+        serviceCapabilityMap.put(Service.Lb, elb);
+        serviceCapabilityMap.put(Service.StaticNat, eip);
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedEIPandELBNetworkOffering, "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null,
+                    true, Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true);
+            offering.setState(NetworkOffering.State.Enabled);
+            offering.setDedicatedLB(false);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
 
         txn.commit();
 
