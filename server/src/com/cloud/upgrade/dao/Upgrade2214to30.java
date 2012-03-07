@@ -526,7 +526,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         // drop keys
         s_logger.debug("Dropping public_ip_address keys from `cloud`.`secondary_storage_vm` and console_proxy tables...");
         for (String tableName : uniqueKeys.keySet()) {
-            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), true);
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), false);
         }
     }
 
