@@ -242,6 +242,14 @@
               }
             }
           });
+				} else if(field.isTextarea) {				 
+					$input = $('<textarea>').attr({
+						name: key
+					}).appendTo($value);
+
+					if (field.defaultValue) {
+						$input.val(field.defaultValue);
+					}					
         } else {
           // Text field
           if (field.range) {

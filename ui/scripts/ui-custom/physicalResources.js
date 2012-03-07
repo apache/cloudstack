@@ -54,10 +54,11 @@
       $dashboard.find('#update_ssl_button').click(function() {   	
 				cloudStack.dialog.createForm({
 					form: {
-						title: 'label.update.ssl',						
+						title: 'label.update.ssl',	
+            desc: 'message.update.ssl',						
 						fields: {
-							certificate: { label: 'label.certificate' },
-							privatekey: { label: 'label.privatekey' },
+							certificate: { label: 'label.certificate', isTextarea: true },
+							privatekey: { label: 'label.privatekey', isTextarea: true },
 							domainsuffix: { label: 'label.domain.suffix' }
 						}
 					},
