@@ -35,7 +35,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     private static final String s_name = "uploadcustomcertificateresponse";
 
-    @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="the custom cert to be uploaded")
+    @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="the custom cert to be uploaded", length=65535)
     private String certificate;
     
     @Parameter(name=ApiConstants.ID,type=CommandType.INTEGER,required=false,description="the custom cert id in the chain")
@@ -44,7 +44,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.NAME,type=CommandType.STRING,required=false,description="the alias of the certificate")
     private String alias;
 
-    @Parameter(name=ApiConstants.PRIVATE_KEY,type=CommandType.STRING,required=false,description="the private key for the certificate")
+    @Parameter(name=ApiConstants.PRIVATE_KEY,type=CommandType.STRING,required=false,description="the private key for the certificate", length=65535)
     private String privateKey;
 
     @Parameter(name=ApiConstants.DOMAIN_SUFFIX,type=CommandType.STRING,required=true,description="DNS domain suffix that the certificate is granted for")
