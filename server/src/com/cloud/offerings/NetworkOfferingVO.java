@@ -240,7 +240,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         return dedicatedLB;
     }
 
-    public void setDedicatedLb(boolean dedicatedLB) {
+    public void setDedicatedLB(boolean dedicatedLB) {
         this.dedicatedLB = dedicatedLB;
     }
 
