@@ -2,6 +2,10 @@
   module('List view', {
     setup: function() {
       $.fx.off = true;
+    },
+    teardown: function() {
+      // Cleanup notification box
+      $('.notification-box').remove();
     }
   });
 
@@ -249,7 +253,7 @@
   });
 
   test('Actions', function() {
-    var $listView = $('<div>');
+    var $cloudStack = $('<div>').appendTo('#qunit-fixture');
     var listView = {
       listView: {
         section: 'test123',
@@ -291,8 +295,20 @@
         }
       }
     };
+
+    // CloudStack object is needed for notification handling for actions
+    var cloudStack = {
+      sections: {
+        testActions: listView
+      },
+
+      home: 'testActions'
+    };
     
-    ok($listView.listView(listView), 'Initialize list view');
+    ok($cloudStack.cloudStack(cloudStack), 'Initialize cloudStack widget w/ list view');
+
+    var $listView = $cloudStack.find('.list-view');
+    
     equal($listView.find('table thead th').size(), 3, 'Correct header column count');
     equal($listView.find('table thead th.actions').size(), 1, 'Action header column present');
     equal($listView.find('table tbody tr:first td').size(), 3, 'Correct data column count');
@@ -301,5 +317,21 @@
     equal($listView.find('table tbody tr:first td.actions .action:first .icon').size(), 1, 'Action has icon');
     ok($listView.find('table tbody tr:first td.actions .action:first').hasClass('basicSync'),
        'First action has ID as CSS class');
+    ok($listView.find('td.actions .action:first').click(), 'Click first action');
+    equal($('.ui-dialog.confirm .message').html(), 'basicActionConfirm', 'Confirmation message present');
+
+    // Make sure dialog is cleaned up -- always put below all confirm tests
+    $(':ui-dialog, .overlay').appendTo('#qunit-fixture');
+
+    ok($('.ui-dialog.confirm .ui-button.ok').click(), 'Confirm action');
+    equal($cloudStack.find('.notifications .total span').html(), '1', 'Notification total increased');
+    equal($('.notification-box ul li').size(), 1, 'Notification list has 1 item');
+    equal($('.notification-box ul li span').html(), 'basicActionNotification', 'Notification list item has correct label');
+    ok($('.notification-box ul li').hasClass('pending'), 'Notification has pending state');
+    stop();
+    setTimeout(function() {
+      start();
+      ok(!$('.notification-box ul li').hasClass('pending'), 'Notification has completed state');
+    });
   });
 }(jQuery)); 
