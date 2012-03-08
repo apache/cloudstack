@@ -698,5 +698,19 @@ ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'No
 
 UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destory.forcestop';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destroy.forcestop', 'false', 'On destroy, force-stop takes this value');
-
 DELETE FROM `cloud`.`configuration` where name='skip.steps';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'external.lb.default.capacity', '50', 'default number of networks permitted per external load balancer device');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'external.firewall.default.capacity', '50', 'default number of networks permitted per external load firewall device');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'resourcecount.check.interval', '0', 'Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'secstorage.proxy', null, 'http proxy used by ssvm, in http://username:password@proxyserver:port format');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'secstorage.vm.mtu.size', '1500', 'MTU size (in Byte) of storage network in secondary storage vms');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'sortkey.algorithm', 'false', 'Sort algorithm for those who use sort key(template, disk offering, service offering, network offering), true means ascending sort while false means descending sort');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'system.vm.default.hypervisor', null, 'Hypervisor type used to create system vm');
+
