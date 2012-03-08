@@ -16,7 +16,7 @@ import com.cloud.consoleproxy.util.ImageHelper;
  * A <code>BuffereImageCanvas</code> component represents frame buffer image on the
  * screen. It also notifies its subscribers when screen is repainted.
  */
-public class BufferedImageCanvas extends Canvas {
+public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
   private static final long serialVersionUID = 1L;
 
    // Offline screen buffer
@@ -80,6 +80,7 @@ public class BufferedImageCanvas extends Canvas {
 	}
   }
   
+  @Override
   public byte[] getFrameBufferJpeg() {
 	int width = 800;
 	int height = 600;
@@ -102,6 +103,7 @@ public class BufferedImageCanvas extends Canvas {
 	return imgBits;
   }
 	
+  @Override
   public byte[] getTilesMergedJpeg(List<TileInfo> tileList, int tileWidth, int tileHeight) {
 	int width = Math.max(tileWidth, tileWidth*tileList.size());
 	BufferedImage bufferedImage = new BufferedImage(width, tileHeight,

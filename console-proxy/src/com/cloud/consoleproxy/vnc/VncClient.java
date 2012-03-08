@@ -28,7 +28,7 @@ public class VncClient {
   private VncServerPacketReceiver receiver;
   
   private boolean noUI = false;
-  private VncClientListener clientListener = null;
+  private FrameBufferEventListener clientListener = null;
 
   public static void main(String args[]) {
     if (args.length < 3) {
@@ -62,7 +62,7 @@ public class VncClient {
     /* LOG */SimpleLogger.info("Usage: HOST PORT PASSWORD.");
   }
 
-  public VncClient(String host, int port, String password, boolean noUI, VncClientListener clientListener) 
+  public VncClient(String host, int port, String password, boolean noUI, FrameBufferEventListener clientListener) 
   	throws UnknownHostException, IOException {
 	  
     this.noUI = noUI;
@@ -88,7 +88,6 @@ public class VncClient {
       socket.close();
     } catch (Throwable e) {
     }
-
   }
 
   public void connectTo(String host, int port, String password) throws UnknownHostException, IOException {
@@ -356,5 +355,11 @@ public class VncClient {
       screen.setDesktopName(desktopName);
     }
   }
-
+  
+  public FrameBufferCanvas getFrameBufferCanvas() {
+    if(receiver != null)
+      return receiver.getCanvas();
+	  
+	return null;
+  }
 }
