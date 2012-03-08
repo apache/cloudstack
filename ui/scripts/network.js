@@ -182,7 +182,7 @@
                       $.ajax({
                         url: createURL('listNetworkOfferings&zoneid=' + args.zoneId),
                         data: {
-                          type: 'Isolated',
+                          guestiptype: 'Isolated',
                           supportedServices: 'SourceNat',
                           specifyvlan: false,
                           state: 'Enabled'
