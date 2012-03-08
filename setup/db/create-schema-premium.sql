@@ -96,7 +96,7 @@ CREATE TABLE  `cloud_usage`.`usage_ip_address` (
   `zone_id` bigint unsigned NOT NULL,
   `public_ip_address` varchar(15) NOT NULL,
   `is_source_nat` smallint(1) NOT NULL,
-  `is_system` smallint(1) NOT NULL,
+  `is_system` smallint(1) NOT NULL default '0',
   `assigned` DATETIME NOT NULL,
   `released` DATETIME NULL,
   UNIQUE KEY (`id`, `assigned`)
@@ -134,6 +134,7 @@ CREATE TABLE  `cloud_usage`.`account` (
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
+  CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
