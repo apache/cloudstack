@@ -725,7 +725,7 @@
                   return hiddenFields;
                 },
                 fields: [                  
-                  {                    
+                  { //updatePhysicalNetwork API               
                     state: { label: 'label.state' },
                     startVlan: {
                       label: 'label.start.vlan',
@@ -738,20 +738,16 @@
 										tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }                   
                   },
-                  {                    
+                  { //updateTrafficType API                   
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
-                  var startVlan, endVlan;
-                  var vlan = selectedPhysicalNetworkObj.vlan;
-                  var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
-
-                  // Get traffic label data
-                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
-
+                  //physical network
+									var startVlan, endVlan;
+                  var vlan = selectedPhysicalNetworkObj.vlan;  
                   if(vlan != null && vlan.length > 0) {
                     if(vlan.indexOf("-") != -1) {
                       var vlanArray = vlan.split("-");
@@ -762,11 +758,15 @@
                       startVlan = vlan;
                     }
                     selectedPhysicalNetworkObj["startVlan"] = startVlan;
-                    selectedPhysicalNetworkObj["endVlan"] = endVlan;
-                    selectedPhysicalNetworkObj["xennetworklabel"] = trafficType.xennetworklabel;
-                    selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
-                    selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
+                    selectedPhysicalNetworkObj["endVlan"] = endVlan;                    
                   }
+									
+									//traffic type
+									var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
+                  var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
+									selectedPhysicalNetworkObj["xennetworklabel"] = trafficType.xennetworklabel;
+									selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
+									selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
 
                   args.response.success({
                     actionFilter: function() {
