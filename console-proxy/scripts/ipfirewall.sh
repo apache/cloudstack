@@ -38,8 +38,6 @@ config_htaccess() {
 
 ips(){
   echo "allow from $1" >> $HTACCESS
-  public_ip=`ip addr show eth2|grep "inet "|sed "s/^ *//"|cut -d "/" -f 1|cut -d " " -f 2`
-  ip route add $1 via $public_ip
   result=$?
   return $result
 }
