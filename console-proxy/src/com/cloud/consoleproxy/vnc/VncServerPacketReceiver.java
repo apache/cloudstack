@@ -17,16 +17,20 @@ public class VncServerPacketReceiver implements Runnable {
   private boolean connectionAlive = true;
   private VncClient vncConnection;
   private final FrameBufferUpdateListener fburListener;
-  private final VncClientListener clientListener;
+  private final FrameBufferEventListener clientListener;
 
   public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection,
-      FrameBufferUpdateListener fburListener, VncClientListener clientListener) {
+      FrameBufferUpdateListener fburListener, FrameBufferEventListener clientListener) {
     this.screen = screen;
     this.canvas = canvas;
     this.is = is;
     this.vncConnection = vncConnection;
     this.fburListener = fburListener;
     this.clientListener = clientListener;
+  }
+  
+  public BufferedImageCanvas getCanvas() { 
+	return canvas; 
   }
 
   @Override

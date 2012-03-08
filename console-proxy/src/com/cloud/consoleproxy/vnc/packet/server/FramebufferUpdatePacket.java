@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import com.cloud.consoleproxy.vnc.BufferedImageCanvas;
 import com.cloud.consoleproxy.vnc.RfbConstants;
-import com.cloud.consoleproxy.vnc.VncClientListener;
+import com.cloud.consoleproxy.vnc.FrameBufferEventListener;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;
 import com.cloud.consoleproxy.vnc.packet.server.CopyRect;
 import com.cloud.consoleproxy.vnc.packet.server.RawRect;
@@ -15,10 +15,10 @@ public class FramebufferUpdatePacket {
 
   private final VncScreenDescription screen;
   private final BufferedImageCanvas canvas;
-  private final VncClientListener clientListener;
+  private final FrameBufferEventListener clientListener;
 
   public FramebufferUpdatePacket(BufferedImageCanvas canvas, VncScreenDescription screen, DataInputStream is, 
-    VncClientListener clientListener) throws IOException {
+    FrameBufferEventListener clientListener) throws IOException {
 	  
     this.screen = screen;
     this.canvas = canvas;
