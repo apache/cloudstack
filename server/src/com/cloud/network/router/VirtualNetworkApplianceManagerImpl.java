@@ -1448,7 +1448,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             + ", but there are already two redundant routers with IP " + router.getPublicIpAddress()
                             + ", they are " + rrouter.getInstanceName() + "(" + rrouter.getId() + ") and "
                             + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")",
-                            this.getClass(), 0);
+                            DataCenter.class, rrouter.getDataCenterIdToDeployIn());
                 }
                 routerToBeAvoid = rrouter;
             }

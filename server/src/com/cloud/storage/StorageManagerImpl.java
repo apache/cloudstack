@@ -90,6 +90,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -1172,7 +1173,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         // Check if there is host up in this cluster
         List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, zoneId);
         if (allHosts.isEmpty()) {
-            throw new ResourceUnavailableException("No host up to associate a storage pool with in cluster " + clusterId, HostPodVO.class, podId);
+            throw new ResourceUnavailableException("No host up to associate a storage pool with in cluster " + clusterId, Pod.class, podId);
         }
         URI uri = null;
         try {
