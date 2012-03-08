@@ -679,13 +679,15 @@
                     vlan = args.data.startVlan;
                   else
                     vlan = args.data.startVlan + "-" + args.data.endVlan;
+										
+									var array1 = [];
+                  if(vlan != null && vlan.length > 0) 
+                    array1.push("&vlan=" + todb(vlan));		
+                  if(args.data.tags != null && args.data.tags.length > 0)
+                    array1.push("&tags=" + todb(args.data.tags));									
+										
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork"),
-                    data: {
-                      id: selectedPhysicalNetworkObj.id,
-                      vlan: todb(vlan),
-                      tags: args.data.tags
-                    },
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),                   
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
