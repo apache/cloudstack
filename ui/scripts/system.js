@@ -1210,7 +1210,10 @@
 
                           if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size()) {
                             array1.push("&subdomainaccess=true");
-                          }
+                          } else {
+                            array1.push("&subdomainaccess=false");
+                          }													
+													
 													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific																											
 														array1.push("&account=" + args.data.account);
 														array1.push("&acltype=account");	
@@ -1467,7 +1470,7 @@
 												}												
 											},
 											
-                      'delete': { 
+                      'remove': { 
                         label: 'label.action.delete.network',
                         messages: {
                           confirm: function(args) {
