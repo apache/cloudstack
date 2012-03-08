@@ -125,4 +125,126 @@
       }
     });
   });
+
+  test('Section select', function() {
+    var $listView = $('<div>');
+    
+    ok($listView.listView({
+      sectionSelect: {
+        label: 'testSectionSelect'
+      },
+      sections: {
+        sectionA: {
+          type: 'select',
+          title: 'sectionA',
+          listView: {
+            fields: {
+              fieldA: { label: 'testFieldA' },
+              fieldB: { label: 'testFieldB' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    fieldA: '1A',
+                    fieldB: '1B'
+                  },
+                  {
+                    fieldA: '2A',
+                    fieldB: '2B'
+                  }
+                ]
+              });
+            }
+          }  
+        },
+        
+        sectionB: {
+          type: 'select',
+          title: 'sectionB',
+          listView: {
+            fields: {
+              fieldC: { label: 'testFieldC' },
+              fieldD: { label: 'testFieldD' },
+              fieldE: { label: 'testFieldE' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    fieldC: '1C',
+                    fieldD: '1D',
+                    fieldE: '1E'
+                  },
+                  {
+                    fieldC: '2C',
+                    fieldD: '2D',
+                    fieldE: '2E'
+                  },
+                  {
+                    fieldC: '3C',
+                    fieldD: '3D',
+                    fieldE: '3E'
+                  },
+                  {
+                    fieldC: '4C',
+                    fieldD: '4D',
+                    fieldE: '4E'
+                  }
+                ]
+              });
+            }
+          }
+        }
+      }
+    }));
+
+    equal($listView.find('.toolbar .section-switcher').size(), 1,
+          'Section switcher present in toolbar');
+    equal($listView.find('.toolbar .section-switcher .section-select select').size(), 1,
+          'Section select present');
+    equal($listView.find('.toolbar .section-switcher .section-select label').html(),
+          'testSectionSelect' + ':',
+          'Section select label is correct');
+    equal($listView.find('.toolbar .section-switcher .section-select select option').size(), 2,
+          'Selectable sections present as options');
+    equal($listView.find('.toolbar .section-switcher .section-select select option:first').html(), 'sectionA',
+          'First select has correct title');
+    equal($listView.find('.toolbar .section-switcher .section-select select option:selected')[0],
+          $listView.find('.toolbar .section-switcher .section-select select option:first')[0],
+          'First section option is selected by default');
+    equal($listView.find('.toolbar .section-switcher .section-select select option:last').html(), 'sectionB', 'Last select has correct title');
+    equal($listView.find('.list-view thead th').size(), 2, 'Correct list view column count present');
+    equal($listView.find('.list-view thead th:first').html(), 'testFieldA', 'Column 1 is labeled correctly');
+    equal($listView.find('.list-view thead th:last').html(), 'testFieldB', 'Column 2 is labeled correctly');
+    equal($listView.find('.list-view tbody tr').size(), 2, 'Correct # of data rows present');
+    equal($listView.find('.list-view tbody tr:first td').size(), 2, 'Correct # of data columns present');
+    
+    $listView.find('.toolbar .section-switcher select').val('sectionB');
+    stop();
+    ok($listView.find('.toolbar .section-switcher select').change(), 'Change section');
+    start();
+    
+    equal($listView.find('.list-view thead th').size(), 3, 'Correct list view column count present');
+    equal($listView.find('.list-view thead th:first').html(), 'testFieldC', 'Column 1 is labeled correctly');
+    equal($($listView.find('.list-view thead th')[1]).html(), 'testFieldD', 'Column 2 is labeled correctly');
+    equal($listView.find('.list-view thead th:last').html(), 'testFieldE', 'Column 3 is labeled correctly');
+    equal($listView.find('.list-view tbody tr').size(), 4, 'Correct # of data rows present');
+    equal($listView.find('.list-view tbody tr:first td').size(), 3, 'Correct # of data columns present');
+    equal($listView.find('.list-view tbody tr:first td:first span').html(), '1C', 'First table cell has correct data');
+    equal($listView.find('.list-view tbody tr:last td:last span').html(), '4E', 'Last table cell has correct data');
+
+    $listView.find('.toolbar .section-switcher select').val('sectionA');
+    stop();
+    ok($listView.find('.toolbar .section-switcher select').change(), 'Change section');
+    start();
+    equal($listView.find('.toolbar .section-switcher .section-select select option:last').html(), 'sectionB', 'Last select has correct title');
+    equal($listView.find('.list-view thead th').size(), 2, 'Correct list view column count present');
+    equal($listView.find('.list-view thead th:first').html(), 'testFieldA', 'Column 1 is labeled correctly');
+    equal($listView.find('.list-view thead th:last').html(), 'testFieldB', 'Column 2 is labeled correctly');
+    equal($listView.find('.list-view tbody tr').size(), 2, 'Correct # of data rows present');
+    equal($listView.find('.list-view tbody tr:first td').size(), 2, 'Correct # of data columns present');
+    equal($listView.find('.list-view tbody tr:first td:first span').html(), '1A', 'First table cell has correct data');
+    equal($listView.find('.list-view tbody tr:last td:last span').html(), '2B', 'Last table cell has correct data');
+  });
 }(jQuery)); 
