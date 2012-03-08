@@ -247,4 +247,59 @@
     equal($listView.find('.list-view tbody tr:first td:first span').html(), '1A', 'First table cell has correct data');
     equal($listView.find('.list-view tbody tr:last td:last span').html(), '2B', 'Last table cell has correct data');
   });
+
+  test('Actions', function() {
+    var $listView = $('<div>');
+    var listView = {
+      listView: {
+        section: 'test123',
+        fields: {
+          fieldA: { label: 'testFieldA' },
+          fieldB: { label: 'testFieldB' }
+        },
+        actions: {
+          basicSync: {
+            label: 'basicAction',
+            messages: {
+              confirm: function() {
+                return 'basicActionConfirm';
+              },
+              notification: function() {
+                return 'basicActionNotification';
+              }
+            },
+            action: function(args) {
+              args.response.success();
+            }
+          }
+        },
+        dataProvider: function(args) {
+          args.response.success({
+            data: [
+              {
+                fieldA: '1A',
+                fieldB: '1B',
+                fieldC: '1C'
+              },
+              {
+                fieldA: '2A',
+                fieldB: '2B',
+                fieldC: '2C'
+              }
+            ]
+          });
+        }
+      }
+    };
+    
+    ok($listView.listView(listView), 'Initialize list view');
+    equal($listView.find('table thead th').size(), 3, 'Correct header column count');
+    equal($listView.find('table thead th.actions').size(), 1, 'Action header column present');
+    equal($listView.find('table tbody tr:first td').size(), 3, 'Correct data column count');
+    equal($listView.find('table tbody tr:first td.actions').size(), 1, 'Action data column present');
+    equal($listView.find('table tbody tr:first td.actions .action').size(), 1, 'Correct action count');
+    equal($listView.find('table tbody tr:first td.actions .action:first .icon').size(), 1, 'Action has icon');
+    ok($listView.find('table tbody tr:first td.actions .action:first').hasClass('basicSync'),
+       'First action has ID as CSS class');
+  });
 }(jQuery)); 
