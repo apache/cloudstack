@@ -526,13 +526,19 @@
     ).length;
   };
 
-  var createHeader = function(fields, $table, actions, options) {
+  var createHeader = function(preFilter, fields, $table, actions, options) {
     if (!options) options = {};
 
     var $thead = $('<thead>').prependTo($table).append($('<tr>'));
     var reorder = options.reorder;
 
-    $.each(fields, function(key) {
+	var hiddenFields = [];
+	if(preFilter != null) 
+		hiddenFields = preFilter();
+		
+    $.each(fields, function(key) {	
+	  if($.inArray(key, hiddenFields) != -1)		
+		return true;			
       var field = this;
       var $th = $('<th>').appendTo($thead.find('tr'));
 
@@ -702,7 +708,7 @@
     $detailsPanel = data.$browser.cloudBrowser('addPanel', panelArgs);
   };
 
-  var addTableRows = function(fields, data, $tbody, actions, options) {
+  var addTableRows = function(preFilter, fields, data, $tbody, actions, options) {
     if (!options) options = {};
     var rows = [];
     var reorder = options.reorder;
@@ -734,9 +740,15 @@
         $tr.appendTo($tbody);
       }
 
+      var hiddenFields = [];
+  	  if(preFilter != null) 
+  		hiddenFields = preFilter();
+      
       // Add field data
-      $.each(fields, function(key) {
-        var field = this;
+      $.each(fields, function(key) {   
+        if($.inArray(key, hiddenFields) != -1)	
+		  return true;
+		var field = this;
         var $td = $('<td>')
               .addClass(key)
               .data('list-view-item-field', key)
@@ -912,7 +924,7 @@
     });
   };
 
-  var loadBody = function($table, dataProvider, fields, append, loadArgs, actions, options) {
+  var loadBody = function($table, dataProvider, preFilter, fields, append, loadArgs, actions, options) {
     if (!options) options = {};
     var context = options.context;
     var reorder = options.reorder;
@@ -941,8 +953,8 @@
         response: {
           success: function(args) {
             setLoadingArgs.loadingCompleted();
-
-            addTableRows(fields, args.data, $tbody, actions, {
+            
+            addTableRows(preFilter, fields, args.data, $tbody, actions, {
               actionFilter: args.actionFilter,
               context: context,
               reorder: reorder
@@ -954,8 +966,8 @@
             });
           },
           error: function(args) {
-            setLoadingArgs.loadingCompleted();
-            addTableRows(fields, [], $tbody, actions);
+            setLoadingArgs.loadingCompleted();            
+            addTableRows(preFilter, fields, [], $tbody, actions);
             $table.find('td:first').html(_l('ERROR'));
             $table.dataTable(null, { noSelect: uiCustom });
           }
@@ -1147,16 +1159,18 @@
 
     $('<tbody>').appendTo($table);
 
-    createHeader(listViewData.fields,
+    createHeader(listViewData.preFilter,
+    		     listViewData.fields,
                  $table,
                  listViewData.actions,
                  { reorder: reorder });
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
-
+    
     loadBody(
       $table,
       listViewData.dataProvider,
+      listViewData.preFilter,
       listViewData.fields,
       false,
       {
@@ -1201,10 +1215,11 @@
       return true;
     });
 
-    var search = function() {
+    var search = function() {    	
       loadBody(
-        $table,
+        $table,        
         listViewData.dataProvider,
+        listViewData.preFilter,
         listViewData.fields,
         false,
         {
@@ -1256,8 +1271,7 @@
 
         if (loadMoreData) {
           page = page + 1;
-
-          loadBody($table, listViewData.dataProvider, listViewData.fields, true, {
+          loadBody($table, listViewData.dataProvider, listViewData.preFilter, listViewData.fields, true, {
             context: context,
             page: page,
             filterBy: {
@@ -1408,8 +1422,8 @@
       listViewArgs.activeSection
     ].listView : listViewArgs;
     var reorder = targetArgs.reorder;
-
     var $tr = addTableRows(
+      targetArgs.preFilter,
       targetArgs.fields,
       data,
       listView.find('table tbody'),
@@ -1441,6 +1455,7 @@
     var defaultActionFilter = $row.data('list-view-action-filter');
 
     $newRow = addTableRows(
+      targetArgs.preFilter,
       targetArgs.fields,
       data,
       $listView.find('table tbody'),
@@ -1482,6 +1497,7 @@
       loadBody(
         this.find('table:last'),
         listViewArgs.dataProvider,
+        listViewArgs.preFilter,
         listViewArgs.fields,
         false,
         null,
