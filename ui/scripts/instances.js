@@ -23,9 +23,17 @@
           },
           label: 'state.Destroyed'
         }
-      },
+      },			
+			preFilter: function(args) {
+				var hiddenFields = [];
+				if(!isAdmin()) {				
+					hiddenFields.push('instancename');
+				}			
+				return hiddenFields;
+			},			
       fields: {        
         displayname: { label: 'label.display.name' },
+				instancename: { label: 'label.internal.name' },
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',
@@ -1495,14 +1503,19 @@
               if (!args.context.instances[0].publicip) {
                 hiddenFields.push('publicip');
               }
-              
+              												
+							if(!isAdmin()) {				
+								hiddenFields.push('instancename');
+							}			
+														
               return hiddenFields;
             },
 
             fields: [
               {                       
                 id: { label: 'label.id', isEditable: false },
-                displayname: { label: 'label.display.name', isEditable: true },								   
+                displayname: { label: 'label.display.name', isEditable: true },		
+                instancename: { label: 'label.internal.name' },								
                 state: { label: 'label.state', isEditable: false },
                 publicip: { label: 'label.public.ip', isEditable: false },
                 zonename: { label: 'label.zone.name', isEditable: false },

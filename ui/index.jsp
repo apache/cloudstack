@@ -2873,6 +2873,7 @@ dictionary = {
 'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />',
 'label.purpose': '<fmt:message key="label.purpose" />',
 'error.please.specify.physical.network.tags': '<fmt:message key="error.please.specify.physical.network.tags" />',
-'error.unable.to.reach.management.server': '<fmt:message key="error.unable.to.reach.management.server" />'
+'error.unable.to.reach.management.server': '<fmt:message key="error.unable.to.reach.management.server" />',
+'label.internal.name': '<fmt:message key="label.internal.name" />'
 };
 </script>
