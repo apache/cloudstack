@@ -62,7 +62,10 @@
 							domainsuffix: { label: 'label.domain.suffix' }
 						}
 					},
-					after: function(args) {
+					after: function(args) {					  
+						var $loading = $('<div>').addClass('loading-overlay');
+            $('.system-dashboard-view:visible').prepend($loading);
+						
 						$.ajax({
 						  url: createURL('uploadCustomCertificate'),
 							data: {
@@ -92,14 +95,20 @@
 												else if (result.jobstatus == 2) {
 													cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + fromdb(result.jobresult.errortext) });													
 												}
+												$loading.remove();
 											}
 										},
 										error: function(XMLHttpResponse) {											
 											cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse) });
+											$loading.remove();
 										}
 									});
 								});				
-							}			
+							},              
+							error: function(XMLHttpResponse) {											
+								cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse) });
+								$loading.remove();
+							}
 						});								 
 					},				
 					context: {}
