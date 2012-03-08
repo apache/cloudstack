@@ -31,6 +31,7 @@ import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 import com.cloud.api.commands.ListVirtualRouterElementsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -190,7 +191,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
         List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), offering.getRedundantRouter());
         if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
+            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
         return true;
     }
@@ -735,7 +736,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             }
 
             if ((routers == null) || (routers.size() == 0)) {
-                throw new ResourceUnavailableException("Can't find at least one router!", this.getClass(), 0);
+                throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
             List<VirtualRouter> rets = _routerMgr.applyDhcpEntry(network, nic, uservm, dest, context, routers);
@@ -784,7 +785,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             }
 
             if ((routers == null) || (routers.size() == 0)) {
-                throw new ResourceUnavailableException("Can't find at least one router!", this.getClass(), 0);
+                throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
             List<VirtualRouter> rets = _routerMgr.applyUserData(network, nic, uservm, dest, context, routers);
