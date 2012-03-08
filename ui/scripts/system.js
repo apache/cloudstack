@@ -735,10 +735,10 @@
                       label: 'label.end.vlan',
                       isEditable: true
                     },
-                    broadcastdomainrange: { label: 'label.broadcast.domain.range' }                    
+										tags: { label: 'Tags', isEditable: true },
+                    broadcastdomainrange: { label: 'label.broadcast.domain.range' }                   
                   },
-                  {
-                    tags: { label: 'Tags', isEditable: true },
+                  {                    
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
