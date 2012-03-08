@@ -912,8 +912,9 @@
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
-					<div class="button refresh" id="update_ssl_button">
-            <span><fmt:message key="label.update.ssl"/></span>
+          <div id="update_ssl_button" class="button action main-action reduced-hide lock">
+            <span class="icon">&nbsp;</span>            
+            <span>Update SSL Certificate</span>
           </div>
         </div>
 
