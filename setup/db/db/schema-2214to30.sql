@@ -516,7 +516,6 @@ ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `physical_network_id` bigint un
 ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
 DELETE FROM `cloud`.`configuration` where name='cmd.wait';
 
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `conserve` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering is IP conserve mode enabled';
 UPDATE `cloud`.`configuration` set value='true' where name='firewall.rule.ui.enabled';
 CREATE TABLE  `cloud`.`op_user_stats_log` (
   `user_stats_id` bigint unsigned NOT NULL,
@@ -542,6 +541,8 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `conserve_mode` int(1) unsign
 
 ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
 ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `service_offering_id` bigint unsigned COMMENT 'service offering id that virtual router is tied to';
+
 ALTER TABLE `cloud`.`network_offerings` DROP `concurrent_connections`;
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `state` char(32) COMMENT 'state of the network offering that has Disabled value by default';
