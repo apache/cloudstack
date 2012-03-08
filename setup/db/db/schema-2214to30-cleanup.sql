@@ -59,3 +59,6 @@ ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physic
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__last_pool_id`(`last_pool_id`);
 ALTER TABLE `cloud`.`swift` MODIFY `account` varchar(255) NOT NULL;
 ALTER TABLE `cloud`.`swift` MODIFY `username` varchar(255) NOT NULL;
+
+DROP TABLE IF EXISTS `cloud`.`network_tags`;
+DROP TABLE IF EXISTS `cloud_usage`.`event`;

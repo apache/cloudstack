@@ -75,6 +75,7 @@ CREATE TABLE  `cloud`.`project_account` (
 
 CREATE TABLE  `cloud`.`project_invitations` (
   `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
   `project_id` bigint unsigned NOT NULL COMMENT 'project id',
   `account_id` bigint unsigned COMMENT 'account id',
   `domain_id` bigint unsigned COMMENT 'domain id',
@@ -85,7 +86,11 @@ CREATE TABLE  `cloud`.`project_invitations` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_project_invitations__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_project_invitations__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_project_invitations__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_project_invitations__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
+  UNIQUE (`project_id`, `account_id`),
+  UNIQUE (`project_id`, `email`),
+  UNIQUE (`project_id`, `token`),
+  CONSTRAINT `uc_project_invitations__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -184,14 +189,14 @@ ALTER TABLE `cloud`.`domain` ADD CONSTRAINT `uc_domain__uuid` UNIQUE (`uuid`);
 ALTER TABLE `cloud`.`account` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
 
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `uuid` varchar(40);
+ALTER TABLE `cloud_usage`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
+
 ALTER TABLE `cloud`.`user` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `uc_user__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`projects` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`projects` ADD CONSTRAINT `uc_projects__uuid` UNIQUE (`uuid`);
-
-ALTER TABLE `cloud`.`project_invitations` ADD COLUMN `uuid` varchar(40); 
-ALTER TABLE `cloud`.`project_invitations` ADD CONSTRAINT `uc_project_invitations__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `uc_data_center__uuid` UNIQUE (`uuid`);
@@ -295,7 +300,7 @@ UPDATE `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
-ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_elastic` smallint(1) NOT NULL default '0';
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_system` smallint(1) NOT NULL default '0';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 
 DELETE FROM `cloud`.`configuration` WHERE name='host.capacity.checker.wait';
@@ -685,4 +690,7 @@ ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_gro
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
 
-update configuration set category = 'Usage' where category = 'Premium';
+UPDATE `cloud`.`configuration` SET category = 'Usage' where category = 'Premium';
+
+ALTER TABLE  `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
