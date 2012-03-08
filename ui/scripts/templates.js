@@ -680,7 +680,7 @@
             community: { label: 'label.community' }
           },
           fields: {
-            displaytext: { label: 'label.name' },
+            name: { label: 'label.name' },
             zonename: { label: 'label.zone' }
           },
 
