@@ -796,9 +796,6 @@
           var tabData = $tabContent.data('detail-view-tab-data');
           var data = args.data;
 										
-					if($detailView.data('list-view-row') != null)
-					  $detailView.data('list-view-row').data('json-obj', data); //refresh embedded data in corresponding list view row
-					
           var isFirstPanel = $tabContent.index($detailView.find('div.detail-group.ui-tabs-panel')) == 0;
           var actionFilter = args.actionFilter;
 
