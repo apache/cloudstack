@@ -244,6 +244,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.utils.exception.CSExceptionErrorCode;
+import com.cloud.utils.AnnotationHelper;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -1838,7 +1839,13 @@ public class ManagementServerImpl implements ManagementServer {
 
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-            	ex.addProxyObject("domain", domainId, "domainId");            	           	
+                // Get the domainVO object's table name.                
+                String tablename = AnnotationHelper.getTableName(domain);
+                if (tablename != null) {                
+                	ex.addProxyObject(tablename, domainId, "domainId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from domainVO proxy cglib object\n");
+                }
             	throw ex;
             }
         }

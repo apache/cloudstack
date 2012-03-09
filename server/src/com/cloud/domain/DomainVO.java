@@ -28,12 +28,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="domain")
 public class DomainVO implements Domain, Identity {
+	public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
+	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
