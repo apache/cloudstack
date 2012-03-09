@@ -340,7 +340,7 @@
     var $cloudStack = $('<div>').appendTo('#qunit-fixture');
     var listView = {
       listView: {
-        id: 'job123',
+        id: 'testAsyncListView',
         fields: {
           fieldA: { label: 'testFieldA' },
           fieldB: { label: 'testFieldB' }
@@ -357,6 +357,7 @@
               }
             },
             action: function(args) {
+              ok($.isArray(args.context.testAsyncListView), 'List view context passed');
               args.response.success({
                 _custom: {
                   jobId: 'job123'
@@ -425,5 +426,86 @@
     equal($('.notification-box ul li span').html(), 'asyncActionNotification', 'Notification list item has correct label');
     ok($('.notification-box ul li').hasClass('pending'), 'Notification has pending state');
     stop();
+  });
+
+  test('Action filter', function() {
+    var $cloudStack = $('<div>').appendTo('#qunit-fixture');
+    var listView = {
+      listView: {
+        id: 'testAsyncListView',
+        fields: {
+          fieldA: { label: 'testFieldA' },
+          fieldB: { label: 'testFieldB' }
+        },
+        actions: {
+          actionA: {
+            label: 'actionA',
+            messages: {
+              confirm: function() { return ''; },
+              notification: function() { return ''; }
+            },
+            action: function(args) { args.response.success(); }
+          },
+          actionB: {
+            label: 'actionB [HIDDEN]',
+            messages: {
+              confirm: function() { return ''; },
+              notification: function() { return ''; }
+            },
+            action: function(args) { args.response.success(); }
+          },
+          actionC: {
+            label: 'actionC',
+            messages: {
+              confirm: function() { return ''; },
+              notification: function() { return ''; }
+            },
+            action: function(args) { args.response.success(); }
+          }
+        },
+        dataProvider: function(args) {
+          args.response.success({
+            actionFilter: function() {
+              return ['actionA', 'actionC'];
+            },
+            data: [
+              {
+                fieldA: '1A',
+                fieldB: '1B',
+                fieldC: '1C'
+              },
+              {
+                fieldA: '2A',
+                fieldB: '2B',
+                fieldC: '2C'
+              }
+            ]
+          });
+        }
+      }
+    };
+
+    // CloudStack object is needed for notification handling for actions
+    var cloudStack = {
+      sections: {
+        testActions: listView
+      },
+
+      home: 'testActions'
+    };
+    
+    ok($cloudStack.cloudStack(cloudStack), 'Initialize cloudStack widget w/ list view');
+
+    var $listView = $cloudStack.find('.list-view');
+    
+    equal($listView.find('table thead th').size(), 3, 'Correct header column count');
+    equal($listView.find('table thead th.actions').size(), 1, 'Action header column present');
+    equal($listView.find('table tbody tr:first td.actions').size(), 1, 'Action data column present');
+    equal($listView.find('table tbody tr:first td.actions .action').size(), 3, 'Correct action count (all)');
+    equal($listView.find('table tbody tr:first td.actions .action:not(.disabled)').size(), 2, 'Correct action count (enabled)');
+    ok($listView.find('table tbody tr:first td.actions .action:first').hasClass('actionA'),
+       'First action has correct ID');
+    ok($listView.find('table tbody tr:first td.actions .action:last').hasClass('actionC'),
+       'Last action has correct ID');
   });
 }(jQuery)); 
