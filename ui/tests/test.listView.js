@@ -2,6 +2,7 @@
   module('List view', {
     setup: function() {
       $.fx.off = true;
+      cloudStack.debug = true;
     },
     teardown: function() {
       // Cleanup notification box
@@ -339,7 +340,7 @@
     var $cloudStack = $('<div>').appendTo('#qunit-fixture');
     var listView = {
       listView: {
-        section: 'test123',
+        id: 'job123',
         fields: {
           fieldA: { label: 'testFieldA' },
           fieldB: { label: 'testFieldB' }
@@ -356,7 +357,19 @@
               }
             },
             action: function(args) {
-              args.response.success();
+              args.response.success({
+                _custom: {
+                  jobId: 'job123'
+                }
+              });
+            },
+            notification: {
+              interval: 0,
+              poll: function(args) {
+                start();
+                equal(args._custom.jobId, 'job123', 'Job ID passed correctly');
+                args.complete();
+              }
             }
           }
         },
