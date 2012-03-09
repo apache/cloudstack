@@ -670,7 +670,15 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (vmId != null) {
             UserVmVO vmInstance = _userVmDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
+                // Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(vmInstance);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, vmId, "vmId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
             }
 
             _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -740,7 +748,15 @@ public class ManagementServerImpl implements ManagementServer {
                 } else if (vmId != null) {
                     UserVmVO vmInstance = _userVmDao.findById(vmId);
                     if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                        throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+                    	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+                        // Get the VO object's table name.
+                        String tablename = AnnotationHelper.getTableName(vmInstance);
+                        if (tablename != null) {
+                        	ex.addProxyObject(tablename, vmId, "vmId");
+                        } else {
+                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                        }
+                        throw ex;
                     }
                     
                     _accountMgr.checkAccess(caller, null, false, vmInstance);
@@ -869,14 +885,30 @@ public class ManagementServerImpl implements ManagementServer {
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(vm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, vmId, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         // business logic
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+                s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
             }
-            throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
+            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(vm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, vmId, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
@@ -894,12 +926,27 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
         long srcHostId = vm.getHostId();
+        // why is this not HostVO?
         Host srcHost = _hostDao.findById(srcHostId);
         if (srcHost == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find the host with id: " + srcHostId + " of this VM:" + vm);
             }
-            throw new InvalidParameterValueException("Unable to find the host with id: " + srcHostId + " of this VM:" + vm);
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified id) of VM with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(srcHost);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, srcHostId, "hostId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            tablename = AnnotationHelper.getTableName(vm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, vmId, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         Long cluster = srcHost.getClusterId();
         Type hostType = srcHost.getType();
@@ -1048,7 +1095,11 @@ public class ManagementServerImpl implements ManagementServer {
             }
             Account account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
+                // Since we don't have a DomainVO object here, we directly set tablename to "domain".
+                String tablename = "domain";
+                ex.addProxyObject(tablename, domainId, "domainId");
+                throw ex;
             } else {
                 accountId = account.getId();
             }
@@ -1066,7 +1117,15 @@ public class ManagementServerImpl implements ManagementServer {
         if (projectId != null) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by id " + projectId);
+                // Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(project);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, projectId, "projectId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
             }
             accountId = project.getProjectAccountId();
         }
@@ -1233,11 +1292,27 @@ public class ManagementServerImpl implements ManagementServer {
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
                 s_logger.error("Template Id " + templateId + " is not an ISO");
-                throw new InvalidParameterValueException("Template Id " + templateId + " is not an ISO");
+                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
+                // Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(template);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, templateId, "templateId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
                 s_logger.error("Incorrect format of the template id " + templateId);
-                throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the template id " + templateId);
+                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the specified template id");
+                // Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(template);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, templateId, "templateId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
             }
         }
 
@@ -1315,12 +1390,28 @@ public class ManagementServerImpl implements ManagementServer {
         // verify that template exists
         VMTemplateVO template = _templateDao.findById(id);
         if (template == null || template.getRemoved() != null) {
-            throw new InvalidParameterValueException("unable to find template/iso with id " + id);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(template);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, id, "templateId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         // Don't allow to modify system template
         if (id == Long.valueOf(1)) {
-            throw new InvalidParameterValueException("Unable to update template/iso with id " + id);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(template);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, id, "templateId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         // do a permission check
@@ -1819,7 +1910,15 @@ public class ManagementServerImpl implements ManagementServer {
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
-            throw new InvalidParameterValueException("Unable to find domain " + domainId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(domain);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, domainId, "domainId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
             throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
@@ -2534,7 +2633,15 @@ public class ManagementServerImpl implements ManagementServer {
     public VirtualMachine.Type findSystemVMTypeById(long instanceId) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("Unable to find a system vm: " + instanceId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm of specified instanceId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, instanceId, "instanceId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy cglib object\n");
+            }
+            throw ex;
         }
         return systemVm.getType();
     }
@@ -2544,7 +2651,15 @@ public class ManagementServerImpl implements ManagementServer {
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("unable to find a system vm with id " + vmId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, vmId, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy cglib object\n");
+            }
+            throw ex;
         }
 
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
@@ -2552,7 +2667,15 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
             return startSecondaryStorageVm(vmId);
         } else {
-            throw new InvalidParameterValueException("Unable to find a system vm: " + vmId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm with specified vmId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, vmId, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy cglib object\n");
+            }
+            throw ex;
         }
     }
 
@@ -2563,7 +2686,15 @@ public class ManagementServerImpl implements ManagementServer {
         // verify parameters
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("unable to find a system vm with id " + id);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, id, "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy object\n");
+            }
+            throw ex;
         }
 
         try {
@@ -2583,7 +2714,15 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
         if (systemVm == null) {
-            throw new InvalidParameterValueException("unable to find a system vm with id " + cmd.getId());
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, cmd.getId(), "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy object\n");
+            }
+            throw ex;
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
@@ -2598,7 +2737,15 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
         if (systemVm == null) {
-            throw new InvalidParameterValueException("unable to find a system vm with id " + cmd.getId());
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
+            // Get the VMInstanceVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(systemVm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, cmd.getId(), "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VMInstanceVO proxy object\n");
+            }
+            throw ex;
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
@@ -2634,7 +2781,15 @@ public class ManagementServerImpl implements ManagementServer {
         // verify that user exists
         User user = _accountMgr.getUserIncludingRemoved(userId);
         if ((user == null) || (user.getRemoved() != null)) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find active user of specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(user);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, userId, "userId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         // check permissions
@@ -2714,7 +2869,15 @@ public class ManagementServerImpl implements ManagementServer {
 
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find volume with id " + volumeId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
+            // Get the VolumeVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(volume);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, volumeId, "volumeId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VolumeVO proxy object\n");
+            }
+            throw ex;
         }
 
         // perform permission check
@@ -2729,7 +2892,15 @@ public class ManagementServerImpl implements ManagementServer {
         // Extract activity only for detached volumes or for volumes whose instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
-            throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
+            PermissionDeniedException ex = new PermissionDeniedException("Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
+            // Get the VO object's table name.                
+            String tablename = AnnotationHelper.getTableName(volume);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, volumeId, "volumeId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from VolumeVO proxy object\n");
+            }
+            throw ex;
         }
 
         if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
@@ -2740,7 +2911,15 @@ public class ManagementServerImpl implements ManagementServer {
                 boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
 // admins are always allowed to extract
-                    throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
+                	PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
+                    // Get the VO object's table name.
+                    String tablename = AnnotationHelper.getTableName(volume);
+                    if (tablename != null) {
+                    	ex.addProxyObject(tablename, volumeId, "volumeId");
+                    } else {
+                    	s_logger.info("\nCould not retrieve table name (annotation) from VolumeVO proxy object\n");
+                    }
+                    throw ex;
                 }
             }
         }
@@ -2875,7 +3054,15 @@ public class ManagementServerImpl implements ManagementServer {
         // Verify input parameters
         InstanceGroupVO group = _vmGroupDao.findById(groupId.longValue());
         if (group == null) {
-            throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a vm group with specified groupId");
+            // Get the VolumeVO object's table name.                
+            String tablename = AnnotationHelper.getTableName(group);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, groupId, "groupId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from InstanceGroupVO proxy object\n");
+            }
+            throw ex;
         }
 
         _accountMgr.checkAccess(caller, null, true, group);
@@ -3097,7 +3284,15 @@ public class ManagementServerImpl implements ManagementServer {
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in domain id=" + owner.getDomainId());
+        	InvalidParameterValueException ex = new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(owner);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, owner.getDomainId(), "domainId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         return _sshKeyPairDao.deleteByName(caller.getAccountId(), caller.getDomainId(), cmd.getName());
@@ -3178,7 +3373,15 @@ public class ManagementServerImpl implements ManagementServer {
 
         UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
-            throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+        	InvalidParameterValueException ex = new InvalidParameterValueException("No VM with specified id found.");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(vm);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, cmd.getId(), "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         // make permission check
@@ -3187,7 +3390,15 @@ public class ManagementServerImpl implements ManagementServer {
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");
         if (password == null || password.equals("")) {
-            throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+        	InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found.");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(vm);
+            if (tablename != null) {            	
+            	ex.addProxyObject(tablename, cmd.getId(), "vmId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         return password;
@@ -3291,7 +3502,15 @@ public class ManagementServerImpl implements ManagementServer {
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
 
         if (hpvCapabilities == null) {
-            throw new InvalidParameterValueException("unable to find the hypervisor capabilities " + id);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find the hypervisor capabilities for specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(hpvCapabilities);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, id, "Id");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         boolean updateNeeded = (maxGuestsLimit != null || securityGroupEnabled != null);
