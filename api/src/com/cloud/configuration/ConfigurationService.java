@@ -34,7 +34,6 @@ import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
-import com.cloud.api.commands.LDAPRemoveCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
@@ -249,6 +248,4 @@ public interface ConfigurationService {
     DiskOffering getDiskOffering(long diskOfferingId);
 
     boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
-
-	boolean removeLDAP(LDAPRemoveCmd cmd);
 }
