@@ -713,3 +713,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'system.vm.default.hypervisor', null, 'Hypervisor type used to create system vm');
 
+UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Security group enabled networks' where display_text='System-Guest-Network';
+
