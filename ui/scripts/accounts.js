@@ -55,7 +55,7 @@
             add: {
               label: 'label.add.account',
               preFilter: function(args) {
-                if(isAdmin())
+                if(isAdmin() || isDomainAdmin())
                   return true;
                 else
                   return false;
@@ -97,6 +97,7 @@
                     select: function(args) {
                       $.ajax({
                         url: createURL("listDomains&listAll=true"),
+                        domainid: args.context.users[0].domainid,
                         dataType: "json",
                         async: false,
                         success: function(json) {
