@@ -3288,7 +3288,7 @@
                 }
               },
 
-              'delete': {
+              'remove': {
                 label: 'label.action.delete.zone',
                 messages: {
                   confirm: function(args) {
@@ -4583,7 +4583,7 @@
                 }
               },
 
-              'delete': {
+              'remove': {
                 label: 'label.delete' , 
                 messages: {
                   confirm: function(args) {
@@ -5014,7 +5014,7 @@
                 }
               },
 
-              'delete': {
+              'remove': {
                 label: 'label.action.delete.cluster' , 
                 messages: {
                   confirm: function(args) {
@@ -5561,7 +5561,7 @@
                 }
               },
 
-              'delete': {  
+              'remove': {  
                 label: 'label.action.remove.host' ,
                 messages: {
                   notification: function(args) {
@@ -6241,7 +6241,7 @@
                 }
               },
 
-              'delete': {
+              'remove': {
                 label: 'label.action.delete.primary.storage' ,  
                 messages: {
                   confirm: function(args) {
@@ -6429,7 +6429,7 @@
           detailView: {
             name: 'Secondary storage details',
             actions: {
-              destroy: {
+              remove: {
                 label: 'label.action.delete.secondary.storage' ,  
                 messages: {
                   confirm: function(args) {
@@ -6513,23 +6513,23 @@
                 }
               },
               action: function(args) {		                
-								var array2 = [];
-								array2.push("&startip=" + args.data.guestStartIp);
-								var endip = args.data.guestEndIp;
-								if(endip != null && endip.length > 0)
-									array2.push("&endip=" + endip);
-								$.ajax({
-									url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
-									dataType: "json",
-									success: function(json) {
-										var item = json.createvlaniprangeresponse.vlan;
-										args.response.success({data:item});
-									},
-									error: function(XMLHttpResponse) {
-										var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-										args.response.error(errorMsg);
-									}
-								});                
+				var array2 = [];
+				array2.push("&startip=" + args.data.guestStartIp);
+				var endip = args.data.guestEndIp;
+				if(endip != null && endip.length > 0)
+				  array2.push("&endip=" + endip);
+				$.ajax({
+				  url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
+				  dataType: "json",
+				  success: function(json) {
+					var item = json.createvlaniprangeresponse.vlan;
+					args.response.success({data:item});
+				  },
+				  error: function(XMLHttpResponse) {
+					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+					args.response.error(errorMsg);
+				  }
+				});                
               },
               notification: {
                 poll: function(args) {
@@ -6543,7 +6543,7 @@
               }
             },
 
-            'delete': {
+            'remove': {
               label: 'label.remove.ip.range' , 
               messages: {
                 confirm: function(args) {
@@ -7148,7 +7148,7 @@
       allowedActions.push("enable");
     else if(jsonObj.allocationstate == "Enabled")
       allowedActions.push("disable");
-    allowedActions.push("delete");
+    allowedActions.push("remove");
     return allowedActions;
   }
 
@@ -7160,7 +7160,7 @@
       allowedActions.push("enable");
     else if(podObj.allocationstate == "Enabled")
       allowedActions.push("disable");
-    allowedActions.push("delete");
+    allowedActions.push("remove");
 
     /*
     var selectedZoneObj;
@@ -7206,7 +7206,7 @@
 			allowedActions.push("manage");
 		}
 
-    allowedActions.push("delete");
+    allowedActions.push("remove");
 
     return allowedActions;
   }
@@ -7232,11 +7232,11 @@
     else if (jsonObj.resourcestate == "Maintenance") {
       allowedActions.push("edit");
       allowedActions.push("cancelMaintenanceMode");
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     else if (jsonObj.resourcestate == "Disabled"){
       allowedActions.push("edit");
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     return allowedActions;
   }
@@ -7252,10 +7252,10 @@
     }
     else if(jsonObj.state == 'Down') {
       allowedActions.push("enableMaintenanceMode");
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     else if(jsonObj.state == "Alert") {
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     else if (jsonObj.state == "ErrorInMaintenance") {
       allowedActions.push("enableMaintenanceMode");
@@ -7266,10 +7266,10 @@
     }
     else if (jsonObj.state == "Maintenance") {
       allowedActions.push("cancelMaintenanceMode");
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     else if (jsonObj.state == "Disconnected"){
-      allowedActions.push("delete");
+      allowedActions.push("remove");
     }
     return allowedActions;
   }
@@ -7277,7 +7277,7 @@
   var secondarystorageActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-    allowedActions.push("destroy");
+    allowedActions.push("remove");
     return allowedActions;
   }
 
@@ -7287,16 +7287,7 @@
     allowedActions.push("addIpRange");
     return allowedActions;
   }
-
-  var directNetworkActionfilter = function(args) {
-    var jsonObj = args.context.item;
-    var allowedActions = [];
-    allowedActions.push("addIpRange");
-    allowedActions.push("edit");
-    allowedActions.push("delete");
-    return allowedActions;
-  }
-
+  
   var routerActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
