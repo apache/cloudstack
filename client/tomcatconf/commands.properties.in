@@ -154,6 +154,7 @@ migrateSystemVm=com.cloud.api.commands.MigrateSystemVMCmd;1
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
 ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
+ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
 listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
 
 #### pod commands
