@@ -166,8 +166,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 
 update `cloud`.`configuration` set name = 'cluster.storage.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.allocated.capacity.threshold' ;
 update `cloud`.`configuration` set name = 'cluster.storage.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.capacity.threshold' ;
-update `cloud`.`configuration` set name = 'cluster.cpu.capacity.notificationthreshold' , category = 'Alert' where name = 'cpu.capacity.threshold' ;
-update `cloud`.`configuration` set name = 'cluster.memory.capacity.notificationthreshold' , category = 'Alert' where name = 'memory.capacity.threshold' ;
+update `cloud`.`configuration` set name = 'cluster.cpu.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'cpu.capacity.threshold' ;
+update `cloud`.`configuration` set name = 'cluster.memory.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'memory.capacity.threshold' ;
 update `cloud`.`configuration` set name = 'zone.virtualnetwork.publicip.capacity.notificationthreshold' , category = 'Alert' where name = 'public.ip.capacity.threshold' ;
 update `cloud`.`configuration` set name = 'pod.privateip.capacity.notificationthreshold' , category = 'Alert' where name = 'private.ip.capacity.threshold' ;
 
