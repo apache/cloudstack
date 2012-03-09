@@ -255,9 +255,9 @@
             });
           }
 										
-					if($detailView.data("list-view-row") != null) {					 
-					  $detailView.data("list-view-row").remove();
-					}					
+		  if($detailView.data("list-view-row") != null) {					 
+			$detailView.data("list-view-row").remove();
+		  }					
         }
       });
     },
