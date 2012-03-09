@@ -55,6 +55,7 @@ import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
+import com.cloud.api.commands.LDAPRemoveCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
@@ -1241,6 +1242,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @DB
+    public boolean removeLDAP(LDAPRemoveCmd cmd) {
+        _configDao.expunge(LDAPParams.hostname.toString());
+        _configDao.expunge(LDAPParams.port.toString());
+        _configDao.expunge(LDAPParams.queryfilter.toString());
+        _configDao.expunge(LDAPParams.searchbase.toString());
+        _configDao.expunge(LDAPParams.usessl.toString());
+        _configDao.expunge(LDAPParams.dn.toString());
+        _configDao.expunge(LDAPParams.passwd.toString());
+        _configDao.expunge(LDAPParams.truststore.toString());
+        _configDao.expunge(LDAPParams.truststorepass.toString());
+    	return true;
+    }
+
+    @Override
+    @DB
     public boolean updateLDAP(LDAPConfigCmd cmd) {
         try {
             // set the ldap details in the zone details table with a zone id of -12
@@ -1284,21 +1300,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             // store the result in DB COnfiguration
             ConfigurationVO cvo = _configDao.findByName(LDAPParams.hostname.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
             }
             cvo.setValue(hostname);
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.port.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.port.toString(), null, "Specify the LDAP port if required, default is 389");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.port.toString(), null, "Specify the LDAP port if required, default is 389");
             }
             cvo.setValue(port.toString());
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.queryfilter.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.queryfilter.toString(), null,
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.queryfilter.toString(), null,
                         "You specify a query filter here, which narrows down the users, who can be part of this domain");
             }
             cvo.setValue(queryFilter);
@@ -1306,7 +1322,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
             cvo = _configDao.findByName(LDAPParams.searchbase.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.searchbase.toString(), null,
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.searchbase.toString(), null,
                         "The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.");
             }
             cvo.setValue(searchBase);
@@ -1314,35 +1330,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
             cvo = _configDao.findByName(LDAPParams.usessl.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check Use SSL if the external LDAP server is configured for LDAP over SSL.");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check Use SSL if the external LDAP server is configured for LDAP over SSL.");
             }
             cvo.setValue(useSSL.toString());
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.dn.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.dn.toString(), null, "Specify the distinguished name of a user with the search permission on the directory");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.dn.toString(), null, "Specify the distinguished name of a user with the search permission on the directory");
             }
             cvo.setValue(bindDN);
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.passwd.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.passwd.toString(), null, "Enter the password");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.passwd.toString(), null, "Enter the password");
             }
             cvo.setValue(DBEncryptionUtil.encrypt(bindPasswd));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.truststore.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.truststore.toString(), null, "Enter the path to trusted keystore");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.truststore.toString(), null, "Enter the path to trusted keystore");
             }
             cvo.setValue(trustStore);
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.truststorepass.toString());
             if (cvo == null) {
-                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.truststorepass.toString(), null, "Enter the password for trusted keystore");
+                cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.truststorepass.toString(), null, "Enter the password for trusted keystore");
             }
             cvo.setValue(DBEncryptionUtil.encrypt(trustStorePassword));
             _configDao.persist(cvo);
