@@ -78,9 +78,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     
-    boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean associateIP (Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     
-    boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean applyFirewallRules(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     
     List<VirtualRouter> getRoutersForNetwork(long networkId);
 
@@ -90,7 +90,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     String getDnsBasicZoneUpdate();
     
-    boolean applyStaticNats(Network network, List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean applyStaticNats(Network network, final List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     
     long getDefaultVirtualRouterServiceOfferingId();
 }
