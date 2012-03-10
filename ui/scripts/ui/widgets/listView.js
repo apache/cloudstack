@@ -1312,6 +1312,9 @@
 
       // Click on first item will trigger detail view (if present)
       if (detailViewPresent && !uiCustom && !$target.closest('.empty, .loading').size()) {
+			  var $loading = $('<div>').addClass('loading-overlay');
+        $target.closest('div.data-table').prepend($loading); //overlay the whole listView, so users can't click another row until click-handling for this row is done (e.g. API response is back)
+			
         listViewData.detailView.$browser = args.$browser;
         detailViewArgs = {
           $panel: $target.closest('div.panel'),
@@ -1347,9 +1350,14 @@
           });
         }
 
-        createDetailView(detailViewArgs, function($detailView) {
-          $detailView.data('list-view', $listView);
-        }, $target.closest('tr'));
+        createDetailView(
+				  detailViewArgs, 
+					function($detailView) { //complete(), callback funcion
+						$detailView.data('list-view', $listView);
+						$loading.remove();
+					}, 
+					$target.closest('tr')
+				);
 
         return false;
       }
