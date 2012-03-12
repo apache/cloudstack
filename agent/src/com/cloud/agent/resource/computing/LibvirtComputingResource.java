@@ -987,11 +987,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (copyToSecondary) {
                 StorageVol volume = _storageResource.getVolume(conn, primaryPool, volumePath);
                 String volumeDestPath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator;
-                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName + ".qcow2", _cmdsTimeout);
+                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName + ".qcow2", cmd.getWait());
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             } else {
                 volumePath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator + volumePath + ".qcow2";
-                _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, _cmdsTimeout);
+                _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, cmd.getWait());
                 return new CopyVolumeAnswer(cmd, true, null, null, primaryMountPath + File.separator + volumeName);
             }
            
@@ -1235,7 +1235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			}
     		} else {
     			/*VM is not running, create a snapshot by ourself*/
-    			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
+    			final Script command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);
     			if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
     				command.add("-c", VolPath);
     			} else {
@@ -1272,7 +1272,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
 			String ssPmountPath = spd.getTargetPath();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
-			Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
+			Script command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
 			command.add("-p", snapshotDestPath);
@@ -1310,7 +1310,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     				vm.resume();
     			}
 			} else {
-				command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);   			
+				command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);   			
     			command.add("-d", snapshotPath);  			
     			command.add("-n", snapshotName);
     			result = command.execute();
@@ -1422,7 +1422,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 _storage.mkdirs(templatePath);
     		 
     		 String tmplPath = templateInstallFolder + File.separator + tmplFileName;
-    		 Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
+    		 Script command = new Script(_createTmplPath, cmd.getWait(), s_logger);
     		 command.add("-t", templatePath);
     		 command.add("-n", tmplFileName);
     		 command.add("-f", snapshotPath);
@@ -1500,7 +1500,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 String tmpltPath = spd.getTargetPath() + File.separator + templateInstallFolder;
         	 _storage.mkdirs(tmpltPath);
 
-        	 Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
+        	 Script command = new Script(_createTmplPath, cmd.getWait(), s_logger);
         	 command.add("-f", cmd.getVolumePath());
         	 command.add("-t", tmpltPath);
         	 command.add("-n", cmd.getUniqueName() + ".qcow2");
@@ -1591,7 +1591,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 primaryPool = _storageResource.getStoragePool(conn, cmd.getPoolUuid());
         	 LibvirtStorageVolumeDef vol = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, null, null);
         	 s_logger.debug(vol.toString());
-        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol, _cmdsTimeout);
+        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol, cmd.getWait());
         	 
         	 StorageVolInfo priVolInfo = primaryVol.getInfo();
         	 return new PrimaryStorageDownloadAnswer(primaryVol.getKey(), priVolInfo.allocation);
