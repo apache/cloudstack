@@ -72,7 +72,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
+    public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -299,14 +299,14 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
-            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException {
+            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return false;
     }

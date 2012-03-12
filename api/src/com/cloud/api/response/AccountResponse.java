@@ -97,6 +97,25 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
     private Integer vmRunning;
+    
+    @SerializedName("projectlimit") @Param(description="the total number of projects the account can own")
+    private String projectLimit;
+
+    @SerializedName("projecttotal") @Param(description="the total number of projects being administrated by this account")
+    private Long projectTotal;
+
+    @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this account")
+    private String projectAvailable;
+    
+    @SerializedName("networklimit") @Param(description="the total number of networks the account can own")
+    private String networkLimit;
+
+    @SerializedName("networktotal") @Param(description="the total number of networks owned by account")
+    private Long networkTotal;
+
+    @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account")
+    private String networkAvailable;
+    
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
     private String state;
@@ -113,216 +132,108 @@ public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
     private Map<String, String> details;
 
-    public Long getId() {
-        return id.getValue();
-    }
-
     public void setId(Long id) {
         this.id.setValue(id);
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public Short getAccountType() {
-        return accountType;
-    }
-
     public void setAccountType(Short accountType) {
         this.accountType = accountType;
-    }
-
-    public Long getDomainId() {
-        return domainId.getValue();
     }
 
     public void setDomainId(Long domainId) {
         this.domainId.setValue(domainId);
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public Long getBytesReceived() {
-        return bytesReceived;
     }
 
     public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
 
-    public Long getBytesSent() {
-        return bytesSent;
-    }
-
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
-    }
-
-    public String getVmLimit() {
-        return vmLimit;
     }
 
     public void setVmLimit(String vmLimit) {
         this.vmLimit = vmLimit;
     }
 
-    public Long getVmTotal() {
-        return vmTotal;
-    }
-
     public void setVmTotal(Long vmTotal) {
         this.vmTotal = vmTotal;
-    }
-
-    public String getVmAvailable() {
-        return vmAvailable;
     }
 
     public void setVmAvailable(String vmAvailable) {
         this.vmAvailable = vmAvailable;
     }
 
-    public String getIpLimit() {
-        return ipLimit;
-    }
-
     public void setIpLimit(String ipLimit) {
         this.ipLimit = ipLimit;
-    }
-
-    public Long getIpTotal() {
-        return ipTotal;
     }
 
     public void setIpTotal(Long ipTotal) {
         this.ipTotal = ipTotal;
     }
 
-    public String getIpAvailable() {
-        return ipAvailable;
-    }
-
     public void setIpAvailable(String ipAvailable) {
         this.ipAvailable = ipAvailable;
-    }
-
-    public String getVolumeLimit() {
-        return volumeLimit;
     }
 
     public void setVolumeLimit(String volumeLimit) {
         this.volumeLimit = volumeLimit;
     }
 
-    public Long getVolumeTotal() {
-        return volumeTotal;
-    }
-
     public void setVolumeTotal(Long volumeTotal) {
         this.volumeTotal = volumeTotal;
-    }
-
-    public String getVolumeAvailable() {
-        return volumeAvailable;
     }
 
     public void setVolumeAvailable(String volumeAvailable) {
         this.volumeAvailable = volumeAvailable;
     }
 
-    public String getSnapshotLimit() {
-        return snapshotLimit;
-    }
-
     public void setSnapshotLimit(String snapshotLimit) {
         this.snapshotLimit = snapshotLimit;
-    }
-
-    public Long getSnapshotTotal() {
-        return snapshotTotal;
     }
 
     public void setSnapshotTotal(Long snapshotTotal) {
         this.snapshotTotal = snapshotTotal;
     }
 
-    public String getSnapshotAvailable() {
-        return snapshotAvailable;
-    }
-
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
-    }
-
-    public String getTemplateLimit() {
-        return templateLimit;
     }
 
     public void setTemplateLimit(String templateLimit) {
         this.templateLimit = templateLimit;
     }
 
-    public Long getTemplateTotal() {
-        return templateTotal;
-    }
-
     public void setTemplateTotal(Long templateTotal) {
         this.templateTotal = templateTotal;
-    }
-
-    public String getTemplateAvailable() {
-        return templateAvailable;
     }
 
     public void setTemplateAvailable(String templateAvailable) {
         this.templateAvailable = templateAvailable;
     }
 
-    public Integer getVmStopped() {
-        return vmStopped;
-    }
-
     public void setVmStopped(Integer vmStopped) {
         this.vmStopped = vmStopped;
-    }
-
-    public Integer getVmRunning() {
-        return vmRunning;
     }
 
     public void setVmRunning(Integer vmRunning) {
         this.vmRunning = vmRunning;
     }
 
-    public String getState() {
-        return state;
-    }
-
     public void setState(String state) {
         this.state = state;
     }
 
-    public Boolean getCleanupRequired() {
-        return cleanupRequired;
-    }
-
     public void setCleanupRequired(Boolean cleanupRequired) {
         this.cleanupRequired = cleanupRequired;
-    }
-    
-    public  List<UserResponse> getUsers() {
-        return this.users;
     }
     
     public void setUsers(List<UserResponse> users) {
@@ -336,8 +247,28 @@ public class AccountResponse extends BaseResponse {
     public void setDetails(Map<String, String> details) {
     	this.details = details;
     }
-    
-    public Map getDetails() {
-    	return details;
+
+    public void setProjectLimit(String projectLimit) {
+        this.projectLimit = projectLimit;
+    }
+
+    public void setProjectTotal(Long projectTotal) {
+        this.projectTotal = projectTotal;
+    }
+
+    public void setProjectAvailable(String projectAvailable) {
+        this.projectAvailable = projectAvailable;
+    }
+
+    public void setNetworkLimit(String networkLimit) {
+        this.networkLimit = networkLimit;
+    }
+
+    public void setNetworkTotal(Long networkTotal) {
+        this.networkTotal = networkTotal;
+    }
+
+    public void setNetworkAvailable(String networkAvailable) {
+        this.networkAvailable = networkAvailable;
     }
 }

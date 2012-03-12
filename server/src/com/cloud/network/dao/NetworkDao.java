@@ -95,5 +95,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     void setCheckForGc(long networkId);
     
     int getNetworkCountByNetworkOffId(long networkOfferingId);
+    
+    long countNetworksUserCanCreate(long ownerId);
 
 }

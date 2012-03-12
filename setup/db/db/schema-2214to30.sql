@@ -139,6 +139,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT'
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.templates', '20', 'The default maximum number of templates that can be deployed for a project');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.snapshots', '20', 'The default maximum number of snapshots that can be created for a project');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.volumes', '20', 'The default maximum number of volumes that can be created for a project');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.networks', '20', 'The default maximum number of networks that can be created for a project');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'project.invite.required', 'false', 'If invitation confirmation is required when add account to project. Default value is false');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'project.invite.timeout', '86400', 'Invitation expiration time (in seconds). Default is 1 day - 86400 seconds');
@@ -717,3 +718,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Security group enabled networks' where display_text='System-Guest-Network';
 
 UPDATE `cloud`.`configuration` SET category = 'Secure' where name in ('alert.smtp.password', 'network.loadbalancer.haproxy.stats.auth', 'security.singlesignon.key', 'project.smtp.password');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.networks', '20', 'The default maximum number of networks that can be created for an account');

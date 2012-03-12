@@ -27,7 +27,8 @@ public interface Resource {
         volume("volume", 2, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         snapshot("snapshot", 3, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         template("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+        project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain);
 
         private String name;
         private ResourceOwnerType[] supportedOwners;

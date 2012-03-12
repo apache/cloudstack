@@ -35,6 +35,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
@@ -168,9 +169,10 @@ public interface NetworkManager extends NetworkService {
     boolean destroyNetwork(long networkId, ReservationContext context);
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId,
-            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException;
+            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
+     * @throws ResourceAllocationException TODO
      * @throws InsufficientCapacityException
      *             Associates an ip address list to an account. The list of ip addresses are all addresses associated
      *             with the
@@ -183,7 +185,7 @@ public interface NetworkManager extends NetworkService {
      * @throws
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException;
+            ResourceUnavailableException, ResourceAllocationException;
 
     Nic getNicInNetwork(long vmId, long networkId);
 

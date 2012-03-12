@@ -279,7 +279,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Long ips = ipLimit - ipTotal;
         // check how many free ips are left, and if it's less than max allowed number of ips from account - use this
-// value
+        // value
         Long ipsLeft = ApiDBUtils.countFreePublicIps();
         boolean unlimited = true;
         if (ips.longValue() > ipsLeft.longValue()) {
@@ -341,7 +341,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setVmStopped(vmStopped);
         accountResponse.setVmRunning(vmRunning);
         accountResponse.setObjectName("account");
-
+        
+        //get resource limits for projects
+        Long projectLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.project, account.getId());
+        String projectLimitDisplay = (accountIsAdmin || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
+        Long projectTotal = ApiDBUtils.getResourceCount(ResourceType.project, account.getId());
+        String projectAvail = (accountIsAdmin || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
+        accountResponse.setProjectLimit(projectLimitDisplay);
+        accountResponse.setProjectTotal(projectTotal);
+        accountResponse.setProjectAvailable(projectAvail);
+        
+        //get resource limits for networks
+        Long networkLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.network, account.getId());
+        String networkLimitDisplay = (accountIsAdmin || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit);
+        Long networkTotal = ApiDBUtils.getResourceCount(ResourceType.network, account.getId());
+        String networkAvail = (accountIsAdmin || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit - networkTotal);
+        accountResponse.setNetworkLimit(networkLimitDisplay);
+        accountResponse.setNetworkTotal(networkTotal);
+        accountResponse.setNetworkAvailable(networkAvail);
+      
         // adding all the users for an account as part of the response obj
         List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();

@@ -1477,7 +1477,7 @@ public class Upgrade218to22 implements DbUpgrade {
         upgradeDomainResourceCounts(conn, ResourceType.public_ip);
     }
 
-    private void upgradeDomainResourceCounts(Connection conn, ResourceType resourceType) {
+    public static void upgradeDomainResourceCounts(Connection conn, ResourceType resourceType) {
         try {
 
             PreparedStatement account_count_pstmt = conn.prepareStatement("SELECT account_id, count from resource_count where type='" + resourceType + "'");

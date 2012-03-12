@@ -2129,7 +2129,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
-    public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
+    public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
         String gateway = cmd.getGateway();
         String startIP = cmd.getStartIp();
@@ -2349,17 +2349,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
-            Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException {
+            Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
-        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         // this method supports only guest network creation
-        if (networkOffering.getTrafficType() != TrafficType.Guest) {
+        if (ntwkOff.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Only guest networks can be created using this method");
             return null;
         }
+        
+        boolean updateResourceCount = (!ntwkOff.getSpecifyVlan() && aclType == ACLType.Account);
+        //check resource limits
+        if (updateResourceCount) {
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.network);
+        }
 
         // Validate network offering
-        if (networkOffering.getState() != NetworkOffering.State.Enabled) {
+        if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             throw new InvalidParameterValueException("Can't use network offering id=" + networkOfferingId + " as its state is not " + NetworkOffering.State.Enabled);
         }
 
@@ -2371,6 +2377,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Validate zone
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone.getNetworkType() == NetworkType.Basic) {
+            // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
+            if (aclType == null || aclType != ACLType.Domain) {
+                throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
+            }
+            
             // Only one guest network is supported in Basic zone
             List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
             if (!guestNetworks.isEmpty()) {
@@ -2378,14 +2389,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             // if zone is basic, only Shared network offerings w/o source nat service are allowed
-            if (!(networkOffering.getGuestType() == GuestType.Shared && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
+            if (!(ntwkOff.getGuestType() == GuestType.Shared && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
                 throw new InvalidParameterValueException("For zone of type " + NetworkType.Basic + " only offerings of guestType " + GuestType.Shared + " with disabled " + Service.SourceNat.getName()
                         + " service are allowed");
-            }
-
-            // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
-            if (aclType == null || aclType != ACLType.Domain) {
-                throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
             }
 
             if (domainId == null || domainId != Domain.ROOT_DOMAIN) {
@@ -2409,8 +2415,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
-// enabled zone
-                boolean allowCreation = (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat));
+                // enabled zone
+                boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat));
                 if (!allowCreation) {
                     throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat service disabled are allowed in security group enabled zone");
                 }
@@ -2419,7 +2425,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // VlanId can be specified only when network offering supports it
         boolean vlanSpecified = (vlanId != null);
-        if (vlanSpecified != networkOffering.getSpecifyVlan()) {
+        if (vlanSpecified != ntwkOff.getSpecifyVlan()) {
             if (vlanSpecified) {
                 throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
             } else {
@@ -2469,10 +2475,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // In Advance zone Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x
-// limitation, remove after we introduce support for multiple ip ranges
+        // limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
-        boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced && networkOffering.getTrafficType() == TrafficType.Guest
-                && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getTrafficType() == TrafficType.Guest
+                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
         if (cidr == null && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of type " + Network.GuestType.Shared + " and network of type " + GuestType.Isolated + " with service "
                     + Service.SourceNat.getName() + " disabled");
@@ -2484,7 +2490,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated
-        if (cidr != null && networkOffering.getGuestType() == Network.GuestType.Isolated && networkOffering.getTrafficType() == TrafficType.Guest) {
+        if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
             }
@@ -2515,7 +2521,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccess);
+        List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccess);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -2533,6 +2539,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // For shared network
                 network = networks.get(0);
             }
+        }
+        
+        if (updateResourceCount) {
+            _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network);
         }
 
         txn.commit();
@@ -3547,7 +3557,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException {
+            ResourceUnavailableException, ResourceAllocationException {
         Account owner = _accountMgr.getActiveAccountById(accountId);
         boolean createNetwork = false;
 
