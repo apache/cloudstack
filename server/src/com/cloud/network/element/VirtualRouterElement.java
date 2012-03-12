@@ -739,8 +739,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            List<VirtualRouter> rets = _routerMgr.applyDhcpEntry(network, nic, uservm, dest, context, routers);
-            return (rets != null) && (!rets.isEmpty());
+            return _routerMgr.applyDhcpEntry(network, nic, uservm, dest, routers);
         }
         return false;
     }
@@ -788,8 +787,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            List<VirtualRouter> rets = _routerMgr.applyUserData(network, nic, uservm, dest, context, routers);
-            return (rets != null) && (!rets.isEmpty());
+            return _routerMgr.applyUserData(network, nic, uservm, dest, routers);
         }
         return false;
     }
