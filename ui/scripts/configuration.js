@@ -1055,6 +1055,7 @@
 
                   networkRate: { label: 'label.network.rate' },
 
+									/*
                   trafficType: {
                     label: 'label.traffic.type', validation: { required: true },
                     select: function(args) {
@@ -1065,6 +1066,7 @@
                       });
                     }
                   },
+									*/
 
                   guestIpType: {
                     label: 'label.guest.type',
@@ -1402,7 +1404,9 @@
 								
                 if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
 									delete inputData.serviceOfferingId;
-																
+								
+                inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
+								
                 $.ajax({
                   url: createURL('createNetworkOffering'),
                   data: inputData,
