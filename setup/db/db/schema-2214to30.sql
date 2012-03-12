@@ -691,7 +691,7 @@ ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_gro
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
 
-UPDATE `cloud`.`configuration` SET category = 'Usage' where category = 'Premium';
+UPDATE `cloud`.`configuration` SET category = 'Usage' where name in ('usage.execution.timezone', 'usage.stats.job.aggregation.range', 'usage.stats.job.exec.time', 'enable.usage.server', 'direct.network.stats.interval', 'usage.sanity.check.interval', 'usage.aggregation.timezone');
 
 ALTER TABLE  `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
@@ -716,3 +716,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Security group enabled networks' where display_text='System-Guest-Network';
 
+UPDATE `cloud`.`configuration` SET category = 'Secure' where name in ('alert.smtp.password', 'network.loadbalancer.haproxy.stats.auth', 'security.singlesignon.key', 'project.smtp.password');
