@@ -66,6 +66,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the system VM")
     private Long zoneId;
+    
+    @IdentityMapper(entityTableName="storage_pool")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
+    private Long storageId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -97,6 +101,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public Long getStorageId() {
+        return storageId;
     }
 
     /////////////////////////////////////////////////////
