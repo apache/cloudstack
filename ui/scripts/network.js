@@ -1377,8 +1377,7 @@
                   // Get network data
                   $.ajax({
                     url: createURL('listPublicIpAddresses'),
-                    data: {
-                      listAll: true,
+                    data: {                      
                       id: args.id
                     },
                     dataType: "json",
