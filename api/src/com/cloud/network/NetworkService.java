@@ -57,7 +57,7 @@ public interface NetworkService {
 
     boolean disassociateIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
-    Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException;
+    Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd);
 

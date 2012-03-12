@@ -98,6 +98,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -2063,7 +2064,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "creating vlan ip range", async = false)
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String startIP = cmd.getStartIp();
@@ -2279,13 +2280,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId(), network);
-            if (network == null) {
-                List<? extends Network> networks = _networkMgr.getIsolatedNetworksOwnedByAccountInZone(zoneId, account);
-                network = networks.get(0);
-            }
-            if (network == null) {
-                throw new CloudRuntimeException("Failed to associate vlan to the account id=" + account.getId() + ", default network failed to create");
-            }
         }
         txn.commit();
 

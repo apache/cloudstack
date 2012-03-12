@@ -47,6 +47,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
@@ -215,10 +216,11 @@ public interface ConfigurationService {
      * @param gateway
      * @param startIP
      * @param endIP
+     * @throws ResourceAllocationException TODO
      * @throws
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
 

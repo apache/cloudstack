@@ -30,6 +30,7 @@ import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
@@ -208,8 +209,8 @@ public class CreateNetworkCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-    	// an exception thrown by createNetwork() will be caught by the dispatcher. 
+	// an exception thrown by createNetwork() will be caught by the dispatcher. 
+    public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
         Network result = _networkService.createNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
