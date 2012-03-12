@@ -2468,6 +2468,7 @@ public class ManagementServerImpl implements ManagementServer {
         String keyword = cmd.getKeyword();
         Long podId = cmd.getPodId();
         Long hostId = cmd.getHostId();
+        Long storageId = cmd.getStorageId();
 
         Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
@@ -2480,6 +2481,12 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
+        
+        if (storageId != null) {
+            SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
@@ -2487,9 +2494,9 @@ public class ManagementServerImpl implements ManagementServer {
             SearchCriteria<VMInstanceVO> ssc = _vmInstanceDao.createSearchCriteria();
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
+            
             sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
-        }
+        } 
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -2515,6 +2522,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("type", type);
         } else {
             sc.setParameters("nulltype", VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy);
+        }
+        
+        if (storageId != null) {
+            sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
 
         return _vmInstanceDao.search(sc, searchFilter);
