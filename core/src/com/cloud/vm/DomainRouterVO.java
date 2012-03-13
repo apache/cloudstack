@@ -177,6 +177,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         super();
     }
     
+    @Override
     public String getPublicIpAddress() {
         return publicIpAddress;
     }
