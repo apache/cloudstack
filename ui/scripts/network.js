@@ -1354,9 +1354,7 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
-                    id: { label: 'label.id' },
-                    networkname: { label: 'label.network' },
-                    networktype: { label: 'label.network.type' },
+                    id: { label: 'label.id' },    
                     networkid: { label: 'label.network.id' },
                     associatednetworkid: { label: 'label.associated.network.id' },
                     state: { label: 'label.state' },
@@ -1400,12 +1398,6 @@
                             item.vpnenabled = true;
                             item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
                           };
-
-                          // Check if data retrieval complete
-                          item.network = args.context.networks[0];
-                          item.networkname = item.network.name;
-                          item.networktype = item.network.type;
-
                           args.response.success({
                             actionFilter: actionFilters.ipAddress,
                             data: item
