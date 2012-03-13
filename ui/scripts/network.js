@@ -451,17 +451,17 @@
 										});																				
 										if(zoneObj.networktype == "Basic") {										  								
 											args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
-											args.$form.find('.form-item[rel=cleanup]').find('input').attr('Disabled', true); //gray-out
+											args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
 										}
 										else {										  												
 											args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked											
-											args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('Disabled'); //enabled
+											args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
                     }											
 									},
 									fields: {
                     cleanup: {
                       label: 'label.clean.up',
-                      isBoolean: true   
+                      isBoolean: true  
                     }
                   }
                 },
