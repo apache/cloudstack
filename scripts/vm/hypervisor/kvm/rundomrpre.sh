@@ -98,7 +98,7 @@ patch_all() {
         cp $pubKey  $path/authorized_keys
     fi
     echo $cmdline > $path/cmdline 
-    sed -i "s/,/\ /g" $path/cmdline
+    sed -i "s/%/\ /g" $path/cmdline
     return 0
 }
 
