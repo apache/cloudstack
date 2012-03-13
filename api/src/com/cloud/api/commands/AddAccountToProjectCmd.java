@@ -26,6 +26,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
+import com.cloud.utils.AnnotationHelper;
+
 
 @Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
@@ -95,7 +97,16 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         Project project= _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            // getProject() returns an object of type ProjectVO.
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         } 
         
         return _projectService.getProjectOwner(projectId).getId(); 
