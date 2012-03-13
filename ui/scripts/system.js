@@ -1617,7 +1617,10 @@
                         ],
                         dataProvider: function(args) {    
                           selectedGuestNetworkObj = args.context.networks[0];                        
-                          args.response.success({data: selectedGuestNetworkObj});
+                          args.response.success({
+													  actionFilter: cloudStack.actionFilter.guestNetwork,
+													  data: selectedGuestNetworkObj
+													});
                         }
                       }
                     }
