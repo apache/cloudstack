@@ -7309,13 +7309,6 @@
     allowedActions.push("remove");
     return allowedActions;
   }
-
-  var publicNetworkActionfilter = function(args) {
-    var jsonObj = args.context.item;
-    var allowedActions = [];
-    allowedActions.push("addIpRange");
-    return allowedActions;
-  }
   
   var routerActionfilter = function(args) {
     var jsonObj = args.context.item;
