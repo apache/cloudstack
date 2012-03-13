@@ -801,7 +801,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		command.add("-l", vmName);
 		command.add("-t", "all");
 		command.add("-d", dataDiskPath);
-		command.add("-p", cmdLine.replaceAll(" ", ","));
+		command.add("-p", cmdLine.replaceAll(" ", "%"));
 		result = command.execute();
 		if (result != null) {
 			throw new InternalErrorException(result);
