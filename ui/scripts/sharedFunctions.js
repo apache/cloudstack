@@ -197,6 +197,22 @@ cloudStack.preFilter = {
   }
 }
 
+cloudStack.actionFilter = {
+  guestNetwork: function(args) {    
+    var jsonObj = args.context.item;
+		var allowedActions = [];
+
+		if(jsonObj.type == 'Isolated') {
+		  allowedActions.push('edit');		//only Isolated network can be upgraded
+		}
+		
+		allowedActions.push('restart');   
+		allowedActions.push('remove');
+		
+		return allowedActions;
+	}
+}
+
 var roleTypeUser = "0";
 var roleTypeAdmin = "1";
 var roleTypeDomainAdmin = "2";

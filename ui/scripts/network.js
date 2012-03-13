@@ -274,8 +274,7 @@
               dataType: 'json',
               async: false,
               success: function(data) {
-                args.response.success({
-								  actionFilter: networkActionfilter,
+                args.response.success({								  
                   data: data.listnetworksresponse.network
                 });
               },
@@ -684,14 +683,14 @@
                 ],
                 dataProvider: function(args) {								 					
 								  $.ajax({
-										url: createURL("listNetworks&id=" + args.context.networks[0].id+'&listAll=true'),
+										url: createURL("listNetworks&id=" + args.context.networks[0].id),
 										dataType: "json",
 										async: true,
 										success: function(json) {								  
 											var jsonObj = json.listnetworksresponse.network[0];   
 											args.response.success(
 												{
-													actionFilter: networkActionfilter,
+													actionFilter: cloudStack.actionFilter.guestNetwork,
 													data: jsonObj
 												}
 											);		
@@ -2903,22 +2902,5 @@
       }
     }
   };
-	
-	 var networkActionfilter = function(args) {
-    var jsonObj = args.context.item;
-		var allowedActions = [];
-
-		allowedActions.push('remove');
 		
-		if (jsonObj.type == 'Shared' ||
-				!$.grep(jsonObj.service, function(service) {
-					return service.name == 'SourceNat';
-				}).length) {
-			 allowedActions.push('edit');
-			 allowedActions.push('restart');                        
-		}
-
-		return allowedActions;
-	}
-	
 })(cloudStack, jQuery);
