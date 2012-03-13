@@ -449,17 +449,19 @@
 											  zoneObj = json.listzonesresponse.zone[0];												
 											}
 										});																				
-										if(zoneObj.networktype == "Basic")
-										  args.$form.find('.form-item[rel=cleanup]').hide();
-										else
-										  args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block');									
+										if(zoneObj.networktype == "Basic") {										  								
+											args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
+											args.$form.find('.form-item[rel=cleanup]').find('input').attr('Disabled', true); //gray-out
+										}
+										else {										  												
+											args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked											
+											args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('Disabled'); //enabled
+                    }											
 									},
 									fields: {
                     cleanup: {
                       label: 'label.clean.up',
-                      isBoolean: true,
-                      isChecked: false,
-											isHidden: true
+                      isBoolean: true   
                     }
                   }
                 },
