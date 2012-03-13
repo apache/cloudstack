@@ -74,6 +74,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -590,12 +591,28 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Project project = getProject(projectId);
         
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");            
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         
         //User can be added to Active project only
         if (project.getState() != Project.State.Active) {
-        	throw new InvalidParameterValueException("Can't add account to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() + " as it's no longer active");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
        
         //check that account-to-add exists
@@ -603,7 +620,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (accountName != null) {
             account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
             if (account == null) {
-                throw new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
+            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in specified domain id");
+                // We don't have a DomainVO object with us, so just pass the tablename "domain" manually.                
+                ex.addProxyObject("domain", project.getDomainId(), "domainId");
+                throw ex;
             }
             
             //verify permissions - only project owner can assign
@@ -665,13 +685,23 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Project project = getProject(projectId);
         
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
        
         //check that account-to-remove exists
         Account account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
         if (account == null) {
-            throw new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
+            // Since we don't have a domainVO object, pass the table name manually.
+            ex.addProxyObject("domain", project.getDomainId(), "domainId");           
         }
         
         //verify permissions
@@ -680,12 +710,28 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         //Check if the account exists in the project
         ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
         if (projectAccount == null) {
-            throw new InvalidParameterValueException("Account " + accountName + " is not assigned to the project id=" + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Account " + accountName + " is not assigned to the project with specified id");
+            // Use the projectVO object and nt the projectAccount object to inject the projectId.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         
         //can't remove the owner of the project
         if (projectAccount.getAccountRole() == Role.Admin) {
-            throw new InvalidParameterValueException("Unable to delete account " + accountName + " from the project id=" + projectId + " as the account is the owner of the project");
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to delete account " + accountName + " from the project with specified id as the account is the owner of the project");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         
         return deleteAccountFromProject(projectId, account.getId());
@@ -940,7 +986,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         ProjectVO project = getProject(projectId);
         
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
        
         //verify permissions
@@ -980,7 +1034,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         ProjectVO project= getProject(projectId);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         
         _accountMgr.checkAccess(caller,AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
@@ -989,7 +1051,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             s_logger.debug("Successfully suspended project id=" + projectId);
             return _projectDao.findById(projectId);
         } else {
-            throw new CloudRuntimeException("Failed to suspend project id=" + projectId);
+        	CloudRuntimeException ex = new CloudRuntimeException("Failed to suspend project with specified id");
+            // Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(project);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, projectId, "projectId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
         
     }

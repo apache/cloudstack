@@ -2037,9 +2037,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Verify input parameters
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
         if (ipVO == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find ip address by id");
-        	ex.addProxyObject("user_ip_address", ipAddressId, "ipAddressId");
-        	throw ex;
+        	throw new InvalidParameterValueException("Unable to find ip address by id");
         }
 
         if (ipVO.getAllocatedTime() == null) {
@@ -2124,9 +2122,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
         String mac = _networksDao.getNextAvailableMacAddress(networkId);
         if (mac == null) {
-        	InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
-        	ex.addProxyObject("networks", networkId, "networkId");
-        	throw ex;
+        	throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);        	
         }
         return mac;
     }
@@ -2255,7 +2251,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOffering == null || networkOffering.isSystemOnly()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
-        	ex.addProxyObject("network_offerings", networkOfferingId, "networkOfferingId");
+        	if (networkOffering != null) {
+        		// Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(networkOffering);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
+        	}
         	throw ex;
         }
         // validate physical network and zone
@@ -2264,9 +2269,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (physicalNetworkId != null) {
             pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
             if (pNtwk == null) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a physical network having the given id");
-            	ex.addProxyObject("physical_network", physicalNetworkId, "physicalNetworkId");
-            	throw ex;
+            	throw new InvalidParameterValueException("Unable to find a physical network having the specified physical network id");
             }
         }
 
@@ -2275,11 +2278,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         DataCenter zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+        	throw new InvalidParameterValueException("Specified zone id was not found");
+        }
+        
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
         	// See DataCenterVO.java
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
-        	ex.addProxyObject("data_center", zone.getId(), "zoneId");
-        	throw ex;
+        	// Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(zone);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, zoneId, "zoneId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;        	
         }
 
         // Only domain and account ACL types are supported in Acton.
@@ -2333,11 +2346,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                	// see DomainVO.java
-                	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain by specified if");
-                	ex.addProxyObject("domain", domainId, "domainId");
-                	throw ex;
+                if (domain == null) {                	
+                	throw new InvalidParameterValueException("Unable to find domain by specified id");
                 }
                 _accountMgr.checkAccess(caller, domain);
             }
@@ -2488,8 +2498,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
         	// see NetworkOfferingVO
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
-        	ex.addProxyObject("network_offerings", networkOfferingId, "networkOfferingId");
-        	throw ex;
+        	// Get the VO object's table name.
+            String tablename = AnnotationHelper.getTableName(networkOfferingId);
+            if (tablename != null) {
+            	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
+            } else {
+            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+            }
+            throw ex;
         }
 
         // Validate physical network
@@ -2716,9 +2732,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             DomainVO domain = _domainDao.findById(domainId);
             if (domain == null) {
             	// see DomainVO.java
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Specified domain id doesn't exist in the system");
-            	ex.addProxyObject("domain", domainId, "domainId");
-            	throw ex;
+            	throw new InvalidParameterValueException("Specified domain id doesn't exist in the system");
             }
 
             _accountMgr.checkAccess(caller, domain);
@@ -2726,9 +2740,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
                 if (owner == null) {
                 	// see DomainVO.java
-                	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
-                	ex.addProxyObject("domain", domainId, "domainId");
-                	throw ex;
+                	throw new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");
                 }
 
                 _accountMgr.checkAccess(caller, null, true, owner);
@@ -2753,17 +2765,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 permittedAccounts.clear();
                 Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                	// see ProjectVO.java
-                	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by specified id");
-                	ex.addProxyObject("projects", projectId, "projectId");
-                	throw ex;
+                if (project == null) {                	
+                	throw new InvalidParameterValueException("Unable to find project by specified id");
                 }
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                	// see ProjectVO.java
+                	// getProject() returns type ProjectVO.
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Account " + caller + " cannot access specified project id");
-                	ex.addProxyObject("projects", projectId, "projectId");
-                	throw ex;
+                	// Get the VO object's table name.
+                    String tablename = AnnotationHelper.getTableName(project);
+                    if (tablename != null) {
+                    	ex.addProxyObject(tablename, projectId, "projectId");
+                    } else {
+                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                    }
+                    throw ex;
                 }
                 permittedAccounts.add(project.getProjectAccountId());
             }
@@ -3571,7 +3586,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (!areServicesSupportedInNetwork(networkId, service)) {
         	// TBD: networkId to uuid. No VO object being passed. So we will need to call
-        	// addProxyObject with hardcoded tablename.
+        	// addProxyObject with hardcoded tablename. Or we should probably look up the correct dao proxy object.
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in the network id=" + networkId);
         }
 

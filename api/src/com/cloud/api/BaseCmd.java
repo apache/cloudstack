@@ -60,6 +60,7 @@ import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 
@@ -485,7 +486,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
@@ -498,10 +499,26 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+                	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
+                    // Get the VO object's table name.
+                    String tablename = AnnotationHelper.getTableName(project);
+                    if (tablename != null) {
+                    	ex.addProxyObject(tablename, projectId, "projectId");
+                    } else {
+                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                    }
+                    throw ex;
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified projectId");
+                // Get the VO object's table name.
+                String tablename = AnnotationHelper.getTableName(project);
+                if (tablename != null) {
+                	ex.addProxyObject(tablename, projectId, "projectId");
+                } else {
+                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
+                }
+                throw ex;
             }
         }
         return null;
