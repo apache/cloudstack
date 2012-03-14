@@ -243,7 +243,13 @@ public class Agent implements HandlerFactory, IAgentControl {
             s_logger.error("Unable to start the resource: " + _resource.getName());
             throw new CloudRuntimeException("Unable to start the resource: " + _resource.getName());
         }
+   
         _connection.start();
+       while (!_connection.isStartup()) {
+    	   _shell.getBackoffAlgorithm().waitBeforeRetry();
+    	   _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
+    	   _connection.start();
+       }
     }
 
     public void stop(final String reason, final String detail) {
