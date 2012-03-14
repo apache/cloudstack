@@ -88,8 +88,8 @@
           if (field.edit) {
             // Edit fields append value of data
             if (field.range) {
-              var start = data[field.range[0]];
-              var end = data[field.range[1]];
+              var start = _s(data[field.range[0]]);
+              var end = _s(data[field.range[1]]);
 
               $td.append($('<span>').html(start + ' - ' + end));
             } else {
@@ -98,20 +98,20 @@
               if (maxLengths &&
                   maxLengths[fieldName] &&
                   data[fieldName].length >= maxLengths[fieldName]) {
-                $td.append($('<span>').html(data[fieldName].toString().substr(0, maxLengths[fieldName] - 3).concat('...')));
+                $td.append($('<span>').html(_s(data[fieldName].toString().substr(0, maxLengths[fieldName] - 3).concat('...'))));
               } else {
-                $td.append($('<span>').html(data[fieldName]));
+                $td.append($('<span>').html(_s(data[fieldName])));
               }
               $td.attr('title', data[fieldName]);
             }
           } else if (field.select) {
-            $td.append($('<span>').html(
+            $td.append($('<span>').html(_s(
               // Get matching option text
               $multi.find('select').filter(function() {
                 return $(this).attr('name') == fieldName;
               }).find('option').filter(function() {
                 return $(this).val() == data[fieldName];
-              }).html()));
+              }).html())));
           } else if (field.addButton && !options.noSelect) {
             if (options.multipleAdd) {              
               $addButton.click(function() {
@@ -511,7 +511,7 @@
       itemRow: function(item, itemActions, multiRule, $tbody) {
         var $tr = $('<tr>');
 
-        $tr.append($('<td></td>').appendTo($tr).html(item.name));
+        $tr.append($('<td></td>').appendTo($tr).html(_s(item.name)));
 
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
@@ -656,7 +656,7 @@
           response: {
             success: function(args) {
               $(args.data).each(function() {
-                $('<option>').val(this.name).html(this.description)
+                $('<option>').val(this.name).html(_s(this.description))
                   .appendTo($select);
               });
               _medit.refreshItemWidths($multi);

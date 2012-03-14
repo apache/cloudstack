@@ -93,7 +93,7 @@
           incomplete: function(args) {},
           error: function(args) {
             if (args.message) {
-              cloudStack.dialog.notice({ message: args.message });
+              cloudStack.dialog.notice({ message: _s(args.message) });
             }
 
             clearInterval(pollTimer);
