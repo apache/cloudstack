@@ -61,6 +61,8 @@
    * Strip unwanted characters from user-based input
    */
   cloudStack.sanitize = window._s = function(str) {
+    if (!str) return '';
+    
     var sanitized = str
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
