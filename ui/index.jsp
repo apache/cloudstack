@@ -1659,13 +1659,6 @@
 
 <script language="javascript">
 dictionary = {
-'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
-'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
-'label.management.ips': '<fmt:message key="label.management.ips"/>',
-'label.edit.traffic.type': '<fmt:message key="label.edit.traffic.type"/>',
-'message.edit.traffic.type': '<fmt:message key="message.edit.traffic.type"/>',
-'label.label': '<fmt:message key="label.label"/>',
-'message.configure.all.traffic.types': '<fmt:message key="message.configure.all.traffic.types"/>',
 'label.max.networks': '<fmt:message key="label.max.networks"/>',
 'label.latest.events': '<fmt:message key="label.latest.events"/>',
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
