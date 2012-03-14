@@ -63,10 +63,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
+                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getId());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
+            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getId());
         }
         
         return true;
