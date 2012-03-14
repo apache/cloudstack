@@ -791,7 +791,6 @@
         if (field.converter) {
           content = _l(field.converter(content, dataItem));
         }
-
         if (field.editable) {
           $td.html(_s(content));
           createEditField($td).appendTo($td);
