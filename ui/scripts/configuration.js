@@ -1634,7 +1634,7 @@
                           return "Unlimited";
                         }
                         else {
-                          return fromdb(args) + " Mb/s";
+                          return _s(args) + " Mb/s";
 
                         }
                       }

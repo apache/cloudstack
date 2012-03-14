@@ -93,7 +93,7 @@
 													cloudStack.dialog.notice({ message: 'Update SSL Certiciate succeeded'	});
 												}
 												else if (result.jobstatus == 2) {
-													cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + fromdb(result.jobresult.errortext) });													
+													cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + _s(result.jobresult.errortext) });													
 												}
 												$loading.remove();
 											}
