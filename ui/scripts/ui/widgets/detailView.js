@@ -310,7 +310,7 @@
             ));
           else if ($input.is('input[type=checkbox]')) {
             var val = $input.is(':checked');
-
+            
             $value.data('detail-view-boolean-value', _s(val));
             $value.html(_s(val) ? _l('label.yes') : _l('label.no'));
           }
