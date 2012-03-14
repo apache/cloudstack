@@ -56,7 +56,7 @@
   };
 
   /**
-   * Sanitize user input -- shortcut _s
+   * Sanitize user input (HTML Encoding) -- shortcut _s
    * 
    * Strip unwanted characters from user-based input
    */
@@ -76,7 +76,7 @@
 	  else if(typeof(value) == null || typeof(value) == "undefined") {		 
 			return '';
 		}
-        
+           
     var sanitized = value
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
@@ -84,4 +84,17 @@
 
     return sanitized;
   };
+	
+	/**
+   * Reverse sanitization (HTML Decoding)   
+   */
+  cloudStack.sanitizeReverse = function(value) {	  
+    var reversedValue = value
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">");
+
+    return reversedValue;
+  };
+	
 })(jQuery, cloudStack);
