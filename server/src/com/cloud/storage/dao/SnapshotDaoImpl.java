@@ -112,7 +112,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listByHostId(Filter filter, long hostId ) {
         SearchCriteria<SnapshotVO> sc = HostIdSearch.create();
         sc.setParameters("hostId", hostId);
-        sc.setParameters("status", Status.DOWNLOADED);
+        sc.setParameters("status", Snapshot.Status.BackedUp);
         return listBy(sc, filter);
     }
         
