@@ -108,5 +108,4 @@
 
     return reversedValue;
   };
-
 })(jQuery, cloudStack);
