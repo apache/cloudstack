@@ -287,20 +287,20 @@
           var $value = $input.closest('td.value');
 
           if ($input.is('input[type=text]'))
-            $value.html(
+            $value.html(_s(
               $input.attr('value')
-            );
+            ));
           else if ($input.is('input[type=checkbox]')) {
             var val = $input.is(':checked');
             
-            $value.data('detail-view-boolean-value', val);
-            $value.html(val ? _l('label.yes') : _l('label.no')); 
+            $value.data('detail-view-boolean-value', _s(val));
+            $value.html(_s(val) ? _l('label.yes') : _l('label.no'));
           }
           else if ($input.is('select')) {
-            $value.html(
+            $value.html(_s(
               $input.find('option:selected').html()
-            );
-            $value.data('detail-view-selected-option', $input.find('option:selected').val());
+            ));
+            $value.data('detail-view-selected-option', _s($input.find('option:selected').val()));
           }
         });
       };
@@ -368,7 +368,7 @@
                   var $value = $input.closest('td.value');
                   var originalValue = $input.data('original-value');
 
-                  $value.html(originalValue);
+                  $value.html(_s(originalValue));
                 });
 
                 if (message) cloudStack.dialog.notice({ message: message });
@@ -411,9 +411,9 @@
           $(selectData).each(function() {
             $('<option>')
               .attr({
-                value: this.id
+                value: _s(this.id)
               })
-              .html(this.description)
+              .html(_s(this.description))
               .appendTo($value.find('select'));
           });
 
@@ -632,7 +632,7 @@
       $.each(fieldGroup, function(key, value) {
         if (hiddenFields && $.inArray(key, hiddenFields) >= 0) return true;
         if ($header && key == args.header) {
-          $header.find('th').html(data[key]);
+          $header.find('th').html(_s(data[key]));
           return true;
         }
 
@@ -654,7 +654,7 @@
         }
 
         $name.html(_l(value.label));
-        $value.html(content);
+        $value.html(_s(content));
 
         // Set up editable metadata
         $value.data('detail-view-is-editable', value.isEditable);
@@ -671,7 +671,7 @@
                 })[0];
 
                 if(matchedSelectValue != null) {
-                  $value.html(matchedSelectValue.description);
+                  $value.html(_s(matchedSelectValue.description));
                   $value.data('detail-view-selected-option', matchedSelectValue.id);
                 }
 
