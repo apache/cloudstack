@@ -54,4 +54,18 @@
 
     return localized ? localized : str;
   };
+
+  /**
+   * Sanitize user input -- shortcut _s
+   * 
+   * Strip unwanted characters from user-based input
+   */
+  cloudStack.sanitize = window._s = function(str) {
+    var sanitized = str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+    return sanitized;
+  };
 })(jQuery, cloudStack);
