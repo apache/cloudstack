@@ -60,10 +60,24 @@
    * 
    * Strip unwanted characters from user-based input
    */
-  cloudStack.sanitize = window._s = function(str) {
-    if (!str) return '';
-    
-    var sanitized = str
+  cloudStack.sanitize = window._s = function(value) {
+	  if(typeof(value) == "number") {		  
+		  //alert("number does not need to be sanitized. Only string needs to be sanitized.");
+			return value;
+		}
+		else if(typeof(value) == "boolean") {		  
+		  //alert("boolean does not need to be sanitized. Only string needs to be sanitized.");
+			return value;
+		}
+		else if(typeof(value) == "object") {		  
+		  //alert("object cant not be sanitized. Only string can be sanitized.");
+			return value;
+		}
+	  else if(typeof(value) == null || typeof(value) == "undefined") {		 
+			return '';
+		}
+        
+    var sanitized = value
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");

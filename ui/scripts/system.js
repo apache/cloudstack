@@ -5695,7 +5695,7 @@
 									var jsonObj = args.context.hosts[0];
 									args.response.success({
 										data: {
-											totalCPU: _s(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+											totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
 											cpuused: jsonObj.cpuused,				
 											cpuallocated: (jsonObj.cpuallocated == null || jsonObj.cpuallocated == 0)? "N/A": jsonObj.cpuallocated,
 											memorytotal: (jsonObj.memorytotal == null || jsonObj.memorytotal == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memorytotal * 1024),
