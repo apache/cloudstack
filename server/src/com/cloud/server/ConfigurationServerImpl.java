@@ -94,6 +94,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -892,6 +893,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
 
+        Map<Network.Service, Network.Provider> ovsIsolatedSourceNatEnabledNetworkOfferingProviders = 
+        		new HashMap<Network.Service, Network.Provider>(defaultIsolatedSourceNatEnabledNetworkOfferingProviders);
+        ovsIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Connectivity, Provider.OvsConnectivityProvider);
         Map<Network.Service, Network.Provider> netscalerServiceProviders = new HashMap<Network.Service, Network.Provider>();
         netscalerServiceProviders.put(Service.Dhcp, Provider.VirtualRouter);
         netscalerServiceProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -906,18 +910,18 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         txn.start();
 
         // Offering #1
-        NetworkOfferingVO deafultSharedSGNetworkOffering = new NetworkOfferingVO(
+        NetworkOfferingVO defaultSharedSGNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
                 "Offering for Shared Security group enabled networks",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
                 null, Network.GuestType.Shared, true, true);
 
-        deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
-        deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
-
+        defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
+        defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
+        
         for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(deafultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -989,7 +993,25 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
+        
+        // Offering #6 - OVS
+        s_logger.debug("Adding network offering for OVS networks");
+        NetworkOfferingVO ovsIsolatedSourceNatEnabledNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.OvsIsolatedNetworkOfferingWithSourceNatService,
+                "Offering for OVS-based Isolated networks with Source Nat service enabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Optional,
+                null, Network.GuestType.Isolated, true, false);
 
+        ovsIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+        ovsIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(ovsIsolatedSourceNatEnabledNetworkOffering);
+
+        for (Service service : ovsIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(ovsIsolatedSourceNatEnabledNetworkOffering.getId(), service, ovsIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.debug("Added service for the OVS network offering: " + offService);
+        }
+        
         txn.commit();
     }
 

@@ -385,7 +385,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
-
+        s_logger.debug("Cleaning up NICS");
         _networkMgr.cleanupNics(profile);
         // Clean up volumes based on the vm's instance id
         _storageMgr.cleanupVolumes(vm.getId());
@@ -949,7 +949,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         }
 
-        _networkMgr.release(profile, force);
+        try {
+            _networkMgr.release(profile, force);
+            s_logger.debug("Successfully released network resources for the vm " + vm);
+        } catch (Exception e) {
+            s_logger.warn("Unable to release some network resources.", e);
+        }
+
         _storageMgr.release(profile);
         s_logger.debug("Successfully cleanued up resources for the vm " + vm + " in " + state + " state");
         return true;

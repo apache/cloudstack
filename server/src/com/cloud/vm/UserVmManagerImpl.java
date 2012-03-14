@@ -3137,7 +3137,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (storageId != null) {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
-
+        s_logger.debug("THE WHERE CLAUSE IS:" + sc.getWhereClause());
         return _vmDao.search(sc, searchFilter);
     }
 

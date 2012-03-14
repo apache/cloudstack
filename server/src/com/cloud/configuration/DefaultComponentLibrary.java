@@ -106,7 +106,7 @@ import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
-import com.cloud.network.ovs.dao.OvsTunnelAccountDaoImpl;
+import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
 import com.cloud.network.ovs.dao.OvsTunnelDaoImpl;
 import com.cloud.network.ovs.dao.OvsWorkDaoImpl;
 import com.cloud.network.ovs.dao.VlanMappingDaoImpl;
@@ -300,7 +300,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("VmFlowLogDao", VmFlowLogDaoImpl.class);
         addDao("GreTunnelDao", GreTunnelDaoImpl.class);
         addDao("OvsTunnelDao", OvsTunnelDaoImpl.class);
-        addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
+        addDao("OvsTunnelAccountDao", OvsTunnelNetworkDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
         addDao("HostTagsDao", HostTagsDaoImpl.class);
         addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);

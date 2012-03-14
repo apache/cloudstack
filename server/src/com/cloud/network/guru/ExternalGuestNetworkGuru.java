@@ -64,14 +64,11 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     DataCenterDao _zoneDao;
     @Inject
-    ConfigurationDao _configDao;
-    @Inject
     PortForwardingRulesDao _pfRulesDao;
     @Inject
     OvsNetworkManager _ovsNetworkMgr;
     @Inject
     OvsTunnelManager _tunnelMgr;
-    @Inject PhysicalNetworkDao _physicalNetworkDao;
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -165,29 +162,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         return implemented;
-    }
-
-    public int getVlanOffset(long physicalNetworkId, int vlanTag) {
-        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-        if (pNetwork == null) {
-            throw new CloudRuntimeException("Could not find the physical Network " + physicalNetworkId + ".");
-        }
-
-        if (pNetwork.getVnet() == null) {
-            throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
-        }
-        String vlanRange[] = pNetwork.getVnet().split("-");
-        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
-        return vlanTag - lowestVlanTag;
-    }
-
-    public int getGloballyConfiguredCidrSize() {
-        try {
-            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-            return 8 + Integer.parseInt(globalVlanBits);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
-        }
     }
 
     @Override

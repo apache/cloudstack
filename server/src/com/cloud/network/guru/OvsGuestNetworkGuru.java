@@ -14,8 +14,11 @@ package com.cloud.network.guru;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -25,12 +28,18 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Network.State;
 
 @Local(value=NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
+	private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
+	
 	@Inject OvsNetworkManager _ovsNetworkMgr;
 	@Inject NetworkManager _externalNetworkManager;
 	@Inject OvsTunnelManager _ovsTunnelMgr;
@@ -52,23 +61,29 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         return config;
 	}
 	
+    protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
+    		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+    	// Overriden as an empty method to avoid Vnet allocation when OVS is the network manager
+    }
+	
 	@Override
-	 public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+	public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
 		 assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 		 if (!_ovsNetworkMgr.isOvsNetworkEnabled()&& !_ovsTunnelMgr.isOvsTunnelEnabled()) {
 			 return null;
 		 }
-		
+		 s_logger.debug("### Implementing network:" + config.getId() + " in OVS Guest Network Guru");
+		 // The above call will NOT reserve a Vnet
 		 NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
-		 
 		 String uri = null;
 		 if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
 		     uri = "vlan";
 		 } else if (_ovsTunnelMgr.isOvsTunnelEnabled()) {
-		     uri = Long.toString(config.getAccountId());
+		     uri = Long.toString(config.getId());
 		 }
-		 
+		 s_logger.debug("### URI value:" + uri);
 		 implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(uri));
+		 s_logger.debug("### Broadcast URI is:" + implemented.getBroadcastUri().toString());
          return implemented;
 	}
 	

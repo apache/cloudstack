@@ -134,6 +134,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return listBy(sc);
     }
 
+
     @Override
     public List<DomainRouterVO> listBy(long accountId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();

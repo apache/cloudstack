@@ -48,6 +48,7 @@ public interface Network extends ControlledEntity {
         public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
+        public static final Service Connectivity = new Service("Connectivity");
 
         private String name;
         private Capability[] caps;
@@ -109,6 +110,7 @@ public interface Network extends ControlledEntity {
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
+        public static final Provider OvsConnectivityProvider = new Provider("OvsConnectivityProvider", false);
         public static final Provider None = new Provider("None", false);
 
         private String name;
