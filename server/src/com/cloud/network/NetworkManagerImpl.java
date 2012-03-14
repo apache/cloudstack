@@ -188,7 +188,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -2248,12 +2247,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean subdomainAccess = cmd.getSubdomainAccess();
 
         // Validate network offering
-        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        if (networkOffering == null || networkOffering.isSystemOnly()) {
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
+        if (ntwkOff == null || ntwkOff.isSystemOnly()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
-        	if (networkOffering != null) {
+        	if (ntwkOff != null) {
         		// Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(networkOffering);
+                String tablename = AnnotationHelper.getTableName(ntwkOff);
                 if (tablename != null) {
                 	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
                 } else {
@@ -2306,25 +2305,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
             }
             // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
-            if (networkOffering.getGuestType() == GuestType.Isolated) {
+            if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 if (aclType != ACLType.Account) {
                     throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + Network.GuestType.Isolated);
                 }
-            } else if (networkOffering.getGuestType() == GuestType.Shared) {
+            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
                 if (!(aclType == ACLType.Domain || aclType == ACLType.Account)) {
                     throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " or " + ACLType.Account + " for network of type " + Network.GuestType.Shared);
                 }
             }
         } else {
-            if (networkOffering.getGuestType() == GuestType.Isolated) {
+            if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 aclType = ACLType.Account;
-            } else if (networkOffering.getGuestType() == GuestType.Shared) {
+            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
                 aclType = ACLType.Domain;
             }
         }
 
         // Only Admin can create Shared networks
-        if (networkOffering.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getType())) {
+        if (ntwkOff.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getType())) {
             throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
         }
 
@@ -2336,12 +2335,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             // only shared networks can be Domain specific
-            if (networkOffering.getGuestType() != GuestType.Shared) {
+            if (ntwkOff.getGuestType() != GuestType.Shared) {
                 throw new InvalidParameterValueException("Only " + GuestType.Shared + " networks can have aclType=" + ACLType.Domain);
             }
 
             if (domainId != null) {
-                if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Shared) {
+                if (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Shared) {
                     throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest type " + Network.GuestType.Shared);
                 }
 
@@ -2398,15 +2397,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL
-                && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated
-                        && areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
+                && (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Isolated
+                        && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and network type "
                     + Network.GuestType.Isolated + " with a service " + Service.SourceNat.getName() + " enabled");
         }
 
-        // Don't allow to specify cidr if the caller is a regular user
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
-            throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange/vlanId");
+        // Don't allow to specify vlan if the caller is a regular user
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
+            throw new InvalidParameterValueException("Regular user is not allowed to specify vlanId");
         }
 
         // For non-root admins check cidr limit - if it's allowed by global config value
@@ -2431,15 +2430,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // 1) GuestType is Shared
         // 2) GuestType is Isolated, but SourceNat service is disabled
         boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced
-                && ((networkOffering.getGuestType() == Network.GuestType.Shared)
-                || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
+                && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
+                || (ntwkOff.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
 
         // Can add vlan range only to the network which allows it
-        if (createVlan && !networkOffering.getSpecifyIpRanges()) {
+        if (createVlan && !ntwkOff.getSpecifyIpRanges()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id doesn't support adding multiple ip ranges");
-            String tablename = AnnotationHelper.getTableName(networkOffering);
+            String tablename = AnnotationHelper.getTableName(ntwkOff);
             if (tablename != null) {
-            	ex.addProxyObject(tablename, networkOffering.getId(), "networkOfferingId");
+            	ex.addProxyObject(tablename, ntwkOff.getId(), "networkOfferingId");
             } else {
             	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
             }
