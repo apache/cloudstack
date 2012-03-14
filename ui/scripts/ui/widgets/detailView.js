@@ -391,7 +391,7 @@
         // Turn into form field
         var selectData = $value.data('detail-view-editable-select');
         var isBoolean = $value.data('detail-view-editable-boolean');
-        var data = !isBoolean ? $value.html() : $value.data('detail-view-boolean-value');
+        var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
 
         $value.html('');
 
