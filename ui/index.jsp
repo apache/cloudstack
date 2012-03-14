@@ -1621,6 +1621,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.max.networks': '<fmt:message key="label.max.networks"/>',
 'label.latest.events': '<fmt:message key="label.latest.events"/>',
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
 'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
