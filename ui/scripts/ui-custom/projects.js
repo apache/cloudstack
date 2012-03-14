@@ -90,7 +90,7 @@
                       $.each(item, function(arrayKey, arrayValue) {
                         var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
 
-                        $arrayElem.html(arrayValue);
+                        $arrayElem.html(_s(arrayValue));
                       });
 
                       $li.attr({ title: item.description });
@@ -103,7 +103,7 @@
                       if ($item.hasClass('chart-line')) {
                         $item.show().animate({ width: value + '%' });
                       } else {
-                        $item.hide().html(value).fadeIn();
+                        $item.hide().html(_s(value)).fadeIn();
                       }
                     });
                   }
@@ -151,7 +151,7 @@
                 var $field = $('<div>').addClass('field');
                 var $label = $('<label>').attr({
                   'for': resource.type
-                }).html(resource.label);
+                }).html(_s(resource.label));
                 var $input = $('<input>').attr({
                   type: 'text',
                   name: resource.type,
@@ -324,18 +324,18 @@
                 var $confirm = $('<div>').addClass('confirm');
 
                 // Update title with project name
-                $newProject.find('.title').html(args.data.name);
+                $newProject.find('.title').html(_s(args.data.name));
 
                 // Show field data
                 $confirm.append($projectName).find('input').replaceWith( // Name
-                  $('<span>').addClass('value').html(
+                  $('<span>').addClass('value').html(_s(
                     args.data.name
-                  )
+                  ))
                 );
                 $confirm.append($projectDesc).find('input').replaceWith( // Display text
-                  $('<span>').addClass('value').html(
+                  $('<span>').addClass('value').html(_s(
                     args.data.displayText
-                  )
+                  ))
                 );
 
                 var $buttons = $('<div>').addClass('buttons');
@@ -354,8 +354,8 @@
 
                     $newProject.find('.title').html(
                       cloudStack.projects.requireInvitation() ?
-                        _l('label.invite.to') + ' ' + args.data.name :
-                        _l('label.add.accounts.to') + ' ' + args.data.name
+                        _l('label.invite.to') + ' ' + _s(args.data.name) :
+                        _l('label.add.accounts.to') + ' ' + _s(args.data.name)
                     );
                     $nextButton.appendTo($userManagement).click(function() {
                       $newProject.find('.title').html(_l('label.review'));
@@ -366,14 +366,14 @@
                         // Basic project data
                         $review.append($projectData);
                         $projectData.append($projectName).find('input').replaceWith( // Name
-                          $('<span>').addClass('value').html(
+                          $('<span>').addClass('value').html(_s(
                             args.data.name
-                          )
+                          ))
                         );
                         $projectData.append($projectDesc).find('input').replaceWith( // Display text
-                          $('<span>').addClass('value').html(
+                          $('<span>').addClass('value').html(_s(
                             args.data.displayText
-                          )
+                          ))
                         );
 
                         // User/resouce tabs
@@ -536,14 +536,14 @@
 
                 $('<li>')
                   .data('json-obj', this)
-                  .html(displayText)
+                  .html(_s(displayText))
                   .appendTo($list.find('ul'));
 
                 // Populate project select
                 $('<option>')
                   .appendTo($projectSelect)
                   .data('json-obj', this)
-                  .html(displayText);
+                  .html(_s(displayText));
               });
 
               cloudStack.evenOdd($list, 'li', {
@@ -598,7 +598,7 @@
           showDashboard();
           
           var $switcher = $('.select.project-view');
-          var projectName = cloudStack.context.projects[0].name;
+          var projectName = _s(cloudStack.context.projects[0].name);
 
           $switcher.attr('title', projectName);
           if (projectName.length > 10) {
@@ -615,7 +615,7 @@
           $projectSelect
             .find('option').attr('selected', '')
             .filter(function() {
-              return $(this).data('json-obj').name == cloudStack.context.projects[0].name;
+              return $(this).data('json-obj').name == _s(cloudStack.context.projects[0].name);
             }).attr('selected', 'selected');
 
           ////
