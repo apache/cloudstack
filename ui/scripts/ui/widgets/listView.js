@@ -1,7 +1,7 @@
 /**
  * Create dynamic list view based on data callbacks
  */
-(function($, cloudStack, _l) {
+(function($, cloudStack, _l, _s) {
   var uiActions = {
     standard: function($instanceRow, args, additional) {
       var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
@@ -352,7 +352,7 @@
         if (!options) options = {};
 
         var oldVal = $label.html();
-        $label.html(val);
+        $label.html(_s(val));
 
         var data = {
           id: $instanceRow.data('list-view-item-id'),
@@ -381,7 +381,7 @@
               if (message) {
                 cloudStack.dialog.notice({ message: message });
                 $edit.hide(),
-                $label.html(oldVal).fadeIn();
+                $label.html(_s(oldVal)).fadeIn();
                 $instanceRow.closest('div.data-table').dataTable('refresh');
 
                 if (options.error) options.error(args);
@@ -495,7 +495,7 @@
 
     // Put <td> label into a span
     var value = $td.html();
-    $('<span></span>').html(value).appendTo($td.html(''));
+    $('<span></span>').html(_s(value)).appendTo($td.html(''));
 
     var $editArea = $('<div></div>').addClass('edit');
     var $editField = $('<input />').addClass('edit').attr({
@@ -767,14 +767,14 @@
           content = _l(field.converter(content, dataItem));
         }
 
-        $td.html(content);
+        $td.html(_s(content));
 
         if (field.editable) createEditField($td).appendTo($td);
         else {
           var origValue = $td.html();
           $td.html('');
           $td.append(
-            $('<span></span>').html(origValue)
+            $('<span></span>').html(_s(origValue))
           );
         }
       });
@@ -1535,4 +1535,4 @@
       $listView.listView('refresh');
     });
   });
-})(jQuery, cloudStack, _l);
+})(window.jQuery, window.cloudStack, window._l, window._s);
