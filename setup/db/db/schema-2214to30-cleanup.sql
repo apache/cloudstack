@@ -62,3 +62,6 @@ ALTER TABLE `cloud`.`swift` MODIFY `username` varchar(255) NOT NULL;
 
 DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud_usage`.`event`;
+
+DELETE from `cloud`.`guest_os` where id=204 or id=205;
+
