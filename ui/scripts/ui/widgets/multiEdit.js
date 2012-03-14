@@ -547,6 +547,7 @@
           });
         });
 
+
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
 
