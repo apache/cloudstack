@@ -1,0 +1,2 @@
+# Adds or removes per-VIF flows
+SUBSYSTEM=="xen-backend", KERNEL=="vif*", RUN+="/usr/bin/python /etc/xapi.d/plugins/ovs-vif-flows.py $env{ACTION} %k"
