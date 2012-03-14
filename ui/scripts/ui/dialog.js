@@ -139,12 +139,12 @@
 
                   var $option = $('<option>')
                     .appendTo($input)
-                    .val(id)
-                    .html(description);
+                    .val(_s(id))
+                    .html(_s(description));
                 });
 
                 if (field.defaultValue) {
-                  $input.val(field.defaultValue);
+                  $input.val(_s(field.defaultValue));
                 }
 
                 $input.trigger('change');
