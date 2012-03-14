@@ -771,10 +771,10 @@
 
         if (field.editable) createEditField($td).appendTo($td);
         else {
-          var origValue = $td.html();
+          var sanitizedValue = $td.html();
           $td.html('');
           $td.append(
-            $('<span></span>').html(_s(origValue))
+            $('<span></span>').html(sanitizedValue)
           );
         }
       });
