@@ -29,6 +29,9 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.ovs.dao.GreTunnelVO;
 import com.cloud.network.ovs.dao.OvsTunnelDao;
 import com.cloud.network.ovs.dao.OvsTunnelVO;
@@ -40,12 +43,14 @@ public class OvsTunnelListener implements Listener {
 	HostDao _hostDao;
 	OvsTunnelDao _tunnelDao;
 	ResourceManager _resourceMgr;
+	NetworkManager _networkMgr;
 	
 	public OvsTunnelListener(OvsTunnelDao tunnelDao, HostDao hostDao) {
 		this._hostDao = hostDao;
 		this._tunnelDao = tunnelDao;
 		ComponentLocator locator = ComponentLocator.getLocator("management-server");
 		_resourceMgr = locator.getManager(ResourceManager.class);
+		_networkMgr = locator.getManager(NetworkManager.class);
 	}
 	
 	@Override
@@ -74,36 +79,38 @@ public class OvsTunnelListener implements Listener {
 			return;
 		}
 		
-		try {
-			List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
-			for (HostVO h : hosts) {
-				if (h.getId() == host.getId()) {
-					continue;
-				}
-				
-				OvsTunnelVO t = _tunnelDao.getByFromAndTo(host.getId(), h.getId());
-				if (t == null) {
-					t = new OvsTunnelVO(host.getId(), h.getId());
-					try {
-						_tunnelDao.persist(t);
-					} catch (EntityExistsException e) {
-						s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", host.getId(), h.getId()));
-					}
-				}
-
-				t = _tunnelDao.getByFromAndTo(h.getId(), host.getId());
-				if (t == null) {
-					t = new OvsTunnelVO(h.getId(), host.getId());
-					try {
-						_tunnelDao.persist(t);
-					} catch (EntityExistsException e) {
-						s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", h.getId(), host.getId()));
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		//try {
+			//List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+			// NOTE: Trying to semplfy things by removing tunnel pre-allocation
+			//List<NetworkVO> networks = _networkMgr.listAllNetworksInAllZonesByType(GuestType.Isolated);
+			//for (HostVO h : hosts) {
+			//	if (h.getId() == host.getId()) {
+			//		continue;
+			//	}
+			//	
+			//	OvsTunnelVO t = _tunnelDao.getByFromAndTo(host.getId(), h.getId());
+			//	if (t == null) {
+			//		t = new OvsTunnelVO(host.getId(), h.getId());
+			//		try {
+			//			_tunnelDao.persist(t);
+			//		} catch (EntityExistsException e) {
+			//			s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", host.getId(), h.getId()));
+			//		}
+			//	}
+			//
+			//	t = _tunnelDao.getByFromAndTo(h.getId(), host.getId());
+			//	if (t == null) {
+			//		t = new OvsTunnelVO(h.getId(), host.getId());
+			//		try {
+			//			_tunnelDao.persist(t);
+			//		} catch (EntityExistsException e) {
+			//			s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", h.getId(), host.getId()));
+			//		}
+			//	}
+			//}
+		//} catch (Exception e) {
+			//e.printStackTrace();
+		//}
 	}
 
 	@Override

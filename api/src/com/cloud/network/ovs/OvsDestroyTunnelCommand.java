@@ -15,16 +15,16 @@ package com.cloud.network.ovs;
 import com.cloud.agent.api.Command;
 
 public class OvsDestroyTunnelCommand extends Command {
-    long account;
+    long networkId;
     String inPortName;
     
-    public OvsDestroyTunnelCommand(long account, String inPortName) {
-        this.account = account;
+    public OvsDestroyTunnelCommand(long networkId, String inPortName) {
+        this.networkId = networkId;
         this.inPortName = inPortName;
     }
     
-    public long getAccount() {
-        return account;
+    public long getNetworkId() {
+        return networkId;
     }
     
     public String getInPortName() {

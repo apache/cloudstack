@@ -22,6 +22,7 @@ import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Provider;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -31,7 +32,8 @@ import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value=NetworkOfferingServiceMapDao.class) @DB(txn=false)
 public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOfferingServiceMapVO, Long> implements NetworkOfferingServiceMapDao {
-    final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;
+
+	final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ServicesSearch;
@@ -133,7 +135,18 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     public List<String> listServicesForNetworkOffering(long networkOfferingId) {
     	SearchCriteria<String> sc = ServicesSearch.create();;
         sc.setParameters("networkOfferingId", networkOfferingId);
-        
         return customSearch(sc, null);
     }
+    
+    @Override
+	public NetworkOfferingServiceMapVO persist(
+			NetworkOfferingServiceMapVO entity) {
+        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkOfferingId", entity.getNetworkOfferingId());
+        sc.setParameters("service", entity.getService());
+        sc.setParameters("provider", entity.getProvider());
+        NetworkOfferingServiceMapVO mappingInDb = findOneBy(sc);
+        return mappingInDb!=null? mappingInDb : super.persist(entity); 
+	}
+    
 }

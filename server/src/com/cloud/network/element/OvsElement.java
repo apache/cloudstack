@@ -66,7 +66,8 @@ public class OvsElement extends AdapterBase implements NetworkElement {
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
-        return true;
+        //Consider actually implementing the network here
+    	return true;
     }
 
     @Override
@@ -83,12 +84,16 @@ public class OvsElement extends AdapterBase implements NetworkElement {
             return true;
         }
 
+        //NOTE (Salvatore Orlando): 
+        //The code for ovs Vlan Manager has not been touched. Only the OVS tunnel
+        //manager has been restored. Ideally, the code for OVS Vlan Manager should go.
         _ovsVlanMgr.VmCheckAndCreateTunnel(vm, dest);
         String command = _ovsVlanMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
         if (command != null) {
             nic.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(command));
         }
-        _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, dest);
+        _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, network, dest);
+        //_ovsTunnelMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
 
         return true;
     }
@@ -106,7 +111,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
             return true;
         }
 
-        _ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine());
+        _ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine(), network);
         return true;
     }
 
@@ -118,7 +123,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        return true;
+    	return true;
     }
 
     @Override

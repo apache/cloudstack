@@ -1725,18 +1725,18 @@ CREATE TABLE `cloud`.`ovs_tunnel`(
   PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_tunnel_account`(
+CREATE TABLE `cloud`.`ovs_tunnel_network`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
-  `account` bigint unsigned COMMENT 'account',
+  `network_id` bigint unsigned COMMENT 'network identifier',
   `key` int unsigned COMMENT 'gre key',
   `port_name` varchar(32) COMMENT 'in port on open vswitch',
   `state` varchar(16) default 'FAILED' COMMENT 'result of tunnel creatation',
   PRIMARY KEY(`from`, `to`, `account`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
+INSERT INTO `cloud`.`ovs_tunnel_network` (`from`, `to`, `network_id`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
 
 CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,

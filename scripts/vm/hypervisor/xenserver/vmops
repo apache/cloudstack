@@ -441,7 +441,7 @@ def can_bridge_firewall(session, args):
         os.makedirs('/var/run/cloud')
     if not os.path.exists('/var/cache/cloud'):
         os.makedirs('/var/cache/cloud')
-    get_ipset_keyword()
+    #get_ipset_keyword()
  
     cleanup_rules_for_dead_vms(session)
     cleanup_rules(session, args)

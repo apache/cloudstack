@@ -1908,7 +1908,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) {
+    public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) throws
+    		ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
@@ -1928,6 +1929,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                             _nicDao.update(nic.getId(), nic);
                         }
                     }
+                    // Perform release on network elements
+                    for (NetworkElement element : _networkElements) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                        }
+                        //NOTE: Context appear to never be used in release method 
+                        //implementations. Consider removing it from interface Element
+                        element.release(network, profile, vmProfile, null);
+                    }
+                                        
                 } else {
                     nic.setState(Nic.State.Allocated);
                     updateNic(nic, network.getId(), -1);
@@ -3838,6 +3849,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return accountNetworks;
     }
 
+    @Override
+    public List<NetworkVO> listAllNetworksInAllZonesByType(Network.GuestType type) {
+    	List<NetworkVO> networks = new ArrayList<NetworkVO>();
+    	for (NetworkVO network: _networksDao.listAll()) {
+    		if (!isNetworkSystem(network)) {
+    			networks.add(network);
+    		}
+    	}
+    	return networks;
+    }
+        
     @DB
     @Override
     public IPAddressVO markIpAsUnavailable(long addrId) {
