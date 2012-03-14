@@ -737,3 +737,4 @@ INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (15
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (156, 10, 'Ubuntu 10.10 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (157, 10, 'Ubuntu 10.10 (64-bit)');
 
+UPDATE `cloud`.`guest_os` SET category_id=4 where id=131;
