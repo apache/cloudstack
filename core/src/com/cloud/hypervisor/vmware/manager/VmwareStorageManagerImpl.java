@@ -491,7 +491,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         }
         
-        String tmpSnapshotName = UUID.randomUUID().toString();
+        String snapshotUuidName = UUID.randomUUID().toString();
         VirtualMachineMO clonedVm = null;
         try {
             Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
@@ -501,7 +501,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
             
-            if(!vmMo.createSnapshot(tmpSnapshotName, "Temporary snapshot for template creation", false, false)) {
+            if(!vmMo.createSnapshot(snapshotUuidName, "Temporary snapshot for template creation", false, false)) {
                 String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
@@ -517,17 +517,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
         
-            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateName, true, false);
+            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, snapshotUuidName, true, false);
             
-            long physicalSize = new File(installFullPath + "/" + templateName + ".ova").length();
+            long physicalSize = new File(installFullPath + "/" + snapshotUuidName + ".ova").length();
             VmdkProcessor processor = new VmdkProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
             processor.configure("VMDK Processor", params);
-            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateName);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, snapshotUuidName);
 
-            postCreatePrivateTemplate(installFullPath, templateId, templateName, physicalSize, virtualSize);
-            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", physicalSize, virtualSize);
+            postCreatePrivateTemplate(installFullPath, templateId, snapshotUuidName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + snapshotUuidName + ".ova", physicalSize, virtualSize);
             
         } finally {
             if(clonedVm != null) {
@@ -535,17 +535,18 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 clonedVm.destroy();
             }
         
-            vmMo.removeSnapshot(tmpSnapshotName, false);
+            vmMo.removeSnapshot(snapshotUuidName, false);
         }
     }
     
     private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateName, 
         String secStorageUrl, long volumeId, String backedUpSnapshotUuid) throws Exception {
         
+        String snapshotUuidName = UUID.randomUUID().toString();
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
         String installFullPath = secondaryMountPoint + "/" + installPath;
-        String installFullName = installFullPath + "/" + templateName + ".ova";
+        String installFullName = installFullPath + "/" + snapshotUuidName + ".ova";
         String snapshotFullName = secondaryMountPoint + "/" + getSnapshotRelativeDirInSecStorage(accountId, volumeId) 
             + "/" + backedUpSnapshotUuid + ".ova";
         String result;
@@ -590,15 +591,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
             
-            long physicalSize = new File(installFullPath + "/" + templateName + ".ova").length();
+            long physicalSize = new File(installFullPath + "/" + snapshotUuidName + ".ova").length();
             VmdkProcessor processor = new VmdkProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
             processor.configure("VMDK Processor", params);
-            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateName);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, snapshotUuidName);
 
-            postCreatePrivateTemplate(installFullPath, templateId, templateName, physicalSize, virtualSize);
-            return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", physicalSize, virtualSize);
+            postCreatePrivateTemplate(installFullPath, templateId, snapshotUuidName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + snapshotUuidName + ".ova", physicalSize, virtualSize);
         
         } catch(Exception e) {
             // TODO, clean up left over files
