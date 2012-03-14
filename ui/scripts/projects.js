@@ -82,8 +82,17 @@
                     4: {
                       id: 'template',
                       label: 'label.max.templates'
+                    },
+                    5: {
+                      id: 'project',
+                      label: 'label.max.projects'
+                    },
+                    6: {
+                      id: 'network',
+                      label: 'label.max.networks'
                     }
                   };
+
                   return {
                     id: resourceMap[resource.resourcetype].id,
                     label: _l(resourceMap[resource.resourcetype].label),
