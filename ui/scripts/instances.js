@@ -1645,7 +1645,7 @@
               var jsonObj = args.context.instances[0];
               args.response.success({
                 data: {
-                  totalCPU: fromdb(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+                  totalCPU: _s(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                   cpuused: jsonObj.cpuused,
                   networkkbsread: (jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                   networkkbswrite: (jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)

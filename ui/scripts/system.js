@@ -2441,7 +2441,7 @@
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
                                 }
                                 else if (result.jobstatus == 2) {
-                                  alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));
+                                  alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
                                 }
                               }
                             },
@@ -2660,7 +2660,7 @@
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");
                                 }
                                 else if (result.jobstatus == 2) {
-                                  alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));
+                                  alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + _s(result.jobresult.errortext));
                                 }
                               }
                             },
@@ -2900,7 +2900,7 @@
                                   addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
                                 }
                                 else if (result.jobstatus == 2) {
-                                  alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));
+                                  alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + _s(result.jobresult.errortext));
                                 }
                               }
                             },
@@ -3902,7 +3902,7 @@
                                 addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
                               }
                               else if (result.jobstatus == 2) {
-                                alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));
+                                alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
                               }
                             }
                           },
@@ -4085,7 +4085,7 @@
                                 addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse", "f5loadbalancer");
                               }
                               else if (result.jobstatus == 2) {
-                                alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));
+                                alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + _s(result.jobresult.errortext));
                               }
                             }
                           },
@@ -4290,7 +4290,7 @@
                                 addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
                               }
                               else if (result.jobstatus == 2) {
-                                alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));
+                                alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + _s(result.jobresult.errortext));
                               }
                             }
                           },
@@ -5695,7 +5695,7 @@
 									var jsonObj = args.context.hosts[0];
 									args.response.success({
 										data: {
-											totalCPU: fromdb(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+											totalCPU: _s(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
 											cpuused: jsonObj.cpuused,				
 											cpuallocated: (jsonObj.cpuallocated == null || jsonObj.cpuallocated == 0)? "N/A": jsonObj.cpuallocated,
 											memorytotal: (jsonObj.memorytotal == null || jsonObj.memorytotal == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memorytotal * 1024),
@@ -7066,7 +7066,7 @@
 																																});
 																															}
 																															else if (result.jobstatus == 2) {
-																																alert("failed to enable security group provider. Error: " + fromdb(result.jobresult.errortext));
+																																alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
 																															}
 																														}
 																													},
@@ -7147,7 +7147,7 @@
 																							}																																		  
 																						}
 																						else if (result.jobstatus == 2) {
-																							alert("failed to enable Virtual Router Provider. Error: " + fromdb(result.jobresult.errortext));
+																							alert("failed to enable Virtual Router Provider. Error: " + _s(result.jobresult.errortext));
 																						}
 																					}
 																				},
@@ -7161,7 +7161,7 @@
 																});
 															}
 															else if (result.jobstatus == 2) {
-																alert("configureVirtualRouterElement failed. Error: " + fromdb(result.jobresult.errortext));
+																alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
 															}
 														}
 													},
@@ -7175,7 +7175,7 @@
 									});
 								}
 								else if (result.jobstatus == 2) {
-									alert("updatePhysicalNetwork failed. Error: " + fromdb(result.jobresult.errortext));
+									alert("updatePhysicalNetwork failed. Error: " + _s(result.jobresult.errortext));
 								}
 							}
 						},
