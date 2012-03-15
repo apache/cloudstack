@@ -104,14 +104,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         //verify input parameters
         if (project == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            // getProject() returns an object of type ProjectVO.
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(project);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, projectId, "projectId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(project, projectId, "projectId");            
             throw ex;
         } 
         

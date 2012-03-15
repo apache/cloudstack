@@ -2882,13 +2882,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         } 
 
@@ -2907,13 +2901,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             status = _itMgr.destroy(vm, userCaller, caller);
         } catch (OperationTimedoutException e) {
         	CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
@@ -2934,13 +2922,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return _vmDao.findById(vmId);
         } else {
         	CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
     }
@@ -3146,17 +3128,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public HypervisorType getHypervisorTypeOfUserVM(long vmid) {
-        UserVmVO userVm = _vmDao.findById(vmid);
+    public HypervisorType getHypervisorTypeOfUserVM(long vmId) {
+        UserVmVO userVm = _vmDao.findById(vmId);
         if (userVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with id " + vmid);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(userVm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmid, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
+        	ex.addProxyObject(userVm, vmId, "vmId");            
             throw ex;
         }
 
@@ -3193,13 +3169,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (vm.getState() != State.Stopped) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Stopped, unable to migrate the vm having the specified id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
@@ -3243,13 +3213,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
             InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+            ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
@@ -3321,13 +3285,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("VM is Running, unable to move the vm " + vm);
             }
             InvalidParameterValueException ex = new InvalidParameterValueException("VM is Running, unable to move the vm with specified vmId");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, cmd.getVmId(), "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
             throw ex;
         }
 
@@ -3338,13 +3296,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //don't allow to move the vm from the project
         if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Specified Vm id belongs to the project and can't be moved");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, cmd.getVmId(), "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, cmd.getVmId(), "vmId");
             throw ex;
         }
         Account newAccount = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
@@ -3533,13 +3485,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	                    NetworkVO network = _networkDao.findById(networkId);
 	                    if (network == null) {
 	                    	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find specified network id");
-	                        // Get the VO object's table name.
-	                        String tablename = AnnotationHelper.getTableName(network);
-	                        if (tablename != null) {
-	                        	ex.addProxyObject(tablename, networkId, "networkId");
-	                        } else {
-	                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-	                        }
+	                    	ex.addProxyObject(network, networkId, "networkId");
 	                        throw ex;
 	                    }
 	
@@ -3549,13 +3495,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	                    NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
 	                    if (networkOffering.isSystemOnly()) {
 	                    	InvalidParameterValueException ex = new InvalidParameterValueException("Specified Network id is system only and can't be used for vm deployment");
-	                        // Get the VO object's table name.
-	                        String tablename = AnnotationHelper.getTableName(network);
-	                        if (tablename != null) {
-	                        	ex.addProxyObject(tablename, networkId, "networkId");
-	                        } else {
-	                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-	                        }
+	                    	ex.addProxyObject(network, networkId, "networkId");
 	                        throw ex;
 	                    }
 	                    applicableNetworks.add(network);
@@ -3624,13 +3564,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Cann not find VM with ID " + vmId);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
         
@@ -3654,13 +3588,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<VolumeVO> rootVols = _volsDao.findByInstance(vmId);
         if (rootVols.isEmpty()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can not find root volume for VM " + vmId);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
@@ -3669,19 +3597,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find template for specified volumeid and vmId");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vmId, "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
-            tablename = AnnotationHelper.getTableName(root);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, root.getId(), "volumeId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(vm, vmId, "vmId");
+        	ex.addProxyObject(root, root.getId(), "volumeId");
             throw ex;
         }
 
@@ -3691,13 +3608,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Stop vm " + vmId + " failed", e);
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(vm);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, vmId, "vmId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+                ex.addProxyObject(vm, vmId, "vmId");
                 throw ex;
             }
         }
@@ -3720,13 +3631,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vmId, e);
                 CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified id" + e.getMessage());
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(vm);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, vmId, "vmId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+                ex.addProxyObject(vm, vmId, "vmId");
                 throw ex;
             }
         }

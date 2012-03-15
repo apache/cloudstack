@@ -112,7 +112,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
         	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
-                throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
+            	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
+                ex.addProxyObject(project, project.getId(), "projectId");
+                throw ex;
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);

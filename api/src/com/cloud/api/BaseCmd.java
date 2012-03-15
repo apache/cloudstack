@@ -500,24 +500,12 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                 	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    // Get the VO object's table name.
-                    String tablename = AnnotationHelper.getTableName(project);
-                    if (tablename != null) {
-                    	ex.addProxyObject(tablename, projectId, "projectId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }
+                	ex.addProxyObject(project, projectId, "projectId");                    
                     throw ex;
                 }
             } else {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified projectId");
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(project);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, projectId, "projectId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(project, projectId, "projectId");                
                 throw ex;
             }
         }

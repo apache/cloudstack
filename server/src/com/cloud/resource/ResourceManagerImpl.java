@@ -331,26 +331,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         DataCenterVO zone = _dcDao.findById(dcId);
         if (zone == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't find zone by the id specified");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, dcId, "dcId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(zone, dcId, "dcId");
             throw ex;
         }
 
         Account account = UserContext.current().getCaller();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, dcId, "dcId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(zone, dcId, "dcId");
             throw ex;
         }
 
@@ -367,20 +355,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             // check if pod belongs to the zone
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified id doesn't belong to the zone " + dcId);
-                // Get the pod VO object's table name.
-                String tablename = AnnotationHelper.getTableName(pod);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, podId, "podId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
-                // Get the zone VO object's table name.
-                tablename = AnnotationHelper.getTableName(zone);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, dcId, "dcId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(pod, podId, "podId");                
+                ex.addProxyObject(zone, dcId, "dcId");
                 throw ex;
             }
         }
@@ -440,19 +416,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             // no longer tolerate exception during the cluster creation phase
         	CloudRuntimeException ex = new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod and data center with specified ids", e);
             // Get the pod VO object's table name.
-            String tablename = AnnotationHelper.getTableName(pod);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, podId, "podId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
-            // Get the zone VO object's table name.
-            tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, dcId, "dcId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(pod, podId, "podId");
+            ex.addProxyObject(zone, dcId, "dcId");
             throw ex;
         }
         clusterId = cluster.getId();
@@ -552,26 +517,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (cluster == null) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("can not find cluster for specified clusterId");
-                // Get the cluster VO object's table name.
-                String tablename = AnnotationHelper.getTableName(cluster);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, clusterId, "clusterId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(cluster, clusterId, "clusterId");
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
                     List<HostVO> hosts = listAllHostsInCluster(clusterId);
                     if (!hosts.isEmpty()) {
                     	CloudRuntimeException ex = new CloudRuntimeException("Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
-                        // Get the cluster VO object's table name.
-                        String tablename = AnnotationHelper.getTableName(cluster);
-                        if (tablename != null) {
-                        	ex.addProxyObject(tablename, clusterId, "clusterId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                    	ex.addProxyObject(cluster, clusterId, "clusterId");
                         throw ex;
                     }
                 }
@@ -611,13 +564,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         Account account = UserContext.current().getCaller();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
-            // Get the zone VO object's table name.
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, dcId, "dcId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(zone, dcId, "dcId");
             throw ex;
         }
 
@@ -634,19 +581,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             // check if pod belongs to the zone            
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified podId" + podId + " doesn't belong to the zone with specified zoneId" + dcId);
-                // Get the pod VO object's table name.
-                String tablename = AnnotationHelper.getTableName(pod);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, podId, "podId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
-                tablename = AnnotationHelper.getTableName(zone);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, dcId, "dcId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(pod, podId, "podId"); 
+                ex.addProxyObject(zone, dcId, "dcId");
                 throw ex;
             }
         }
@@ -698,19 +634,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 cluster = _clusterDao.findBy(clusterName, podId);
                 if (cluster == null) {
                 	CloudRuntimeException ex = new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod with specified podId and data center with specified dcID", e);
-                    // Get the pod VO object's table name.
-                    String tablename = AnnotationHelper.getTableName(pod);
-                    if (tablename != null) {
-                    	ex.addProxyObject(tablename, podId, "podId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }
-                    tablename = AnnotationHelper.getTableName(zone);
-                    if (tablename != null) {
-                    	ex.addProxyObject(tablename, dcId, "dcId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }
+                	ex.addProxyObject(pod, podId, "podId"); 
+                    ex.addProxyObject(zone, dcId, "dcId");
                     throw ex;   
                 }
             }

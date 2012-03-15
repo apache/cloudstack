@@ -67,7 +67,9 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 		
 		List<HostVO> pxeServers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, podId, zoneId);
 		if (pxeServers.size() != 0) {
-			throw new InvalidParameterValueException("Already had a PXE server in Pod: " + podId + " zone: " + zoneId);
+			InvalidParameterValueException ex = new InvalidParameterValueException("Already had a PXE server in Pod with specified podId and zone with specified zoneId");
+			ex.addProxyObject("pod", podId, "podId");
+			ex.addProxyObject(zone, zoneId, "zoneId");
 		}
 		
 		

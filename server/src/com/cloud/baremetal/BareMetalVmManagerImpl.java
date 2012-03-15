@@ -169,7 +169,9 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         }
 
         if (pxes.size() > 1) {
-            throw new CloudRuntimeException("Multiple PXE servers found in Pod " + host.getPodId() + " Zone " + host.getDataCenterId());
+        	CloudRuntimeException ex = new CloudRuntimeException("Multiple PXE servers found in Pod " + host.getPodId() + " in Zone with specified id");
+            ex.addProxyObject("data_center", host.getDataCenterId(), "zoneId");
+            throw ex;
         }
 
         HostVO pxe = pxes.get(0);

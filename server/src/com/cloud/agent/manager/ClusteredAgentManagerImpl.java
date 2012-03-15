@@ -484,7 +484,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         if (agent == null) {
-            throw new AgentUnavailableException("Host is not in the right state: " + host.getStatus() , hostId);
+        	AgentUnavailableException ex = new AgentUnavailableException("Host with specified id is not in the right state: " + host.getStatus(), hostId);
+            ex.addProxyObject(host, hostId, "hostId");
+            throw ex;
         }
 
         return agent;
