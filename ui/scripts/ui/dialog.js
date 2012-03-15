@@ -279,7 +279,8 @@
             if (field.defaultValue) {
               $input.val(field.defaultValue);
             }
-          }
+          }					
+					$input.addClass("disallowSpecialCharacters");					
         }
 
         $input.data('validation-rules', field.validation);

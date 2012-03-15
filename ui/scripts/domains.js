@@ -172,11 +172,11 @@
               fields: {
                 name: {
                   label: 'label.name',
-                  validation: { required: true, disallowSpecialCharacters: true }
+                  validation: { required: true }
                 },
                 networkdomain: {
                   label: 'label.network.domain',
-                  validation: { required: false, disallowSpecialCharacters: true }
+                  validation: { required: false }
                 }
               }
             }
