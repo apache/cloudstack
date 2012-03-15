@@ -24,7 +24,7 @@ class Services:
         self.services = {
                       "host": {
                                "username": 'root', # Credentials for SSH
-                               "password": 'fr3sca',
+                               "password": 'password',
                                "publicport": 22,
                                },
                        "zoneid": 1,

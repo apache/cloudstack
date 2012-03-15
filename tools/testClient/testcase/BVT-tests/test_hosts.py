@@ -41,7 +41,7 @@ class Services:
                                         "clustertype": 'ExternalManaged',
                                         # CloudManaged or ExternalManaged"
                                         "username": 'administrator',
-                                        "password": 'fr3sca',
+                                        "password": 'password',
                                         "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
                                         # Format:http://vCenter Host/Datacenter/Cluster
                                         "clustername": 'VMWare Cluster',
@@ -57,7 +57,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.210',
                                           "username": "root",
-                                          "password": "fr3sca",
+                                          "password": "password",
                                           },
                                  "kvm": {
                                           "hypervisor": 'KVM',
@@ -66,7 +66,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.212',
                                           "username": "root",
-                                          "password": "fr3sca",
+                                          "password": "password",
                                           },
                                  "vmware": {
                                           "hypervisor": 'VMware',
@@ -75,7 +75,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.203',
                                           "username": "administrator",
-                                          "password": "fr3sca",
+                                          "password": "password",
                                          },
                                  },
                          "zoneid": 2,

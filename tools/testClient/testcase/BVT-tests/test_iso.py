@@ -29,7 +29,7 @@ class Services:
                         "username": "test",
                         # Random characters are appended in create account to 
                         # ensure unique username generated each time
-                        "password": "fr3sca",
+                        "password": "password",
                 },
             "iso_1":
                     {

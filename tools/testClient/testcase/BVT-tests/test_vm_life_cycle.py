@@ -33,7 +33,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to 
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "small":
                 # Create a small virtual machine instance with disk offering 

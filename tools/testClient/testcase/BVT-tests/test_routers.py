@@ -33,7 +33,7 @@ class Services:
                                     {
                                         "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
                                         "domainid": 1,
@@ -46,7 +46,7 @@ class Services:
                                         "firstname": "Test",
                                         "lastname": "User",
                                         "username": "testuser",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         },
                          "ostypeid":12,
                          "sleep": 60,
