@@ -411,13 +411,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             UserVm vm = _vmDao.findById(instanceId);
             if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Invalid instance id specified");
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(vm);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, instanceId, "instanceId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(vm, instanceId, "instanceId");               
                 throw ex;
             }
 
@@ -439,13 +433,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
             if (nicInSameNetwork == null) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("VM " + instanceId + " cannot be added because it doesn't belong in the same network.");
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(vm);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, instanceId, "instanceId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(vm, instanceId, "instanceId");                
                 throw ex;
             }
 
@@ -491,13 +479,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         if(!success){
         	CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms " + instanceIds);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(loadBalancer);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, loadBalancerId, "loadBalancerId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");           
             // TBD: Also pack in the instanceIds in the exception using the right VO object or table name.            
             throw ex;
         }
@@ -537,13 +519,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             if (!applyLoadBalancerConfig(loadBalancerId)) {
                 s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + instanceIds);
-                // Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(loadBalancer);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, loadBalancerId, "loadBalancerId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+                ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");                
                 throw ex;
             }
             success = true;
@@ -565,13 +541,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         if(!success){
         	CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + instanceIds);
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(loadBalancer);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, loadBalancerId, "loadBalancerId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");            
             throw ex;
     	}
         return success;
@@ -804,23 +774,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddr);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, sourceIpId, "sourceIpId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");            
             throw ex;
         } else if (ipAddr.isOneToOneNat()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddr);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, sourceIpId, "sourceIpId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");            
             throw ex;
         }
 
@@ -830,13 +788,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddr);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, sourceIpId, "sourceIpId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");            
             throw ex;
 
         }
@@ -847,15 +799,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         // verify that lb service is supported by the network
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("LB service is not supported in specified network id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, networkId, "networkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, networkId, "networkId");        	
             throw ex;
-
         }
 
         Transaction txn = Transaction.currentTxn();

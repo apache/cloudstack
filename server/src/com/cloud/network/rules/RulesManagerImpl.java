@@ -1062,26 +1062,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         if (ipAddress.getSystem()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't disable static nat for system IP address with specified id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddress);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ipId, "ipId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddress, ipId, "ipId");            
             throw ex;
         }
 
         Long vmId = ipAddress.getAssociatedWithVmId();
         if (vmId == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Specified IP address id is not associated with any vm Id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddress);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ipId, "ipId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddress, ipId, "ipId");            
             throw ex;
         }
 
@@ -1107,13 +1095,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         if (!ipAddress.isOneToOneNat()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("One to one nat is not enabled for the specified ip id");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ipAddress);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ipId, "ipId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipAddress, ipId, "ipId");            
             throw ex;
         }
 
@@ -1176,13 +1158,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Source ip address of the specified firewall rule id is not static nat enabled");
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(ruleVO);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, rule.getId(), "ruleId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ruleVO, rule.getId(), "ruleId");
             throw ex;
         }
         
@@ -1215,14 +1191,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
         Network network = _networkMgr.getNetwork(networkId);
         if (network == null) {
-        	CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");            
-            // Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(vm);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, vm.getId(), "vmId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
+        	ex.addProxyObject(vm, vm.getId(), "vmId");            
             throw ex;
         }
 

@@ -17,6 +17,7 @@
  */
 package com.cloud.utils.exception;
 
+import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.IdentityProxy;
 import java.util.ArrayList;
 
@@ -51,6 +52,15 @@ public class RuntimeCloudException extends RuntimeException {
     public RuntimeCloudException(String message, Throwable cause) {
         super(message, cause);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+    
+    public void addProxyObject(Object voObj, Long id, String idFieldName) {
+    	// Get the VO object's table name.
+    	String tablename = AnnotationHelper.getTableName(voObj);
+    	if (tablename != null) {
+    		addProxyObject(tablename, id, idFieldName);    		
+    	}
+    	return;
     }
     	
 	public RuntimeCloudException() {

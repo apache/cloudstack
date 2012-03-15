@@ -1034,13 +1034,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, zone with specified id is currently disabled");
-            // Get the VO object's table name.                
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, zone.getId(), "zoneId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+            ex.addProxyObject(zone, zone.getId(), "zoneId");
             throw ex;
         }
 
@@ -1651,19 +1645,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                     if (errorIfAlreadySetup) {
                     	InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
-                        // Get the VO object's table name.              
-                        String tablename = AnnotationHelper.getTableName(offering);
-                        if (tablename != null) {
-                        	ex.addProxyObject(tablename, offering.getId(), "offeringId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
-                        tablename = AnnotationHelper.getTableName(configs.get(0));
-                        if (tablename != null) {
-                        	ex.addProxyObject(tablename, configs.get(0).getId(), "networkConfigId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                    	ex.addProxyObject(offering, offering.getId(), "offeringId");
+                    	ex.addProxyObject(configs.get(0), configs.get(0).getId(), "networkConfigId");                       
                         throw ex;
                     } else {
                         return configs;
@@ -1679,19 +1662,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                     if (errorIfAlreadySetup) {
                     	InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
-                        // Get the VO object's table name.              
-                        String tablename = AnnotationHelper.getTableName(offering);
-                        if (tablename != null) {
-                        	ex.addProxyObject(tablename, offering.getId(), "offeringId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
-                        tablename = AnnotationHelper.getTableName(configs.get(0));
-                        if (tablename != null) {
-                        	ex.addProxyObject(tablename, configs.get(0).getId(), "networkConfigId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                    	ex.addProxyObject(offering, offering.getId(), "offeringId");
+                    	ex.addProxyObject(configs.get(0), configs.get(0).getId(), "networkConfigId");                       
                         throw ex;
                     } else {
                         return configs;
@@ -1742,12 +1714,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networks.size() < 1) {
             	// see networkOfferingVO.java
             	CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering with specified id to network profile");
-            	String tablename = AnnotationHelper.getTableName(offering);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, offering.getId(), "networkOfferingId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }                    
+            	ex.addProxyObject(offering, offering.getId(), "offeringId");
                 throw ex;
             }
 
@@ -2093,12 +2060,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 if (!element.implement(network, offering, dest, context)) {
                 	CloudRuntimeException ex = new CloudRuntimeException("Failed to implement provider " + element.getProvider().getName() + " for network with specified id");
-                    String tablename = AnnotationHelper.getTableName(network);                    
-                    if (tablename != null) {
-                    	ex.addProxyObject(tablename, network.getId(), "networkId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }                    
+                	ex.addProxyObject(network, network.getId(), "networkId");
                     throw ex;                    
                 }
             }
@@ -2399,27 +2361,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Check for account wide pool. It will have an entry for account_vlan_map.
-        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {
+        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAllocatedToAccountId(), ipVO.getVlanId()) != null) {        	
         	//see IPaddressVO.java
         	InvalidParameterValueException ex = new InvalidParameterValueException("Sepcified IP address uuid belongs to Account wide IP pool and cannot be disassociated");
-        	String tablename = AnnotationHelper.getTableName(ipVO);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ipVO.getId(), "systemIpAddrId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipVO, ipVO.getId(), "systemIpAddrId");        	
             throw ex;
         }
 
         // don't allow releasing system ip address
         if (ipVO.getSystem()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't release system IP address with specified id");
-            String tablename = AnnotationHelper.getTableName(ipVO);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ipVO.getId(), "systemIpAddrId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ipVO, ipVO.getId(), "systemIpAddrId");
             throw ex;
         }
 
@@ -2603,13 +2555,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ntwkOff == null || ntwkOff.isSystemOnly()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
         	if (ntwkOff != null) {
-        		// Get the VO object's table name.
-                String tablename = AnnotationHelper.getTableName(ntwkOff);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+        		ex.addProxyObject(ntwkOff, networkOfferingId, "networkOfferingId");        		
                 throw ex;
         	}
         	throw ex;
@@ -2636,13 +2582,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
         	// See DataCenterVO.java
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
-        	// Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, zoneId, "zoneId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(zone, zoneId, "zoneId");
             throw ex;        	
         }
 
@@ -2801,12 +2741,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.getSpecifyIpRanges()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id doesn't support adding multiple ip ranges");
-            String tablename = AnnotationHelper.getTableName(ntwkOff);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, ntwkOff.getId(), "networkOfferingId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ntwkOff, ntwkOff.getId(), "networkOfferingId");
             throw ex;
         }
 
@@ -2894,13 +2829,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
         	// see NetworkOfferingVO
         	InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
-        	// Get the VO object's table name.
-            String tablename = AnnotationHelper.getTableName(networkOfferingId);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(ntwkOff, ntwkOff.getId(), "networkOfferingId");
             throw ex;
         }
 
@@ -3189,13 +3118,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
                 	// getProject() returns type ProjectVO.
                 	InvalidParameterValueException ex = new InvalidParameterValueException("Account " + caller + " cannot access specified project id");
-                	// Get the VO object's table name.
-                    String tablename = AnnotationHelper.getTableName(project);
-                    if (tablename != null) {
-                    	ex.addProxyObject(tablename, projectId, "projectId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }
+                	ex.addProxyObject(project, projectId, "projectId");                	
                     throw ex;
                 }
                 permittedAccounts.add(project.getProjectAccountId());
@@ -3434,24 +3357,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	// see NetworkVO.java
         	
         	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find network with specified id");
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, networkId, "networkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, networkId, "networkId");            
             throw ex;
         }
 
         // don't allow to delete system network
         if (isNetworkSystem(network)) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id is system and can't be removed");
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, network.getId(), "networkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, network.getId(), "networkId");            
             throw ex;
         }
 
@@ -3905,12 +3818,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, networkId, "networkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, networkId, "networkId");            
             throw ex;
         }
 
@@ -4649,26 +4557,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
             if (networkOffering == null || networkOffering.isSystemOnly()) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering with specified id");
-                // Get the VO object's table name.                
-                String tablename = AnnotationHelper.getTableName(networkOffering);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
                 throw ex;
             }
 
             // network offering should be in Enabled state
             if (networkOffering.getState() != NetworkOffering.State.Enabled) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it");
-                // Get the VO object's table name.                
-                String tablename = AnnotationHelper.getTableName(networkOffering);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, networkOfferingId, "networkOfferingId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
                 throw ex;
             }
 
@@ -4680,13 +4576,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (changeCidr) {
                     if (!checkForNonStoppedVmInNetwork(network.getId())) {
                     	InvalidParameterValueException ex = new InvalidParameterValueException("All user vm of network of specified id should be stopped before changing CIDR!");
-                        String tablename = AnnotationHelper.getTableName(network);
-                        if (tablename != null) {
-                        	// We could use network.getId() instead of networkId too.
-                        	ex.addProxyObject(tablename, networkId, "networkId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                    	ex.addProxyObject(network, networkId, "networkId");                       
                         throw ex;
                     }
                 }
@@ -4741,13 +4631,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (!shutdownNetworkElementsAndResources(context, true, network)) {
                         s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network);
                         CloudRuntimeException ex = new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of update to network of specified id");
-                        String tablename = AnnotationHelper.getTableName(network);
-                        if (tablename != null) {
-                        	// We could use network.getId() instead of networkId too.
-                        	ex.addProxyObject(tablename, networkId, "networkId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                        ex.addProxyObject(network, networkId, "networkId");                       
                         throw ex;
                     }
                 } else {
@@ -4757,25 +4641,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (!shutdownNetwork(network.getId(), context, true)) {
                         s_logger.warn("Failed to shutdown the network as a part of update to network with specified id");
                         CloudRuntimeException ex = new CloudRuntimeException("Failed to shutdown the network as a part of update of specified network id");
-                        String tablename = AnnotationHelper.getTableName(network);
-                        if (tablename != null) {
-                        	// We could use network.getId() instead of networkId too.
-                        	ex.addProxyObject(tablename, networkId, "networkId");
-                        } else {
-                        	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                        }
+                        ex.addProxyObject(network, networkId, "networkId");                        
                         throw ex;
                     }
                 }
             } else {
             	CloudRuntimeException ex = new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of update to network with specified id; network is in wrong state: " + network.getState());
-                String tablename = AnnotationHelper.getTableName(network);
-                if (tablename != null) {
-                	// We could use network.getId() instead of networkId too.
-                	ex.addProxyObject(tablename, networkId, "networkId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(network, networkId, "networkId");                
                 throw ex;
             }
         }
@@ -4786,13 +4658,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean validStateToImplement = (networkState == Network.State.Implemented || networkState == Network.State.Setup || networkState == Network.State.Allocated);
         if (restartNetwork && !validStateToImplement) {
         	CloudRuntimeException ex = new CloudRuntimeException("Failed to implement the network elements and resources as a part of update to network with specified id; network is in wrong state: " + networkState);
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	// We could use network.getId() instead of networkId too.
-            	ex.addProxyObject(tablename, networkId, "networkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, networkId, "networkId");            
             throw ex;
         }
 
@@ -4842,13 +4708,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } catch (Exception ex) {
                     s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
                     CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of network update");
-                    String tablename = AnnotationHelper.getTableName(network);
-                    if (tablename != null) {
-                    	// We could use network.getId() instead of networkId too.
-                    	e.addProxyObject(tablename, networkId, "networkId");
-                    } else {
-                    	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                    }
+                    e.addProxyObject(network, networkId, "networkId");                    
                     throw e;
                 }
             }
@@ -5379,12 +5239,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
         if (network == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, id, "physicalNetworkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, id, "physicalNetworkId");            
             throw ex;
         }
 
@@ -5392,12 +5247,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (zone == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system");
-            String tablename = AnnotationHelper.getTableName(zone);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, network.getDataCenterId(), "dataCenterId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(zone, network.getDataCenterId(), "dataCenterId");            
             throw ex;
         }
         if (newVnetRangeString != null) {
@@ -5531,12 +5381,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNetwork == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            String tablename = AnnotationHelper.getTableName(pNetwork);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, physicalNetworkId, "physicalNetworkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(pNetwork, physicalNetworkId, "physicalNetworkId");            
             throw ex;
         }
 
@@ -5723,12 +5568,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
         if (network == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            String tablename = AnnotationHelper.getTableName(network);
-            if (tablename != null) {
-            	ex.addProxyObject(tablename, physicalNetworkId, "physicalNetworkId");
-            } else {
-            	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-            }
+        	ex.addProxyObject(network, physicalNetworkId, "physicalNetworkId");
             throw ex;
         }
 
@@ -5737,12 +5577,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             PhysicalNetworkVO destNetwork = _physicalNetworkDao.findById(destinationPhysicalNetworkId);
             if (destNetwork == null) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Destination Physical Network with specified id doesn't exist in the system");
-                String tablename = AnnotationHelper.getTableName(destNetwork);
-                if (tablename != null) {
-                	ex.addProxyObject(tablename, destinationPhysicalNetworkId, "destinationPhysicalNetworkId");
-                } else {
-                	s_logger.info("\nCould not retrieve table name (annotation) from " + tablename + " VO proxy object\n");
-                }
+            	ex.addProxyObject(destNetwork, destinationPhysicalNetworkId, "destinationPhysicalNetworkId");                
                 throw ex;
             }
         }
