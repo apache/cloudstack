@@ -1,53 +1,37 @@
-/**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
- * This software is licensed under the GNU General Public License v3 or later.
- * 
- * It is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- */
 package com.cloud.consoleproxy;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import javax.net.ssl.SSLServerSocket;
-
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.console.AuthenticationException;
 import com.cloud.console.Logger;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * 
+ * @author Kelven Yang
+ * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
+ * keep a lot of static memebers in this class 
+ */
 public class ConsoleProxy {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxy.class);
 	
 	public static final int KEYBOARD_RAW = 0;
 	public static final int KEYBOARD_COOKED = 1;
-
+	
+	public static int VIEWER_LINGER_SECONDS = 180;
+	
 	public static Object context;
 	
 	// this has become more ugly, to store keystore info passed from management server (we now use management server managed keystore to support
@@ -58,27 +42,23 @@ public class ConsoleProxy {
 	public static Method authMethod;
 	public static Method reportMethod;
 	public static Method ensureRouteMethod;
-
-	static Hashtable<String, ConsoleProxyViewer> connectionMap = new Hashtable<String, ConsoleProxyViewer>();
-	static int tcpListenPort = 5999;
+	
+	static Hashtable<String, ConsoleProxyClient> connectionMap = new Hashtable<String, ConsoleProxyClient>();
 	static int httpListenPort = 80;
 	static int httpCmdListenPort = 8001;
-	static String jarDir = "./applet/";
-	static boolean compressServerMessage = true;
-	static int viewerLinger = 180;
 	static int reconnectMaxRetry = 5;
 	static int readTimeoutSeconds = 90;
 	static int keyboardType = KEYBOARD_RAW;
 	static String factoryClzName;
 	static boolean standaloneStart = false;
-
+	
 	private static void configLog4j() {
 		URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
 		if(configUrl == null)
-			configUrl = System.class.getClassLoader().getSystemResource("log4j-cloud.xml");
+			configUrl = ClassLoader.getSystemResource("log4j-cloud.xml");
 		
 		if(configUrl == null)
-			configUrl = System.class.getClassLoader().getSystemResource("conf/log4j-cloud.xml");
+			configUrl = ClassLoader.getSystemResource("conf/log4j-cloud.xml");
 			
 		if(configUrl != null) {
 			try {
@@ -100,20 +80,14 @@ public class ConsoleProxy {
 			System.out.println("Configure log4j with default properties");
 		}
 	}
-
+	
 	private static void configProxy(Properties conf) {
 		s_logger.info("Configure console proxy...");
 		for(Object key : conf.keySet()) {
 			s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
 		}
 		
-		String s = conf.getProperty("consoleproxy.tcpListenPort");
-		if (s!=null) {
-			tcpListenPort = Integer.parseInt(s);
-			s_logger.info("Setting tcpListenPort=" + s);
-		}
-		
-		s = conf.getProperty("consoleproxy.httpListenPort");
+		String s = conf.getProperty("consoleproxy.httpListenPort");
 		if (s!=null) {
 			httpListenPort = Integer.parseInt(s);
 			s_logger.info("Setting httpListenPort=" + s);
@@ -132,21 +106,6 @@ public class ConsoleProxy {
 		if (s!=null) {
 			httpCmdListenPort = Integer.parseInt(s);
 			s_logger.info("Setting httpCmdListenPort=" + s);
-		}
-		s = conf.getProperty("consoleproxy.jarDir");
-		if (s!=null) {
-			jarDir = s;
-			s_logger.info("Setting jarDir=" + s);
-		}
-		s = conf.getProperty("consoleproxy.viewerLinger");
-		if (s!=null) {
-			viewerLinger = Integer.parseInt(s);
-			s_logger.info("Setting viewerLinger=" + s);
-		}
-		s = conf.getProperty("consoleproxy.compressServerMessage");
-		if (s!=null) {
-			compressServerMessage = Boolean.parseBoolean(s);
-			s_logger.info("Setting compressServerMessage=" + s);
 		}
 		
 		s = conf.getProperty("consoleproxy.reconnectMaxRetry");
@@ -181,7 +140,7 @@ public class ConsoleProxy {
 			return new ConsoleProxyBaseServerFactoryImpl();
 		}
 	}
-	
+
 	public static boolean authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket) {
 		if(standaloneStart)
 			return true;
@@ -238,7 +197,7 @@ public class ConsoleProxy {
 			s_logger.warn("Unable to find ensureRoute method, console proxy agent is not up to date");
 		}
 	}
-	
+
 	public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword) {
 		s_logger.info("Start console proxy with context");
 		if(conf != null) {
@@ -316,51 +275,9 @@ public class ConsoleProxy {
 	    	s_logger.info("HTTP command port is disabled");
 	    }
 	    
-		ViewerGCThread cthread = new ViewerGCThread(connectionMap);
-		cthread.setName("Viewer GC Thread");
+	    ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap);
+		cthread.setName("Console Proxy GC Thread");
 		cthread.start();
-		
-		if(tcpListenPort > 0) {
-			SSLServerSocket srvSock = null;
-			try {
-				srvSock = factory.createSSLServerSocket(tcpListenPort);
-			    s_logger.info("Listening for TCP on port " + tcpListenPort);
-			} catch (IOException ioe) {
-				s_logger.error(ioe.toString(), ioe);
-				System.exit(1);
-			}
-			
-			if(srvSock != null) {
-				while (true) {
-				    Socket conn = null;
-				    try {
-				        conn = srvSock.accept();
-				        String srcinfo = conn.getInetAddress().getHostAddress() + ":" + conn.getPort();
-				        s_logger.info("Accepted connection from " + srcinfo);
-				        conn.setSoLinger(false,0);
-				        ConsoleProxyClientHandler worker = new ConsoleProxyClientHandler(conn);
-				        worker.setName("Proxy Thread " + worker.getId() + " <" + srcinfo);
-				        worker.start();
-				    } catch (IOException ioe2) {
-						s_logger.error(ioe2.toString(), ioe2);
-						try {
-						    if (conn != null) {
-						        conn.close();
-						    }
-						} catch (IOException ioe) {}
-				    } catch (Throwable e) {
-				    	// Something really bad happened
-				    	// Terminate the program
-				    	s_logger.error(e.toString(), e);
-				    	System.exit(1);
-				    }
-				}
-			} else {
-		    	s_logger.warn("TCP port is enabled in configuration but we are not able to instantiate server socket.");
-			}
-		} else {
-	    	s_logger.info("TCP port is disabled for applet viewers");
-		}
 	}
 	
 	private static void startupHttpMain() {
@@ -415,71 +332,39 @@ public class ConsoleProxy {
 		}
 		start(conf);
 	}
-
-	static ConsoleProxyViewer createViewer() {
-		ConsoleProxyViewer viewer = new ConsoleProxyViewer();
-		viewer.compressServerMessage = compressServerMessage;
-		return viewer;
-	}
 	
-	static void initViewer(ConsoleProxyViewer viewer, String host, int port, String tag, String sid, String ticket) throws AuthenticationException {
-		ConsoleProxyViewer.authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
-		
-		viewer.host = host;
-		viewer.port = port;
-		viewer.tag = tag;
-		viewer.passwordParam = sid;
-		
-		viewer.init();
-	}
-	
-	static ConsoleProxyViewer getVncViewer(String host, int port, String sid, String tag, String ticket) throws Exception {
-		ConsoleProxyViewer viewer = null;
+	public static ConsoleProxyClient getVncViewer(String host, int port, String sid, String tag, String ticket) throws Exception {
+		ConsoleProxyClient viewer = null;
 		
 		boolean reportLoadChange = false;
 		synchronized (connectionMap) {
 			viewer = connectionMap.get(host + ":" + port);
 			if (viewer == null) {
-				viewer = createViewer();
-				initViewer(viewer, host, port, tag, sid, ticket);
+				viewer = new ConsoleProxyVncClient();
+				viewer.initClient(host, port, sid, tag, ticket);
 				connectionMap.put(host + ":" + port, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				
 				reportLoadChange = true;
-			} else if (!viewer.rfbThread.isAlive()) {
+			} else if (!viewer.isFrontEndAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
-				initViewer(viewer, host, port, tag, sid, ticket);
+				viewer.initClient(host, port, sid, tag, ticket);
 				
 				reportLoadChange = true;
-			} else if (!sid.equals(viewer.passwordParam)) {
-				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.passwordParam + ", sid in request: " + sid);
-				initViewer(viewer, host, port, tag, sid, ticket);
+			} else if (!sid.equals(viewer.getClientHostPassword())) {
+				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword()
+					+ ", sid in request: " + sid);
+				viewer.initClient(host, port, sid, tag, ticket);
 				
 				reportLoadChange = true;
-					
-				/*
-				throw new AuthenticationException ("Cannot use the existing viewer " +
-						viewer + ": bad sid");
-				*/
-			}
-		}
-		
-		if(viewer != null) {
-			if (viewer.status == ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
-				// Do not update lastUsedTime if the viewer is in the process of starting up
-				// or if it failed to authenticate.
-				viewer.lastUsedTime = System.currentTimeMillis();
 			}
 		}
 		
 		if(reportLoadChange) {
-			ConsoleProxyStatus status = new ConsoleProxyStatus();
-			status.setConnections(ConsoleProxy.connectionMap);
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			String loadInfo = gson.toJson(status);
-			
-			ConsoleProxy.reportLoadInfo(loadInfo);
+			ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
+			String loadInfo = statsCollector.getStatsReport();
+			reportLoadInfo(loadInfo);
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Report load change : " + loadInfo);
 		}
@@ -487,52 +372,38 @@ public class ConsoleProxy {
 		return viewer;
 	}
 	
-	static ConsoleProxyViewer getAjaxVncViewer(String host, int port, String sid, String tag, String ticket, String ajaxSession) throws Exception {
+	public static ConsoleProxyClient getAjaxVncViewer(String host, int port, String sid, String tag, 
+		String ticket, String ajaxSession) throws Exception {
+		
 		boolean reportLoadChange = false;
 		synchronized (connectionMap) {
-			ConsoleProxyViewer viewer = connectionMap.get(host + ":" + port);
-//			s_logger.info("view lookup " + host + ":" + port + " = " + viewer);
-
+			ConsoleProxyClient viewer = connectionMap.get(host + ":" + port);
 			if (viewer == null) {
-				viewer = createViewer();
-				viewer.ajaxViewer = true;
+				viewer = new ConsoleProxyVncClient();
+				viewer.initClient(host, port, sid, tag, ticket);
 				
-				initViewer(viewer, host, port, tag, sid, ticket);
 				connectionMap.put(host + ":" + port, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				reportLoadChange = true;
-			} else if (!viewer.rfbThread.isAlive()) {
+			} else if (!viewer.isFrontEndAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
-				initViewer(viewer, host, port, tag, sid, ticket);
+				viewer.initClient(host, port, sid, tag, ticket);
 				reportLoadChange = true;
-			} else if (!sid.equals(viewer.passwordParam)) {
-				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.passwordParam + ", sid in request: " + sid);
-				initViewer(viewer, host, port, tag, sid, ticket);
+			} else if (!sid.equals(viewer.getClientHostPassword())) {
+				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " 
+					+ viewer.getClientHostPassword() + ", sid in request: " + sid);
+				viewer.initClient(host, port, sid, tag, ticket);
 				reportLoadChange = true;
-				
-				/*
-				throw new AuthenticationException ("Cannot use the existing viewer " +
-						viewer + ": bad sid");
-				*/
 			} else {
 				if(ajaxSession == null || ajaxSession.isEmpty())
-					ConsoleProxyViewer.authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
-			}
-			
-			if (viewer.status == ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
-				// Do not update lastUsedTime if the viewer is in the process of starting up
-				// or if it failed to authenticate.
-				viewer.lastUsedTime = System.currentTimeMillis();
+					authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
 			}
 			
 			if(reportLoadChange) {
-				ConsoleProxyStatus status = new ConsoleProxyStatus();
-				status.setConnections(ConsoleProxy.connectionMap);
-				Gson gson = new GsonBuilder().setPrettyPrinting().create();
-				String loadInfo = gson.toJson(status);
-				
-				ConsoleProxy.reportLoadInfo(loadInfo);
+				ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
+				String loadInfo = statsCollector.getStatsReport();
+				reportLoadInfo(loadInfo);
 				if(s_logger.isDebugEnabled())
 					s_logger.debug("Report load change : " + loadInfo);
 			}
@@ -540,9 +411,9 @@ public class ConsoleProxy {
 		}
 	}
 	
-	public static void removeViewer(ConsoleProxyViewer viewer) {
+	public static void removeViewer(ConsoleProxyClient viewer) {
 		synchronized (connectionMap) {
-			for(Map.Entry<String, ConsoleProxyViewer> entry : connectionMap.entrySet()) {
+			for(Map.Entry<String, ConsoleProxyClient> entry : connectionMap.entrySet()) {
 				if(entry.getValue() == viewer) {
 					connectionMap.remove(entry.getKey());
 					return;
@@ -551,138 +422,21 @@ public class ConsoleProxy {
 		}
 	}
 	
-	static void waitForViewerToStart(ConsoleProxyViewer viewer) throws Exception {
-		if (viewer.status == ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
-			return;
-		}
-
-		Long startTime = System.currentTimeMillis();
-		int delay = 500;
-		
-		while (System.currentTimeMillis() < startTime + 30000 &&
-				viewer.status != ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
-			if (viewer.status == ConsoleProxyViewer.STATUS_AUTHENTICATION_FAILURE) {
-				throw new Exception ("Authentication failure");
-			}
-			try {
-				Thread.sleep(delay);
-			} catch (InterruptedException e) {
-				// ignore
-			}
-			delay = (int)(delay * 1.5);
-		}
-		
-		if (viewer.status != ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
-			throw new Exception ("Cannot start VncViewer");
-		}
-		
-		s_logger.info("Waited " +
-				(System.currentTimeMillis() - startTime) + "ms for VncViewer to start");
+	public static ConsoleProxyClientStatsCollector getStatsCollector() {
+		return new ConsoleProxyClientStatsCollector(connectionMap);
 	}
-
+	
+	public static void authenticationExternally(String host, String port, String tag, String sid, String ticket) throws AuthenticationException {
+		if(!authenticateConsoleAccess(host, port, tag, sid, ticket)) {
+    		s_logger.warn("External authenticator failed authencation request for vm " + tag + " with sid " + sid);
+        	
+			throw new AuthenticationException("External authenticator failed request for vm " + tag + " with sid " + sid);
+		}
+	}
+	
 	static class ThreadExecutor implements Executor {
 	     public void execute(Runnable r) {
 	         new Thread(r).start();
 	     }
 	}
-
-    static class ViewerGCThread extends Thread {
-    	Hashtable<String, ConsoleProxyViewer> connMap;
-    	long lastLogScan = 0L;
-    	
-    	public ViewerGCThread(Hashtable<String, ConsoleProxyViewer> connMap) {
-    		this.connMap = connMap;
-    	}
-    	
-		private void cleanupLogging() {
-			if(lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000)
-				return;
-			lastLogScan = System.currentTimeMillis();
-			
-			File logDir = new File("./logs");
-			File files[] = logDir.listFiles();
-			if(files != null) {
-				for(File file : files) {
-					if(System.currentTimeMillis() - file.lastModified() >= 86400000L) {
-						try {
-							file.delete();
-						} catch(Throwable e) {
-						}
-					}
-				}
-			}
-		}
-    	
-    	@Override
-        public void run() {
-    		while (true) {
-    			cleanupLogging();
-    			
-    			s_logger.info("connMap=" + connMap);
-    			Enumeration<String> e = connMap.keys();
-    		    while (e.hasMoreElements()) {
-    		    	String key;
-    		    	ConsoleProxyViewer viewer;
-    		    	
-    		    	synchronized (connMap) {
-	    		        key  = e.nextElement();
-	    		        viewer  = connMap.get(key);
-    		    	}
-
-	    		    long seconds_unused = (System.currentTimeMillis() - viewer.lastUsedTime) / 1000;
-	    		         
-	    		    if (seconds_unused > viewerLinger / 2 && viewer.clientStream != null) {
-	    		    	s_logger.info("Pinging client for " + viewer +
-	    		    			" which has not been used for " + seconds_unused + "sec");
-	    		    	byte[] bs = new byte[2];
-	    		        bs[0] = (byte)250;
-	    		        bs[1] = 3;
-	    		        viewer.writeToClientStream(bs);
-	    		    }
-	    		    
-	    		    if (seconds_unused < viewerLinger) {
-	    		      	continue;
-	    		    }
-	    		    
-    		    	synchronized (connMap) {
-    		    		connMap.remove(key);
-    		    	}
-	    		    // close the server connection
-	    		    s_logger.info("Dropping " + viewer +
-	    		        		 " which has not been used for " +
-	    		        		 seconds_unused + " seconds");
-	    		    viewer.dropMe = true;
-	    		    synchronized (viewer) {
-		    		    if (viewer.clientStream != null) {
-		    		    	try {
-		    		    		viewer.clientStream.close();
-		    		    	} catch (IOException ioe) {
-		    		    		// ignored
-		    		    	}
-				    		viewer.clientStream = null;
-				    		viewer.clientStreamInfo = null;
-		    		    }
-	    		        if (viewer.rfb != null) {
-	    		        	viewer.rfb.close();
-	    		        }
-    		    	}
-
-	    		    // report load change for removal of the viewer
-    				ConsoleProxyStatus status = new ConsoleProxyStatus();
-    				status.setConnections(ConsoleProxy.connectionMap);
-    				Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    				String loadInfo = gson.toJson(status);
-    				
-    				ConsoleProxy.reportLoadInfo(loadInfo);
-    				if(s_logger.isDebugEnabled())
-    					s_logger.debug("Report load change : " + loadInfo);
-    		    }
-    			try {
-    				Thread.sleep(30000);
-    			} catch (InterruptedException exp) {
-    				// Ignore
-    			}
-    		}
-    	}
-    }
 }

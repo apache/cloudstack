@@ -5,10 +5,13 @@ import java.awt.datatransfer.StringSelection;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.cloud.console.Logger;
+import com.cloud.consoleproxy.ConsoleProxyClientListener;
 import com.cloud.consoleproxy.vnc.packet.server.FramebufferUpdatePacket;
 import com.cloud.consoleproxy.vnc.packet.server.ServerCutText;
 
 public class VncServerPacketReceiver implements Runnable {
+  private static final Logger s_logger = Logger.getLogger(VncServerPacketReceiver.class);
 
   private final VncScreenDescription screen;
   private BufferedImageCanvas canvas;
@@ -17,10 +20,10 @@ public class VncServerPacketReceiver implements Runnable {
   private boolean connectionAlive = true;
   private VncClient vncConnection;
   private final FrameBufferUpdateListener fburListener;
-  private final FrameBufferEventListener clientListener;
+  private final ConsoleProxyClientListener clientListener;
 
   public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection,
-      FrameBufferUpdateListener fburListener, FrameBufferEventListener clientListener) {
+      FrameBufferUpdateListener fburListener, ConsoleProxyClientListener clientListener) {
     this.screen = screen;
     this.canvas = canvas;
     this.is = is;
@@ -66,9 +69,9 @@ public class VncServerPacketReceiver implements Runnable {
         default:
           throw new RuntimeException("Unknown server packet type: " + messageType + ".");
         }
-
       }
     } catch (Throwable e) {
+    	
       if (connectionAlive) {
         closeConnection();
         vncConnection.shutdown();
@@ -78,6 +81,10 @@ public class VncServerPacketReceiver implements Runnable {
 
   public void closeConnection() {
     connectionAlive = false;
+  }
+  
+  public boolean isConnectionAlive() {
+	return connectionAlive;
   }
 
   /**
@@ -95,6 +102,6 @@ public class VncServerPacketReceiver implements Runnable {
     StringSelection contents = new StringSelection(clipboardContent.getContent());
     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, null);
     
-    SimpleLogger.info("Server clipboard buffer: "+clipboardContent.getContent());
+    s_logger.info("Server clipboard buffer: "+clipboardContent.getContent());
   }
 }

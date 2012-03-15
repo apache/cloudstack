@@ -16,7 +16,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
+import com.cloud.console.Logger;
+import com.cloud.consoleproxy.ConsoleProxyClientListener;
+import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
+import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
+
 public class VncClient {
+  private static final Logger s_logger = Logger.getLogger(VncClient.class);
 
   private Socket socket;
   private DataInputStream is;
@@ -28,7 +34,7 @@ public class VncClient {
   private VncServerPacketReceiver receiver;
   
   private boolean noUI = false;
-  private FrameBufferEventListener clientListener = null;
+  private ConsoleProxyClientListener clientListener = null;
 
   public static void main(String args[]) {
     if (args.length < 3) {
@@ -43,26 +49,31 @@ public class VncClient {
     try {
       new VncClient(host, Integer.parseInt(port), password, false, null);
     } catch (NumberFormatException e) {
-      SimpleLogger.error("Incorrect VNC server port number: " + port + ".");
+      s_logger.error("Incorrect VNC server port number: " + port + ".");
       System.exit(1);
     } catch (UnknownHostException e) {
-      SimpleLogger.error("Incorrect VNC server host name: " + host + ".");
+    	s_logger.error("Incorrect VNC server host name: " + host + ".");
       System.exit(1);
     } catch (IOException e) {
-      SimpleLogger.error("Cannot communicate with VNC server: " + e.getMessage());
+    	s_logger.error("Cannot communicate with VNC server: " + e.getMessage());
       System.exit(1);
     } catch (Throwable e) {
-      SimpleLogger.error("An error happened: " + e.getMessage());
-      System.exit(1);
+    	s_logger.error("An error happened: " + e.getMessage());
+    	System.exit(1);
     }
     System.exit(0);
   }
 
   private static void printHelpMessage() {
-    /* LOG */SimpleLogger.info("Usage: HOST PORT PASSWORD.");
+    /* LOG */s_logger.info("Usage: HOST PORT PASSWORD.");
+  }
+  
+  public VncClient(ConsoleProxyClientListener clientListener) {
+	this.noUI = true;
+	this.clientListener = clientListener;
   }
 
-  public VncClient(String host, int port, String password, boolean noUI, FrameBufferEventListener clientListener) 
+  public VncClient(String host, int port, String password, boolean noUI, ConsoleProxyClientListener clientListener) 
   	throws UnknownHostException, IOException {
 	  
     this.noUI = noUI;
@@ -70,33 +81,40 @@ public class VncClient {
     connectTo(host, port, password);
   }
 
-  void shutdown() {
-    sender.closeConnection();
-    receiver.closeConnection();
+  public void shutdown() {
+	if(sender != null)
+		sender.closeConnection();
+	
+	if(receiver != null)
+		receiver.closeConnection();
 
-    try {
-      is.close();
-    } catch (Throwable e) {
-    }
+	if(is != null) {
+	  try {
+	    is.close();
+	  } catch (Throwable e) {
+	  }
+	}
 
-    try {
-      os.close();
-    } catch (Throwable e) {
-    }
-
-    try {
-      socket.close();
-    } catch (Throwable e) {
-    }
+	if(os != null) {
+	  try {
+	    os.close();
+	  } catch (Throwable e) {
+	  }
+	}
+	
+	if(socket != null) {
+	  try {
+	    socket.close();
+	  } catch (Throwable e) {
+	  }
+	}
+    
+    clientListener.onClientClose();
   }
 
   public void connectTo(String host, int port, String password) throws UnknownHostException, IOException {
-    // If port number is too small, then interpret it as display number.
-    if (port < 100)
-      port += 5900;
-
     // Connect to server
-    SimpleLogger.info("Connecting to VNC server " + host + ":" + port + "...");
+	s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
     this.socket = new Socket(host, port);
     is = new DataInputStream(socket.getInputStream());
     os = new DataOutputStream(socket.getOutputStream());
@@ -322,6 +340,8 @@ public class VncClient {
       int framebufferWidth = is.readUnsignedShort();
       int framebufferHeight = is.readUnsignedShort();
       screen.setFramebufferSize(framebufferWidth, framebufferHeight);
+      if(clientListener != null)
+    	  clientListener.onFramebufferSizeChange(framebufferWidth, framebufferHeight);
     }
 
     // Read pixel format
@@ -361,5 +381,24 @@ public class VncClient {
       return receiver.getCanvas();
 	  
 	return null;
+  }
+  
+  public void requestUpdate(boolean fullUpdate) {
+	if(fullUpdate)
+		sender.requestFullScreenUpdate();
+	else
+		sender.imagePaintedOnScreen();  
+  }
+  
+  public void sendClientKeyboardEvent(int event, int code, int modifiers) {
+    sender.sendClientPacket(new KeyboardEventPacket(event, code));
+  }
+  
+  public void sendClientMouseEvent(int event, int x, int y, int code, int modifiers) {
+    sender.sendClientPacket(new MouseEventPacket(event, x, y));
+  }
+  
+  public boolean isHostConnected() {
+	  return receiver != null && receiver.isConnectionAlive();
   }
 }

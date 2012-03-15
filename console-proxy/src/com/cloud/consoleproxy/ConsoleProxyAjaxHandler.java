@@ -114,22 +114,11 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			}
 		}
 		
-		ConsoleProxyViewer viewer = null;
+		ConsoleProxyClient viewer = null;
 		try {
 			viewer = ConsoleProxy.getAjaxVncViewer(host, port, sid, tag, ticket, ajaxSessionIdStr);
 		} catch(Exception e) {
 
-/*
-			StringWriter writer = new StringWriter();
-			try {
-				ConsoleProxy.processTemplate("viewer-bad-sid.ftl", null, writer);
-			} catch (IOException ex) {
-				s_logger.warn("Unexpected exception in processing template.", e);
-			} catch (TemplateException ex) {
-				s_logger.warn("Unexpected exception in processing template.", e);
-			}
-			StringBuffer sb = writer.getBuffer();
-*/
 			s_logger.warn("Failed to create viwer due to " + e.getMessage(), e);
 
 			String[] content = new String[] {
@@ -236,7 +225,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientEventBag(ConsoleProxyViewer viewer, String requestData) {
+	@SuppressWarnings("deprecation")
+	private void handleClientEventBag(ConsoleProxyClient viewer, String requestData) {
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("Handle event bag, event bag: " + requestData);
 		
@@ -294,7 +284,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientEvent(ConsoleProxyViewer viewer, int event, Map<String, String> queryMap) {
+	private void handleClientEvent(ConsoleProxyClient viewer, int event, Map<String, String> queryMap) {
 		int code = 0;
 		int x = 0, y = 0;
 		int modifiers = 0;
@@ -347,7 +337,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 				if(s_logger.isTraceEnabled())
 					s_logger.trace("Handle client mouse move event. x: " + x + ", y: " + y);
 			}
-			viewer.sendClientMouseEvent(event, x, y, code, modifiers);
+			viewer.sendClientMouseEvent(InputEventType.fromEventCode(event), x, y, code, modifiers);
 			break;
 			
 		case 4:		// key press
@@ -371,7 +361,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Handle client keyboard event. event: " + event + ", code: " + code + ", modifier: " + modifiers);
-			viewer.sendClientRawKeyboardEvent(event, code, modifiers);
+			viewer.sendClientRawKeyboardEvent(InputEventType.fromEventCode(event), code, modifiers);
 			break;
 			
 		default :
@@ -379,7 +369,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientKickoff(HttpExchange t, ConsoleProxyViewer viewer) throws IOException {
+	private void handleClientKickoff(HttpExchange t, ConsoleProxyClient viewer) throws IOException {
 		String response = viewer.onAjaxClientKickoff();
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
@@ -390,7 +380,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientStart(HttpExchange t, ConsoleProxyViewer viewer, String title, String guest) throws IOException {
+	private void handleClientStart(HttpExchange t, ConsoleProxyClient viewer, String title, String guest) throws IOException {
 		List<String> languages = t.getRequestHeaders().get("Accept-Language");
 		String response = viewer.onAjaxClientStart(title, languages, guest);
 		
@@ -408,7 +398,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientUpdate(HttpExchange t, ConsoleProxyViewer viewer) throws IOException {
+	private void handleClientUpdate(HttpExchange t, ConsoleProxyClient viewer) throws IOException {
 		String response = viewer.onAjaxClientUpdate();
 		
 		Headers hds = t.getResponseHeaders();
