@@ -1,4 +1,4 @@
-(function($, cloudStack) {
+(function($, cloudStack, _s) {
   /**
    * Make <ul> of tree items
    */
@@ -21,7 +21,7 @@
               )
               .append(
                 $('<div>').addClass('name')
-                  .html(this.name)
+                  .html(_s(this.name))
               )
               .appendTo($treeList);
           });
@@ -125,4 +125,4 @@
 
     return this;
   };
-})(jQuery, cloudStack);
+})(jQuery, cloudStack, cloudStack.sanitize);
