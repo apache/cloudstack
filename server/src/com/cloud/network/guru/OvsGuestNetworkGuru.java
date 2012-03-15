@@ -16,8 +16,12 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
@@ -27,6 +31,7 @@ import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -63,7 +68,16 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
     		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
-    	// Overriden as an empty method to avoid Vnet allocation when OVS is the network manager
+        if (network.getBroadcastUri() == null) {
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
+            if (vnet == null) {
+                throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
+            }
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
+            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
+        } else {
+            implemented.setBroadcastUri(network.getBroadcastUri());
+        }
     }
 	
 	@Override

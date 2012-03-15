@@ -4823,7 +4823,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Integer newStartVnet = 0;
             Integer newEndVnet = 0;
             String[] newVnetRange = newVnetRangeString.split("-");
-
+            int maxVnet = 4096;
+            // for GRE phynets allow up to 32bits
+            // TODO: Not happy about this test.  
+            // What about guru-like objects for physical networs?
+            if (network.getIsolationMethods().contains("GRE")) { 
+            	maxVnet = 2^32 - 1;
+            }
             if (newVnetRange.length < 2) {
                 throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
             }
@@ -4839,15 +4845,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.warn("Unable to parse vnet range:", e);
                 throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
             }
-
-            if (newStartVnet < 0 || newEndVnet > 4096) {
+            if (newStartVnet < 0 || newEndVnet > maxVnet) {
                 throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
             }
 
             if (newStartVnet > newEndVnet) {
                 throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
             }
-
+            
             if (physicalNetworkHasAllocatedVnets(network.getDataCenterId(), network.getId())) {
                 String[] existingRange = network.getVnet().split("-");
                 int existingStartVnet = Integer.parseInt(existingRange[0]);

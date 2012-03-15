@@ -34,6 +34,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
 import com.cloud.network.ovs.dao.OvsTunnelDao;
@@ -84,15 +85,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		return true;
 	}
 
-	protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId) {
+	protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId, int key) {
 		OvsTunnelNetworkVO ta = null;
 		
 		try {
-			// Use the network id as a Key
-			// FIXME: networkid is long, key must be integer
-			// This is a horrible cast, and it must be removed and replace with something better
-			// before committing into master
-			ta = new OvsTunnelNetworkVO(from, to, (int)networkId, networkId);
+			ta = new OvsTunnelNetworkVO(from, to, key, networkId);
 			OvsTunnelNetworkVO lock = _tunnelNetworkDao.acquireInLockTable(Long.valueOf(1));
 			if (lock == null) {
 			    s_logger.warn("Cannot lock table ovs_tunnel_account");
@@ -115,20 +112,20 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		Long from = r.getFrom();
 		Long to = r.getTo();
 		long networkId = r.getNetworkId();
-		OvsTunnelNetworkVO ta = _tunnelNetworkDao.getByFromToNetwork(from, to, networkId);
-		if (ta == null) {
-            throw new CloudRuntimeException(String.format("Unable find tunnelAccount record(from=%1$s, to=%2$s, account=%3$s", from, to, networkId));
+		OvsTunnelNetworkVO tunnel = _tunnelNetworkDao.getByFromToNetwork(from, to, networkId);
+		if (tunnel == null) {
+            throw new CloudRuntimeException(String.format("Unable find tunnelNetwork record(from=%1$s, to=%2$s, account=%3$s", from, to, networkId));
 		}
 		s_logger.debug("Result:" + r.getResult());
 		if (!r.getResult()) {
-		    ta.setState("FAILED");
+		    tunnel.setState("FAILED");
 			s_logger.warn("Create GRE tunnel failed due to " + r.getDetails() + s);
 		} else {
-		    ta.setState("SUCCESS");
-		    ta.setPortName(r.getInPortName());
+		    tunnel.setState("SUCCESS");
+		    tunnel.setPortName(r.getInPortName());
 		    s_logger.warn("Create GRE tunnel " + r.getDetails() + s);
 		}
-		_tunnelNetworkDao.update(ta.getId(), ta);
+		_tunnelNetworkDao.update(tunnel.getId(), tunnel);
 	}
 	
 	@DB
@@ -145,6 +142,18 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		}
 		
 		long hostId = dest.getHost().getId();
+		int key = 0;
+		try {
+			//The GRE key is actually in the host part of the URI
+			String keyStr = nw.getBroadcastUri().getHost();
+    		// The key is most certainly and int.
+    		// So we feel quite safe in converting it into a string			
+    		key = Integer.valueOf(keyStr);
+		} catch (NumberFormatException e) {
+			s_logger.debug("Well well, how did '" + key + 
+					       "' end up in the broadcast URI for the network?");
+			s_logger.warn("Unable to create GRE tunnels on host:" + hostId);
+		}
 		// Find active (i.e.: not shut off) VMs with a NIC on the target network
 		List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(nw.getId(), State.Running, State.Starting,
 								State.Stopping, State.Unknown, State.Migrating);
@@ -157,23 +166,19 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		if (routers.size() != 0) {
 			ins.addAll(routers);
 		}
-		s_logger.debug("### Virtual Machines:" + vms.size());
-		s_logger.debug("### Virtual Routers:" + routers.size());
 		List<Long> toHostIds = new ArrayList<Long>();
 		List<Long> fromHostIds = new ArrayList<Long>();
-		
         for (VMInstanceVO v : ins) {
             Long rh = v.getHostId();
             if (rh == null || rh.longValue() == hostId) {
                 continue;
             }
-            //FIXME: Still using 'TunnelAccount name' - but should actually be tunnelNetwork or something like that
             OvsTunnelNetworkVO ta = _tunnelNetworkDao.getByFromToNetwork(hostId, rh.longValue(), nw.getId());
             // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals("FAILED")) {
             	s_logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
             	if (ta == null) {
-            		this.createTunnelRecord(hostId, rh.longValue(), nw.getId());
+            		this.createTunnelRecord(hostId, rh.longValue(), nw.getId(), key);
             	}
                 if (!toHostIds.contains(rh)) {
                     toHostIds.add(rh);
@@ -185,7 +190,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             if (ta == null || ta.getState().equals("FAILED")) {
             	s_logger.debug("Attempting to create tunnel from:" + rh.longValue() + " to:" + hostId);
             	if (ta == null) {
-            		this.createTunnelRecord(rh.longValue(), hostId, nw.getId());
+            		this.createTunnelRecord(rh.longValue(), hostId, nw.getId(), key);
             	} 
                 if (!fromHostIds.contains(rh)) {
                     fromHostIds.add(rh);
@@ -215,7 +220,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 				handleCreateTunnelAnswer(answers);
 			}
 		} catch (Exception e) {
-		    s_logger.debug("Ovs Tunnel network created tunnel failed", e);
+		    s_logger.warn("Ovs Tunnel network created tunnel failed", e);
 		}	
 	}
 	
