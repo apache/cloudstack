@@ -738,3 +738,6 @@ INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (15
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (157, 10, 'Ubuntu 10.10 (64-bit)');
 
 UPDATE `cloud`.`guest_os` SET category_id=4 where id=131;
+
+UPDATE `cloud`.`networks` n  SET n.name=(CONCAT('guestNetworkForBasicZone_', (SELECT name from `cloud`.`data_center` d where d.id=n.data_center_id AND d.networktype='Basic'))) where n.name is null and n.traffic_type='Guest';
+UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZone_', (SELECT name from `cloud`.`data_center` d where d.id=n.data_center_id AND d.networktype='Basic'))) where n.display_text is null and n.traffic_type='Guest';
