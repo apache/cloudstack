@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+/*
 public class ConsoleProxyStatus {
 	ArrayList<ConsoleProxyConnection> connections;
 	public ConsoleProxyStatus() {
@@ -59,3 +60,4 @@ public class ConsoleProxyStatus {
 		}
 	}
 }
+*/

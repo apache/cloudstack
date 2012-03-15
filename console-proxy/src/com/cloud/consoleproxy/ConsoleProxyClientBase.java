@@ -1,5 +1,6 @@
 package com.cloud.consoleproxy;
 
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.util.List;
 
@@ -8,7 +9,6 @@ import org.apache.log4j.Logger;
 import com.cloud.console.TileInfo;
 import com.cloud.console.TileTracker;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
-import com.cloud.consoleproxy.vnc.FrameBufferEventListener;
 
 /**
  * 
@@ -20,7 +20,7 @@ import com.cloud.consoleproxy.vnc.FrameBufferEventListener;
  * It mainly implements the features needed by front-end AJAX viewer
  * 
  */
-public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, FrameBufferEventListener {
+public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, ConsoleProxyClientListener {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyClientBase.class);
 	
 	private static int s_nextClientId = 0;
@@ -37,6 +37,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 	protected int port;
 	protected String passwordParam;
 	protected String tag = "";
+	protected String ticket = "";
 	protected long createTime = System.currentTimeMillis();
 	protected long lastFrontEndActivityTime = System.currentTimeMillis();
 
@@ -45,6 +46,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 	protected int resizedFramebufferHeight;
 
 	public ConsoleProxyClientBase() {
+		tracker = new TileTracker();
+		tracker.initTracking(64, 64, 800, 600);
 	}
 
 	//
@@ -54,6 +57,30 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 	public int getClientId() {
 		return clientId;
 	}
+	
+	public abstract boolean isHostConnected();
+	public abstract boolean isFrontEndAlive();
+
+	@Override
+	public long getAjaxSessionId() {
+		return this.ajaxSessionId;
+	}
+	
+	@Override
+	public AjaxFIFOImageCache getAjaxImageCache() {
+		return ajaxImageCache;
+	}
+	
+	public Image getClientScaledImage(int width, int height) {
+		FrameBufferCanvas canvas = getFrameBufferCavas();
+		if(canvas != null)
+			return canvas.getFrameBufferScaledImage(width, height);
+		
+		return null;
+	}
+	
+	public abstract void sendClientRawKeyboardEvent(InputEventType event, int code, int modifiers);
+	public abstract void sendClientMouseEvent(InputEventType event, int x, int y, int code, int modifiers);
 	
 	@Override
 	public long getClientCreateTime() {
@@ -87,8 +114,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 
 	@Override
 	public abstract void initClient(String clientHostAddress, int clientHostPort, 
-		String clientHostPassword, String clientTag);
-	
+		String clientHostPassword, String clientTag, String ticket);
+		
 	@Override
 	public abstract void closeClient();
 	
@@ -170,6 +197,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 		return sb.toString();
 	}
 
+	@Override
 	public String onAjaxClientKickoff() {
 		return "onKickoff();";
 	}
@@ -193,8 +221,11 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 			"Unable to start console session as connection is refused by the machine you are accessing" +
 			"</p></div></body></html>";
 	}
-	
+
+	@Override
 	public String onAjaxClientStart(String title, List<String> languages, String guest) {
+		updateFrontEndActivityTime();
+		
 		if(!waitForViewerReady())
 			return onAjaxClientConnectFailed();
 		
@@ -317,8 +348,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 	public String onAjaxClientDisconnected() {
 		return "onDisconnect();";
 	}
-	
+
+	@Override
 	public String onAjaxClientUpdate() {
+		updateFrontEndActivityTime();
 		if(!waitForViewerReady())
 			return onAjaxClientDisconnected();
 		
@@ -384,14 +417,6 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Fram
 	//
 	private synchronized static int getNextClientId() {
 		return ++s_nextClientId;
-	}
-	
-	public long getAjaxSessionId() {
-		return this.ajaxSessionId;
-	}
-	
-	public AjaxFIFOImageCache getAjaxImageCache() {
-		return ajaxImageCache;
 	}
 	
 	private void signalTileDirtyEvent() {

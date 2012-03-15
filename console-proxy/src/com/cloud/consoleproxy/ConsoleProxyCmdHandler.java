@@ -23,8 +23,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
 import com.cloud.console.Logger;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -61,14 +59,13 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
 		String cmd = path.substring(i + 1);
 		s_logger.info("Get CMD request for " + cmd);
 		if (cmd.equals("getstatus")) {
-			ConsoleProxyStatus status = new ConsoleProxyStatus();
-			status.setConnections(ConsoleProxy.connectionMap);
+			ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
+			
 			Headers hds = t.getResponseHeaders();
 			hds.set("Content-Type", "text/plain");
 			t.sendResponseHeaders(200, 0);
 			OutputStreamWriter os = new OutputStreamWriter(t.getResponseBody());
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			gson.toJson(status, os);
+			statsCollector.getStatsReport(os);
 			os.close();
 		}
 	}

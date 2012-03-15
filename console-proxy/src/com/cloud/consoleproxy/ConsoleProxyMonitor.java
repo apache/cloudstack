@@ -123,10 +123,10 @@ public class ConsoleProxyMonitor {
 	private static void configLog4j() {
 		URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
 		if(configUrl == null)
-			configUrl = System.class.getClassLoader().getSystemResource("log4j-cloud.xml");
+			configUrl = ClassLoader.getSystemResource("log4j-cloud.xml");
 		
 		if(configUrl == null)
-			configUrl = System.class.getClassLoader().getSystemResource("conf/log4j-cloud.xml");
+			configUrl = ClassLoader.getSystemResource("conf/log4j-cloud.xml");
 			
 		if(configUrl != null) {
 			try {
@@ -150,7 +150,6 @@ public class ConsoleProxyMonitor {
 	
 	public static void main(String[] argv) {
 		configLog4j();
-		
 		(new ConsoleProxyMonitor(argv)).run();
 	}
 }

@@ -49,6 +49,7 @@ import com.cloud.console.RfbViewer;
 import com.cloud.console.TileInfo;
 import com.cloud.console.TileTracker;
 
+/*
 public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbProtoAdapter, ITileScanListener {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyViewer.class);
 	
@@ -317,42 +318,6 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 	}
 	
 	static void authenticationExternally(String host, String port, String tag, String sid, String ticket) throws AuthenticationException {
-/*		
-		if(ConsoleProxy.management_host != null) {
-			try {
-				boolean success = false;
-				URL url = new URL(ConsoleProxy.management_host + "/console?cmd=auth&vm=" + getTag() + "&sid=" + passwordParam);
-				
-				URLConnection conn = url.openConnection();
-				
-				// setting TIMEOUTs to avoid possible waiting until death situations
-				conn.setConnectTimeout(5000);
-				conn.setReadTimeout(5000);
-				
-		        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-		        String inputLine;
-		        if ((inputLine = in.readLine()) != null) { 
-		            if(inputLine.equals("success"))
-		            	success = true;
-		        }
-		        in.close();
-		        
-		        if(!success) {
-		        	if(s_logger.isInfoEnabled())
-		        		s_logger.info("External authenticator failed authencation request for vm " + getTag() + " with sid " + passwordParam);
-		        	
-					throw new AuthenticationException("Unable to contact external authentication source " + ConsoleProxy.management_host);
-		        }
-			} catch (MalformedURLException e) {
-				s_logger.error("Unexpected exception " + e.getMessage(), e);
-			} catch(IOException e) {
-				s_logger.error("Unable to contact external authentication source due to " + e.getMessage(), e);
-				throw new AuthenticationException("Unable to contact external authentication source " + ConsoleProxy.management_host);
-			}
-		} else {
-			s_logger.warn("No external authentication source being setup.");
-		}
-*/
 		if(!ConsoleProxy.authenticateConsoleAccess(host, port, tag, sid, ticket)) {
     		s_logger.warn("External authenticator failed authencation request for vm " + tag + " with sid " + sid);
         	
@@ -978,31 +943,6 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			i++;
 		}
 
-/*		
-		SimpleHash model = new SimpleHash();
-		model.put("tileSequence", sbTileSequence.toString());
-		model.put("imgUrl", imgUrl);
-		model.put("updateUrl", updateUrl);
-		model.put("width", String.valueOf(width));
-		model.put("height", String.valueOf(height));
-		model.put("tileWidth", String.valueOf(tileWidth));
-		model.put("tileHeight", String.valueOf(tileHeight));
-		model.put("title", title);
-		model.put("rawKeyboard", ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW ? "true" : "false");
-		
-		StringWriter writer = new StringWriter();
-		try {
-			ConsoleProxy.processTemplate("viewer.ftl", model, writer);
-		} catch (IOException e) {
-			s_logger.warn("Unexpected exception in processing template.", e);
-		} catch (TemplateException e) {
-			s_logger.warn("Unexpected exception in processing template.", e);
-		}
-		StringBuffer sb = writer.getBuffer();
-		if(s_logger.isTraceEnabled())
-			s_logger.trace("onAjaxClientStart response: " + sb.toString());
-		return sb.toString();
-	*/
 		return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, 
 				updateUrl, width, height, tileWidth, tileHeight, title, 
 				ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages, guest);
@@ -1129,31 +1069,6 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			i++;
 		}
 
-/*		
-		SimpleHash model = new SimpleHash();
-		model.put("tileSequence", sbTileSequence.toString());
-		model.put("resized", doResize);
-		model.put("imgUrl", imgUrl);
-		model.put("width", String.valueOf(resizedFramebufferWidth));
-		model.put("height", String.valueOf(resizedFramebufferHeight));
-		model.put("tileWidth", String.valueOf(tracker.getTileWidth()));
-		model.put("tileHeight", String.valueOf(tracker.getTileHeight()));
-		
-		StringWriter writer = new StringWriter();
-		try {
-			ConsoleProxy.processTemplate("viewer-update.ftl", model, writer);
-		} catch (IOException e) {
-			s_logger.warn("Unexpected exception in processing template.", e);
-		} catch (TemplateException e) {
-			s_logger.warn("Unexpected exception in processing template.", e);
-		}
-		StringBuffer sb = writer.getBuffer();
-		
-		if(s_logger.isTraceEnabled())
-			s_logger.trace("onAjaxClientUpdate response: " + sb.toString());
-		
-		return sb.toString();
-*/
 		return getAjaxViewerUpdatePageContent(sbTileSequence.toString(), imgUrl, doResize, resizedFramebufferWidth,
 			resizedFramebufferHeight, tracker.getTileWidth(), tracker.getTileHeight());
 	}
@@ -1306,3 +1221,5 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
         }
 	}
 }
+
+*/

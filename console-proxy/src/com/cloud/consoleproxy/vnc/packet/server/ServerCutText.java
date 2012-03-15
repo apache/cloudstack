@@ -3,10 +3,11 @@ package com.cloud.consoleproxy.vnc.packet.server;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.cloud.console.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
-import com.cloud.consoleproxy.vnc.SimpleLogger;
 
 public class ServerCutText {
+  private static final Logger s_logger = Logger.getLogger(ServerCutText.class);
 
   private String content;
 
@@ -26,7 +27,7 @@ public class ServerCutText {
 
     content = new String(buf, RfbConstants.CHARSET);
 
-    /* LOG */SimpleLogger.log("Clippboard content: " + content);
+    /* LOG */s_logger.info("Clippboard content: " + content);
   }
 
 }

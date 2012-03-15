@@ -29,6 +29,7 @@ import com.cloud.console.Logger;
 import com.cloud.console.RfbProto;
 
 public class ConsoleProxyClientHandler extends Thread {
+/*	
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyClientHandler.class);
 	
 	Socket clientSocket = null;
@@ -275,4 +276,5 @@ public class ConsoleProxyClientHandler extends Thread {
 			viewer.lastUsedTime = System.currentTimeMillis();
 		}
 	}
+*/	
 }

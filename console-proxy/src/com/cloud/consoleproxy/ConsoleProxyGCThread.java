@@ -81,7 +81,7 @@ public class ConsoleProxyGCThread extends Thread {
 					s_logger.debug("Report load change : " + loadInfo);
 		    }
 		    
-			try { Thread.sleep(30000); } catch (InterruptedException ex) {}
+			try { Thread.sleep(1000); } catch (InterruptedException ex) {}
 		}
 	}
 }
