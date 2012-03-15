@@ -1,0 +1,10 @@
+Example of headers for a rest call of copyObject
+
+Authorization: AWS Mark:djdjdjdjdjdjdjdj\n
+Host: Henry2.s3.amazonaws.com\n
+x-amz-copy-source: /Henry1/test1\n
+x-amz-metadata-directive: REPLACE\n
+x-amz-meta-hight: 55 feet\n
+x-amz-meta-width: 13 yards\n
+x-amz-meta-weight: 4 tons\n
+x-amz-acl: public-read\n

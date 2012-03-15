@@ -1,0 +1,48 @@
+1. Get the EC2 API tool
+http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip. Install it by unzipping it
+
+2. Prepare a API request certificate, if you have Amazon account, Amazon has the service to let you generate and download a X509 certificate and its associated private key 
+
+3. Prepare EC2 command running environment
+
+Set following environment variables and make them point to the right location.
+
+EC2_ACCESS_KEY=<CloudStack API key>
+EC2_SECRET_KEY=<CloudStack Secret key>
+EC2_HOME: <full path to your EC2 API tool installation directory>
+EC2_CERT: <full path to your certficate file>
+EC2_PRIVATE_KEY: <full path to your private key file for the certficate>
+EC2_URL: http://<CloudBridge server address>/bridge/AmazonEC2
+
+4. Generate CloudStack API key
+Login to CloudStack management console, you can generate an API key and its secret key pair there. 
+
+5. Inform CloudBridge about the API/security key pair to use
+
+http://<CloudBridge server address>/bridge/rest/AmazonEC2?Action=SetUserKeys&accesskey=<key>&secretkey=<key>
+
+6. Upload certificate and associate it with the API key
+There is not a convenient tool to do that, this has to be done in manual step. following HTML form can be used to submit the certificate, be sure to replace the content 
+matching with your setup though.
+to ec2-service.properties 
+
+<HTML>
+<BODY>
+Save the cert into Cloud's EC2 Service:
+<P>
+<FORM name="setcert" action="http://<CloudBridge server address>/bridge/rest/AmazonEC2" method="get">
+<input type="hidden" name="Action" value="SetCertificate"/>
+<input type="hidden" name="AWSAccessKeyId" value="<your API key>" />
+<input type="hidden" name="SignatureMethod" value="HmacSHA1" />
+<input type="hidden" name="SignatureVersion" value="2" />
+<input type="hidden" name="Expires" value="2010-11-15T10:10:10Z" />
+<input type="hidden" name="Timestamp" value="2011-11-15T10:10:10Z" />
+<input type="hidden" name="Version" value="2010-08-31" />
+<input type="hidden" name="Signature" value="7KUYxW5YOpUZyZGCP49BudZraGU=" />
+<TEXTAREA name="cert" cols=100 rows=20></TEXTAREA>
+<P>
+<input type="submit" value="Submit" />
+</FORM>
+</BODY>
+</HTML>
+    

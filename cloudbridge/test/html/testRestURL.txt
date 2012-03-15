@@ -1,0 +1,25 @@
+      http://localhost:8080/gate/rest/AmazonEC2?Action=DescribeInstances&SignatureVersion=2&SignatureMethod=HmacSHA256&Version=2009-11-30&Timestamp=2010-01-07T15%3A23%3A03Z&Expires=2010-11-07T15%3A23%3A03Z&AWSAccessKeyId=O4O0Niu98EvraLKH2o8SFNMQlXZvuE5ueMDR9CHU5WA2-qv4PEQkgMcrtrNs6eHYwpLySev4Hi03_YXiHz4gGg&Signature=lyHOvu2LNxjLHIAlQo3F0JNSDtuCtqHtAX786cCZDFI=
+
+
+
+10:44:35,804  INFO EC2RestServlet:? - Request parameter Expires:2010-11-07T15:23
+:03Z
+10:44:36,197 ERROR RestAuth:? - Signature mismatch, [+fhKzW5k+O33zWoJ6dUmmo9ycZi
+td62M0Lwicz2jT2s=] [lyHOvu2LNxjLHIAlQo3F0JNSDtuCtqHtAX786cCZDFI=] over [GET
+localhost:8080
+/gate/rest/AmazonEC2
+AWSAccessKeyId=O4O0Niu98EvraLKH2o8SFNMQlXZvuE5ueMDR9CHU5WA2-qv4PEQkgMcrtrNs6eHYw
+pLySev4Hi03_YXiHz4gGg&Action=DescribeInstances&Expires=2010-11-07T15%3A23%3A03Z&
+SignatureMethod=HmacSHA256&SignatureVersion=2&Timestamp=2010-01-07T15%3A23%3A03Z
+&Version=2009-11-30]
+
+
+From usercredentials table:
+-----------------------+
+|  4 | O4O0Niu98EvraLKH2o8SFNMQlXZvuE5ueMDR9CHU5WA2-qv4PEQkgMcrtrNs6eHYwpLySev4H
+i03_YXiHz4gGg | EmskZDLp5EmwPQDzHtA2CK3heW12keN-YTTrO39Iz2Qfk8fmtkFih95B7xexhAat
+rlQ5ioNns4iT9qav3WzmrQ | CN=AWS Limited-Assurance CA, OU=AWS, O=Amazon.com, C=US
+, serial=1033226874324 |
++----+--------------------------------------------------------------------------
+
+EmskZDLp5EmwPQDzHtA2CK3heW12keN-YTTrO39Iz2Qfk8fmtkFih95B7xexhAatrlQ5ioNns4iT9qav3WzmrQ
