@@ -797,7 +797,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     		s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result );
     		return "Error in allowing outgoing to " + destCidr + ", err=" + result;
     	}
-    	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
+    	
+    	if (_storageIp == null) {
+    	    /* only set route when no storage network present */
+    	    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
+    	}
+    	
     	return null;
 	}
     
