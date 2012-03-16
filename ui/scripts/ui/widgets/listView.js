@@ -412,7 +412,7 @@
                   _l('Set value of') +
                   ' ' + $instanceRow.find('td.name span').html() +
                   ' ' + _l('to') +
-                  ' ' + newName :
+                  ' ' + _s(newName) :
                   _l('Unset value for') +
                   ' ' + $instanceRow.find('td.name span').html()
               },
