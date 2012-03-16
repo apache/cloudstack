@@ -84,7 +84,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		return true;
 	}
 
-	protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId) {
+	@DB
+	protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId, int key) {
 		OvsTunnelNetworkVO ta = null;
 		
 		try {
@@ -195,24 +196,36 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		
 		try {
 			String myIp = dest.getHost().getPrivateIpAddress();
+			boolean noHost = true;
 			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i);
 				Commands cmds = new Commands(
-						new OvsCreateTunnelCommand(rHost.getPrivateIpAddress(), String.valueOf(nw.getId()),
-								Long.valueOf(hostId), i, nw.getId(), myIp));
+						new OvsCreateTunnelCommand(rHost.getPrivateIpAddress(), key, 
+											       Long.valueOf(hostId), i, nw.getId(), myIp));
 				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i);
 				Answer[] answers = _agentMgr.send(hostId, cmds);
 				handleCreateTunnelAnswer(answers);
+				noHost = false;
 			}
 			
 			for (Long i : fromHostIds) {
 			    HostVO rHost = _hostDao.findById(i);
-				Commands cmd2s = new Commands(
-				        new OvsCreateTunnelCommand(myIp, String.valueOf(nw.getId()),
-				        		i, Long.valueOf(hostId), nw.getId(), rHost.getPrivateIpAddress()));
+				Commands cmds = new Commands(
+				        new OvsCreateTunnelCommand(myIp, key, i, Long.valueOf(hostId),
+				        		                   nw.getId(), rHost.getPrivateIpAddress()));
 				s_logger.debug("Ask host " + i + " to create gre tunnel to " + hostId);
-				Answer[] answers = _agentMgr.send(i, cmd2s);
+				Answer[] answers = _agentMgr.send(i, cmds);
 				handleCreateTunnelAnswer(answers);
+				noHost = false;
+			}
+			// If not tunnels have been configured, perform the bridge setup anyway
+			// This will ensure VIF rules will be triggered
+			if (noHost) {
+				Commands cmds = new Commands(
+						new OvsSetupBridgeCommand(key, hostId, nw.getId()));
+				s_logger.debug("Ask host " + hostId + " to configure bridge for network:" + nw.getId());
+				Answer[] answers = _agentMgr.send(hostId, cmds);
+				handleSetupBridgeAnswer(answers);
 			}
 		} catch (Exception e) {
 		    s_logger.debug("Ovs Tunnel network created tunnel failed", e);
@@ -244,6 +257,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         CheckAndCreateTunnel(vm.getVirtualMachine(), nw, dest);    
     }
 
+    @DB
     private void handleDestroyTunnelAnswer(Answer ans, long from, long to, long network_id) {
         
         if (ans.getResult()) {
@@ -266,6 +280,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         }
     }
 
+    @DB
     private void handleDestroyBridgeAnswer(Answer ans, long host_id, long network_id) {
         
         if (ans.getResult()) {
@@ -282,6 +297,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         } else {
         	s_logger.debug(String.format("Destroy bridge for network %1$s failed", network_id));        
         }
+    }
+
+    private void handleSetupBridgeAnswer(Answer[] answers) {
+    	//TODO: Add some error management here?
+    	s_logger.debug("Placeholder for something more meanginful to come");
     }
 
     @Override

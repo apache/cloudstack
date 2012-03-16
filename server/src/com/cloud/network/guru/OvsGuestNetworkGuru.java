@@ -63,7 +63,23 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
     		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
-    	// Overriden as an empty method to avoid Vnet allocation when OVS is the network manager
+        if (network.getBroadcastUri() == null) {
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
+            if (vnet == null) {
+                throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
+            }
+	   		String vnetUri = null;
+	   		if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
+	   		    vnetUri = "vlan" + vnet;
+	   		} else if (_ovsTunnelMgr.isOvsTunnelEnabled()) {
+	   		    vnetUri = vnet;
+	   		}
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnetUri));
+   		 	s_logger.debug("### URI value:" + vnetUri);            
+            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
+        } else {
+            implemented.setBroadcastUri(network.getBroadcastUri());
+        }
     }
 	
 	@Override
@@ -75,15 +91,6 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 		 s_logger.debug("### Implementing network:" + config.getId() + " in OVS Guest Network Guru");
 		 // The above call will NOT reserve a Vnet
 		 NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
-		 String uri = null;
-		 if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
-		     uri = "vlan";
-		 } else if (_ovsTunnelMgr.isOvsTunnelEnabled()) {
-		     uri = Long.toString(config.getId());
-		 }
-		 s_logger.debug("### URI value:" + uri);
-		 implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(uri));
-		 s_logger.debug("### Broadcast URI is:" + implemented.getBroadcastUri().toString());
          return implemented;
 	}
 	
