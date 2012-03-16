@@ -494,13 +494,13 @@
     $td.addClass('editable');
 
     // Put <td> label into a span
-    var value = $td.html();
-    $('<span></span>').html(_s(value)).appendTo($td.html(''));
+    var sanitizedValue = $td.html();			
+    $('<span></span>').html(sanitizedValue).appendTo($td.html(''));
 
     var $editArea = $('<div></div>').addClass('edit');
     var $editField = $('<input />').addClass('edit').attr({
       type: 'text',
-      value: value
+      value: cloudStack.sanitizeReverse(sanitizedValue)
     });
     var $actionButton = $('<div></div>').addClass('action');
     var $saveButton = $actionButton.clone().addClass('save').attr({
@@ -766,15 +766,15 @@
         if (field.converter) {
           content = _l(field.converter(content, dataItem));
         }
-
-        $td.html(_s(content));
-
-        if (field.editable) createEditField($td).appendTo($td);
-        else {
-          var sanitizedValue = $td.html();
+				
+        if (field.editable) { 
+				  $td.html(_s(content));
+				  createEditField($td).appendTo($td);
+			  }
+        else {          
           $td.html('');
           $td.append(
-            $('<span></span>').html(sanitizedValue)
+            $('<span></span>').html(_s(content))
           );
         }
       });
