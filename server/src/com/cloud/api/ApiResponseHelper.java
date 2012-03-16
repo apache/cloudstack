@@ -1671,7 +1671,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
                     } else if (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest) {
-                    	/*In basic zone, public ip has TrafficType.Guest*/
+                        /*In basic zone, public ip has TrafficType.Guest*/
                         vmResponse.setPublicIp(singleNicProfile.getIp4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPublicNetmask(singleNicProfile.getNetmask());

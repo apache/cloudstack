@@ -30,7 +30,6 @@ public class OvsCreateTunnelCommand extends Command {
     }
 
     public OvsCreateTunnelCommand(String remoteIp, Integer key, Long from, Long to, long networkId, String fromIp) {
-
         this.remoteIp = remoteIp;
         this.key = key;
         this.from = from;
