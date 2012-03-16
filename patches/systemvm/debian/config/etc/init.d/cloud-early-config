@@ -89,6 +89,7 @@ get_boot_params() {
   case $hyp in 
      xen-domU)
           cat /proc/cmdline > /var/cache/cloud/cmdline
+          sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
           # KVM needs to mount another disk, to get cmdline
