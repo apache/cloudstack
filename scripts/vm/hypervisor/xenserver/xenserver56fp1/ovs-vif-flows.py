@@ -77,15 +77,12 @@ def main(command, vif_raw):
     	if this_vif == vif:
     		this_vif_ofport = vif_ofport 
         vif_ofports.append(vif_ofport)
-    # So regardless of whether the VIF is brought online or offline we 
-    # will always execute the same action
-	if command == 'offline':
-		clear_flows(bridge,  this_vif_ofport, vif_ofports)
 
-	if command == 'online':
-		apply_flows(bridge,  this_vif_ofport, vif_ofports)
-    
-        
+    if command == 'offline':
+        clear_flows(bridge,  this_vif_ofport, vif_ofports)
+
+    if command == 'online':
+        apply_flows(bridge,  this_vif_ofport, vif_ofports)
 
 
 if __name__ == "__main__":
