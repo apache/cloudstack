@@ -374,9 +374,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
             }
             List<? extends Nic> nics = _networkMgr.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
-            Nic privateNic = nics.get(0);
-            String privateCidr = NetUtils.ipAndNetMaskToCidr(privateNic.getIp4Address(), privateNic.getNetmask());
-            String publicCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPublicIpAddress(), secStorageVm.getPublicNetmask());
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
         String copyPasswd = _configDao.getValue("secstorage.copy.password");
