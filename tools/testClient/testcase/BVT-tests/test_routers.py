@@ -136,6 +136,7 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
+                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -153,6 +154,12 @@ class TestRouterServices(cloudstackTestCase):
                             'Running',
                             "Check list router response for router state"
                         )
+        self.debug("connecting to router %s on host %s with \
+                   (username,password) (%s,%s)" \
+                   %(router.linklocalip, host.ipaddress,\
+                     self.vm_1.username, self.vm_1.password))
+
+
 
         result = get_process_status(
                                 host.ipaddress,
@@ -197,6 +204,7 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
+                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -214,6 +222,11 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
+        self.debug("connecting to router %s on host %s with \
+                   (username,password) (%s,%s)" \
+                   %(router.linklocalip, host.ipaddress,\
+                     self.vm_1.username, self.vm_1.password))
+
         result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
@@ -230,6 +243,11 @@ class TestRouterServices(cloudstackTestCase):
                             1,
                             "Check dnsmasq service is running or not"
                         )
+        self.debug("connecting to router %s on host %s with \
+                   (username,password) (%s,%s)" \
+                   %(router.linklocalip, host.ipaddress,\
+                     self.vm_1.username, self.vm_1.password))
+
 
         result = get_process_status(
                                 host.ipaddress,
@@ -382,6 +400,7 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
+                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -391,6 +410,11 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         host = hosts[0]
+        self.debug("connecting to router %s on host %s with \
+                   (username,password) (%s,%s)" \
+                   %(router.linklocalip, host.ipaddress,\
+                     self.vm_1.username, self.vm_1.password))
+
 
         res = get_process_status(
                                 host.ipaddress,
@@ -779,7 +803,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         router = list_router_response[0]
         
-        self.debug("Router state after network.gc.interval: %s" % router.state)
+        self.debug("waited for %s time. Router state after network.gc.interval: %s" % (int(response.value)*3, router.state))
         self.assertEqual(
             router.state,
             'Stopped',
