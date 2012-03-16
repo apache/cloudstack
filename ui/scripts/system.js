@@ -7288,6 +7288,11 @@
       allowedActions.push("edit");
       allowedActions.push("remove");
     }
+		
+		if((jsonObj.state == "Down" || jsonObj.state == "Alert" || jsonObj.state == "Disconnected") && ($.inArray("remove", allowedActions) == -1)) {	      	  
+		  allowedActions.push("remove");
+		}
+		
     return allowedActions;
   }
 
