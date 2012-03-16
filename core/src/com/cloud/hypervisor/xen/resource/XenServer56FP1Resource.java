@@ -180,7 +180,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         String bootArgs = vmSpec.getBootArgs();
         if (bootArgs != null && bootArgs.length() > 0) {
             String pvargs = vm.getPVArgs(conn);
-            pvargs = pvargs + vmSpec.getBootArgs();
+            pvargs = pvargs + vmSpec.getBootArgs().replaceAll(" ", "%");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("PV args are " + pvargs);
             }
