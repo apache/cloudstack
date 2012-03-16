@@ -155,9 +155,8 @@ def setup_ovs_bridge(session, args):
 		version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
 					   'param-name=software-version',
 					   'param-key=product_version']
-		version = lib.do_cmd(version_cmd)		
+		version = lib.do_cmd(version_cmd).split('.')[0]	
 		block_ipv6_handlers[version](bridge)
-		lib.add_flow(bridge, priority=65000, proto='ipv6', actions='drop')
 	logging.debug("Setup_ovs_bridge completed with result:%s" %result)
 	return result
 
