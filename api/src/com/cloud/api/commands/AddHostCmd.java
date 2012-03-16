@@ -28,7 +28,6 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
@@ -56,7 +55,7 @@ public class AddHostCmd extends BaseCmd {
     private String password;
 
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the host")
+    @Parameter(name=ApiConstants.POD_ID, required=true, type=CommandType.LONG, description="the Pod ID for the host")
     private Long podId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the host URL")
