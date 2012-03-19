@@ -129,6 +129,24 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		_tunnelNetworkDao.update(tunnel.getId(), tunnel);
 	}
 	
+	private int getGreKey(Network network) {
+		int key = 0;
+		try {
+			//The GRE key is actually in the host part of the URI
+			String keyStr = network.getBroadcastUri().getHost();
+    		// The key is most certainly and int.
+    		// So we feel quite safe in converting it into a string			
+    		key = Integer.valueOf(keyStr);
+    		return key;
+		} catch (NumberFormatException e) {
+			s_logger.debug("Well well, how did '" + key + 
+					       "' end up in the broadcast URI for the network?");
+			throw new CloudRuntimeException(
+					String.format("Invalid GRE key parsed from network broadcast URI (%s)",
+							network.getBroadcastUri().toString()));
+		}
+	}
+	
 	@DB
     protected void CheckAndCreateTunnel(VirtualMachine instance, Network nw, DeployDestination dest) {
 		if (!_isEnabled) {
@@ -143,18 +161,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		}
 		
 		long hostId = dest.getHost().getId();
-		int key = 0;
-		try {
-			//The GRE key is actually in the host part of the URI
-			String keyStr = nw.getBroadcastUri().getHost();
-    		// The key is most certainly and int.
-    		// So we feel quite safe in converting it into a string			
-    		key = Integer.valueOf(keyStr);
-		} catch (NumberFormatException e) {
-			s_logger.debug("Well well, how did '" + key + 
-					       "' end up in the broadcast URI for the network?");
-			s_logger.warn("Unable to create GRE tunnels on host:" + hostId);
-		}
+		int key = getGreKey(nw);
 		// Find active (i.e.: not shut off) VMs with a NIC on the target network
 		List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(nw.getId(), State.Running, State.Starting,
 								State.Stopping, State.Unknown, State.Migrating);
@@ -198,7 +205,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
                 }
             }
         }
-		
+		//FIXME: Why are we cancelling the exception here?
 		try {
 			String myIp = dest.getHost().getPrivateIpAddress();
 			boolean noHost = true;
@@ -337,7 +344,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         try {
             /* Now we are last one on host, destroy the bridge with all 
              * the tunnels for this network  */
-            Command cmd = new OvsDestroyBridgeCommand(nw.getId());
+        	int key = getGreKey(nw);
+            Command cmd = new OvsDestroyBridgeCommand(nw.getId(), key);
             s_logger.debug("### Destroying bridge for network " + nw.getId() + " on host:" + vm.getHostId());
             Answer ans = _agentMgr.send(vm.getHostId(), cmd);
             handleDestroyBridgeAnswer(ans, vm.getHostId(), nw.getId());
@@ -345,11 +353,14 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             /* Then ask hosts have peer tunnel with me to destroy them */
             List<OvsTunnelNetworkVO> peers = _tunnelNetworkDao.listByToNetwork(vm.getHostId(), nw.getId());
             for (OvsTunnelNetworkVO p : peers) {
-                cmd = new OvsDestroyTunnelCommand(p.getNetworkId(), p.getPortName());
-                s_logger.debug("### Destroying tunnel to " + vm.getHostId() + 
-                		" from " + p.getFrom());
-                ans = _agentMgr.send(p.getFrom(), cmd);
-                handleDestroyTunnelAnswer(ans, p.getFrom(), p.getTo(), p.getNetworkId());
+            	// If the tunnel was not successfully created don't bother to remove it
+            	if (p.getState().equals("SUCCESS")) {
+	                cmd = new OvsDestroyTunnelCommand(p.getNetworkId(), key, p.getPortName());
+	                s_logger.debug("### Destroying tunnel to " + vm.getHostId() + 
+	                		" from " + p.getFrom());
+	                ans = _agentMgr.send(p.getFrom(), cmd);
+	                handleDestroyTunnelAnswer(ans, p.getFrom(), p.getTo(), p.getNetworkId());
+            	}
             }
         } catch (Exception e) {
             s_logger.warn(String.format("Destroy tunnel(account:%1$s, hostId:%2$s) failed", vm.getAccountId(), vm.getHostId()), e);

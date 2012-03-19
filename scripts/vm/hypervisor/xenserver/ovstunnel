@@ -144,7 +144,7 @@ def setup_ovs_bridge(session, args):
 					 	   "uuid=%s" % xs_nw_uuid,
 					 	   "param-name=other-config",
 					 	   "param-key=ovs-host-setup", "--minimal"])
-		conf_hosts = conf_hosts + ",%s" %cs_host_id
+		conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
 		lib.do_cmd([lib.XE_PATH,"network-param-set", "uuid=%s" % xs_nw_uuid,
 				   "other-config:ovs-host-setup=%s" %conf_hosts])
 		
@@ -176,8 +176,8 @@ def destroy_ovs_bridge(session, args):
 		# Note that the bridge has been removed on xapi network object
 		xs_nw_uuid = lib.do_cmd([xePath, "network-list",
 							    "bridge=%s" % bridge, "--minimal"])
-		lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
-				   "other-config:ovs-setup=False"])
+		#lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
+		#		   "other-config:ovs-setup=False"])
 		result = "SUCCESS:%s" %bridge 
 
 	logging.debug("Destroy_ovs_bridge completed with result:%s" %result)

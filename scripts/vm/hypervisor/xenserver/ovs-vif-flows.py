@@ -65,8 +65,7 @@ def main(command, vif_raw):
             # We need the REAL bridge name
             bridge = pluginlib.do_cmd([pluginlib.VSCTL_PATH,
                                        'br-to-parent', bridge])
-    # For the OVS version shipped with XS56FP1 we need to retrieve
-    # the ofport number for all interfaces
+
     vsctl_output = pluginlib.do_cmd([pluginlib.VSCTL_PATH,
                                      'list-ports', bridge])
     vifs = vsctl_output.split('\n')
@@ -75,8 +74,9 @@ def main(command, vif_raw):
     	vif_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get',
                                        'Interface', vif, 'ofport'])
     	if this_vif == vif:
-    		this_vif_ofport = vif_ofport 
-        vif_ofports.append(vif_ofport)
+    		this_vif_ofport = vif_ofport
+        if vif.startswith('vif'): 
+            vif_ofports.append(vif_ofport)
 
     if command == 'offline':
         clear_flows(bridge,  this_vif_ofport, vif_ofports)
