@@ -543,6 +543,7 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `conserve_mode` int(1) unsign
 ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
 ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
 ALTER TABLE `cloud`.`network_offerings` MODIFY `service_offering_id` bigint unsigned COMMENT 'service offering id that virtual router is tied to';
+ALTER TABLE `cloud`.`network_offerings` DROP KEY `service_offering_id`;
 
 ALTER TABLE `cloud`.`network_offerings` DROP `concurrent_connections`;
 
