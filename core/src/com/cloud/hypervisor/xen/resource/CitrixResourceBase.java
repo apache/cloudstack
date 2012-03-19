@@ -490,6 +490,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((NetworkRulesSystemVmCommand)cmd);
         } else if (clazz == OvsCreateTunnelCommand.class) {
             return execute((OvsCreateTunnelCommand)cmd);
+        } else if (clazz == OvsSetupBridgeCommand.class) {
+            return execute((OvsSetupBridgeCommand)cmd);
         } else if (clazz == OvsDestroyBridgeCommand.class) {
             return execute((OvsDestroyBridgeCommand)cmd);
         } else if (clazz == OvsDestroyTunnelCommand.class) {
