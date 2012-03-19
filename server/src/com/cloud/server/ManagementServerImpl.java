@@ -617,7 +617,7 @@ public class ManagementServerImpl implements ManagementServer {
         // For now, we will be listing the following based on the usertype
         // 1. For root, we will list all offerings
         // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way
-// till
+        // till
         // root
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
@@ -740,7 +740,7 @@ public class ManagementServerImpl implements ManagementServer {
                     if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                         throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
                     }
-                    
+
                     _accountMgr.checkAccess(caller, null, false, vmInstance);
 
                     ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
@@ -2018,7 +2018,7 @@ public class ManagementServerImpl implements ManagementServer {
                 for (DataCenterVO dc : dcList) {
                     CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());
                     if (capacity.getTotalCapacity() != 0) {
-                        capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                        capacity.setUsedPercentage((float) capacity.getUsedCapacity() / capacity.getTotalCapacity());
                     } else {
                         capacity.setUsedPercentage(0);
                     }
@@ -2481,7 +2481,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
-        
+
         if (storageId != null) {
             SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
             volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
@@ -2494,9 +2494,9 @@ public class ManagementServerImpl implements ManagementServer {
             SearchCriteria<VMInstanceVO> ssc = _vmInstanceDao.createSearchCriteria();
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            
+
             sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
-        } 
+        }
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -2523,7 +2523,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             sc.setParameters("nulltype", VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy);
         }
-        
+
         if (storageId != null) {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
