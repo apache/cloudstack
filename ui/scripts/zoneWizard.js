@@ -5,6 +5,7 @@
   var selectedNetworkOfferingHavingELB = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
+	var selectedNetworkOfferingHavingNetscaler = false;
 	
   cloudStack.zoneWizard = {
     customUI: {
@@ -253,7 +254,8 @@
                 selectedNetworkOfferingHavingSG = false;
                 selectedNetworkOfferingHavingEIP = false;
                 selectedNetworkOfferingHavingELB = false;
-
+                selectedNetworkOfferingHavingNetscaler = false;
+								
                 var selectedNetworkOfferingId = $(this).val();
 
                 $(networkOfferingObjs).each(function(){
@@ -265,6 +267,14 @@
 
                 $(selectedNetworkOfferingObj.service).each(function(){
                   var thisService = this;
+																	
+									$(thisService.provider).each(function(){										
+										if(this.name == "Netscaler") {
+											selectedNetworkOfferingHavingNetscaler = true;
+											return false; //break each loop
+										}
+									});			
+									
                   if(thisService.name == "SecurityGroup") {
                     selectedNetworkOfferingHavingSG = true;
                   }
