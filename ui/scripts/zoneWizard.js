@@ -3,10 +3,10 @@
   var selectedNetworkOfferingHavingSG = false;
   var selectedNetworkOfferingHavingEIP = false;
   var selectedNetworkOfferingHavingELB = false;
+	var selectedNetworkOfferingHavingNetscaler = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
-	var selectedNetworkOfferingHavingNetscaler = false;
-	
+		
   cloudStack.zoneWizard = {
     customUI: {
       publicTrafficIPRange: function(args) {
@@ -101,43 +101,40 @@
     },
 
     preFilters: {
+		  addNetscalerDevice: function(args) { //add Netscaler
+        var isShown;        
+				if(selectedNetworkOfferingHavingNetscaler == true) {
+          isShown = true;
+          $('.conditional.netscaler').show();
+        } else {
+          isShown= false;
+          $('.conditional.netscaler').hide();
+        }
+        return isShown;
+      },
+		
       addPublicNetwork: function(args) {		
         var isShown;
 				var $publicTrafficDesc = $('.zone-wizard:visible').find('#add_zone_public_traffic_desc');	 
         if(args.data['network-model'] == 'Basic') {
           if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
-            $('.conditional.elb').show();
             isShown = true;
           }
-          else {
-            $('.conditional.elb').hide();
+          else {            
             isShown = false;
           }			
 					
 					$publicTrafficDesc.find('#for_basic_zone').css('display', 'inline');
 					$publicTrafficDesc.find('#for_advanced_zone').hide();					
         }
-        else { //args.data['network-model'] == 'Advanced'
-          $('.conditional.elb').hide();
+        else { //args.data['network-model'] == 'Advanced'          
           isShown = true;					
 					
 					$publicTrafficDesc.find('#for_advanced_zone').css('display', 'inline');
 					$publicTrafficDesc.find('#for_basic_zone').hide();					
         }
         return isShown;
-      },
-
-      addNetscalerDevice: function(args) { //add Netscaler
-        var isShown;
-        if(args.data['network-model'] == 'Basic' && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)) {
-          isShown = true;
-          $('.conditional.elb').show();
-        } else {
-          isShown= false;
-          $('.conditional.elb').hide();
-        }
-        return isShown;
-      },
+      },   
 
       setupPhysicalNetwork: function(args) {
         return args.data['network-model'] == 'Advanced';
@@ -1477,8 +1474,9 @@
                                                                   else {
                                                                     $("body").stopTime(updateNetworkServiceProviderTimer);
                                                                     if (result.jobstatus == 1) { //Security group provider has been enabled successfully
-                                                                      //"ElasticIP + ElasticLB"
-                                                                      if(selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) { //inside "selectedNetworkOfferingHavingSG == true" section
+                                                                      //debugger;
+																																			//netscaler
+                                                                      if(selectedNetworkOfferingHavingNetscaler == true) { //inside "selectedNetworkOfferingHavingSG == true" section
                                                                         //add netscaler provider (start)
                                                                         $.ajax({
                                                                           url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
@@ -1519,7 +1517,7 @@
                                                                         });
                                                                         //add netscaler provider (end)
                                                                       }
-                                                                      else { //no "ElasticIP + ElasticLB"
+                                                                      else { //selectedNetworkOfferingHavingNetscaler == false
                                                                         //create a guest network for basic zone
                                                                         var array2 = [];
                                                                         array2.push("&zoneid=" + args.data.returnedZone.id);
