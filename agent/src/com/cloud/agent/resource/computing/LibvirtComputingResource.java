@@ -305,7 +305,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String _localStoragePath;
 	protected String _localStorageUUID;
 	private Pair<String, String> _pifs;
+
 	private int _migrateSpeed;
+
+	private String _networkUsagePath;
+
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 	
 	
@@ -690,6 +694,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		if (_mountPoint == null) {
 		    _mountPoint = "/mnt";
 		}
+
+		_networkUsagePath = Script.findScript("scripts/network/domr/", "networkUsage.sh");
+		if (_networkUsagePath == null) {
+			throw new ConfigurationException("Unable to find the networkUsage.sh");
+		}
+
 		
 		value = (String) params.get("vm.migrate.speed");
 		_migrateSpeed = NumbersUtil.parseInt(value, -1);
@@ -1178,6 +1188,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
                 }
                 nicNum = vlanAllocatedToVM.get(ip.getVlanId());
+                networkUsage(routerIp, "addVif", "eth" + nicNum);
                 result = _virtRouterResource.assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
                                                                    ip.isFirstIP(), ip.isSourceNat(), 
                                                                    ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
@@ -1195,6 +1206,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (InternalErrorException e) {
             return new ManageSnapshotAnswer(cmd, false, e.toString());
         }
+    }
+    
+    protected String networkUsage(final String privateIpAddress, final String option, final String vif) {
+    	Script getUsage = new Script(_networkUsagePath, s_logger);
+    	if (option.equals("get")) {
+    		getUsage.add("-g");
+    	} else if (option.equals("create")) {
+    		getUsage.add("-c");
+    	} else if (option.equals("reset")) {
+    		getUsage.add("-r");
+    	} else if (option.equals("addVif")) {
+    		getUsage.add("-a", vif);
+    	} else if (option.equals("deleteVif")) {
+    		getUsage.add("-d", vif);
+    	}
+
+    	getUsage.add("-i", privateIpAddress);
+    	final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
+    	String result = getUsage.execute(usageParser);
+    	if (result != null) {
+    		s_logger.debug("Failed to execute networkUsage:" + result);
+    		return null;
+    	}
+    	return usageParser.getLine();
+    }
+    protected long[] getNetworkStats(String privateIP) {
+    	String result = networkUsage(privateIP, "get", null);
+    	long[] stats = new long[2];
+    	if (result != null) {
+    		String[] splitResult = result.split(":");
+    		int i = 0;
+    		while (i < splitResult.length - 1) {
+    			stats[0] += (new Long(splitResult[i++])).longValue();
+    			stats[1] += (new Long(splitResult[i++])).longValue();
+    		}
+    	}
+    	return stats;
     }
     
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
@@ -2021,27 +2069,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, nicStats.first()/1000, nicStats.second()/1000, "host", totMem, freeMem, 0, 0);
 		return new GetHostStatsAnswer(cmd, hostStats);
 	}
-	
+
 	private Answer execute(NetworkUsageCommand cmd) {
-		String vmName = cmd.getDomRName();
-		try {
-			Connect conn = LibvirtConnection.getConnection();
-			Domain dm = getDomain(conn, vmName);
-			LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-			String xml = dm.getXMLDesc(0);
-			parser.parseDomainXML(xml);
-			List<InterfaceDef> nics = parser.getInterfaces();
-			if (nics.size() != 3) {
-				return new Answer(cmd, false, vmName + " doesn't have public nic");
-			}
-			InterfaceDef pubNic = nics.get(2);
-			Pair<Double, Double> nicStats = getNicStats(pubNic.getBrName());
-			/*Note: received means bytes received by all the vms, but from host kernel's pov, it's tx*/
-			return new NetworkUsageAnswer(cmd, "", nicStats.first().longValue(), nicStats.second().longValue());
-		} catch (LibvirtException e) {
-			return new Answer(cmd, false, e.toString());
+		if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+			String result = networkUsage(cmd.getPrivateIP(), "create", null);
+			NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+			return answer;
 		}
+		long[] stats = getNetworkStats(cmd.getPrivateIP());
+		NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
+		return answer;
 	}
+
 
 	private Answer execute(RebootCommand cmd) {
 		Long bytesReceived = null;
@@ -2076,9 +2115,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	 protected Answer execute(RebootRouterCommand cmd) {
+		 Long bytesSent = 0L;
+		 Long bytesRcvd = 0L;
+		 if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
+			 long[] stats = getNetworkStats(cmd.getPrivateIpAddress());
+			 bytesSent = stats[0];
+			 bytesRcvd = stats[1];
+		 }
+
 		 RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
+		 answer.setBytesSent(bytesSent);
+		 answer.setBytesReceived(bytesRcvd);
 		 String result = _virtRouterResource.connect(cmd.getPrivateIpAddress());
 		 if (result == null) {
+			 networkUsage(cmd.getPrivateIpAddress(), "create", null);
 			 return answer;
 		 } else {
 			 return new Answer(cmd, false, result);
@@ -2117,9 +2167,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             state = _vms.get(vmName);
             _vms.put(vmName, State.Stopping);
         }
+        
+        
+        
         try {
         	Connect conn = LibvirtConnection.getConnection();
-        	
+        	try {
+        		Domain vm = getDomain(conn, vmName);
+        		if (vm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
+        			if (VirtualMachineName.isValidRouterName(vmName)) {
+        	            if (cmd.getPrivateRouterIpAddress() != null) {
+        	                long[] stats = getNetworkStats(cmd.getPrivateRouterIpAddress());
+        	                bytesSent = stats[0];
+        	                bytesReceived = stats[1];
+        	            }
+        	        }
+        		}
+        	} catch (Exception e) {
+        		
+        	}
         	destroy_network_rules_for_vm(conn, vmName);
             String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
             
