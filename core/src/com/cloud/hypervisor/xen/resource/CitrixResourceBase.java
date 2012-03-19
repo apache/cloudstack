@@ -616,23 +616,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * This method just creates a XenServer network following the tunnel network naming convention
      */
-    private synchronized Network findOrCreateTunnelNetwork(Connection conn, long networkId) {
+    private synchronized Network findOrCreateTunnelNetwork(Connection conn, long vnetId) {
         try {
-            String nwName = "OVSTunnel" + networkId;
+            String nwName = "OVSTunnel" + vnetId;
             Network nw = null;
             Network.Record rec = new Network.Record();
             Set<Network> networks = Network.getByNameLabel(conn, nwName);
 
             if (networks.size() == 0) {
-                rec.nameDescription = "tunnel network id# " + networkId;
+                rec.nameDescription = "tunnel network id# " + vnetId;
                 rec.nameLabel = nwName;
                 //Initialize the ovs-host-setup to avoid error when doing get-param in plugin
                 Map<String,String> otherConfig = new HashMap<String,String>();
                 otherConfig.put("ovs-host-setup", "");
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
-                // Plug dom0 vif only when creating network
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + networkId);
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);                
             } else {
                 nw = networks.iterator().next();
@@ -650,7 +648,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private synchronized Network configureTunnelNetwork(Connection conn, long networkId, long hostId, int key) {
     	try {
-	    	Network nw = findOrCreateTunnelNetwork(conn, networkId);
+	    	// Note: the vnet (or gre key) is used to identify the XS network
+    		Network nw = findOrCreateTunnelNetwork(conn, key);
+    		String nwName = "OVSTunnel" + key;
 	    	//Invoke plugin to setup the bridge which will be used by this network
 	        String bridge = nw.getBridge(conn);
 	        Map<String,String> nwOtherConfig = nw.getOtherConfig(conn);
@@ -666,6 +666,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	        	}
 	        }
 	        if (!configured) {
+	            // Plug dom0 vif only if not done before for network and host
+	            enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
 	            String result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge,
 	            							   "key", String.valueOf(key),
 	            							   "xs_nw_uuid", nw.getUuid(conn),
@@ -685,9 +687,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
     
-    private synchronized void destroyTunnelNetwork(Connection conn, long networkId) {
+    private synchronized void destroyTunnelNetwork(Connection conn, int key) {
     	try {
-    		Network nw = findOrCreateTunnelNetwork(conn, networkId);
+    		Network nw = findOrCreateTunnelNetwork(conn, key);
             String bridge = nw.getBridge(conn);
             String result = callHostPlugin(conn, "ovstunnel", "destroy_ovs_bridge", "bridge", bridge);
             String[] res = result.split(":");
@@ -727,8 +729,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 _isOvs = true;
                 return setupvSwitchNetwork(conn);
             } else {
-                long networkId = Long.parseLong(nic.getBroadcastUri().getHost());
-                return findOrCreateTunnelNetwork(conn, networkId);
+                long vnetId = Long.parseLong(nic.getBroadcastUri().getHost());
+                return findOrCreateTunnelNetwork(conn, vnetId);
             }
         } else if (nic.getBroadcastType() == BroadcastDomainType.Storage) {
         	URI broadcastUri = nic.getBroadcastUri();
@@ -1192,7 +1194,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             startVM(conn, host, vm, vmName);
 
             if (_isOvs) {
-            	// TODO(Salvatore-orlando): First option is to do per-NIC rules here
+            	// TODO(Salvatore-orlando): This code should go
                 for (NicTO nic : vmSpec.getNics()) {
                     if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
                         HashMap<String, String> args = parseDefaultOvsRuleComamnd(nic.getBroadcastUri().toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length()));
@@ -4787,7 +4789,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private Answer execute(OvsSetupBridgeCommand cmd) {
         Connection conn = getConnection();
         s_logger.debug("### About to configure OVS bridge");
-        Network nw=findOrCreateTunnelNetwork(conn, cmd.getNetworkId());
+        Network nw=findOrCreateTunnelNetwork(conn, cmd.getKey());
         this.configureTunnelNetwork(conn, cmd.getNetworkId(), cmd.getHostId(), cmd.getKey());
         s_logger.debug("### Bridge configured");
     	return new Answer(cmd, true, null);
@@ -4796,7 +4798,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private Answer execute(OvsDestroyBridgeCommand cmd) {
         Connection conn = getConnection();
         s_logger.debug("### About to destroy OVS bridge");
-        destroyTunnelNetwork(conn, cmd.getNetworkId());
+        destroyTunnelNetwork(conn, cmd.getKey());
         s_logger.debug("### Bridge destroyed");
     	return new Answer(cmd, true, null);
     }
@@ -4805,7 +4807,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         s_logger.debug("### About to destroy tunnel network");
         try {
-        	Network nw = findOrCreateTunnelNetwork(conn, cmd.getNetworkId());
+        	Network nw = findOrCreateTunnelNetwork(conn, cmd.getKey());
             if (nw == null) {
             	s_logger.warn("### Unable to find tunnel network");
                 return new Answer(cmd, false, "No network found");
@@ -4837,7 +4839,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String bridge = "unknown";
         try {
             s_logger.debug("### About to create tunnel network");
-        	Network nw = findOrCreateTunnelNetwork(conn, cmd.getNetworkId());
+        	Network nw = findOrCreateTunnelNetwork(conn, cmd.getKey());
             if (nw == null) {
             	s_logger.debug("### SOMETHING WENT WRONG DURING NETWORK SETUP");
                 return new OvsCreateTunnelAnswer(cmd, false, "Cannot create network", bridge);

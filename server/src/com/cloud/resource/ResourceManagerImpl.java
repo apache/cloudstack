@@ -550,8 +550,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             if (pod == null) {
             	throw new InvalidParameterValueException("Can't find pod by id " + podId);
             }
-            // check if pod belongs to the zone
-            HostPodVO pod = _podDao.findById(podId);
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
                 throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
             }
@@ -600,7 +598,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             if (pod == null) {
             	throw new InvalidParameterValueException("Can't find pod by id " + podId);
             }
-        	ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+       	    ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
             cluster.setHypervisorType(hypervisorType);
             try {
                 cluster = _clusterDao.persist(cluster);

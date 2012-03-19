@@ -12,7 +12,7 @@
 NFSSR.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 xen-ovs-vif-flows.rules=..,0644,/etc/udev/rules.d
-ovs-vif-flows.py=.,0755,/etc/xapi.d/plugins
+ovs-vif-flows.py=..,0755,/etc/xapi.d/plugins
 cloudstack_plugins.conf=..,0644,/etc/xensource
 cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
 ovsgre=..,0755,/etc/xapi.d/plugins
