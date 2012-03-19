@@ -267,13 +267,11 @@
             window.g_projectsInviteRequired = false;
           },
           error: function(XMLHttpRequest) {					  
-						var errorMsg = parseXMLHttpResponse(XMLHttpRequest);	
-            if(errorMsg.length == 0) {		
-						  if(XMLHttpRequest.status == 0) 
-                errorMsg = dictionary['error.unable.to.reach.management.server'];	       
-              else
-							  errorMsg = dictionary['label.error'];	     
-            }								
+						var errorMsg = parseXMLHttpResponse(XMLHttpRequest);							
+            if(errorMsg.length == 0 && XMLHttpRequest.status == 0) 		
+						  errorMsg = dictionary['error.unable.to.reach.management.server'];	 
+            else 
+              errorMsg = _l('error.invalid.username.password'); //override error message             						
             args.response.error(errorMsg);			
           },										
 					beforeSend : function(XMLHttpResponse) {				
