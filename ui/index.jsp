@@ -2875,6 +2875,7 @@ dictionary = {
 'label.purpose': '<fmt:message key="label.purpose" />',
 'error.please.specify.physical.network.tags': '<fmt:message key="error.please.specify.physical.network.tags" />',
 'error.unable.to.reach.management.server': '<fmt:message key="error.unable.to.reach.management.server" />',
-'label.internal.name': '<fmt:message key="label.internal.name" />'
+'label.internal.name': '<fmt:message key="label.internal.name" />',
+'error.invalid.username.password': '<fmt:message key="error.invalid.username.password" />'
 };
 </script>
