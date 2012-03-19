@@ -546,8 +546,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         // Check if the pod exists in the system
         if (podId != null) {
-            if (_podDao.findById(podId) == null) {
-                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            HostPodVO pod = _podDao.findById(podId);
+            if (pod == null) {
+            	throw new InvalidParameterValueException("Can't find pod by id " + podId);
             }
             // check if pod belongs to the zone
             HostPodVO pod = _podDao.findById(podId);
@@ -595,7 +596,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
         if (clusterName != null) {
-            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            HostPodVO pod = _podDao.findById(podId);
+            if (pod == null) {
+            	throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+        	ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
             cluster.setHypervisorType(hypervisorType);
             try {
                 cluster = _clusterDao.persist(cluster);
