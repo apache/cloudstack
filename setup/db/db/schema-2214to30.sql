@@ -130,7 +130,7 @@ ALTER TABLE `cloud`.`swift` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`swift` ADD COLUMN `url` varchar(255) NOT NULL;
 ALTER TABLE `cloud`.`swift` ADD COLUMN `key` varchar(255) NOT NULL COMMENT 'token for this user';
 ALTER TABLE `cloud`.`swift` ADD COLUMN `created` datetime COMMENT 'date the swift first signed on';
-ALTER TABLE `cloud`.`swift` ADD CONSTRAINT `uc_swift_uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`swift` ADD CONSTRAINT `uc_swift__uuid` UNIQUE (`uuid`);
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'swift.enable', 'false', 'enable swift');
 
