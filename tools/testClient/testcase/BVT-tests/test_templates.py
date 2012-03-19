@@ -46,7 +46,6 @@ class Services:
                         "virtual_machine": {
                                     "displayname": "testVM",
                                     "hypervisor": 'XenServer',
-                                    "domainid": '9ee36d2e-8b8f-432e-a927-a678ebec1d6b',
                                     "protocol": 'TCP',
                                     "ssh_port": 22,
                                     "username": "root",
@@ -60,12 +59,12 @@ class Services:
                          "template_1": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
+                                "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                          },
                          "template_2": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
+                                "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
@@ -79,10 +78,7 @@ class Services:
                         "isextractable": False,
                         "bootable": True,
                         "passwordenabled": True,
-                        "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
-                        "zoneid": '4a6c0290-e64d-40fc-afbb-4a05cab6fa4b',
-                        # Optional, if specified the mentioned zone will be
-                        # used for tests
+                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                         "mode": 'advanced',
                         # Networking mode: Advanced, basic
                         "sleep": 30,
@@ -115,6 +111,7 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -132,7 +129,8 @@ class TestCreateTemplate(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
 
@@ -146,6 +144,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -274,6 +273,7 @@ class TestTemplates(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -292,12 +292,15 @@ class TestTemplates(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            admin=True,
+                            domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -312,6 +315,7 @@ class TestTemplates(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -426,7 +430,6 @@ class TestTemplates(cloudstackTestCase):
         cmd.name = new_name
         cmd.bootable = self.services["bootable"]
         cmd.passwordenabled = self.services["passwordenabled"]
-        cmd.ostypeid = self.services["ostypeid"]
 
         self.apiclient.updateTemplate(cmd)
 

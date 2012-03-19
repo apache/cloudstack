@@ -27,9 +27,6 @@ class Services:
                                "password": 'fr3sca',
                                "publicport": 22,
                                },
-                       "zoneid": '4a6c0290-e64d-40fc-afbb-4a05cab6fa4b',
-                       # Optional, if specified the mentioned zone will be
-                       # used for tests
                        "sleep": 60,
                        "timeout": 10,
                       }

@@ -40,7 +40,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '5a5b5f64-de08-452d-9672-608a4946f754',
+                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                     },
             "iso_2":
                     {
@@ -51,7 +51,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '5a5b5f64-de08-452d-9672-608a4946f754',
+                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
@@ -64,12 +64,8 @@ class Services:
             "passwordenabled": True,
             "sleep": 60,
             "timeout": 10,
-            "ostypeid": '5a5b5f64-de08-452d-9672-608a4946f754',
+            "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
             # CentOS 5.3 (64 bit)
-            "domainid": '9ee36d2e-8b8f-432e-a927-a678ebec1d6b',
-            "zoneid": '4a6c0290-e64d-40fc-afbb-4a05cab6fa4b',
-            # Optional, if specified the mentioned zone will be
-            # used for tests
             "mode": 'advanced'
             # Networking mode: Basic or Advanced
         }
@@ -82,12 +78,15 @@ class TestCreateIso(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services["domainid"] = self.domain.id
         self.services["iso_2"]["zoneid"] = self.zone.id
         
         self.account = Account.create(
                             self.apiclient,
-                            self.services["account"]
+                            self.services["account"],
+                            domainid=self.domain.id
                             )
         
         self.cleanup = [self.account]
@@ -172,7 +171,10 @@ class TestISO(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        
+        cls.services["domainid"] = cls.domain.id
         cls.services["iso_1"]["zoneid"] = cls.zone.id
         cls.services["iso_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
@@ -181,6 +183,7 @@ class TestISO(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
         cls.iso_1 = Iso.create(
@@ -259,7 +262,6 @@ class TestISO(cloudstackTestCase):
         cmd.name = new_name
         cmd.bootable = self.services["bootable"]
         cmd.passwordenabled = self.services["passwordenabled"]
-        cmd.ostypeid = self.services["ostypeid"]
 
         self.apiclient.updateIso(cmd)
 

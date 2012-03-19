@@ -16,6 +16,21 @@ from base import *
 #Import System modules
 import time
 
+def get_domain(apiclient, services=None):
+    "Returns a default domain"
+
+    cmd = listDomains.listDomainsCmd()
+    if services:
+        if "domainid" in services:
+            cmd.id = services["domainid"]
+    
+    domains = apiclient.listDomains(cmd)
+    
+    if isinstance(domains, list):
+        return domains[0]
+    else:
+        raise Exception("Failed to find specified domain.") 
+
 def get_zone(apiclient, services=None):
     "Returns a default zone"
 
@@ -112,10 +127,10 @@ def download_systemplates_sec_storage(server, services):
         raise Exception("Failed to download System Templates on Sec Storage")
     return
 
-def wait_for_ssvms(apiclient, zoneid, podid):
+def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
     """After setup wait for SSVMs to come Up"""
 
-    time.sleep(30)
+    time.sleep(interval)
     timeout = 40
     while True:
             list_ssvm_response = list_ssvms(
@@ -127,15 +142,15 @@ def wait_for_ssvms(apiclient, zoneid, podid):
             ssvm = list_ssvm_response[0]
             if ssvm.state != 'Running':
                 # Sleep to ensure SSVMs are Up and Running
-                time.sleep(30)
+                time.sleep(interval)
                 timeout = timeout - 1
             elif ssvm.state == 'Running':
                 break
             elif timeout == 0:
-                raise Exception("SSVM failled to come up")
+                raise Exception("SSVM failed to come up")
                 break
 
-    timeout = 20
+    timeout = 40
     while True:
             list_ssvm_response = list_ssvms(
                                         apiclient,
@@ -146,16 +161,16 @@ def wait_for_ssvms(apiclient, zoneid, podid):
             cpvm = list_ssvm_response[0]
             if cpvm.state != 'Running':
                 # Sleep to ensure SSVMs are Up and Running
-                time.sleep(30)
+                time.sleep(interval)
                 timeout = timeout - 1
             elif cpvm.state == 'Running':
                 break
             elif timeout == 0:
-                raise Exception("SSVM failled to come up")
+                raise Exception("CPVM failed to come up")
                 break
     return
 
-def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip):
+def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip, interval=60):
     """After setup wait till builtin templates are downloaded"""
     
     # Change IPTABLES Rules
@@ -167,7 +182,7 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
                                 linklocalip,
                                 "iptables -P INPUT ACCEPT"
                             )
-
+    time.sleep(interval)
     # Find the BUILTIN Templates for given Zone, Hypervisor
     list_template_response = list_templates(
                                     apiclient,
@@ -187,7 +202,7 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
 
     # Sleep to ensure that template is in downloading state after adding
     # Sec storage
-    time.sleep(30)
+    time.sleep(interval)
     while True:
         template_response = list_templates(
                                     apiclient,
@@ -200,12 +215,15 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip)
         # template.status = Download Complete
         # Downloading - x% Downloaded
         # Error - Any other string 
-        if template.status == 'Download Complete'  :
+        if template.status == 'Download Complete':
             break
-        elif 'Downloaded' not in template.status.split():
+                
+        elif 'Downloaded' in template.status:
+            time.sleep(interval)
+
+        elif 'Installing' not in template.status:
             raise Exception("ErrorInDownload")
-        elif 'Downloaded' in template.status.split():
-            time.sleep(30)
+        
     return
 
 def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,
@@ -413,3 +431,24 @@ def list_usage_records(apiclient, **kwargs):
     cmd = listUsageRecords.listUsageRecordsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listUsageRecords(cmd))
+
+def list_nw_service_prividers(apiclient, **kwargs):
+    """Lists Network service providers"""
+
+    cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listNetworkServiceProviders(cmd))
+
+def list_virtual_router_elements(apiclient, **kwargs):
+    """Lists Virtual Router elements"""
+
+    cmd = listVirtualRouterElements.listVirtualRouterElementsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listVirtualRouterElements(cmd))
+
+def list_network_offerings(apiclient, **kwargs):
+    """Lists network offerings"""
+
+    cmd = listNetworkOfferings.listNetworkOfferingsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listNetworkOfferings(cmd))

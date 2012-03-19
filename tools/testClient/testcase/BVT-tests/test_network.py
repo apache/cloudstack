@@ -22,11 +22,8 @@ class Services:
 
     def __init__(self):
         self.services = {
-                            "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
+                            "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
                             # Cent OS 5.3 (64 bit)
-                            "zoneid": '4a6c0290-e64d-40fc-afbb-4a05cab6fa4b',
-                            # Optional, if specified the mentioned zone will be
-                            # used for tests
                             "mode": 'advanced',
                             # Networking mode: Basic or advanced
                             "lb_switch_wait": 10,
@@ -36,7 +33,7 @@ class Services:
                             "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
-                                  "networkoffering": '4c6dea7e-7aa8-4b17-bf1c-26c312586e7c',
+                                  "networkoffering": '3d4e36f1-6b5f-40fc-bb63-fe9353419e91',
                                 },
                             "service_offering": {
                                     "name": "Tiny Instance",
@@ -60,7 +57,6 @@ class Services:
                                     "username": "root",
                                     "password": "password",
                                     "hypervisor": 'XenServer',
-                                    "domainid": '9ee36d2e-8b8f-432e-a927-a678ebec1d6b',
                                     "privateport": 22,
                                     "publicport": 22,
                                     "ssh_port": 22,
@@ -94,18 +90,21 @@ class TestPublicIP(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         # Create Accounts & networks
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
-                            admin=True
+                            admin=True,
+                            domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["network"]["zoneid"] = cls.zone.id
         cls.account_network = Network.create(
@@ -261,6 +260,7 @@ class TestPortForwarding(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -271,7 +271,8 @@ class TestPortForwarding(cloudstackTestCase):
         cls.account = Account.create(
                                 cls.api_client,
                                 cls.services["account"],
-                                admin=True
+                                admin=True,
+                                domainid=cls.domain.id
                                 )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
@@ -283,6 +284,7 @@ class TestPortForwarding(cloudstackTestCase):
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -537,6 +539,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -549,7 +552,8 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
-                            admin=True
+                            admin=True,
+                            domainid=cls.domain.id
                             )
         cls.service_offering = ServiceOffering.create(
                                         cls.api_client,
@@ -560,6 +564,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_2 = VirtualMachine.create(
@@ -567,6 +572,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.non_src_nat_ip = PublicIPAddress.create(
@@ -689,7 +695,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
                             0,
                             "Check Load Balancer instances Rule in its List"
                         )
-
+        self.debug("lb_instance_rules Ids: %s, %s" %  (
+                                                    lb_instance_rules[0].id,
+                                                    lb_instance_rules[1].id
+                                                    ))
+        self.debug("VM ids: %s, %s" %  (self.vm_1.id, self.vm_2.id))
+        
         self.assertIn(
                 lb_instance_rules[0].id,
                 [self.vm_1.id, self.vm_2.id],
@@ -744,6 +755,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             self.fail("%s: SSH failed for VM with IP Address: %s" % 
                                         (e, src_nat_ip_addr.ipaddress))
 
+        self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
                       self.vm_1.name,
                       hostnames,
@@ -795,7 +807,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                         )
             ssh_1.execute("hostname")[0]
         return
-    
+
     def test_02_create_lb_rule_non_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
@@ -924,7 +936,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                     )
             
             hostnames.append(ssh_2.execute("hostname")[0])
-            
+            self.debug("Hostnames after adding 2 VMs to LB rule: %s" % str(hostnames))
             self.assertIn(
                       self.vm_1.name,
                       hostnames,
@@ -952,7 +964,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                         )
     
             hostnames.append(ssh_1.execute("hostname")[0])
-            
+            self.debug("Hostnames after removing VM2: %s" % str(hostnames))
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" % 
                                         (e, self.non_src_nat_ip.ipaddress.ipaddress))
@@ -988,6 +1000,7 @@ class TestRebootRouter(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
@@ -1000,7 +1013,8 @@ class TestRebootRouter(cloudstackTestCase):
         self.account = Account.create(
                                       self.apiclient,
                                       self.services["account"],
-                                      admin=True
+                                      admin=True,
+                                      domainid=self.domain.id
                                       )
         self.service_offering = ServiceOffering.create(
                                             self.apiclient,
@@ -1011,6 +1025,7 @@ class TestRebootRouter(cloudstackTestCase):
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         
@@ -1135,6 +1150,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.services = Services().services
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
@@ -1147,7 +1163,8 @@ class TestAssignRemoveLB(cloudstackTestCase):
         self.account = Account.create(
                                       self.apiclient,
                                       self.services["account"],
-                                      admin=True
+                                      admin=True,
+                                      domainid=self.domain.id
                                       )
         self.service_offering = ServiceOffering.create(
                                             self.apiclient,
@@ -1159,6 +1176,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                   self.services["server"],
                                   templateid=template.id,
                                   accountid=self.account.account.name,
+                                  domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
 
@@ -1167,6 +1185,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=template.id,
                                 accountid=self.account.account.name,
+                                domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id
                               )
 
@@ -1175,6 +1194,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=template.id,
                                 accountid=self.account.account.name,
+                                domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id
                               )
 
@@ -1378,6 +1398,7 @@ class TestReleaseIP(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
@@ -1390,7 +1411,8 @@ class TestReleaseIP(cloudstackTestCase):
         self.account = Account.create(
                                       self.apiclient,
                                       self.services["account"],
-                                      admin=True
+                                      admin=True,
+                                      domainid=self.domain.id
                                       )
 
         self.service_offering = ServiceOffering.create(
@@ -1403,6 +1425,7 @@ class TestReleaseIP(cloudstackTestCase):
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 
@@ -1514,6 +1537,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         template = get_template(
                             self.apiclient,
@@ -1526,7 +1550,8 @@ class TestDeleteAccount(cloudstackTestCase):
         self.account = Account.create(
                                 self.apiclient,
                                 self.services["account"],
-                                admin=True
+                                admin=True,
+                                domainid=self.domain.id
                                 )
         self.service_offering = ServiceOffering.create(
                                     self.apiclient,
@@ -1537,6 +1562,7 @@ class TestDeleteAccount(cloudstackTestCase):
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 

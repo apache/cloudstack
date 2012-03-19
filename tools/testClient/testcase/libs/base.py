@@ -185,20 +185,10 @@ class VirtualMachine:
         elif "domainid" in services:
             cmd.domainid = services["domainid"]
 
-        # List Networks for that user
-        command = listNetworks.listNetworksCmd()
-        command.zoneid = services["zoneid"]
-        command.account = accountid or services["account"]
-        command.domainid = domainid or services["domainid"]
-        network = apiclient.listNetworks(command)
-        
         if networkids:
             cmd.networkids = networkids
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
-#        elif network:   #If user already has source NAT created, then use that
-#            if hasattr(network[0], "account"):
-#                cmd.networkids = str(network[0].id)
 
         if templateid:
             cmd.templateid = templateid
@@ -274,13 +264,16 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.rebootVirtualMachine(cmd)
 
-    def get_ssh_client(self, ipaddress=None, reconnect=False):
+    def get_ssh_client(self, ipaddress=None, reconnect=False, port=None):
         """Get SSH object of VM"""
 
         # If NAT Rules are not created while VM deployment in Advanced mode
         # then, IP address must be passed
         if ipaddress != None:
             self.ssh_ip = ipaddress
+        if port:
+            self.ssh_port = port
+
         if reconnect:
             self.ssh_client = is_server_ssh_ready(
                                                     self.ssh_ip,
@@ -479,7 +472,7 @@ class Template:
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod
-    def register(cls, apiclient, services, account=None, domainid=None):
+    def register(cls, apiclient, services, zoneid=None, account=None, domainid=None):
         """Create template from URL"""
         
         #Create template from Virtual machine and Volume ID
@@ -490,7 +483,11 @@ class Template:
         cmd.hypervisor = services["hypervisor"]
         cmd.ostypeid = services["ostypeid"]
         cmd.url = services["url"]
-        cmd.zoneid = services["zoneid"]
+        
+        if zoneid:
+            cmd.zoneid = zoneid
+        else:
+            cmd.zoneid = services["zoneid"]
 
         cmd.isfeatured = services["isfeatured"] if "isfeatured" in services else False
         cmd.ispublic = services["ispublic"] if "ispublic" in services else False
@@ -529,10 +526,10 @@ class Template:
         cmd.id = self.id
         apiclient.deleteTemplate(cmd)
 
-    def download(self, apiclient, timeout=5):
+    def download(self, apiclient, timeout=5, interval=60):
         """Download Template"""
         #Sleep to ensure template is in proper state before download
-        time.sleep(30)
+        time.sleep(interval)
         
         while True:
             template_response = Template.list(
@@ -548,22 +545,20 @@ class Template:
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
                 # Error - Any other string 
-
-                if template.status == 'Download Complete'  :
+                if template.status == 'Download Complete':
                     break
                 
-                elif 'Downloaded' not in template.status.split() or \
-                     'Installing' not in template.status.split():
+                elif 'Downloaded' in template.status:
+                    time.sleep(interval)
+
+                elif 'Installing' not in template.status:
                     raise Exception("ErrorInDownload")
-                
-                elif 'Downloaded' in template.status.split():
-                    time.sleep(10)
-            
+
             elif timeout == 0:
                 break
             
             else:
-                time.sleep(10)
+                time.sleep(interval)
                 timeout = timeout - 1
         return
                 
@@ -617,11 +612,11 @@ class Iso:
         apiclient.deleteIso(cmd)
         return
 
-    def download(self, apiclient, timeout=5):
+    def download(self, apiclient, timeout=5, interval=60):
         """Download an ISO"""
         #Ensuring ISO is successfully downloaded
         while True:
-            time.sleep(60)
+            time.sleep(interval)
 
             cmd = listIsos.listIsosCmd()
             cmd.id = self.id
@@ -636,8 +631,9 @@ class Iso:
                 # or ISO is 'Successfully Installed'
                 if response.status == 'Successfully Installed':
                     return
-                elif 'Downloaded' not in response.status.split():
+                elif 'Downloaded' not in response.status:
                     raise Exception("ErrorInDownload")
+
             elif timeout == 0:
                 raise Exception("TimeoutException")
             else:
@@ -1083,6 +1079,13 @@ class Host:
         apiclient.deleteHost(cmd)
         return
 
+    def enableMaintenance(self, apiclient):
+        """enables maintainance mode Host"""
+        
+        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
+        cmd.id = self.id
+        return apiclient.prepareHostForMaintenance(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all Hosts matching criteria"""
@@ -1135,6 +1138,13 @@ class StoragePool:
         cmd.id = self.id
         apiclient.deleteStoragePool(cmd)
         return
+
+    def enableMaintenance(self, apiclient):
+        """enables maintainance mode Storage pool"""
+        
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = self.id
+        return apiclient.enableStorageMaintenance(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -1233,6 +1243,8 @@ class VpnUser:
 
         cmd = removeVpnUser.removeVpnUserCmd()
         cmd.username = self.username
+        cmd.account = self.account
+        cmd.domainid = self.domainid
         apiclient.removeVpnUser(cmd)
 
 
@@ -1267,6 +1279,15 @@ class Zone:
         cmd.id = self.id
         apiclient.deleteZone(cmd)
 
+    def update(self, apiclient, **kwargs):
+        """Update the zone"""
+        
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateZone(cmd)
+        
+        
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all Zones matching criteria"""
@@ -1372,6 +1393,46 @@ class SecondaryStorage:
         cmd.id = self.id
         apiclient.deleteHost(cmd)
         
+
+class PhysicalNetwork:
+    """Manage physical network storage"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, zoneid, domainid=None):
+        """Create physical network"""
+        cmd = createPhysicalNetwork.createPhysicalNetworkCmd()
+
+        cmd.name = services["name"]
+        cmd.zoneid = zoneid
+        if domainid:
+            cmd.domainid = domainid
+        return PhysicalNetwork(apiclient.createPhysicalNetwork(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Physical Network"""
+
+        cmd = deletePhysicalNetwork.deletePhysicalNetworkCmd()
+        cmd.id = self.id
+        apiclient.deletePhysicalNetwork(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update Physical network state"""
+        
+        cmd = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updatePhysicalNetwork(cmd)
+        
+    def addTrafficType(self, apiclient, type):
+        """Add Traffic type to Physical network"""
+        
+        cmd = addTrafficType.addTrafficTypeCmd()
+        cmd.physicalnetworkid = self.id
+        cmd.traffictype = type
+        return apiclient.addTrafficType(cmd)
 
 class SecurityGroup:
     """Manage Security Groups"""
