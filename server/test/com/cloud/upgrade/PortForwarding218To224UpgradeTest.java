@@ -41,7 +41,7 @@ public class PortForwarding218To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
     }
     
     @Override
@@ -51,7 +51,7 @@ public class PortForwarding218To224UpgradeTest extends TestCase {
     
     public void test217to22Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.1.8");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.1.8/2.1.8_sample_portForwarding.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
         
         Connection conn;
         PreparedStatement pstmt;
