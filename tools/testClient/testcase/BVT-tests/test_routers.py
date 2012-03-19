@@ -33,10 +33,9 @@ class Services:
                                     {
                                         "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "password",
+                                        "password": "fr3sca",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
-                                        "domainid": 1,
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
@@ -46,14 +45,11 @@ class Services:
                                         "firstname": "Test",
                                         "lastname": "User",
                                         "username": "testuser",
-                                        "password": "password",
+                                        "password": "fr3sca",
                                         },
                          "ostypeid":12,
                          "sleep": 60,
                          "timeout": 10,
-                         "zoneid": 1,
-                         # Optional, if specified the mentioned zone will be
-                         # used for tests
                          "mode": 'advanced', #Networking mode: Basic, Advanced
                         }
 
@@ -66,6 +62,7 @@ class TestRouterServices(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -77,7 +74,8 @@ class TestRouterServices(cloudstackTestCase):
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
                                      cls.api_client,
-                                     cls.services["account"]
+                                     cls.services["account"],
+                                     domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -88,6 +86,7 @@ class TestRouterServices(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -136,7 +135,6 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
-                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -154,12 +152,6 @@ class TestRouterServices(cloudstackTestCase):
                             'Running',
                             "Check list router response for router state"
                         )
-        self.debug("connecting to router %s on host %s with \
-                   (username,password) (%s,%s)" \
-                   %(router.linklocalip, host.ipaddress,\
-                     self.vm_1.username, self.vm_1.password))
-
-
 
         result = get_process_status(
                                 host.ipaddress,
@@ -204,7 +196,6 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
-                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -222,11 +213,6 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-        self.debug("connecting to router %s on host %s with \
-                   (username,password) (%s,%s)" \
-                   %(router.linklocalip, host.ipaddress,\
-                     self.vm_1.username, self.vm_1.password))
-
         result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
@@ -243,11 +229,6 @@ class TestRouterServices(cloudstackTestCase):
                             1,
                             "Check dnsmasq service is running or not"
                         )
-        self.debug("connecting to router %s on host %s with \
-                   (username,password) (%s,%s)" \
-                   %(router.linklocalip, host.ipaddress,\
-                     self.vm_1.username, self.vm_1.password))
-
 
         result = get_process_status(
                                 host.ipaddress,
@@ -400,7 +381,6 @@ class TestRouterServices(cloudstackTestCase):
         hosts = list_hosts(
                            self.apiclient,
                            zoneid=router.zoneid,
-                           hostid=router.hostid,
                            type='Routing',
                            state='Up'
                            )
@@ -410,11 +390,6 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         host = hosts[0]
-        self.debug("connecting to router %s on host %s with \
-                   (username,password) (%s,%s)" \
-                   %(router.linklocalip, host.ipaddress,\
-                     self.vm_1.username, self.vm_1.password))
-
 
         res = get_process_status(
                                 host.ipaddress,
@@ -778,7 +753,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         response = config[0]
 
-        # Wait for network.gc.interval * 3 time
+        # Wait for network.gc.interval * 3 time to cleanup all the resources
         time.sleep(int(response.value) * 3)
         
         timeout = self.services["timeout"]
@@ -803,7 +778,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         router = list_router_response[0]
         
-        self.debug("waited for %s time. Router state after network.gc.interval: %s" % (int(response.value)*3, router.state))
+        self.debug("Router state after network.gc.interval: %s" % router.state)
         self.assertEqual(
             router.state,
             'Stopped',

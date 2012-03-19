@@ -33,7 +33,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to 
                     # ensure unique username generated each time
-                    "password": "password",
+                    "password": "fr3sca",
                 },
                 "small":
                 # Create a small virtual machine instance with disk offering 
@@ -43,7 +43,6 @@ class Services:
                     "password": "password",
                     "ssh_port": 22,
                     "hypervisor": 'XenServer',
-                    "domainid": 1,
                     "privateport": 22,
                     "publicport": 22,
                     "protocol": 'TCP',
@@ -55,7 +54,6 @@ class Services:
                     "password": "password",
                     "ssh_port": 22,
                     "hypervisor": 'XenServer',
-                    "domainid": 1,
                     "privateport": 22,
                     "publicport": 22,
                     "protocol": 'TCP',
@@ -109,9 +107,6 @@ class Services:
             #Migrate VM to hostid
             "ostypeid": 12,
             # CentOS 5.3 (64-bit)
-            "zoneid": 2,
-            # Optional, if specified the mentioned zone will be
-            # used for tests
             "mode":'advanced',
             # Networking mode: Basic or Advanced
         }
@@ -125,6 +120,7 @@ class TestDeployVM(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.services = Services().services
         # Get Zone, Domain and templates
+        domain = get_domain(self.apiclient, self.services)
         zone = get_zone(self.apiclient, self.services)
 
         template = get_template(
@@ -143,7 +139,8 @@ class TestDeployVM(cloudstackTestCase):
         # Create Account, VMs, NAT Rules etc
         self.account = Account.create(
                             self.apiclient,
-                            self.services["account"]
+                            self.services["account"],
+                            domainid=domain.id
                             )
 
         self.service_offering = ServiceOffering.create(
@@ -169,6 +166,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["small"],
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
 
@@ -224,6 +222,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
+        domain = get_domain(cls.api_client, cls.services)
         zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -241,7 +240,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=domain.id
                             )
 
         cls.small_offering = ServiceOffering.create(
@@ -258,6 +258,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         cls.api_client,
                                         cls.services["small"],
                                         accountid=cls.account.account.name,
+                                        domainid=cls.account.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
@@ -265,6 +266,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                        cls.api_client,
                                        cls.services["medium"],
                                        accountid=cls.account.account.name,
+                                       domainid=cls.account.account.domainid,
                                        serviceofferingid=cls.medium_offering.id,
                                        mode=cls.services["mode"]
                                     )
@@ -272,6 +274,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         cls.api_client,
                                         cls.services["small"],
                                         accountid=cls.account.account.name,
+                                        domainid=cls.account.account.domainid,
                                         serviceofferingid=cls.small_offering.id,
                                         mode=cls.services["mode"]
                                         )
@@ -322,7 +325,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
-                            "Check VM avaliable in List Virtual Machines"
+                            "Check VM available in List Virtual Machines"
                         )
 
         self.assertEqual(

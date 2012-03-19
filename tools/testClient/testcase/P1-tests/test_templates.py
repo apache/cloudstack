@@ -46,7 +46,6 @@ class Services:
                         "virtual_machine": {
                                     "displayname": "testVM",
                                     "hypervisor": 'XenServer',
-                                    "domainid": 1,
                                     "protocol": 'TCP',
                                     "ssh_port": 22,
                                     "username": "root",
@@ -83,14 +82,11 @@ class Services:
                         "ostypeid": 12,
                         "sleep": 60,
                         "timeout": 10,
-                        "zoneid": 1,
-                        # Optional, if specified the mentioned zone will be
-                        # used for tests
                         "mode": 'advanced', # Networking mode: Advanced, basic
                      }
 
 
-@unittest.skip("Testing is pending")
+@unittest.skip("Open questions")
 class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):
@@ -116,6 +112,7 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -125,7 +122,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                             )
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
 
@@ -170,6 +168,7 @@ class TestCreateTemplate(cloudstackTestCase):
             template = Template.register(
                                         self.apiclient,
                                         v,
+                                        zoneid=self.zone.id,
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
@@ -228,6 +227,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
@@ -267,6 +267,7 @@ class TestTemplates(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, templates etc
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         template = get_template(
@@ -277,7 +278,8 @@ class TestTemplates(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -292,6 +294,7 @@ class TestTemplates(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     )
         #Stop virtual machine
@@ -370,6 +373,7 @@ class TestTemplates(cloudstackTestCase):
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     )
         
@@ -451,7 +455,6 @@ class TestTemplates(cloudstackTestCase):
         cmd.zoneid = self.services["destzoneid"]
         self.apiclient.deleteTemplate(cmd)
         return
-
 
     def test_03_delete_template(self):
         """Test Delete template
@@ -565,6 +568,7 @@ class TestTemplates(cloudstackTestCase):
                                     self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     )
         self.cleanup.append(virtual_machine)

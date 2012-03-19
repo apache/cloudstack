@@ -31,7 +31,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "password",
+                                    "password": "fr3sca",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -48,7 +48,6 @@ class Services:
                         "volume_offerings": {
                             0: {
                                 "diskname": "TestDiskServ",
-                                "domainid": 1,
                             },
                         },
                         "customdisksize": 1,    # GBs
@@ -57,16 +56,12 @@ class Services:
                         "ssh_port": 22,
                         "diskname": "TestDiskServ",
                         "hypervisor": 'XenServer',
-                        "domainid": 1,
                         "privateport": 22,
                         "publicport": 22,
                         "protocol": 'TCP',
                         "diskdevice": "/dev/xvdb",
                         "ostypeid": 12,
-                        "zoneid": 1,
-                        # Optional, if specified the mentioned zone will be
-                        # used for tests
-                        "mode": 'basic',
+                        "mode": 'advanced',
                         "sleep": 60,
                         "timeout": 10,
                     }
@@ -80,6 +75,7 @@ class TestCreateVolume(cloudstackTestCase):
         cls.services = Services().services
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -95,6 +91,7 @@ class TestCreateVolume(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
+        cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
         cls.services["customdiskofferingid"] = cls.custom_disk_offering.id
@@ -102,7 +99,8 @@ class TestCreateVolume(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -114,6 +112,7 @@ class TestCreateVolume(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
@@ -263,6 +262,7 @@ class TestVolumes(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -273,6 +273,7 @@ class TestVolumes(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
+        cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
         cls.services["diskofferingid"] = cls.disk_offering.id
@@ -280,7 +281,8 @@ class TestVolumes(cloudstackTestCase):
         # Create VMs, VMs etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -292,6 +294,7 @@ class TestVolumes(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )

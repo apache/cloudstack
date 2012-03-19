@@ -41,7 +41,7 @@ class Services:
                                         "clustertype": 'ExternalManaged',
                                         # CloudManaged or ExternalManaged"
                                         "username": 'administrator',
-                                        "password": 'password',
+                                        "password": 'fr3sca',
                                         "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
                                         # Format:http://vCenter Host/Datacenter/Cluster
                                         "clustername": 'VMWare Cluster',
@@ -57,7 +57,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.210',
                                           "username": "root",
-                                          "password": "password",
+                                          "password": "fr3sca",
                                           },
                                  "kvm": {
                                           "hypervisor": 'KVM',
@@ -66,7 +66,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.212',
                                           "username": "root",
-                                          "password": "password",
+                                          "password": "fr3sca",
                                           },
                                  "vmware": {
                                           "hypervisor": 'VMware',
@@ -75,7 +75,7 @@ class Services:
                                           # CloudManaged or ExternalManaged"
                                           "url": 'http://192.168.100.203',
                                           "username": "administrator",
-                                          "password": "password",
+                                          "password": "fr3sca",
                                          },
                                  },
                          "zoneid": 2,
@@ -93,7 +93,7 @@ class TestHosts(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id, self.services)
         self.cleanup = []
-        
+
         return
 
     def tearDown(self):

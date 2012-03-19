@@ -40,10 +40,6 @@ class Services:
                             },
                          "sleep": 60,
                          "timeout": 5,
-                         "zoneid": 1,
-                         # Optional, if specified the mentioned zone will be
-                         # used for tests
-                         "domainid": 1,
                         }
 
 class TestSecStorageServices(cloudstackTestCase):
@@ -70,6 +66,7 @@ class TestSecStorageServices(cloudstackTestCase):
         self.cleanup = []
         self.services = Services().services
         # Get Zone and pod
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id)
         return
@@ -285,7 +282,7 @@ class TestSecStorageServices(cloudstackTestCase):
                                     zoneid=self.zone.id,
                                     templatefilter=v["templatefilter"],
                                     account='system',
-                                    domainid=self.services["domainid"]
+                                    domainid=self.domain.id
                                     )
 
             # Ensure all BUILTIN templates are downloaded
@@ -307,7 +304,7 @@ class TestSecStorageServices(cloudstackTestCase):
                                     zoneid=self.zone.id,
                                     templatefilter=v["templatefilter"],
                                     account='system',
-                                    domainid=self.services["domainid"]
+                                    domainid=self.domain.id
                                     )
                 
                     if isinstance(template_response, list):
@@ -342,7 +339,7 @@ class TestSecStorageServices(cloudstackTestCase):
                                     zoneid=self.zone.id,
                                     templatefilter=v["templatefilter"],
                                     account='system',
-                                    domainid=self.services["domainid"]
+                                    domainid=self.domain.id
                                     )
                 
                 if isinstance(template_response, list):

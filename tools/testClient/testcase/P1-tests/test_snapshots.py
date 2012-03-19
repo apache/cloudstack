@@ -45,7 +45,6 @@ class Services:
                                     "password": "password",
                                     "ssh_port": 22,
                                     "hypervisor": 'XenServer',
-                                    "domainid": 1,
                                     "privateport": 22,
                                     "publicport": 22,
                                     "protocol": 'TCP',
@@ -59,7 +58,7 @@ class Services:
                         "recurring_snapshot": {
                                     "intervaltype": 'HOURLY',
                                     # Frequency of snapshots
-                                    "maxsnaps": 2, # Should be min 2
+                                    "maxsnaps": 1, # Should be min 2
                                     "schedule": 1,
                                     "timezone": 'US/Arizona',
                                     # Timezone Formats - http://cloud.mindtouch.us/CloudStack_Documentation/Developer's_Guide%3A_CloudStack 
@@ -73,7 +72,6 @@ class Services:
                         "diskdevice": "/dev/xvda",
                         "diskname": "TestDiskServ",
                         "size": 1, # GBs
-                        "domainid": 1,
 
                         "mount_dir": "/mnt/tmp",
                         "sub_dir": "test",
@@ -81,14 +79,8 @@ class Services:
                         "sub_lvl_dir2": "test2",
                         "random_data": "random.data",
 
-                        "sec_storage": '192.168.100.131',
-                        # IP address of Sec storage where snapshots are stored
-                        "exportpath": 'SecondaryStorage',
                         "ostypeid": 12,
                         # Cent OS 5.3 (64 bit)
-                        "zoneid": 1,
-                        # Optional, if specified the mentioned zone will be
-                        # used for tests
                         "sleep": 60,
                         "timeout": 10,
                         "mode" : 'advanced', # Networking mode: Advanced, Basic
@@ -102,6 +94,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         cls.template = get_template(
@@ -109,6 +102,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
+        cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = cls.template.id
@@ -117,6 +111,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -179,6 +174,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account.account.name,
+                                domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
@@ -214,6 +210,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                             snapshot.id,
                             "Check snapshot id in list resources call"
                         )
+        self.debug("select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
+                        % snapshot.id)
         # Verify backup_snap_id is not NULL
         qresultset = self.dbclient.execute(
                         "select backup_snap_id, account_id, volume_id from snapshots where id = %s;" \
@@ -265,6 +263,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Created VM with ID: %s from template: %s" % (
@@ -381,6 +380,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         template = get_template(
@@ -396,6 +396,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -409,6 +410,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                 cls.services["server"],
                                 templateid=template.id,
                                 accountid=cls.account.account.name,
+                                domainid=cls.account.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         # Get the Root disk of VM 
@@ -689,7 +691,9 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -708,6 +712,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -721,6 +726,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                 cls.services["server"],
                                 templateid=template.id,
                                 accountid=cls.account.account.name,
+                                domainid=cls.account.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
@@ -957,6 +963,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         template = get_template(
@@ -971,7 +978,8 @@ class TestSnapshotLimit(cloudstackTestCase):
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -985,6 +993,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                                 cls.services["server"],
                                 templateid=template.id,
                                 accountid=cls.account.account.name,
+                                domainid=cls.account.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -1198,6 +1207,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         template = get_template(
@@ -1213,6 +1223,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.account.name
@@ -1226,6 +1237,7 @@ class TestSnapshotEvents(cloudstackTestCase):
                                 cls.services["server"],
                                 templateid=template.id,
                                 accountid=cls.account.account.name,
+                                domainid=cls.account.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
 
@@ -1306,7 +1318,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         snapshot.delete(self.apiclient)
 
         # Sleep to ensure that snapshot is deleted properly
-        time.sleep(30)
+        time.sleep(self.services["sleep"])
         events = list_events(
                              self.apiclient,
                              account=self.account.account.name,
@@ -1323,9 +1335,9 @@ class TestSnapshotEvents(cloudstackTestCase):
                             None,
                             "Check if event exists in list events call"
                             )
-        self.assertEqual(
+        self.assertIn(
                             events[0].state,
-                            'Completed',
+                            ['Completed', 'Scheduled'],
                             "Check events state in list events call"
                         )
         return

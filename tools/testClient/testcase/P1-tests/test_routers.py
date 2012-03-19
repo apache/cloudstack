@@ -33,16 +33,20 @@ class Services:
                                     {
                                         "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
                                         # Hypervisor type should be same as
                                         # hypervisor type of cluster
-                                        "domainid": 1,
                                         "privateport": 22,
                                         "publicport": 22,
                                         "protocol": 'TCP',
                                 },
+                        "host": {
+                                        "username": "root",
+                                        "password": "fr3sca",
+                                        "publicport": 22,
+                            },
                         "account": {
                                         "email": "test@test.com",
                                         "firstname": "Test",
@@ -61,7 +65,7 @@ class Services:
                                     "name": "SSH",
                                     "alg": "roundrobin",
                                     # Algorithm used for load balancing
-                                    "privateport": 80,
+                                    "privateport": 22,
                                     "publicport": 2222,
                                 },
                          "fw_rule":{
@@ -72,9 +76,6 @@ class Services:
                                     },
                          "ostypeid":12,
                          # Used for Get_Template : CentOS 5.3 (64 bit)
-                         "zoneid": 1,
-                         # Optional, if specified the mentioned zone will be
-                         # used for tests
                          "mode": 'advanced', # Networking mode: Advanced, basic
                         }
 
@@ -87,6 +88,7 @@ class TestRouterServices(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.template = get_template(
                             cls.api_client,
@@ -99,7 +101,8 @@ class TestRouterServices(cloudstackTestCase):
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
-                                     admin=True
+                                     admin=True,
+                                     domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -110,6 +113,7 @@ class TestRouterServices(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_2 = VirtualMachine.create(
@@ -117,6 +121,7 @@ class TestRouterServices(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -211,9 +216,9 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list networks response"
                              )
         for network in networks:
-            self.assertEqual(
+            self.assertIn(
                         network.state,
-                        'Implemented',
+                        ['Implemented','Allocated'],
                         "Check list network response for network state"
                     )
             self.debug("Network ID: %s & Network state: %s" % (
@@ -359,9 +364,9 @@ class TestRouterServices(cloudstackTestCase):
                              )
         # Check if network in 'Implemented' state
         for network in networks:
-            self.assertEqual(
+            self.assertIn(
                         network.state,
-                        'Implemented',
+                        ['Implemented','Allocated'],
                         "Check list network response for network state"
                     )
             self.debug("Network ID: %s & Network state: %s" % (
@@ -459,6 +464,7 @@ class TestRouterServices(cloudstackTestCase):
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Deployed a VM with ID: %s" % vm.id)
@@ -581,6 +587,7 @@ class TestRouterStopAssociateIp(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -767,6 +774,9 @@ class TestRouterStopAssociateIp(cloudstackTestCase):
                                 'ip addr show'
                                 )
         self.debug("ip addr show: %s" % str(result))
+        self.debug("Public IP address: %s" % public_ip.ipaddress.ipaddress)
+        
+        res = str(result)
         self.assertEqual(
                             result.count(str(public_ip.ipaddress.ipaddress)),
                             1,
@@ -783,6 +793,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -795,7 +806,8 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
-                                     admin=True
+                                     admin=True,
+                                     domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -806,6 +818,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -960,13 +973,11 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                     "Check list port forwarding rules"
                     )
         try:
-            remoteSSHClient.remoteSSHClient(
-                                            nat_rule.ipaddress,
-                                            nat_rule.publicport,
-                                            self.vm_1.username,
-                                            self.vm_1.password
-                                            )
+
             self.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
+            
+            self.vm_1.ssh_port = nat_rule.publicport
+            self.vm_1.get_ssh_client(nat_rule.ipaddress)
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -982,7 +993,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -994,7 +1006,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
-                                     admin=True
+                                     admin=True,
+                                     domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1005,6 +1018,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -1161,13 +1175,9 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                     )
 
         try:
-            remoteSSHClient.remoteSSHClient(
-                                    public_ip.ipaddress,
-                                    self.services["lb_rule"]["publicport"],
-                                    self.vm_1.username,
-                                    self.vm_1.password
-                                    )
             self.debug("SSH into VM with IP: %s" % public_ip.ipaddress)
+            self.vm_1.ssh_port = self.services["lbrule"]["publicport"]
+            self.vm_1.get_ssh_client(public_ip.ipaddress)
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -1175,7 +1185,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                       )
         return
 
-@unittest.skip("iptables does not return anything")
+
 class TestRouterStopCreateFW(cloudstackTestCase):
 
     @classmethod
@@ -1184,6 +1194,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         template = get_template(
                             cls.api_client,
@@ -1195,7 +1206,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
                                      cls.api_client,
-                                     cls.services["account"]
+                                     cls.services["account"],
+                                     domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1206,6 +1218,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.account.name,
+                                    domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -1342,7 +1355,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         # After Router start, FW rule should be in Active state
         fw_rules = list_firewall_rules(
                                    self.apiclient,
-                                   ipaddressid=public_ip.id
+                                   id=fw_rule.id,
                                    )
         self.assertEqual(
                         isinstance(fw_rules, list),
@@ -1379,16 +1392,17 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         # For DNS and DHCP check 'dnsmasq' process status
         result = get_process_status(
                                 host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
+                                self.services['host']["publicport"],
+                                self.services['host']["username"],
+                                self.services['host']["password"],
                                 router.linklocalip,
-                                'iptables -t nat -nvx'
+                                'iptables -t nat -L'
                                 )
-        self.debug("iptables -t nat -nvx: %s" % result)
-        # TODO : Find assertion condition                        )
+        self.debug("iptables -t nat -L: %s" % result)
+        self.debug("Public IP: %s" % public_ip.ipaddress)
+        res = str(result)
         self.assertEqual(
-                            result.count(str(public_ip.ipaddress)),
+                            res.count(str(public_ip.ipaddress)),
                             1,
                             "Check public IP address"
                         )

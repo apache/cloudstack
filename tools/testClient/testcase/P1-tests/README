@@ -28,4 +28,9 @@ The following files contain these P1 cases:
 1. test_snapshots.py - Snapshots related tests
 2. test_routers.py - Router related tests
 3. test_usage.py - Usage realted tests
-
+4. test_account.py - Account related tests
+5. test_resource_limits.py - Resource limits tests
+6. test_security_groups.py - Security groups related tests
+7. test_templates - templates related tests
+8. test_volumes - Volumes related tests
+9. test_blocker_bugs - Blocker bugs tests

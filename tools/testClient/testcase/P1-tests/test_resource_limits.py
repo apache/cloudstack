@@ -44,7 +44,6 @@ class Services:
                         },
                         "volume": {
                                    "diskname": "TestDiskServ",
-                                   "domainid": 1,
                         },
                         "server": {
                                     "displayname": "TestVM",
@@ -52,7 +51,6 @@ class Services:
                                     "password": "password",
                                     "ssh_port": 22,
                                     "hypervisor": 'XenServer',
-                                    "domainid": 1,
                                     "privateport": 22,
                                     "publicport": 22,
                                     "protocol": 'TCP',
@@ -63,12 +61,8 @@ class Services:
                                     "ostypeid": 12,
                                     "templatefilter": 'self',
                         },
-                        "domainid": 1,
                         "ostypeid": 12,
                         # Cent OS 5.3 (64 bit)
-                        "zoneid": 1,
-                        # Optional, if specified the mentioned zone will be
-                        # used for tests
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced',
@@ -81,6 +75,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         cls.api_client = fetch_api_client()
         cls.services = Services().services
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
 
         cls.template = get_template(
@@ -94,11 +89,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         cls.account_1 = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
         # Create Account, VMs etc
         cls.account_2 = Account.create(
                             cls.api_client,
                             cls.services["account"],
+                            domainid=cls.domain.id
                             )
 
         cls.service_offering = ServiceOffering.create(
@@ -170,6 +167,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine)
@@ -188,6 +186,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug(
@@ -199,6 +198,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -217,6 +217,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -261,6 +262,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -280,6 +282,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -401,6 +404,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -420,6 +424,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -541,7 +546,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                               2, # Volume
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
-                              max=3
+                              max=2
                               )
 
         self.debug(
@@ -552,6 +557,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -571,6 +577,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -689,6 +696,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -708,6 +716,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)

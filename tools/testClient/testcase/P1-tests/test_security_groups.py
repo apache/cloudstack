@@ -45,7 +45,6 @@ class Services:
                     "password": "password",
                     "ssh_port": 22,
                     "hypervisor": 'XenServer',
-                    "domainid": 1,
                     "privateport": 22,
                     "publicport": 22,
                     "protocol": 'TCP',
@@ -81,9 +80,6 @@ class Services:
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
-            "zoneid": 2,
-            # Optional, if specified the mentioned zone will be
-            # used for tests
             "mode":'basic',
             # Networking mode: Basic or Advanced
         }
@@ -114,6 +110,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         
         template = get_template(
@@ -121,7 +118,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
-        
+        cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
         
@@ -132,7 +129,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
-                            admin=True
+                            admin=True,
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
 
@@ -167,6 +165,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
@@ -275,6 +274,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.account.name,
+                                    domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
@@ -376,6 +376,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         
         template = get_template(
@@ -383,7 +384,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
-        
+        cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
         
@@ -393,7 +394,8 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
                                             )
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
         cls._cleanup = [
@@ -508,6 +510,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         
         template = get_template(
@@ -515,7 +518,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostypeid"]
                             )
-        
+        cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
         
@@ -525,7 +528,8 @@ class TestRevokeIngressRule(cloudstackTestCase):
                                             )
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
         cls._cleanup = [
@@ -620,35 +624,21 @@ class TestRevokeIngressRule(cloudstackTestCase):
         
         self.debug("Revoking ingress rule for sec group ID: %s for ssh access" 
                                                             % security_group.id)
-        # Revoke Ingress rule from security group
-        result = None
-        timeout = self.services["timeout"]
-        while not isinstance(result, list):
-            try:
-                # Revoke Security group to SSH to VM
-                result = security_group.revoke(
+        # Revoke Security group to SSH to VM
+        result = security_group.revoke(
                                 self.apiclient, 
-                                id = ssh_rule["ruleid"]
+                                id=ssh_rule["ruleid"]
                                 )
-                self.debug("Revoke ingress rule result: %s" % result)
-            except Exception as e:
-                break
-            
-            if isinstance(result, list):
-                break
-            
-            if timeout == 0: 
-                raise Exception(
-                    "Revoke ingress rule (ID: %s) failed" %
-                                                        ssh_rule["ruleid"])
-            time.sleep(5)
-            timeout = timeout - 1
-            
-            
+
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.get_ssh_client(reconnect=True)
+            remoteSSHClient.remoteSSHClient(
+                                        self.virtual_machine.ssh_ip,
+                                        self.virtual_machine.ssh_port,
+                                        self.virtual_machine.username,
+                                        self.virtual_machine.password
+                                        )
         return
 
 
@@ -677,6 +667,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         
         template = get_template(
@@ -685,6 +676,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                             cls.services["ostypeid"]
                             )
         
+        cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
         
@@ -694,7 +686,8 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                                             )
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
         cls.virtual_machine = VirtualMachine.create(
@@ -806,6 +799,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         cls.api_client = fetch_api_client()
 
         # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         
         template = get_template(
@@ -814,6 +808,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                             cls.services["ostypeid"]
                             )
         
+        cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
         
@@ -823,7 +818,8 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                                             )
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"]
+                            cls.services["account"],
+                            domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
         cls._cleanup = [
@@ -959,6 +955,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         
         template = get_template(
@@ -967,6 +964,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                             self.services["ostypeid"]
                             )
         
+        self.services["domainid"] = self.domain.id
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = template.id
         
@@ -976,7 +974,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                                             )
         self.account = Account.create(
                             self.apiclient,
-                            self.services["account"]
+                            self.services["account"],
+                            domainid=self.domain.id
                             )
         self.services["account"] = self.account.account.name
         self.cleanup = [
@@ -1078,13 +1077,24 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                                 )
         self.debug("Deploying VM in account: %s" % self.account.account.name)
         
-        
         # Deleting Security group should raise exception
-        with self.assertRaises(Exception):
-            security_group.delete(self.apiclient)
+        security_group.delete(self.apiclient)
+        
+        #sleep to ensure that Security group is deleted properly
+        time.sleep(self.services["sleep"])
+        
+        # Default Security group should not have any ingress rule
+        sercurity_groups = SecurityGroup.list(
+                                              self.apiclient,
+                                              id=security_group.id
+                                              )
+        self.assertNotEqual(
+                            sercurity_groups, 
+                            None, 
+                            "Check List Security groups response"
+                            )
         return
-        
-        
+
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
         
@@ -1187,6 +1197,7 @@ class TestIngressRule(cloudstackTestCase):
         self.services = Services().services
 
         # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
         
         template = get_template(
@@ -1195,6 +1206,7 @@ class TestIngressRule(cloudstackTestCase):
                             self.services["ostypeid"]
                             )
         
+        self.services["domainid"] = self.domain.id
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = template.id
         
@@ -1204,7 +1216,8 @@ class TestIngressRule(cloudstackTestCase):
                                             )
         self.account = Account.create(
                             self.apiclient,
-                            self.services["account"]
+                            self.services["account"],
+                            domainid=self.domain.id
                             )
         self.services["account"] = self.account.account.name
         self.cleanup = [
@@ -1241,7 +1254,6 @@ class TestIngressRule(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-    
 
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
@@ -1352,7 +1364,6 @@ class TestIngressRule(cloudstackTestCase):
             self.fail("Ping failed for ingress rule ID: %s, %s" \
                       % (ingress_rule_2["id"], e))
         return
-        
 
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
@@ -1481,30 +1492,13 @@ class TestIngressRule(cloudstackTestCase):
                     self.account.account.name
                 ))
         
-        # Revoke Ingress rule from security group
-        result = None
-        timeout = self.services["timeout"]
-        while not isinstance(result, list):
-            try:
-                # Revoke Security group to SSH to VM
-                result = security_group.revoke(
+       # Revoke Security group to SSH to VM
+       result = security_group.revoke(
                                 self.apiclient, 
                                 id = icmp_rule["ruleid"]
                                 )
-                self.debug("Revoke ingress rule result: %s" % result)
-            except Exception as e:
-                break
-            
-            if isinstance(result, list):
-                break
-            
-            if timeout == 0: 
-                raise Exception(
-                    "Revoke ingress rule (ID: %s) failed" %
-                                                        icmp_rule["ruleid"])
-            time.sleep(5)
-            timeout = timeout - 1
-        
+       self.debug("Revoke ingress rule result: %s" % result)
+
         time.sleep(self.services["sleep"])
         # User should not be able to ping VM
         try:
