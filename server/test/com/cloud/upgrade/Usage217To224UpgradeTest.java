@@ -41,8 +41,8 @@ public class Usage217To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("fake.sql", false, true);
-        DbTestUtils.executeUsageScript("fake.sql", false, true);
+        DbTestUtils.executeScript("cleanup.sql", false, true);
+        DbTestUtils.executeUsageScript("cleanup.sql", false, true);
     }
     
     @Override
