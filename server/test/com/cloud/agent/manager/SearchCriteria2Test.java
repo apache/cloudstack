@@ -30,7 +30,7 @@ public class SearchCriteria2Test extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("fake.sql", false, true);
+        DbTestUtils.executeScript("cleanup.sql", false, true);
         MockComponentLocator locator = new MockComponentLocator("management-server");
         locator.addDao("HostDao", HostDaoImpl.class);
         locator.addDao("VmInstance", VMInstanceDaoImpl.class);

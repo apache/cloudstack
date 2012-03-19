@@ -42,7 +42,7 @@ public class Test2214To30DBUpgrade extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("fake.sql", false,
+        DbTestUtils.executeScript("cleanup.sql", false,
                 true);
     }
 

@@ -41,7 +41,7 @@ public class PortForwarding218To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("fake.sql", false, true);
+        DbTestUtils.executeScript("cleanup.sql", false, true);
     }
     
     @Override
