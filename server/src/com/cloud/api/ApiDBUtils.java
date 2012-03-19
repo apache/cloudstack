@@ -728,7 +728,7 @@ public class ApiDBUtils {
     }
     
     public static long findDefaultRouterServiceOffering() {
-        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName("Cloud.Com-SoftwareRouter");
+        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         return serviceOffering.getId();
     }
     

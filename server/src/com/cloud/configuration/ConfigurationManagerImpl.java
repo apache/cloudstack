@@ -402,7 +402,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 s_logger.debug("Config 'system.vm.use.local.storage' changed to value:" + value + ", need to update System VM offerings");
             }
             boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(Config.SystemVMUseLocalStorage.key()));
-            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName("Cloud.com-ConsoleProxy");
+            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.consoleProxyDefaultOffUniqueName);
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
@@ -410,7 +410,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
 
-            serviceOffering = _serviceOfferingDao.findByName("Cloud.Com-SoftwareRouter");
+            serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
@@ -418,7 +418,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
 
-            serviceOffering = _serviceOfferingDao.findByName("Cloud.com-SecondaryStorage");
+            serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.ssvmDefaultOffUniqueName);
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
@@ -447,7 +447,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (value == null) {
             return _configDao.findByName(name);
         }
-        
+
         if (value.trim().isEmpty() || value.equals("null")) {
             value = null;
         }
@@ -463,7 +463,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     private String validateConfigurationValue(String name, String value) {
-    
+
         Config c = Config.getConfig(name);
         if (c == null) {
             s_logger.error("Missing configuration variable " + name + " in configuration table");
@@ -471,7 +471,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Class<?> type = c.getType();
-        
+
         if (value == null) {
             if (type.equals(Boolean.class)) {
                 return "Please enter either 'true' or 'false'.";
@@ -479,7 +479,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             return null;
         }
         value = value.trim();
-        
+
         if (type.equals(Boolean.class)) {
             if (!(value.equals("true") || value.equals("false"))) {
                 s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
@@ -1253,7 +1253,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         _configDao.expunge(LDAPParams.passwd.toString());
         _configDao.expunge(LDAPParams.truststore.toString());
         _configDao.expunge(LDAPParams.truststorepass.toString());
-    	return true;
+        return true;
     }
 
     @Override
@@ -1274,7 +1274,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (bindDN != null && bindPasswd == null) {
                 throw new InvalidParameterValueException("If you specify a bind name then you need to provide bind password too.");
             }
-            
+
             // check if the info is correct
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -1282,15 +1282,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (new Boolean(useSSL)) {
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol = "ldaps://";
-                if (trustStore == null || trustStorePassword==null ){
-                	throw new InvalidParameterValueException("If you plan to use SSL then you need to configure the trust store.");
+                if (trustStore == null || trustStorePassword == null) {
+                    throw new InvalidParameterValueException("If you plan to use SSL then you need to configure the trust store.");
                 }
                 System.setProperty("javax.net.ssl.trustStore", trustStore);
                 System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
             }
             env.put(Context.PROVIDER_URL, protocol + hostname + ":" + port);
             if (bindDN != null && bindPasswd != null) {
-            	env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, bindDN);
                 env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
             }
@@ -1363,7 +1363,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             cvo.setValue(DBEncryptionUtil.encrypt(trustStorePassword));
             _configDao.persist(cvo);
-            
+
             s_logger.debug("The ldap server is configured: " + hostname);
         } catch (NamingException ne) {
             ne.printStackTrace();
@@ -1371,8 +1371,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         return true;
     }
-    
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_EDIT, eventDescription = "editing zone", async = false)
@@ -3138,7 +3137,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         if (provider == Provider.JuniperSRX) {
                             isSrx = true;
                         }
-                            
+
                         providers.add(provider);
 
                         Set<Service> serviceSet = null;
@@ -3186,9 +3185,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
-        
-        //if Firewall service is missing, and Juniper is a provider for any other service, add Firewall service/provider combination
-        if (isSrx)  {
+
+        // if Firewall service is missing, and Juniper is a provider for any other service, add Firewall
+// service/provider combination
+        if (isSrx) {
             s_logger.debug("Adding Firewall service with provider " + Provider.JuniperSRX.getName());
             Set<Provider> firewallProvider = new HashSet<Provider>();
             firewallProvider.add(Provider.JuniperSRX);
@@ -3510,11 +3510,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
-        
+
         if (tags != null) {
             sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
         }
-        
+
         if (isTagged != null) {
             if (isTagged) {
                 sc.addAnd("tags", SearchCriteria.Op.NNULL);
@@ -3531,7 +3531,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
             if (pNtwks.size() > 1) {
                 checkForTags = true;
-                //go through tags
+                // go through tags
                 for (PhysicalNetworkVO pNtwk : pNtwks) {
                     List<String> pNtwkTag = pNtwk.getTags();
                     if (pNtwkTag == null || pNtwkTag.isEmpty()) {
@@ -3568,13 +3568,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (NetworkOfferingVO offering : offerings) {
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
-                
+
                 if (checkForTags) {
                     if (!pNtwkTags.contains(offering.getTags())) {
                         continue;
                     }
                 }
-                
+
                 if (listBySupportedServices) {
                     addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), supportedServices);
                 }
@@ -3592,14 +3592,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (sourceNatSupported != null) {
                     addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
                 }
-                
-               
 
                 if (addOffering) {
                     supportedOfferings.add(offering);
                 }
-                
-                
+
             }
 
             return supportedOfferings;
@@ -3626,12 +3623,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering.isDefault() == true) {
             throw new InvalidParameterValueException("Default network offering can't be deleted");
         }
-        
-        //don't allow to delete network offering if it's in use by existing networks (the offering can be disabled though)
+
+        // don't allow to delete network offering if it's in use by existing networks (the offering can be disabled
+// though)
         int networkCount = _networkDao.getNetworkCountByNetworkOffId(offeringId);
         if (networkCount > 0) {
             throw new InvalidParameterValueException("Can't delete network offering " + offeringId + " as its used by " + networkCount + " networks. " +
-            		"To make the network offering unavaiable, disable it");
+                    "To make the network offering unavaiable, disable it");
         }
 
         if (_networkOfferingDao.remove(offeringId)) {
