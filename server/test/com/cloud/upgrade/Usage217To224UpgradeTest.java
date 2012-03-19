@@ -41,8 +41,8 @@ public class Usage217To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
-        DbTestUtils.executeUsageScript("PreviousDatabaseSchema/clean-usage-db.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
+        DbTestUtils.executeUsageScript("fake.sql", false, true);
     }
     
     @Override
@@ -52,8 +52,8 @@ public class Usage217To224UpgradeTest extends TestCase {
     
     public void test21to22Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.1.7");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.1.7/2.1.tata.sql", false, true);
-        DbTestUtils.executeUsageScript("PreviousDatabaseSchema/2.1.7/2.1.usage.tata.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
+        DbTestUtils.executeUsageScript("fake.sql", false, true);
         
         Connection conn;
         PreparedStatement pstmt;

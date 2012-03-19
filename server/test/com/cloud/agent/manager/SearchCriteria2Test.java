@@ -30,12 +30,12 @@ public class SearchCriteria2Test extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
         MockComponentLocator locator = new MockComponentLocator("management-server");
         locator.addDao("HostDao", HostDaoImpl.class);
         locator.addDao("VmInstance", VMInstanceDaoImpl.class);
         s_logger.debug("Finding sample data from 2.1.12");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.12-newagentmanager/2.2.12_new_agent_manager_cloud_db_sample.sql", false, true);
+        DbTestUtils.executeScript("fake", false, true);
     }
     
     public void testSearch() {

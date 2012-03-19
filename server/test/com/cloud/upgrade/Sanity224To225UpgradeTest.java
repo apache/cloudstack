@@ -39,7 +39,7 @@ public class Sanity224To225UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class Sanity224To225UpgradeTest extends TestCase {
 
     public void test224to225Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.2.4");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.4/2.2.4_cloud_db_sample.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
 
         Connection conn;
         PreparedStatement pstmt;

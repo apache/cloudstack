@@ -42,7 +42,7 @@ public class Test2214To30DBUpgrade extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false,
+        DbTestUtils.executeScript("fake.sql", false,
                 true);
     }
 
@@ -54,7 +54,7 @@ public class Test2214To30DBUpgrade extends TestCase {
     public void test2214to30Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.2.14");
         DbTestUtils.executeScript(
-                "PreviousDatabaseSchema/2.2.14/alena_2214_guestNetwork_advanceZone.sql", false,
+                "fake.sql", false,
                 true);
 
         DatabaseUpgradeChecker checker = ComponentLocator

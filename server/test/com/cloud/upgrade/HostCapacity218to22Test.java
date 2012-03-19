@@ -18,7 +18,7 @@ public class HostCapacity218to22Test extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
     }
     
     @Override
@@ -28,7 +28,7 @@ public class HostCapacity218to22Test extends TestCase {
 
     public void test218to22Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.1.8");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.1.8/2.1.8_sample_host_capacity.sql", false, true);
+        DbTestUtils.executeScript("fake.sql", false, true);
         
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
