@@ -160,6 +160,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -633,7 +634,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long vmId = cmd.getVirtualMachineId();
         Long domainId = cmd.getDomainId();
         Boolean isSystem = cmd.getIsSystem();
-        String vm_type_str = cmd.getSystemVmType();
+        String vmTypeStr = cmd.getSystemVmType();
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
@@ -700,8 +701,15 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
 
-        if (vm_type_str != null) {
-            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vm_type_str);
+        if (vmTypeStr != null) {
+            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
+        }
+
+        if (isSystem && vmTypeStr == null) {
+            // don't return console proxy and ssvm offerings is not requested with vmTypeStr
+            sc.addAnd("uniqueName", SearchCriteria.Op.NIN, ServiceOffering.consoleProxyDefaultOffUniqueName, 
+                    ServiceOffering.ssvmDefaultOffUniqueName, ServiceOffering.elbVmDefaultOffUniqueName);
+
         }
 
         sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);

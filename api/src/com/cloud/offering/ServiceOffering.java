@@ -24,6 +24,11 @@ import java.util.Date;
  * offered.
  */
 public interface ServiceOffering {
+    public static final String consoleProxyDefaultOffUniqueName = "Cloud.com-ConsoleProxy";
+    public static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
+    public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
+    public static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
+
     public enum StorageType {
         local,
         shared

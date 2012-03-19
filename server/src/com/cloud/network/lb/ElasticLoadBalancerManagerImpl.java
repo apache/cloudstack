@@ -99,6 +99,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -398,7 +399,7 @@ public class ElasticLoadBalancerManagerImpl implements
         _elasticLbVmOffering = new ServiceOfferingVO("System Offering For Elastic LB VM", _elasticLbvmNumCpu, 
                 _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null, useLocalStorage, 
                 true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
-        _elasticLbVmOffering.setUniqueName("Cloud.Com-ElasticLBVm");
+        _elasticLbVmOffering.setUniqueName(ServiceOffering.elbVmDefaultOffUniqueName);
         _elasticLbVmOffering = _serviceOfferingDao.persistSystemServiceOffering(_elasticLbVmOffering);
         
         

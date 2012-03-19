@@ -77,6 +77,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -834,7 +835,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, null, null, false, null, _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
-        _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
+        _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         
         // this can sometimes happen, if DB is manually or programmatically manipulated
