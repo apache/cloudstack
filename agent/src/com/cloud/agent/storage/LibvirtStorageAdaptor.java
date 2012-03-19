@@ -445,7 +445,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 	public KVMPhysicalDisk getPhysicalDisk(String volumeUuid,
 			KVMStoragePool pool) {
 		LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
-
+		String[] volPaths = volumeUuid.split("/");
+		if (volPaths.length == 4) {
+			//to compatible with 2.2.x, volume path is passed in
+			volumeUuid = volPaths[3];
+		}
 		try {
 			StorageVol vol = this.getVolume(libvirtPool.getPool(), volumeUuid);
 			KVMPhysicalDisk disk;
