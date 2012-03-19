@@ -276,14 +276,16 @@ public class ApiServer implements HttpRequestHandler {
         _dispatcher = ApiDispatcher.getInstance();
         _domainMgr = locator.getManager(DomainManager.class);
 
-        int apiPort = 8096; // default port
+        Integer apiPort = null; // api port, null by default
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
         List<ConfigurationVO> values = configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
             ConfigurationVO apiPortConfig = values.get(0);
-            apiPort = Integer.parseInt(apiPortConfig.getValue());
+            if (apiPortConfig.getValue() != null) {
+                apiPort = Integer.parseInt(apiPortConfig.getValue());
+            }
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
@@ -293,8 +295,10 @@ public class ApiServer implements HttpRequestHandler {
             jsonContentType = jsonType;
         }
 
-        ListenerThread listenerThread = new ListenerThread(this, apiPort);
-        listenerThread.start();
+        if (apiPort != null) {
+            ListenerThread listenerThread = new ListenerThread(this, apiPort);
+            listenerThread.start();
+        }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

@@ -96,7 +96,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	            chksum, bootable, null, null, details, false);
 	}
 	
-	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
+	public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
 			String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled) throws ResourceAllocationException {
@@ -158,12 +158,6 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 
 		if (!isAdmin || featured == null) {
 			featured = Boolean.FALSE;
-		}
-
-		// If command is executed via 8096 port, set userId to the id of System
-		// account (1)
-		if (userId == null) {
-			userId = Long.valueOf(1);
 		}
 		
 		ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
@@ -258,7 +252,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	}
 	
 
-	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg)
+	private Long accountAndUserValidation(Account account, long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg)
 			throws PermissionDeniedException {
 
 		if (account != null) {
@@ -286,11 +280,6 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 					}
 				}
 			}
-		}
-		// If command is executed via 8096 port, set userId to the id of System
-		// account (1)
-		if (userId == null) {
-			userId = new Long(1);
 		}
 
 		return userId;
