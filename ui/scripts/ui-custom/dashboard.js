@@ -46,6 +46,8 @@
                   }
 
                   $.each(item, function(arrayKey, arrayValue) {
+                    if (!arrayValue) arrayValue = '';
+                    
                     var $arrayElem = $li.find('[data-list-item=' + arrayKey + ']');
 
                     $arrayElem.each(function() {
