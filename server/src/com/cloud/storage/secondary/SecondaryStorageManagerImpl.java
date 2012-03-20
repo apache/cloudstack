@@ -974,7 +974,17 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
 
         try {
-            return _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            if (result) {
+                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterIdToDeployIn(), ssvm.getHostName(), 
+                        Host.Type.SecondaryStorageVM);
+                if (host != null) {
+                    s_logger.debug("Removing host entry for ssvm id=" + vmId);
+                    result = result && _hostDao.remove(host.getId());
+                }
+            }
+            
+            return result;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + ssvm, e);
             return false;

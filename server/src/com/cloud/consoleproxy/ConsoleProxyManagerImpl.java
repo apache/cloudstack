@@ -1332,7 +1332,18 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     public boolean destroyProxy(long vmId) {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
-            return _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            //expunge the vm
+            boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            if (result) {
+                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterIdToDeployIn(), proxy.getHostName(), 
+                        Host.Type.ConsoleProxy);
+                if (host != null) {
+                    s_logger.debug("Removing host entry for proxy id=" + vmId);
+                    result = result && _hostDao.remove(host.getId());
+                }
+            }
+            
+            return result;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + proxy, e);
             return false;

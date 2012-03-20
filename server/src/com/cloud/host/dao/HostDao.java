@@ -69,4 +69,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 
 	HostVO findByGuid(String guid);
+	
+	HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
 }
