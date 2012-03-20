@@ -177,7 +177,11 @@ public class ApiServlet extends HttpServlet {
                     Long domainId = null;
                     if ((domainIdArr != null) && (domainIdArr.length > 0)) {
                         try {
-                            domainId = new Long(Long.parseLong(domainIdArr[0]));
+                            //check if UUID is passed in for domain
+                            domainId = _apiServer.fetchDomainId(domainIdArr[0]);
+                            if(domainId == null){
+                                domainId = new Long(Long.parseLong(domainIdArr[0]));
+                            }
                             auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
                         } catch (NumberFormatException e) {
                             s_logger.warn("Invalid domain id entered by user");
