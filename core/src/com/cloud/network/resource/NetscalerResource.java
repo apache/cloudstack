@@ -493,10 +493,13 @@ public class NetscalerResource implements ServerResource {
                                             throw new ExecutionException("Failed to delete the binding between the virtual server: " + nsVirtualServerName + " and service:" + nsServiceName + " due to" + apiCallResult.message);
                                         }
     
-                                        // delete the service
-                                        apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, nsServiceName);
-                                        if (apiCallResult.errorcode != 0) {
-                                            throw new ExecutionException("Failed to delete service: " + nsServiceName + " due to " + apiCallResult.message);
+                                        // check if service is bound to any other virtual server
+                                        if (!isServiceBoundToVirtualServer(nsServiceName)) {
+                                            // no lb virtual servers are bound to this service so delete it
+                                            apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, nsServiceName);
+                                            if (apiCallResult.errorcode != 0) {
+                                                throw new ExecutionException("Failed to delete service: " + nsServiceName + " due to " + apiCallResult.message);
+                                            }
                                         }
     
                                         // delete the server if there is no associated services
@@ -531,21 +534,12 @@ public class NetscalerResource implements ServerResource {
                                 String nsServerName = svc.get_servername();
 
                                 // check if service is bound to any other virtual server
-                                boolean deleteService = true;
-                                lbvserver[] lbservers = lbvserver.get(_netscalerService);
-                                for (lbvserver vserver : lbservers) {
-                                    filtervalue[] filter = new filtervalue[1];
-                                    filter[0] = new filtervalue("servicename", serviceName);
-                                    lbvserver_service_binding[] result = (lbvserver_service_binding[]) lbvserver_service_binding.get_filtered(_netscalerService, vserver.get_name(), filter);
-                                    if (result != null && result.length > 0) {
-                                        deleteService = false;
-                                        break;
-                                    }
-                                }
-                                
-                                if (deleteService) {
+                                if (!isServiceBoundToVirtualServer(serviceName)) {
                                     // no lb virtual servers are bound to this service so delete it
-                                    com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, serviceName);
+                                    apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, serviceName);
+                                    if (apiCallResult.errorcode != 0) {
+                                        throw new ExecutionException("Failed to delete service: " + serviceName + " due to " + apiCallResult.message);
+                                    }
                                 }
 
                                 //delete the server if no more services attached
@@ -1080,6 +1074,23 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
+    private boolean isServiceBoundToVirtualServer(String serviceName) throws ExecutionException {
+        try {
+            lbvserver[] lbservers = lbvserver.get(_netscalerService);
+            for (lbvserver vserver : lbservers) {
+                filtervalue[] filter = new filtervalue[1];
+                filter[0] = new filtervalue("servicename", serviceName);
+                lbvserver_service_binding[] result = (lbvserver_service_binding[]) lbvserver_service_binding.get_filtered(_netscalerService, vserver.get_name(), filter);
+                if (result != null && result.length > 0) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify service " + serviceName + " is bound to any virtual server due to " + e.getMessage());
+        }
+    }
+    
     private boolean nsServiceExists(String serviceName) throws ExecutionException {
         try {
             if (com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName) != null) {
