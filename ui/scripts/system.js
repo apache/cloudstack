@@ -1665,7 +1665,40 @@
               label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off' }
             },
             vlan: { label: 'label.vlan.range' }
-          }
+          },
+										
+					actions: {
+						remove: {
+							label: 'label.action.delete.physical.network',
+							messages: {
+								confirm: function(args) {
+									return 'message.action.delete.physical.network';
+								},
+								notification: function(args) {
+									return 'label.action.delete.physical.network';
+								}
+							},
+							action: function(args) {								
+								$.ajax({
+									url: createURL("deletePhysicalNetwork&id=" + args.context.physicalNetworks[0].id),
+									dataType: "json",
+									async: true,
+									success: function(json) {		
+										var jid = json.deletephysicalnetworkresponse.jobid;
+										args.response.success(
+											{_custom:
+											 {jobId: jid
+											 }
+											}
+										);										
+									}
+								});
+							},
+							notification: {
+								poll: pollAsyncJobResult
+							}
+						}
+					}					
         },
         dataProvider: function(args) {     
 				  //Comment out next line which causes Bug 13852 (Unable to configure multiple physical networks with service providers of the same device type).
