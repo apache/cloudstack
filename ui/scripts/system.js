@@ -3475,7 +3475,7 @@
                   custom: cloudStack.uiCustom.systemChart('compute')
                 },
                 network: {
-                  title: 'label.network',
+                  title: 'label.physical.network',
                   custom: cloudStack.uiCustom.systemChart('network')
                 },
                 resources: {
