@@ -1214,7 +1214,7 @@
                     label: 'label.compute.offering',
                     select: function(args) {
                       $.ajax({
-                        url: createURL('listServiceOfferings&issystem=true&systemvmtype=domainrouter'),
+                        url: createURL('listServiceOfferings&issystem=true'),
                         dataType: 'json',
                         async: true,
                         success: function(data) {
