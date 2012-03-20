@@ -19,11 +19,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface OvsTunnelManager extends Manager {
+	
 	boolean isOvsTunnelEnabled();
 
     public void VmCheckAndCreateTunnel(VirtualMachineProfile<? extends VirtualMachine> vm, Network nw, DeployDestination dest);
     
     public void CheckAndDestroyTunnel(VirtualMachine vm, Network nw);
-    
-    public void applyDefaultFlow(VirtualMachine instance, DeployDestination dest);
+
 }

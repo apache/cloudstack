@@ -557,7 +557,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         	vif.getRecord(conn);
         	if (vif.getNetwork(conn).getUuid(conn) == nw.getUuid(conn)) {
         		dom0vif = vif;
-        		s_logger.debug("### A dom0 VIF has already been found - No need to create one");
+        		s_logger.debug("A VIF for dom0 has already been found - No need to create one");
         	}
         }
         if (dom0vif == null) {
@@ -636,7 +636,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);                
             } else {
                 nw = networks.iterator().next();
-                s_logger.debug("### Xen Server network for tunnels found:" + nwName);                
+                s_logger.debug("Xen Server network for tunnels found:" + nwName);                
             }
             return nw;
         } catch (Exception e) {
@@ -651,7 +651,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private synchronized Network configureTunnelNetwork(Connection conn, long networkId, long hostId, int key) {
     	try {
 	    	Network nw = findOrCreateTunnelNetwork(conn, networkId);
->>>>>>> fb7dcaa... Now using vnets instead of network id for creating networks
 	    	//Invoke plugin to setup the bridge which will be used by this network
 	        String bridge = nw.getBridge(conn);
 	        Map<String,String> nwOtherConfig = nw.getOtherConfig(conn);
@@ -4789,35 +4788,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     private Answer execute(OvsSetupBridgeCommand cmd) {
         Connection conn = getConnection();
-        s_logger.debug("### About to configure OVS bridge");
-        Network nw=findOrCreateTunnelNetwork(conn, cmd.getKey());
-        this.configureTunnelNetwork(conn, cmd.getNetworkId(), cmd.getHostId(), cmd.getKey());
-        s_logger.debug("### Bridge configured");
+        findOrCreateTunnelNetwork(conn, cmd.getKey());
+        configureTunnelNetwork(conn, cmd.getNetworkId(), cmd.getHostId(), cmd.getKey());
+        s_logger.debug("OVS Bridge configured");
     	return new Answer(cmd, true, null);
     }
 
     private Answer execute(OvsDestroyBridgeCommand cmd) {
         Connection conn = getConnection();
-        s_logger.debug("### About to destroy OVS bridge");
         destroyTunnelNetwork(conn, cmd.getKey());
-        s_logger.debug("### Bridge destroyed");
+        s_logger.debug("OVS Bridge destroyed");
     	return new Answer(cmd, true, null);
     }
     
     private Answer execute(OvsDestroyTunnelCommand cmd) {
         Connection conn = getConnection();
-        s_logger.debug("### About to destroy tunnel network");
         try {
         	Network nw = findOrCreateTunnelNetwork(conn, cmd.getNetworkId());
             if (nw == null) {
-            	s_logger.warn("### Unable to find tunnel network");
+            	s_logger.warn("Unable to find tunnel network for GRE key:" + cmd.getKey());
                 return new Answer(cmd, false, "No network found");
             }
 
             String bridge = nw.getBridge(conn);
-            s_logger.debug("### About to remove tunnel named:" + cmd.getInPortName());
             String result = callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", cmd.getInPortName());
-            s_logger.debug("### Tunnel removed");
             if (result.equalsIgnoreCase("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
@@ -4839,19 +4833,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         String bridge = "unknown";
         try {
-            s_logger.debug("### About to create tunnel network");
         	Network nw = findOrCreateTunnelNetwork(conn, cmd.getKey());
             if (nw == null) {
-            	s_logger.debug("### SOMETHING WENT WRONG DURING NETWORK SETUP");
+            	s_logger.debug("Error during bridge setup");
                 return new OvsCreateTunnelAnswer(cmd, false, "Cannot create network", bridge);
             }
         	
             configureTunnelNetwork(conn, cmd.getNetworkId(), cmd.getFrom(), cmd.getKey());            
             bridge = nw.getBridge(conn);
-            s_logger.debug("### The bridge is:" + bridge);
             String result = callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", cmd.getRemoteIp(), 
             		                       "key", cmd.getKey().toString(), "from", cmd.getFrom().toString(), "to", cmd.getTo().toString());
-            s_logger.debug("### Result from create tunnel operation:" + result);
             String[] res = result.split(":");
             if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
                 return new OvsCreateTunnelAnswer(cmd, true, result, res[1], bridge);
@@ -4859,8 +4850,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
             }
         } catch (Exception e) {
-        	s_logger.debug("### SOMETHING WENT WRONG DURING TUNNEL SETUP");
-        	s_logger.warn("caught execption when creating ovs tunnel", e);
+        	s_logger.debug("Error during tunnel setup");
+        	s_logger.warn("Caught execption when creating ovs tunnel", e);
             return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
         }
     }
@@ -5244,14 +5235,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VDI vdi = null;
         try {
             SR poolSr = getStorageRepository(conn, pool);
-            s_logger.debug("### STORAGE CREATE - Template URL:" + cmd.getTemplateUrl());
             if (cmd.getTemplateUrl() != null) {
                 VDI tmpltvdi = null;
                 
                 tmpltvdi = getVDIbyUuid(conn, cmd.getTemplateUrl());
-                s_logger.debug("### STORAGE CREATE - ABOUT TO CLONE VDI:" + tmpltvdi.getUuid(conn));
                 vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
-                s_logger.debug("### STORAGE CREATE - CLoned VDI:" + vdi.getUuid(conn));
                 vdi.setNameLabel(conn, dskch.getName());
             } else {
                 VDI.Record vdir = new VDI.Record();
@@ -5260,9 +5248,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vdir.type = Types.VdiType.USER;
 
                 vdir.virtualSize = dskch.getSize();
-                s_logger.debug("### STORAGE CREATE - Creating VDI with size:" + dskch.getSize());
                 vdi = VDI.create(conn, vdir);
-                s_logger.debug("### STORAGE CREATE - VDI created:" + vdi.getUuid(conn));
             }
 
             VDI.Record vdir;

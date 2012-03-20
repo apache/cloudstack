@@ -75,7 +75,6 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	   		    vnetUri = vnet;
 	   		}
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnetUri));
-   		 	s_logger.debug("### URI value:" + vnetUri);            
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -88,8 +87,6 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 		 if (!_ovsNetworkMgr.isOvsNetworkEnabled()&& !_ovsTunnelMgr.isOvsTunnelEnabled()) {
 			 return null;
 		 }
-		 s_logger.debug("### Implementing network:" + config.getId() + " in OVS Guest Network Guru");
-		 // The above call will NOT reserve a Vnet
 		 NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
          return implemented;
 	}
