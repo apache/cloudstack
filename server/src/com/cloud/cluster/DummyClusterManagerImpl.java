@@ -25,7 +25,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
@@ -60,12 +59,6 @@ public class DummyClusterManagerImpl implements ClusterManager {
     	throw new CloudRuntimeException("Unsupported feature");
     }
     
-/*    
-    @Override
-    public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException {
-    	throw new CloudRuntimeException("Unsupported feature");
-    }
-*/    
     @Override
     public boolean executeAgentUserRequest(long agentId, Event event) throws AgentUnavailableException {
     	throw new CloudRuntimeException("Unsupported feature");
