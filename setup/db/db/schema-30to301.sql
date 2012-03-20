@@ -17,3 +17,6 @@
 
 #Schema upgrade from 3.0 to 3.0.1;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.networks', '20', 'The default maximum number of networks that can be created for a project');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.networks', '20', 'The default maximum number of networks that can be created for an account');
