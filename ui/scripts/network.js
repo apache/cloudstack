@@ -2068,7 +2068,8 @@
                                 id: item.id
                               },
                               success: function(data) {
-                                lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;
+                                lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance ? 
+                                  data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance : [];
                               },
                               error: function(data) {
                                 args.response.error(parseXMLHttpResponse(data));
