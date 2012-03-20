@@ -378,6 +378,13 @@ public class ApiServlet extends HttpServlet {
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
+        
+       String user_UUID = (String)session.getAttribute("user_UUID");
+       session.removeAttribute("user_UUID");
+
+       String domain_UUID = (String)session.getAttribute("domain_UUID");
+       session.removeAttribute("domain_UUID");       
+        
 
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append("{ \"loginresponse\" : { ");
@@ -386,9 +393,15 @@ public class ApiServlet extends HttpServlet {
                 sb.append("\"timeout\" : \"" + inactiveInterval + "\"");
                 while (attrNames.hasMoreElements()) {
                     String attrName = (String) attrNames.nextElement();
-                    Object attrObj = session.getAttribute(attrName);
-                    if ((attrObj instanceof String) || (attrObj instanceof Long)) {
-                        sb.append(", \"" + attrName + "\" : \"" + attrObj.toString() + "\"");
+                    if("userid".equalsIgnoreCase(attrName)){
+                        sb.append(", \"" + attrName + "\" : \"" + user_UUID + "\"");
+                    }else if("domainid".equalsIgnoreCase(attrName)){
+                        sb.append(", \"" + attrName + "\" : \"" + domain_UUID + "\"");
+                    }else{
+                        Object attrObj = session.getAttribute(attrName);
+                        if ((attrObj instanceof String) || (attrObj instanceof Long)) {
+                            sb.append(", \"" + attrName + "\" : \"" + attrObj.toString() + "\"");
+                        }
                     }
                 }
             }
@@ -400,9 +413,15 @@ public class ApiServlet extends HttpServlet {
             if (attrNames != null) {
                 while (attrNames.hasMoreElements()) {
                     String attrName = (String) attrNames.nextElement();
-                    Object attrObj = session.getAttribute(attrName);
-                    if (attrObj instanceof String || attrObj instanceof Long || attrObj instanceof Short) {
-                        sb.append("<" + attrName + ">" + attrObj.toString() + "</" + attrName + ">");
+                    if("userid".equalsIgnoreCase(attrName)){
+                        sb.append("<" + attrName + ">" + user_UUID + "</" + attrName + ">");
+                    }else if("domainid".equalsIgnoreCase(attrName)){
+                        sb.append("<" + attrName + ">" + domain_UUID + "</" + attrName + ">");
+                    }else{
+                        Object attrObj = session.getAttribute(attrName);
+                        if (attrObj instanceof String || attrObj instanceof Long || attrObj instanceof Short) {
+                            sb.append("<" + attrName + ">" + attrObj.toString() + "</" + attrName + ">");
+                        }
                     }
                 }
             }
