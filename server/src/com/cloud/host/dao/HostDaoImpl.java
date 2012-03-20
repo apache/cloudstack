@@ -92,7 +92,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterStatusSearch;
-    protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
+    protected final SearchBuilder<HostVO> TypeNameZoneSearch;
     protected final SearchBuilder<HostVO> AvailHypevisorInZone;
 
     protected final SearchBuilder<HostVO> DirectConnectSearch;
@@ -187,10 +187,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ClusterStatusSearch.and("status", ClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         ClusterStatusSearch.done();
 
-        ConsoleProxyHostSearch = createSearchBuilder();
-        ConsoleProxyHostSearch.and("name", ConsoleProxyHostSearch.entity().getName(), SearchCriteria.Op.EQ);
-        ConsoleProxyHostSearch.and("type", ConsoleProxyHostSearch.entity().getType(), SearchCriteria.Op.EQ);
-        ConsoleProxyHostSearch.done();
+        TypeNameZoneSearch = createSearchBuilder();
+        TypeNameZoneSearch.and("name", TypeNameZoneSearch.entity().getName(), SearchCriteria.Op.EQ);
+        TypeNameZoneSearch.and("type", TypeNameZoneSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeNameZoneSearch.and("zoneId", TypeNameZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        TypeNameZoneSearch.done();
 
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -704,6 +705,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
 		
         return result > 0;
+    }
+    
+    @Override
+    public HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type) {
+        SearchCriteria<HostVO> sc = TypeNameZoneSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("name", name);
+        sc.setParameters("zoneId", zoneId);
+        return findOneBy(sc);
     }
 
 }
