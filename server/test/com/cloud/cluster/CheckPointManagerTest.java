@@ -259,32 +259,17 @@ public class CheckPointManagerTest extends TestCase {
         }
 
         @Override
+        public void OnReceiveClusterServicePdu(ClusterServicePdu pdu) {
+            throw new CloudRuntimeException("Not implemented");
+        }
+        
+        @Override
         public Answer[] execute(String strPeer, long agentId, Command[] cmds, boolean stopOnError) {
             throw new UnsupportedOperationException("Not implemented");
         }
 
         @Override
-        public long executeAsync(String strPeer, long agentId, Command[] cmds, boolean stopOnError, Listener listener) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
-        public boolean onAsyncResult(String executingPeer, long agentId, long seq, Answer[] answers) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
-        public boolean forwardAnswer(String targetPeer, long agentId, long seq, Answer[] answers) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
         public Answer[] sendToAgent(Long hostId, Command[] cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
-        public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException {
             throw new UnsupportedOperationException("Not implemented");
         }
 

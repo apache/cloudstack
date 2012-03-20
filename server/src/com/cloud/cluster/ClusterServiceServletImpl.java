@@ -52,7 +52,27 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         _gson = GsonHelper.getGson();
     }
+    
+    @Override
+    public String execute(ClusterServicePdu pdu) throws RemoteException {
 
+        HttpClient client = getHttpClient();
+        PostMethod method = new PostMethod(_serviceUrl);
+
+        method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_DELIVER_PDU));
+        method.addParameter("sourcePeer", pdu.getSourcePeer());
+        method.addParameter("destPeer", pdu.getDestPeer());
+        method.addParameter("pduSeq", Long.toString(pdu.getSequenceId()));
+        method.addParameter("pduAckSeq", Long.toString(pdu.getAckSequenceId()));
+        method.addParameter("agentId", Long.toString(pdu.getAgentId()));
+        method.addParameter("gsonPackage", pdu.getJsonPackage());
+        method.addParameter("stopOnError", pdu.isStopOnError() ? "1" : "0");
+        method.addParameter("requestAck", pdu.isRequest() ? "1" : "0");
+
+        return executePostMethod(client, method);
+    }
+
+/*    
     @Override
     public String execute(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException {
         if(s_logger.isDebugEnabled()) {
@@ -129,7 +149,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         }
         return false;
     }
-
+*/
     @Override
     public boolean ping(String callingPeer) throws RemoteException {
         if(s_logger.isDebugEnabled()) {
@@ -187,11 +207,13 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     // for test purpose only
     public static void main(String[] args) {
+/*
         ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
         try {
             String result = service.execute("test", 1, "{ p1:v1, p2:v2 }", true);
             System.out.println(result);
         } catch (RemoteException e) {
         }
+*/        
     }
 }

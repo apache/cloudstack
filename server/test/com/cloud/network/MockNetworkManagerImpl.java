@@ -34,6 +34,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.Nic;
@@ -503,5 +504,11 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public boolean updateVmData(UserVm vm) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }
