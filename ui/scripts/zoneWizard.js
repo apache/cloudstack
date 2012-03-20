@@ -1437,7 +1437,9 @@
 																											if(args.data.pluginFrom != null && args.data.pluginFrom.name == "installWizard") {
 																											  selectedNetworkOfferingHavingSG = args.data.pluginFrom.selectedNetworkOfferingHavingSG;
 																											}
-                                                      if(selectedNetworkOfferingHavingSG == true) { //need to Enable security group provider first
+                                                      if(selectedNetworkOfferingHavingSG == true) { //need to Enable security group provider first																											  
+																												message(dictionary['message.enabling.security.group.provider']); 
+																											
                                                         // get network service provider ID of Security Group
                                                         var securityGroupProviderId;
                                                         $.ajax({
@@ -1473,71 +1475,10 @@
                                                                   }
                                                                   else {
                                                                     $("body").stopTime(updateNetworkServiceProviderTimer);
-                                                                    if (result.jobstatus == 1) { //Security group provider has been enabled successfully
-                                                                      
-																																			//netscaler
-                                                                      if(selectedNetworkOfferingHavingNetscaler == true) { //inside "selectedNetworkOfferingHavingSG == true" section
-                                                                        //add netscaler provider (start)
-                                                                        $.ajax({
-                                                                          url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
-                                                                          dataType: "json",
-                                                                          async: false,
-                                                                          success: function(json) {
-                                                                            var addNetworkServiceProviderTimer = "asyncJob_" + json.addnetworkserviceproviderresponse.jobid;
-                                                                            $("body").everyTime(2000, addNetworkServiceProviderTimer, function() {
-                                                                              $.ajax({
-                                                                                url: createURL("queryAsyncJobResult&jobId=" + json.addnetworkserviceproviderresponse.jobid),
-                                                                                dataType: "json",
-                                                                                success: function(json) {
-                                                                                  var result = json.queryasyncjobresultresponse;
-                                                                                  if (result.jobstatus == 0) {
-                                                                                    return; //Job has not completed
-                                                                                  }
-                                                                                  else {
-                                                                                    $("body").stopTime(addNetworkServiceProviderTimer);
-                                                                                    if (result.jobstatus == 1) {
-                                                                                      args.data.returnedNetscalerProvider = result.jobresult.networkserviceprovider;
-
-                                                                                      stepFns.addNetscalerDevice({
-                                                                                        data: args.data
-                                                                                      });
-                                                                                    }
-                                                                                    else if (result.jobstatus == 2) {
-                                                                                      alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
-                                                                                    }
-                                                                                  }
-                                                                                },
-                                                                                error: function(XMLHttpResponse) {
-                                                                                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                                                  alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
-                                                                                }
-                                                                              });
-                                                                            });
-                                                                          }
-                                                                        });
-                                                                        //add netscaler provider (end)
-                                                                      }
-                                                                      else { //selectedNetworkOfferingHavingNetscaler == false
-                                                                        //create a guest network for basic zone
-                                                                        var array2 = [];
-                                                                        array2.push("&zoneid=" + args.data.returnedZone.id);
-                                                                        array2.push("&name=guestNetworkForBasicZone");
-                                                                        array2.push("&displaytext=guestNetworkForBasicZone");
-                                                                        array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
-                                                                        $.ajax({
-                                                                          url: createURL("createNetwork" + array2.join("")),
-                                                                          dataType: "json",
-                                                                          async: false,
-                                                                          success: function(json) {
-                                                                            //basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
-                                                                            stepFns.addPod({
-                                                                              data: $.extend(args.data, {
-                                                                                returnedGuestNetwork: json.createnetworkresponse.network
-                                                                              })
-                                                                            });
-                                                                          }
-                                                                        });
-                                                                      }
+                                                                    if (result.jobstatus == 1) { //Security group provider has been enabled successfully      
+																																			stepFns.addNetscalerProvider({
+																																				data: args.data
+																																			});																																			
                                                                     }
                                                                     else if (result.jobstatus == 2) {
                                                                       alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
@@ -1553,70 +1494,10 @@
                                                           }
                                                         });
                                                       }
-                                                      else { //selectedNetworkOfferingHavingSG == false                                                        
-																												//netscaler
-																												if(selectedNetworkOfferingHavingNetscaler == true) { //inside "selectedNetworkOfferingHavingSG == true" section
-																													//add netscaler provider (start)
-																													$.ajax({
-																														url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
-																														dataType: "json",
-																														async: false,
-																														success: function(json) {
-																															var addNetworkServiceProviderTimer = "asyncJob_" + json.addnetworkserviceproviderresponse.jobid;
-																															$("body").everyTime(2000, addNetworkServiceProviderTimer, function() {
-																																$.ajax({
-																																	url: createURL("queryAsyncJobResult&jobId=" + json.addnetworkserviceproviderresponse.jobid),
-																																	dataType: "json",
-																																	success: function(json) {
-																																		var result = json.queryasyncjobresultresponse;
-																																		if (result.jobstatus == 0) {
-																																			return; //Job has not completed
-																																		}
-																																		else {
-																																			$("body").stopTime(addNetworkServiceProviderTimer);
-																																			if (result.jobstatus == 1) {
-																																				args.data.returnedNetscalerProvider = result.jobresult.networkserviceprovider;
-
-																																				stepFns.addNetscalerDevice({
-																																					data: args.data
-																																				});
-																																			}
-																																			else if (result.jobstatus == 2) {
-																																				alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
-																																			}
-																																		}
-																																	},
-																																	error: function(XMLHttpResponse) {
-																																		var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																																		alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
-																																	}
-																																});
-																															});
-																														}
-																													});
-																													//add netscaler provider (end)
-																												}
-																												else { //selectedNetworkOfferingHavingNetscaler == false
-																													//create a guest network for basic zone
-																													var array2 = [];
-																													array2.push("&zoneid=" + args.data.returnedZone.id);
-																													array2.push("&name=guestNetworkForBasicZone");
-																													array2.push("&displaytext=guestNetworkForBasicZone");
-																													array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
-																													$.ajax({
-																														url: createURL("createNetwork" + array2.join("")),
-																														dataType: "json",
-																														async: false,
-																														success: function(json) {
-																															//basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
-																															stepFns.addPod({
-																																data: $.extend(args.data, {
-																																	returnedGuestNetwork: json.createnetworkresponse.network
-																																})
-																															});
-																														}
-																													});
-																												}																												
+                                                      else { //selectedNetworkOfferingHavingSG == false                                                        																											
+                                                        stepFns.addNetscalerProvider({
+																													data: args.data
+																												});                                                       																									
                                                       }
                                                     }
                                                     else if (result.jobstatus == 2) {
@@ -1808,7 +1689,58 @@
             });
           }
         },
-
+				
+				addNetscalerProvider: function(args) {   	
+					if(selectedNetworkOfferingHavingNetscaler == true) {					  
+					  message(dictionary['message.adding.Netscaler.provider']); 
+						
+						$.ajax({
+							url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
+							dataType: "json",
+							async: false,
+							success: function(json) {
+								var addNetworkServiceProviderTimer = "asyncJob_" + json.addnetworkserviceproviderresponse.jobid;
+								$("body").everyTime(2000, addNetworkServiceProviderTimer, function() {
+									$.ajax({
+										url: createURL("queryAsyncJobResult&jobId=" + json.addnetworkserviceproviderresponse.jobid),
+										dataType: "json",
+										success: function(json) {
+											var result = json.queryasyncjobresultresponse;
+											if (result.jobstatus == 0) {
+												return; //Job has not completed
+											}
+											else {
+												$("body").stopTime(addNetworkServiceProviderTimer);
+												if (result.jobstatus == 1) {
+													args.data.returnedNetscalerProvider = result.jobresult.networkserviceprovider;                       
+													stepFns.addNetscalerDevice({
+														data: args.data
+													});
+												}
+												else if (result.jobstatus == 2) {
+													alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
+												}
+											}
+										},
+										error: function(XMLHttpResponse) {
+											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+											alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
+										}
+									});
+								});
+							}
+						});
+						//add netscaler provider (end)
+					}
+					else { //selectedNetworkOfferingHavingNetscaler == false
+						//create a guest network for basic zone						
+						stepFns.addGuestNetwork({
+							data: args.data
+						});							
+					}		
+        },
+				
+				
         addNetscalerDevice: function(args) {
           message(dictionary['message.adding.Netscaler.device']); 
 
@@ -1936,30 +1868,10 @@
                                   }
                                   else {
                                     $("body").stopTime(updateNetworkServiceProviderTimer);
-                                    if(result.jobstatus == 1) {
-                                      //create a guest network for basic zone
-                                      var array2 = [];
-                                      array2.push("&zoneid=" + args.data.returnedZone.id);
-                                      array2.push("&name=guestNetworkForBasicZone");
-                                      array2.push("&displaytext=guestNetworkForBasicZone");
-                                      array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
-                                      $.ajax({
-                                        url: createURL("createNetwork" + array2.join("")),
-                                        dataType: "json",
-                                        async: false,
-                                        success: function(json) {
-                                          //basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
-                                          stepFns.addPod({
-                                            data: $.extend(args.data, {
-                                              returnedGuestNetwork: json.createnetworkresponse.network
-                                            })
-                                          });
-                                        },
-                                        error: function(XMLHttpResponse) {
-                                          var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                          alert("failed to create a guest network for basic zone. Error: " + errorMsg);
-                                        }
-                                      });
+                                    if(result.jobstatus == 1) {																		 
+																			stepFns.addGuestNetwork({
+																				data: args.data
+																			});		
                                     }
                                     else if(result.jobstatus == 2) {
                                       alert("failed to enable Netscaler provider. Error: " + _s(result.jobresult.errortext));
@@ -1989,7 +1901,34 @@
             }
           });
         },
-
+				
+				addGuestNetwork: function(args) {  //create a guest network for basic zone
+          message(dictionary['message.creating.guest.network']); 
+          
+					var array2 = [];
+					array2.push("&zoneid=" + args.data.returnedZone.id);
+					array2.push("&name=guestNetworkForBasicZone");
+					array2.push("&displaytext=guestNetworkForBasicZone");
+					array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
+					$.ajax({
+						url: createURL("createNetwork" + array2.join("")),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+							//basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
+							stepFns.addPod({
+								data: $.extend(args.data, {
+									returnedGuestNetwork: json.createnetworkresponse.network
+								})
+							});
+						},
+						error: function(XMLHttpResponse) {
+							var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+							alert("failed to create a guest network for basic zone. Error: " + errorMsg);
+						}
+					});																			
+				},
+								
         addPod: function(args) {
           message(dictionary['message.creating.pod']); 
 
