@@ -329,6 +329,15 @@
         }
       }
     },
+				
+		remove: function($instanceRow, args) {	
+		  uiActions.standard($instanceRow, args, { 
+        complete: function(args) {     
+					$instanceRow.remove();										
+        }
+      });
+    },
+				
     edit: function($instanceRow, args) {
       var $td = $instanceRow.find('td.editable');
       var $edit = $td.find('div.edit');
