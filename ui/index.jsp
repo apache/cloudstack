@@ -2907,6 +2907,8 @@ dictionary = {
 'error.invalid.username.password': '<fmt:message key="error.invalid.username.password" />',
 'message.enabling.security.group.provider': '<fmt:message key="message.enabling.security.group.provider" />',
 'message.adding.Netscaler.provider': '<fmt:message key="message.adding.Netscaler.provider" />',
-'message.creating.guest.network': '<fmt:message key="message.creating.guest.network" />'
+'message.creating.guest.network': '<fmt:message key="message.creating.guest.network" />',
+'label.action.delete.physical.network': '<fmt:message key="label.action.delete.physical.network" />',
+'message.action.delete.physical.network': '<fmt:message key="message.action.delete.physical.network" />'
 };
 </script>
