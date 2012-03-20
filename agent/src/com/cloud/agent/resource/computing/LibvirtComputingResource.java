@@ -1185,10 +1185,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (!vlanAllocatedToVM.containsKey(ip.getVlanId())) {
                     /*plug a vif into router*/
                     VifHotPlug(conn, routerName, ip.getVlanId(), ip.getVifMacAddress());
-                    vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
+                    vlanAllocatedToVM.put(ip.getVlanId(), nicPos);
+                    
+                    networkUsage(routerIp, "addVif", "eth" + nicPos);
+                    nicPos++;
                 }
                 nicNum = vlanAllocatedToVM.get(ip.getVlanId());
-                networkUsage(routerIp, "addVif", "eth" + nicNum);
+               
                 result = _virtRouterResource.assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
                                                                    ip.isFirstIP(), ip.isSourceNat(), 
                                                                    ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
