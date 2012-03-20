@@ -308,7 +308,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	private boolean _can_bridge_firewall;
 	protected String _localStoragePath;
 	protected String _localStorageUUID;
-	private Pair<String, String> _pifs;
+	private Map<String, String> _networkMaps = new HashMap<String, String>();
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 
 	protected boolean _disconnected = true;
@@ -698,20 +698,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			throw new ConfigurationException(e.getMessage());
 		}
 
-		_pifs = getPifs();
-		if (_pifs.first() == null) {
-			s_logger.debug("Failed to get private nic name");
-			throw new ConfigurationException("Failed to get private nic name");
-		}
-
-		if (_pifs.second() == null) {
-			s_logger.debug("Failed to get public nic name");
-			throw new ConfigurationException("Failed to get public nic name");
-		}
-		s_logger.debug("Found pif: " + _pifs.first() + " on " + _privBridgeName
-				+ ", pif: " + _pifs.second() + " on " + _publicBridgeName);
-
-		_can_bridge_firewall = can_bridge_firewall(_pifs.second());
+		String prvPhysicalDev = getPhysicalNetwork(_privBridgeName);
+		_can_bridge_firewall = can_bridge_firewall(prvPhysicalDev);
 
 		_localGateway = Script
 				.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
@@ -729,7 +717,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (_migrateSpeed == -1) {
 			//get guest network device speed
 			_migrateSpeed = 0;
-			String speed = Script.runSimpleBashScript("ethtool " + _pifs.second() + " |grep Speed | cut -d \\  -f 2");
+			String speed = Script.runSimpleBashScript("ethtool " + prvPhysicalDev + " |grep Speed | cut -d \\  -f 2");
 			if (speed != null) {
 				String[] tokens = speed.split("M");
 				if (tokens.length == 2) {
@@ -738,7 +726,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 					} catch (Exception e) {
 						
 					}
-					s_logger.debug("device " + _pifs.second() + " has speed: " + String.valueOf(_migrateSpeed));
+					s_logger.debug("device " + prvPhysicalDev + " has speed: " + String.valueOf(_migrateSpeed));
 				}
 			}
 			params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
@@ -747,33 +735,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 		return true;
 	}
-
-	private Pair<String, String> getPifs() {
-		/* get pifs from bridge */
-		String pubPif = null;
-		String privPif = null;
-		String vlan = null;
-		if (_publicBridgeName != null) {
-			pubPif = Script.runSimpleBashScript("brctl show | grep "
-					+ _publicBridgeName + " | awk '{print $4}'");
-			vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pubPif);
-			if (vlan != null && !vlan.isEmpty()) {
-				pubPif = Script
-						.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
-								+ pubPif + " | awk {'print $2'}");
-			}
+	
+	private String getPhysicalNetwork(String bridgeName) {
+		String physcialDev = _networkMaps.get(bridgeName);
+		if (physcialDev != null) {
+			return physcialDev;
 		}
-		if (_guestBridgeName != null) {
-			privPif = Script.runSimpleBashScript("brctl show | grep "
-					+ _guestBridgeName + " | awk '{print $4}'");
-			vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + privPif);
-			if (vlan != null && !vlan.isEmpty()) {
-				privPif = Script
-						.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
-								+ privPif + " | awk {'print $2'}");
-			}
+		
+		physcialDev = Script.runSimpleBashScript("brctl show | grep "
+				+ bridgeName + " | awk '{print $4}'");
+		if (physcialDev == null) {
+			return null;
 		}
-		return new Pair<String, String>(privPif, pubPif);
+		String vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + physcialDev);
+		if (vlan != null && !vlan.isEmpty()) {
+			physcialDev = Script
+					.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
+							+ physcialDev + " | awk {'print $2'}");
+		}
+		if (physcialDev != null)
+			_networkMaps.put(bridgeName, physcialDev);
+		return physcialDev;
 	}
 
 	private boolean checkNetwork(String networkName) {
@@ -781,11 +763,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			return true;
 		}
 
-		String name = Script.runSimpleBashScript("brctl show | grep "
-				+ networkName + " | awk '{print $4}'");
+		String name = getPhysicalNetwork(networkName);
 		if (name == null) {
 			return false;
 		} else {
+			
 			return true;
 		}
 	}
@@ -1248,15 +1230,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			int i = 0;
 			String result = null;
 			int nicNum = 0;
+			
 			for (IpAddressTO ip : ips) {
+				boolean addnewNic = false;
 				if (!vlanAllocatedToVM.containsKey(ip.getVlanId())) {
 					/* plug a vif into router */
 					VifHotPlug(conn, routerName, ip.getVlanId(),
 							ip.getVifMacAddress());
 					vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
+					addnewNic = true;
 				}
 				nicNum = vlanAllocatedToVM.get(ip.getVlanId());
-				networkUsage(routerIp, "addVif", "eth" + nicNum);
+				if (addnewNic) {
+					networkUsage(routerIp, "addVif", "eth" + nicNum);
+				}
 				result = _virtRouterResource.assignPublicIpAddress(routerName,
 						routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(),
 						ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(),
@@ -2079,7 +2066,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				if (nic.getType() == TrafficType.Guest) {
 					if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 							&& !vlanId.equalsIgnoreCase("untagged")) {
-						createVlanBr(vlanId, _pifs.first());
+						createVlanBr(vlanId, getPhysicalNetwork(nic.getName()));
 					}
 				} else if (nic.getType() == TrafficType.Control) {
 					/* Make sure the network is still there */
@@ -2087,7 +2074,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				} else if (nic.getType() == TrafficType.Public) {
 					if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 							&& !vlanId.equalsIgnoreCase("untagged")) {
-						createVlanBr(vlanId, _pifs.second());
+						createVlanBr(vlanId, getPhysicalNetwork(nic.getName()));
 					}
 				}
 			}
@@ -2712,6 +2699,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		InterfaceDef intf = new InterfaceDef();
 
 		String vlanId = null;
+		String nicName = _privBridgeName;
+		if (nic.getName() != null) {
+			nicName = nic.getName();
+		}
 		if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
 			URI broadcastUri = nic.getBroadcastUri();
 			vlanId = broadcastUri.getHost();
@@ -2720,10 +2711,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (nic.getType() == TrafficType.Guest) {
 			if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 					&& !vlanId.equalsIgnoreCase("untagged")) {
-				String brName = createVlanBr(vlanId, _pifs.first());
+				String brName = createVlanBr(vlanId, getPhysicalNetwork(nicName));
 				intf.defBridgeNet(brName, null, nic.getMac(), model);
 			} else {
-				intf.defBridgeNet(_guestBridgeName, null, nic.getMac(), model);
+				intf.defBridgeNet(nicName, null, nic.getMac(), model);
 			}
 		} else if (nic.getType() == TrafficType.Control) {
 			/* Make sure the network is still there */
@@ -2732,13 +2723,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		} else if (nic.getType() == TrafficType.Public) {
 			if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 					&& !vlanId.equalsIgnoreCase("untagged")) {
-				String brName = createVlanBr(vlanId, _pifs.second());
+				String brName = createVlanBr(vlanId, getPhysicalNetwork(nicName));
 				intf.defBridgeNet(brName, null, nic.getMac(), model);
 			} else {
-				intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), model);
+				intf.defBridgeNet(nicName, null, nic.getMac(), model);
 			}
 		} else if (nic.getType() == TrafficType.Management) {
-			intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
+			intf.defBridgeNet(nicName, null, nic.getMac(), model);
 		} else if (nic.getType() == TrafficType.Storage) {
 			String storageBrName = nic.getName() == null ? _privBridgeName
 					: nic.getName();

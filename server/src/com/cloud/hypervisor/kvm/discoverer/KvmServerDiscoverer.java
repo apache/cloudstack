@@ -181,26 +181,15 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			}
 			
-			List<PhysicalNetworkSetupInfo> networks = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
-			if (networks.size() < 1) {
-				s_logger.debug("Can't find physical network devices on zone: " + dcId + ", use the default from kvm.{private|public|guest}.devices");
-			} else {
-				PhysicalNetworkSetupInfo network = networks.get(0);
-				String pubNetName = network.getPublicNetworkName();
-				if (pubNetName != null) {
-					_kvmPublicNic = pubNetName;
-				}
-				String prvNetName = network.getPrivateNetworkName();
-				if (prvNetName != null) {
-					_kvmPrivateNic = prvNetName;
-				}
-				String guestNetName = network.getGuestNetworkName();
-				if (guestNetName != null) {
-					_kvmGuestNic = guestNetName;
-				}
-			}
-			
-			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.KVM);
+
+            if (privateNetworkLabel != null) {
+            	_kvmPublicNic = privateNetworkLabel;
+            	_kvmPrivateNic = privateNetworkLabel;
+            	_kvmGuestNic = privateNetworkLabel;
+            }
+
+            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 			
 			if (_kvmPublicNic != null) {
 				parameters += " --pubNic=" + _kvmPublicNic;
