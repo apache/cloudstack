@@ -34,17 +34,13 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
-import com.cloud.network.ovs.dao.OvsTunnelDao;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -318,13 +314,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 
     @Override
     public void CheckAndDestroyTunnel(VirtualMachine vm, Network nw) {
-        s_logger.debug("### DESTROYING YOUR TUNNELS!");
     	if (!_isEnabled) {
             return;
         }
         
         List<UserVmVO> userVms = _userVmDao.listByAccountIdAndHostId(vm.getAccountId(), vm.getHostId());
-        s_logger.debug("### User Vms:" + userVms.size());
         if (vm.getType() == VirtualMachine.Type.User) {
             if (userVms.size() > 1) {
                 return;
@@ -333,20 +327,18 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             List<DomainRouterVO> routers = _routerDao.findByNetwork(nw.getId());
             for (DomainRouterVO router : routers) {
                 if (router.getHostId() == vm.getHostId()) {
-                	s_logger.debug("### Not destroying because on same host as router");
                 	return;
                 }
             }
         } else if (vm.getType() == VirtualMachine.Type.DomainRouter && userVms.size() != 0) {
                 return;
         }
-        s_logger.debug("### I WILL DESTROYYY");
         try {
             /* Now we are last one on host, destroy the bridge with all 
              * the tunnels for this network  */
         	int key = getGreKey(nw);
             Command cmd = new OvsDestroyBridgeCommand(nw.getId(), key);
-            s_logger.debug("### Destroying bridge for network " + nw.getId() + " on host:" + vm.getHostId());
+            s_logger.debug("Destroying bridge for network " + nw.getId() + " on host:" + vm.getHostId());
             Answer ans = _agentMgr.send(vm.getHostId(), cmd);
             handleDestroyBridgeAnswer(ans, vm.getHostId(), nw.getId());
             
@@ -356,7 +348,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             	// If the tunnel was not successfully created don't bother to remove it
             	if (p.getState().equals("SUCCESS")) {
 	                cmd = new OvsDestroyTunnelCommand(p.getNetworkId(), key, p.getPortName());
-	                s_logger.debug("### Destroying tunnel to " + vm.getHostId() + 
+	                s_logger.debug("Destroying tunnel to " + vm.getHostId() + 
 	                		" from " + p.getFrom());
 	                ans = _agentMgr.send(p.getFrom(), cmd);
 	                handleDestroyTunnelAnswer(ans, p.getFrom(), p.getTo(), p.getNetworkId());
@@ -367,22 +359,5 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         }
         
     }
-
-	@Override
-	public void applyDefaultFlow(VirtualMachine instance,
-			DeployDestination dest) {
-		if (!_isEnabled) {
-			return;
-		}
-		
-		VirtualMachine.Type vmType = instance.getType();
-		if (vmType != VirtualMachine.Type.User
-				&& vmType != VirtualMachine.Type.DomainRouter) {
-			return;
-		}
-		
-		s_logger.debug("### Applying rules for allowing broadcast traffic");
-		
-	}
 
 }
