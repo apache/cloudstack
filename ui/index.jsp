@@ -2876,6 +2876,9 @@ dictionary = {
 'error.please.specify.physical.network.tags': '<fmt:message key="error.please.specify.physical.network.tags" />',
 'error.unable.to.reach.management.server': '<fmt:message key="error.unable.to.reach.management.server" />',
 'label.internal.name': '<fmt:message key="label.internal.name" />',
-'error.invalid.username.password': '<fmt:message key="error.invalid.username.password" />'
+'error.invalid.username.password': '<fmt:message key="error.invalid.username.password" />',
+'message.enabling.security.group.provider': '<fmt:message key="message.enabling.security.group.provider" />',
+'message.adding.Netscaler.provider': '<fmt:message key="message.adding.Netscaler.provider" />',
+'message.creating.guest.network': '<fmt:message key="message.creating.guest.network" />'
 };
 </script>
