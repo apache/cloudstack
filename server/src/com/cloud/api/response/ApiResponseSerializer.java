@@ -213,6 +213,7 @@ public class ApiResponseSerializer {
                             }
                             serializeResponseObjXML(sb, subObj);
                         } else if (value instanceof IdentityProxy) {
+                        	// Only exception reponses carry a list of IdentityProxy objects.
                         	IdentityProxy idProxy = (IdentityProxy)value;                        	
                         	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
                         	if(!id.isEmpty()) {
@@ -240,6 +241,19 @@ public class ApiResponseSerializer {
                     }
                 } else if (fieldValue instanceof Date) {
                     sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");                
+                } else if (fieldValue instanceof IdentityProxy) {                	
+                	IdentityProxy idProxy = (IdentityProxy)fieldValue;
+                	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
+                	if(!id.isEmpty()) {
+                		IdentityDao identityDao = new IdentityDaoImpl();
+                		if(idProxy.getTableName() != null) {
+                		    id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                		} else {
+                		    s_logger.warn("IdentityProxy sanity check issue, invalid IdentityProxy table name found in class: " + obj.getClass().getName());
+                		}
+                	}
+                	if(id != null && !id.isEmpty())
+                		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
