@@ -34,7 +34,7 @@ class OvmVolumeEncoder(json.JSONEncoder):
 def toOvmVolume(jStr):
     return json.loads(jStr, cls=OvmVolumeDecoder)
 
-def fromOvmVlolume(vol):
+def fromOvmVolume(vol):
     return normalizeToGson(json.dumps(vol, cls=OvmVolumeEncoder))
 
 class OvmVolume(OvmObject):
@@ -66,7 +66,7 @@ class OvmVolume(OvmObject):
             filePath = join(path, vol.name)
             exceptionIfNoSuccess(xen_create_disk(filePath, BytesToM(vol.size)), "Create datadisk %s failed"%filePath)
             vol.path = filePath
-            rs = fromOvmVlolume(vol)
+            rs = fromOvmVolume(vol)
             logger.debug(OvmVolume.createDataDisk, rs)
             return rs
         except Exception, e:
@@ -99,7 +99,7 @@ class OvmVolume(OvmObject):
             vol.size = volSize
             vol.uuid = volUuid
             vol.poolUuid = poolUuid
-            rs = fromOvmVlolume(vol)
+            rs = fromOvmVolume(vol)
             logger.debug(OvmVolume.createFromTemplate, rs)
             return rs
         except Exception, e:
