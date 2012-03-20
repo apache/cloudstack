@@ -45,10 +45,21 @@
       function(network) {
         var $network = $(network);
         var $guestForm = $wizard.find('form[guest-network-id=' + $network.index() + ']');
+        var trafficTypeConfiguration = {};
+        
+        $network.find('.traffic-type-draggable').each(function() {
+          var $trafficType = $(this);
+          var trafficTypeID = $trafficType.attr('traffic-type-id');
+          
+
+          trafficTypeConfiguration[trafficTypeID] = $trafficType.data('traffic-type-data');
+        });
 
         return {
           id: $network.index(),
           name: $network.find('.field.name input[type=text]').val(),
+
+          // Traffic type list
           trafficTypes: $.map(
             $network.find('.traffic-type-draggable'),
             function(trafficType) {
@@ -57,6 +68,10 @@
               return $trafficType.attr('traffic-type-id');
             }
           ),
+
+          // Traffic type configuration data
+          trafficTypeConfiguration: trafficTypeConfiguration,
+          
           guestConfiguration: $guestForm.size() ?
             cloudStack.serializeForm($guestForm) : null
         };
@@ -93,7 +108,7 @@
         var $storageTrafficItem = $(storageTrafficItem);
         var storageTrafficData = {};
         var fields = [
-				  'gateway',
+          'gateway',
           'netmask',
           'vlanid',
           'startip',
@@ -139,6 +154,30 @@
         message: dictionary['message.please.add.at.lease.one.traffic.range']
       });
       return false;
+    },
+
+    physicalNetworks: function($form) {
+      var $enabledPhysicalNetworks = $form.filter(':not(.disabled)').filter(function() {
+        return $(this).find('.traffic-type-draggable').size();
+      });
+      var $trafficTypes = $enabledPhysicalNetworks.find('.traffic-type-draggable');
+      var $configuredTrafficTypes = $trafficTypes.filter(function() {
+        var $trafficType = $(this);
+
+        return $trafficType.data('traffic-type-data') &&
+          $trafficType.data('traffic-type-data').label.length >= 1;
+      });
+
+      if ($enabledPhysicalNetworks.size() > 1 &&
+          $configuredTrafficTypes.size() != $trafficTypes.size()) {
+        cloudStack.dialog.notice({
+          message: _l('message.configure.all.traffic.types')
+        });
+        
+        return false;
+      }
+
+      return true;
     }
   };
 
@@ -153,6 +192,8 @@
 
     if ($multiEditForm.size()) {
       isCustomValidated = customValidation.networkRanges($multiEditForm);
+    } else if ($physicalNetworks.size()) {
+      isCustomValidated = customValidation.physicalNetworks($physicalNetworks);
     } else {
       isCustomValidated = true;
     }
@@ -160,35 +201,114 @@
     return isCustomValidated;
   };
 
+  var isAdvancedNetwork = function($wizard) {
+    return getData($wizard, { all: true })['network-model'] == 'Advanced';
+  };
+
   /**
    * Setup physical network wizard UI
    */
   var physicalNetwork = {
     init: function($wizard) {
-      // Initialize initial physical networks
-      for (var i = 0; i < 2; i++) {
-        var $physicalNetwork = physicalNetwork.add($wizard);
-        if (i == 0) {
-          $physicalNetwork.find('.button.remove.physical-network').remove();
-        }
+      var $existingPhysicalNetworks = physicalNetwork.getNetworks($wizard);
+
+      // Initialize physical networks
+      if (!$existingPhysicalNetworks.size()) {
+        physicalNetwork.add($wizard);
+      } else if (!isAdvancedNetwork($wizard)) {
+        $existingPhysicalNetworks.filter(':first').siblings().each(function() {
+          physicalNetwork.remove($(this));
+        });
       }
 
-      // First physical network gets required traffic types
-      $(physicalNetwork.requiredTrafficTypes).each(function () {
-        var $firstPhysicalNetwork = physicalNetwork.getPhysicalNetworks($wizard).filter(':first');
+      physicalNetwork.updateNetworks(physicalNetwork.getNetworks($wizard));
 
-        physicalNetwork.assignTrafficType(this, $firstPhysicalNetwork);
+      $wizard.find('.traffic-types-drag-area ul li').removeClass('required disabled clone');
+
+      // Setup clone traffic types
+      $(physicalNetwork.cloneTrafficTypes($wizard)).each(function() {
+        var trafficTypeID = this;
+
+        $wizard.find('.traffic-types-drag-area ul li').filter(function() {
+          return $(this).hasClass(trafficTypeID);
+        }).addClass('clone');
+      });
+
+      // Setup required traffic types
+      $(physicalNetwork.requiredTrafficTypes($wizard)).each(function () {
+        var trafficTypeID = this;
+        var $firstPhysicalNetwork = physicalNetwork.getNetworks($wizard).filter(':first');
+
+        // First physical network gets required traffic types
+        physicalNetwork.assignTrafficType(trafficTypeID, $firstPhysicalNetwork);
+
+        $wizard.find('.traffic-types-drag-area ul li').filter(function() {
+          return $(this).hasClass(trafficTypeID);
+        }).addClass('required');
+      });
+
+      // Setup disabled traffic types
+      $(physicalNetwork.disabledTrafficTypes($wizard)).each(function() {
+        var trafficTypeID = this;
+        var $trafficType = physicalNetwork.getTrafficType(this, $wizard);
+
+        physicalNetwork.unassignTrafficType($trafficType);
+
+        $wizard.find('.traffic-types-drag-area ul li').filter(function() {
+          return $(this).hasClass(trafficTypeID);
+        }).addClass('disabled');
       });
     },
 
     /**
-     * Required traffic type IDs for proper validation
+     * Traffic type edit dialog
      */
-    requiredTrafficTypes: [
-      'management',
-      'public',
-      'guest'
-    ],
+    editTrafficTypeDialog: function($trafficType) {
+      var trafficData = $trafficType.data('traffic-type-data') ?
+            $trafficType.data('traffic-type-data') : {};
+      var hypervisor = getData($trafficType.closest('.zone-wizard')).zone.hypervisor;
+
+      cloudStack.dialog.createForm({
+        form: {
+          title: _l('label.edit.traffic.type'),
+          desc: _l('message.edit.traffic.type'),
+          fields: {
+            label: { label: hypervisor + ' ' + _l('label.label'), defaultValue: trafficData.label }
+          }
+        },
+
+        after: function(args) {
+          $trafficType.data('traffic-type-data', args.data);
+        }
+      });
+    },
+
+    /**
+     * Get required traffic type IDs for proper validation
+     */
+    requiredTrafficTypes: function($wizard) {
+      return cloudStack.zoneWizard.requiredTrafficTypes({
+        data: getData($wizard)
+      });
+    },
+
+    /**
+     * Get required traffic type IDs for proper validation
+     */
+    disabledTrafficTypes: function($wizard) {
+      return cloudStack.zoneWizard.disabledTrafficTypes({
+        data: getData($wizard)
+      });
+    },
+
+    /**
+     * Get clone-type traffic type IDs for proper validation
+     */
+    cloneTrafficTypes: function($wizard) {
+      return cloudStack.zoneWizard.cloneTrafficTypes({
+        data: getData($wizard)
+      });
+    },
 
     /**
      * Physical network step: Renumber network form items
@@ -261,7 +381,7 @@
      *
      * @param $container Physical network step - main container
      */
-    getPhysicalNetworks: function($container) {
+    getNetworks: function($container) {
       return $container.find('.select-container.multi');
     },
 
@@ -271,7 +391,7 @@
      * @param $trafficType
      */
     isTrafficTypeClone: function($trafficType) {
-      return $trafficType.hasClass('clone');
+      return physicalNetwork.getOriginalTrafficContainer($trafficType).parent().hasClass('clone');
     },
 
     /**
@@ -280,10 +400,12 @@
      * @param trafficTypeID ID of desired traffic type
      * @param $physicalNetwork Physical network elem
      */
-    assignTrafficType: function(trafficTypeID, $physicalNetwork) {
+    assignTrafficType: function(trafficTypeID, $physicalNetwork, data) {
       var $container = physicalNetwork.getMainContainer($physicalNetwork);
       var $trafficType = physicalNetwork.getTrafficType(trafficTypeID, $container);
       var $dropArea = $physicalNetwork.find('.drop-container ul');
+
+      if ($physicalNetwork.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').size()) return false;
 
       if (physicalNetwork.isTrafficTypeClone($trafficType)) {
         if (!physicalNetwork.getTrafficType(trafficTypeID, $physicalNetwork).size()) {
@@ -298,7 +420,11 @@
         $trafficType.appendTo($dropArea);
       }
 
-      physicalNetwork.update($.merge($physicalNetwork, $physicalNetwork.siblings()));
+      if (data) {
+        $trafficType.data('traffic-type-data', data);
+      }
+
+      physicalNetwork.updateNetworks($.merge($physicalNetwork, $physicalNetwork.siblings()));
 
       return $trafficType;
     },
@@ -310,25 +436,26 @@
      * @param $container Physical network wizard step container
      * @param $physicalNetwork (optional) Specific physical network to remove from -- only for clones
      */
-    unassignTrafficType: function(trafficTypeID, $container, $physicalNetwork) {
-      var $trafficType = physicalNetwork.getTrafficType(trafficTypeID, $container);
+    unassignTrafficType: function($trafficType) {
+      var $wizard = $trafficType.closest('.zone-wizard');
       var $originalContainer = physicalNetwork.getOriginalTrafficContainer($trafficType);
+      var $physicalNetworks = physicalNetwork.getNetworks($wizard);
+      var trafficTypeID = $trafficType.attr('traffic-type-id');
 
-      if (physicalNetwork.isTrafficTypeClone($trafficType)) {
-        // Multiple traffic type elems present -- only get from physical network(s)
-        if ($physicalNetwork) {
-          $trafficType = physicalNetwork.getTrafficType(trafficTypeID, $physicalNetwork);
-        } else {
-          $trafficType = physicalNetwork.getTrafficType(trafficTypeID, physicalNetwork.getPhysicalNetworks($container));
-        }
-
-        $trafficType.remove();
-      } else {
-        // Just 1 traffic type elem present
+      if (!physicalNetwork.isTrafficTypeClone($trafficType) &&
+        $.inArray(trafficTypeID, physicalNetwork.requiredTrafficTypes($wizard)) == -1) {
         $trafficType.appendTo($originalContainer);
-      }
+      } else {
+        physicalNetwork.assignTrafficType(
+          trafficTypeID,
+          $physicalNetworks.filter(':first')
+        );
 
-      physicalNetwork.update(physicalNetwork.getPhysicalNetworks($container));
+        if (physicalNetwork.isTrafficTypeClone($trafficType) &&
+            $physicalNetworks.find('.traffic-type-draggable[traffic-type-id=' + trafficTypeID + ']').size() > 1) {
+          $trafficType.remove();
+        }
+      }
 
       return $trafficType;
     },
@@ -336,7 +463,11 @@
     /**
      * Returns true if new physical network item needs to be added
      */
-    needNew: function($containers) {
+    needsNewNetwork: function($containers) {
+      // Basic zones do not have multiple physical networks
+      if (!isAdvancedNetwork($containers.closest('.zone-wizard')))
+        return false;
+
       var $emptyContainers = $containers.filter(function() {
         return !$(this).find('li').size();
       });
@@ -347,9 +478,11 @@
     /**
      * Cleanup physical network containers
      */
-    update: function($containers) {
+    updateNetworks: function($containers) {
       var $mainContainer = physicalNetwork.getMainContainer($containers);
-      var $allPhysicalNetworks = physicalNetwork.getPhysicalNetworks($mainContainer);
+      var $allPhysicalNetworks = physicalNetwork.getNetworks($mainContainer);
+      var containerTotal = isAdvancedNetwork($containers.closest('.zone-wizard')) ?
+        2 : 1;
 
       $allPhysicalNetworks.each(function() {
         var $ul = $(this).find('.drop-container ul');
@@ -366,7 +499,7 @@
       $containers.each(function() {
         var $currentContainer = $(this);
         if (!$currentContainer.find('li').size() &&
-            $containers.size() > 2) {
+            $containers.size() > containerTotal) {
           $currentContainer.remove();
         }
       });
@@ -374,9 +507,11 @@
       $containers = $containers.closest('.setup-physical-network')
         .find('.select-container.multi');
 
-      if (physicalNetwork.needNew($containers)) {
+      if (physicalNetwork.needsNewNetwork($containers)) {
         physicalNetwork.add($mainContainer.parent());
       }
+
+      $containers.filter(':first').find('.remove.physical-network').remove();
 
       return $containers;
     },
@@ -396,7 +531,9 @@
 
         stop: function(event, ui) {
           $(this).removeClass('disabled');
-        }
+        },
+
+        cancel: '.edit-traffic-type'
       };
     },
 
@@ -439,19 +576,20 @@
           var $ul = $(this).find('ul');
 
           $ul.removeClass('active');
-          physicalNetwork.update($(this).closest('.select-container.multi'));
+          physicalNetwork.updateNetworks($(this).closest('.select-container.multi'));
         },
 
         drop: function(event, ui) {
           var trafficTypeID = ui.draggable.attr('traffic-type-id');
           var $physicalNetwork = $(this).closest('.select-container.multi');
-
+          var trafficTypeData = ui.draggable.data('traffic-type-data');
+          
           if (trafficTypeID == 'guest' &&
             ui.draggable.closest('.select-container.multi').size()) {
             ui.draggable.remove();
           }
 
-          physicalNetwork.assignTrafficType(trafficTypeID, $physicalNetwork);
+          physicalNetwork.assignTrafficType(trafficTypeID, $physicalNetwork, trafficTypeData);
         }
       });
 
@@ -463,26 +601,24 @@
 
       // Initialize new default network form elem
       $physicalNetworkItem.append(
-        $deleteButton,
         $icon,
         $nameField,
         $idField,
         $dropContainer
       );
+
+      // Only advanced zones can remove physical network
+      if (isAdvancedNetwork($wizard)) {
+        $physicalNetworkItem.prepend($deleteButton);
+      }
+
       $physicalNetworkItem.hide().appendTo($container).fadeIn('fast');
       $physicalNetworkItem.find('.name input').val('Physical Network ' + parseInt($physicalNetworkItem.index() + 1));
       physicalNetwork.renumberFormItems($container);
 
       // Remove network action
       $physicalNetworkItem.find('.button.remove.physical-network').click(function() {
-        $physicalNetworkItem.find('li.traffic-type-draggable').each(function() {
-          var trafficTypeID = $(this).attr('traffic-type-id');
-
-          physicalNetwork.assignTrafficType(trafficTypeID, $physicalNetworkItem.prev());
-        });
-
-        $physicalNetworkItem.find('li.traffic-type-draggable.clone').remove();
-        physicalNetwork.update($physicalNetworkItem.parent().find('.multi'));
+        physicalNetwork.remove($physicalNetworkItem);
       });
 
       $physicalNetworkItem.addClass('disabled'); // Since there are no traffic types yet
@@ -492,33 +628,24 @@
 
     /**
      * Physical network step: Remove specified network element
+     *
+     * @param $physicalNetworkItem Physical network container to remove
      */
-    remove: function($item) {
-      var $container = $item.closest('.setup-physical-network .content.input-area form');
+    remove: function($physicalNetworkItem) {
+      var $container = $physicalNetworkItem.closest('.setup-physical-network .content.input-area form');
+      var $trafficTypes = $physicalNetworkItem.find('li.traffic-type-draggable');
 
-      if (!$item.siblings().size()) {
-        cloudStack.dialog.notice({
-          message: dictionary['message.you.must.have.at.least.one.physical.network']
-        });
-      } else if ($item.find('input[type=radio]:checked').size()) {
-        cloudStack.dialog.notice({
-          message: dictionary['message.please.select.a.different.public.and.management.network.before.removing']
-        });
-      } else {
-        // Put any traffic type symbols back in original container
-        $item.find('li.traffic-type-draggable').each(function() {
-          var $draggable = $(this);
-          var $originalContainer = $('.traffic-types-drag-area:visible > ul > li')
-            .filter(function() {
-              return $(this).hasClass($draggable.attr('traffic-type-id'));
-            });
+      $trafficTypes.each(function() {
+        var trafficTypeID = $(this).attr('traffic-type-id');
 
-          $draggable.appendTo($item.prev());
-        });
+        physicalNetwork.assignTrafficType(
+          trafficTypeID,
+          $physicalNetworkItem.prev()
+        );
+      });
 
-        $item.remove();
-      }
-
+      $trafficTypes.filter('.clone').remove();
+      physicalNetwork.updateNetworks($physicalNetworkItem.parent().find('.multi'));
       $container.validate('refresh');
     }
   };
@@ -528,7 +655,7 @@
    */
   var guestTraffic = {
     init: function($wizard, args) {
-      var $physicalNetworks = physicalNetwork.getPhysicalNetworks($wizard);
+      var $physicalNetworks = physicalNetwork.getNetworks($wizard);
       var $tabs = guestTraffic.makeTabs($physicalNetworks, args);
       var $container = guestTraffic.getMainContainer($wizard);
 
@@ -688,7 +815,7 @@
           if (isError) {
             $li.prev().addClass('error');
           }
-          
+
         };
 
         args.action({
@@ -844,6 +971,9 @@
               guestTraffic.remove($wizard);
             }
             break;
+
+          case 'setupPhysicalNetwork':
+            physicalNetwork.init($wizard);
         }
 
         if ($uiCustom.size()) {
@@ -1021,6 +1151,16 @@
           return false;
         }
 
+        // Edit traffic type button
+        var $editTrafficTypeButton = $target.closest('.drop-container .traffic-type-draggable .edit-traffic-type');
+        var $trafficType = $editTrafficTypeButton.closest('.traffic-type-draggable');
+
+        if ($editTrafficTypeButton.size()) {
+          physicalNetwork.editTrafficTypeDialog($trafficType);
+
+          return false;
+        }
+
         return true;
       });
 
@@ -1035,26 +1175,11 @@
       // For removing traffic types from physical network
       $wizard.find('.traffic-types-drag-area').droppable({
         drop: function(event, ui) {
-          var trafficTypeID = ui.draggable.attr('traffic-type-id');
-
-          if (!physicalNetwork.isTrafficTypeClone(ui.draggable)) {
-            if ($.inArray(trafficTypeID, physicalNetwork.requiredTrafficTypes) == -1) {
-              physicalNetwork.unassignTrafficType(trafficTypeID, $wizard);
-            } else {
-              physicalNetwork.assignTrafficType(
-                trafficTypeID,
-                $wizard.find('.select-container.multi:first')
-              );
-            }
-          } else if (!ui.draggable.closest('.traffic-types-drag-area').size()) {
-            ui.draggable.remove();
-          }
+          physicalNetwork.unassignTrafficType(ui.draggable);
 
           return true;
         }
       });
-
-      physicalNetwork.init($wizard);
 
       showStep(1);
 

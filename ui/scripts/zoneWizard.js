@@ -6,8 +6,78 @@
 	var selectedNetworkOfferingHavingNetscaler = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
-		
+
+  // Makes URL string for traffic label
+  var trafficLabelParam = function(trafficTypeID, data, physicalNetworkID) {
+    var zoneType = data.zone.networkType;
+    var hypervisor = data.zone.hypervisor;
+    physicalNetworkID = zoneType == 'Advanced' ? physicalNetworkID : 0;
+    var physicalNetwork = data.physicalNetworks ? data.physicalNetworks[physicalNetworkID] : null;
+    var trafficConfig = physicalNetwork ? physicalNetwork.trafficTypeConfiguration[trafficTypeID] : null;
+    var trafficLabel = trafficConfig ? trafficConfig.label : null;
+    var hypervisorAttr, trafficLabelStr;
+
+    switch(hypervisor) {
+      case 'XenServer':
+        hypervisorAttr = 'xennetworklabel';
+        break;
+      case 'KVM':
+        hypervisorAttr = 'kvmnetworklabel';
+        break;
+      case 'VMWare':
+        hypervisorAttr = 'vmwarenetworklabel';
+        break;
+      case 'BareMetal':
+        hypervisorAttr = 'baremetalnetworklabel';
+        break;
+      case 'Ovm':
+        hypervisorAttr = 'ovmnetworklabel';
+        break;
+    }
+
+    trafficLabelStr = trafficLabel ? '&' + hypervisorAttr + '=' + trafficLabel : '';
+
+    return trafficLabelStr;
+  };
+
   cloudStack.zoneWizard = {
+    // Return required traffic types, for configure physical network screen
+    requiredTrafficTypes: function(args) {
+      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
+                                                    selectedNetworkOfferingHavingELB)) {
+        return [
+          'management',
+          'guest'
+        ];
+      } else {
+        return [
+          'management',
+          'guest',
+          'public'
+        ];
+      }
+    },
+
+    disabledTrafficTypes: function(args) {
+      if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
+                                                    selectedNetworkOfferingHavingELB)) {
+        return [
+          'public'
+        ];
+      } else {
+        return [];
+      }
+
+    },
+
+    cloneTrafficTypes: function(args) {
+      if (args.data.zone.networkType == 'Advanced') {
+        return ['guest'];
+      } else {
+        return [];
+      }
+    },
+
     customUI: {
       publicTrafficIPRange: function(args) {
         var multiEditData = [];
@@ -137,7 +207,7 @@
       },   
 
       setupPhysicalNetwork: function(args) {
-        return args.data['network-model'] == 'Advanced';
+        return true; // Both basic & advanced zones show physical network UI
       },
 
       configureGuestTraffic: function(args) {
@@ -148,10 +218,9 @@
       },
 
       configureStorageTraffic: function(args) {
-        return args.data['network-model'] == 'Advanced' &&
-          $.grep(args.groupedData.physicalNetworks, function(network) {
-            return $.inArray('storage', network.trafficTypes) > -1;
-          }).length;
+        return $.grep(args.groupedData.physicalNetworks, function(network) {
+          return $.inArray('storage', network.trafficTypes) > -1;
+        }).length;
       },
 
       addHost: function(args) {
@@ -226,6 +295,29 @@
           internaldns2: {
             label: 'label.internal.dns.2',
             desc: 'message.tooltip.internal.dns.2'
+          },
+          hypervisor: {
+            label: 'label.hypervisor',
+            validation: { required: true },
+            select: function(args) {
+              $.ajax({
+                url: createURL('listHypervisors'),
+                data: { listAll: true },
+                success: function(json) {
+                  args.response.success({
+                    data: $.map(
+                      json.listhypervisorsresponse.hypervisor,
+                      function(hypervisor) {
+                        return {
+                          id: hypervisor.name,
+                          description: hypervisor.name
+                        };
+                      }
+                    )
+                  });
+                }
+              });
+            }
           },
           networkOfferingId: {
             label: 'label.network.offering',
@@ -473,6 +565,9 @@
           hypervisor: {
             label: 'label.hypervisor',
             select: function(args) {
+              // Disable select -- selection is made on zone setup step
+              args.$select.attr('disabled', 'disabled');
+
               $.ajax({
                 url: createURL("listHypervisors"),
                 dataType: "json",
@@ -484,6 +579,8 @@
                     items.push({id: this.name, description: this.name})
                   });
                   args.response.success({data: items});
+                  args.$select.val(args.context.zones[0].hypervisor);
+                  args.$select.change();
                 }
               });
 
@@ -710,11 +807,14 @@
             validation: { required: true }, 
 						select: function(args) {
               var selectedClusterObj = {
-                hypervisortype: args.context.zones[0].hypervisor
+                hypervisortype: $.isArray(args.context.zones[0].hypervisor) ?
+                  // We want the cluster's hypervisor type
+                  args.context.zones[0].hypervisor[1] : args.context.zones[0].hypervisor
               };
 
-              if(selectedClusterObj == null)
+              if(selectedClusterObj == null) {
                 return;
+              }
 
               if(selectedClusterObj.hypervisortype == "KVM") {
                 var items = [];
@@ -1079,11 +1179,11 @@
                         $("body").stopTime(timerKey);
                         if (result.jobstatus == 1) {
                           var returnedBasicPhysicalNetwork = result.jobresult.physicalnetwork;
-
+                          var label = returnedBasicPhysicalNetwork.id + trafficLabelParam('guest', data);
                           var returnedTrafficTypes = [];
 
                           $.ajax({
-                            url: createURL("addTrafficType&trafficType=Guest&physicalnetworkid=" + returnedBasicPhysicalNetwork.id),
+                            url: createURL("addTrafficType&trafficType=Guest&physicalnetworkid=" + label),
                             dataType: "json",
                             success: function(json) {
                               var jobId = json.addtraffictyperesponse.jobid;
@@ -1126,8 +1226,10 @@
                             }
                           });
 
+                          label = trafficLabelParam('management', data);
+
                           $.ajax({
-                            url: createURL("addTrafficType&trafficType=Management&physicalnetworkid=" + returnedBasicPhysicalNetwork.id),
+                            url: createURL("addTrafficType&trafficType=Management&physicalnetworkid=" + returnedBasicPhysicalNetwork.id + label),
                             dataType: "json",
                             success: function(json) {
                               var jobId = json.addtraffictyperesponse.jobid;
@@ -1170,9 +1272,59 @@
                             }
                           });
 
-                          if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
+                          // Storage traffic
+                          if (data.physicalNetworks &&
+                              $.inArray('storage', data.physicalNetworks[0].trafficTypes) > -1) {
+                            label = trafficLabelParam('storage', data);
                             $.ajax({
-                              url: createURL("addTrafficType&trafficType=Public&physicalnetworkid=" + returnedBasicPhysicalNetwork.id),
+                              url: createURL('addTrafficType&physicalnetworkid=' + returnedBasicPhysicalNetwork.id + '&trafficType=Storage' + label),
+                              dataType: "json",
+                              success: function(json) {
+                                var jobId = json.addtraffictyperesponse.jobid;
+                                var timerKey = "addTrafficTypeJob_" + jobId;
+                                $("body").everyTime(2000, timerKey, function() {
+                                  $.ajax({
+                                    url: createURL("queryAsyncJobResult&jobid=" + jobId),
+                                    dataType: "json",
+                                    success: function(json) {
+                                      var result = json.queryasyncjobresultresponse;
+                                      if (result.jobstatus == 0) {
+                                        return; //Job has not completed
+                                      }
+                                      else {
+                                        $("body").stopTime(timerKey);
+                                        if (result.jobstatus == 1) {
+                                          returnedTrafficTypes.push(result.jobresult.traffictype);
+
+                                          if(returnedTrafficTypes.length == requestedTrafficTypeCount) { //all requested traffic types have been added
+                                            returnedBasicPhysicalNetwork.returnedTrafficTypes = returnedTrafficTypes;
+
+                                            stepFns.configurePhysicalNetwork({
+                                              data: $.extend(args.data, {
+                                                returnedBasicPhysicalNetwork: returnedBasicPhysicalNetwork
+                                              })
+                                            });
+                                          }
+                                        }
+                                        else if (result.jobstatus == 2) {
+                                          alert("Failed to add Management traffic type to basic zone. Error: " + _s(result.jobresult.errortext));
+                                        }
+                                      }
+                                    },
+                                    error: function(XMLHttpResponse) {
+                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                      alert("Failed to add Management traffic type to basic zone. Error: " + errorMsg);
+                                    }
+                                  });
+                                });
+                              }
+                            });
+                          }
+
+                          if (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) {
+                            label = trafficLabelParam('public', data);
+                            $.ajax({
+                              url: createURL("addTrafficType&trafficType=Public&physicalnetworkid=" + returnedBasicPhysicalNetwork.id + label),
                               dataType: "json",
                               success: function(json) {
                                 var jobId = json.addtraffictyperesponse.jobid;
@@ -1231,7 +1383,7 @@
             });
           }
           else if(args.data.zone.networkType == "Advanced") {
-            $(args.data.physicalNetworks).each(function(){
+            $(args.data.physicalNetworks).each(function(index) {
               var thisPhysicalNetwork = this;
               $.ajax({
                 url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + "&name=" + todb(thisPhysicalNetwork.name)),
@@ -1255,20 +1407,29 @@
                             returnedPhysicalNetwork.originalId = thisPhysicalNetwork.id;
 
                             var returnedTrafficTypes = [];
+                            var label; // Traffic type label
                             $(thisPhysicalNetwork.trafficTypes).each(function(){
                               var thisTrafficType = this;
                               var apiCmd = "addTrafficType&physicalnetworkid=" + returnedPhysicalNetwork.id;
-                              if(thisTrafficType == "public")
+                              if(thisTrafficType == "public") {
                                 apiCmd += "&trafficType=Public";
-                              else if(thisTrafficType == "management")
+                                label = trafficLabelParam('public', data, index);
+                              }
+                              else if(thisTrafficType == "management") {
                                 apiCmd += "&trafficType=Management";
-                              else if(thisTrafficType == "guest")
+                                label = trafficLabelParam('management', data, index);
+                              }
+                              else if(thisTrafficType == "guest") {
                                 apiCmd += "&trafficType=Guest";
-                              else if(thisTrafficType == "storage")
+                                label = trafficLabelParam('guest', data, index);
+                              }
+                              else if(thisTrafficType == "storage") {
                                 apiCmd += "&trafficType=Storage";
+                                label = trafficLabelParam('storage', data, index);
+                              }
 
                               $.ajax({
-                                url: createURL(apiCmd),
+                                url: createURL(apiCmd + label),
                                 dataType: "json",
                                 success: function(json) {
                                   var jobId = json.addtraffictyperesponse.jobid;
@@ -2030,9 +2191,15 @@
             });
           }
           else { //basic zone without public traffic type , skip to next step
-            stepFns.configureGuestTraffic({
-              data: args.data
-            });
+            if (data.physicalNetworks && $.inArray('storage', data.physicalNetworks[0].trafficTypes) > -1) {
+              stepFns.configureStorageTraffic({
+                data: args.data
+              });
+            } else {
+              stepFns.configureGuestTraffic({
+                data: args.data
+              });
+            }
           }
         },
 
@@ -2046,8 +2213,7 @@
           var targetNetwork = $.grep(args.data.physicalNetworks, function(net) {
             return $.inArray('storage', net.trafficTypes) > -1; });
 
-          if (args.data.zone.networkType == 'Basic' ||
-              !targetNetwork.length) {
+          if (!targetNetwork.length) {
             return complete({});
           }
 
@@ -2233,7 +2399,11 @@
         },
 
         addCluster: function(args) {
-          message(dictionary['message.creating.cluster']); 
+          message(dictionary['message.creating.cluster']);
+
+          // Have cluster use zone's hypervisor
+          args.data.cluster.hypervisor = args.data.zone.hypervisor ?
+            args.data.zone.hypervisor : args.data.cluster.hypervisor;
 
           var array1 = [];
           array1.push("&zoneId=" + args.data.returnedZone.id);
@@ -2303,7 +2473,7 @@
           array1.push("&zoneid=" + args.data.returnedZone.id);
           array1.push("&podid=" + args.data.returnedPod.id);
           array1.push("&clusterid=" + args.data.returnedCluster.id);
-          array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor));
+          array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype));
           var clustertype = args.data.returnedCluster.clustertype;
           array1.push("&clustertype=" + todb(clustertype));
           array1.push("&hosttags=" + todb(args.data.host.hosttags));

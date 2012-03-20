@@ -508,7 +508,13 @@
                   <ul class="container">
                     <li traffic-type-id="management"
                         title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
-                        class="traffic-type-draggable management"></li>
+                        class="traffic-type-draggable management">
+                      <!-- Edit buttton -->
+                      <div class="edit-traffic-type">
+                        <span class="icon">&nbsp;</span>
+                        <span>Edit</span>
+                      </div>
+                    </li>
                   </ul>
                   <div class="info">
                     <div class="title"><fmt:message key="label.management"/></div>
@@ -519,7 +525,13 @@
                   <ul class="container">
                     <li traffic-type-id="public"
                         title="Traffic between the internet and virtual machines in the cloud."
-                        class="traffic-type-draggable public"></li>
+                        class="traffic-type-draggable public">
+                      <!-- Edit buttton -->
+                      <div class="edit-traffic-type">
+                        <span class="icon">&nbsp;</span>
+                        <span>Edit</span>
+                      </div>
+                    </li>
                   </ul>
                   <div class="info">
                     <div class="title"><fmt:message key="label.public"/></div>
@@ -530,7 +542,13 @@
                   <ul class="container">
                     <li traffic-type-id="guest"
                         title="Traffic between end-user virtual machines"
-                        class="traffic-type-draggable guest clone"></li>
+                        class="traffic-type-draggable guest">
+                      <!-- Edit buttton -->
+                      <div class="edit-traffic-type">
+                        <span class="icon">&nbsp;</span>
+                        <span>Edit</span>
+                      </div>
+                    </li>
                   </ul>
                   <div class="info">
                     <div class="title"><fmt:message key="label.guest"/></div>
@@ -541,7 +559,13 @@
                   <ul class="container">
                     <li traffic-type-id="storage"
                         title="Traffic between primary and secondary storage servers, such as VM templates and snapshots"
-                        class="traffic-type-draggable storage"></li>
+                        class="traffic-type-draggable storage">
+                      <!-- Edit buttton -->
+                      <div class="edit-traffic-type">
+                        <span class="icon">&nbsp;</span>
+                        <span>Edit</span>
+                      </div>
+                    </li>
                   </ul>
                   <div class="info">
                     <div class="title"><fmt:message key="label.storage"/></div>
@@ -1621,6 +1645,10 @@
 
 <script language="javascript">
 dictionary = {
+'label.edit.traffic.type': '<fmt:message key="label.edit.traffic.type"/>',
+'message.edit.traffic.type': '<fmt:message key="message.edit.traffic.type"/>',
+'label.label': '<fmt:message key="label.label"/>',
+'message.configure.all.traffic.types': '<fmt:message key="message.configure.all.traffic.types"/>',
 'label.max.networks': '<fmt:message key="label.max.networks"/>',
 'label.latest.events': '<fmt:message key="label.latest.events"/>',
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
