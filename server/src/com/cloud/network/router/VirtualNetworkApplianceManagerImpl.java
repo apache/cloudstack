@@ -2529,7 +2529,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
         dhcpCommand.setDefaultRouter(findGatewayIp(vm.getId()));
-        dhcpCommand.setDefaultRouter(findDefaultDnsIp(vm.getId()));
+        dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
