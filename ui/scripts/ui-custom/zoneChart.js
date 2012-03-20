@@ -279,39 +279,32 @@
           response: {
             success: function(args) {
               var data = args.data;
-              if (data.length > 1) {
-                // Render list view first
-                $chart.listView({
-                  listView: $.extend(true, {}, cloudStack.sections.system.naas.networks.listView, {
-                    dataProvider: function(args) {
-                      args.response.success({ data: data });
-                    },
-                    detailView: {
-                      tabs: {
-                        network: {
-                          title: 'Network',
-                          custom: function(args) {
-                            var $chart = $('<div>').addClass('system-chart network');
 
-                            renderChart({
-                              $chart: $chart,
-                              data: args.context.physicalNetworks[0]
-                            });
+              $chart.listView({
+                listView: $.extend(true, {}, cloudStack.sections.system.naas.networks.listView, {
+                  dataProvider: function(args) {
+                    args.response.success({ data: data });
+                  },
+                  detailView: {
+                    tabs: {
+                      network: {
+                        title: 'Network',
+                        custom: function(args) {
+                          var $chart = $('<div>').addClass('system-chart network');
 
-                            return $chart;
-                          }
+                          renderChart({
+                            $chart: $chart,
+                            data: args.context.physicalNetworks[0]
+                          });
+
+                          return $chart;
                         }
                       }
                     }
-                  })
-                });
-                $loading.remove();
-              } else {
-                renderChart({
-                  $chart: $chart,
-                  data: data[0]
-                });
-              }
+                  }
+                })
+              });
+              $loading.remove();
             }
           }
         });
