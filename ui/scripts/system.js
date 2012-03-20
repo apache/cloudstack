@@ -1107,25 +1107,7 @@
                                 success: function(json) {																  
                                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;																	
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
-                                    for (var i = 0; i < networkOfferingObjs.length; i++) {
-																		
-                                      //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
-                                      //comment the following section becaues nspMap is empty unless network providers has been clicked.
-																			/*
-																			if(nspMap["securityGroups"].state == "Disabled"){ 
-                                        var includingSGP = false;
-                                        var serviceObjArray = networkOfferingObjs[i].service;
-                                        for(var k = 0; k < serviceObjArray.length; k++) {
-                                          if(serviceObjArray[k].name == "SecurityGroup") {
-                                            includingSGP = true;
-                                            break;
-                                          }
-                                        }
-                                        if(includingSGP == true)
-                                          continue; //skip to next network offering
-                                      }
-																			*/																			
-																																						
+                                    for (var i = 0; i < networkOfferingObjs.length; i++) {	
 																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)																			
 																			if(args.scope == "account-specific" || args.scope == "project-specific") {
 																			  var includingSourceNat = false;
@@ -1196,12 +1178,23 @@
                         var $form = args.$form;
 												
 												var array1 = [];
-                        array1.push("&zoneId=" + selectedZoneObj.id);												
-												array1.push("&physicalnetworkid=" + selectedPhysicalNetworkObj.id);		
+                        array1.push("&zoneId=" + selectedZoneObj.id);		
+												array1.push("&networkOfferingId=" + args.data.networkOfferingId);																							
+												
+												//Pass physical network ID to createNetwork API only when network offering's guestiptype is Shared.                        
+												var selectedNetworkOfferingObj;												
+												$(networkOfferingObjs).each(function(){												  
+													if(this.id == args.data.networkOfferingId) {
+													  selectedNetworkOfferingObj = this;
+														return false; //break each loop
+													}
+												});												
+												if(selectedNetworkOfferingObj.guestiptype == "Shared")
+												  array1.push("&physicalnetworkid=" + selectedPhysicalNetworkObj.id);																									
+												
                         array1.push("&name=" + todb(args.data.name));
                         array1.push("&displayText=" + todb(args.data.description));
-                        array1.push("&networkOfferingId=" + args.data.networkOfferingId);
-                      											 
+                                              											 
 											  if(($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0)) 
 												  array1.push("&vlan=" + todb(args.data.vlanId));                        
 												
