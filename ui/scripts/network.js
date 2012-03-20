@@ -2032,7 +2032,7 @@
                               },
                               success: function(json) {
                                 var stickyPolicy = json.listlbstickinesspoliciesresponse.stickinesspolicies ?
-                                  json.listlbstickinesspoliciesresponse.stickinesspolicies[0].stickinesspolicy : null
+                                  json.listlbstickinesspoliciesresponse.stickinesspolicies[0].stickinesspolicy : null;
 
                                 if (stickyPolicy && stickyPolicy.length) {
                                   stickyPolicy = stickyPolicy[0];
@@ -2068,7 +2068,8 @@
                                 id: item.id
                               },
                               success: function(data) {
-                                lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;
+                                lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance ? 
+                                  data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance : [];
                               },
                               error: function(data) {
                                 args.response.error(parseXMLHttpResponse(data));
@@ -2076,7 +2077,11 @@
                             });
 
                             $.extend(item, {
-                              _itemData: lbInstances,
+                              _itemData: $.map(lbInstances, function(instance) {
+                                return $.extend(instance, {
+                                  name: instance.instancename
+                                });
+                              }),
                               _maxLength: {
                                 name: 7
                               },
