@@ -2078,15 +2078,12 @@
                             });
 
                             $.extend(item, {
-                              _itemData: $.map(lbInstances, function(instance) {
-                                return $.extend(instance, {
-                                  name: instance.instancename
-                                });
-                              }),
+                              _itemName: 'instancename',
+                              _itemData: lbInstances,
                               _maxLength: {
                                 name: 7
                               },
-                              sticky: stickyData
+                              sticky: stickyData,
                             });
                           });
 
