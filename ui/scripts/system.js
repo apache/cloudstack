@@ -1,4 +1,64 @@
 (function($, cloudStack) {
+  cloudStack.publicIpRangeAccount = {
+    dialog: function(args) {      
+      return function(args) {
+        var data = args.data ? args.data : {};
+        var fields = {
+          account: { label: 'Account', defaultValue: data.account },
+          domainid: {
+            label: 'Domain',
+            defaultValue: data.domainid,
+            select: function(args) {
+              $.ajax({
+                url: createURL('listDomains'),
+                data: { listAll: true },
+                success: function(json) {
+                  args.response.success({
+                    data: $.map(json.listdomainsresponse.domain, function(domain) {
+                      return {
+                        id: domain.id,
+                        description: domain.path
+                      };
+                    })
+                  });
+                }
+              });
+            }
+          }
+        };
+        var success = args.response.success;
+        
+        if (args.$item) { // Account data is read-only after creation
+          $.ajax({
+            url: createURL('listDomains'),
+            data: { id: data.domainid, listAll: true },
+            success: function(json) {
+              var domain = json.listdomainsresponse.domain[0];
+              
+              cloudStack.dialog.notice({
+                message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' +
+                  '<li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+              });
+            }
+          });
+        } else {
+          cloudStack.dialog.createForm({
+            form: {
+              title: 'label.add.account',
+              desc: '(optional) Please specify an account to be associated with this IP range.',
+              fields: fields
+            },
+            after: function(args) {
+              var data = cloudStack.serializeForm(args.$form);
+              
+              success({ data: data });
+            }
+          });
+        }
+      };     
+    }
+  };
+  
 
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
@@ -345,6 +405,13 @@
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
                       'startip': { edit: true, label: 'label.start.IP' },
                       'endip': { edit: true, label: 'label.end.IP' },
+                      'account': {
+                        label: 'label.account',
+                        custom: {
+                          buttonLabel: 'label.add.account',
+                          action: cloudStack.publicIpRangeAccount.dialog()
+                        }
+                      },
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -363,6 +430,11 @@
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
+
+                        if (args.data.account) {
+                          array1.push("&account=" + args.data.account.account);
+                          array1.push("&domainid=" + args.data.account.domainid);
+                        }
 
                         array1.push("&forVirtualNetwork=true");  //indicates this new IP range is for public network, not guest network
 
@@ -419,7 +491,18 @@
                         dataType: "json",
                         success: function(json) {
                           var items = json.listvlaniprangesresponse.vlaniprange;
-                          args.response.success({data: items});
+
+                          args.response.success({
+                            data: $.map(items, function(item) {
+                              return $.extend(item, {
+                                account: {
+                                  _buttonLabel: item.account,
+                                  account: item.account,
+                                  domainid: item.domainid
+                                }
+                              });
+                            })
+                          });
                         }
                       });
                     }
