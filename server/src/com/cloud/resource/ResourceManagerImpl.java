@@ -1025,6 +1025,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
+        
+    	//for kvm, need to log into kvm host, restart cloud-agent
+		if (host.getStatus() != Status.Up && host.getHypervisorType() == HypervisorType.KVM) {
+			return restartAgent(host) ? host : null;
+		}
 
         return (_agentMgr.reconnect(hostId) ? host : null);
     }
@@ -1761,6 +1766,30 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		}
 	}
 	
+	private boolean restartAgent(HostVO host) {
+		//for kvm, need to log into kvm host, restart cloud-agent
+		_hostDao.loadDetails(host);
+		String password = host.getDetail("password");
+		String username = host.getDetail("username");
+		if (password == null || username == null) {
+			s_logger.debug("Can't find password/username");
+			return false;
+		}
+		com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
+		if (connection == null) {
+			s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
+			return false;
+		}
+
+		try {
+			SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloud-agent restart");
+			return true;
+		} catch (sshException e) {
+			return false;
+		}
+	}
+
+	
     private boolean doCancelMaintenance(long hostId) {
         HostVO host;
         host = _hostDao.findById(hostId);
@@ -1790,24 +1819,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			
 			//for kvm, need to log into kvm host, restart cloud-agent
 			if (host.getHypervisorType() == HypervisorType.KVM) {
-				_hostDao.loadDetails(host);
-				String password = host.getDetail("password");
-				String username = host.getDetail("username");
-				if (password == null || username == null) {
-					s_logger.debug("Can't find password/username");
-					return false;
-				}
-				com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
-				if (connection == null) {
-					s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
-					return false;
-				}
-				
-				try {
-					SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloud-agent restart");
-				} catch (sshException e) {
-					return false;
-				}
+				restartAgent(host);
 			}
 			
 			return true;
