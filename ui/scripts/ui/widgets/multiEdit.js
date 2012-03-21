@@ -81,6 +81,7 @@
           });
         };
 
+        if (!itemData) itemData = [{}];
         var itemName = data._itemName ?
           itemData[0][data._itemName] : itemData[0].name;
 
