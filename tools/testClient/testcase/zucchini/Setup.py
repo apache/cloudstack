@@ -55,9 +55,13 @@ if __name__ == "__main__":
         ip.startip = "172."+ str(a)+"."+ str(b)+"."+"190"
         ip.endip = "172."+ str(a)+"."+ str(b)+"."+"249"
         p.guestIpRanges.append(ip)
-        b = b+1
+        b = b + 1
         if b == 256:
-            a = a+1    
+            a = a + 1
+            b = 1
+        if a == 256:
+            raise ValueError("Out of IP ranges")
+
         #Define Cluster  (10 clusters/pod)      
         for j in range(10):
             c = cluster()
