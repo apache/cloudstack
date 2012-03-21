@@ -942,6 +942,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return _networksDao.listBy(owner.getId(), zoneId, Network.GuestType.Isolated);
     }
+    
+    @Override
+    public List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
+
+        return _networksDao.listSourceNATEnabledNetworks(owner.getId(), zoneId, Network.GuestType.Isolated);
+    }
 
     @Override
     @DB
@@ -3566,24 +3572,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
 
         if (network == null) {
-            List<? extends Network> networks = getIsolatedNetworksOwnedByAccountInZone(zoneId, owner);
+            List<? extends Network> networks = getIsolatedNetworksWithSourceNATOwnedByAccountInZone(zoneId, owner);
             if (networks.size() == 0) {
                 createNetwork = true;
-            } else {
+            } else if (networks.size() == 1)  {
                 network = networks.get(0);
+            }else{
+                throw new InvalidParameterValueException("Error, more than 1 Guest Isolated Networks with SourceNAT service enabled found for this account, cannot assosiate the IP range, please provide the network ID");
             }
         }
 
-        // create new Virtual network for the user if it doesn't exist
+        // create new Virtual network (Isolated with SourceNAT) for the user if it doesn't exist
         if (createNetwork) {
-            List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
+            List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+            if (requiredOfferings.size() < 1) {
+                throw new CloudRuntimeException("Unable to find network offering with availability=" + Availability.Required + " to automatically create the network as part of createVlanIpRange");
+            }
             PhysicalNetwork physicalNetwork = translateZoneIdToPhysicalNetwork(zoneId);
-            network = createGuestNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, owner, false, null, physicalNetwork, zoneId,
-                    ACLType.Account, null);
-
-            if (network == null) {
-                s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
-                return false;
+            
+            if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
+                s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of createVlanIpRange process");
+                network = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, owner, false, null, physicalNetwork, zoneId,
+                        ACLType.Account, null);
+                if (network == null) {
+                    s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
+                    throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT service enabled as a part of createVlanIpRange, for the account " + accountId + "in zone " + zoneId);
+                }
+            } else {
+                throw new CloudRuntimeException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
             }
         }
 

@@ -66,6 +66,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> SecurityGroupSearch;
     final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
+    final SearchBuilder<NetworkVO> SourceNATSearch;
 
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
@@ -164,6 +165,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         NetworksRegularUserCanCreateSearch.done();
 
         _tgMacAddress = _tgs.get("macAddress");
+        
+        SourceNATSearch = createSearchBuilder();
+        SourceNATSearch.and("account", SourceNATSearch.entity().getAccountId(), Op.EQ);
+        SourceNATSearch.and("datacenter", SourceNATSearch.entity().getDataCenterId(), Op.EQ);
+        SourceNATSearch.and("guestType", SourceNATSearch.entity().getGuestType(), Op.EQ);
+        SearchBuilder<NetworkServiceMapVO> join6 = _ntwkSvcMap.createSearchBuilder();
+        join6.and("service", join6.entity().getService(), Op.EQ);
+        SourceNATSearch.join("services", join6, SourceNATSearch.entity().getId(), join6.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        SourceNATSearch.done();
 
     }
 
@@ -441,6 +451,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setJoinParameters("accounts", "account", ownerId);
         sc.setJoinParameters("ntwkOff", "specifyVlan", false);
         return customSearch(sc, null).get(0);
+    }
+    
+    
+    @Override
+    public List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, Network.GuestType type) {
+        SearchCriteria<NetworkVO> sc = SourceNATSearch.create();
+        sc.setParameters("datacenter", dataCenterId);
+        sc.setParameters("account", accountId);
+        sc.setParameters("guestType", type);
+        sc.setJoinParameters("services", "service", Service.SourceNat.getName());
+        return listBy(sc);
     }
 
 }
