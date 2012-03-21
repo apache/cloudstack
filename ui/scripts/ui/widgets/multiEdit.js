@@ -22,6 +22,7 @@
         if (options.ignoreEmptyFields && !data[fieldName]) {
           return true;
         }
+
         var $td = $('<td>').addClass(fieldName).appendTo($tr);
         var $input, val;
         var $addButton = $multi.find('form .button.add-vm:not(.custom-action)').clone();
@@ -80,6 +81,9 @@
           });
         };
 
+        var itemName = data._itemName ?
+          itemData[0][data._itemName] : itemData[0].name;
+
         if ($multi.find('th,td').filter(function() {
           return $(this).attr('rel') == fieldName;
         }).is(':hidden')) return true;
@@ -128,14 +132,16 @@
             } else {
               // Show VM data
               $td.html(options.multipleAdd ?
-                       itemData.length + ' VMs' : itemData[0].name);
+                       itemData.length + ' VMs' : itemName);
               $td.click(function() {
                 var $browser = $(this).closest('.detail-view').data('view-args').$browser;
 
                 if (options.multipleAdd) {
                   _medit.multiItem.details(itemData, $browser);
                 } else {
-                  _medit.details(itemData[0], $browser, { context: options.context });
+                  _medit.details(itemData[0], $browser, {
+                    context: options.context, itemName: itemName
+                  });
                 }
               });
             }
@@ -468,11 +474,11 @@
       detailViewArgs.actions = null;
       detailViewArgs.$browser = $browser;
       detailViewArgs.id = data.id;
-      detailViewArgs.jsonObj = data[0];
+      detailViewArgs.jsonObj = data;
       detailViewArgs.context = options.context;
 
       $browser.cloudBrowser('addPanel', {
-        title: data.name,
+        title: options.itemName ? options.itemName : data.name,
         complete: function($newPanel) {
           $newPanel.detailView(detailViewArgs);
         }

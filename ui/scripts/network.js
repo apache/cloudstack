@@ -2239,6 +2239,8 @@
                           $(portForwardingData).each(function() {
                             var item = this;
 
+                            item._itemName = 'instancename';
+
                             $.ajax({
                               url: createURL('listVirtualMachines'),
                               dataType: 'json',
