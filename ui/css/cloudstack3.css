@@ -1374,7 +1374,8 @@ div.list-view td.state.off span {
   padding: 20px 0px 17px;
 }
 
-.detail-view .button.done {
+.detail-view .button.done,
+.detail-view .button.cancel {
   display: inline-block;
   color: #FFFFFF;
   font-size: 12px;
@@ -1405,6 +1406,17 @@ div.list-view td.state.off span {
   position: absolute;
 }
 
+.detail-view .button.cancel {
+  background-position: 0px -795px;
+  left: 85px;
+  color: gray;
+  /*+text-shadow:0px -1px 2px #000000;*/
+  -moz-text-shadow: 0px -1px 2px #CCCCCC;
+  -webkit-text-shadow: 0px -1px 2px #CCCCCC;
+  -o-text-shadow: 0px -1px 2px #CCCCCC;
+  text-shadow: 0px -1px 2px #CCCCCC; 
+}
+
 .detail-view .button.done:hover {
   background-position: 0px -950px;
   /*+box-shadow:inset 0px 1px 3px #000000;*/
@@ -1412,6 +1424,10 @@ div.list-view td.state.off span {
   -webkit-box-shadow: inset 0px 1px 3px #000000;
   -o-box-shadow: inset 0px 1px 3px #000000;
   box-shadow: inset 0px 1px 3px #000000;
+}
+
+.detail-view .button.cancel:hover {
+  background-position: 0px -834px;
 }
 
 div.group-multiple div.detail-group table {

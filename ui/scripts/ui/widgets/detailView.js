@@ -275,10 +275,14 @@
       var $inputs = $detailView.find('input, select');
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
-      var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide()
-            .appendTo(
-              $detailView.find('.ui-tabs-panel .detail-group.actions')              
-            ).fadeIn();
+      var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide();
+      var $cancelButton = $('<div>').addClass('button cancel').html(_l('label.cancel')).hide();
+
+      // Show buttons
+      $.merge($editButton, $cancelButton)
+        .appendTo(
+          $detailView.find('.ui-tabs-panel .detail-group.actions')              
+        ).fadeIn();
 
       var convertInputs = function($inputs) {
         // Save and turn back into labels
@@ -303,6 +307,21 @@
             $value.data('detail-view-selected-option', _s($input.find('option:selected').val()));
           }
         });
+      };
+
+      // Put in original values
+      var cancelEdits = function($inputs, $editButton) {
+        $inputs.each(function() {
+          var $input = $(this);
+          var $value = $input.closest('td.value');
+          var originalValue = $input.data('original-value');
+
+          $value.html(_s(originalValue));
+        }); 
+
+        $editButton.fadeOut('fast', function() {
+          $editButton.remove();
+        });  
       };
 
       var applyEdits = function($inputs, $editButton) {
@@ -362,15 +381,7 @@
                 }
               },
               error: function(message) {
-                // Put in original values on error
-                $inputs.each(function() {
-                  var $input = $(this);
-                  var $value = $input.closest('td.value');
-                  var originalValue = $input.data('original-value');
-
-                  $value.html(_s(originalValue));
-                });
-
+                cancelEdits($inputs, $editButton);
                 if (message) cloudStack.dialog.notice({ message: message });
               }
             }
@@ -380,7 +391,12 @@
 
       $editButton.click(function() {
         var $inputs = $detailView.find('input, select');
-        applyEdits($inputs, $editButton);
+
+        if ($(this).hasClass('done')) {
+          applyEdits($inputs, $editButton);
+        } else { // Cancel
+          cancelEdits($inputs, $editButton);
+        }
       });
 
       $detailView.find('td.value').each(function() {
