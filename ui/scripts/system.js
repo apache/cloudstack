@@ -405,6 +405,9 @@
                                   }
                                 }
                               });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
                             }
                           });
                         }
@@ -862,6 +865,9 @@
                                   }
                                 }
                               });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
                             }
                           });
                         }
@@ -6593,23 +6599,23 @@
                 }
               },
               action: function(args) {		                
-				var array2 = [];
-				array2.push("&startip=" + args.data.guestStartIp);
-				var endip = args.data.guestEndIp;
-				if(endip != null && endip.length > 0)
-				  array2.push("&endip=" + endip);
-				$.ajax({
-				  url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
-				  dataType: "json",
-				  success: function(json) {
-					var item = json.createvlaniprangeresponse.vlan;
-					args.response.success({data:item});
-				  },
-				  error: function(XMLHttpResponse) {
-					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-					args.response.error(errorMsg);
-				  }
-				});                
+                var array2 = [];
+                array2.push("&startip=" + args.data.guestStartIp);
+                var endip = args.data.guestEndIp;
+                if(endip != null && endip.length > 0)
+                  array2.push("&endip=" + endip);
+                $.ajax({
+                  url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
+                  dataType: "json",
+                  success: function(json) {
+                    var item = json.createvlaniprangeresponse.vlan;
+                    args.response.success({data:item});
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+                });                
               },
               notification: {
                 poll: function(args) {
@@ -6640,6 +6646,9 @@
                   async: true,
                   success: function(json) {
                     args.response.success({data:{}});
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                   }
                 });
               },
