@@ -143,7 +143,7 @@ class cloudConnection(object):
             result = self.make_request_without_auth(commandName, requests)
         
         if self.logging is not None:
-            self.logging.debug("got result: "  + result)
+            self.logging.debug("got result: %s"%result)
         if result is None:
             return None
         
