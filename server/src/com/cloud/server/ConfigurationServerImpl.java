@@ -574,8 +574,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 	}
     
+    @Override
     @DB
-    protected void updateKeyPairs() {
+    public void updateKeyPairs() {
         // Grab the SSH key pair and insert it into the database, if it is not present
 
         String userid = System.getProperty("user.name");

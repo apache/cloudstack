@@ -33,5 +33,5 @@ public interface ConfigurationServer {
      * @return
      */
     public void persistDefaultValues() throws InternalErrorException;
-
+    public void updateKeyPairs();
 }
