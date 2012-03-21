@@ -18,6 +18,8 @@
 
 package com.cloud.api;
 
+import java.util.Map;
+
 import com.google.gson.GsonBuilder;
 
 public class ApiGsonHelper {
@@ -27,6 +29,7 @@ public class ApiGsonHelper {
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
         s_gBuilder.registerTypeAdapter(IdentityProxy.class, new IdentityTypeAdapter());
+        s_gBuilder.registerTypeAdapter(Map.class, new StringMapTypeAdapter());
     }
 
     public static GsonBuilder getBuilder() {
