@@ -451,7 +451,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource NetworkUsageCommand " + _gson.toJson(cmd));
         }
-
+        if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+            String result = networkUsage(cmd.getPrivateIP(), "create", null);
+            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+            return answer;
+        }
         long[] stats = getNetworkStats(cmd.getPrivateIP());
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
