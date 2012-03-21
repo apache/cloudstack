@@ -2083,7 +2083,7 @@
                               _maxLength: {
                                 name: 7
                               },
-                              sticky: stickyData,
+                              sticky: stickyData
                             });
                           });
 
