@@ -121,7 +121,7 @@
 
 									
 									$.ajax({
-                    url: createURL("listIsos&isofilter=featured&zoneid="+args.currentData.zoneid),
+                    url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -129,7 +129,7 @@
                     }
                   });
                   $.ajax({
-                    url: createURL("listIsos&isofilter=community&zoneid="+args.currentData.zoneid),
+                    url: createURL("listIsos&isofilter=community&zoneid=" + args.currentData.zoneid + "&bootable=true"),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -137,24 +137,14 @@
                     }
                   });
                   $.ajax({
-                    url: createURL("listIsos&isofilter=selfexecutable&zoneid="+args.currentData.zoneid),
+                    url: createURL("listIsos&isofilter=selfexecutable&zoneid=" + args.currentData.zoneid + "&bootable=true"),
                     dataType: "json",
                     async: false,
                     success: function(json) {
                       myIsoObjs = json.listisosresponse.iso;
                     }
                   });		
-									/*
-                  $.ajax({
-                    url: createURL("listIsos&isReady=true&bootable=true&isofilter=executable&zoneid="+args.currentData.zoneid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      isoObjs = json.listisosresponse.iso;
-                    }
-                  });
-                  */
-									
+																		
                   args.response.success({
                     hypervisor: {
                       idField: 'name',
