@@ -255,7 +255,11 @@
                         }
                       }
                     },
-                    error: cloudStack.dialog.error
+                    error: function(message) {
+                      cloudStack.dialog.notice({ message: message });
+                      $item.show();
+                      $loading.remove();
+                    }
                   }
                 });
               };
