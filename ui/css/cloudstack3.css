@@ -6552,6 +6552,16 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   font-weight: bold;
 }
 
+.multi-edit .data .data-body .data-item .expandable-listing table tbody tr td.name span {
+  color: #4C5D78;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.multi-edit .data .data-body .data-item .expandable-listing table tbody tr td.name span:hover {
+  color: blue;
+}
+
 .multi-edit .data .data-body .data-item table tbody tr td.multi-actions {
   border-right: none;
 }
