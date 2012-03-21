@@ -624,6 +624,9 @@ UPDATE `cloud`.`event` e set e.domain_id = (select acc.domain_id from `cloud`.`a
 
 update `cloud`.`vm_template` set removed=now() where id=2;
 
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
+    VALUES (5, 'centos56-x86_64-xen', 'CentOS 5.6(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/centos56-x86_64.vhd.bz2', '905cec879afd9c9d22ecc8036131a180', 0, 'CentOS 5.6(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'XenServer', 1);
+
 DELETE from `cloud`.`configuration` where name='firewall.rule.ui.enabled';
 
 DELETE FROM `cloud`.`resource_limit` WHERE domain_id = 1 AND account_id IS NULL;
