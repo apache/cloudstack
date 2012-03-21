@@ -62,6 +62,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
@@ -105,6 +106,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject CheckPointManager _checkPointMgr;
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
+    
+    ConfigurationServer _configServer;
 
     String _mountParent;
     StorageLayer _storage;
@@ -272,6 +275,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         ((VmwareStorageManagerImpl)_storageMgr).configure(params);
 
+        if(_configServer == null)
+            _configServer = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
+        
         _agentMgr.registerForHostEvents(this, true, true, true);
 
         s_logger.info("VmwareManagerImpl has been successfully configured");
@@ -527,6 +533,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                     File srcIso = getSystemVMPatchIsoFile();
                     File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
                     if(!destIso.exists()) {
+                        s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
+                        _configServer.updateKeyPairs();
+                        
 	                    try {
 	                        FileUtil.copyfile(srcIso, destIso);
 	                    } catch(IOException e) {
