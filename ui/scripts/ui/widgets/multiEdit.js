@@ -480,6 +480,7 @@
 
       $browser.cloudBrowser('addPanel', {
         title: options.itemName ? options.itemName : data.name,
+        maximizeIfSelected: true,
         complete: function($newPanel) {
           $newPanel.detailView(detailViewArgs);
         }
@@ -522,8 +523,18 @@
       itemRow: function(item, itemActions, multiRule, $tbody) {
         var $tr = $('<tr>');
         var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
+        var $itemName = $('<span>').html(_s(itemName));
 
-        $tr.append($('<td></td>').appendTo($tr).html(_s(itemName)));
+        $tr.append($('<td>').addClass('name').appendTo($tr).append($itemName));
+
+        $itemName.click(function() {
+          _medit.details(item, $('#browser .container'), {
+            itemName: itemName,
+            context: {
+              instances: [item]
+            }
+          });
+        });
 
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
