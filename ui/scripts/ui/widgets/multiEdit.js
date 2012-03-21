@@ -514,8 +514,9 @@
 
       itemRow: function(item, itemActions, multiRule, $tbody) {
         var $tr = $('<tr>');
+        var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
 
-        $tr.append($('<td></td>').appendTo($tr).html(_s(item.name)));
+        $tr.append($('<td></td>').appendTo($tr).html(_s(itemName)));
 
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
