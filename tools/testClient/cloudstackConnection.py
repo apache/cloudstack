@@ -146,7 +146,7 @@ class cloudConnection(object):
         if result is None:
             return None
         if self.logging is not None:
-            self.logging.debug("got result: "  + result)
+            self.logging.debug("got result: %s"%result)
         
         result = jsonHelper.getResultObj(result, response)
         if raw or isAsync == "false":
