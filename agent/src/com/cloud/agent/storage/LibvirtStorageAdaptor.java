@@ -656,27 +656,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
 	@Override
 	public KVMStoragePool getStoragePoolByUri(String uri) {
-		URI storageUri = null;
-
-		try {
-			storageUri = new URI(uri);
-		} catch (URISyntaxException e) {
-			throw new CloudRuntimeException(e.toString());
-		}
-
-		String sourcePath = null;
-		String uuid = null;
-		String sourceHost = "";
-		StoragePoolType protocal = null;
-		if (storageUri.getScheme().equalsIgnoreCase("nfs")) {
-			sourcePath = storageUri.getPath();
-			sourcePath = sourcePath.replace("//", "/");
-			sourceHost = storageUri.getHost();
-			uuid = UUID.randomUUID().toString();
-			protocal = StoragePoolType.NetworkFilesystem;
-		}
-
-		return createStoragePool(uuid, sourceHost, sourcePath, protocal);
+		return this.getStoragePoolByUri(uri, UUID.randomUUID().toString());
 	}
 
 	@Override
@@ -716,6 +696,29 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		}
 
 		return true;
+	}
+
+	@Override
+	public KVMStoragePool getStoragePoolByUri(String uri, String name) {
+		URI storageUri = null;
+
+		try {
+			storageUri = new URI(uri);
+		} catch (URISyntaxException e) {
+			throw new CloudRuntimeException(e.toString());
+		}
+
+		String sourcePath = null;
+		String sourceHost = "";
+		StoragePoolType protocal = null;
+		if (storageUri.getScheme().equalsIgnoreCase("nfs")) {
+			sourcePath = storageUri.getPath();
+			sourcePath = sourcePath.replace("//", "/");
+			sourceHost = storageUri.getHost();
+			protocal = StoragePoolType.NetworkFilesystem;
+		}
+
+		return createStoragePool(name, sourceHost, sourcePath, protocal);
 	}
 
 }

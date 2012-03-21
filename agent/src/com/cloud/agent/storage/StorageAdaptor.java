@@ -42,6 +42,7 @@ public interface StorageAdaptor {
 			String snapshotName, String name, KVMStoragePool destPool);
 
 	public KVMStoragePool getStoragePoolByUri(String uri);
+	public KVMStoragePool getStoragePoolByUri(String uri, String name);
 
 	public KVMPhysicalDisk getPhysicalDiskFromURI(String uri);
 

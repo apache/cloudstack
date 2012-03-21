@@ -2557,7 +2557,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			String path = isoPath.substring(0, index);
 			String name = isoPath.substring(index + 1);
 			KVMStoragePool secondaryPool = _storagePoolMgr
-					.getStoragePoolByURI(path);
+					.getStoragePoolByURI(path, UUID.nameUUIDFromBytes(isoPath.getBytes()).toString());
 			KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
 			return isoVol.getPath();
 		} else {
@@ -2806,7 +2806,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			String path = isoPath.substring(0, index);
 			String name = isoPath.substring(index + 1);
 			KVMStoragePool secondaryPool = _storagePoolMgr
-					.getStoragePoolByURI(path);
+					.getStoragePoolByURI(path, UUID.nameUUIDFromBytes(isoPath.getBytes()).toString());
 			KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
 			isoPath = isoVol.getPath();
 
