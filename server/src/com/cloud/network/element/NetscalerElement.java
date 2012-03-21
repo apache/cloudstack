@@ -163,6 +163,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return false;
         }
 
+        if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(guestConfig.getId(), Service.StaticNat, Network.Provider.Netscaler) && !isBasicZoneNetwok(guestConfig)) {
+            s_logger.error("NetScaler provider can not be Static Nat service provider for the network " + guestConfig.getGuestType() + 
+                    " and traffic type " + guestConfig.getTrafficType());
+            return false;
+        }
+
         try {
             return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
@@ -534,6 +540,17 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean verifyServicesCombination(List<String> services) {
+        List<String> netscalerServices = new ArrayList<String>();
+        netscalerServices.add(Service.Lb.getName());
+        netscalerServices.add(Service.StaticNat.getName());
+
+        // NetScaler can only act as Lb and Static Nat service provider
+        if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+                + services + " is not supported.");
+            return false;
+        }
+
         return true;
     }
 
