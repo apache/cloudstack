@@ -328,8 +328,8 @@
           3: { name: _l('label.primary.allocated') },
           6: { name: _l('label.secondary.storage') },
           9: { name: _l('label.local.storage') },
-          4: { name: _l('label.public.ip') },
-          5: { name: _l('label.private.ip') },
+          4: { name: _l('label.public.ips') },
+          5: { name: _l('label.management.ips') },
           8: { name: _l('label.direct.ips') },
           7: { name: 'VLAN' }
         };

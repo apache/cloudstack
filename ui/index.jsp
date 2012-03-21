@@ -1645,6 +1645,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.management.ips': '<fmt:message key="label.management.ips"/>',
 'label.edit.traffic.type': '<fmt:message key="label.edit.traffic.type"/>',
 'message.edit.traffic.type': '<fmt:message key="message.edit.traffic.type"/>',
 'label.label': '<fmt:message key="label.label"/>',
