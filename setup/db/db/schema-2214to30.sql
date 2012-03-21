@@ -156,7 +156,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'manageme
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'pool.storage.allocated.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for low allocated storage available.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'pool.storage.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.vlan.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.localStorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.localStorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low number of direct network public ips.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.directnetwork.publicip.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.secstorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'custom.diskoffering.size.min', '1', 'Minimum size in GB for custom disk offering');
@@ -745,3 +745,5 @@ UPDATE `cloud`.`networks` n  SET n.name=(CONCAT('guestNetworkForBasicZone_', (SE
 UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZone_', (SELECT name from `cloud`.`data_center` d where d.id=n.data_center_id AND d.networktype='Basic'))) where n.display_text is null and n.traffic_type='Guest';
 
 UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use exetrnal dns1 and dns2' WHERE name='use.external.dns';
+UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
+
