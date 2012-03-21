@@ -1602,13 +1602,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             VMInstanceVO castedVm = null;
             if (info == null) {
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                castedVm = info.guru.findById(vm.getId());
-            } else {
-                castedVm = info.vm;
-            }
+            } 
+            castedVm = info.guru.findById(vm.getId());
 
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-
             Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
             if (command != null) {
                 commands.addCommand(command);
