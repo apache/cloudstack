@@ -332,8 +332,8 @@
 				
 		remove: function($instanceRow, args) {	
 		  uiActions.standard($instanceRow, args, { 
-        complete: function(args) {     
-					$instanceRow.remove();										
+        complete: function(args, $newRow) {     
+					$newRow.remove();										
         }
       });
     },
