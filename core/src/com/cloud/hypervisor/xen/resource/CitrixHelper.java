@@ -408,6 +408,12 @@ public class CitrixHelper {
         _xenServer600GuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
         _xenServer600GuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003 (32-bit)");
         _xenServer600GuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 Enterprise Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 Enterprise Edition(64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 DataCenter Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 DataCenter Edition(64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 Standard Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer600GuestOsMap.put("Windows Server 2003 Standard Edition(64-bit)", "Windows Server 2003 (64-bit)");
         _xenServer600GuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008 (32-bit)");
         _xenServer600GuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 (64-bit)");
         _xenServer600GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
