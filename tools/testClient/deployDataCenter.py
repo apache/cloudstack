@@ -7,9 +7,6 @@ import logging
 from cloudstackAPI import *
 from optparse import OptionParser
 
-module_logger = "testclient.deploy"
-
-
 class deployDataCenters():
 
     def __init__(self, cfgFile):
@@ -316,11 +313,11 @@ class deployDataCenters():
 
         testClientLogger = None
         if testClientLogFile is not None:
-            testClientLogger = logging.getLogger("testclient.deploy.deployDataCenters")
+            testClientLogger = logging.getLogger("testclient.testengine.run")
             fh = logging.FileHandler(testClientLogFile)
             fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
             testClientLogger.addHandler(fh)
-            testClientLogger.setLevel(logging.DEBUG)
+            testClientLogger.setLevel(logging.INFO)
         self.testClientLogger = testClientLogger
 
         self.testClient = \
