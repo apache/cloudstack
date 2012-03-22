@@ -1191,8 +1191,10 @@
           }
         }
         else { // Disk not attached
-          allowedActions.push("remove");
-          allowedActions.push("migrateToAnotherStorage");
+          allowedActions.push("remove");		
+					if(isAdmin()) {
+            allowedActions.push("migrateToAnotherStorage");
+					}
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
           }
