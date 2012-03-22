@@ -49,6 +49,9 @@ public class ListGuestOsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="guest_os_category")
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
     private Long osCategoryId;
+    
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description")
+    private String description;
 
 
     /////////////////////////////////////////////////////
@@ -63,7 +66,10 @@ public class ListGuestOsCmd extends BaseListCmd {
         return osCategoryId;
     }
 
-
+    public String getDescription() {
+        return description;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
