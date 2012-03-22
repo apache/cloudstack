@@ -51,14 +51,14 @@ class cloudConnection(object):
 
         try:
             self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-            self.logging.debug("sending request: %s"%requestUrl)
+            self.logging.debug("sending GET request: %s"%requestUrl)
             response = self.connection.read()
-            self.logging.debug("got response: %s"%response)
+            self.logging.info("got response: %s"%response)
         except IOError, e:
             if hasattr(e, 'reason'):
-                self.logging.debug("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
+                self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
             elif hasattr(e, 'code'):
-                self.logging.debug("server returned %d error code"%e.code)
+                self.logging.critical("server returned %d error code"%e.code)
         except HTTPException, h:
             self.logging.debug("encountered http Exception %s"%h.args)
             if self.retries > 0:
@@ -77,9 +77,9 @@ class cloudConnection(object):
         requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
 
         self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-        self.logging.debug("sending request without auth: %s"%requestUrl)
+        self.logging.debug("sending GET request without auth: %s"%requestUrl)
         response = self.connection.read()
-        self.logging.debug("got response: %s"%response)
+        self.logging.info("got response: %s"%response)
         return response
     
     def pollAsyncJob(self, jobId, response):
@@ -135,15 +135,13 @@ class cloudConnection(object):
                             i = i + 1
         
         if self.logging is not None:
-            self.logging.debug("sending command: %s %s"%(commandName, str(requests)))
+            self.logging.info("sending command: %s %s"%(commandName, str(requests)))
         result = None
         if self.auth:
             result = self.make_request_with_auth(commandName, requests)
         else:
             result = self.make_request_without_auth(commandName, requests)
         
-        if self.logging is not None:
-            self.logging.debug("got result: %s"%result)
         if result is None:
             return None
         
