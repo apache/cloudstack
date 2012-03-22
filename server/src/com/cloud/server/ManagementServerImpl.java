@@ -1739,19 +1739,25 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long id = cmd.getId();
         Long osCategoryId = cmd.getOsCategoryId();
+        String description = cmd.getDescription();
+        String keyword = cmd.getKeyword();
 
-        SearchBuilder<GuestOSVO> sb = _guestOSDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("categoryId", sb.entity().getCategoryId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<GuestOSVO> sc = sb.create();
+        SearchCriteria<GuestOSVO> sc = _guestOSDao.createSearchCriteria();
 
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
         if (osCategoryId != null) {
-            sc.setParameters("categoryId", osCategoryId);
+            sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
+        }
+        
+        if (description != null) {
+            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
+        }
+        
+        if (keyword != null) {
+            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         return _guestOSDao.search(sc, searchFilter);
@@ -1761,14 +1767,21 @@ public class ManagementServerImpl implements ManagementServer {
     public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd) {
         Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long id = cmd.getId();
+        String name = cmd.getName();
+        String keyword = cmd.getKeyword();
 
-        SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<GuestOSCategoryVO> sc = sb.create();
+        SearchCriteria<GuestOSCategoryVO> sc = _guestOSCategoryDao.createSearchCriteria();
 
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+        
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         return _guestOSCategoryDao.search(sc, searchFilter);
