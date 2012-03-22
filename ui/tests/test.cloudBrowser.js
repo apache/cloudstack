@@ -29,6 +29,22 @@
     equal($breadcrumbs.find('ul li:first span').html(), 'testPanel123', 'First panel still has correct title');
   });
 
+  test('Add maximized panel', function() {
+    var $maximizedPanel, $normalPanel;
+    
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel123' }, 'Add first panel'));
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel456' }, 'Add normal-sized-panel'));
+    ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel789', maximizeIfSelected: true }), 'Add maximized panel');
+
+    $maximizedPanel = $browserContainer.find('.panel:last');
+    $normalPanel = $browserContainer.find('.panel:first').next();
+   
+    ok($maximizedPanel.hasClass('always-maximized'), 'Maximized panel has maximized class');
+    ok(!$normalPanel.hasClass('always-maximized'), 'Normal panel has maximized class');
+    equal($maximizedPanel.width(), $browserContainer.width(), 'Maximized panel covers full width of browser container');
+    notEqual($normalPanel.width(), $browserContainer.width(), 'Normal panel doesn\'t have maximized appearance');
+  });
+
   test('Select panel', function() {
     ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel123' }), 'Add first panel');
     ok($browserContainer.cloudBrowser('addPanel', { title: 'testPanel456' }), 'Add second panel');
