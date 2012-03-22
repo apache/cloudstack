@@ -286,11 +286,36 @@
             indicator: { 'Enabled': 'on', 'Disabled': 'off' }
           }
         },
-        dataProvider: function(args) {
-          cloudStack.sections.system.naas.networkProviders.statusCheck({
-            context: args.context
+        dataProvider: function(args) {          
+					$.ajax({
+            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;							
+              nspMap = {}; //empty the map
+              for(var i = 0; i < items.length; i++) {
+                switch(items[i].name) {
+                  case "VirtualRouter":
+                    nspMap["virtualRouter"] = items[i];                    
+                    break;
+                  case "Netscaler":
+                    nspMap["netscaler"] = items[i];                    
+                    break;
+                  case "F5BigIp":
+                    nspMap["f5"] = items[i];                    
+                    break;
+                  case "JuniperSRX":
+                    nspMap["srx"] = items[i];                    
+                    break;
+                  case "SecurityGroupProvider":
+                    nspMap["securityGroups"] = items[i];                    
+                    break;
+                }
+              }
+            }
           });
-
+				
 					var networkProviderData = [
 						{
 							id: 'netscaler',
@@ -1786,11 +1811,7 @@
 						}
 					}					
         },
-        dataProvider: function(args) {     
-				  //Comment out next line which causes Bug 13852 (Unable to configure multiple physical networks with service providers of the same device type).
-          //cloudStack.sections.system.naas.networkProviders.statusCheck({ context: args.context}); 
-					//Bug 13852 appears when there are multiple physical networks. Shouldn't call statusCheck() to render network provider chart before a physical network is selected. 
-										
+        dataProvider: function(args) {     				  				
           $.ajax({
             url: createURL('listPhysicalNetworks'),
 						data: {
@@ -1829,110 +1850,7 @@
         }
       },
 
-      networkProviders: { 
-        // Returns state of each network provider type
-        statusCheck: function(args) {
-          naasStatusMap = {
-            virtualRouter: 'not-configured',
-            netscaler: 'not-configured',
-            f5: 'not-configured',
-            srx: 'not-configured',
-            securityGroups: 'not-configured'
-          };
-
-          //selectedZoneObj = args.context.physicalResources[0];
-					
-          $.ajax({
-            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-            dataType: "json",
-            async: false,
-            success: function(json) {
-              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-              nspMap = {}; //empty the map
-              for(var i = 0; i < items.length; i++) {
-                switch(items[i].name) {
-                  case "VirtualRouter":
-                    nspMap["virtualRouter"] = items[i];
-                    if(items[i].state == "Enabled") {
-                      naasStatusMap["virtualRouter"] = "enabled";
-                    }
-                    else {
-                      naasStatusMap["virtualRouter"] = "disabled";  //VirtualRouter provider is disabled
-                    }
-                    break;
-                  case "Netscaler":
-                    nspMap["netscaler"] = items[i];
-                    if(items[i].state == "Enabled") {
-                      naasStatusMap["netscaler"] = "enabled";
-                    }
-                    else { //items[i].state == "Disabled"
-                      $.ajax({
-                        url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                          var items = json.listnetscalerloadbalancerresponse.netscalerloadbalancer;
-                          if(items != null && items.length > 0) {
-                            naasStatusMap["netscaler"] = "disabled";  //NetScaler provider is disabled with device(s)
-                          }
-                        }
-                      });
-                    }
-                    break;
-                  case "F5BigIp":
-                    nspMap["f5"] = items[i];
-                    if(items[i].state == "Enabled") {
-                      naasStatusMap["f5"] = "enabled";
-                    }
-                    else { //items[i].state == "Disabled"
-                      $.ajax({
-                        url: createURL("listF5LoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                          var items = json.listf5loadbalancerresponse.f5loadbalancer;
-                          if(items != null && items.length > 0) {
-                            naasStatusMap["f5"] = "disabled";  //F5 provider is disabled with device(s)
-                          }
-                        }
-                      });
-                    }
-                    break;
-                  case "JuniperSRX":
-                    nspMap["srx"] = items[i];
-                    if(items[i].state == "Enabled") {
-                      naasStatusMap["srx"] = "enabled";
-                    }
-                    else { //items[i].state == "Disabled"
-                      $.ajax({
-                        url: createURL("listSrxFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                          var items = json.listsrxfirewallresponse.srxfirewall;
-                          if(items != null && items.length > 0) {
-                            naasStatusMap["srx"] = "disabled";  //SRX provider is disabled with device(s)
-                          }
-                        }
-                      });
-                    }
-                    break;
-                  case "SecurityGroupProvider":
-                    nspMap["securityGroups"] = items[i];
-                    if(items[i].state == "Enabled") {
-                      naasStatusMap["securityGroups"] = "enabled";
-                    }
-                    else {
-                      naasStatusMap["securityGroups"] = "disabled";  //SecurityGroup provider is disabled
-                    }
-                    break;
-                }
-              }
-            }
-          });
-          return naasStatusMap;
-        },
-
+      networkProviders: {     
         statusLabels: {
           enabled: 'Enabled',             //having device, network service provider is enabled
           'not-configured': 'Not setup',  //no device
