@@ -140,7 +140,6 @@
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement"/>
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
-            <adapter name="ElasticLoadBalancerVm" class="com.cloud.network.element.ElasticLoadBalancerElement"/>
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
         </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
