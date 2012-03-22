@@ -3117,7 +3117,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // populate providers
         Map<Provider, Set<Service>> providerCombinationToVerify = new HashMap<Provider, Set<Service>>();
         Map<String, List<String>> svcPrv = cmd.getServiceProviders();
-        boolean isSrx = false;
+        Provider firewallProvider = null;
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
@@ -3135,7 +3135,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         }
 
                         if (provider == Provider.JuniperSRX) {
-                            isSrx = true;
+                            firewallProvider = Provider.JuniperSRX;
+                        }
+                        
+                        if ((service == Service.PortForwarding || service == Service.StaticNat) && provider == Provider.VirtualRouter){
+                            firewallProvider = Provider.VirtualRouter;
                         }
 
                         providers.add(provider);
@@ -3186,13 +3190,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
 
-        // if Firewall service is missing, and Juniper is a provider for any other service, add Firewall
-// service/provider combination
-        if (isSrx) {
-            s_logger.debug("Adding Firewall service with provider " + Provider.JuniperSRX.getName());
-            Set<Provider> firewallProvider = new HashSet<Provider>();
-            firewallProvider.add(Provider.JuniperSRX);
-            serviceProviderMap.put(Service.Firewall, firewallProvider);
+        // if Firewall service is missing, and Juniper is a provider for any other service or VR is StaticNat/PF provider, add Firewall
+        // service/provider combination
+        if (firewallProvider != null) {
+            s_logger.debug("Adding Firewall service with provider " + firewallProvider.getName());
+            Set<Provider> firewallProviderSet = new HashSet<Provider>();
+            firewallProviderSet.add(firewallProvider);
+            serviceProviderMap.put(Service.Firewall, firewallProviderSet);
         }
 
         return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
