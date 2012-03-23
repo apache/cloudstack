@@ -258,4 +258,53 @@
 
     $detailView.find('.detail-actions .action.actionB a').click(); // <a> triggers action, not action's container
   });
+
+  test('Refresh', function() {
+    var dataA = ['dataLoad1A', 'dataLoad2A'];
+    var dataB = ['dataLoad1B', 'dataLoad2B'];
+    var index = 0;
+    
+    var detailView = {
+      tabs: {
+        tabA: {
+          title: 'tabA',
+          fields: {
+            fieldA: { label: 'fieldA' }
+          },
+          dataProvider: function(args) {
+            args.response.success({ data: { fieldA: dataA[index]  }});
+            start();
+            equal($detailView.find('tr td:last').html(), dataA[index], 'Tab A data correct for load ' + (index + 1));
+            index++;
+          }
+        },
+        tabB: {
+          title: 'tabB',
+          fields: {
+            fieldB: { label: 'fieldB' }
+          },
+          dataProvider: function(args) {
+            args.response.success({ data: { fieldB: dataB[index]  }});
+            start();
+            equal($detailView.find('tr td:last').html(), dataB[index], 'Tab B data correct for load ' + (index + 1));
+            index++;
+          }
+        }
+      }
+    };
+    var $detailView = $('<div>');
+
+    stop();
+    $detailView.detailView(detailView).appendTo('#qunit-fixture');
+
+    stop();
+    $detailView.find('.button.refresh').click();
+
+    stop();
+    index = 0;
+    $detailView.find('.ui-tabs-nav li.last a').click();
+
+    stop();
+    $detailView.find('.button.refresh').click();
+  });
 }(jQuery));
