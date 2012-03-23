@@ -2078,7 +2078,7 @@
                             });
 
                             $.extend(item, {
-                              _itemName: 'instancename',
+                              _itemName: 'displayname',
                               _itemData: lbInstances,
                               _maxLength: {
                                 name: 7
@@ -2239,7 +2239,7 @@
                           $(portForwardingData).each(function() {
                             var item = this;
 
-                            item._itemName = 'instancename';
+                            item._itemName = 'displayname';
 
                             $.ajax({
                               url: createURL('listVirtualMachines'),
