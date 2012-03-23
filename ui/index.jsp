@@ -59,6 +59,7 @@
               <select name="language">
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+								<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
               </select>
             </div>
           </div>
