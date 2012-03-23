@@ -144,9 +144,10 @@ public class ClusterServiceServletContainer {
                                 s_logger.error("Unrecoverable HTTP protocol violation", ex);
                             } finally {
                                 try {
-                                    conn.shutdown();
                                     conn.close();
-                                } catch (IOException ignore) {}
+                                } catch (IOException ignore) {
+                                    s_logger.error("unexpected exception", ignore);
+                                }
                             }
                     	}
                     });
