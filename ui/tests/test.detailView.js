@@ -176,7 +176,7 @@
     $detailView.detailView(detailView);
   });
 
-  test('Action', function() {    
+  test('Action', function() {
     var detailView = {
       actions: {
         actionA: {
@@ -242,7 +242,7 @@
 
       args.action(); // Perform action
     };
-    
+
     cloudStack.ui.notifications.add = function(notification, success, successArgs) {
       stop();
       equal(notification.desc, 'testActionANotification', 'Correct notification message for action A');
@@ -258,7 +258,7 @@
 
       args.action(); // Perform action
     };
-    
+
     cloudStack.ui.notifications.add = function(notification, success, successArgs) {
       start();
       equal(notification.desc, 'testActionBNotification', 'Correct notification message for action B');
@@ -269,11 +269,53 @@
     $detailView.find('.detail-actions .action.actionB a').click(); // <a> triggers action, not action's container
   });
 
+  test('Action filter', function() {
+    var detailView = {
+      actions: {
+        actionA: {
+          label: 'testActionA',
+          action: function(args) {}
+        },
+        actionB: {
+          label: 'testActionB',
+          action: function(args) {}
+        }
+      },
+      tabs: {
+        tabA: {
+          title: 'tabA',
+          fields: {
+            fieldA: { label: 'fieldA' },
+            fieldB: { label: 'fieldB' }
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              actionFilter: function() {
+                return ['actionA'];
+              },
+              data: {
+                fieldA: 'fieldAContent',
+                fieldB: 'fieldBContent'
+              }
+            });
+          }
+        }
+      }
+    };
+    var $detailView = $('<div>');
+
+    $detailView.detailView(detailView).appendTo('#qunit-fixture');
+
+    equal($detailView.find('.detail-actions .action').size(), 1, 'Correct action count');
+    equal($detailView.find('.detail-actions .action.actionA').size(), 1, 'actionA present');
+    notEqual($detailView.find('.detail-actions .action.actionB').size(), 1, 'actionB not present');
+  });
+
   test('Refresh', function() {
     var dataA = ['dataLoad1A', 'dataLoad2A'];
     var dataB = ['dataLoad1B', 'dataLoad2B'];
     var index = 0;
-    
+
     var detailView = {
       tabs: {
         tabA: {
