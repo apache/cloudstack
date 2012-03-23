@@ -95,21 +95,29 @@
                     label: 'label.domain',
                     validation: { required: true },
                     select: function(args) {
+                      var data = {};
+
+                      if (args.context.users) { // In accounts section
+                        data.listAll = true;
+                      } else if (args.context.domains) { // In domain section (use specific domain)
+                        data.id = args.context.domains[0].id;
+                      }
+
                       $.ajax({
-                        url: createURL("listDomains&listAll=true"),
-                        domainid: args.context.users[0].domainid,
+                        url: createURL("listDomains"),
+                        data: data,
                         dataType: "json",
                         async: false,
                         success: function(json) {
                           var items = [];
-                          domainObjs = json.listdomainsresponse.domain;													
+                          domainObjs = json.listdomainsresponse.domain;
                           $(domainObjs).each(function() {
-                            items.push({id: this.id, description: this.path});
-														
-														if(this.level == 0)
-														  rootDomainId = this.id;														
-                          });													
-                          args.response.success({data: items});
+                            items.push({ id: this.id, description: this.path });
+
+                            if(this.level == 0)
+                              rootDomainId = this.id;
+                          });
+                          args.response.success({ data: items });
                         }
                       });
                     }
