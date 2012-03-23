@@ -1,5 +1,15 @@
 (function($) {
-  module('Detail view');
+  module('Detail view', {
+    setup: function() {
+      cloudStack.dialog.__confirm = cloudStack.dialog.confirm;
+      cloudStack.ui.notifications.__add = cloudStack.ui.notifications.add;
+    },
+
+    teardown: function() {
+      cloudStack.dialog.confirm = cloudStack.dialog.__confirm;
+      cloudStack.ui.notifications.add = cloudStack.ui.notifications.__add;
+    }
+  });
 
   test('Basic', function() {
     var detailView = {
