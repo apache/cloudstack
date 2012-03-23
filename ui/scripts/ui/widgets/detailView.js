@@ -173,6 +173,8 @@
                     $loading.remove();
                   }
                 );
+
+                return true;
               },
               error: function(args) {		//args here is parsed errortext from API response	
 							  if(args != null & args.length > 0) {
