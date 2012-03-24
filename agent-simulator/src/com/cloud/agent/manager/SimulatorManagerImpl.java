@@ -3,6 +3,7 @@ package com.cloud.agent.manager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -62,8 +63,10 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.mockvm.MockVm;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
+import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.utils.Pair;
@@ -312,6 +315,18 @@ public class SimulatorManagerImpl implements SimulatorManager {
         txn.transitToUserManagedConnection(_concierge.conn());
         try {
             return _mockVmMgr.getVmStates(hostGuid);
+        } finally {
+            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+        }
+    }
+    
+    @Override
+    @DB
+    public Map<String, MockVMVO> getVms(String hostGuid) {
+        Transaction txn = Transaction.currentTxn();
+        txn.transitToUserManagedConnection(_concierge.conn());
+        try {
+            return _mockVmMgr.getVms(hostGuid);
         } finally {
             txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
         }
