@@ -200,6 +200,7 @@ updateHostPassword=com.cloud.api.commands.UpdateHostPasswordCmd;1
 
 #### volume commands
 attachVolume=com.cloud.api.commands.AttachVolumeCmd;15
+uploadVolume=com.cloud.api.commands.UploadVolumeCmd;15
 detachVolume=com.cloud.api.commands.DetachVolumeCmd;15
 createVolume=com.cloud.api.commands.CreateVolumeCmd;15
 deleteVolume=com.cloud.api.commands.DeleteVolumeCmd;15

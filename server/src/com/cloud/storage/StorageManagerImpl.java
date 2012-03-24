@@ -18,6 +18,8 @@
 package com.cloud.storage;
 
 import java.math.BigDecimal;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -75,6 +77,7 @@ import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
+import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -1613,6 +1616,115 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return _volsDao.findById(volume.getId());
     }
 
+    
+    /*
+     * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally
+     * created
+     * only when it's attached to a VM.
+     */
+//    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
+    public VolumeVO createVolumeEntry(UploadVolumeCmd cmd) throws ResourceAllocationException{
+    	Account caller = UserContext.current().getCaller();
+        long ownerId = cmd.getEntityOwnerId();
+        Long zoneId = cmd.getZoneId();
+        String volumeName = cmd.getVolumeName();
+        String url = cmd.getUrl();
+        
+    	validateVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
+    	persistVolume();
+		return null;
+    	
+    }
+    
+    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException{
+
+        // permission check
+        _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
+
+        // Check that the resource limit for volumes won't be exceeded
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
+        
+
+        // Verify that zone exists
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        }
+
+        // Check if zone is disabled
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+        }
+        
+		if (url.toLowerCase().contains("file://")) {
+			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+		}
+		
+        String userSpecifiedName = volumeName;
+        if (userSpecifiedName == null) {
+            userSpecifiedName = getRandomVolumeName();
+        }
+		if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
+		        &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz")) 
+		        &&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
+		        &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
+		        &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
+		        &&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+		        &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
+		        throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
+		    }
+			
+			if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
+				|| (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
+				|| (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
+				|| (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
+		        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
+			}
+        validateUrl(url);
+               
+    	return false;
+    }
+    
+    private String validateUrl(String url){
+		try {
+			URI uri = new URI(url);
+			if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") 
+				&& !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+				throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+			}
+
+			int port = uri.getPort();
+			if (!(port == 80 || port == 443 || port == -1)) {
+				throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+			}
+			String host = uri.getHost();
+			try {
+				InetAddress hostAddr = InetAddress.getByName(host);
+				if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+					throw new IllegalArgumentException("Illegal host specified in url");
+				}
+				if (hostAddr instanceof Inet6Address) {
+					throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+				}
+			} catch (UnknownHostException uhe) {
+				throw new IllegalArgumentException("Unable to resolve " + host);
+			}
+			
+			return uri.toString();
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Invalid URL " + url);
+		}
+    	
+    }
+    
+    private boolean persistVolume() {
+    	
+		return false;
+	}
+    	    
+    
     /*
      * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally
      * created
@@ -1714,6 +1826,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
              * throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId +
              * " is created from ROOT volume");
              * }
+             * 
              */
         }
 
