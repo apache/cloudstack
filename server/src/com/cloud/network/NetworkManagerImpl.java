@@ -254,6 +254,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     NicDao _nicDao = null;
     @Inject
+    FirewallRulesDao _fwRulesDao = null;
+    @Inject
     RulesManager _rulesMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
@@ -906,14 +908,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } else {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
+                //We would apply all the existed firewall rules for this IP, since the rule maybe discard by revoke PF/LB rules
+                List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
+                boolean applyFirewallRules = false;
+                if (element instanceof FirewallServiceProvider &&
+                        isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider)) {
+                    applyFirewallRules = true;
+                }
                 Set<Service> services = new HashSet<Service>();
                 for (PublicIp ip : ips) {
                     if (!ipToServices.containsKey(ip)) {
                         continue;
                     }
                     services.addAll(ipToServices.get(ip));
+                    if (applyFirewallRules) {
+                        firewallRules.addAll(_fwRulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
+                    }
                 }
                 deployer.applyIps(network, ips, services);
+                if (applyFirewallRules && !firewallRules.isEmpty()) {
+                    ((FirewallServiceProvider) element).applyFWRules(network, firewallRules);
+                }
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
