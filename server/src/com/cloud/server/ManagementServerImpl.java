@@ -2089,6 +2089,11 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (zoneId != null) {
             dcList.add(ApiDBUtils.findZoneById(zoneId));
         } else {
+        	if (clusterId != null){
+        		zoneId = ApiDBUtils.findClusterById(clusterId).getDataCenterId();
+        	}else{
+        		zoneId = ApiDBUtils.findPodById(podId).getDataCenterId();
+        	}
             if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
                 capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
             }

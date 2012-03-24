@@ -44,7 +44,7 @@ public class CapacityVO implements Capacity {
     private Long hostOrPoolId;
 
     @Column(name="data_center_id")
-    private long dataCenterId;
+    private Long dataCenterId;
 
     @Column(name="pod_id")
     private Long podId;
@@ -79,7 +79,7 @@ public class CapacityVO implements Capacity {
     
     public CapacityVO() {}
 
-    public CapacityVO(Long hostId, long dataCenterId, Long podId, Long clusterId, long usedCapacity, long totalCapacity, short capacityType) {
+    public CapacityVO(Long hostId, Long dataCenterId, Long podId, Long clusterId, long usedCapacity, long totalCapacity, short capacityType) {
         this.hostOrPoolId = hostId;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
@@ -90,7 +90,7 @@ public class CapacityVO implements Capacity {
         this.updateTime = new Date();
     }
     
-    public CapacityVO(long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {        
+    public CapacityVO(Long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {        
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -112,10 +112,10 @@ public class CapacityVO implements Capacity {
         this.hostOrPoolId = hostId;
     }
     @Override
-    public long getDataCenterId() {
+    public Long getDataCenterId() {
         return dataCenterId;
     }
-    public void setDataCenterId(long dataCenterId) {
+    public void setDataCenterId(Long dataCenterId) {
         this.dataCenterId = dataCenterId;
     }
     
