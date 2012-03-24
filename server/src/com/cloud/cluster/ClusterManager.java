@@ -31,6 +31,7 @@ public interface ClusterManager extends Manager {
 	public static final String ALERT_SUBJECT = "cluster-alert";
 	
 	public void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
+    public void executeAsync(String strPeer, long agentId, Command [] cmds, boolean stopOnError);
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError);
 
     public Answer[] sendToAgent(Long hostId, Command []  cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException;

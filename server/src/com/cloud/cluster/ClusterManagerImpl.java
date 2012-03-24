@@ -33,10 +33,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -47,7 +45,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
-import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
@@ -300,33 +297,40 @@ public class ClusterManagerImpl implements ClusterManager {
     private void onNotifyingClusterPdu() {
         while(true) {
             try {
-                ClusterServicePdu pdu = popIncomingClusterPdu(1000);
+                final ClusterServicePdu pdu = popIncomingClusterPdu(1000);
                 if(pdu == null)
                 	continue;
-                	
-                if(pdu.isRequest()) {
-                    String result = dispatchClusterServicePdu(pdu);
-                    if(result == null)
-                        result = "";
-                    
-                    ClusterServicePdu responsePdu = new ClusterServicePdu();
-                    responsePdu.setSourcePeer(pdu.getDestPeer());
-                    responsePdu.setDestPeer(pdu.getSourcePeer());
-                    responsePdu.setAckSequenceId(pdu.getSequenceId());
-                    responsePdu.setJsonPackage(result);
-                    
-                    addOutgoingClusterPdu(responsePdu);
-                } else {
-                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
-                    if(requestPdu != null) {
-                        requestPdu.setResponseResult(pdu.getJsonPackage());
-                        synchronized(requestPdu) {
-                            requestPdu.notifyAll();
-                        }
-                    } else {
-                        s_logger.warn("Original request has already been cancelled. pdu: " + _gson.toJson(pdu));
-                    }
-                }
+
+                _executor.execute(new Runnable() {
+                	public void run() {
+		                if(pdu.getPduType() == ClusterServicePdu.PDU_TYPE_RESPONSE) {
+		                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
+		                    if(requestPdu != null) {
+		                        requestPdu.setResponseResult(pdu.getJsonPackage());
+		                        synchronized(requestPdu) {
+		                            requestPdu.notifyAll();
+		                        }
+		                    } else {
+		                        s_logger.warn("Original request has already been cancelled. pdu: " + _gson.toJson(pdu));
+		                    }
+		                } else {
+		                    String result = dispatchClusterServicePdu(pdu);
+		                    if(result == null)
+		                        result = "";
+		                    
+		                    if(pdu.getPduType() == ClusterServicePdu.PDU_TYPE_REQUEST) {
+			                    ClusterServicePdu responsePdu = new ClusterServicePdu();
+			                    responsePdu.setPduType(ClusterServicePdu.PDU_TYPE_RESPONSE);
+			                    responsePdu.setSourcePeer(pdu.getDestPeer());
+			                    responsePdu.setDestPeer(pdu.getSourcePeer());
+			                    responsePdu.setAckSequenceId(pdu.getSequenceId());
+			                    responsePdu.setJsonPackage(result);
+			                    
+			                    addOutgoingClusterPdu(responsePdu);
+		                    }
+		                }
+                	}
+                });
             } catch(Throwable e) {
                 s_logger.error("Unexcpeted exception: ", e);
             }
@@ -493,11 +497,22 @@ public class ClusterManagerImpl implements ClusterManager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Forwarding " + cmds[0].toString() + " to " + peer.getMsid());
                 }
-                execute(peerName, agentId, cmds, true);
+                executeAsync(peerName, agentId, cmds, true);
             } catch (Exception e) {
                 s_logger.warn("Caught exception while talkign to " + peer.getMsid());
             }
         }
+    }
+
+    @Override
+    public void executeAsync(String strPeer, long agentId, Command [] cmds, boolean stopOnError) {
+        ClusterServicePdu pdu = new ClusterServicePdu();
+        pdu.setSourcePeer(getSelfPeerName());
+        pdu.setDestPeer(strPeer);
+        pdu.setAgentId(agentId);
+        pdu.setJsonPackage(_gson.toJson(cmds, Command[].class));
+        pdu.setStopOnError(true);
+        addOutgoingClusterPdu(pdu);
     }
 
     @Override
@@ -513,9 +528,8 @@ public class ClusterManagerImpl implements ClusterManager {
         pdu.setAgentId(agentId);
         pdu.setJsonPackage(_gson.toJson(cmds, Command[].class));
         pdu.setStopOnError(stopOnError);
-        pdu.setRequest(true);
         registerRequestPdu(pdu);
-        _clusterPduOutgoingQueue.add(pdu);
+        addOutgoingClusterPdu(pdu);
         
         synchronized(pdu) {
             try {
@@ -1230,10 +1244,7 @@ public class ClusterManagerImpl implements ClusterManager {
         }
         
         _executor.execute(getClusterPduSendingTask());
-        
-        // TODO, make it configurable
-        for(int i = 0; i < 5; i++)
-            _executor.execute(getClusterPduNotificationTask());
+        _executor.execute(getClusterPduNotificationTask());
 
         Adapters<ClusterServiceAdapter> adapters = locator.getAdapters(ClusterServiceAdapter.class);
         if (adapters == null || !adapters.isSet()) {

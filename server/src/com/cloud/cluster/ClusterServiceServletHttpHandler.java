@@ -166,7 +166,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         String agentId = (String)req.getParams().getParameter("agentId");
         String gsonPackage = (String)req.getParams().getParameter("gsonPackage");
         String stopOnError = (String)req.getParams().getParameter("stopOnError");
-        String requestAck = (String)req.getParams().getParameter("requestAck");
+        String pduType = (String)req.getParams().getParameter("pduType");
 
         ClusterServicePdu pdu = new ClusterServicePdu();
         pdu.setSourcePeer(sourcePeer);
@@ -176,7 +176,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         pdu.setAckSequenceId(Long.parseLong(pduAckSeq));
         pdu.setJsonPackage(gsonPackage);
         pdu.setStopOnError("1".equals(stopOnError));
-        pdu.setRequest("1".equals(requestAck));
+        pdu.setPduType(Integer.parseInt(pduType));
         
         manager.OnReceiveClusterServicePdu(pdu);
         return "true";
