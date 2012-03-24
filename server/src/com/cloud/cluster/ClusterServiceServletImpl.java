@@ -62,7 +62,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         method.addParameter("agentId", Long.toString(pdu.getAgentId()));
         method.addParameter("gsonPackage", pdu.getJsonPackage());
         method.addParameter("stopOnError", pdu.isStopOnError() ? "1" : "0");
-        method.addParameter("requestAck", pdu.isRequest() ? "1" : "0");
+        method.addParameter("pduType", Integer.toString(pdu.getPduType()));
 
         try {
         	return executePostMethod(client, method);
