@@ -20,11 +20,14 @@
 package com.cloud.agent.manager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.mockvm.MockVm;
+import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
@@ -61,4 +64,6 @@ public interface SimulatorManager extends Manager {
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
     Map<String, State> getVmStates(String hostGuid);
+
+	Map<String, MockVMVO> getVms(String hostGuid);
 }

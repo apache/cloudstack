@@ -174,6 +174,16 @@ public class MockVmManagerImpl implements MockVmManager {
 	}
 	
 	@Override
+    public Map<String, MockVMVO> getVms(String hostGuid) {
+		List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
+		Map<String, MockVMVO> vmMap = new HashMap<String, MockVMVO>();
+		for (MockVMVO vm : vms) {
+			vmMap.put(vm.getName(), vm);
+		}
+		return vmMap;
+	}
+	
+	@Override
     public Map<String, State> getVmStates(String hostGuid) {
 		Map<String, State> states = new HashMap<String, State>();
 		List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
