@@ -245,9 +245,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			String host, String path) {
 
 		String volgroupPath = "/dev/" + path;
+		String volgroupName = path;
+		volgroupName = volgroupName.replaceFirst("/", "");
 
 		LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.LOGICAL,
-				uuid, uuid, host, volgroupPath, volgroupPath);
+				volgroupName, uuid, host, volgroupPath, volgroupPath);
 		StoragePool sp = null;
 		try {
 			s_logger.debug(spd.toString());
