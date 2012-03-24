@@ -37,7 +37,7 @@ public interface Capacity {
 
     public Long getHostOrPoolId();
 
-    public long getDataCenterId();
+    public Long getDataCenterId();
 
     public Long getPodId();
 
