@@ -139,4 +139,6 @@ public interface ResourceManager extends ResourceService{
 	HypervisorType getAvailableHypervisor(long zoneId);
 
     Discoverer getMatchingDiscover(HypervisorType hypervisorType);
+
+	List<HostVO> findHostByGuid(long dcId, String guid);
 }
