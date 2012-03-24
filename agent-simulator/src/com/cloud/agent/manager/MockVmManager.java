@@ -5,6 +5,7 @@
 package com.cloud.agent.manager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
@@ -33,6 +34,7 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
@@ -73,5 +75,6 @@ public interface MockVmManager extends Manager {
     SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info);
 	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
 	GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
+	Map<String, MockVMVO> getVms(String hostGuid);
     
 }

@@ -14,6 +14,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value={MockVMDao.class})
 public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements MockVMDao {
@@ -37,6 +38,7 @@ public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements Moc
     public List<MockVMVO> findByHostGuid(String guid) {
         SearchCriteria<MockVMVO> sc = GuidSearch.create();
         sc.setJoinParameters("host", "guid", guid);
+        sc.setParameters("state", VirtualMachine.State.Running);
         return listBy(sc);
     }
     
@@ -55,6 +57,7 @@ public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements Moc
         
         GuidSearch = createSearchBuilder();
         GuidSearch.join("host", host, host.entity().getId(), GuidSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        GuidSearch.and("state", GuidSearch.entity().getState(), SearchCriteria.Op.EQ);
         GuidSearch.done();
         
         vmNameSearch = createSearchBuilder();

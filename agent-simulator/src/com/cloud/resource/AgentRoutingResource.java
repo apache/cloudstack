@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
 
@@ -38,6 +40,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.Pair;
@@ -47,6 +50,11 @@ public class AgentRoutingResource extends AgentStorageResource {
     private static final Logger s_logger = Logger.getLogger(AgentRoutingResource.class);
 
     protected Map<String, State> _vms = new HashMap<String, State>();
+    private Map<String, Pair<Long, Long>> _runningVms = new HashMap<String, Pair<Long, Long>>();
+    long usedCpu = 0;
+    long usedMem = 0;
+    long totalCpu;
+    long totalMem;
     protected String _mountParent;
 
 
@@ -108,6 +116,16 @@ public class AgentRoutingResource extends AgentStorageResource {
             _vms.clear();
         }
         Map<String, State> changes = _simMgr.getVmStates(this.hostGuid);
+        Map<String, MockVMVO> vmsMaps = _simMgr.getVms(this.hostGuid);
+        totalCpu = agentHost.getCpuCount() * agentHost.getCpuSpeed();
+        totalMem = agentHost.getMemorySize();
+        for (Map.Entry<String, MockVMVO> entry : vmsMaps.entrySet()) {
+        	MockVMVO vm = entry.getValue();
+        	usedCpu += vm.getCpu();
+        	usedMem += vm.getMemory();
+        	_runningVms.put(entry.getKey(), new Pair<Long, Long>(Long.valueOf(vm.getCpu()), vm.getMemory()));
+        }
+        
         List<Object> info = getHostInfo();
 
         StartupRoutingCommand cmd = new StartupRoutingCommand((Integer) info.get(0), (Long) info.get(1), (Long) info.get(2), (Long) info.get(4), (String) info.get(3), HypervisorType.Simulator,
@@ -159,7 +177,10 @@ public class AgentRoutingResource extends AgentStorageResource {
 			throws IllegalArgumentException {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 		String vmName = vmSpec.getName();
-
+		if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getSpeed() + this.usedCpu) ||
+			this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
+			return new StartAnswer(cmd, "No enough resource to start the vm"); 
+		}
 		State state = State.Stopped;
 		synchronized (_vms) {
 			_vms.put(vmName, State.Starting);
@@ -170,7 +191,10 @@ public class AgentRoutingResource extends AgentStorageResource {
 		    if (!result.getResult()) {
 		        return new StartAnswer(cmd, result.getDetails());
 		    }
-
+		    
+		    this.usedCpu += vmSpec.getCpus() * vmSpec.getSpeed();
+		    this.usedMem += vmSpec.getMaxRam();
+		    _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getSpeed()), vmSpec.getMaxRam()));
 		    state = State.Running;
 
 		} finally {
@@ -201,7 +225,11 @@ public class AgentRoutingResource extends AgentStorageResource {
 		    }
 		    
 			answer = new StopAnswer(cmd, null, 0, new Long(100), new Long(200));
-			
+			Pair<Long, Long> data = _runningVms.get(vmName);
+			if (data != null) {
+				this.usedCpu -= data.first();
+				this.usedMem -= data.second();
+			}
 			state = State.Stopped;
 			
 		} finally {
