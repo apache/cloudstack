@@ -48,6 +48,11 @@ public class DummyClusterManagerImpl implements ClusterManager {
     public void OnReceiveClusterServicePdu(ClusterServicePdu pdu) {
         throw new CloudRuntimeException("Unsupported feature");
     }
+
+    @Override
+    public void executeAsync(String strPeer, long agentId, Command [] cmds, boolean stopOnError) {
+    	throw new CloudRuntimeException("Unsupported feature");
+    }
     
     @Override
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError) {
