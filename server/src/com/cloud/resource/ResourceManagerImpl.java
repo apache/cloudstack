@@ -2005,6 +2005,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
 		return sc.list();
     }
+	
+	@Override 
+	public List<HostVO> findHostByGuid(long dcId, String guid) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+		return sc.list();
+	}
 
 	@Override
     public List<HostVO> listAllHostsInCluster(long clusterId) {

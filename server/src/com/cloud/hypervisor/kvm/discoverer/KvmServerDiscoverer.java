@@ -274,7 +274,12 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			}
 		}
 		s_logger.debug("Timeout, to wait for the host connecting to mgt svr, assuming it is failed");
-		return null;
+		List<HostVO> hosts = _resourceMgr.findHostByGuid(dcId, guid);
+		if (hosts.size() == 1) {
+			return hosts.get(0);
+		} else {
+			return null;
+		}
 	}
 	
 	@Override
