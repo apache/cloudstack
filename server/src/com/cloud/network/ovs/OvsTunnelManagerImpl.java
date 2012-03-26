@@ -203,12 +203,13 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         }
 		//FIXME: Why are we cancelling the exception here?
 		try {
-			String myIp = dest.getHost().getPrivateIpAddress();
+			//HACK HACK HACK - Should not use public IP
+                        String myIp = dest.getHost().getPublicIpAddress();
 			boolean noHost = true;
 			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i);
 				Commands cmds = new Commands(
-						new OvsCreateTunnelCommand(rHost.getPrivateIpAddress(), key, 
+						new OvsCreateTunnelCommand(rHost.getPublicIpAddress(), key, 
 											       Long.valueOf(hostId), i, nw.getId(), myIp));
 				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i);
 				Answer[] answers = _agentMgr.send(hostId, cmds);
@@ -220,7 +221,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 			    HostVO rHost = _hostDao.findById(i);
 				Commands cmds = new Commands(
 				        new OvsCreateTunnelCommand(myIp, key, i, Long.valueOf(hostId),
-				        		                   nw.getId(), rHost.getPrivateIpAddress()));
+				        		                   nw.getId(), rHost.getPublicIpAddress()));
 				s_logger.debug("Ask host " + i + " to create gre tunnel to " + hostId);
 				Answer[] answers = _agentMgr.send(i, cmds);
 				handleCreateTunnelAnswer(answers);
