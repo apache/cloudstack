@@ -33,8 +33,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -45,13 +47,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
-import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PropagateResourceEventCommand;
+import com.cloud.agent.api.TransferAgentCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -91,9 +93,7 @@ import com.google.gson.Gson;
 public class ClusterManagerImpl implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
-
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
-
 
     private final List<ClusterManagerListener> _listeners = new ArrayList<ClusterManagerListener>();
     private final Map<Long, ManagementServerHostVO> _activePeers = new HashMap<Long, ManagementServerHostVO>();
@@ -101,7 +101,6 @@ public class ClusterManagerImpl implements ClusterManager {
     private int _heartbeatThreshold = ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD;
 
     private final Map<String, ClusterService> _clusterPeers;
-    private final Map<String, Listener> _asyncCalls;
     private final Gson _gson;
 
     @Inject
@@ -142,10 +141,12 @@ public class ClusterManagerImpl implements ClusterManager {
     private double _connectedAgentsThreshold = 0.7;
     private static boolean _agentLbHappened = false;
     
+    private BlockingQueue<ClusterServicePdu> _clusterPduOutgoingQueue = new LinkedBlockingQueue<ClusterServicePdu>();
+    private BlockingQueue<ClusterServicePdu> _clusterPduIncomingQueue = new LinkedBlockingQueue<ClusterServicePdu>();
+    private Map<Long, ClusterServiceRequestPdu> _outgoingPdusWaitingForAck = new HashMap<Long, ClusterServiceRequestPdu>();
     
     public ClusterManagerImpl() {
         _clusterPeers = new HashMap<String, ClusterService>();
-        _asyncCalls = new HashMap<String, Listener>();
 
         _gson = GsonHelper.getGson();
 
@@ -154,7 +155,242 @@ public class ClusterManagerImpl implements ClusterManager {
         //
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
     }
+    
+    private void registerRequestPdu(ClusterServiceRequestPdu pdu) {
+        synchronized(_outgoingPdusWaitingForAck) {
+            _outgoingPdusWaitingForAck.put(pdu.getSequenceId(), pdu);
+        }
+    }
+    
+    private ClusterServiceRequestPdu popRequestPdu(long ackSequenceId) {
+        synchronized(_outgoingPdusWaitingForAck) {
+            if(_outgoingPdusWaitingForAck.get(ackSequenceId) != null) {
+                ClusterServiceRequestPdu pdu = _outgoingPdusWaitingForAck.get(ackSequenceId);
+                _outgoingPdusWaitingForAck.remove(ackSequenceId);
+                return pdu;
+            }
+        }
+        
+        return null;
+    }
+    
+    private void cancelClusterRequestToPeer(String strPeer) {
+        List<ClusterServiceRequestPdu> candidates = new ArrayList<ClusterServiceRequestPdu>();
+        synchronized(_outgoingPdusWaitingForAck) {
+            for(Map.Entry<Long, ClusterServiceRequestPdu> entry : _outgoingPdusWaitingForAck.entrySet()) {
+                if(entry.getValue().getDestPeer().equalsIgnoreCase(strPeer))
+                    candidates.add(entry.getValue());
+            }
 
+            for(ClusterServiceRequestPdu pdu : candidates) {
+                _outgoingPdusWaitingForAck.remove(pdu.getSequenceId());
+            }
+        }
+        
+        for(ClusterServiceRequestPdu pdu : candidates) {
+            s_logger.warn("Cancel cluster request PDU to peer: " + strPeer + ", pdu: " + _gson.toJson(pdu));
+            synchronized(pdu) {
+                pdu.notifyAll();
+            }
+        }
+    }
+    
+    private Runnable getClusterPduSendingTask() {
+        return new Runnable() {
+            public void run() {
+                onSendingClusterPdu();
+            }
+        };
+    }
+    
+    private Runnable getClusterPduNotificationTask() {
+        return new Runnable() {
+            public void run() {
+                onNotifyingClusterPdu();
+            }
+        };
+    }
+    
+    private void onSendingClusterPdu() {
+        while(true) {
+            try {
+                ClusterServicePdu pdu = _clusterPduOutgoingQueue.take();
+                
+                ClusterService peerService =  null;
+                for(int i = 0; i < 2; i++) {
+                    try {
+                        peerService = getPeerService(pdu.getDestPeer());
+                    } catch (RemoteException e) {
+                        s_logger.error("Unable to get cluster service on peer : " + pdu.getDestPeer());
+                    }
+
+                    if(peerService != null) {
+                        try {
+                            if(s_logger.isDebugEnabled()) {
+                                s_logger.debug("Cluster PDU " + getSelfPeerName() + " -> " + pdu.getDestPeer() + ". agent: " + pdu.getAgentId() 
+                                    + ", pdu seq: " + pdu.getSequenceId() + ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
+                            }
+
+                            long startTick = System.currentTimeMillis();
+                            String strResult = peerService.execute(pdu);
+                            if(s_logger.isDebugEnabled()) {
+                                s_logger.debug("Cluster PDU " + getSelfPeerName() + " -> " + pdu.getDestPeer() + " completed. time: " +
+                                    (System.currentTimeMillis() - startTick) + "ms. agent: " + pdu.getAgentId() 
+                                     + ", pdu seq: " + pdu.getSequenceId() + ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
+                            }
+                            
+                            if("true".equals(strResult))
+                                break;
+                            
+                        } catch (RemoteException e) {
+                            invalidatePeerService(pdu.getDestPeer());
+                            if(s_logger.isInfoEnabled()) {
+                                s_logger.info("Exception on remote execution, peer: " + pdu.getDestPeer() + ", iteration: "
+                                        + i + ", exception message :" + e.getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch(InterruptedException e) {
+            } catch(Throwable e) {
+                s_logger.error("Unexcpeted exception: ", e);
+            }
+        }
+    }
+    
+    private void onNotifyingClusterPdu() {
+        while(true) {
+            try {
+                ClusterServicePdu pdu = _clusterPduOutgoingQueue.take();
+                if(pdu.isRequest()) {
+                    String result = dispatchClusterServicePdu(pdu);
+                    if(result == null)
+                        result = "";
+                    
+                    ClusterServicePdu responsePdu = new ClusterServicePdu();
+                    responsePdu.setSourcePeer(pdu.getDestPeer());
+                    responsePdu.setDestPeer(pdu.getSourcePeer());
+                    responsePdu.setAckSequenceId(pdu.getSequenceId());
+                    responsePdu.setJsonPackage(result);
+                    
+                    _clusterPduOutgoingQueue.put(responsePdu);
+                } else {
+                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
+                    if(requestPdu != null) {
+                        requestPdu.setResponseResult(pdu.getJsonPackage());
+                        synchronized(requestPdu) {
+                            requestPdu.notifyAll();
+                        }
+                    } else {
+                        s_logger.warn("Original request has already been cancelled. pdu: " + _gson.toJson(pdu));
+                    }
+                }
+            } catch(InterruptedException e) {
+            } catch(Throwable e) {
+                s_logger.error("Unexcpeted exception: ", e);
+            }
+        }
+    }
+    
+    private String dispatchClusterServicePdu(ClusterServicePdu pdu) {
+
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Dispatch ->" + pdu.getAgentId() + ", json: " + pdu.getJsonPackage());
+        }
+
+        Command [] cmds = null;
+        try {
+            cmds = _gson.fromJson(pdu.getJsonPackage(), Command[].class);
+        } catch(Throwable e) {
+            assert(false);
+            s_logger.error("Excection in gson decoding : ", e);
+        }
+
+        if (cmds.length == 1 && cmds[0] instanceof ChangeAgentCommand) {  //intercepted
+            ChangeAgentCommand cmd = (ChangeAgentCommand)cmds[0];
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Intercepting command for agent change: agent " + cmd.getAgentId() + " event: " + cmd.getEvent());
+            }
+            boolean result = false;
+            try {
+                result = executeAgentUserRequest(cmd.getAgentId(), cmd.getEvent());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Result is " + result);
+                }
+
+            } catch (AgentUnavailableException e) {
+                s_logger.warn("Agent is unavailable", e);
+                return null;
+            }
+
+            Answer[] answers = new Answer[1];
+            answers[0] = new ChangeAgentAnswer(cmd, result);
+            return _gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof TransferAgentCommand) {
+            TransferAgentCommand cmd = (TransferAgentCommand) cmds[0];
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Intercepting command for agent rebalancing: agent " + cmd.getAgentId() + " event: " + cmd.getEvent());
+            }
+            boolean result = false;
+            try {
+                result = rebalanceAgent(cmd.getAgentId(), cmd.getEvent(), cmd.getCurrentOwner(), cmd.getFutureOwner());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Result is " + result);
+                }
+
+            } catch (AgentUnavailableException e) {
+                s_logger.warn("Agent is unavailable", e);
+                return null;
+            } catch (OperationTimedoutException e) {
+                s_logger.warn("Operation timed out", e);
+                return null;
+            }
+            Answer[] answers = new Answer[1];
+            answers[0] = new Answer(cmd, result, null);
+            return _gson.toJson(answers);
+        }
+
+        try {
+            long startTick = System.currentTimeMillis();
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Dispatch -> " + pdu.getAgentId() + ", json: " + pdu.getJsonPackage());
+            }
+
+            Answer[] answers = sendToAgent(pdu.getAgentId(), cmds, pdu.isStopOnError());
+            if(answers != null) {
+                String jsonReturn =  _gson.toJson(answers);
+
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Completed dispatching -> " + pdu.getAgentId() + ", json: " + pdu.getJsonPackage() +
+                            " in " + (System.currentTimeMillis() - startTick) + " ms, return result: " + jsonReturn);
+                }
+
+                return jsonReturn;
+            } else {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Completed dispatching -> " + pdu.getAgentId() + ", json: " + pdu.getJsonPackage() +
+                            " in " + (System.currentTimeMillis() - startTick) + " ms, return null result");
+                }
+            }
+        } catch(AgentUnavailableException e) {
+            s_logger.warn("Agent is unavailable", e);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+        }
+        
+        return null;
+    }
+
+    public void OnReceiveClusterServicePdu(ClusterServicePdu pdu) {
+        try {
+            _clusterPduIncomingQueue.put(pdu);
+        } catch (InterruptedException e) {
+            s_logger.warn("InterruptedException. pdu: " + _gson.toJson(pdu) + " is dropped");
+        }
+    }
+    
     @Override
     public Answer[] sendToAgent(Long hostId, Command[] cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException {
         Commands commands = new Commands(stopOnError ? OnError.Stop : OnError.Continue);
@@ -162,15 +398,6 @@ public class ClusterManagerImpl implements ClusterManager {
             commands.addCommand(cmd);
         }
         return _agentMgr.send(hostId, commands);
-    }
-
-    @Override
-    public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException {
-        Commands commands = new Commands(stopOnError ? OnError.Stop : OnError.Continue);
-        for (Command cmd : cmds) {
-            commands.addCommand(cmd);
-        }
-        return _agentMgr.send(hostId, commands, listener);
     }
 
     @Override
@@ -229,7 +456,7 @@ public class ClusterManagerImpl implements ClusterManager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Forwarding " + cmds[0].toString() + " to " + peer.getMsid());
                 }
-                Answer[] answers = execute(peerName, agentId, cmds, true);
+                execute(peerName, agentId, cmds, true);
             } catch (Exception e) {
                 s_logger.warn("Caught exception while talkign to " + peer.getMsid());
             }
@@ -238,208 +465,44 @@ public class ClusterManagerImpl implements ClusterManager {
 
     @Override
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError) {
-        ClusterService peerService =  null;
-
         if(s_logger.isDebugEnabled()) {
             s_logger.debug(getSelfPeerName() + " -> " + strPeer + "." + agentId + " " +
                     _gson.toJson(cmds, Command[].class));
         }
-
-        for(int i = 0; i < 2; i++) {
+        
+        ClusterServiceRequestPdu pdu = new ClusterServiceRequestPdu();
+        pdu.setSourcePeer(getSelfPeerName());
+        pdu.setDestPeer(strPeer);
+        pdu.setAgentId(agentId);
+        pdu.setJsonPackage(_gson.toJson(cmds, Command[].class));
+        pdu.setStopOnError(stopOnError);
+        pdu.setRequest(true);
+        registerRequestPdu(pdu);
+        _clusterPduOutgoingQueue.add(pdu);
+        
+        synchronized(pdu) {
             try {
-                peerService = getPeerService(strPeer);
-            } catch (RemoteException e) {
-                s_logger.error("Unable to get cluster service on peer : " + strPeer);
+                pdu.wait();
+            } catch (InterruptedException e) {
             }
+        }
 
-            if(peerService != null) {
-                try {
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Send " + getSelfPeerName() + " -> " + strPeer + "." + agentId + " to remote");
-                    }
-
-                    long startTick = System.currentTimeMillis();
-                    String strResult = peerService.execute(getSelfPeerName(), agentId, _gson.toJson(cmds, Command[].class), stopOnError);
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Completed " + getSelfPeerName() + " -> " + strPeer + "." + agentId + "in " +
-                                (System.currentTimeMillis() - startTick) + " ms, result: " + strResult);
-                    }
-
-                    if(strResult != null) {
-                        try {
-                            return _gson.fromJson(strResult, Answer[].class);
-                        } catch(Throwable e) {
-                            s_logger.error("Exception on parsing gson package from remote call to " + strPeer);
-                        }
-                    }
-                    return null;
-                } catch (RemoteException e) {
-                    invalidatePeerService(strPeer);
-                    if(s_logger.isInfoEnabled()) {
-                        s_logger.info("Exception on remote execution, peer: " + strPeer + ", iteration: "
-                                + i + ", exception message :" + e.getMessage());
-                    }
-                }
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug(getSelfPeerName() + " -> " + strPeer + "." + agentId + " completed. result: " +
+                pdu.getResponseResult());
+        }
+        
+        if(pdu.getResponseResult() != null && pdu.getResponseResult().length() > 0) {
+            try {
+                return _gson.fromJson(pdu.getResponseResult(), Answer[].class);
+            } catch(Throwable e) {
+                s_logger.error("Exception on parsing gson package from remote call to " + strPeer);
             }
         }
 
         return null;
     }
-
-    @Override
-    public long executeAsync(String strPeer, long agentId, Command[] cmds, boolean stopOnError, Listener listener) {
-        ClusterService peerService =  null;
-
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId + " " +
-                    _gson.toJson(cmds, Command[].class));
-        }
-
-        for(int i = 0; i < 2; i++) {
-            try {
-                peerService = getPeerService(strPeer);
-            } catch (RemoteException e) {
-                s_logger.error("Unable to get cluster service on peer : " + strPeer);
-            }
-            if(peerService != null) {
-                try {
-                    long seq = 0;
-                    synchronized(String.valueOf(agentId).intern()) {
-                        if(s_logger.isDebugEnabled()) {
-                            s_logger.debug("Send Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId + " to remote");
-                        }
-
-                        long startTick = System.currentTimeMillis();
-                        seq = peerService.executeAsync(getSelfPeerName(), agentId, _gson.toJson(cmds, Command[].class), stopOnError);
-                        if(seq > 0) {
-                            if(s_logger.isDebugEnabled()) {
-                                s_logger.debug("Completed Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId
-                                        + " in " + (System.currentTimeMillis() - startTick) + " ms"
-                                        + ", register local listener " + strPeer + "/" + seq);
-                            }
-
-                            registerAsyncCall(strPeer, seq, listener);
-                        } else {
-                            s_logger.warn("Completed Async " + getSelfPeerName() + " -> " + strPeer + "." + agentId
-                                    + " in " + (System.currentTimeMillis() - startTick) + " ms, return indicates failure, seq: " + seq);
-                        }
-                    }
-                    return seq;
-                } catch (RemoteException e) {
-                    invalidatePeerService(strPeer);
-
-                    if(s_logger.isInfoEnabled()) {
-                        s_logger.info("Exception on remote execution -> " + strPeer + ", iteration : " + i);
-                    }
-                }
-            }
-        }
-
-        return 0L;
-    }
-
-    @Override
-    public boolean onAsyncResult(String executingPeer, long agentId, long seq, Answer[] answers) {
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Process Async-call result from remote peer " + executingPeer + ", {" +
-                    agentId + "-" + seq + "} answers: " + (answers != null ? _gson.toJson(answers, Answer[].class): "null"));
-        }
-
-        Listener listener = null;
-        synchronized(String.valueOf(agentId).intern()) {
-            // need to synchronize it with executeAsync() to make sure listener have been registered
-            // before this callback reaches back
-            listener = getAsyncCallListener(executingPeer, seq);
-        }
-
-        if(listener != null) {
-            long startTick = System.currentTimeMillis();
-
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Processing answer {" + agentId + "-" + seq + "} from remote peer " + executingPeer);
-            }
-
-            listener.processAnswers(agentId, seq, answers);
-
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Answer {" + agentId + "-" + seq + "} is processed in " +
-                        (System.currentTimeMillis() - startTick) + " ms");
-            }
-
-            if(!listener.isRecurring()) {
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Listener is not recurring after async-result callback {" +
-                            agentId + "-" + seq + "}, unregister it");
-                }
-
-                unregisterAsyncCall(executingPeer, seq);
-            } else {
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Listener is recurring after async-result callback {" + agentId
-                            +"-" + seq + "}, will keep it");
-                }
-                return true;
-            }
-        } else {
-            if(s_logger.isInfoEnabled()) {
-                s_logger.info("Async-call Listener has not been registered yet for {" + agentId
-                        +"-" + seq + "}");
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean forwardAnswer(String targetPeer, long agentId, long seq, Answer[] answers) {
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Forward -> " + targetPeer + " Async-call answer {" + agentId + "-" + seq +
-                    "} " + (answers != null? _gson.toJson(answers, Answer[].class):""));
-        }
-
-        final String targetPeerF = targetPeer;
-        final Answer[] answersF = answers;
-        final long agentIdF = agentId;
-        final long seqF = seq;
-
-        ClusterService peerService = null;
-
-        for(int i = 0; i < 2; i++) {
-            try {
-                peerService = getPeerService(targetPeerF);
-            } catch (RemoteException e) {
-                s_logger.error("cluster service for peer " + targetPeerF + " no longer exists");
-            }
-
-            if(peerService != null) {
-                try {
-                    boolean result = false;
-
-                    long startTick = System.currentTimeMillis();
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Start forwarding Async-call answer {" + agentId + "-" + seq + "} to remote");
-                    }
-
-                    result = peerService.onAsyncResult(getSelfPeerName(), agentIdF, seqF, _gson.toJson(answersF, Answer[].class));
-
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Completed forwarding Async-call answer {" + agentId + "-" + seq + "} in " +
-                                (System.currentTimeMillis() - startTick) + " ms, return result: " + result);
-                    }
-
-                    return result;
-                } catch (RemoteException e) {
-                    s_logger.warn("Exception in performing remote call, ", e);
-                    invalidatePeerService(targetPeerF);
-                }
-            } else {
-                s_logger.warn("Remote peer " + targetPeer + " no longer exists to process answer {" + agentId + "-"
-                        + seq + "}");
-            }
-        }
-
-        return false;
-    }
-
+    
     @Override
     public String getPeerName(long agentHostId) {
 
@@ -511,10 +574,12 @@ public class ClusterManagerImpl implements ClusterManager {
     public void notifyNodeLeft(List<ManagementServerHostVO> nodeList) {
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Notify management server node left to listeners.");
-
-            for(ManagementServerHostVO mshost : nodeList) {
+        }
+        
+        for(ManagementServerHostVO mshost : nodeList) {
+            if(s_logger.isDebugEnabled())
                 s_logger.debug("Leaving node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
-            }
+            cancelClusterRequestToPeer(String.valueOf(mshost.getMsid()));
         }
 
         synchronized(_listeners) {
@@ -564,38 +629,6 @@ public class ClusterManagerImpl implements ClusterManager {
         synchronized(_clusterPeers) {
             if(_clusterPeers.containsKey(strPeer)) {
                 _clusterPeers.remove(strPeer);
-            }
-        }
-    }
-
-    private void registerAsyncCall(String strPeer, long seq, Listener listener) {
-        String key = strPeer + "/" + seq;
-
-        synchronized(_asyncCalls) {
-            if(!_asyncCalls.containsKey(key)) {
-                _asyncCalls.put(key, listener);
-            }
-        }
-    }
-
-    private Listener getAsyncCallListener(String strPeer, long seq) {
-        String key = strPeer + "/" + seq;
-
-        synchronized(_asyncCalls) {
-            if(_asyncCalls.containsKey(key)) {
-                return _asyncCalls.get(key);
-            }
-        }
-
-        return null;
-    }
-
-    private void unregisterAsyncCall(String strPeer, long seq) {
-        String key = strPeer + "/" + seq;
-
-        synchronized(_asyncCalls) {
-            if(_asyncCalls.containsKey(key)) {
-                _asyncCalls.remove(key);
             }
         }
     }
@@ -677,12 +710,12 @@ public class ClusterManagerImpl implements ClusterManager {
                     s_logger.error("Runtime DB exception ", e.getCause());
 
                     if(e.getCause() instanceof ClusterInvalidSessionException) {
-                        s_logger.error("Invalid cluster session found");
+                        s_logger.error("Invalid cluster session found, fence it");
                         queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                     }
 
                     if(isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected");
+                        s_logger.error("DB communication problem detected, fence it");
                         queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                     }
 
@@ -690,12 +723,13 @@ public class ClusterManagerImpl implements ClusterManager {
                 } catch(ActiveFencingException e) {
                     queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                 } catch (Throwable e) {
+                    s_logger.error("Unexpected exception in cluster heartbeat", e);
                     if(isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected");
+                        s_logger.error("DB communication problem detected, fence it");
                         queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                     }
 
-                    s_logger.error("Problem with the cluster heartbeat!", e);
+                    invalidHeartbeatConnection();
                 } finally {
                     txn.close("ClusterHeartBeat");
                 }
@@ -1205,7 +1239,6 @@ public class ClusterManagerImpl implements ClusterManager {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
 
-
         _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
         
         String connectedAgentsThreshold = configs.get("agent.load.threshold");
@@ -1218,6 +1251,13 @@ public class ClusterManagerImpl implements ClusterManager {
 
         checkConflicts();
 
+        _executor.execute(getClusterPduSendingTask());
+        
+        // TODO, make it configurable
+        for(int i = 0; i < 5; i++)
+            _executor.execute(getClusterPduNotificationTask());
+        
+        
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Cluster manager is configured.");
         }
