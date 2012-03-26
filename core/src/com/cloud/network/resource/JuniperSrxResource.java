@@ -88,19 +88,23 @@ public class JuniperSrxResource implements ServerResource {
     private BufferedReader _fromSrx;
     private PrintWriter _UsagetoSrx;
     private BufferedReader _UsagefromSrx;
-    private static Integer _numRetries;
-    private static Integer _timeoutInSeconds;
-    private static String _publicZone;
-    private static String _privateZone;
-    private static String _publicInterface;
-    private static String _usageInterface;
-    private static String _privateInterface;
-    private static String _ikeProposalName;
-    private static String _ipsecPolicyName;
-    private static String _primaryDnsAddress;
-    private static String _ikeGatewayHostname;
-    private static String _vpnObjectPrefix;
-    private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+    private Integer _numRetries;
+    private Integer _timeoutInSeconds;
+    private String _publicZone;
+    private String _privateZone;
+    private String _publicInterface;
+    private String _usageInterface;
+    private String _privateInterface;
+    private String _ikeProposalName;
+    private String _ipsecPolicyName;
+    private String _primaryDnsAddress;
+    private String _ikeGatewayHostname;
+    private String _vpnObjectPrefix;
+    private UsageFilter _usageFilterVlanInput = new UsageFilter("vlan-input", null, "vlan-input");
+    private UsageFilter _usageFilterVlanOutput = new UsageFilter("vlan-output", null, "vlan-output");
+    private UsageFilter _usageFilterIPInput = new UsageFilter(_publicZone, "destination-address", "-i");
+    private UsageFilter _usageFilterIPOutput = new UsageFilter(_privateZone, "source-address", "-o");
+    private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
         LOGIN("login.xml"), 
@@ -166,6 +170,7 @@ public class JuniperSrxResource implements ServerResource {
 
         private String scriptsDir = "scripts/network/juniper";
         private String xml;
+        private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
         private SrxXml(String filename) {
             this.xml = getXml(filename);
@@ -200,12 +205,7 @@ public class JuniperSrxResource implements ServerResource {
         }
     }	
 
-    public enum UsageFilter {
-        VLAN_INPUT("vlan-input", null, "vlan-input"),
-        VLAN_OUTPUT("vlan-output", null, "vlan-output"),
-        IP_INPUT(_publicZone, "destination-address", "-i"),
-        IP_OUTPUT(_privateZone, "source-address", "-o");    	
-
+    public class UsageFilter {
         private String name;
         private String counterIdentifier;
         private String addressType;
@@ -671,11 +671,11 @@ public class JuniperSrxResource implements ServerResource {
             manageSourceNatPool(SrxCommand.ADD, publicIp);    
             manageSourceNatRule(SrxCommand.ADD, publicIp, privateSubnet); 		    				
             manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);			
-            manageUsageFilter(SrxCommand.ADD, UsageFilter.IP_OUTPUT, privateSubnet, null, genIpFilterTermName(publicIp));
-            manageUsageFilter(SrxCommand.ADD, UsageFilter.IP_INPUT, publicIp, null, genIpFilterTermName(publicIp));
+            manageUsageFilter(SrxCommand.ADD, _usageFilterIPOutput, privateSubnet, null, genIpFilterTermName(publicIp));
+            manageUsageFilter(SrxCommand.ADD, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));
         } else if (type.equals(GuestNetworkType.INTERFACE_NAT)){		    
-            manageUsageFilter(SrxCommand.ADD, UsageFilter.VLAN_OUTPUT, null, privateVlanTag, null);		    
-            manageUsageFilter(SrxCommand.ADD, UsageFilter.VLAN_INPUT, null, privateVlanTag, null);
+            manageUsageFilter(SrxCommand.ADD, _usageFilterVlanOutput, null, privateVlanTag, null);		    
+            manageUsageFilter(SrxCommand.ADD, _usageFilterVlanInput, null, privateVlanTag, null);
         }
 
         String msg = "Implemented guest network with type " + type + ". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway;
@@ -698,11 +698,11 @@ public class JuniperSrxResource implements ServerResource {
             manageSourceNatRule(SrxCommand.DELETE, sourceNatIpAddress, privateSubnet);
             manageSourceNatPool(SrxCommand.DELETE, sourceNatIpAddress);
             manageProxyArp(SrxCommand.DELETE, publicVlanTag, sourceNatIpAddress);
-            manageUsageFilter(SrxCommand.DELETE, UsageFilter.IP_OUTPUT, privateSubnet, null, genIpFilterTermName(sourceNatIpAddress));
-            manageUsageFilter(SrxCommand.DELETE, UsageFilter.IP_INPUT, sourceNatIpAddress, null, genIpFilterTermName(sourceNatIpAddress));					    					   		    		   
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterIPOutput, privateSubnet, null, genIpFilterTermName(sourceNatIpAddress));
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, sourceNatIpAddress, null, genIpFilterTermName(sourceNatIpAddress));					    					   		    		   
         } else if (type.equals(GuestNetworkType.INTERFACE_NAT)) {
-            manageUsageFilter(SrxCommand.DELETE, UsageFilter.VLAN_OUTPUT, null, privateVlanTag, null);         
-            manageUsageFilter(SrxCommand.DELETE, UsageFilter.VLAN_INPUT, null, privateVlanTag, null); 		       		    
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanOutput, null, privateVlanTag, null);         
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanInput, null, privateVlanTag, null); 		       		    
         }				
 
         String msg = "Shut down guest network with type " + type +". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway;
@@ -764,7 +764,7 @@ public class JuniperSrxResource implements ServerResource {
     private void addStaticNatRule(Long publicVlanTag, String publicIp, String privateIp, List<FirewallRuleTO> rules) throws ExecutionException {
         manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
         manageStaticNatRule(SrxCommand.ADD, publicIp, privateIp);
-        manageUsageFilter(SrxCommand.ADD, UsageFilter.IP_INPUT, publicIp, null, genIpFilterTermName(publicIp));		
+        manageUsageFilter(SrxCommand.ADD, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));		
         manageAddressBookEntry(SrxCommand.ADD, _privateZone, privateIp, null);
 
         // Add a new security policy with the current set of applications
@@ -776,7 +776,7 @@ public class JuniperSrxResource implements ServerResource {
     private void removeStaticNatRule(Long publicVlanTag, String publicIp, String privateIp) throws ExecutionException {	    
         manageStaticNatRule(SrxCommand.DELETE, publicIp, privateIp);
         manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);   
-        manageUsageFilter(SrxCommand.DELETE, UsageFilter.IP_INPUT, publicIp, null, genIpFilterTermName(publicIp));
+        manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));
 
         // Remove any existing security policy and clean up applications
         removeSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp);
@@ -1533,8 +1533,8 @@ public class JuniperSrxResource implements ServerResource {
             xml = replaceXmlValue(xml, "private-interface-ip", privateInterfaceIp);
 
             if (addFilters) {
-                xml = replaceXmlValue(xml, "input-filter-name", UsageFilter.VLAN_INPUT.getName() + "-" + vlanTag);
-                xml = replaceXmlValue(xml, "output-filter-name", UsageFilter.VLAN_OUTPUT.getName() + "-" + vlanTag);
+                xml = replaceXmlValue(xml, "input-filter-name", _usageFilterVlanInput.getName() + "-" + vlanTag);
+                xml = replaceXmlValue(xml, "output-filter-name", _usageFilterVlanOutput.getName() + "-" + vlanTag);
             }
 
             if (!sendRequestAndCheckResponse(command, xml)) {
@@ -2712,12 +2712,12 @@ public class JuniperSrxResource implements ServerResource {
         String filterDescription;
         String xml;
 
-        if (filter.equals(UsageFilter.IP_INPUT) || filter.equals(UsageFilter.IP_OUTPUT)) {
+        if (filter.equals(_usageFilterIPInput) || filter.equals(_usageFilterIPOutput)) {
             assert (ip != null && guestVlanTag == null);	        
             filterName = filter.getName();
             filterDescription = filter.toString() + ", public IP = " + ip;
             xml = SrxXml.PUBLIC_IP_FILTER_TERM_ADD.getXml();
-        } else if (filter.equals(UsageFilter.VLAN_INPUT) || filter.equals(UsageFilter.VLAN_OUTPUT)) {
+        } else if (filter.equals(_usageFilterVlanInput) || filter.equals(_usageFilterVlanOutput)) {
             assert (ip == null && guestVlanTag != null);	        
             filterName = filter.getName() + "-" + guestVlanTag;	     
             filterDescription = filter.toString() + ", guest VLAN tag = " + guestVlanTag;
@@ -2744,7 +2744,7 @@ public class JuniperSrxResource implements ServerResource {
             xml = replaceXmlValue(xml, "filter-name", filterName);
             xml = replaceXmlValue(xml, "term-name", filterTermName);
 
-            if (filter.equals(UsageFilter.IP_INPUT) || filter.equals(UsageFilter.IP_OUTPUT)) {
+            if (filter.equals(_usageFilterIPInput) || filter.equals(_usageFilterIPOutput)) {
                 xml = replaceXmlValue(xml, "ip-address", ip);
                 xml = replaceXmlValue(xml, "address-type", filter.getAddressType());
             }
@@ -2760,7 +2760,7 @@ public class JuniperSrxResource implements ServerResource {
                 return true;
             }
 
-            boolean deleteFilter = filter.equals(UsageFilter.VLAN_INPUT) || filter.equals(UsageFilter.VLAN_OUTPUT);
+            boolean deleteFilter = filter.equals(_usageFilterVlanInput) || filter.equals(_usageFilterVlanOutput);
             xml = deleteFilter ? SrxXml.FILTER_GETONE.getXml() : SrxXml.FILTER_TERM_GETONE.getXml();
             xml = setDelete(xml, true);
             xml = replaceXmlValue(xml, "filter-name", filterName);
@@ -2842,7 +2842,7 @@ public class JuniperSrxResource implements ServerResource {
         }
 
         int index = 0;
-        if (filter.equals(UsageFilter.VLAN_OUTPUT) || filter.equals(UsageFilter.IP_INPUT)) {
+        if (filter.equals(_usageFilterVlanOutput) || filter.equals(_usageFilterIPInput)) {
             index = 1;
         }
 
@@ -2871,19 +2871,24 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private UsageFilter getUsageFilter(String counterName) {
-        for (UsageFilter filter : UsageFilter.values()) {
-            if (counterName.contains(filter.getCounterIdentifier())) {
-                return filter;
-            }
-        }
 
+        if (counterName.contains(_usageFilterVlanInput.getCounterIdentifier())) {
+            return _usageFilterVlanInput;
+        } else if (counterName.contains(_usageFilterVlanOutput.getCounterIdentifier())) {
+            return _usageFilterVlanOutput;
+        } else if (counterName.contains(_usageFilterIPInput.getCounterIdentifier())) {
+            return _usageFilterIPInput;
+        } else if (counterName.contains(_usageFilterIPOutput.getCounterIdentifier())) {
+            return _usageFilterIPOutput;
+        } 
+ 
         return null;
     }
 
     private String getUsageAnswerKey(UsageFilter filter, String counterName) {
-        if (filter.equals(UsageFilter.VLAN_INPUT) || filter.equals(UsageFilter.VLAN_OUTPUT)) {
+        if (filter.equals(_usageFilterVlanInput) || filter.equals(_usageFilterVlanOutput)) {
             return getGuestVlanTag(counterName);
-        } else if (filter.equals(UsageFilter.IP_INPUT) || filter.equals(UsageFilter.IP_OUTPUT)) {
+        } else if (filter.equals(_usageFilterIPInput) || filter.equals(_usageFilterIPOutput)) {
             return getIpAddress(counterName);
         } else {
             return null;
@@ -2891,9 +2896,9 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private Map<String, long[]> getBytesMap(ExternalNetworkResourceUsageAnswer answer, UsageFilter filter, String usageAnswerKey) {
-        if (filter.equals(UsageFilter.VLAN_INPUT) || filter.equals(UsageFilter.VLAN_OUTPUT)) {
+        if (filter.equals(_usageFilterVlanInput) || filter.equals(_usageFilterVlanOutput)) {
             return answer.guestVlanBytes;
-        } else if (filter.equals(UsageFilter.IP_INPUT) || filter.equals(UsageFilter.IP_OUTPUT)) {
+        } else if (filter.equals(_usageFilterIPInput) || filter.equals(_usageFilterIPOutput)) {
             return answer.ipBytes;
         } else {
             return null;
