@@ -24,3 +24,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT'
 UPDATE snapshots SET removed=now() WHERE removed IS NULL AND sechost_id IN (SELECT id FROM host WHERE type='SecondaryStorage' AND removed IS NOT NULL);
 
 ALTER TABLE `cloud_usage`.`usage_ip_address` MODIFY COLUMN `is_system` smallint(1) NOT NULL default '0';
+
+ALTER TABLE `cloud_usage`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
