@@ -115,7 +115,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 Account account = _accountDao.findById(entity.getAccountId());
                 
-                if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
