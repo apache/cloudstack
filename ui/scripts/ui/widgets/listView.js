@@ -405,7 +405,7 @@
         return false;
       }
 
-      if (!$editInput.is(':visible')) {
+      if (!$editInput.is(':visible') || !(typeof(args.action) == 'undefined')) {
         showEditField();
       } else if ($editInput.val() != $label.html()) {
         $edit.animate({ opacity: 0.5 });
