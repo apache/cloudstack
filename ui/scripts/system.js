@@ -4252,13 +4252,8 @@
           id: 'srxProviders',
           fields: {
             ipaddress: { label: 'label.ip.address' },
-            lbdevicestate: {
-              converter: function(str) {
-                // For localization
-                return str;
-              },
-              label: 'label.status'
-            }
+            fwdevicestate: { label: 'label.status' },
+            fwdevicename: { label: 'label.type' },
           },
           actions: {
             add: {
