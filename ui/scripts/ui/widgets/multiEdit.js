@@ -82,9 +82,7 @@
         };
 
         if (!itemData) itemData = [{}];
-        var itemName = data._itemName ?
-          itemData[0][data._itemName] : itemData[0].name;
-
+        
         if ($multi.find('th,td').filter(function() {
           return $(this).attr('rel') == fieldName;
         }).is(':hidden')) return true;
@@ -131,7 +129,8 @@
               });
               $td.append($addButton);
             } else {
-              // Show VM data
+              // Show VM data						
+							var itemName = data._itemName ? itemData[0][data._itemName] : itemData[0].name;							
               $td.html(options.multipleAdd ?
                        itemData.length + ' VMs' : itemName);
               $td.click(function() {
