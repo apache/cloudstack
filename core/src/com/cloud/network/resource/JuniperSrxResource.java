@@ -88,19 +88,19 @@ public class JuniperSrxResource implements ServerResource {
     private BufferedReader _fromSrx;
     private PrintWriter _UsagetoSrx;
     private BufferedReader _UsagefromSrx;
-    private Integer _numRetries;
-    private Integer _timeoutInSeconds;
-    private String _publicZone;
-    private String _privateZone;
-    private String _publicInterface;
-    private String _usageInterface;
-    private String _privateInterface;
-    private String _ikeProposalName;
-    private String _ipsecPolicyName;
-    private String _primaryDnsAddress;
-    private String _ikeGatewayHostname;
-    private String _vpnObjectPrefix;
-    private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+    private static Integer _numRetries;
+    private static Integer _timeoutInSeconds;
+    private static String _publicZone;
+    private static String _privateZone;
+    private static String _publicInterface;
+    private static String _usageInterface;
+    private static String _privateInterface;
+    private static String _ikeProposalName;
+    private static String _ipsecPolicyName;
+    private static String _primaryDnsAddress;
+    private static String _ikeGatewayHostname;
+    private static String _vpnObjectPrefix;
+    private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
         LOGIN("login.xml"), 
