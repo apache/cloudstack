@@ -179,6 +179,8 @@ import com.cloud.network.ovs.OvsCreateTunnelCommand;
 import com.cloud.network.ovs.OvsDeleteFlowCommand;
 import com.cloud.network.ovs.OvsDestroyBridgeCommand;
 import com.cloud.network.ovs.OvsDestroyTunnelCommand;
+import com.cloud.network.ovs.OvsFetchInterfaceAnswer;
+import com.cloud.network.ovs.OvsFetchInterfaceCommand;
 import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.network.ovs.OvsSetupBridgeCommand;
@@ -210,6 +212,7 @@ import com.xensource.xenapi.HostMetrics;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.PIF.Record;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
@@ -478,6 +481,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckSshCommand)cmd);
         } else if (clazz == SecurityGroupRulesCmd.class) {
             return execute((SecurityGroupRulesCmd) cmd);
+        } else if (clazz == OvsFetchInterfaceCommand.class) {
+            return execute((OvsFetchInterfaceCommand)cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
             return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsSetTagAndFlowCommand.class) {
@@ -4940,6 +4945,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
 
+    private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
+        
+    	String label = cmd.getLabel();
+    	s_logger.debug("### Will look for network with name-label:" + label + " on host " + _host.ip);
+        Connection conn = getConnection();
+        try {
+            XsLocalNetwork nw = this.getNetworkByName(conn, label);
+            s_logger.debug("### Network object:" + nw.getNetwork().getUuid(conn));
+            PIF pif = nw.getPif(conn);
+            Record pifRec = pif.getRecord(conn);
+            s_logger.debug("### PIF object:" + pifRec.uuid + "(" + pifRec.device + ")");
+            return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + pifRec.device + " retrieved successfully", 
+            		pifRec.IP, pifRec.netmask, pifRec.MAC);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:" + e.getMessage());
+        }
+
+        
+    }
+
+    
     private OvsCreateGreTunnelAnswer execute(OvsCreateGreTunnelCommand cmd) {
         _isOvs = true;
 

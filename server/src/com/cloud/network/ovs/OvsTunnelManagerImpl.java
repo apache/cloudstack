@@ -33,7 +33,15 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.ovs.dao.OvsTunnelInterfaceDao;
+import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
 import com.cloud.utils.component.Inject;
@@ -62,9 +70,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	@Inject ConfigurationDao _configDao;
 	@Inject NicDao _nicDao;
 	@Inject HostDao _hostDao;
+	@Inject PhysicalNetworkTrafficTypeDao _physNetTTDao;
 	@Inject UserVmDao _userVmDao;
 	@Inject DomainRouterDao _routerDao;
 	@Inject OvsTunnelNetworkDao _tunnelNetworkDao;
+	@Inject OvsTunnelInterfaceDao _tunnelInterfaceDao;
 	@Inject AgentManager _agentMgr;
 	
 	@Override
@@ -99,6 +109,40 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		}
 		
 		return ta;
+	}
+
+	@DB
+	protected OvsTunnelInterfaceVO createInterfaceRecord(String ip, String netmask, String mac,
+														 long hostId, String label) {
+		OvsTunnelInterfaceVO ti = null;
+		try {
+			ti = new OvsTunnelInterfaceVO(ip, netmask, mac, hostId, label);
+			//TODO: Is locking really necessary here?
+			OvsTunnelInterfaceVO lock = _tunnelInterfaceDao.acquireInLockTable(Long.valueOf(1));
+			if (lock == null) {
+			    s_logger.warn("Cannot lock table ovs_tunnel_account");
+			    return null;
+			}
+			_tunnelInterfaceDao.persist(ti);
+			_tunnelInterfaceDao.releaseFromLockTable(lock.getId());
+		} catch (EntityExistsException e) {
+			s_logger.debug("A record for the interface for network " + label +
+					       " on host id " + hostId + " already exists");
+		}
+		return ti;
+	}
+	
+	
+	private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId){
+		OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer) answers[0];
+		String s = String.format(
+				"(ip:%1$s, netmask:%2$s, mac:%3$s, label:%4s, host:%5l)",
+				ans.getIp(), ans.getNetmask(), ans.getMac(), ans.getLabel(), hostId);
+		s_logger.debug("### About to add DB entry for:" + s);
+		OvsTunnelInterfaceVO ti = createInterfaceRecord(ans.getIp(), ans.getNetmask(), ans.getMac(),
+							  						    hostId, ans.getLabel());
+		s_logger.debug("### Interface added to DB - id:" + ti.getId());
+		return ti.getIp();
 	}
 
 	private void handleCreateTunnelAnswer(Answer[] answers){
@@ -203,9 +247,43 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         }
 		//FIXME: Why are we cancelling the exception here?
 		try {
-			//HACK HACK HACK - Should not use public IP
-                        String myIp = dest.getHost().getPublicIpAddress();
-			boolean noHost = true;
+            String myIp = null;
+            // Fetch physical network and associated tags
+            // If no tag specified, look for this network
+            // TODO: Should we Make this a configuration option?
+            String physNetLabel = "cloud-public";
+            Long physNetId = nw.getPhysicalNetworkId();
+            PhysicalNetworkTrafficType physNetTT = _physNetTTDao.findBy(physNetId, TrafficType.Guest);
+            s_logger.debug("### Physical network:" + physNetId + " - traffic type:" + physNetTT.getUuid());
+            HypervisorType hvType = dest.getHost().getHypervisorType();
+            
+            switch (hvType) {
+            	case XenServer:
+            		String label = physNetTT.getXenNetworkLabel();
+            		if ((label!=null) && (!label.equals(""))) {
+            			physNetLabel = label; 
+            		}
+            		break;
+            	default:
+            		throw new CloudRuntimeException("Hypervisor " + hvType.toString() + " unsupported by OVS Tunnel Manager");
+            }
+			
+            // Try to fetch GRE endpoint IP address for cloud db
+            // If not found, then find it on the hypervisor            
+            OvsTunnelInterfaceVO tunnelIface = _tunnelInterfaceDao.getByHostAndLabel(hostId, physNetLabel);
+            if (tunnelIface == null) {
+	            //Now find and fetch configuration for physical interface for network with label on target host
+				Commands fetchIfaceCmds = new Commands(new OvsFetchInterfaceCommand(physNetLabel));
+				s_logger.debug("Ask host " + hostId + " to retrieve interface for phy net with label:" + physNetLabel);
+				Answer[] fetchIfaceAnswers = _agentMgr.send(hostId, fetchIfaceCmds);
+				
+	            //And finally save it for future use
+				myIp = handleFetchInterfaceAnswer(fetchIfaceAnswers, hostId);
+            } else {
+            	myIp = tunnelIface.getIp();
+            }
+            
+            boolean noHost = true;
 			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i);
 				Commands cmds = new Commands(
