@@ -2372,7 +2372,7 @@
             type: 'detailView',
             id: 'netscalerProviders',
             label: 'label.netScaler',
-            viewAll: { label: 'label.providers', path: '_zone.netscalerProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.netscalerProviders' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2606,7 +2606,7 @@
             type: 'detailView',
             id: 'f5Providers',
             label: 'label.f5',
-            viewAll: { label: 'label.providers', path: '_zone.f5Providers' },
+            viewAll: { label: 'label.devices', path: '_zone.f5Providers' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2838,7 +2838,7 @@
             type: 'detailView',
             id: 'srxProviders',
             label: 'label.srx',
-            viewAll: { label: 'label.providers', path: '_zone.srxProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.srxProviders' },
             tabs: {
               details: {
                 title: 'label.details',
