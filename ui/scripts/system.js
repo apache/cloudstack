@@ -63,7 +63,7 @@
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj; 
   var nspMap = {}; //from listNetworkServiceProviders API 
-	var networkProviderData = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
+	var nspArray = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
 	
   var getTrafficType = function(physicalNetwork, typeID) {
     var trafficType = {};
@@ -316,7 +316,7 @@
             }
           });
 				
-					networkProviderData = [
+					nspArray = [
 						{
 							id: 'netscaler',
 							name: 'NetScaler',
@@ -330,7 +330,7 @@
 					];
 					
 					if(selectedZoneObj.networktype == "Basic") {
-					  networkProviderData.push(
+					  nspArray.push(
 						  {
                 id: 'securityGroups',
                 name: 'Security Groups',
@@ -339,14 +339,14 @@
 						);
 					}
 					else if(selectedZoneObj.networktype == "Advanced"){					  
-						networkProviderData.push(
+						nspArray.push(
 						  {
 								id: 'f5',
 								name: 'F5',
 								state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
 							}						
 						);					
-					  networkProviderData.push(
+					  nspArray.push(
 						  {
 								id: 'srx',
 								name: 'SRX',
@@ -356,7 +356,7 @@
 					}
 
           args.response.success({
-            data: networkProviderData
+            data: nspArray
           })
         },
 
@@ -2386,7 +2386,7 @@
                 ],
                 dataProvider: function(args) {								 
 									var providerObj;
-									$(networkProviderData).each(function(){										
+									$(nspArray).each(function(){										
 										if(this.id == "netscaler") {
 											providerObj = this;
 											return false; //break each loop
@@ -2620,7 +2620,7 @@
                 ],
                 dataProvider: function(args) {								  
 									var providerObj;
-									$(networkProviderData).each(function(){										
+									$(nspArray).each(function(){										
 										if(this.id == "f5") {
 											providerObj = this;
 											return false; //break each loop
@@ -2852,7 +2852,7 @@
                 ],
                 dataProvider: function(args) {								  
 									var providerObj;
-									$(networkProviderData).each(function(){										
+									$(nspArray).each(function(){										
 										if(this.id == "srx") {
 											providerObj = this;
 											return false; //break each loop
@@ -3080,12 +3080,12 @@
             }
           },
 
-          // Security groups provider list view
+          // Security groups detail view
           securityGroups: {
             id: 'securityGroup-providers',
             label: 'Security Groups',
             type: 'detailView',
-            viewAll: { label: 'Security Groups', path: 'network.securityGroups' },
+            viewAll: { label: 'label.rules', path: 'network.securityGroups' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -3099,7 +3099,7 @@
                 ],
                 dataProvider: function(args) {								  
 									var providerObj;
-									$(networkProviderData).each(function(){										
+									$(nspArray).each(function(){										
 										if(this.id == "securityGroups") {
 											providerObj = this;
 											return false; //break each loop
