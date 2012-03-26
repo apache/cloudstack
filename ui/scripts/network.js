@@ -1280,7 +1280,7 @@
                   poll: pollAsyncJobResult
                 }
               },
-              destroy: {
+              remove: {
                 label: 'label.action.release.ip',
                 action: function(args) {
                   $.ajax({
