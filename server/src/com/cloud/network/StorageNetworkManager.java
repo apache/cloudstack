@@ -11,7 +11,7 @@ public interface StorageNetworkManager extends Manager {
 
 	void releaseIpAddress(String ip);
 	
-	boolean isStorageIpRangeAvailable();
+	boolean isStorageIpRangeAvailable(long zoneId);
 	
 	List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId);
 	
