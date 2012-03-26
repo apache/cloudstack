@@ -19,6 +19,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
@@ -35,6 +36,7 @@ import com.cloud.vm.Nic.ReservationStrategy;
 public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);
 	@Inject StorageNetworkManager _sNwMgr;
+	@Inject NetworkDao _nwDao;
 	
 	protected StorageNetworkGuru() {
 		super();
@@ -81,7 +83,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException {
 		assert network.getTrafficType() == TrafficType.Storage : "Why are you sending this configuration to me " + network;
-		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+		if (!_sNwMgr.isStorageIpRangeAvailable(destination.getDataCenter().getId())) {
 			return super.implement(network, offering, destination, context);
 		}
 		return network;
@@ -91,7 +93,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 		assert network.getTrafficType() == TrafficType.Storage : "Well, I can't take care of this config now can I? " + network; 
-		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+		if (!_sNwMgr.isStorageIpRangeAvailable(network.getDataCenterId())) {
 			return super.allocate(network, nic, vm);
 		}
 		
@@ -101,7 +103,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	@Override
 	public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+		if (!_sNwMgr.isStorageIpRangeAvailable(dest.getDataCenter().getId())) {
 			super.reserve(nic, network, vm, dest, context);
 			return;
 		}
@@ -132,7 +134,8 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
 	@Override
 	public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
-		if (!_sNwMgr.isStorageIpRangeAvailable()) {
+	    Network nw = _nwDao.findById(nic.getNetworkId());
+		if (!_sNwMgr.isStorageIpRangeAvailable(nw.getDataCenterId())) {
 			return super.release(nic, vm, reservationId);
 		}
 		

@@ -24,6 +24,7 @@ import com.cloud.dc.dao.StorageNetworkIpAddressDao;
 import com.cloud.dc.dao.StorageNetworkIpRangeDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.HostVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.Pair;
@@ -342,8 +343,11 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
     }
 
 	@Override
-    public boolean isStorageIpRangeAvailable() {
-		return _sNwIpRangeDao.countRanges() > 0;
+    public boolean isStorageIpRangeAvailable(long zoneId) {
+	    SearchCriteriaService<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = SearchCriteria2.create(StorageNetworkIpRangeVO.class);
+	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+	    List<StorageNetworkIpRangeVO> entries = sc.list();
+		return entries.size() > 0;
     }
 
 	@Override
