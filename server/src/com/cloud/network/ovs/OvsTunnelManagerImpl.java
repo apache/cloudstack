@@ -31,6 +31,9 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -169,6 +172,48 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		_tunnelNetworkDao.update(tunnel.getId(), tunnel);
 	}
 	
+	
+	private String getGreEndpointIP(Host host, Network nw) throws AgentUnavailableException, OperationTimedoutException {
+		String endpointIp = null;
+		// Fetch physical network and associated tags
+        // If no tag specified, look for this network
+        // TODO: Should we Make this a configuration option?
+		String physNetLabel = "cloud-public";
+        Long physNetId = nw.getPhysicalNetworkId();
+        PhysicalNetworkTrafficType physNetTT = _physNetTTDao.findBy(physNetId, TrafficType.Guest);
+        s_logger.debug("### Physical network:" + physNetId + " - traffic type:" + physNetTT.getUuid());
+        HypervisorType hvType = host.getHypervisorType();
+        
+        switch (hvType) {
+        	case XenServer:
+        		String label = physNetTT.getXenNetworkLabel();
+        		if ((label!=null) && (!label.equals(""))) {
+        			physNetLabel = label; 
+        		}
+        		break;
+        	default:
+        		throw new CloudRuntimeException("Hypervisor " + hvType.toString() + " unsupported by OVS Tunnel Manager");
+        }
+		
+        // Try to fetch GRE endpoint IP address for cloud db
+        // If not found, then find it on the hypervisor            
+        OvsTunnelInterfaceVO tunnelIface = _tunnelInterfaceDao.getByHostAndLabel(host.getId(), physNetLabel);
+        if (tunnelIface == null) {
+            //Now find and fetch configuration for physical interface for network with label on target host
+			Commands fetchIfaceCmds = new Commands(new OvsFetchInterfaceCommand(physNetLabel));
+			s_logger.debug("Ask host " + host.getId() + " to retrieve interface for phy net with label:" + physNetLabel);
+			Answer[] fetchIfaceAnswers = _agentMgr.send(host.getId(), fetchIfaceCmds);
+			
+            //And finally save it for future use
+			endpointIp = handleFetchInterfaceAnswer(fetchIfaceAnswers, host.getId());
+        } else {
+        	endpointIp = tunnelIface.getIp();
+        }
+        s_logger.debug("### Ladies and gents, the endpoint for host " + host.getId() + " is " + endpointIp);
+        return endpointIp;
+	}
+
+	
 	private int getGreKey(Network network) {
 		int key = 0;
 		try {
@@ -247,47 +292,13 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         }
 		//FIXME: Why are we cancelling the exception here?
 		try {
-            String myIp = null;
-            // Fetch physical network and associated tags
-            // If no tag specified, look for this network
-            // TODO: Should we Make this a configuration option?
-            String physNetLabel = "cloud-public";
-            Long physNetId = nw.getPhysicalNetworkId();
-            PhysicalNetworkTrafficType physNetTT = _physNetTTDao.findBy(physNetId, TrafficType.Guest);
-            s_logger.debug("### Physical network:" + physNetId + " - traffic type:" + physNetTT.getUuid());
-            HypervisorType hvType = dest.getHost().getHypervisorType();
-            
-            switch (hvType) {
-            	case XenServer:
-            		String label = physNetTT.getXenNetworkLabel();
-            		if ((label!=null) && (!label.equals(""))) {
-            			physNetLabel = label; 
-            		}
-            		break;
-            	default:
-            		throw new CloudRuntimeException("Hypervisor " + hvType.toString() + " unsupported by OVS Tunnel Manager");
-            }
-			
-            // Try to fetch GRE endpoint IP address for cloud db
-            // If not found, then find it on the hypervisor            
-            OvsTunnelInterfaceVO tunnelIface = _tunnelInterfaceDao.getByHostAndLabel(hostId, physNetLabel);
-            if (tunnelIface == null) {
-	            //Now find and fetch configuration for physical interface for network with label on target host
-				Commands fetchIfaceCmds = new Commands(new OvsFetchInterfaceCommand(physNetLabel));
-				s_logger.debug("Ask host " + hostId + " to retrieve interface for phy net with label:" + physNetLabel);
-				Answer[] fetchIfaceAnswers = _agentMgr.send(hostId, fetchIfaceCmds);
-				
-	            //And finally save it for future use
-				myIp = handleFetchInterfaceAnswer(fetchIfaceAnswers, hostId);
-            } else {
-            	myIp = tunnelIface.getIp();
-            }
-            
+            String myIp = getGreEndpointIP(dest.getHost(), nw);
             boolean noHost = true;
 			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i);
+				String otherIp = getGreEndpointIP(rHost, nw);
 				Commands cmds = new Commands(
-						new OvsCreateTunnelCommand(rHost.getPublicIpAddress(), key, 
+						new OvsCreateTunnelCommand(otherIp, key, 
 											       Long.valueOf(hostId), i, nw.getId(), myIp));
 				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i);
 				Answer[] answers = _agentMgr.send(hostId, cmds);
@@ -297,9 +308,10 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 			
 			for (Long i : fromHostIds) {
 			    HostVO rHost = _hostDao.findById(i);
+			    String otherIp = getGreEndpointIP(rHost, nw);
 				Commands cmds = new Commands(
 				        new OvsCreateTunnelCommand(myIp, key, i, Long.valueOf(hostId),
-				        		                   nw.getId(), rHost.getPublicIpAddress()));
+				        		                   nw.getId(), otherIp));
 				s_logger.debug("Ask host " + i + " to create gre tunnel to " + hostId);
 				Answer[] answers = _agentMgr.send(i, cmds);
 				handleCreateTunnelAnswer(answers);
