@@ -499,6 +499,10 @@ public class ApiXmlDocWriter {
                          respArg.setDescription(description);
                      }
 
+                     if(!paramAnnotation.since().isEmpty()){
+                    	 respArg.setSinceVersion(paramAnnotation.since());
+                     }
+                     
                      if (fieldClass != null) {
                          Class<?> superClass = fieldClass.getSuperclass();
                          if (superClass != null) {
