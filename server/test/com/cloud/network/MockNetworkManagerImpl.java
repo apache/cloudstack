@@ -843,4 +843,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
+    @Override
+    public List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
