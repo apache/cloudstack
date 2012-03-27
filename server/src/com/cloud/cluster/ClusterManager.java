@@ -18,7 +18,6 @@
 
 package com.cloud.cluster;
 
-import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
@@ -32,13 +31,10 @@ public interface ClusterManager extends Manager {
 	public static final int DEFAULT_HEARTBEAT_THRESHOLD = 150000;
 	public static final String ALERT_SUBJECT = "cluster-alert";
 	
+	public void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError);
-    public long executeAsync(String strPeer, long agentId, Command[] cmds, boolean stopOnError, Listener listener);
-    public boolean onAsyncResult(String executingPeer, long agentId, long seq, Answer[] answers);
-    public boolean forwardAnswer(String targetPeer, long agentId, long seq, Answer[] answers);
-    
+
     public Answer[] sendToAgent(Long hostId, Command []  cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException;
-    public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException;
     public boolean executeAgentUserRequest(long agentId, Event event) throws AgentUnavailableException;
     public Boolean propagateAgentEvent(long agentId, Event event) throws AgentUnavailableException;
     public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException;

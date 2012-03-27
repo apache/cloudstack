@@ -43,38 +43,29 @@ public class DummyClusterManagerImpl implements ClusterManager {
     
     private String _name;
     private final String _clusterNodeIP = "127.0.0.1";
-	
+
+    @Override
+    public void OnReceiveClusterServicePdu(ClusterServicePdu pdu) {
+        throw new CloudRuntimeException("Unsupported feature");
+    }
+    
     @Override
     public Answer[] execute(String strPeer, long agentId, Command [] cmds, boolean stopOnError) {
     	throw new CloudRuntimeException("Unsupported feature");
     }
-    
-    @Override
-    public long executeAsync(String strPeer, long agentId, Command[] cmds, boolean stopOnError, Listener listener) {
-    	throw new CloudRuntimeException("Unsupported feature");
-    }
-    
-    @Override
-    public boolean onAsyncResult(String executingPeer, long agentId, long seq, Answer[] answers) {
-    	throw new CloudRuntimeException("Unsupported feature");
-    }
-    
-    @Override
-    public boolean forwardAnswer(String targetPeer, long agentId, long seq, Answer[] answers) {
-    	throw new CloudRuntimeException("Unsupported feature");
-    }
-    
+  
     @Override
     public Answer[] sendToAgent(Long hostId, Command []  cmds, boolean stopOnError)
     	throws AgentUnavailableException, OperationTimedoutException {
     	throw new CloudRuntimeException("Unsupported feature");
     }
     
+/*    
     @Override
     public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException {
     	throw new CloudRuntimeException("Unsupported feature");
     }
-    
+*/    
     @Override
     public boolean executeAgentUserRequest(long agentId, Event event) throws AgentUnavailableException {
     	throw new CloudRuntimeException("Unsupported feature");
