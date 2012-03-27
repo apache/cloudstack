@@ -26,7 +26,8 @@ import java.util.Map;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.console.Logger;
+import com.cloud.consoleproxy.util.Logger;
+
 
 //
 // This class is not currently in use, was planning to add a simulated embedded VNC server and monitor console proxy health by

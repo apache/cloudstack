@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.console.TileInfo;
-import com.cloud.console.TileTracker;
+import com.cloud.consoleproxy.util.TileInfo;
+import com.cloud.consoleproxy.util.TileTracker;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
 
 /**

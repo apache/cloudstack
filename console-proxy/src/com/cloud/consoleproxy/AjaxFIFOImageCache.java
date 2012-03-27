@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.console.Logger;
+import com.cloud.consoleproxy.util.Logger;
 
 public class AjaxFIFOImageCache {
 	private static final Logger s_logger = Logger.getLogger(AjaxFIFOImageCache.class);

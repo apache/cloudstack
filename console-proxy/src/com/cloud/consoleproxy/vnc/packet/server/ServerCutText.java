@@ -3,7 +3,7 @@ package com.cloud.consoleproxy.vnc.packet.server;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.cloud.console.Logger;
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 
 public class ServerCutText {
