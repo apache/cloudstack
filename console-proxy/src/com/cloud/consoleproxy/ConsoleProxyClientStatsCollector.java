@@ -1,5 +1,6 @@
 package com.cloud.consoleproxy;
 
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -27,6 +28,11 @@ public class ConsoleProxyClientStatsCollector {
 	public String getStatsReport() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		return gson.toJson(this);
+	}
+	
+	public void getStatsReport(OutputStreamWriter os) {
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		gson.toJson(this, os);
 	}
 
 	private void setConnections(Hashtable<String, ConsoleProxyClient> connMap) {

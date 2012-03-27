@@ -40,6 +40,10 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
     sendSetEncodings();
     requestFullScreenUpdate();
   }
+  
+  public void sendClientPacket(ClientPacket packet) {
+	  queue.add(packet);
+  }
 
   @Override
   public void run() {

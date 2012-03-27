@@ -93,32 +93,6 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 			OutputStream os = t.getResponseBody();
 			os.write(bs);
 			os.close();
-			
-/*			
-			// Send back a dummy image
-			File f = new File ("./images/cannotconnect.jpg");
-			long length = f.length();
-			FileInputStream fis = new FileInputStream(f);
-			Headers hds = t.getResponseHeaders();
-			hds.set("Content-Type", "image/jpeg");
-			hds.set("Cache-Control", "no-cache");
-			hds.set("Cache-Control", "no-store");				
-			t.sendResponseHeaders(200, length);
-			OutputStream os = t.getResponseBody();
-			try {
-				while (true) {
-					byte[] b = new byte[8192];
-					int n = fis.read(b);
-					if (n < 0) {
-						break;
-					}
-					os.write(b, 0, n);
-				}
-			} finally {
-				os.close();
-				fis.close();
-			}
-*/			
 			s_logger.error("Cannot get console, sent error JPG response for " + t.getRequestURI());
 			return;
 		} finally {
@@ -126,8 +100,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 		}
 	}
 	
-	private void doHandle(HttpExchange t) throws Exception,
-			IllegalArgumentException {
+	private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
 		String queries = t.getRequestURI().getQuery();
 		Map<String, String> queryMap = getQueryMap(queries);
 		int width = 0;
@@ -154,9 +127,9 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 			throw new IllegalArgumentException(e);
 		}
 
-		ConsoleProxyViewer viewer = ConsoleProxy.getVncViewer(host, port, sid, tag, ticket);
+		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(host, port, sid, tag, ticket);
 		
-		if (viewer.status != ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
+		if (!viewer.isHostConnected()) {
 			// use generated image instead of static
 			BufferedImage img = generateTextImage(width, height, "Connecting");
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
@@ -171,54 +144,13 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 			os.write(bs);
 			os.close();
 			
-/*			
-			// Send back a dummy image
-			File f = new File ("./images/notready.jpg");
-			long length = f.length();
-			FileInputStream fis = new FileInputStream(f);
-			Headers hds = t.getResponseHeaders();
-			hds.set("Content-Type", "image/jpeg");
-			hds.set("Cache-Control", "no-cache");
-			hds.set("Cache-Control", "no-store");				
-			t.sendResponseHeaders(200, length);
-			
-			OutputStream os = t.getResponseBody();
-			try {
-				while (true) {
-					byte[] b = new byte[8192];
-					int n = fis.read(b);
-					if (n < 0) {
-						break;
-					}
-					os.write(b, 0, n);
-				}
-			} finally {
-				os.close();
-				fis.close();
-			}
-*/			
 			if(s_logger.isInfoEnabled())
-				s_logger.info("Console not ready, sent dummy JPG response, viewer status : " + viewer.status);
+				s_logger.info("Console not ready, sent dummy JPG response");
 			return;
 		}
-/*			
-			if (viewer.status == ConsoleViewer.STATUS_AUTHENTICATION_FAILURE) {
-				String response = "Authentication failed";
-				t.sendResponseHeaders(200, response.length());
-				OutputStream os = t.getResponseBody();
-				os.write(response.getBytes());
-				os.close();
-			} else if (viewer.vc == null || viewer.vc.memImage == null) {
-				String response = "Server not ready";
-				t.sendResponseHeaders(200, response.length());
-				OutputStream os = t.getResponseBody();
-				os.write(response.getBytes());
-				os.close();
-			} else 
-*/
+		
 		{
-			Image scaledImage = viewer.vc.memImage.getScaledInstance(width,
-					height, Image.SCALE_DEFAULT);
+			Image scaledImage = viewer.getClientScaledImage(width, height);
 			BufferedImage bufferedImage = new BufferedImage(width, height,
 					BufferedImage.TYPE_3BYTE_BGR);
 			Graphics2D bufImageGraphics = bufferedImage.createGraphics();
