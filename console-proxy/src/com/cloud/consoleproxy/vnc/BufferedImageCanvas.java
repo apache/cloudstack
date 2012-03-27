@@ -10,8 +10,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
-import com.cloud.console.TileInfo;
 import com.cloud.consoleproxy.util.ImageHelper;
+import com.cloud.consoleproxy.util.TileInfo;
 
 /**
  * A <code>BuffereImageCanvas</code> component represents frame buffer image on the

@@ -14,8 +14,7 @@ import java.util.concurrent.Executor;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.console.AuthenticationException;
-import com.cloud.console.Logger;
+import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.HttpServer;
 
 /**

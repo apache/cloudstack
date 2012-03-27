@@ -283,7 +283,7 @@
   </target>
 
 <!-- The following target is OBSOLETE.  If you need to add a jar file / target, go to the function def runant(target): in wscrpit_build, and list the jar file and the target in the appropriate places -->
-<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-common, compile-console-proxy, build-console-viewer">
+<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-proxy">
     <copy todir="${waf.artifacts}">
       <fileset dir="${target.dir}/jar"/>
     </copy>

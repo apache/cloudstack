@@ -16,14 +16,21 @@
  * 
  */
 
-package com.cloud.console;
+// repackage it to VMOps common packaging structure
+package com.cloud.consoleproxy;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
-
-public interface RfbProtoAdapter {
-	Socket createConnection(String host, int port) throws IOException;
-	void writeInit(OutputStream os) throws IOException;
-	void swapMouseButton(Integer[] masks);
+public class AuthenticationException extends Exception {
+	private static final long serialVersionUID = -393139302884898842L;
+	public AuthenticationException() {
+		super();
+	}
+	public AuthenticationException(String s) {
+		super(s);
+	}
+	public AuthenticationException(String message, Throwable cause) {
+		super(message, cause);
+	}
+	 public AuthenticationException(Throwable cause) {
+		 super(cause);
+	 }
 }

@@ -5,8 +5,8 @@ import java.awt.datatransfer.StringSelection;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.cloud.console.Logger;
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.server.FramebufferUpdatePacket;
 import com.cloud.consoleproxy.vnc.packet.server.ServerCutText;
 
