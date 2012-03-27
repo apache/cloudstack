@@ -274,7 +274,23 @@ def setLinkLocalIP(session, args):
         cmd = ["ifconfig", brName, "169.254.0.1", "netmask", "255.255.0.0"]
         txt = util.pread2(cmd)
     except:
-        txt = '' 
+        try:
+            cmd = ["brctl", "addbr", brName]
+            txt = util.pread2(cmd)
+        except:
+            pass
+        
+        try:
+            cmd = ["ovs-vsctl", "add-br", brName]
+            txt = util.pread2(cmd)
+        except:
+            pass
+        
+        try:
+            cmd = ["ifconfig", brName, "169.254.0.1", "netmask", "255.255.0.0"]
+            txt = util.pread2(cmd)
+        except:
+            pass
     try:
         cmd = ["ip", "route", "add", "169.254.0.0/16", "dev", brName, "src", "169.254.0.1"]
         txt = util.pread2(cmd)
