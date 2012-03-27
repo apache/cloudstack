@@ -138,6 +138,7 @@
             if (data.zones) {
               $.ajax({
                 url: createURL('listCapacity'),
+                data: { fetchLatest: true },
                 success: function(json) {
                   var capacities = json.listcapacityresponse.capacity;
 
