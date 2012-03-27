@@ -9,6 +9,16 @@ div.toolbar {
   top: expression(this.offsetParent.scrollTop);
 }
 
+div.toolbar div.text-search div.search-bar input {
+  float: left;
+  border: none;
+  margin-top: -1px;
+  margin-right:0px;
+  margin-bottom:0px;
+  margin-left:-12px;
+  width: 97%;
+  height: 67%;
+}
 div.panel div.list-view div.fixed-header {
   top: expression(this.offsetParent.scrollTop + 30);
 }
