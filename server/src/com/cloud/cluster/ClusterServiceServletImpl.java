@@ -126,7 +126,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     	if(s_client == null) {
     		MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
-    		mgr.getParams().setDefaultMaxConnectionsPerHost(1);
+    		mgr.getParams().setDefaultMaxConnectionsPerHost(4);
     		
     		// TODO make it configurable
     		mgr.getParams().setMaxTotalConnections(1000);
@@ -134,6 +134,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 	        s_client = new HttpClient(mgr);
 	        HttpClientParams clientParams = new HttpClientParams();
 	        clientParams.setSoTimeout(_requestTimeoutSeconds * 1000);
+	        
 	        s_client.setParams(clientParams);
     	}
     	return s_client;

@@ -92,6 +92,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
+    private static final int DEFAULT_OUTGOING_WORKERS = 5; 
 
     private final List<ClusterManagerListener> _listeners = new ArrayList<ClusterManagerListener>();
     private final Map<Long, ManagementServerHostVO> _activePeers = new HashMap<Long, ManagementServerHostVO>();
@@ -1285,8 +1286,11 @@ public class ClusterManagerImpl implements ClusterManager {
         if(!NetUtils.isLocalAddress(_clusterNodeIP)) {
             throw new ConfigurationException("cluster node IP should be valid local address where the server is running, please check your configuration");
         }
+
+        for(int i = 0; i < DEFAULT_OUTGOING_WORKERS; i++)
+        	_executor.execute(getClusterPduSendingTask());
         
-        _executor.execute(getClusterPduSendingTask());
+        // notification task itself in turn works as a task dispatcher
         _executor.execute(getClusterPduNotificationTask());
 
         Adapters<ClusterServiceAdapter> adapters = locator.getAdapters(ClusterServiceAdapter.class);
