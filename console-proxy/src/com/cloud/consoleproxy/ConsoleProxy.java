@@ -629,8 +629,7 @@ public class ConsoleProxy {
 	    		        viewer  = connMap.get(key);
     		    	}
 
-	    		    long seconds_unused =
-	    		        (System.currentTimeMillis() - viewer.lastUsedTime) / 1000;
+	    		    long seconds_unused = (System.currentTimeMillis() - viewer.lastUsedTime) / 1000;
 	    		         
 	    		    if (seconds_unused > viewerLinger / 2 && viewer.clientStream != null) {
 	    		    	s_logger.info("Pinging client for " + viewer +
