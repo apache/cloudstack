@@ -1406,16 +1406,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 
                 routers.add(router);
 
-                // Creating stats entry for router
-                UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
-                if (stats == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
-                    }
-                    stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
-                    _userStatsDao.persist(stats);
-                }
-
             }
         } finally {
             if (network != null) {
@@ -2172,7 +2162,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public DomainRouterVO persist(DomainRouterVO router) {
-        return _routerDao.persist(router);
+    	DomainRouterVO virtualRouter =  _routerDao.persist(router);
+        // Creating stats entry for router
+        UserStatisticsVO stats = _userStatsDao.findBy(virtualRouter.getAccountId(), virtualRouter.getDataCenterIdToDeployIn(), router.getNetworkId(), null, router.getId(), router.getType().toString());
+        if (stats == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating user statistics for the account: " + virtualRouter.getAccountId() + " Router Id: " + router.getId());
+            }
+            stats = new UserStatisticsVO(virtualRouter.getAccountId(), virtualRouter.getDataCenterIdToDeployIn(), null, router.getId(), router.getType().toString(), router.getNetworkId());
+            _userStatsDao.persist(stats);
+        }
+        return virtualRouter;
     }
 
     @Override
@@ -2625,7 +2625,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
                 disconnectedRouter.getDataCenterIdToDeployIn(), disconnectedRouter.getPodIdToDeployIn(), title, context);
         disconnectedRouter.setStopPending(true);
-        disconnectedRouter = this.persist(disconnectedRouter);
+        disconnectedRouter = _routerDao.persist(disconnectedRouter);
 
         int connRouterPR = getRealPriority(connectedRouter);
         int disconnRouterPR = getRealPriority(disconnectedRouter);
