@@ -1173,6 +1173,11 @@
             <div class="title">
               <span></span>
             </div>
+            
+             <div class="button fetch-latest">
+               <span><fmt:message key="label.fetch.latest"/></span>
+              </div>
+
             <div class="selects" style="display:none;">
               <div class="select">
                 <label>Zone:</label>
@@ -1908,6 +1913,7 @@ dictionary = {
 'label.local.storage': '<fmt:message key="label.local.storage" />',
 'label.direct.ips': '<fmt:message key="label.direct.ips" />',
 'label.view.all': '<fmt:message key="label.view.all" />',
+'label.fetch.latest': '<fmt:message key="label.fetch.latest" />',
 'label.zone.details': '<fmt:message key="label.zone.details" />',
 'message.alert.state.detected': '<fmt:message key="message.alert.state.detected" />',
 'state.Starting': '<fmt:message key="state.Starting" />',
