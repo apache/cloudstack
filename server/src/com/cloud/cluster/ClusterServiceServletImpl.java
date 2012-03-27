@@ -24,12 +24,10 @@ import java.rmi.RemoteException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
-
-import com.cloud.serializer.GsonHelper;
-import com.google.gson.Gson;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
@@ -37,11 +35,10 @@ public class ClusterServiceServletImpl implements ClusterService {
     
     private String _serviceUrl;
 
-    private final Gson _gson;
     private int _requestTimeoutSeconds;
-
+    protected static HttpClient s_client = null;
+    
     public ClusterServiceServletImpl() {
-        _gson = GsonHelper.getGson();
     }
 
     public ClusterServiceServletImpl(String serviceUrl, int requestTimeoutSeconds) {
@@ -49,8 +46,6 @@ public class ClusterServiceServletImpl implements ClusterService {
     	
         this._serviceUrl = serviceUrl;
         this._requestTimeoutSeconds = requestTimeoutSeconds;
-
-        _gson = GsonHelper.getGson();
     }
     
     @Override
@@ -69,7 +64,11 @@ public class ClusterServiceServletImpl implements ClusterService {
         method.addParameter("stopOnError", pdu.isStopOnError() ? "1" : "0");
         method.addParameter("requestAck", pdu.isRequest() ? "1" : "0");
 
-        return executePostMethod(client, method);
+        try {
+        	return executePostMethod(client, method);
+        } finally {
+        	method.releaseConnection();
+        }
     }
 
     @Override
@@ -83,11 +82,16 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
         method.addParameter("callingPeer", callingPeer);
-        String returnVal =  executePostMethod(client, method);
-        if("true".equalsIgnoreCase(returnVal)) {
-            return true;
+        
+        try {
+	        String returnVal =  executePostMethod(client, method);
+	        if("true".equalsIgnoreCase(returnVal)) {
+	            return true;
+	        }
+	        return false;
+        } finally {
+        	method.releaseConnection();
         }
-        return false;
     }
 
     private String executePostMethod(HttpClient client, PostMethod method) {
@@ -119,12 +123,20 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
     
     private HttpClient getHttpClient() {
-        HttpClient client = new HttpClient();
-        HttpClientParams clientParams = new HttpClientParams();
-        clientParams.setSoTimeout(this._requestTimeoutSeconds * 1000);
-        client.setParams(clientParams);
-    	
-        return client;
+
+    	if(s_client == null) {
+    		MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
+    		mgr.getParams().setDefaultMaxConnectionsPerHost(1);
+    		
+    		// TODO make it configurable
+    		mgr.getParams().setMaxTotalConnections(1000);
+    		
+	        s_client = new HttpClient(mgr);
+	        HttpClientParams clientParams = new HttpClientParams();
+	        clientParams.setSoTimeout(_requestTimeoutSeconds * 1000);
+	        s_client.setParams(clientParams);
+    	}
+    	return s_client;
     }
 
     // for test purpose only
