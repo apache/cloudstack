@@ -91,15 +91,9 @@
   <property name="scripts.dir" location="${base.dir}/scripts" />
   <property name="scripts.target.dir" location="${target.dir}/scripts"/>
 
-  <!-- directories for console proxy & applet code compilation-->
-  <property name="console-common.dir" location="${base.dir}/console" />
-  <property name="console-common.dist.dir" location="${dist.dir}/console-common" />
-
+  <!-- directories for console proxy compilation-->
   <property name="console-proxy.dir" location="${base.dir}/console-proxy" />
   <property name="console-proxy.dist.dir" location="${dist.dir}/console-proxy" />
-
-  <property name="console-viewer.dir" location="${base.dir}/console-viewer" />
-  <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
 
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
@@ -118,7 +112,6 @@
   <property name="utils.jar" value="cloud-utils.jar" />
   <property name="server.jar" value="cloud-server.jar" />
   <property name="agent.jar" value="cloud-agent.jar" />
-  <property name="console-common.jar" value="cloud-console-common.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
   <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
@@ -317,19 +310,11 @@
     </copy>
   </target>
 
-  <path id="console-common.classpath">
-    <path refid="deps.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-console-common" depends="-init" description="Compile the console-common jar that is shared.">
-    <compile-java jar.name="${console-common.jar}" top.dir="${console-common.dir}" classpath="console-common.classpath" />
-  </target>
-
   <path id="console-proxy.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-console-proxy" depends="-init, compile-console-common" description="Compile the console proxy.">
+  <target name="compile-console-proxy" depends="-init" description="Compile the console proxy.">
     <compile-java jar.name="${console-proxy.jar}" top.dir="${console-proxy.dir}" classpath="console-proxy.classpath" >
       <include-files>
         <fileset dir="${console-proxy.dir}/certs">
@@ -364,7 +349,6 @@
     <copy todir="${copyto.dir}">
       <fileset dir="${jar.dir}">
         <include name="cloud-console-proxy.jar" />
-        <include name="cloud-console-common.jar" />
       </fileset>
     </copy>
     <copy todir="${copyto.dir}/conf">
@@ -379,11 +363,6 @@
         <include name="*.gif" />
         <include name="*.png" />
         <include name="*.cur" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/applet">
-      <fileset dir="${jar.dir}">
-        <include name="VMOpsConsoleApplet.jar" />
       </fileset>
     </copy>
     <copy todir="${copyto.dir}/js">
@@ -410,7 +389,7 @@
     </copy>
   </target>
 
-  <target name="build-console-proxy" depends="-init, build-console-viewer, compile-console-proxy, copy-console-proxy">
+  <target name="build-console-proxy" depends="-init, compile-console-proxy, copy-console-proxy">
     <copy todir="${console-proxy.dist.dir}">
       <fileset dir="${console-proxy.dir}/scripts">
       </fileset>
@@ -419,36 +398,6 @@
       <fileset dir="${console-proxy.dir}/conf">
       </fileset>
     </copy>
-  </target>
-
-  <path id="console-viewer.classpath">
-    <path refid="deps.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="build-console-viewer" depends="-init" description="Compile console viewer applet">
-
-    <mkdir dir="${classes.dir}/console-viewer" />
-    <depend srcdir="${console-viewer.dir}/src" destdir="${classes.dir}/console-viewer" cache="${dep.cache.dir}" />
-
-    <javac srcdir="${console-common.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/console-viewer" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false">
-      <classpath refid="console-viewer.classpath" />
-      <exclude name="${compile.java.exclude.files}" />
-      <compilerarg value="-Xlint:all" />
-    </javac>
-
-    <javac srcdir="${console-viewer.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/console-viewer" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false">
-      <classpath refid="console-viewer.classpath" />
-      <exclude name="${compile.java.exclude.files}" />
-      <compilerarg value="-Xlint:all" />
-    </javac>
-    <jar jarfile="${jar.dir}/VMOpsConsoleApplet.jar" basedir="${classes.dir}/console-viewer">
-      <manifest>
-        <attribute name="Class-Path" value="" />
-        <attribute name="Built-By" value="${built.by}" />
-        <attribute name="Manifest-Version" value="1.0" />
-        <attribute name="Main-Class" value="ConsoleViewer" />
-      </manifest>
-    </jar>
   </target>
 
   <path id="agent.classpath">

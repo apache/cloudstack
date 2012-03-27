@@ -16,8 +16,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
-import com.cloud.console.Logger;
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
 import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
 

@@ -18,15 +18,18 @@
 
 package com.cloud.consoleproxy;
 
-public class ConsoleProxyLoggerFactory implements com.cloud.console.LoggerFactory {
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.consoleproxy.util.LoggerFactory;
+
+public class ConsoleProxyLoggerFactory implements LoggerFactory {
 	public ConsoleProxyLoggerFactory() {
 	}
 	
-	public com.cloud.console.Logger getLogger(Class clazz) {
+	public Logger getLogger(Class<?> clazz) {
 		return new Log4jLogger(org.apache.log4j.Logger.getLogger(clazz));
 	}
 	
-	public static class Log4jLogger extends com.cloud.console.Logger {
+	public static class Log4jLogger extends Logger {
 		private org.apache.log4j.Logger logger;
 		
 		public Log4jLogger(org.apache.log4j.Logger logger) {

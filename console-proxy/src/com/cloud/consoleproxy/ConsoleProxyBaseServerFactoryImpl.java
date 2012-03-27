@@ -23,7 +23,7 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLServerSocket;
 
-import com.cloud.console.Logger;
+import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.HttpServer;
 
 public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFactory {
