@@ -207,6 +207,13 @@
       },   
 
       setupPhysicalNetwork: function(args) {
+        if (args.data['network-model'] == 'Basic') {
+          $('.setup-physical-network .info-desc.conditional.basic').show();
+          $('.setup-physical-network .info-desc.conditional.advanced').hide();
+        } else {
+          $('.setup-physical-network .info-desc.conditional.basic').hide();
+          $('.setup-physical-network .info-desc.conditional.advanced').show();
+        }
         return true; // Both basic & advanced zones show physical network UI
       },
 
