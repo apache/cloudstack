@@ -1103,6 +1103,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 smtpTrans.connect();
                 smtpTrans.sendMessage(msg, msg.getAllRecipients());
                 smtpTrans.close();
+            } else {
+                throw new CloudRuntimeException("Unable to send email invitation; smtp ses");
             }
         }
     }
