@@ -138,9 +138,11 @@ public class ClusterServiceServletContainer {
 	                            		s_logger.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
                             	}
                             } catch (ConnectionClosedException ex) {
-                                s_logger.error("Client closed connection", ex);
+                            	// client close and read time out exceptions are expected
+                            	// when KEEP-AVLIE is enabled
+                                s_logger.trace("Client closed connection", ex);
                             } catch (IOException ex) {
-                                s_logger.error("I/O error", ex);
+                                s_logger.trace("I/O error", ex);
                             } catch (HttpException ex) {
                                 s_logger.error("Unrecoverable HTTP protocol violation", ex);
                             } finally {
