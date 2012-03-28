@@ -500,10 +500,6 @@ class OvmVm(OvmObject):
                 scope = 'cfg'
                 vmPath = OvmHost()._getVmPathFromPrimaryStorage(vmName)
             
-            vmType = OvmVm()._getVmTypeFromConfigFile(vmPath)
-            if vmType != 'HVM':
-                raise Exception("Only HVM supports attaching/detaching ISO")
-            
             if not isAttach:
                 iso = ''
             else:
