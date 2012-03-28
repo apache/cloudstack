@@ -834,12 +834,10 @@
                   },
                   {
                     id: { label: 'ID' },
-                    zonename: { label: 'label.zone' },
-                    deviceid: { label: 'label.device.id' },
+                    zonename: { label: 'label.zone' },                    
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },
-                    storagetype: { label: 'label.storage.type' },
-                    storage: { label: 'label.storage' },
+                    storagetype: { label: 'label.storage.type' },                    
                     size : {
                       label: 'Size ',
                       converter: function(args) {
@@ -858,8 +856,11 @@
                           return args;
                       }
                     },
-                    vmname: { label: 'label.vm.name' },
+                    //vmname: { label: 'label.vm.name' },
                     vmdisplayname: { label: 'label.vm.display.name' },
+										vmstate: { label: 'label.vm.state' },
+										deviceid: { label: 'label.device.id' },
+										storage: { label: 'label.storage' },
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' }
@@ -1174,7 +1175,7 @@
       allowedActions.push("recurringSnapshot");
     }
     if(jsonObj.state != "Allocated") {
-      if(jsonObj.vmstate == "Stopped") {
+      if(jsonObj.vmstate == "Stopped" || jsonObj.virtualmachineid == null) {
         allowedActions.push("downloadVolume");
       }
     }
