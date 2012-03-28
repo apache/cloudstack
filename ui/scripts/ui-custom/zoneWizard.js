@@ -273,7 +273,7 @@
           title: _l('label.edit.traffic.type'),
           desc: _l('message.edit.traffic.type'),
           fields: {
-            label: { label: hypervisor + ' ' + _l('label.label'), defaultValue: trafficData.label }
+            label: { label: hypervisor + ' ' + _l('label.traffic.label'), defaultValue: trafficData.label }
           }
         },
 
