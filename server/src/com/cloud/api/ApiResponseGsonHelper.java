@@ -17,15 +17,15 @@
  */
 
 
-/**
- * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
- */
 
 
 package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
 
+/**
+ * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
+ */
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
     
