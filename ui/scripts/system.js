@@ -90,8 +90,6 @@
 		  trafficType.kvmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		if(trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
 		  trafficType.vmwarenetworklabel = dictionary['label.network.label.display.for.blank.value'];
-		if(trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
-		  trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
 		
     return trafficType;
   };
@@ -104,8 +102,6 @@
 		  array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
 		if(labels.vmwarenetworklabel != dictionary['label.network.label.display.for.blank.value'])
 		  array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-		if(labels.ovmnetworklabel != dictionary['label.network.label.display.for.blank.value'])
-		  array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
 				
 		$.ajax({
       url: createURL('updateTrafficType' + array1.join("")),
@@ -396,8 +392,7 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'label.ovm.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -416,7 +411,6 @@
                       selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -569,8 +563,7 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'label.ovm.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
 
@@ -587,7 +580,6 @@
                       selectedPublicNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
 
                       args.response.success({data: selectedPublicNetworkObj});
                     }
@@ -728,8 +720,7 @@
                   {
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'label.ovm.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -744,7 +735,6 @@
                       selectedManagementNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-                      selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
 
                       args.response.success({ data: selectedManagementNetworkObj });                      
                     }
@@ -862,8 +852,7 @@
                   { //updateTrafficType API                   
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
-                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true },
-                    ovmnetworklabel: { label: 'label.ovm.traffic.label', isEditable: true }
+                    vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
                   }
                 ],
                 dataProvider: function(args) {                  
@@ -889,7 +878,6 @@
 									selectedPhysicalNetworkObj["xennetworklabel"] = trafficType.xennetworklabel;
 									selectedPhysicalNetworkObj["kvmnetworklabel"] = trafficType.kvmnetworklabel;
 									selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
-                  selectedPhysicalNetworkObj["ovmnetworklabel"] = trafficType.ovmnetworklabel;
 
                   args.response.success({
                     actionFilter: function() {
