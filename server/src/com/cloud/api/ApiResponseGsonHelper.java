@@ -17,9 +17,6 @@
  */
 
 
-/**
- * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
- */
 
 
 package com.cloud.api;
@@ -27,6 +24,9 @@ package com.cloud.api;
 import com.google.gson.GsonBuilder;
 import com.cloud.utils.IdentityProxy;
 
+/**
+ * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
+ */
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
     
