@@ -39,6 +39,7 @@ import java.net.URLConnection;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -203,6 +204,9 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
 
 
 /**
@@ -997,11 +1001,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (copyToSecondary) {
                 StorageVol volume = _storageResource.getVolume(conn, primaryPool, volumePath);
                 String volumeDestPath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator;
-                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName + ".qcow2", cmd.getWait());
+                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName + ".qcow2", cmd.getWait() * 1000);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             } else {
                 volumePath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator + volumePath + ".qcow2";
-                _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, cmd.getWait());
+                _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, cmd.getWait() * 1000);
                 return new CopyVolumeAnswer(cmd, true, null, null, primaryMountPath + File.separator + volumeName);
             }
            
@@ -1286,7 +1290,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			}
     		} else {
     			/*VM is not running, create a snapshot by ourself*/
-    			final Script command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);
+    			final Script command = new Script(_manageSnapshotPath, cmd.getWait() * 1000, s_logger);
     			if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
     				command.add("-c", VolPath);
     			} else {
@@ -1323,7 +1327,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
 			String ssPmountPath = spd.getTargetPath();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
-			Script command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);
+			Script command = new Script(_manageSnapshotPath, cmd.getWait() * 1000, s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
 			command.add("-p", snapshotDestPath);
@@ -1361,7 +1365,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     				vm.resume();
     			}
 			} else {
-				command = new Script(_manageSnapshotPath, cmd.getWait(), s_logger);   			
+				command = new Script(_manageSnapshotPath, cmd.getWait() * 1000, s_logger);   			
     			command.add("-d", snapshotPath);  			
     			command.add("-n", snapshotName);
     			result = command.execute();
@@ -1473,7 +1477,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 _storage.mkdirs(templatePath);
     		 
     		 String tmplPath = templateInstallFolder + File.separator + tmplFileName;
-    		 Script command = new Script(_createTmplPath, cmd.getWait(), s_logger);
+    		 Script command = new Script(_createTmplPath, cmd.getWait() * 1000, s_logger);
     		 command.add("-t", templatePath);
     		 command.add("-n", tmplFileName);
     		 command.add("-f", snapshotPath);
@@ -1551,7 +1555,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 String tmpltPath = spd.getTargetPath() + File.separator + templateInstallFolder;
         	 _storage.mkdirs(tmpltPath);
 
-        	 Script command = new Script(_createTmplPath, cmd.getWait(), s_logger);
+        	 Script command = new Script(_createTmplPath, cmd.getWait() * 1000, s_logger);
         	 command.add("-f", cmd.getVolumePath());
         	 command.add("-t", tmpltPath);
         	 command.add("-n", cmd.getUniqueName() + ".qcow2");
@@ -1642,7 +1646,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 primaryPool = _storageResource.getStoragePool(conn, cmd.getPoolUuid());
         	 LibvirtStorageVolumeDef vol = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, null, null);
         	 s_logger.debug(vol.toString());
-        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol, cmd.getWait());
+        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol, cmd.getWait() * 1000);
         	 
         	 StorageVolInfo priVolInfo = primaryVol.getInfo();
         	 return new PrimaryStorageDownloadAnswer(primaryVol.getKey(), priVolInfo.allocation);
@@ -2429,8 +2433,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	protected void createVbd(Connect conn, VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException{
-		List<DiskDef> vols = new ArrayList<DiskDef>();
-		for (VolumeTO volume : vmSpec.getDisks()) {
+		List<VolumeTO> disks = Arrays.asList(vmSpec.getDisks());
+		Collections.sort(disks, new Comparator<VolumeTO>() {
+			@Override
+			public int compare(VolumeTO arg0, VolumeTO arg1) {
+				return arg0.getDeviceId() > arg1.getDeviceId() ? 1 : -1;
+			}
+		});
+		
+		for (VolumeTO volume : disks) {
 
 			String volPath = getVolumePath(conn, volume);
 
@@ -2451,14 +2462,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				} else {
 					disk.defFileBasedDisk(volume.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
 				}
-				vols.add(devId, disk);
-				continue;
 			}
 
-			vm.getDevices().addDevice(disk);
-		}
-		
-		for (DiskDef disk : vols) {
 			vm.getDevices().addDevice(disk);
 		}
 
