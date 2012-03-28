@@ -223,7 +223,7 @@ class JavaAdder(Adder):
         pass
         
             
-copyRightAdderFactory = {".sql":SqlAdder.__name__, ".sh":InterpreterAdder.__name__, ".py":InterpreterAdder.__name__}           
+copyRightAdderFactory = {".sql":SqlAdder.__name__, ".sh":InterpreterAdder.__name__, ".py":InterpreterAdder.__name__,".java":JavaAdder.__name__, ".js":JavaAdder.__name__}
 class CopyRightAdder(object):
     parser = None
     options = None
