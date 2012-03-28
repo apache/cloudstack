@@ -472,11 +472,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("Failed to reset password for the virutal machine; no need to reboot the vm");
                 return false;
             } else {
-                if (rebootVirtualMachine(userId, vmId) == null) {
-                    if (vmInstance.getState() == State.Stopped) {
-                        s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of password reset");
-                        return true;
-                    }
+                if (vmInstance.getState() == State.Stopped) {
+                    s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of password reset");
+                    return true;
+                }
+                
+                if (rebootVirtualMachine(userId, vmId) == null) { 
                     s_logger.warn("Failed to reboot the vm " + vmInstance);
                     return false;
                 } else {
