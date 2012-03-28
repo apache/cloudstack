@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.0")
+@Implementation(description="Remove the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.1")
 public class LDAPRemoveCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(LDAPRemoveCmd.class.getName());
 
