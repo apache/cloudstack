@@ -496,8 +496,11 @@
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
             </ul>
-            <div class="info-desc">
+            <div class="info-desc conditional advanced">
               <fmt:message key="message.setup.physical.network.during.zone.creation"/>
+            </div>
+            <div class="info-desc conditional basic">
+              <fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>
             </div>
             <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span><fmt:message key="label.add.physical.network"/></span></div>
 
@@ -1646,6 +1649,7 @@
 
 <script language="javascript">
 dictionary = {
+'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
 'label.edit.traffic.type': '<fmt:message key="label.edit.traffic.type"/>',
