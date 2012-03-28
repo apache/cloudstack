@@ -3287,34 +3287,36 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
-
-        // specifyIpRanges should always be true for Shared network offerings
-        if (!specifyIpRanges && type == GuestType.Shared) {
-            throw new InvalidParameterValueException("SpecifyIpRanges should be true if network offering's type is " + type);
+        
+        if (specifyVlan != specifyIpRanges) {
+            throw new InvalidParameterValueException("SpecifyVlan should be equal to specifyIpRanges which is " + specifyIpRanges);
         }
 
-        // specifyVlan should always be true for Shared network offerings and Isolated network offerings with
-        // specifyIpRanges = true
-        if (!specifyVlan) {
-            if (type == GuestType.Shared) {
-                throw new InvalidParameterValueException("SpecifyVlan should be true if network offering's type is " + type);
-            } else if (specifyIpRanges) {
-                throw new InvalidParameterValueException("SpecifyVlan should be true if network offering has specifyIpRanges=true");
-            }
+        // specifyVlan should always be true for Shared network offerings
+        if (!specifyVlan && type == GuestType.Shared) {
+            throw new InvalidParameterValueException("SpecifyVlan should be true if network offering's type is " + type);
+        }
+        
+        //specifyIpRanges should always be false for Isolated offering with Source nat service enabled
+        if (specifyVlan && type == GuestType.Isolated && serviceProviderMap.containsKey(Service.SourceNat)) {
+            throw new InvalidParameterValueException("SpecifyVlan should be false if the network offering type is " 
+                                                        + type + " and service " + Service.SourceNat.getName() + " is supported");
         }
 
         // validate availability value
         if (availability == NetworkOffering.Availability.Required) {
             boolean canOffBeRequired = (type == GuestType.Isolated && serviceProviderMap.containsKey(Service.SourceNat));
             if (!canOffBeRequired) {
-                throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with "
+                throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required 
+                        + " only for networkOfferings of type " + GuestType.Isolated + " and with "
                         + Service.SourceNat.getName() + " enabled");
             }
 
             // only one network offering in the system can be Required
             List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
             if (!offerings.isEmpty()) {
-                throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+                throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() 
+                        + " with availability " + Availability.Required);
             }
         }
 
