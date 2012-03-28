@@ -881,9 +881,8 @@
 
                   args.response.success({
                     actionFilter: function() {
-                      var allowedActions = [];
-                      if(selectedZoneObj.networktype == "Advanced")
-                        allowedActions.push("edit");
+                      var allowedActions = ['edit'];
+
                       return allowedActions;
                     },
                     data: selectedPhysicalNetworkObj
