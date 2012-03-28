@@ -98,22 +98,22 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
     private Integer vmRunning;
     
-    @SerializedName("projectlimit") @Param(description="the total number of projects the account can own")
+    @SerializedName("projectlimit") @Param(description="the total number of projects the account can own", since="3.0.1")
     private String projectLimit;
 
-    @SerializedName("projecttotal") @Param(description="the total number of projects being administrated by this account")
+    @SerializedName("projecttotal") @Param(description="the total number of projects being administrated by this account", since="3.0.1")
     private Long projectTotal;
 
-    @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this account")
+    @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this account", since="3.0.1")
     private String projectAvailable;
     
-    @SerializedName("networklimit") @Param(description="the total number of networks the account can own")
+    @SerializedName("networklimit") @Param(description="the total number of networks the account can own", since="3.0.1")
     private String networkLimit;
 
-    @SerializedName("networktotal") @Param(description="the total number of networks owned by account")
+    @SerializedName("networktotal") @Param(description="the total number of networks owned by account", since="3.0.1")
     private Long networkTotal;
 
-    @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account")
+    @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account", since="3.0.1")
     private String networkAvailable;
     
 
