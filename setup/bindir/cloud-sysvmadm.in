@@ -65,11 +65,13 @@ for d in "${secondary[@]}"; do
 	echo "INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
 	jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
+	    echo -e "ERROR: Failed to stop secondary storage vm with id $d \n"
 		echo "ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
 	else	
 		echo "INFO: Starting secondary storage vm with id $d" >>$LOGFILE
 		jobresult=$(send_request startSystemVm $d SSVM)
 		if [ "$jobresult" != "1" ]; then
+		    echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
         	echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
 		fi
 	fi
@@ -89,11 +91,13 @@ for d in "${console[@]}"; do
 	echo "INFO: Stopping console proxy with id $d" >>$LOGFILE
     jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
+	    echo -e "ERROR: Failed to stop console proxy vm with id $d \n"
         echo "ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
     else	
 		echo "INFO: Starting console proxy vm with id $d" >>$LOGFILE
 		jobresult=$(send_request startSystemVm $d consoleProxy)
 		if [ "$jobresult" != "1" ]; then
+		    echo -e "ERROR: Failed to start console proxy vm with id $d \n"
     		echo "ERROR: Failed to start console proxy vm with id $d" >>$LOGFILE
 		fi
     fi
@@ -197,6 +201,7 @@ reboot_router(){
 	jobresult=$(query_async_job_result $jobid)
 	
 	if [ "$jobresult" != "1" ]; then
+	    echo -e "ERROR: Failed to restart domainRouter with id $1 \n"
 		echo "ERROR: Failed to restart domainRouter with id $1" >>$LOGFILE
 		exit 0
 	else
