@@ -52,7 +52,27 @@
         if (field.hidden || field.isHidden) $formItem.hide();
 
         $formItem.appendTo($form);
-
+    
+       //Handling Escape KeyPress events
+     /*   $('.ui-dialog').keypress(function(event) {
+           if ( event.which == 27 ) { 
+            event.stopPropagation();
+        }
+        });
+        
+        $(document).ready(function(){
+        $('.ui-dialog').keydown(function(event) {
+             if(event.keyCode == 27)
+               {
+                 alert("you pressed the Escape key");
+                 event.preventdefault();
+               }
+            })
+         });
+  
+        $(':ui-dialog').dialog({
+           closeOnEscape: false
+             }); */
         // Label field
         var $name = $('<div>').addClass('name')
           .appendTo($formItem)
@@ -238,7 +258,7 @@
                 $form.show();
 
                 // Form should be slightly wider
-                $form.closest(':ui-dialog').dialog('option', { position: 'center' });
+                $form.closest(':ui-dialog').dialog('option', { position: 'center',closeOnEscape: false });
               }
             }
           });
@@ -332,6 +352,7 @@
 
       return $formContainer.dialog({
         dialogClass: 'create-form',
+        closeOnEscape: false,
         width: 400,
         title: _l(args.form.title),
         open: function() {
@@ -377,6 +398,7 @@
       ).dialog({
         title: _l('label.confirmation'),
         dialogClass: 'confirm',
+        closeOnEscape: false,
         zIndex: 5000,
         buttons: [
           {
@@ -412,6 +434,7 @@
       ).dialog({
         title: _l('label.status'),
         dialogClass: 'notice',
+        closeOnEscape: false,
         zIndex: 5000,
         buttons: [
           {
