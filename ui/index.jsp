@@ -2915,6 +2915,7 @@ dictionary = {
 'message.action.delete.physical.network': '<fmt:message key="message.action.delete.physical.network" />',
 'label.physical.network': '<fmt:message key="label.physical.network" />',
 'label.devices': '<fmt:message key="label.devices" />',
-'label.rules': '<fmt:message key="label.rules" />'
+'label.rules': '<fmt:message key="label.rules" />',
+'label.vm.state': '<fmt:message key="label.vm.state" />'
 };
 </script>
