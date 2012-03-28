@@ -1029,19 +1029,50 @@
                 iso: {
                   label: 'ISO',
                   select: function(args) {
+									  var items = [];//???
+										var map = {};
                     $.ajax({
-                      url: createURL("listIsos&isReady=true&isofilter=executable"),
+                      url: createURL("listIsos&isReady=true&isofilter=featured"),
                       dataType: "json",
-                      async: true,
+                      async: false,
                       success: function(json) {
-                        var isos = json.listisosresponse.iso;
-                        var items = [];
+                        var isos = json.listisosresponse.iso;                        
                         $(isos).each(function() {
                           items.push({id: this.id, description: this.displaytext});
-                        });
-                        args.response.success({data: items});
+													map[this.id] = 1;
+                        });                        
                       }
                     });
+										$.ajax({
+                      url: createURL("listIsos&isReady=true&isofilter=community"),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {
+                        var isos = json.listisosresponse.iso;                        
+                        $(isos).each(function() {												  
+													if(!(this.id in map)) {
+                            items.push({id: this.id, description: this.displaytext});
+														map[this.id] = 1;
+													}
+                        });                        
+                      }
+                    });
+										$.ajax({
+                      url: createURL("listIsos&isReady=true&isofilter=selfexecutable"),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {
+                        var isos = json.listisosresponse.iso;                        
+                        $(isos).each(function() {												 
+													if(!(this.id in map)) {
+                            items.push({id: this.id, description: this.displaytext});
+														map[this.id] = 1;
+													}
+                        });                             
+                      }
+                    });
+																				
+										args.response.success({data: items});
                   }
                 }
               }
