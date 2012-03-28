@@ -8452,11 +8452,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-position: 1px -674px;
 }
 
-.migrate .icon {
+.migrate .icon,
+.migrateToAnotherStorage .icon {
   background-position: 0px -125px;
 }
 
-.migrate:hover .icon {
+.migrate:hover .icon,
+.migrateToAnotherStorage:hover .icon {
   background-position: 0px -707px;
 }
 
