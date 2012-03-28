@@ -68,7 +68,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     private Long zoneId;
     
     @IdentityMapper(entityTableName="storage_pool")
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to", since="3.0.1")
     private Long storageId;
 
     /////////////////////////////////////////////////////

@@ -50,7 +50,7 @@ public class ListGuestOsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
     private Long osCategoryId;
     
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description", since="3.0.1")
     private String description;
 
 
