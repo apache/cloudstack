@@ -268,13 +268,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 			}
 
 			Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo,
-					accountId, templateId, cmd.getTemplateName(),
+					accountId, templateId, cmd.getUniqueName(),
 					secondaryStoragePoolURL, volumePath, 
 					hostService.getWorkerName(context, cmd, 0));
 
 			return new CreatePrivateTemplateAnswer(cmd, true, null,
 					result.first(), result.third(), result.second(),
-					cmd.getTemplateName(), ImageFormat.OVA);
+					cmd.getUniqueName(), ImageFormat.OVA);
 
 		} catch (Throwable e) {
 			if (e instanceof RemoteException) {
@@ -471,7 +471,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
     
-    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateName, 
+    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName, 
         String secStorageUrl, String volumePath, String workerVmName) throws Exception {
         
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
@@ -491,7 +491,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         }
         
-        String snapshotUuidName = UUID.randomUUID().toString();
         VirtualMachineMO clonedVm = null;
         try {
             Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
@@ -501,7 +500,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
             
-            if(!vmMo.createSnapshot(snapshotUuidName, "Temporary snapshot for template creation", false, false)) {
+            if(!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
                 String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
@@ -517,17 +516,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
         
-            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, snapshotUuidName, true, false);
+            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
             
-            long physicalSize = new File(installFullPath + "/" + snapshotUuidName + ".ova").length();
+            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
             VmdkProcessor processor = new VmdkProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
             processor.configure("VMDK Processor", params);
-            long virtualSize = processor.getTemplateVirtualSize(installFullPath, snapshotUuidName);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
-            postCreatePrivateTemplate(installFullPath, templateId, snapshotUuidName, physicalSize, virtualSize);
-            return new Ternary<String, Long, Long>(installPath + "/" + snapshotUuidName + ".ova", physicalSize, virtualSize);
+            postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
             
         } finally {
             if(clonedVm != null) {
@@ -535,18 +534,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 clonedVm.destroy();
             }
         
-            vmMo.removeSnapshot(snapshotUuidName, false);
+            vmMo.removeSnapshot(templateUniqueName, false);
         }
     }
     
-    private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateName, 
+    private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateUniqueName, 
         String secStorageUrl, long volumeId, String backedUpSnapshotUuid) throws Exception {
         
-        String snapshotUuidName = UUID.randomUUID().toString();
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
         String installFullPath = secondaryMountPoint + "/" + installPath;
-        String installFullName = installFullPath + "/" + snapshotUuidName + ".ova";
+        String installFullName = installFullPath + "/" + templateUniqueName + ".ova";
         String snapshotFullName = secondaryMountPoint + "/" + getSnapshotRelativeDirInSecStorage(accountId, volumeId) 
             + "/" + backedUpSnapshotUuid + ".ova";
         String result;
@@ -591,15 +589,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
             
-            long physicalSize = new File(installFullPath + "/" + snapshotUuidName + ".ova").length();
+            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
             VmdkProcessor processor = new VmdkProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
             processor.configure("VMDK Processor", params);
-            long virtualSize = processor.getTemplateVirtualSize(installFullPath, snapshotUuidName);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
-            postCreatePrivateTemplate(installFullPath, templateId, snapshotUuidName, physicalSize, virtualSize);
-            return new Ternary<String, Long, Long>(installPath + "/" + snapshotUuidName + ".ova", physicalSize, virtualSize);
+            postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
         
         } catch(Exception e) {
             // TODO, clean up left over files
