@@ -778,7 +778,7 @@
                   }
                 },
                 createForm: {
-                  label: 'label.action.change.password',
+                  title: 'label.action.change.password',
                   fields: {
                     newPassword: {
                       label: 'label.new.password',
