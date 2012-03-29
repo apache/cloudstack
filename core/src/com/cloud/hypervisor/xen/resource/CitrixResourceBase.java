@@ -274,6 +274,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     // Guest and Host Performance Statistics
     protected String _consolidationFunction = "AVERAGE";
     protected int _pollingIntervalInSeconds = 60;
+    
+    //Hypervisor specific params with generic value, may need to be overridden for specific versions
+    long _xs_memory_used = 128 * 1024 * 1024L; // xen hypervisor used 128 M
+    double _xs_virtualization_factor = 63.0/64.0;  // 1 - virtualization overhead
 
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
@@ -4928,9 +4932,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     break;
                 }
             }
-            // assume the memory Virtualization overhead is 1/64
-            // xen hypervisor used 128 M
-            ram = (ram - dom0Ram - (128 * 1024 * 1024)) * 63/64;
+            
+            ram = (long) ((ram - dom0Ram - _xs_memory_used) * _xs_virtualization_factor);
             cmd.setMemory(ram);
             cmd.setDom0MinMemory(dom0Ram);
 
