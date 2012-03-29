@@ -685,7 +685,7 @@ body.login {
 }
 
 .install-wizard .step .setup-form .field .name {
-  width: 93px;
+  width: 98px;
   text-align: right;
   float: left;
   font-size: 13px;
@@ -6006,7 +6006,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container .field .name {
   float: left;
   margin: 18px 0 0 12px;
-  width: 90px;
+  width: 95px;
   font-size: 11px;
   text-align: left;
   line-height: 13px;
