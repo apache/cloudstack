@@ -34,7 +34,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2581,8 +2584,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	protected void createVbd(Connect conn, VirtualMachineTO vmSpec,
 			String vmName, LibvirtVMDef vm) throws InternalErrorException,
 			LibvirtException, URISyntaxException {
-		List<DiskDef> disks = new ArrayList<DiskDef>();
-		for (VolumeTO volume : vmSpec.getDisks()) {
+		List<VolumeTO> disks = Arrays.asList(vmSpec.getDisks());
+		Collections.sort(disks, new Comparator<VolumeTO>() {
+			@Override
+			public int compare(VolumeTO arg0, VolumeTO arg1) {
+				return arg0.getDeviceId() > arg1.getDeviceId() ? 1 : -1;
+			}
+		});
+		
+		for (VolumeTO volume : disks) {
 			KVMPhysicalDisk physicalDisk = null;
 			KVMStoragePool pool = null;
 			if (volume.getType() == Volume.Type.ISO && volume.getPath() != null) {
@@ -2627,16 +2637,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 								diskBusType, DiskDef.diskFmtType.QCOW2);
 					}
 				}
-
-				disks.add(devId, disk);
-				continue;
 			}
 
-			vm.getDevices().addDevice(disk);
-
-		}
-
-		for (DiskDef disk : disks) {
 			vm.getDevices().addDevice(disk);
 		}
 
