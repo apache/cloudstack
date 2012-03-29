@@ -51,9 +51,9 @@ class TestCaseExecuteEngine(object):
                 setattr(test, "testClient", self.testclient)
                 setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
                 setattr(test.__class__, "clstestclient", self.testclient)
-                
                 if hasattr(test, "UserName"):
                     self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+
     def run(self):
         loader = unittest.loader.TestLoader()
         suite = loader.discover(self.testCaseFolder)
