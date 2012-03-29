@@ -7,9 +7,9 @@
         return $('<div>').multiEdit(args);
       };
 
-      var makeMultiEditPanel = function($item, options) {
-        if (!options) options = {};
-        if ($item.closest('li').hasClass('disabled')) return false;
+      var makeMultiEditPanel = function($item) {       
+        if ($item.closest('li').hasClass('disabled')) 
+				  return false;
 
         var targetId = $item.attr('net-target');
         var targetName = $item.parent().find('.name').find('span').html();
@@ -18,7 +18,7 @@
         var $browser = $item.closest('.detail-view').data('view-args').$browser;
 
         $browser.cloudBrowser('addPanel', {
-          title: options.title ? options.title : targetName,
+          title: targetName,
           maximizeIfSelected: true,
           complete: function($newPanel) {
             $newPanel.detailView({
@@ -27,7 +27,7 @@
               context: context,
               tabs: {
                 network: {
-                  title: options.title ? options.title : targetName,
+                  title: targetName,
                   custom: function(args) {
                     return portMultiEdit($.extend(target, {
                       context: context
@@ -94,7 +94,8 @@
 			
 				if(includingFirewall == true) {
 				  $chart.find('li.firewall .view-details').click(function() {
-						makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
+						//makeMultiEditPanel($(this), { title: _l('label.nat.port.range')});
+						makeMultiEditPanel($(this));
 					});				
 				}
 				else {				
@@ -130,25 +131,7 @@
                 return $(this).hasClass(id);
               }).addClass('disabled');
             });
-          }
-					
-					/*
-          if (preFilter.length == 3) { // 'firewall', 'portForwarding', 'loadBalancing'            
-            return staticNATChart(args, true); //static NAT including Firewall 
-          }
-          else if (preFilter.length == 4) { // 'firewall', 'portForwarding', 'loadBalancing', 'staticnatFirewall'            
-            return staticNATChart(args, false); //static NAT excluding Firewall 
-          }				
-					else {
-            $(preFilter).each(function() {
-              var id = this;
-
-              var $li = $chart.find('li').filter(function() {
-                return $(this).hasClass(id);
-              }).addClass('disabled');
-            });
-          }
-					*/
+          }					
         }
 
         $chart.find('.view-details').click(function() {
