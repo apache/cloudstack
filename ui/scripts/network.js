@@ -1631,6 +1631,10 @@
 
                   vmDetails: cloudStack.sections.instances.listView.detailView,
 
+									
+									//"NAT Port Range" multiEdit screen for StaticNAT is obsolete in cloudstack 3.0 because createIpForwardingRule/deleteIpForwardingRule/listIpForwardingRules API are obsolete in cloudstack 3.0.
+									//cloudstack 3.0 is using createFirewallRule/listFirewallRules/deleteFirewallRule API for both staticNAT and non-staticNAT .
+									/*
                   staticNAT: {
                     noSelect: true,
                     fields: {
@@ -1730,6 +1734,8 @@
                       }, 100);
                     }
                   },
+									*/
+									
 
                   // Load balancing rules
                   loadBalancing: {

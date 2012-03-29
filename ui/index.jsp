@@ -798,7 +798,8 @@
           </li>
           <li class="firewall">
             <div class="name"><span><fmt:message key="label.firewall"/></span></div>
-            <div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>
+            <!--<div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>-->
+						<div class="view-details" net-target="firewall"><fmt:message key="label.view.all"/>
           </li>
         </ul>
       </div>
