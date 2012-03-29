@@ -5,6 +5,19 @@ except ImportError:
     import unittest
 import cloudstackTestClient
 
+#class UserName(object):
+#    def __init__(self, account, domain, type=0):
+#        self.account = account
+#        self.domain = domain
+#        self.accounttype = type
+#        
+#    def __call__(self, cls):
+#        class Wrapped(cls):
+#            cls.UserName = self.account
+#            cls.DomainName = self.domain
+#            cls.AcctType = self.accounttype
+#        return Wrapped
+
 def UserName(Name, DomainName, AcctType):
     def wrapper(cls):
         orig_init = cls.__init__
@@ -16,6 +29,7 @@ def UserName(Name, DomainName, AcctType):
         cls.__init__ = __init__
         return cls
     return wrapper
+
 class cloudstackTestCase(unittest.case.TestCase):
     clstestclient = None
     

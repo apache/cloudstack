@@ -1,8 +1,9 @@
 import cloudstackConnection
 import asyncJobMgr
 import dbConnection
-import uuid
 from cloudstackAPI import * 
+import random
+import string
 
 class cloudstackTestClient(object):
     def __init__(self, mgtSvr=None, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, defaultWorkerThreads=10, logging=None):
@@ -17,8 +18,34 @@ class cloudstackTestClient(object):
     def dbConfigure(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
         self.dbConnection = dbConnection.dbConnection(host, port, user, passwd, db)
     
-    def createNewApiClient(self, UserName, DomainName, acctType):
+    def isAdminContext(self):
+        """
+        A user is a regular user if he fails to listDomains;
+        if he is a domain-admin, he can list only domains that are non-ROOT;
+        if he is an admin, he can list the ROOT domain successfully
+        """
+        try:
+            listdom = listDomains.listDomainsCmd()
+            listdom.name = 'ROOT'
+            listdomres = self.apiClient.listDomains(listdom)
+            rootdom = listdomres[0].name
+            if rootdom == 'ROOT':
+                return 1 #admin
+            else:
+                return 2 #domain-admin
+        except:
+            return 0 #user
+    
+    def random_gen(self, size=6, chars=string.ascii_uppercase + string.digits):
+        """Generate Random Strings of variable length"""
+        return ''.join(random.choice(chars) for x in range(size))
+
+    def createNewApiClient(self, UserName, DomainName, acctType=0):
+        if not self.isAdminContext():
+            return self.apiClient
+        
         listDomain = listDomains.listDomainsCmd()
+        listDomain.listall = True
         listDomain.name = DomainName
         try:
             domains = self.apiClient.listDomains(listDomain)
@@ -31,7 +58,7 @@ class cloudstackTestClient(object):
         
         cmd = listAccounts.listAccountsCmd()
         cmd.name = UserName
-        exist = True
+        cmd.domainid = domId
         try:
             accounts = self.apiClient.listAccounts(cmd)
             acctId = accounts[0].id
@@ -39,7 +66,7 @@ class cloudstackTestClient(object):
             createAcctCmd = createAccount.createAccountCmd()
             createAcctCmd.accounttype = acctType
             createAcctCmd.domainid = domId
-            createAcctCmd.email = str(uuid.uuid4()) + "@citrix.com"
+            createAcctCmd.email = "test-" + self.random_gen() + "@citrix.com"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
             createAcctCmd.password = "password"
@@ -65,8 +92,8 @@ class cloudstackTestClient(object):
         nConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port, apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
         self.connection.close()
         self.connection = nConnection
-        
         self.apiClient = cloudstackAPIClient.CloudStackAPIClient(self.connection)
+        
     def close(self):
         if self.connection is not None:
             self.connection.close()
