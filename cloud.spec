@@ -14,8 +14,8 @@ Release:   0.%{_build_number}%{dist}.%{_prerelease}
 Release:   %{_rel}%{dist}
 %endif
 License:   GPLv3+ with exceptions or CSL 1.1
-Vendor:    CloudStack, Inc. <sqa@cloud.com>
-Packager:  CloudStack, Inc. <engineering@cloud.com>
+Vendor:    CloudStack <engineering@cloud.com>
+Packager:  CloudStack <engineering@cloud.com>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_ver}.tar.bz2
