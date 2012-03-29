@@ -4785,7 +4785,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _dcDao.deleteVnet(physicalNetworkId);
 
         // delete service providers
-        _pNSPDao.deleteProviders(physicalNetworkId);
+        List<PhysicalNetworkServiceProviderVO> providers = _pNSPDao.listBy(physicalNetworkId);
+        
+        for(PhysicalNetworkServiceProviderVO provider : providers){
+            try {
+                deleteNetworkServiceProvider(provider.getId());
+            }catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to complete destroy of the physical network provider: " + provider.getProviderName() + ", id: "+ provider.getId(), e);
+                return false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Unable to complete destroy of the physical network provider: " + provider.getProviderName() + ", id: "+ provider.getId(), e);
+                return false;
+            }
+        }
 
         // delete traffic types
         _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);

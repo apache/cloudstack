@@ -59,7 +59,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
@@ -672,6 +671,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         for (DomainRouterVO router : routers) {
             result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
+        _vrProviderDao.remove(elementId);
+        
         return result;
     }
 
