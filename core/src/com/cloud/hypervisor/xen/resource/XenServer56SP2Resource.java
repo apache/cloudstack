@@ -32,9 +32,11 @@ import com.cloud.utils.script.Script;
 @Local(value=ServerResource.class)
 public class XenServer56SP2Resource extends XenServer56FP1Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer56SP2Resource.class);
-    
+        
     public XenServer56SP2Resource() {
         super();
+        _xs_memory_used = 128 * 1024 * 1024L;
+        _xs_virtualization_factor = 62.0/64.0;
     }
     
     @Override
