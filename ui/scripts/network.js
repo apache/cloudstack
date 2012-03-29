@@ -1640,7 +1640,8 @@
                           args.response.success({
                             data: [
                               { name: 'tcp', description: 'TCP' },
-                              { name: 'udp', description: 'UDP' }
+                              { name: 'udp', description: 'UDP' },
+															{ name: 'icmp', description: 'ICMP' } //Bug 14532
                             ]
                           });
                         }
