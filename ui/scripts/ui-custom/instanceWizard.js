@@ -22,6 +22,7 @@
         // Save instance and close wizard
         var completeAction = function() {
           var data = cloudStack.serializeForm($form);
+          var $wizardLoading = $('<div>').addClass('loading-overlay').appendTo($wizard).css('z-index', '10000');
 
           args.action({
             // Populate data
