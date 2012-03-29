@@ -18,6 +18,7 @@
 package com.cloud.network.dao;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "physical_network_service_providers")
@@ -90,6 +92,8 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @Column(name = "security_group_service_provided")
     boolean securitygroupServiceProvided;
     
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    Date removed;
     
     public PhysicalNetworkServiceProviderVO() {
     }
@@ -240,6 +244,14 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+    
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
     
     public void setEnabledServices(List<Service> services){

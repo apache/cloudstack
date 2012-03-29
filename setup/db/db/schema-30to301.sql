@@ -28,3 +28,5 @@ ALTER TABLE `cloud_usage`.`usage_ip_address` MODIFY COLUMN `is_system` smallint(
 ALTER TABLE `cloud_usage`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`host` ALTER COLUMN `resource_state` SET DEFAULT 'Enabled';
+
+ALTER TABLE `cloud`.`physical_network_service_providers` ADD COLUMN `removed` datetime COMMENT 'date removed if not null';
