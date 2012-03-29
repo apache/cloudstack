@@ -46,7 +46,6 @@ for _globber in [
         "apache-log4j-extras-1.1",
         "cglib",
         "gson",
-        "vnc",
         "ehcache",
         "vhd-tools",
         "xmlrpc",
