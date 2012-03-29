@@ -1,5 +1,6 @@
 from cloudstackTestCase import *
 
+@UserName("edison", "edison", "0")
 class TestCase1(cloudstackTestCase):
 
     def test_cloudstackapi(self):
