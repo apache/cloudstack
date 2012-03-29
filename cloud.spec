@@ -5,7 +5,7 @@
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
 Name:      cloud
-Summary:   Cloud.com Stack
+Summary:   CloudStack Stack
 Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
@@ -14,8 +14,8 @@ Release:   0.%{_build_number}%{dist}.%{_prerelease}
 Release:   %{_rel}%{dist}
 %endif
 License:   GPLv3+ with exceptions or CSL 1.1
-Vendor:    Cloud.com, Inc. <sqa@cloud.com>
-Packager:  Cloud.com, Inc. <engineering@cloud.com>
+Vendor:    CloudStack <engineering@cloud.com>
+Packager:  CloudStack <engineering@cloud.com>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_ver}.tar.bz2
@@ -31,42 +31,42 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: MySQL-python
 
 %description
-This is the Cloud.com Stack, a highly-scalable elastic, open source,
+This is the CloudStack Stack, a highly-scalable elastic, open source,
 intelligent cloud implementation.
 
 %package utils
-Summary:   Cloud.com utility library
+Summary:   CloudStack utility library
 Requires: java >= 1.6.0
 Requires: python
 Group:     System Environment/Libraries
 Obsoletes: vmops-utils < %{version}-%{release}
 %description utils
-The Cloud.com utility libraries provide a set of Java classes used
-in the Cloud.com Stack.
+The CloudStack utility libraries provide a set of Java classes used
+in the CloudStack Stack.
 
 %package client-ui
-Summary:   Cloud.com management server UI
+Summary:   CloudStack management server UI
 Requires: %{name}-client
 Group:     System Environment/Libraries
 Obsoletes: vmops-client-ui < %{version}-%{release}
 %description client-ui
-The Cloud.com management server is the central point of coordination,
-management, and intelligence in the Cloud.com Stack.  This package
+The CloudStack management server is the central point of coordination,
+management, and intelligence in the CloudStack Stack.  This package
 is a requirement of the %{name}-client package, which installs the
-Cloud.com management server.
+CloudStack management server.
 
 %package server
-Summary:   Cloud.com server library
+Summary:   CloudStack server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
-The Cloud.com server libraries provide a set of Java classes used
-in the Cloud.com Stack.
+The CloudStack server libraries provide a set of Java classes used
+in the CloudStack Stack.
 
 %package agent-scripts
-Summary:   Cloud.com agent scripts
+Summary:   CloudStack agent scripts
 # FIXME nuke the archdependency
 Requires: python
 Requires: bash
@@ -82,51 +82,51 @@ AutoReqProv: no
 Obsoletes: vmops-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
 %description agent-scripts
-The Cloud.com agent is in charge of managing shared computing resources in
-a Cloud.com Stack-powered cloud.  Install this package if this computer
-will participate in your cloud -- this is a requirement for the Cloud.com
+The CloudStack agent is in charge of managing shared computing resources in
+a CloudStack Stack-powered cloud.  Install this package if this computer
+will participate in your cloud -- this is a requirement for the CloudStack
 agent.
 
 %package python
-Summary:   Cloud.com Python library
+Summary:   CloudStack Python library
 # FIXME nuke the archdependency
 Requires: python
 Group:     System Environment/Libraries
 %description python
-The Cloud.com Python library contains a few Python modules that the
+The CloudStack Python library contains a few Python modules that the
 CloudStack uses.
 
 %package deps
-Summary:   Cloud.com library dependencies
+Summary:   CloudStack library dependencies
 Requires: java >= 1.6.0
 Obsoletes: vmops-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
 This package contains a number of third-party dependencies
-not shipped by distributions, required to run the Cloud.com
+not shipped by distributions, required to run the CloudStack
 Stack.
 
 %package daemonize
-Summary:   Cloud.com daemonization utility
+Summary:   CloudStack daemonization utility
 Group:     System Environment/Libraries
 Obsoletes: vmops-daemonize < %{version}-%{release}
 %description daemonize
 This package contains a program that daemonizes the specified
-process.  The Cloud.com Cloud Stack uses this to start the agent
+process.  The CloudStack Cloud Stack uses this to start the agent
 as a service.
 
 %package core
-Summary:   Cloud.com core library
+Summary:   CloudStack core library
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-deps = %{version}
 Group:     System Environment/Libraries
 Obsoletes: vmops-core < %{version}-%{release}
 %description core
-The Cloud.com core libraries provide a set of Java classes used
-in the Cloud.com Stack.
+The CloudStack core libraries provide a set of Java classes used
+in the CloudStack Stack.
 
 %package client
-Summary:   Cloud.com management server
+Summary:   CloudStack management server
 # If GCJ is present, a setPerformanceSomething method fails to load Catalina
 Conflicts: java-1.5.0-gcj-devel
 Obsoletes: vmops-client < %{version}-%{release}
@@ -160,12 +160,12 @@ Requires: jakarta-commons-httpclient
 
 Group:     System Environment/Libraries
 %description client
-The Cloud.com management server is the central point of coordination,
-management, and intelligence in the Cloud.com Stack.  This package
+The CloudStack management server is the central point of coordination,
+management, and intelligence in the CloudStack Stack.  This package
 installs the management server..
 
 %package setup
-Summary:   Cloud.com setup tools
+Summary:   CloudStack setup tools
 Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
@@ -176,10 +176,10 @@ Requires: %{name}-deps = %{version}
 Requires: %{name}-python = %{version}
 Group:     System Environment/Libraries
 %description setup
-The Cloud.com setup tools let you set up your Management Server and Usage Server.
+The CloudStack setup tools let you set up your Management Server and Usage Server.
 
 %package agent-libs
-Summary:   Cloud.com agent libraries
+Summary:   CloudStack agent libraries
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: commons-httpclient
@@ -187,11 +187,11 @@ Requires: jakarta-commons-logging
 Requires: jpackage-utils
 Group:     System Environment/Libraries
 %description agent-libs
-The Cloud.com agent libraries are used by the Cloud Agent and the Cloud
+The CloudStack agent libraries are used by the Cloud Agent and the Cloud
 Console Proxy.
 
 %package agent
-Summary:   Cloud.com agent
+Summary:   CloudStack agent
 Obsoletes: vmops-agent < %{version}-%{release}
 Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
@@ -237,12 +237,12 @@ Requires: /sbin/ip
 Requires: vconfig
 Group:     System Environment/Libraries
 %description agent
-The Cloud.com agent is in charge of managing shared computing resources in
-a Cloud.com Stack-powered cloud.  Install this package if this computer
-will participate in your cloud.
+The CloudStack agent is in charge of managing shared computing resources.
+This package must be installed on any server that will provide computing
+resources for the cloud.
 
 %package baremetal-agent
-Summary: Cloud.com baremetal agent
+Summary: CloudStack baremetal agent
 Requires: PING
 Requires: tftp-server
 Requires: xinetd
@@ -251,10 +251,10 @@ Requires: chkconfig
 Requires: dhcp
 Group:     System Environment/Libraries
 %description baremetal-agent
-The Cloud.com baremetal agent
+The CloudStack baremetal agent
 
 %package console-proxy
-Summary:   Cloud.com console proxy
+Summary:   CloudStack console proxy
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-agent-libs = %{version}
 Requires: python
@@ -270,29 +270,29 @@ Requires: /bin/egrep
 Requires: /sbin/ip
 Group:     System Environment/Libraries
 %description console-proxy
-The Cloud.com console proxy is the service in charge of granting console
-access into virtual machines managed by the Cloud.com CloudStack.
+The CloudStack console proxy is the service in charge of granting console
+access into virtual machines managed by the CloudStack CloudStack.
 
 %package cli
-Summary:   Cloud.com command line tools
+Summary:   CloudStack command line tools
 Requires: python
 Group:     System Environment/Libraries
 %description cli
-The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
+The CloudStack command line tools contain a few Python modules that can call cloudStack APIs.
 
 %package test
-Summary:   Cloud.com test suite
+Summary:   CloudStack test suite
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-deps = %{version}, wget
 Group:     System Environment/Libraries
 Obsoletes: vmops-test < %{version}-%{release}
 %description test
-The Cloud.com test package contains a suite of automated tests
-that the very much appreciated QA team at Cloud.com constantly
-uses to help increase the quality of the Cloud.com Stack.
+The CloudStack test package contains a suite of automated tests
+that the very much appreciated QA team at CloudStack constantly
+uses to help increase the quality of the CloudStack Stack.
 
 %package usage
-Summary:   Cloud.com usage monitor
+Summary:   CloudStack usage monitor
 Obsoletes: vmops-usage < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-daemonize = %{version}
@@ -301,7 +301,7 @@ Requires: %{name}-client = %{version}
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description usage
-The Cloud.com usage monitor provides usage accounting across the entire cloud for
+The CloudStack usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
 
@@ -337,7 +337,7 @@ if [ "$1" == "0" ] ; then
 fi
 
 %pre client
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
+id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
 # set max file descriptors for cloud user to 4096
@@ -373,7 +373,7 @@ if [ "$1" == "0" ] ; then
 fi
 
 %pre usage
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
+id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 # user harcoded here, also hardcoded on wscript
 
@@ -386,7 +386,7 @@ else
 fi
 
 %pre agent-scripts
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
+id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
 %preun agent
@@ -605,7 +605,7 @@ fi
 
 %changelog
 * Fri Apr 30 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.11
-- Rename to Cloud.com everywhere
+- Rename to CloudStack everywhere
 
 * Wed Apr 28 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.10
 - FOSS release
