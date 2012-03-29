@@ -14,8 +14,8 @@ Release:   0.%{_build_number}%{dist}.%{_prerelease}
 Release:   %{_rel}%{dist}
 %endif
 License:   GPLv3+ with exceptions or CSL 1.1
-Vendor:    Cloud.com, Inc. <sqa@cloud.com>
-Packager:  Cloud.com, Inc. <engineering@cloud.com>
+Vendor:    CloudStack, Inc. <sqa@cloud.com>
+Packager:  CloudStack, Inc. <engineering@cloud.com>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_ver}.tar.bz2
@@ -542,7 +542,7 @@ fi
 
 %changelog
 * Fri Apr 30 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.11
-- Rename to Cloud.com everywhere
+- Rename to CloudStack everywhere
 
 * Wed Apr 28 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.10
 - FOSS release
