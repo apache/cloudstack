@@ -3876,6 +3876,7 @@
           dataProvider: function(args) {
             $.ajax({
               url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+              data: { page: args.page, pageSize: pageSize },
               dataType: "json",
               async: false,
               success: function(json) {
@@ -4178,6 +4179,7 @@
           dataProvider: function(args) {
             $.ajax({
               url: createURL("listF5LoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+              data: { page: args.page, pageSize: pageSize },
               dataType: "json",
               async: false,
               success: function(json) {
@@ -4378,6 +4380,7 @@
           dataProvider: function(args) {
             $.ajax({
               url: createURL("listSrxFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+              data: { page: args.page, pageSize: pageSize },
               dataType: "json",
               async: false,
               success: function(json) {
