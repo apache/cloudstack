@@ -313,8 +313,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException {
-        Long dcId = cmd.getZoneId();
-        Long podId = cmd.getPodId();
+        long dcId = cmd.getZoneId();
+        long podId = cmd.getPodId();
         String clusterName = cmd.getClusterName();
         String url = cmd.getUrl();
         String username = cmd.getUsername();
@@ -338,15 +338,13 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
         // Check if the pod exists in the system
-        if (podId != null) {
-            if (_podDao.findById(podId) == null) {
-                throw new InvalidParameterValueException("Can't find pod by id " + podId);
-            }
-            // check if pod belongs to the zone
-            HostPodVO pod = _podDao.findById(podId);
-            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-                throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
-            }
+        if (_podDao.findById(podId) == null) {
+            throw new InvalidParameterValueException("Can't find pod by id " + podId);
+        }
+        // check if pod belongs to the zone
+        HostPodVO pod = _podDao.findById(podId);
+        if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+            throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
         }
 
         // Verify cluster information and create a new cluster if needed
