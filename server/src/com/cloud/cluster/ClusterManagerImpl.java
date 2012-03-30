@@ -970,8 +970,17 @@ public class ClusterManagerImpl implements ClusterManager {
         		for(ManagementServerHostVO host : inactiveList)
         			s_logger.info("management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service ip: " + host.getServiceIP() + ", version: " + host.getVersion());
         	}
-        	
-            this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, inactiveList));
+
+        	List<ManagementServerHostVO> downHostList = new ArrayList<ManagementServerHostVO>();
+            for(ManagementServerHostVO host : inactiveList) {
+	            if(!pingManagementNode(host)) {
+	                s_logger.warn("Management node " + host.getId() + " is detected inactive by timestamp and also not pingable");
+	                downHostList.add(host);	
+	            }
+            }
+            
+            if(downHostList.size() > 0)
+            	this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, downHostList));
         } else {
         	s_logger.info("No inactive management server node found");
         }
