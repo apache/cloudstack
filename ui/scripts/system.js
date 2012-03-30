@@ -4791,13 +4791,8 @@
               async: true,
               success: function(json) {                
                 var items = json.listclustersresponse.cluster;								
-								$(items).each(function(){								  
-									if(this.managedstate == "Managed") {
-									  this.state = this.allocationstate; //this.state == Enabled, Disabled
-									}	
-                  else {
-                    this.state = this.managedstate; //this.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
-                  }									
+								$(items).each(function(){	                  						
+                  addExtraPropertiesToClusterObject(this);						  		
 								});
 																
                 args.response.success({
@@ -4989,7 +4984,8 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var item = json.updateclusterresponse.cluster;
+                      var item = json.updateclusterresponse.cluster;											
+											addExtraPropertiesToClusterObject(item);																				
                       args.response.success({
                         actionFilter: clusterActionfilter,
                         data:item
@@ -5020,7 +5016,8 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var item = json.updateclusterresponse.cluster;
+                      var item = json.updateclusterresponse.cluster;										
+											addExtraPropertiesToClusterObject(item);												
                       args.response.success({
                         actionFilter: clusterActionfilter,
                         data:item
@@ -5051,7 +5048,8 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var item = json.updateclusterresponse.cluster;
+                      var item = json.updateclusterresponse.cluster;							
+											addExtraPropertiesToClusterObject(item);									
                       args.response.success({
                         actionFilter: clusterActionfilter,
                         data:item
@@ -5082,7 +5080,8 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var item = json.updateclusterresponse.cluster;
+                      var item = json.updateclusterresponse.cluster;											
+											addExtraPropertiesToClusterObject(item);												
                       args.response.success({
                         actionFilter: clusterActionfilter,
                         data:item
@@ -5141,11 +5140,19 @@
 										state: { label: 'label.state' }
                   }
                 ],                
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: clusterActionfilter,
-                    data: args.context.clusters[0]
-                  });
+                dataProvider: function(args) {								 
+									$.ajax({
+										url: createURL("listClusters&id=" + args.context.clusters[0].id),
+										dataType: "json",										
+										success: function(json) {  
+											var item = json.listclustersresponse.cluster[0];								
+											addExtraPropertiesToClusterObject(item);							
+											args.response.success({
+												actionFilter: clusterActionfilter,
+												data: item
+											});
+										}
+									});									
                 }
               }
             }
@@ -7464,4 +7471,13 @@
     }
   };
 
+	var addExtraPropertiesToClusterObject = function(jsonObj) {								
+		if(jsonObj.managedstate == "Managed") {
+			jsonObj.state = jsonObj.allocationstate; //jsonObj.state == Enabled, Disabled
+		}	
+		else {
+			jsonObj.state = jsonObj.managedstate; //jsonObj.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
+		}			
+  }									
+	
 })($, cloudStack);
