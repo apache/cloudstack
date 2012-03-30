@@ -432,7 +432,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
 	public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(instanceName).append("]").toString();
+            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(hostName).append("]").toString();
         }
         return toString;
     }
