@@ -716,6 +716,8 @@
                             $.ajax({
                               url: createURL('listVirtualMachines'),
                               data: {
+                                page: args.page,
+                                pageSize: pageSize,
                                 networkid: args.context.networks[0].id,
                                 listAll: true
                               },
@@ -1167,6 +1169,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
+                              page: args.page,
+                              pageSize: pageSize,
                               networkid: args.context.networks[0].id,
                               listAll: true
                             },
@@ -1748,6 +1752,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
+                              page: args.page,
+                              pageSize: pageSize,
                               networkid: args.context.ipAddresses[0].associatednetworkid,
                               listAll: true
                             },
@@ -2109,6 +2115,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
+                              page: args.page,
+                              pageSize: pageSize,
                               listAll: true,
                               networkid: args.context.ipAddresses[0].associatednetworkid
                             },
