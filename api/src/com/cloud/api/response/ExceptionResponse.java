@@ -25,7 +25,7 @@ public class ExceptionResponse extends BaseResponse {
     private Integer errorCode;
 
     @SerializedName("errortext") @Param(description="the text associated with this error")
-    private String errorText;
+    private String errorText = "Command failed due to Internal Server Error";
 
     public Integer getErrorCode() {
         return errorCode;
