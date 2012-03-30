@@ -5,7 +5,7 @@ guestIp=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
 
 while [ "$ENABLED" == "1" ]
 do
-	socat TCP4-LISTEN:8080,reuseaddr,crnl,bind=$guestIp SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
+	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$guestIp SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
 
 	rc=$?
 	if [ $rc -ne 0 ]
