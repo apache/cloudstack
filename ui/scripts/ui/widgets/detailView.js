@@ -145,7 +145,7 @@
                 // Setup notification
                 cloudStack.ui.notifications.add(
                   notification,
-                  function(args) {
+                  function(args2) { //name parameter as "args2" instead of "args" to avoid override "args" from success: function(args) {						
                     if ($detailView.is(':visible')) {
                       $loading.remove();
 
