@@ -100,10 +100,10 @@ public class JuniperSrxResource implements ServerResource {
     private String _primaryDnsAddress;
     private String _ikeGatewayHostname;
     private String _vpnObjectPrefix;
-    private UsageFilter _usageFilterVlanInput = new UsageFilter("vlan-input", null, "vlan-input");
-    private UsageFilter _usageFilterVlanOutput = new UsageFilter("vlan-output", null, "vlan-output");
-    private UsageFilter _usageFilterIPInput = new UsageFilter(_publicZone, "destination-address", "-i");
-    private UsageFilter _usageFilterIPOutput = new UsageFilter(_privateZone, "source-address", "-o");
+    private UsageFilter _usageFilterVlanInput;
+    private UsageFilter _usageFilterVlanOutput;
+    private UsageFilter _usageFilterIPInput;
+    private UsageFilter _usageFilterIPOutput;
     private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
@@ -366,6 +366,11 @@ public class JuniperSrxResource implements ServerResource {
             if (!refreshSrxConnection()) {
                 throw new ConfigurationException("Unable to open a connection to the SRX.");
             }
+
+            _usageFilterVlanInput = new UsageFilter("vlan-input", null, "vlan-input");
+            _usageFilterVlanOutput = new UsageFilter("vlan-output", null, "vlan-output");
+            _usageFilterIPInput = new UsageFilter(_publicZone, "destination-address", "-i");
+            _usageFilterIPOutput = new UsageFilter(_privateZone, "source-address", "-o");
 
             return true;
         } catch (Exception e) {
