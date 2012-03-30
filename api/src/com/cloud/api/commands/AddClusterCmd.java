@@ -48,7 +48,7 @@ public class AddClusterCmd extends BaseCmd {
     private String password;
 
     @IdentityMapper(entityTableName="host_pod_ref")
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the host")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required=true, description="the Pod ID for the host")
     private Long podId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the URL")

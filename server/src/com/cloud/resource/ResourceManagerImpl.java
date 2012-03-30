@@ -140,7 +140,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.sshException;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -314,8 +313,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException {
-        Long dcId = cmd.getZoneId();
-        Long podId = cmd.getPodId();
+        long dcId = cmd.getZoneId();
+        long podId = cmd.getPodId();
         String clusterName = cmd.getClusterName();
         String url = cmd.getUrl();
         String username = cmd.getUsername();
@@ -348,18 +347,17 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         // Check if the pod exists in the system
-        if (podId != null) {
-            if (_podDao.findById(podId) == null) {
-                throw new InvalidParameterValueException("Can't find pod by id " + podId);
-            }
-            // check if pod belongs to the zone
-            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified id doesn't belong to the zone " + dcId);
-            	ex.addProxyObject(pod, podId, "podId");                
-                ex.addProxyObject(zone, dcId, "dcId");
-                throw ex;
-            }
+        if (_podDao.findById(podId) == null) {
+            throw new InvalidParameterValueException("Can't find pod by id " + podId);
         }
+        // check if pod belongs to the zone
+        if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified id doesn't belong to the zone " + dcId);
+        	ex.addProxyObject(pod, podId, "podId");                
+            ex.addProxyObject(zone, dcId, "dcId");
+            throw ex;
+        }
+        
 
         // Verify cluster information and create a new cluster if needed
         if (clusterName == null || clusterName.isEmpty()) {
