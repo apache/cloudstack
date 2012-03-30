@@ -756,16 +756,19 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         public synchronized void run() {
-            if (!cancelled) {
-                startRebalanceAgents();
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("The agent load balancer task is now being cancelled");
-                }
-                cancelled = true;
-            }
+        	try {
+	            if (!cancelled) {
+	                startRebalanceAgents();
+	                if (s_logger.isInfoEnabled()) {
+	                    s_logger.info("The agent load balancer task is now being cancelled");
+	                }
+	                cancelled = true;
+	            }
+        	} catch(Throwable e) {
+        		s_logger.error("Unexpected exception " + e.toString(), e);
+        	}
         }
     }
-    
    
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
