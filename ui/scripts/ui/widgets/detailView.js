@@ -859,7 +859,8 @@
     var tabFilter = options.tabFilter;
     var context = options.context ? options.context : {};
 
-    if (options.newData) {
+    if(options.newData && 
+		    ($detailView.data('view-args').section != null && context[$detailView.data('view-args').section] != null && context[$detailView.data('view-args').section].length > 0)) {
       $.extend(
         context[$detailView.data('view-args').section][0],
         options.newData
