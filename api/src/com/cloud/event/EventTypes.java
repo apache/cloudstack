@@ -240,11 +240,16 @@ public class EventTypes {
     public static final String EVENT_TRAFFIC_TYPE_UPDATE = "TRAFFIC.TYPE.UPDATE";
 
     // external network device events
-    public static final String EVENT_EXTERAL_LB_DEVICE_ADD = "PHYSICAL.LOADBALANCER.ADD";
-    public static final String EVENT_EXTERAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
-    public static final String EVENT_EXTERAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
+    public static final String EVENT_EXTERNAL_LB_DEVICE_ADD = "PHYSICAL.LOADBALANCER.ADD";
+    public static final String EVENT_EXTERNAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
+    public static final String EVENT_EXTERNAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
 
-    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD";
-    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
-    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
+    // external switch management device events (E.g.: Cisco Nexus 1000v Virtual Supervisor Module.
+    public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD = "SWITCH.MGMT.ADD";
+    public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE = "SWITCH.MGMT.DELETE";
+    public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_CONFIGURE = "SWITCH.MGMT.CONFIGURE";    		
+    		
+    public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD";
+    public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
+    public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
 }
