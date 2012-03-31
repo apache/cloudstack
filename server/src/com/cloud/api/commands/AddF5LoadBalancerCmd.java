@@ -115,7 +115,7 @@ public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERAL_LB_DEVICE_ADD;
+        return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
     }
  
     @Override

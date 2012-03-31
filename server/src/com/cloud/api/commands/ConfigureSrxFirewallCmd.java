@@ -94,7 +94,7 @@ public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERAL_FIREWALL_DEVICE_CONFIGURE;
+        return EventTypes.EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE;
     }
 
     @Override

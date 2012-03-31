@@ -31,6 +31,7 @@ public interface Host extends StateObject<Status> {
         ConsoleProxy(true),
         ExternalFirewall(false),
         ExternalLoadBalancer(false),
+        ExternalVirtualSwitchSupervisor(false),
         PxeServer(false),
         TrafficMonitor(false),
 
