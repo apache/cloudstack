@@ -86,7 +86,7 @@ class TestDeployVm(cloudstackTestCase):
         deployVmCmd.zoneid = 1
         deployVmCmd.account = self.acct.account
         deployVmCmd.domainid = self.acct.domainid
-        deployVmCmd.templateid = 2
+        deployVmCmd.templateid = 5 #CentOS 5.6 builtin
         deployVmCmd.serviceofferingid = 1
 
         deployVmResponse = self.apiClient.deployVirtualMachine(deployVmCmd)
