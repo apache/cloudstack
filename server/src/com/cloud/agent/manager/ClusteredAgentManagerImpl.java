@@ -756,9 +756,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             s_logger.warn("Somebody else is already rebalancing host id: " + hostId);
                             continue;
                         }
-                        
-                        HostTransferMapVO transfer = _hostTransferDao.startAgentTransfering(hostId, node.getMsid(), _nodeId);
+
+                        HostTransferMapVO transfer = null; 
                         try {
+                            transfer = _hostTransferDao.startAgentTransfering(hostId, node.getMsid(), _nodeId);
                             Answer[] answer = sendRebalanceCommand(node.getMsid(), hostId, node.getMsid(), _nodeId, Event.RequestAgentRebalance);
                             if (answer == null) {
                                 s_logger.warn("Failed to get host id=" + hostId + " from management server " + node.getMsid());
@@ -768,13 +769,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             s_logger.warn("Failed to get host id=" + hostId + " from management server " + node.getMsid(), ex);
                             result = false;
                         } finally {
-                            HostTransferMapVO transferState = _hostTransferDao.findByIdAndFutureOwnerId(transfer.getId(), _nodeId);
-                            if (!result && transferState != null && transferState.getState() == HostTransferState.TransferRequested) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Removing mapping from op_host_transfer as it failed to be set to transfer mode");
+                            if (transfer != null) {
+                                HostTransferMapVO transferState = _hostTransferDao.findByIdAndFutureOwnerId(transfer.getId(), _nodeId);
+                                if (!result && transferState != null && transferState.getState() == HostTransferState.TransferRequested) {
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Removing mapping from op_host_transfer as it failed to be set to transfer mode");
+                                    }
+                                    //just remove the mapping (if exists) as nothing was done on the peer management server yet
+                                    _hostTransferDao.remove(transfer.getId());
                                 }
-                                //just remove the mapping as nothing was done on the peer management server yet
-                                _hostTransferDao.remove(transfer.getId());
                             }
                         }
                     }
