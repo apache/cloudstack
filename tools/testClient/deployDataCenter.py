@@ -193,7 +193,7 @@ class deployDataCenters():
             self.config =  configGenerator.get_setup_config(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException( \
-                            "Failed to load config" + sys.exc_info())
+                            "Failed to load config %s" %sys.exc_info())
 
         mgt = self.config.mgtSvr[0]
         
