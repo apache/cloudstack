@@ -156,7 +156,7 @@
 
                     if (messages.complete) {
                       cloudStack.dialog.notice({
-                        message: messages.complete(args.data)
+                        message: messages.complete(args2.data)
                       });
                     }
                     if (additional && additional.complete) additional.complete($.extend(true, args, {
