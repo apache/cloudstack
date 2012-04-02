@@ -66,7 +66,9 @@ class TestSSVMs(cloudstackTestCase):
 
         list_ssvm_response = list_ssvms(
                                         self.apiclient,
-                                        systemvmtype='secondarystoragevm'
+                                        systemvmtype='secondarystoragevm',
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -87,6 +89,9 @@ class TestSSVMs(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
+
+        self.debug("Number of zones: %s" % len(list_zones_response))
+        self.debug("Number of SSVMs: %s" % len(list_ssvm_response))
         # Number of Sec storage VMs = No of Zones
         self.assertEqual(
                             len(list_ssvm_response),
@@ -97,6 +102,7 @@ class TestSSVMs(cloudstackTestCase):
         #public IP, link local IP and DNS
         for ssvm in list_ssvm_response:
 
+            self.debug("SSVM state: %s" % ssvm.state)
             self.assertEqual(
                             ssvm.state,
                             'Running',
@@ -178,7 +184,9 @@ class TestSSVMs(cloudstackTestCase):
 
         list_cpvm_response = list_ssvms(
                                         self.apiclient,
-                                        systemvmtype='consoleproxy'
+                                        systemvmtype='consoleproxy',
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),
@@ -200,6 +208,9 @@ class TestSSVMs(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         
+        self.debug("Number of zones: %s" % len(list_zones_response))
+        self.debug("Number of CPVMs: %s" % len(list_cpvm_response))
+
         self.assertEqual(
                             len(list_cpvm_response),
                             len(list_zones_response),
@@ -208,6 +219,7 @@ class TestSSVMs(cloudstackTestCase):
         #For each CPVM check private IP, public IP, link local IP and DNS
         for cpvm in list_cpvm_response:
 
+            self.debug("CPVM state: %s" % cpvm.state)
             self.assertEqual(
                             cpvm.state,
                             'Running',
@@ -280,23 +292,11 @@ class TestSSVMs(cloudstackTestCase):
         # 4. If no process is running/multiple process are running
         #    then the test is a failure
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
-
         list_ssvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -305,7 +305,18 @@ class TestSSVMs(cloudstackTestCase):
                         )
         ssvm = list_ssvm_response[0]
 
-        self.debug("Checking cloud process status")
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=ssvm.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
+        self.debug("Running SSVM check script")
 
         result = get_process_status(
                                 host.ipaddress,
@@ -316,6 +327,8 @@ class TestSSVMs(cloudstackTestCase):
                                 "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL"
                                 )
         res = str(result)
+        self.debug("SSVM script output: %s" % res)
+
         self.assertEqual(
                             res.count("ERROR"),
                             1,
@@ -338,6 +351,7 @@ class TestSSVMs(cloudstackTestCase):
                                 "service cloud status"
                                 )
         res = str(result)
+        self.debug("Cloud Process status: %s" % res)
         # cloud.com service (type=secstorage) is running: process id: 2346
         self.assertEqual(
                             res.count("is running"),
@@ -356,23 +370,11 @@ class TestSSVMs(cloudstackTestCase):
         # 3. Service cloud status should report cloud agent status to be
         #    running
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
-
         list_cpvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='consoleproxy',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),
@@ -381,11 +383,24 @@ class TestSSVMs(cloudstackTestCase):
                         )
         cpvm = list_cpvm_response[0]
 
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=cpvm.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
         try:
             telnet = telnetlib.Telnet(
                                       str(self.apiclient.connection.mgtSvr),
                                       '8250'
                                       )
+            self.debug("Telnet management server (IP: %s)" % 
+                                            self.apiclient.connection.mgtSvr)
         except Exception as e:
             self.fail(
                     "Telnet Access failed for %s: %s" % \
@@ -403,6 +418,7 @@ class TestSSVMs(cloudstackTestCase):
                                 "service cloud status"
                                 )
         res = str(result)
+        self.debug("Cloud Process status: %s" % res)
         self.assertEqual(
                             res.count("is running"),
                             1,
@@ -421,23 +437,11 @@ class TestSSVMs(cloudstackTestCase):
         #    test cases still passing
         # 3. If either of the two above steps fail the test is a failure
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
-
         list_ssvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -446,6 +450,18 @@ class TestSSVMs(cloudstackTestCase):
                         )
         ssvm = list_ssvm_response[0]
 
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=ssvm.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
+        self.debug("Stopping SSVM: %s" % ssvm.id)
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
@@ -474,6 +490,7 @@ class TestSSVMs(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         ssvm_response = list_ssvm_response[0]
+        self.debug("SSVM state after debug: %s" % ssvm_response.state)
         self.assertEqual(
                         ssvm_response.state,
                         'Running',
@@ -495,23 +512,11 @@ class TestSSVMs(cloudstackTestCase):
         #    two test cases still passing
         # 3. If either of the two above steps fail the test is a failure
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
-
         list_cpvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='consoleproxy',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),
@@ -520,6 +525,18 @@ class TestSSVMs(cloudstackTestCase):
                         )
         cpvm = list_cpvm_response[0]
 
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=cpvm.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
+        self.debug("Stopping CPVM: %s" % cpvm.id)
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = cpvm.id
         self.apiclient.stopSystemVm(cmd)
@@ -544,6 +561,8 @@ class TestSSVMs(cloudstackTestCase):
 
         cpvm_response = list_cpvm_response[0]
 
+        self.debug("CPVM state after debug: %s" % cpvm_response.state)
+
         self.assertEqual(
                         cpvm_response.state,
                         'Running',
@@ -563,23 +582,11 @@ class TestSSVMs(cloudstackTestCase):
         #    before and after reboot
         # 3. The cloud process should still be running within the SSVM
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
-
         list_ssvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
     
         self.assertEqual(
@@ -590,10 +597,22 @@ class TestSSVMs(cloudstackTestCase):
         
         ssvm_response = list_ssvm_response[0]
 
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=ssvm_response.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
         #Store the public & private IP values before reboot
         old_public_ip = ssvm_response.publicip
         old_private_ip = ssvm_response.privateip
 
+        self.debug("Rebooting SSVM: %s" % ssvm_response.id)
         cmd = rebootSystemVm.rebootSystemVmCmd()
         cmd.id = ssvm_response.id
         self.apiclient.rebootSystemVm(cmd)
@@ -617,7 +636,7 @@ class TestSSVMs(cloudstackTestCase):
             timeout = timeout - 1
 
         ssvm_response = list_ssvm_response[0]
-
+        self.debug("SSVM State: %s" % ssvm_response.state)
         self.assertEqual(
                         'Running',
                         str(ssvm_response.state),
@@ -648,23 +667,12 @@ class TestSSVMs(cloudstackTestCase):
         #    the same before and after reboot
         # 3. the cloud process should still be running within the CPVM
 
-        hosts = list_hosts(
-                           self.apiclient,
-                           zoneid=self.zone.id,
-                           type='Routing',
-                           state='Up'
-                           )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        host = hosts[0]
 
         list_cpvm_response = list_ssvms(
                                         self.apiclient,
                                         systemvmtype='consoleproxy',
-                                        hostid=host.id
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),
@@ -673,9 +681,22 @@ class TestSSVMs(cloudstackTestCase):
                         )
         cpvm_response = list_cpvm_response[0]
 
+        hosts = list_hosts(
+                           self.apiclient,
+                           id=cpvm_response.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+
         #Store the public & private IP values before reboot
         old_public_ip = cpvm_response.publicip
         old_private_ip = cpvm_response.privateip
+
+        self.debug("Rebooting CPVM: %s" % cpvm_response.id)
 
         cmd = rebootSystemVm.rebootSystemVmCmd()
         cmd.id = cpvm_response.id
@@ -701,6 +722,7 @@ class TestSSVMs(cloudstackTestCase):
 
         cpvm_response = list_cpvm_response[0]
 
+        self.debug("CPVM state: %s" % cpvm_response.state)
         self.assertEqual(
                         'Running',
                         str(cpvm_response.state),
@@ -735,8 +757,9 @@ class TestSSVMs(cloudstackTestCase):
 
         list_ssvm_response = list_ssvms(
                                         self.apiclient,
-                                        zoneid=self.zone.id,
-                                        systemvmtype='secondarystoragevm'
+                                        systemvmtype='secondarystoragevm',
+                                        state='Running',
+                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -747,6 +770,7 @@ class TestSSVMs(cloudstackTestCase):
 
         old_name = ssvm_response.name
 
+        self.debug("Destroying SSVM: %s" % ssvm_response.id)
         cmd = destroySystemVm.destroySystemVmCmd()
         cmd.id = ssvm_response.id
         self.apiclient.destroySystemVm(cmd)
@@ -826,6 +850,7 @@ class TestSSVMs(cloudstackTestCase):
 
         old_name = cpvm_response.name
 
+        self.debug("Destroying CPVM: %s" % cpvm_response.id)
         cmd = destroySystemVm.destroySystemVmCmd()
         cmd.id = cpvm_response.id
         self.apiclient.destroySystemVm(cmd)

@@ -15,6 +15,72 @@ import configGenerator
 import logging
 import string
 import random
+import imaplib
+import email
+import datetime
+
+def restart_mgmt_server(server):
+    """Restarts the management server"""
+
+    try:
+        # Get the SSH client 
+        ssh = is_server_ssh_ready(
+                                  server["ipaddress"],
+                                  server["port"],
+                                  server["username"],
+                                  server["password"],
+                                )
+        result = ssh.execute("/etc/init.d/cloud-management restart")
+        res = str(result)
+        # Server Stop - OK
+        # Server Start - OK
+        if res.count("OK") != 2:
+            raise ("ErrorInReboot!")
+    except Exception as e:
+        raise e
+    return
+
+def fetch_latest_mail(services, from_mail):
+    """Fetch mail"""
+    
+    # Login to mail server to verify email
+    mail = imaplib.IMAP4_SSL(services["server"])
+    mail.login(
+                   services["email"],
+                   services["password"]
+                   )
+    mail.list()
+    mail.select(services["folder"])
+    date = (datetime.date.today() - datetime.timedelta(1)).strftime("%d-%b-%Y")
+
+    result, data = mail.uid(
+            'search',
+            None,
+            '(SENTSINCE {date} HEADER FROM "{mail}")'.format(
+                                                             date=date, 
+                                                             mail=from_mail
+                                                             )
+            )
+    # Return False if email is not present
+    if data == []:
+        return False
+    
+    latest_email_uid = data[0].split()[-1]
+    result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
+    raw_email = data[0][1]
+    email_message = email.message_from_string(raw_email)
+    result = get_first_text_block(email_message)
+    return result
+    
+def get_first_text_block(email_message_instance):
+    """fetches first text block from the mail"""
+    maintype = email_message_instance.get_content_maintype()
+    if maintype == 'multipart':
+        for part in email_message_instance.get_payload():
+            if part.get_content_maintype() == 'text':
+                return part.get_payload()
+    elif maintype == 'text':
+        return email_message_instance.get_payload()
 
 def random_gen(size=6, chars=string.ascii_uppercase + string.digits):
     """Generate Random Strings of variable length"""

@@ -74,7 +74,7 @@ class Services:
                                     "cidr": '55.55.0.0/11',
                                     # Any network (For creating FW rule
                                     },
-                         "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                         "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
                          "mode": 'advanced', # Networking mode: Advanced, basic
                         }
@@ -85,7 +85,7 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -133,7 +133,7 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
             cleanup_resources(cls.api_client, cls.cleanup)
 
@@ -558,7 +558,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -598,7 +598,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created resources
             cleanup_resources(cls.api_client, cls.cleanup)
 
@@ -758,7 +758,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -798,7 +798,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created resources
             cleanup_resources(cls.api_client, cls.cleanup)
 
@@ -959,7 +959,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -998,7 +998,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
             cleanup_resources(cls.api_client, cls.cleanup)
 

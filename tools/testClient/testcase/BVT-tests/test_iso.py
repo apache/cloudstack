@@ -40,7 +40,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                     },
             "iso_2":
                     {
@@ -51,7 +51,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
@@ -64,7 +64,7 @@ class Services:
             "passwordenabled": True,
             "sleep": 60,
             "timeout": 10,
-            "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
             # CentOS 5.3 (64 bit)
             "mode": 'advanced'
             # Networking mode: Basic or Advanced
@@ -168,7 +168,7 @@ class TestISO(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -216,7 +216,7 @@ class TestISO(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
             cleanup_resources(cls.api_client, cls._cleanup)
 

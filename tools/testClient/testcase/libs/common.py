@@ -227,7 +227,7 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip,
     return
 
 def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,
-                          max=None):
+                          max=None, projectid=None):
     """Updates the resource limit to 'max' for given account"""
 
     cmd = updateResourceLimit.updateResourceLimitCmd()
@@ -238,6 +238,8 @@ def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,
         cmd.domainid = domainid
     if max:
         cmd.max = max
+    if projectid:
+        cmd.projectid = projectid
     apiclient.updateResourceLimit(cmd)
     return
 
@@ -452,3 +454,10 @@ def list_network_offerings(apiclient, **kwargs):
     cmd = listNetworkOfferings.listNetworkOfferingsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listNetworkOfferings(cmd))
+
+def list_resource_limits(apiclient, **kwargs):
+    """Lists resource limits"""
+
+    cmd = listResourceLimits.listResourceLimitsCmd()
+    [setattr(cmd, k, v) for k, v in kwargs.items()]
+    return(apiclient.listResourceLimits(cmd))

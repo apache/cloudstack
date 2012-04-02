@@ -107,7 +107,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestDefaultSecurityGroup, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -143,7 +143,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestDefaultSecurityGroup, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -374,7 +374,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAuthorizeIngressRule, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -408,7 +408,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestAuthorizeIngressRule, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -508,7 +508,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRevokeIngressRule, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -542,7 +542,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestRevokeIngressRule, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -665,7 +665,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestDhcpOnlyRouter, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -707,7 +707,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestDhcpOnlyRouter, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -740,7 +740,8 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
-                           state='Up'
+                           state='Up',
+                           virtualmachineid=self.virtual_machine.id
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -798,7 +799,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestdeployVMWithUserData, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -833,7 +834,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestdeployVMWithUserData, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -1000,14 +1001,14 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestDeleteSecurityGroup, cls).getClsTestClient().getApiClient()
         cls._cleanup = []
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestDeleteSecurityGroup, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -1242,14 +1243,14 @@ class TestIngressRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestIngressRule, cls).getClsTestClient().getApiClient()
         cls._cleanup = []
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestIngressRule, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 

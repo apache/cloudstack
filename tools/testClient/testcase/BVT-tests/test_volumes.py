@@ -60,7 +60,7 @@ class Services:
                         "publicport": 22,
                         "protocol": 'TCP',
                         "diskdevice": "/dev/xvdb",
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                         "mode": 'advanced',
                         "sleep": 60,
                         "timeout": 10,
@@ -71,7 +71,7 @@ class TestCreateVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
@@ -187,7 +187,6 @@ class TestCreateVolume(cloudstackTestCase):
                                                )
             try:
                 ssh = self.virtual_machine.get_ssh_client()
-
                 ssh.execute("reboot")
 
             except Exception as e:
@@ -249,7 +248,7 @@ class TestCreateVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -259,7 +258,7 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)

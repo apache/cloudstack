@@ -91,7 +91,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestCreateVMsnapshotTemplate, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -307,32 +307,33 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
+        uuids = []
+        for host in hosts:
+            # hosts[0].name = "nfs://192.168.100.21/export/test"
+            parse_url = (host.name).split('/')
+            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
-        # hosts[0].name = "nfs://192.168.100.21/export/test"
-        parse_url = (hosts[0].name).split('/')
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+            # Split IP address and export path from name
+            sec_storage_ip = parse_url[2]
+            # Sec Storage IP: 192.168.100.21
 
-        # Split IP address and export path from name
-        sec_storage_ip = parse_url[2]
-        # Sec Storage IP: 192.168.100.21
-
-        export_path = '/'.join(parse_url[3:])
-        # Export path: export/test
+            export_path = '/'.join(parse_url[3:])
+            # Export path: export/test
         
-        # Sleep to ensure that snapshot is reflected in sec storage
-        time.sleep(self.services["sleep"])
-        try:
-            # Login to VM to check snapshot present on sec disk
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            # Sleep to ensure that snapshot is reflected in sec storage
+            time.sleep(self.services["sleep"])
+            try:
+                # Login to VM to check snapshot present on sec disk
+                ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-            cmds = [    
+                cmds = [    
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (
+                    "mount %s/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -343,34 +344,36 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                                volume_id
                                                ),
                 ]
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
+                for c in cmds:
+                    self.debug("command: %s" % c)
+                    result = ssh_client.execute(c)
+                    self.debug("Result: %s" % result)
                 
-        except Exception as e:
-            self.fail("SSH failed for Management server: %s" %
+            except Exception as e:
+                self.fail("SSH failed for Management server: %s" %
                                 self.services["mgmt_server"]["ipaddress"])
+            uuids.append(result)
+            # Unmount the Sec Storage
+            cmds = [
+                    "umount %s" % (self.services["mount_dir"]),
+                    ]
+            try:
+                for c in cmds:
+                    self.debug("command: %s" % c)
+                    result = ssh_client.execute(c)
+                    self.debug("Result: %s" % result)
 
-        res = str(result)
+            except Exception as e:
+                self.fail("SSH failed for Management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
+        
+        res = str(uuids)
         self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-        # Unmount the Sec Storage
-        cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                ]
-        try:
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
 
-        except Exception as e:
-            self.fail("SSH failed for Management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])        
         return
 
 
@@ -378,7 +381,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAccountSnapshotClean, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -563,32 +566,33 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
+        uuids = []
+        for host in hosts:
+            # hosts[0].name = "nfs://192.168.100.21/export/test"
+            parse_url = (host.name).split('/')
+            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
-        # hosts[0].name = "nfs://192.168.100.21/export/test"
-        parse_url = (hosts[0].name).split('/')
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+            # Split IP address and export path from name
+            sec_storage_ip = parse_url[2]
+            # Sec Storage IP: 192.168.100.21
 
-        # Split IP address and export path from name
-        sec_storage_ip = parse_url[2]
-        # Sec Storage IP: 192.168.100.21
-
-        export_path = '/'.join(parse_url[3:])
-        # Export path: export/test
+            export_path = '/'.join(parse_url[3:])
+            # Export path: export/test
         
-        # Sleep to ensure that snapshot is reflected in sec storage
-        time.sleep(self.services["sleep"])
-        try:
-            # Login to Secondary storage VM to check snapshot present on sec disk
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            # Sleep to ensure that snapshot is reflected in sec storage
+            time.sleep(self.services["sleep"])
+            try:
+                # Login to Secondary storage VM to check snapshot present on sec disk
+                ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-            cmds = [
+                cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (
+                    "mount %s/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -600,27 +604,29 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                                ),
                 ]
 
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
+                for c in cmds:
+                    self.debug("command: %s" % c)
+                    result = ssh_client.execute(c)
+                    self.debug("Result: %s" % result)
                 
-            res = str(result)
-            self.assertEqual(
+                uuids.append(result)
+
+                # Unmount the Sec Storage
+                cmds = [
+                    "umount %s" % (self.services["mount_dir"]),
+                    ]
+                for c in cmds:
+                    result = ssh_client.execute(c)
+            except Exception:
+                self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
+        
+        res = str(uuids)
+        self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                ]
-            for c in cmds:
-                result = ssh_client.execute(c)
-        except Exception:
-            self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
         
         self.debug("Deleting account: %s" % self.account.account.name)
         # Delete account
@@ -645,44 +651,58 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                  self.apiclient,
                                  id=self.account.account.id
                                  )
-        try:
-            cmds = [    
-                "mount %s:/%s %s" % (
+        uuids = []
+        for host in hosts:
+            # hosts[0].name = "nfs://192.168.100.21/export/test"
+            parse_url = (host.name).split('/')
+            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+
+            # Split IP address and export path from name
+            sec_storage_ip = parse_url[2]
+            # Sec Storage IP: 192.168.100.21
+
+            export_path = '/'.join(parse_url[3:])
+            # Export path: export/test
+
+            try:
+                cmds = [    
+                        "mount %s/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
                                          ),
-                "ls %s/snapshots/%s/%s" % (
+                        "ls %s/snapshots/%s/%s" % (
                                                self.services["mount_dir"],
                                                account_id,
                                                volume_id
                                                ),
-                ]
+                        ]
 
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
+                for c in cmds:
+                    self.debug("command: %s" % c)
+                    result = ssh_client.execute(c)
+                    self.debug("Result: %s" % result)
                 
-            res = str(result)
-            
-            self.assertNotEqual(
+                uuids.append(result)
+                # Unmount the Sec Storage
+                cmds = [
+                    "umount %s" % (self.services["mount_dir"]),
+                    ]
+                for c in cmds:
+                    self.debug("command: %s" % c)
+                    result = ssh_client.execute(c)
+                    self.debug("Result: %s" % result)
+
+            except Exception:
+                self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
+                
+        res = str(uuids)
+        self.assertNotEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
-
-        except Exception:
-            self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
         return
 
 
@@ -690,7 +710,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestSnapshotDetachedDisk, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -902,32 +922,34 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
+        uuids = []
+        for host in hosts:
+            # hosts[0].name = "nfs://192.168.100.21/export/test"
+            parse_url = (host.name).split('/')
+            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
-        # hosts[0].name = "nfs://192.168.100.21/export/test"
-        parse_url = (hosts[0].name).split('/')
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+            # Split IP address and export path from name
+            sec_storage_ip = parse_url[2]
+            # Sec Storage IP: 192.168.100.21
 
-        # Split IP address and export path from name
-        sec_storage_ip = parse_url[2]
-        # Sec Storage IP: 192.168.100.21
-
-        export_path = '/'.join(parse_url[3:])
-        # Export path: export/test
+            export_path = '/'.join(parse_url[3:])
+            # Export path: export/test
         
-        # Sleep to ensure that snapshot is reflected in sec storage
-        time.sleep(self.services["sleep"])
-        try:
-            # Login to Management server to check snapshot present on sec disk
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            # Sleep to ensure that snapshot is reflected in sec storage
+            time.sleep(self.services["sleep"])
+            try:
+                # Login to Management server to check snapshot present on
+                # sec disk
+                ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-            cmds = [
+                cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (
+                    "mount %s/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -937,26 +959,28 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                account_id,
                                                volume_id
                                                ),
-                ]
+                        ]
 
-            for c in cmds:
-                result = ssh_client.execute(c)
-            res = str(result)
-            self.assertEqual(
+                for c in cmds:
+                    result = ssh_client.execute(c)
+                
+                uuids.append(result)
+                # Unmount the Sec Storage
+                cmds = [
+                        "umount %s" % (self.services["mount_dir"]),
+                        ]
+                for c in cmds:
+                    result = ssh_client.execute(c)
+            except Exception as e:
+                self.fail("SSH failed for management server: %s" %
+                                self.services["mgmt_server"]["ipaddress"])
+        
+        res = str(uuids)
+        self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-            for c in cmds:
-                result = ssh_client.execute(c)
-        except Exception as e:
-            self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
-
         return
 
 
@@ -964,7 +988,7 @@ class TestSnapshotLimit(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestSnapshotLimit, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -1150,29 +1174,30 @@ class TestSnapshotLimit(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
+        uuids = []
+        for host in hosts:
+            # hosts[0].name = "nfs://192.168.100.21/export/test"
+            parse_url = (host.name).split('/')
+            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
-        # hosts[0].name = "nfs://192.168.100.21/export/test"
-        parse_url = (hosts[0].name).split('/')
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+            # Split IP address and export path from name
+            sec_storage_ip = parse_url[2]
+            # Sec Storage IP: 192.168.100.21
 
-        # Split IP address and export path from name
-        sec_storage_ip = parse_url[2]
-        # Sec Storage IP: 192.168.100.21
-
-        export_path = '/'.join(parse_url[3:])
-        # Export path: export/test
-        try:
-            # Login to VM to check snapshot present on sec disk
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            export_path = '/'.join(parse_url[3:])
+            # Export path: export/test
+            try:
+                # Login to VM to check snapshot present on sec disk
+                ssh_client = remoteSSHClient.remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-            cmds = [
+                cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s:/%s %s" % (
+                    "mount %s/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -1184,25 +1209,28 @@ class TestSnapshotLimit(cloudstackTestCase):
                                                ),
                 ]
 
-            for c in cmds:
-                result = ssh_client.execute(c)
+                for c in cmds:
+                    result = ssh_client.execute(c)
 
-            res = str(result)
-            self.assertEqual(
+                uuids.append(result)
+
+                # Unmount the Sec Storage
+                cmds = [
+                    "umount %s" % (self.services["mount_dir"]),
+                    ]
+                for c in cmds:
+                    result = ssh_client.execute(c)
+            except Exception as e:
+                raise Exception(
+                        "SSH access failed for management server: %s" %
+                                    self.services["mgmt_server"]["ipaddress"])
+
+        res = str(uuids)
+        self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                ]
-            for c in cmds:
-                result = ssh_client.execute(c)
-        except Exception as e:
-            raise Exception("SSH access failed for management server: %s" %
-                                    self.services["mgmt_server"]["ipaddress"])
         return
 
 
@@ -1210,7 +1238,7 @@ class TestSnapshotEvents(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestSnapshotEvents, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)

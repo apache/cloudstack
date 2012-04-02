@@ -22,7 +22,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                            "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                             # Cent OS 5.3 (64 bit)
                             "mode": 'advanced',
                             # Networking mode: Basic or advanced
@@ -30,10 +30,23 @@ class Services:
                             # Time interval after which LB switches the requests
                             "sleep": 60,
                             "timeout":10,
+                            "network_offering": {
+                                    "name": 'Test Network offering',
+                                    "displaytext": 'Test Network offering',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList" : {
+                                            "Dhcp": 'VirtualRouter',
+                                            "Dns": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                            "PortForwarding": 'VirtualRouter',
+                                        },
+                                },
                             "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
-                                  "networkoffering": '3d4e36f1-6b5f-40fc-bb63-fe9353419e91',
                                 },
                             "service_offering": {
                                     "name": "Tiny Instance",
@@ -87,7 +100,7 @@ class TestPublicIP(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestPublicIP, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -107,6 +120,15 @@ class TestPublicIP(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls.services["network"]["zoneid"] = cls.zone.id
+
+        cls.network_offering = NetworkOffering.create(
+                                    cls.api_client, 
+                                    cls.services["network_offering"],
+                                    )
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+        
+        cls.services["network"]["networkoffering"] = cls.network_offering.id
         cls.account_network = Network.create(
                                              cls.api_client,
                                              cls.services["network"],
@@ -138,6 +160,7 @@ class TestPublicIP(cloudstackTestCase):
                         cls.user_network,
                         cls.account,
                         cls.user,
+                        cls.network_offering
                         ]
         return
 
@@ -256,7 +279,7 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
@@ -301,7 +324,7 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -536,7 +559,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestLoadBalancingRule, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)

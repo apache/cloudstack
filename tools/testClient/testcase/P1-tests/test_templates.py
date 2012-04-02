@@ -62,7 +62,7 @@ class Services:
                             0:{
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format" : 'VHD',
@@ -74,12 +74,12 @@ class Services:
                         "template": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
                         "destzoneid": 2, # For Copy template (Destination zone)
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced', # Networking mode: Advanced, basic
@@ -109,7 +109,7 @@ class TestCreateTemplate(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -136,7 +136,7 @@ class TestCreateTemplate(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
@@ -264,7 +264,7 @@ class TestTemplates(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.services = Services().services
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
 
         # Get Zone, templates etc
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -335,7 +335,7 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
             #Cleanup created resources such as templates and VMs
             cleanup_resources(cls.api_client, cls._cleanup)
 

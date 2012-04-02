@@ -156,7 +156,7 @@ class TestAccounts(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAccounts, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -281,7 +281,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestRemoveUserFromAccount, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -542,7 +542,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestNonRootAdminsPrivileges, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -639,7 +639,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestServiceOfferingSiblings, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Create Domains, accounts etc
@@ -751,7 +751,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestServiceOfferingHierarchy, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Create domain, service offerings etc
@@ -875,7 +875,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TesttemplateHierarchy, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -1011,7 +1011,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAddVmToSubDomain, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Setup working Environment- Create domain, zone, pod cluster etc.

@@ -65,10 +65,10 @@ class Services:
                           "name": "testISO",
                           "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                           # Source URL where ISO is located
-                          "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                          "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                           },
                         "sleep": 50,
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                         "mode": 'advanced',
                     }
 
@@ -77,7 +77,7 @@ class TestAttachVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAttachVolume, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
@@ -336,7 +336,7 @@ class TestAttachVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestAttachVolume, cls).getClsTestClient().getApiClient()
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -346,7 +346,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAttachDetachVolume, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
@@ -404,7 +404,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(TestAttachDetachVolume, cls).getClsTestClient().getApiClient()
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -590,7 +590,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestAttachVolumeISO, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
@@ -781,7 +781,7 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)

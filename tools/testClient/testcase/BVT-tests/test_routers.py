@@ -47,7 +47,7 @@ class Services:
                                         "username": "testuser",
                                         "password": "fr3sca",
                                         },
-                         "ostypeid":'144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                         "ostypeid":'5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                          "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced', #Networking mode: Basic, Advanced
@@ -59,7 +59,10 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = fetch_api_client()
+        cls.api_client = super(
+                               TestRouterServices,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -99,7 +102,10 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = fetch_api_client()
+            cls.api_client = super(
+                                   TestRouterServices,
+                                   cls
+                                   ).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
             cleanup_resources(cls.api_client, cls.cleanup)
 
@@ -136,7 +142,8 @@ class TestRouterServices(cloudstackTestCase):
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
-                           state='Up'
+                           state='Up',
+                           virtualmachineid=self.vm_1.id
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -197,7 +204,8 @@ class TestRouterServices(cloudstackTestCase):
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
-                           state='Up'
+                           state='Up',
+                           virtualmachineid=self.vm_1.id
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -382,7 +390,8 @@ class TestRouterServices(cloudstackTestCase):
                            self.apiclient,
                            zoneid=router.zoneid,
                            type='Routing',
-                           state='Up'
+                           state='Up',
+                           virtualmachineid=self.vm_1.id
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -742,6 +751,7 @@ class TestRouterServices(cloudstackTestCase):
             cmd.id = vm.id
             self.apiclient.stopVirtualMachine(cmd)
 
+        # Get network.gc.interval config value
         config = list_configurations(
                                      self.apiclient,
                                      name='network.gc.interval'
@@ -751,10 +761,23 @@ class TestRouterServices(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        response = config[0]
+        gcinterval = config[0]
 
-        # Wait for network.gc.interval * 3 time to cleanup all the resources
-        time.sleep(int(response.value) * 3)
+        # Get network.gc.wait config value
+        config = list_configurations(
+                                     self.apiclient,
+                                     name='network.gc.wait'
+                                     )
+        self.assertEqual(
+                            isinstance(config, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        gcwait = config[0]
+
+        total_wait = int(gcinterval.value) + int(gcwait.value)
+        # Wait for wait_time * 2 time to cleanup all the resources
+        time.sleep(total_wait * 2)
         
         timeout = self.services["timeout"]
         while True:

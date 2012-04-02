@@ -162,7 +162,7 @@ class VirtualMachine:
     @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, networkids=None, serviceofferingid=None,
-                    securitygroupids=None, mode='basic'):
+                    securitygroupids=None, projectid=None, mode='basic'):
         """Create the instance"""
         
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -204,6 +204,9 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
         
+        if projectid:
+            cmd.projectid = projectid
+
         virtual_machine = apiclient.deployVirtualMachine(cmd)
         
         # VM should be in Running state after deploy
@@ -325,7 +328,7 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None, domainid=None,
-               diskofferingid=None):
+               diskofferingid=None, projectid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = services["diskname"]
@@ -350,6 +353,8 @@ class Volume:
         elif "domainid" in services:
             cmd.domainid = services["domainid"]
 
+        if projectid:
+            cmd.projectid = projectid
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -414,7 +419,7 @@ class Snapshot:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, volume_id, account=None, domainid=None):
+    def create(cls, apiclient, volume_id, account=None, domainid=None, projectid=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -422,6 +427,8 @@ class Snapshot:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -447,7 +454,7 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None):
+               account=None, domainid=None, projectid=None):
         """Create template from Volume"""
         #Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
@@ -469,6 +476,8 @@ class Template:
         if domainid:
             cmd.domainid = domainid
 
+        if projectid:
+            cmd.projectid = projectid
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod
@@ -561,7 +570,15 @@ class Template:
                 time.sleep(interval)
                 timeout = timeout - 1
         return
-                
+
+    def updatePermissions(self, apiclient, **kwargs):
+        """Updates the template permissions"""
+        
+        cmd = updateTemplatePermissions.updateTemplatePermissionsCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateTemplatePermissions(cmd))
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all templates matching criteria"""
@@ -578,7 +595,8 @@ class Iso:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, 
+                                                        projectid=None):
         """Create an ISO"""
         #Create ISO from URL
         cmd = registerIso.registerIsoCmd()
@@ -599,6 +617,8 @@ class Iso:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
         # Register ISO
         iso = apiclient.registerIso(cmd)
         
@@ -656,17 +676,29 @@ class PublicIPAddress:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid, zoneid=None, domainid=None,
-               services=None, networkid=None):
+    def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
+               services=None, networkid=None, projectid=None):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
-        cmd.account = accountid
-        cmd.zoneid = zoneid or services["zoneid"]
-        cmd.domainid = domainid or services["domainid"]
+        
+        if accountid:
+            cmd.account = accountid
+        
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            services["zoneid"]
+        
+        if domainid:
+            cmd.domainid = domainid
+        elif "domainid" in services:
+            services["domainid"]
 
         if networkid:
             cmd.networkid = networkid
-
+        
+        if projectid:
+            cmd.projectid = projectid
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -691,7 +723,8 @@ class NATRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, virtual_machine, services, ipaddressid=None):
+    def create(cls, apiclient, virtual_machine, services, ipaddressid=None,
+                                                            projectid=None):
         """Create Port forwarding rule"""
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
 
@@ -704,6 +737,9 @@ class NATRule:
         cmd.publicport = services["publicport"]
         cmd.protocol = services["protocol"]
         cmd.virtualmachineid = virtual_machine.id
+        
+        if projectid:
+            cmd.projectid = projectid
         
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
@@ -793,7 +829,7 @@ class FireWallRule:
 
     @classmethod
     def create(cls, apiclient, ipaddressid, protocol, cidrlist=None,
-               startport=None, endport=None):
+               startport=None, endport=None, projectid=None):
         """Create Firewall Rule"""
         cmd = createFirewallRule.createFirewallRuleCmd()
         cmd.ipaddressid = ipaddressid
@@ -805,7 +841,10 @@ class FireWallRule:
         if endport:
             cmd.endport = endport
 
-        return NATRule(apiclient.createFirewallRule(cmd).__dict__)
+        if projectid:
+            cmd.projectid = projectid
+
+        return FireWallRule(apiclient.createFirewallRule(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete Firewall rule"""
@@ -867,7 +906,7 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, custom=False):
+    def create(cls, apiclient, services, custom=False, domainid=None):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
@@ -876,6 +915,10 @@ class DiskOffering:
             cmd.customized = True
         else:
             cmd.disksize = services["disksize"]
+
+        if domainid:
+            cmd.domainid = domainid
+
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -892,6 +935,58 @@ class DiskOffering:
         cmd = listDiskOfferings.listDiskOfferingsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listDiskOfferings(cmd))
+
+
+class NetworkOffering:
+    """Manage network offerings cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, serviceProviderList=None, **kwargs):
+        """Create network offering"""
+        
+        cmd = createNetworkOffering.createNetworkOfferingCmd()
+        cmd.displaytext = services["displaytext"]
+        cmd.name = services["name"]
+        cmd.guestiptype = services["guestiptype"]
+        cmd.supportedservices = services["supportedservices"]
+        cmd.traffictype = services["traffictype"]
+
+        cmd.serviceProviderList = []
+        for service, provider in services["serviceProviderList"].items():
+            cmd.serviceProviderList.append({
+                                            'service' : service,
+                                            'provider': provider
+                                           })
+
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        
+        return NetworkOffering(apiclient.createNetworkOffering(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete network offering"""
+        cmd = deleteNetworkOffering.deleteNetworkOfferingCmd()
+        cmd.id = self.id
+        apiclient.deleteNetworkOffering(cmd)
+        return
+
+    def update(self, apiclient, **kwargs):
+        """Lists all available network offerings."""
+
+        cmd = updateNetworkOffering.updateNetworkOfferingCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateNetworkOffering(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all available network offerings."""
+
+        cmd = listNetworkOfferings.listNetworkOfferingsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listNetworkOfferings(cmd))
 
 
 class SnapshotPolicy:
@@ -934,16 +1029,26 @@ class LoadBalancerRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, ipaddressid, accountid=None):
+    def create(cls, apiclient, services, ipaddressid, accountid=None, 
+                                                            projectid=None):
         """Create Load balancing Rule"""
 
         cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
         cmd.publicipid = ipaddressid or services["ipaddressid"]
-        cmd.account = accountid or services["account"]
+
+        if accountid:
+            cmd.account = accountid
+        elif "account" in services:
+            cmd.account = services["account"]
+
         cmd.name = services["name"]
         cmd.algorithm = services["alg"]
         cmd.privateport = services["privateport"]
         cmd.publicport = services["publicport"]
+        
+        if projectid:
+            cmd.projectid = projectid
+        
         return LoadBalancerRule(apiclient.createLoadBalancerRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1162,17 +1267,42 @@ class Network:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, accountid=None, domainid=None):
+    def create(cls, apiclient, services, accountid=None, domainid=None, 
+               networkofferingid=None, projectid=None, zoneid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
         cmd.displaytext = services["displaytext"]
-        cmd.networkofferingid = services["networkoffering"]
-        cmd.zoneid = services["zoneid"]
+        
+        if networkofferingid:
+            cmd.networkofferingid = networkofferingid
+        elif "networkoffering" in services:
+            cmd.networkofferingid = services["networkoffering"]
+        
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
+        
+        if "gateway" in services:
+            cmd.gateway = services["gateway"]
+        if "netmask" in services:
+            cmd.netmask = services["netmask"]
+        if "startip" in services:
+            cmd.startip = services["startip"]
+        if "endip" in services:
+            cmd.endip = services["endip"]
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
+        if "acltype" in services:
+            cmd.acltype = services["acltype"]
+        
         if accountid:
             cmd.account = accountid
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
 
         return Network(apiclient.createNetwork(cmd).__dict__)
 
@@ -1199,7 +1329,8 @@ class Vpn:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, publicipid, account=None, domainid=None):
+    def create(cls, apiclient, publicipid, account=None, domainid=None, 
+                                                            projectid=None):
         """Create VPN for Public IP address"""
         cmd = createRemoteAccessVpn.createRemoteAccessVpnCmd()
         cmd.publicipid = publicipid
@@ -1207,7 +1338,8 @@ class Vpn:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
-
+        if projectid:
+            cmd.projectid = projectid
         return Vpn(apiclient.createRemoteAccessVpn(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1225,7 +1357,8 @@ class VpnUser:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, username, password, account=None, domainid=None):
+    def create(cls, apiclient, username, password, account=None, domainid=None,
+               projectid=None):
         """Create VPN user"""
         cmd = addVpnUser.addVpnUserCmd()
         cmd.username = username
@@ -1235,7 +1368,8 @@ class VpnUser:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
-
+        if projectid:
+            cmd.projectid = projectid
         return VpnUser(apiclient.addVpnUser(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1442,7 +1576,7 @@ class SecurityGroup:
 
     @classmethod
     def create(cls, apiclient, services, account=None, domainid=None,
-               description=None):
+               description=None, projectid=None):
         """Create security group"""
         cmd = createSecurityGroup.createSecurityGroupCmd()
 
@@ -1453,7 +1587,9 @@ class SecurityGroup:
             cmd.domainid=domainid
         if description:
             cmd.description=description
-            
+        if projectid:
+            cmd.projectid = projectid
+
         return SecurityGroup(apiclient.createSecurityGroup(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1464,7 +1600,7 @@ class SecurityGroup:
         apiclient.deleteSecurityGroup(cmd)
         
     def authorize(self, apiclient, services,
-                  account=None, domainid=None):
+                  account=None, domainid=None, projectid=None):
         """Authorize Ingress Rule"""
         
         cmd=authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
@@ -1473,7 +1609,9 @@ class SecurityGroup:
             cmd.domainid = domainid
         if account:
             cmd.account = account
-                
+
+        if projectid:
+            cmd.projectid = projectid        
         cmd.securitygroupid=self.id
         cmd.protocol=services["protocol"]
         
@@ -1501,3 +1639,143 @@ class SecurityGroup:
         cmd = listSecurityGroups.listSecurityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listSecurityGroups(cmd))
+    
+class Project:
+    """Manage Project life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, account=None, domainid=None):
+        """Create project"""
+        
+        cmd = createProject.createProjectCmd()
+        cmd.displaytext = services["displaytext"]
+        cmd.name = "-".join([services["name"], random_gen()])
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+
+        return Project(apiclient.createProject(cmd).__dict__)
+        
+    def delete(self, apiclient):
+        """Delete Project"""
+
+        cmd = deleteProject.deleteProjectCmd()
+        cmd.id = self.id
+        apiclient.deleteProject(cmd)
+        
+    def update(self, apiclient, **kwargs):
+        """Updates the project"""
+        
+        cmd = updateProject.updateProjectCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateProject(cmd)
+
+    def activate(self, apiclient):
+        """Activates the suspended project"""
+        
+        cmd = activateProject.activateProjectCmd()
+        cmd.id = self.id
+        return apiclient.activateProject(cmd)
+    
+    def suspend(self, apiclient):
+        """Suspend the active project"""
+        
+        cmd = suspendProject.suspendProjectCmd()
+        cmd.id = self.id
+        return apiclient.suspendProject(cmd)
+
+    def addAccount(self, apiclient, account=None, email=None):
+        """Add account to project"""
+        
+        cmd = addAccountToProject.addAccountToProjectCmd()
+        cmd.projectid = self.id
+        if account:
+            cmd.account = account
+        if email:
+            cmd.email = email
+        return apiclient.addAccountToProject(cmd)
+
+    def deleteAccount(self, apiclient, account):
+        """Delete account from project"""
+        
+        cmd = deleteAccountFromProject.deleteAccountFromProjectCmd()
+        cmd.projectid = self.id
+        cmd.account = account
+        return apiclient.deleteAccountFromProject(cmd)
+
+    @classmethod
+    def listAccounts(cls, apiclient, **kwargs):
+        """Lists all accounts associated with projects."""
+
+        cmd = listProjectAccounts.listProjectAccountsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listProjectAccounts(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all projects."""
+
+        cmd = listProjects.listProjectsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listProjects(cmd))
+
+class ProjectInvitation:
+    """Manage project invitations"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+    
+    @classmethod
+    def update(cls, apiclient, projectid, accept, account=None, token=None):
+        """Updates the project invitation for that account"""
+        
+        cmd = updateProjectInvitation.updateProjectInvitationCmd()
+        cmd.projectid = projectid
+        cmd.accept = accept
+        if account:
+            cmd.account = account
+        if token:
+            cmd.token = token
+        
+        return (apiclient.updateProjectInvitation(cmd).__dict__)
+    
+    def delete(self, apiclient, id):
+        """Deletes the project invitation"""
+        
+        cmd = deleteProjectInvitation.deleteProjectInvitationCmd()
+        cmd.id = id
+        return apiclient.deleteProjectInvitation(cmd)
+    
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists project invitations"""
+        
+        cmd = listProjectInvitations.listProjectInvitationsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listProjectInvitations(cmd))
+
+
+class Configurations:
+    """Manage Configuration"""
+    
+    @classmethod
+    def update(cls, apiclient, name, value=None):
+        """Updates the specified configuration"""
+        
+        cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.name = name
+        cmd.value = value
+        apiclient.updateConfiguration(cmd)
+        
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists configurations"""
+        
+        cmd = listConfigurations.listConfigurationsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listConfigurations(cmd))

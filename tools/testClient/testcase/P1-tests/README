@@ -31,6 +31,11 @@ The following files contain these P1 cases:
 4. test_account.py - Account related tests
 5. test_resource_limits.py - Resource limits tests
 6. test_security_groups.py - Security groups related tests
-7. test_templates - templates related tests
-8. test_volumes - Volumes related tests
-9. test_blocker_bugs - Blocker bugs tests
+7. test_templates.py - templates related tests
+8. test_volumes.py - Volumes related tests
+9. test_blocker_bugs.py - Blocker bugs tests
+10. test_project_configs.py - Project global configuration related tests
+11. test_project_limits.py - Project resource limits related tests
+12. test_project_resources.py - Project resource creation related tests
+13. test_project_usage.py - Project usage related tests
+14. test_projects - Projects functionality tests
