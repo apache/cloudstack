@@ -615,4 +615,88 @@
     stop();
     $detailView.find('.action.updateDataTestSync a').click();
   });
+
+
+  test('Update data async, from list view row', function() {
+    var detailView = {
+      section: 'testListView',
+      context: {
+        testListView: [{
+          fieldA: 'fieldA-1',
+          fieldB: 'fieldB-1',
+          fieldC: 'fieldC-1'
+        }]
+      },
+      actions: {
+        updateDataTestAsync: {
+          label: 'updateDataTestAsync',
+          preAction: function(args) { return true; },
+          action: function(args) {
+            args.response.success();
+          },
+          messages: { notification: function() { return 'notification'; }},
+          notification: {
+            poll: function(args) {
+              args.complete({
+                data: {
+                  fieldA: 'fieldA-2',
+                  fieldB: 'fieldB-2'
+                }
+              });
+
+              start();
+              equal($detailView.data('view-args').context.testListView[0].fieldA, 'fieldA-2', 'Correct context value for fieldA');
+              equal($detailView.data('view-args').context.testListView[0].fieldB, 'fieldB-2', 'Correct context value for fieldB');
+              equal($detailView.data('view-args').context.testListView[0].fieldC, 'fieldC-1', 'Correct context value for fieldC');
+              equal($detailView.find('tr.fieldA .value').html(), 'fieldA-2', 'Correct table value for fieldA');
+              equal($detailView.find('tr.fieldB .value').html(), 'fieldB-2', 'Correct table value for fieldB');
+              equal($detailView.find('tr.fieldC .value').html(), 'fieldC-1', 'Correct table value for fieldC');
+            }
+          }
+        }
+      },
+      tabs: {
+        test: {
+          title: 'test',
+          fields: [{
+            fieldA: { label: 'fieldA' },
+            fieldB: { label: 'fieldB' },
+            fieldC: { label: 'fieldC' }
+          }],
+          dataProvider: function(args) {
+            args.response.success({
+              data: args.context.testListView[0]
+            });
+          }
+        }
+      }
+    };
+    var $detailView = $('<div>');
+    var $listView = $('<div>').addClass('list-view');
+    var $listViewRow = $('<div>').data('json-obj', detailView.context.testListView[0]).appendTo($listView);
+    var $cloudStackContainer = $('<div>').attr('cloudStack-container', true).data('cloudStack-args', {
+      sections: {
+        testListView: {}
+      }
+    }).appendTo('#qunit-fixture');
+
+    stop();
+    $.fn.dataTable = function() { return this; };
+    $.fn.listView = function(args1, args2) {
+      if (args1 == 'replaceItem')
+        args2.after(args2.$row.data('json-obj', args2.data));
+
+      return this;
+    };
+    
+    cloudStack.ui.notifications.add = function(notification, complete) {
+      notification.poll({ complete: complete });
+    };
+    cloudStack.dialog.confirm = function(args) {
+      args.action();
+    };
+    $detailView.data('list-view-row', $listViewRow);
+    $detailView.detailView(detailView);
+    $detailView.find('.action.updateDataTestAsync a').click();
+  });
 }(jQuery));
