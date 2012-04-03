@@ -215,10 +215,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	public void setRedundantState(RedundantState redundantState) {
 	    this.redundantState = redundantState;
 	}
-	
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
     
 	public boolean getIsPriorityBumpUp() {
 	    return this.isPriorityBumpUp;

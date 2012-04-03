@@ -56,6 +56,7 @@ import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
+import com.cloud.api.commands.UpgradeSystemVMCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -205,6 +206,8 @@ public interface ManagementService {
     VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
 
     VirtualMachine destroySystemVM(DestroySystemVmCmd cmd);
+    
+    VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd);
 
     /**
      * update an existing domain
