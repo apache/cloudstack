@@ -23,10 +23,27 @@
       var $label = $('<span>').addClass('view-all-label').html(args.label ? args.label : 'View all');
       var $browser = args.$browser;
       var action = args.action;
-
       // Launch a list view
-      $viewAll.click(function() {
+      //var $multiple-click=$viewAll.data('multiple-click',false);     
+      $viewAll.click(function() { 
+        if ($viewAll.data('multiple-click')) return false;
+         //@pranav-handling the multiple clicks by using a flag variable 
+         $viewAll.data('multiple-click', true);
+         $browser.cloudBrowser('addPanel', {
+         title: args.title,
+         maximizeIfSelected: true,
+         complete: function($newPanel) {
+         $viewAll.data('multiple-click', false);
+         action({ $panel: $newPanel });
+          }
+        });
+     });
+
+
+
+  /*   $viewAll.click(function() {
         $browser.cloudBrowser('addPanel', {
+      //    $('.button view-all').data('multiple_click',true),
           title: args.title,
           maximizeIfSelected: true,
           complete: function($newPanel) {
@@ -34,7 +51,8 @@
           }
         });
       });
-
+      
+  */
       $viewAll.append($label);
 
       return $viewAll;
