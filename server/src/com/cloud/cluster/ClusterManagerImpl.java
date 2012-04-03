@@ -16,6 +16,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -1366,28 +1369,40 @@ public class ClusterManagerImpl implements ClusterManager {
             s_logger.info("ping management node cluster service can not be performed on self");
             return false;
         }
-
-        String targetPeer = String.valueOf(mshost.getMsid());
-        ClusterService peerService = null;
-        for(int i = 0; i < 2; i++) {
+     
+        int retry = 10;
+        while (--retry > 0) {
+            SocketChannel sch = null;
             try {
-                peerService = getPeerService(targetPeer);
-            } catch (RemoteException e) {
-                s_logger.error("cluster service for peer " + targetPeer + " no longer exists");
+                s_logger.info("Trying to connect to " + targetIp);
+                sch = SocketChannel.open();
+                sch.configureBlocking(true);
+                sch.socket().setSoTimeout(5000);
+
+                InetSocketAddress addr = new InetSocketAddress(targetIp, mshost.getServicePort());
+                sch.connect(addr);
+                return true;
+            } catch (IOException e) {
+                if (e instanceof ConnectException) {
+                    s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                	return false;
+                }
+            } finally {
+                if (sch != null) {
+                    try {
+                        sch.close();
+                    } catch (IOException e) {
+                    }
+                }
             }
 
-            if(peerService != null) {
-                try {
-                    return peerService.ping(getSelfPeerName());
-                } catch (RemoteException e) {
-                    s_logger.warn("Exception in performing remote call, ", e);
-                    invalidatePeerService(targetPeer);
-                }
-            } else {
-                s_logger.warn("Remote peer " + mshost.getMsid() + " no longer exists");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
             }
         }
-
+        
+        s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " after retries");
         return false;
     }
 
