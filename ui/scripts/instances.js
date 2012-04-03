@@ -1218,9 +1218,6 @@
           changeService: {
             label: 'label.action.change.service',
             messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to change service offering?';
-              },
               notification: function(args) {
                 return 'label.action.change.service';
               }
@@ -1710,6 +1707,7 @@
       allowedActions.push("stop");
       allowedActions.push("restart");
       allowedActions.push("destroy");
+      allowedActions.push("changeService");
 
       if (isAdmin())
         allowedActions.push("migrate");
