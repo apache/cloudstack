@@ -91,6 +91,7 @@ import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
+import com.cloud.api.commands.UpgradeSystemVMCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.async.AsyncJobExecutor;
@@ -104,6 +105,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -296,6 +298,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
+    private final ConfigurationManager _configMgr;
+    
     @Inject
     ProjectManager _projectMgr;
     private final ResourceManager _resourceMgr;
@@ -365,6 +369,7 @@ public class ManagementServerImpl implements ManagementServer {
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
+        _configMgr = locator.getManager(ConfigurationManager.class);
 
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
 
@@ -698,13 +703,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-
-        if (isSystem && vmTypeStr == null) {
-            // don't return console proxy and ssvm offerings is not requested with vmTypeStr
-            sc.addAnd("uniqueName", SearchCriteria.Op.NIN, ServiceOffering.consoleProxyDefaultOffUniqueName, 
-                    ServiceOffering.ssvmDefaultOffUniqueName, ServiceOffering.elbVmDefaultOffUniqueName);
-
         }
 
         sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
@@ -3399,5 +3397,59 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             return null;
         }
+    }
+    
+    
+    @Override
+    public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
+        Long systemVmId = cmd.getId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        Account caller = UserContext.current().getCaller();
+
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+            throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
+        }
+
+        _accountMgr.checkAccess(caller, null, true, systemVm);
+
+        if (systemVm.getServiceOfferingId() == serviceOfferingId) {
+            s_logger.debug("System vm id: " + systemVmId + "already has service offering: " + serviceOfferingId);
+            return systemVm;
+        }
+
+        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(serviceOfferingId);
+        if (newServiceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
+        }
+
+        // check if it is a system service offering, if yes return with error as it cannot be used for user vms
+        if (!newServiceOffering.getSystemUse()) {
+            throw new InvalidParameterValueException("Cannot upgrade system vm to a non system service offering " + serviceOfferingId);
+        }
+
+        // Check that the system vm is stopped
+        if (!systemVm.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to upgrade system vm " + systemVm + " in state " + systemVm.getState());
+            throw new InvalidParameterValueException("Unable to upgrade system vm " + systemVm + " in state " + systemVm.getState()
+                    + "; make sure the system vm is stopped and not in an error state before upgrading.");
+        }
+
+        ServiceOffering currentServiceOffering = _configMgr.getServiceOffering(systemVm.getServiceOfferingId());
+
+        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
+        // offering
+        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage() + " is different from "
+                    + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
+        }
+
+        systemVm.setServiceOfferingId(serviceOfferingId);
+        if (_vmInstanceDao.update(systemVmId, systemVm)) {
+            return _vmInstanceDao.findById(systemVmId);
+        } else {
+            throw new CloudRuntimeException("Unable to upgrade system vm " + systemVm);
+        }
+
     }
 }

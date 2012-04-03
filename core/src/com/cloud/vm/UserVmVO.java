@@ -58,10 +58,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public long getServiceOfferingId() {
         return serviceOfferingId;
     }
-    
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
 
     public UserVmVO(long id,
                     String instanceName,

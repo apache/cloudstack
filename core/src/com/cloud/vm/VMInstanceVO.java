@@ -453,5 +453,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 			return false;
 		return true;
 	}
+	
+	
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
 
 }
