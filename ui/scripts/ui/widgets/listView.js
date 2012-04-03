@@ -373,7 +373,9 @@
         if (!options) options = {};
 
         var oldVal = $label.html();
-        $label.html(_s(val));
+				
+				if(val != null )
+          $label.html(_s(val));
 
         var data = {
           id: $instanceRow.data('list-view-item-id'),
@@ -411,15 +413,16 @@
           }
         });
       };
-
-      if (args.cancel) {
+			
+      if (args.cancel) {  //click Cancel button
         showLabel();
         return false;
       }
-
-      if (!$editInput.is(':visible') || !(typeof(args.action) == 'undefined')) {
+						
+      if (!$editInput.is(':visible') || !(typeof(args.action) == 'undefined')) { //click Edit button		
         showEditField();
-      } else if ($editInput.val() != $label.html()) {
+      } 
+			else if ($editInput.val() != $label.html()) { //click Save button with changed value			  
         $edit.animate({ opacity: 0.5 });
 
         var originalName = $label.html();
@@ -442,7 +445,8 @@
             );
           }
         });
-      } else {
+      } 
+			else {  //click Save button with unchanged value			
         showLabel();
       }
 
