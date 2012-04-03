@@ -3685,7 +3685,7 @@
                           }
                         },
 
-                        destroy: {
+                        remove: {
                           label: 'label.action.destroy.systemvm',
                           messages: {
                             confirm: function(args) {
@@ -7435,17 +7435,17 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("destroy");  //destroy
+      allowedActions.push("remove");  
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-      allowedActions.push("destroy");  //destroy
+      allowedActions.push("remove");  
     }
     else if (jsonObj.state == 'Error') {
-      allowedActions.push("destroy");  //destroy
+      allowedActions.push("remove");  
     }
     return allowedActions;
   }
