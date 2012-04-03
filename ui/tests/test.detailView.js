@@ -624,7 +624,8 @@
         testListView: [{
           fieldA: 'fieldA-1',
           fieldB: 'fieldB-1',
-          fieldC: 'fieldC-1'
+          fieldC: 'fieldC-1',
+          state: 'on'
         }]
       },
       actions: {
@@ -649,7 +650,8 @@
               args.complete({
                 data: {
                   fieldA: 'fieldA-2',
-                  fieldB: 'fieldB-2'
+                  fieldB: 'fieldB-2',
+                  state: 'off'
                 }
               });
 
@@ -660,9 +662,19 @@
               equal($detailView.find('tr.fieldA .value').html(), 'fieldA-2', 'Correct table value for fieldA');
               equal($detailView.find('tr.fieldB .value').html(), 'fieldB-2', 'Correct table value for fieldB');
               equal($detailView.find('tr.fieldC .value').html(), 'fieldC-1', 'Correct table value for fieldC');
+
+              equal($detailView.find('.action').size(), 1, 'Correct action count');
+              equal($detailView.find('.action.updateDataTestAsync').size(), 1, 'updateDataTestAsync present');
+              equal($detailView.find('.action.filteredAction').size(), 0, 'filteredAction not present');
               stop();
             }
           }
+        },
+
+        filteredAction: {
+          label: 'filteredAction',
+          action: function() {},
+          messages: { notification: function() { return 'notification'; } }
         }
       },
       tabs: {
@@ -675,7 +687,14 @@
           }],
           dataProvider: function(args) {
             args.response.success({
-              data: args.context.testListView[0]
+              data: args.context.testListView[0],
+              actionFilter: function(args) {
+                if (args.context.testListView[0].state == 'on') {
+                  return ['updateDataTestAsync', 'filteredAction'];
+                }
+
+                return ['updateDataTestAsync'];
+              }
             });
           }
         }
@@ -690,7 +709,6 @@
       }
     }).appendTo('#qunit-fixture');
 
-    stop();
     $.fn.dataTable = function() { return this; };
     $.fn.listView = function(args1, args2) {
       if (args1 == 'replaceItem')
@@ -707,6 +725,12 @@
     };
     $detailView.data('list-view-row', $listViewRow);
     $detailView.detailView(detailView);
+
+    equal($detailView.find('.action').size(), 2, 'Correct action count');
+    equal($detailView.find('.action.updateDataTestAsync').size(), 1, 'updateDataTestAsync present');
+    equal($detailView.find('.action.filteredAction').size(), 1, 'filteredAction present');
+    
+    stop();    
     $detailView.find('.action.updateDataTestAsync a').click();
     $detailView.data('view-args').actions.updateDataTestAsync.preAction = function(args) {
       start();
