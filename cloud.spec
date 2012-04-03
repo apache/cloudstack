@@ -13,7 +13,7 @@ Release:   0.%{_build_number}%{dist}.%{_prerelease}
 %else
 Release:   %{_rel}%{dist}
 %endif
-License:   GPLv3+ with exceptions or CSL 1.1
+License:   Apache License 2.0
 Vendor:    CloudStack <engineering@cloud.com>
 Packager:  CloudStack <engineering@cloud.com>
 Group:     System Environment/Libraries

@@ -525,7 +525,7 @@
   </target>
 
   <target name="help">
-    <echo level="info" message="Ant Build File for Cloud.com Cloud Stack" />
+    <echo level="info" message="Ant Build File for CloudStack" />
     <echo level="info" message="Type 'ant -projecthelp' to get a list of targets and their descriptions." />
   </target>
   <target name="usage" depends="help" />

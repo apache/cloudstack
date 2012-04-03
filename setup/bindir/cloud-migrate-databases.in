@@ -71,7 +71,7 @@ class CloudContext(cloud_utils.MigrationContext):
 		self.db.execute = wrapex(self.db.execute)
 	
 	def __str__(self):
-		return "Cloud.com %s database at %s"%(self.database,self.host)
+		return "CloudStack %s database at %s"%(self.database,self.host)
 	
 	def get_schema_level(self):
 		return self.get_config_value('schema.level') or cloud_utils.INITIAL_LEVEL

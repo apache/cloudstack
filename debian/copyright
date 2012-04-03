@@ -1,46 +1,10 @@
-Copyright:
-
-    <Copyright (C) 2009-2010 Cloud.com.>
-
-License:
-
-    This program is dual-licensed.
-    
-    For the free software portions: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.  These portions -- clearly marked
-    throughout the program sources -- are also distributed under the
-    Cloud.com Software License 1.1.
-    
-    For the proprietary portions: these portions are made available to you
-    on the terms of the Cloud.com Software License 1.1.
-
-    This package is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-On Debian systems, the complete text of the GNU General
-Public License version 3 can be found in `/usr/share/common-licenses/GPL-3'.
-
---------------------------------------------------------------------------------
-
-This package was debianized by:
-
-    Manuel Amador (Rudd-O) <manuel@vmops.com> on Thu, 25 Mar 2010 15:12:06 -0700
-
-It was downloaded from:
-
-    <http://techcenter.vmops.com/software/cloudstack>
-
-The Debian packaging is:
-
-    Copyright (C) 2010 Cloud.com Inc. <manuel@vmops.com>
-
-and is licensed under the GPL version 3, see above.
-
-Note: if your source package contains a folder premium/ or a folder usage/,
-then this program is being distributed to you under the terms of the CSL 1.1.
+Copyright 2012 Citrix Systems, Inc. Licensed under the 
+Apache License, Version 2.0 (the "License"); you may not use this
+file except in compliance with the License.  Citrix Systems, Inc.
+reserves all rights not expressly granted by the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and 
+limitations under the License.
