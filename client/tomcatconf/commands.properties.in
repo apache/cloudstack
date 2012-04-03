@@ -149,6 +149,7 @@ stopSystemVm=com.cloud.api.commands.StopSystemVmCmd;1
 destroySystemVm=com.cloud.api.commands.DestroySystemVmCmd;1
 listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;3
 migrateSystemVm=com.cloud.api.commands.MigrateSystemVMCmd;1
+changeServiceForSystemVm=com.cloud.api.commands.UpgradeSystemVMCmd;1
 
 #### configuration commands
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1

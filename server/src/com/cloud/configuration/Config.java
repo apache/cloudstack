@@ -113,8 +113,6 @@ public enum Config {
 	ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
 	ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "realhostip.com", "Console proxy url domain", null),
 	ConsoleProxyLoadscanInterval("Console Proxy", AgentManager.class, String.class, "consoleproxy.loadscan.interval", "10000", "The time interval(in milliseconds) to scan console proxy working-load info", null),
-	ConsoleProxyRamSize("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.ram.size", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE), "RAM size (in MB) used to create new console proxy VMs", null),
-	ConsoleProxyCpuMHz("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.cpu.mhz", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_VM_CPUMHZ), "CPU speed (in MHz) used to create new console proxy VMs", null),
 	ConsoleProxySessionMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.max", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY), "The max number of viewer sessions console proxy is configured to serve for", null),
 	ConsoleProxySessionTimeout("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.timeout", "300000", "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", null),
 	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "true", "disable rp_filter on console proxy VM public interface", null),
@@ -186,9 +184,7 @@ public enum Config {
 	ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
     UseLocalStorage("Advanced", ManagementServer.class, Boolean.class, "use.local.storage", "false", "Should we use the local storage if it's available?", null),
-	SecStorageVmRamSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.ram.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE), "RAM size (in MB) used to create new secondary storage vms", null),
 	SecStorageVmMTUSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.mtu.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_MTUSIZE), "MTU size (in Byte) of storage network in secondary storage vms", null),
-	SecStorageVmCpuMHz("Advanced", AgentManager.class, Integer.class, "secstorage.vm.cpu.mhz", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ), "CPU speed (in MHz) used to create new secondary storage vms", null),
 	MaxTemplateAndIsoSize("Advanced",  ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers", null),
 	SecStorageEncryptCopy("Advanced", ManagementServer.class, Boolean.class, "secstorage.encrypt.copy", "false", "Use SSL method used to encrypt copy traffic between zones", "true,false"),
@@ -333,7 +329,9 @@ public enum Config {
     DefaultExternalLoadBalancerCapacity("Advanced", ManagementServer.class, String.class, "external.lb.default.capacity", "50", "default number of networks permitted per external load balancer device", null),
     DefaultExternalFirewallCapacity("Advanced", ManagementServer.class, String.class, "external.firewall.default.capacity", "50", "default number of networks permitted per external load firewall device", null),
 	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
-	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null);
+	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
+	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Service offering used by console proxy; if NULL - system offering will be used", null),
+	SecondaryStorageServiceOffering("Advanced", ManagementServer.class, Long.class, "secstorage.service.offering", null, "Service offering used by secondary storage; if NULL - system offering will be used", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;

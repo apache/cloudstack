@@ -220,9 +220,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject
     KeystoreManager _keystoreMgr;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
-
-    private int _secStorageVmRamSize;
-    private int _secStorageVmCpuMHz;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -789,9 +786,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
-
-        _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
-        _secStorageVmCpuMHz = NumbersUtil.parseInt(configs.get("secstorage.vm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
+        
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
         String useServiceVM = configDao.getValue("secondary.storage.vm");
         boolean _useServiceVM = false;
@@ -827,17 +822,29 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _agentMgr.registerForHostEvents(_listener, true, false, true);
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
-
-        _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, null, null, false, null, _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
-        _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
-        _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         
-        // this can sometimes happen, if DB is manually or programmatically manipulated
-        if(_serviceOffering == null) {
-        	String msg = "Data integrity problem : System Offering For Secondary Storage VM has been removed?";
-        	s_logger.error(msg);
-            throw new ConfigurationException(msg);
+        //check if there is a default service offering configured
+        String ssvmSrvcOffIdStr = configs.get(Config.SecondaryStorageServiceOffering.key());
+        if (ssvmSrvcOffIdStr != null) {
+            Long ssvmSrvcOffId = Long.parseLong(ssvmSrvcOffIdStr);
+            _serviceOffering = _offeringDao.findById(ssvmSrvcOffId);
+            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
+                String msg = "Can't find system service offering id=" + ssvmSrvcOffId + " for secondary storage vm";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
+        } else {
+            _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+            _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, DEFAULT_SS_VM_RAMSIZE, DEFAULT_SS_VM_CPUMHZ, null, null, false, null, _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
+            _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
+            _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
+            
+            // this can sometimes happen, if DB is manually or programmatically manipulated
+            if(_serviceOffering == null) {
+                String msg = "Data integrity problem : System Offering For Secondary Storage VM has been removed?";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
         }
 
         if (_useServiceVM) {

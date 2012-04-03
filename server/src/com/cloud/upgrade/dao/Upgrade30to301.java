@@ -25,7 +25,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade30to301 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade2214to30.class);
+    final static Logger s_logger = Logger.getLogger(Upgrade30to301.class);
 
     @Override
     public String[] getUpgradableVersionRange() {

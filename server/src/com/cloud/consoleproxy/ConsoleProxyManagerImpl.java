@@ -229,8 +229,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
-    private int _proxyRamSize;
-    private int _proxyCpuMHz;
+
     private boolean _use_lvm;
     private boolean _use_storage_vm;
     private boolean _disable_rp_filter = false;
@@ -1385,9 +1384,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
 
-        _proxyRamSize = NumbersUtil.parseInt(configs.get(Config.ConsoleProxyRamSize.key()), DEFAULT_PROXY_VM_RAMSIZE);
-        _proxyCpuMHz = NumbersUtil.parseInt(configs.get(Config.ConsoleProxyCpuMHz.key()), DEFAULT_PROXY_VM_CPUMHZ);
-
         String value = configs.get(Config.ConsoleProxyCmdPort.key());
         value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
@@ -1453,15 +1449,28 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
-        _serviceOffering.setUniqueName(ServiceOffering.consoleProxyDefaultOffUniqueName);
-        _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
+        
+        //check if there is a default service offering configured
+        String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
+        if (cpvmSrvcOffIdStr != null) {
+            Long cpvmSrvcOffId = Long.parseLong(cpvmSrvcOffIdStr);
+            _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
+            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
+                String msg = "Can't find system service offering id=" + cpvmSrvcOffId + " for console proxy vm";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
+        } else {
+            _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, DEFAULT_PROXY_VM_RAMSIZE, DEFAULT_PROXY_VM_CPUMHZ, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
+            _serviceOffering.setUniqueName(ServiceOffering.consoleProxyDefaultOffUniqueName);
+            _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
-        // this can sometimes happen, if DB is manually or programmatically manipulated
-        if (_serviceOffering == null) {
-            String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
-            s_logger.error(msg);
-            throw new ConfigurationException(msg);
+            // this can sometimes happen, if DB is manually or programmatically manipulated
+            if (_serviceOffering == null) {
+                String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
         }
 
         _loadScanner = new SystemVmLoadScanner<Long>(this);

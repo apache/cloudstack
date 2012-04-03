@@ -83,10 +83,6 @@ public class UserConcentratedAllocator implements PodAllocator {
     private int _secondsToSkipStoppedVMs = 86400;
     private int _secondsToSkipDestroyedVMs = 0;
 
-    private int _secStorageVmRamSize = 1024;
-    private int _proxyRamSize = 256;
-    private int _routerRamSize = 128;
-
     @Override
     public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId, Set<Long> avoids) {
         long zoneId = zone.getId();
@@ -254,17 +250,9 @@ public class UserConcentratedAllocator implements PodAllocator {
                 if (userVm == null) {
                     continue;
                 }
-                so = _offeringDao.findById(userVm.getServiceOfferingId());
-            } else if (vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-                so = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, false, true, null, true, VirtualMachine.Type.ConsoleProxy, false);
-            } else if (vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-                so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.SecondaryStorageVm, false);
-            } else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.DomainRouter, false);
-            } else {
-                assert (false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, false, true, null, true, null, false);
-            }
+            } 
+            
+            so = _offeringDao.findById(vm.getServiceOfferingId());
 
             if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
                 usedCapacity += so.getRamSize() * 1024L * 1024L;
@@ -324,11 +312,6 @@ public class UserConcentratedAllocator implements PodAllocator {
         String destroyedValue = null;
         _secondsToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 86400);
         _secondsToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);
-
-        // TODO this is not good, there should be one place to get these values
-        _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
-        _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), 1024);
 
         /*
          * ComponentLocator locator = ComponentLocator.getCurrentLocator(); _vmDao = locator.getDao(UserVmDao.class); if (_vmDao

@@ -28,7 +28,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -76,9 +75,6 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     protected GenericSearchBuilder<VMInstanceVO, Long> VmsOnPoolSearch;
 
     private int _secondsToSkipStoppedVMs = 86400;
-    private int _secStorageVmRamSize = 1024;
-    private int _proxyRamSize = 256;
-    private int _routerRamSize = 128;
 
     @Override
     public boolean allocatorIsCorrectType(DiskProfile dskCh) {
@@ -131,23 +127,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     // we don't need to check host capacity now, since hostAllocators will do that anyway
     private boolean hostHasCpuMemoryCapacity(long hostId, List<Long> vmOnHost, VMInstanceVO vm) {
 
-        ServiceOffering so = null;
-        if (vm.getType() == VirtualMachine.Type.User) {
-            UserVmVO userVm = _vmDao.findById(vm.getId());
-            if (userVm != null) {
-                so = _offeringDao.findById(userVm.getServiceOfferingId());
-            }
-
-        } else if (vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-            so = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, false, true, null, true, VirtualMachine.Type.ConsoleProxy, false);
-        } else if (vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-            so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.SecondaryStorageVm, false);
-        } else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.DomainRouter, false);
-        } else {
-            assert (false) : "Unsupported system vm type";
-            so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, false, true, null, false, null, false);
-        }
+        ServiceOffering so = _offeringDao.findById(vm.getServiceOfferingId());
 
         long usedMemory = calcHostAllocatedCpuMemoryCapacity(vmOnHost, CapacityVO.CAPACITY_TYPE_MEMORY);
         if (s_logger.isDebugEnabled()) {
@@ -235,23 +215,13 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
                 continue;
             }
 
-            ServiceOffering so = null;
+            ServiceOffering so = _offeringDao.findById(vm.getServiceOfferingId());
             if (vm.getType() == VirtualMachine.Type.User) {
                 UserVmVO userVm = _vmDao.findById(vm.getId());
                 if (userVm == null) {
                     continue;
                 }
-                so = _offeringDao.findById(userVm.getServiceOfferingId());
-            } else if (vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-                so = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, false, true, null, true, VirtualMachine.Type.ConsoleProxy, false);
-            } else if (vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-                so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.SecondaryStorageVm, false);
-            } else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, true, null, false, true, null, true, VirtualMachine.Type.DomainRouter, false);
-            } else {
-                assert (false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, false, true, null, false, null, false);
-            }
+            } 
 
             if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
                 usedCapacity += so.getRamSize() * 1024L * 1024L;
@@ -273,11 +243,6 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String value = configs.get("vm.resource.release.interval");
         _secondsToSkipStoppedVMs = NumbersUtil.parseInt(value, 86400);
-
-        // TODO this is not good, there should be one place to get these values
-        _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
-        _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), 1024);
 
         VmsOnPoolSearch = _vmInstanceDao.createSearchBuilder(Long.class);
         VmsOnPoolSearch.select(null, Func.DISTINCT, VmsOnPoolSearch.entity().getId());
