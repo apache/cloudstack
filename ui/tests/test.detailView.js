@@ -630,7 +630,16 @@
       actions: {
         updateDataTestAsync: {
           label: 'updateDataTestAsync',
-          preAction: function(args) { return true; },
+          preAction: function(args) {
+            start();
+            ok(true, 'Pre-action called');
+            equal($detailView.data('view-args').context.testListView[0].fieldA, 'fieldA-1', 'Pre-action: Correct context value for fieldA');
+            equal($detailView.data('view-args').context.testListView[0].fieldB, 'fieldB-1', 'Pre-action: Correct context value for fieldB');
+            equal($detailView.data('view-args').context.testListView[0].fieldC, 'fieldC-1', 'Pre-action: Correct context value for fieldC');
+            stop();
+
+            return true;
+          },
           action: function(args) {
             args.response.success();
           },
@@ -651,6 +660,7 @@
               equal($detailView.find('tr.fieldA .value').html(), 'fieldA-2', 'Correct table value for fieldA');
               equal($detailView.find('tr.fieldB .value').html(), 'fieldB-2', 'Correct table value for fieldB');
               equal($detailView.find('tr.fieldC .value').html(), 'fieldC-1', 'Correct table value for fieldC');
+              stop();
             }
           }
         }
@@ -697,6 +707,16 @@
     };
     $detailView.data('list-view-row', $listViewRow);
     $detailView.detailView(detailView);
+    $detailView.find('.action.updateDataTestAsync a').click();
+    $detailView.data('view-args').actions.updateDataTestAsync.preAction = function(args) {
+      start();
+      equal($detailView.data('view-args').context.testListView[0].fieldA, 'fieldA-2', 'Pre-action: Correct context value for fieldA');
+      equal($detailView.data('view-args').context.testListView[0].fieldB, 'fieldB-2', 'Pre-action: Correct context value for fieldB');
+      equal($detailView.data('view-args').context.testListView[0].fieldC, 'fieldC-1', 'Pre-action: Correct context value for fieldC');
+      ok(true, 'Pre-action called');
+
+      return false;
+    };
     $detailView.find('.action.updateDataTestAsync a').click();
   });
 }(jQuery));
