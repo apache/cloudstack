@@ -1,10 +1,4 @@
 /*
- * This file was modified by Cloud.com to omit encoding for non-ascii characters - this functionality is needed by multi-language support
- * Line 86 was modified; lines 114-117 were added
- */ 
-
-/*
- * Copyright 2011 Cloud.com.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +78,7 @@ public class URLEncoder {
     
         for (int i = 0; i < path.length(); i++) {
             int c = (int) path.charAt(i);
-            //NOTICE - !isPureAscii(path.charAt(i)) check was added by Cloud.com
+            //NOTICE - !isPureAscii(path.charAt(i)) check was added by CloudStack
             if (safeCharacters.get(c) || !isPureAscii(path.charAt(i))) {
                 rewrittenPath.append((char) c);
             } else {
@@ -113,7 +107,7 @@ public class URLEncoder {
         }
         
     
-        //NOTICE - this part was added by Cloud.com
+        //NOTICE - this part was added by CloudStack
         public static boolean isPureAscii(Character v) {
             return asciiEncoder.canEncode(v);
         }

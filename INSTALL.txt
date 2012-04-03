@@ -50,7 +50,7 @@ $ ant deploydb
 Type to run mgt server:
 $ ant debug
 
-If all of the above process is successful. You are done the single server CloudStack installation.Now your Cloud.com Management Server is running.
+If all of the above process is successful. You are done the single server CloudStack installation.Now your CloudStack Management Server is running.
 
 Open your browser and type the bellow url in address bar:
 

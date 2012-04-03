@@ -334,7 +334,7 @@ for example:
         def checkDbserverHostname():
             self.info("Checking mysql server hostname ...", None)
             if resolves_to_ipv6(self, self.port):
-                err = "%s resolves to an IPv6 address.  The Cloud.com CloudStack does not support IPv6 yet.\nPlease fix this issue in either /etc/hosts or your DNS configuration.\n"%self.host
+                err = "%s resolves to an IPv6 address.  The CloudStack does not support IPv6 yet.\nPlease fix this issue in either /etc/hosts or your DNS configuration.\n"%self.host
                 self.errorAndExit(err)
             self.info(None, True)
         

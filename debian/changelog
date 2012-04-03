@@ -6,43 +6,43 @@ cloud (2.2.2) unstable; urgency=low
 
 cloud (2.1.97) unstable; urgency=low
 
-  * Bumping version number for next Cloud.com release
+  * Bumping version number for next CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Sat, 31 Jul 2010 19:09:54 -0700
 
 cloud (2.0.97) unstable; urgency=low
 
-  * Bumping version number for next Cloud.com release
+  * Bumping version number for next CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Mon, 12 Jul 2010 14:01:41 -0700
 
 cloud (2.0.2) unstable; urgency=low
 
-  * Bumping version number for next Cloud.com release
+  * Bumping version number for next CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Fri, 2 Jul 2010 19:55:41 -0700
 
 cloud (2.0.0) unstable; urgency=low
 
-  * Bumping version number for next Cloud.com release
+  * Bumping version number for next CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Tue, 15 Jun 2010 12:10:05 -0700
 
 cloud (1.9.14) unstable; urgency=low
 
-  * Bumping version number for next Cloud.com release
+  * Bumping version number for next CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Tue, 11 May 2010 14:46:14 -0700
 
 cloud (1.9.12) unstable; urgency=low
 
-  * Bumping version number for Cloud.com RC4 release
+  * Bumping version number for CloudStack RC4 release
 
  -- Rudd-O <manuel@cloud.com>  Mon, 3 May 2010 14:46:14 -0700
 
 cloud (1.9.11) unstable; urgency=low
 
-  * Bumping version number for Cloud.com release
+  * Bumping version number for CloudStack release
 
  -- Rudd-O <manuel@cloud.com>  Fri, 30 Apr 2010 15:08:38 -0700
 
