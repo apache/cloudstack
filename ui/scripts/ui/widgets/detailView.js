@@ -162,7 +162,7 @@
                       $loading.remove();
 
                       if (!noRefresh) {
-                        updateTabContent(args.data);
+                        updateTabContent(args.data? args.data : args2.data);
                       }
                     }
 
@@ -175,7 +175,7 @@
                       $detailView: $detailView
                     }));
 
-                    replaceListViewItem($detailView, args.data);
+                    replaceListViewItem($detailView, args.data ? args.data : args2.data);
                   },
 
                   {},
