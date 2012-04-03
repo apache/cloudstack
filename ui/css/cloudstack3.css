@@ -1264,22 +1264,17 @@ div.list-view td.state.off span {
 .project-view .ui-tabs ul li.ui-state-active a {
   background: #DBDDDF;
   color: #4F6270;
-  /*+text-shadow:0px 0px none;*/
-  -moz-text-shadow: 0px 0px none;
-  -webkit-text-shadow: 0px 0px none;
-  -o-text-shadow: 0px 0px none;
-  text-shadow: 0px 0px none;
-  -moz-text-shadow: none;
-  -webkit-text-shadow: none;
-  -o-text-shadow: none;
+  font-weight: bold;
+  /*+text-shadow:0px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 0px #FFFFFF;
+  -o-text-shadow: 0px 0px #FFFFFF;
+  text-shadow: 0px 0px #FFFFFF;
   /*+box-shadow:0px 0px none;*/
   -moz-box-shadow: 0px 0px none;
   -webkit-box-shadow: 0px 0px none;
   -o-box-shadow: 0px 0px none;
   box-shadow: 0px 0px none;
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  -o-box-shadow: none;
 }
 
 .ui-tabs li.ui-state-active.first a,
