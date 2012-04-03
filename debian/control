@@ -12,9 +12,9 @@ Conflicts: vmops-deps
 Replaces: vmops-deps
 Architecture: any
 Depends: openjdk-6-jre, cloud-agent-deps
-Description: Cloud.com library dependencies
+Description: CloudStack library dependencies
  This package contains a number of third-party dependencies
- not shipped by distributions, required to run the Cloud.com
+ not shipped by distributions, required to run the CloudStack
  Cloud Stack.
 
 Package: cloud-agent-deps
@@ -23,9 +23,9 @@ Conflicts: cloud-agent-deps
 Replaces: cloud-agent-deps
 Architecture: any
 Depends: openjdk-6-jre
-Description: Cloud.com agent library dependencies
+Description: CloudStack agent library dependencies
  This package contains a number of third-party dependencies
- not shipped by distributions, required to run the Cloud.com
+ not shipped by distributions, required to run the CloudStack
  Cloud Stack.
 
 
@@ -35,9 +35,9 @@ Conflicts: vmops-utils
 Replaces: vmops-utils
 Architecture: any
 Depends: openjdk-6-jre, python
-Description: Cloud.com utility library
- The Cloud.com utility libraries provide a set of Java classes used
- in the Cloud.com Cloud Stack.
+Description: CloudStack utility library
+ The CloudStack utility libraries provide a set of Java classes used
+ in the CloudStack Cloud Stack.
 
 Package: cloud-client-ui
 Provides: vmops-client-ui
@@ -45,11 +45,11 @@ Conflicts: vmops-client-ui
 Replaces: vmops-client-ui
 Architecture: any
 Depends: openjdk-6-jre, cloud-client (= ${source:Version})
-Description: Cloud.com management server UI
- The Cloud.com management server is the central point of coordination,
- management, and intelligence in the Cloud.com Cloud Stack.  This package
+Description: CloudStack management server UI
+ The CloudStack management server is the central point of coordination,
+ management, and intelligence in the CloudStack Cloud Stack.  This package
  is a requirement of the cloud-client package, which installs the
- Cloud.com management server.
+ CloudStack management server.
 
 Package: cloud-server
 Provides: vmops-server
@@ -57,9 +57,9 @@ Conflicts: vmops-server
 Replaces: vmops-server
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libservlet2.5-java
-Description: Cloud.com server library
- The Cloud.com server libraries provide a set of Java classes used
- in the Cloud.com Cloud Stack.
+Description: CloudStack server library
+ The CloudStack server libraries provide a set of Java classes used
+ in the CloudStack Cloud Stack.
 
 Package: cloud-agent-scripts
 Provides: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
@@ -67,10 +67,10 @@ Conflicts: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-prox
 Replaces: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Architecture: any
 Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
-Description: Cloud.com agent scripts
- The Cloud.com agent is in charge of managing shared computing resources in
- a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud -- this is a requirement for the Cloud.com
+Description: CloudStack agent scripts
+ The CloudStack agent is in charge of managing shared computing resources in
+ a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
+ will participate in your cloud -- this is a requirement for the CloudStack
  agent.
 
 Package: cloud-daemonize
@@ -78,9 +78,9 @@ Provides: vmops-daemonize
 Conflicts: vmops-daemonize
 Replaces: vmops-daemonize
 Architecture: any
-Description: Cloud.com daemonization utility
+Description: CloudStack daemonization utility
  This package contains a program that daemonizes the specified
- process.  The Cloud.com Cloud Stack uses this to start the agent
+ process.  The CloudStack Cloud Stack uses this to start the agent
  as a service.
 
 Package: cloud-core
@@ -89,9 +89,9 @@ Conflicts: vmops-core
 Replaces: vmops-core
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version})
-Description: Cloud.com core library
- The Cloud.com core libraries provide a set of Java classes used
- in the Cloud.com Cloud Stack.
+Description: CloudStack core library
+ The CloudStack core libraries provide a set of Java classes used
+ in the CloudStack Cloud Stack.
 
 Package: cloud-test
 Provides: vmops-test
@@ -99,9 +99,9 @@ Conflicts: vmops-test
 Replaces: vmops-test
 Architecture: any
 Depends: openjdk-6-jre, wget, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version})
-Description: Cloud.com test suite
- The Cloud.com test package contains a suite of automated tests
- that the very much appreciated QA team at Cloud.com constantly
+Description: CloudStack test suite
+ The CloudStack test package contains a suite of automated tests
+ that the very much appreciated QA team at CloudStack constantly
  uses to help increase the quality of the Cloud Stack.
 
 Package: cloud-client
@@ -110,9 +110,9 @@ Conflicts: vmops-client
 Replaces: vmops-client
 Architecture: any
 Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso
-Description: Cloud.com client
- The Cloud.com management server is the central point of coordination,
- management, and intelligence in the Cloud.com Cloud Stack.  This package
+Description: CloudStack client
+ The CloudStack management server is the central point of coordination,
+ management, and intelligence in the CloudStack Cloud Stack.  This package
  is required for the management server to work.
 
 Package: cloud-setup
@@ -121,21 +121,21 @@ Conflicts: vmops-setup
 Replaces: vmops-setup
 Architecture: any
 Depends: openjdk-6-jre, python, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-python (= ${source:Version}), python-mysqldb
-Description: Cloud.com client
- The Cloud.com setup tools let you set up your Management Server and Usage Server.
+Description: CloudStack client
+ The CloudStack setup tools let you set up your Management Server and Usage Server.
 
 Package: cloud-python
 Architecture: any
 Depends: python
-Description: Cloud.com Python library
- The Cloud.com Python library contains a few Python modules that the
+Description: CloudStack Python library
+ The CloudStack Python library contains a few Python modules that the
  CloudStack uses.
 
 Package: cloud-agent-libs
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
-Description: Cloud.com agent libraries
- The Cloud.com agent libraries are used by the Cloud Agent and the Cloud
+Description: CloudStack agent libraries
+ The CloudStack agent libraries are used by the Cloud Agent and the Cloud
  Console Proxy.
 
 Package: cloud-agent
@@ -144,24 +144,24 @@ Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, jnetpcap, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget
-Description: Cloud.com agent
- The Cloud.com agent is in charge of managing shared computing resources in
- a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
+Description: CloudStack agent
+ The CloudStack agent is in charge of managing shared computing resources in
+ a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
 
 Package: cloud-system-iso
 Architecture: any
-Description: Cloud.com system iso
- The Cloud.com agent is in charge of managing shared computing resources in
- a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
+Description: CloudStack system iso
+ The CloudStack agent is in charge of managing shared computing resources in
+ a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
 
 Package: cloud-console-proxy
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-agent-libs (= ${source:Version}), python, cloud-python (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, cloud-daemonize, sysvinit-utils, chkconfig, augeas-tools, uuid-runtime, grep, iproute
-Description: Cloud.com console proxy
- The Cloud.com console proxy is the service in charge of granting console
- access into virtual machines managed by the Cloud.com CloudStack.
+Description: CloudStack console proxy
+ The CloudStack console proxy is the service in charge of granting console
+ access into virtual machines managed by the CloudStack CloudStack.
 
 Package: cloud-usage
 Provides: vmops-usage
@@ -169,6 +169,6 @@ Conflicts: vmops-usage
 Replaces: vmops-usage
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
-Description: Cloud.com usage monitor
- The Cloud.com usage monitor provides usage accounting across the entire cloud for
+Description: CloudStack usage monitor
+ The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.

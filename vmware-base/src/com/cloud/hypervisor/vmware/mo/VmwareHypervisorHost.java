@@ -12,7 +12,7 @@ import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 
 /**
- * Interface to consolidate ESX(i) hosts and HA/FT clusters into a common interface used by Cloud.com Hypervisor resources  
+ * Interface to consolidate ESX(i) hosts and HA/FT clusters into a common interface used by CloudStack Hypervisor resources  
  */
 public interface VmwareHypervisorHost {
 	VmwareContext getContext();

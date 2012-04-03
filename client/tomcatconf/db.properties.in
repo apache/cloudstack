@@ -3,14 +3,14 @@
 cluster.node.IP=127.0.0.1
 cluster.servlet.port=9090
 
-# Cloud.com database settings
+# CloudStack database settings
 db.cloud.username=@DBUSER@
 db.cloud.password=@DBPW@
 db.cloud.host=@DBHOST@
 db.cloud.port=3306
 db.cloud.name=cloud
 
-# Cloud.com database tuning parameters
+# CloudStack database tuning parameters
 db.cloud.maxActive=250
 db.cloud.maxIdle=30
 db.cloud.maxWait=10000
@@ -26,7 +26,7 @@ db.cloud.logAbandoned=true
 db.cloud.poolPreparedStatements=false
 db.cloud.url.params=prepStmtCacheSize=517&cachePrepStmts=true
 
-# Cloud.com database SSL settings
+# CloudStack database SSL settings
 db.cloud.useSSL=false
 db.cloud.keyStore=
 db.cloud.keyStorePassword=

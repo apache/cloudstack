@@ -36,7 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(responseObject=TemplateResponse.class, description="Registers an existing ISO into the Cloud.com Cloud.")
+@Implementation(responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 

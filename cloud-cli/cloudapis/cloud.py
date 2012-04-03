@@ -17,7 +17,7 @@
   #
  
 
-'''Implements the Cloud.com API'''
+'''Implements the CloudStack API'''
 
 
 from cloudtool.utils import describe

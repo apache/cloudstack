@@ -21,7 +21,7 @@
  
 
 # -*- coding: utf-8 -*-
-"""Cloud.com Python utility library"""
+"""CloudStack Python utility library"""
 
 import sys, os, subprocess, errno, re, time, glob
 import urllib2
@@ -1072,7 +1072,6 @@ def setup_consoleproxy_config(configfile, host, zone, pod):
 # =========================== DATABASE MIGRATION SUPPORT CODE ===================
 
 # Migrator, Migratee and Evolvers -- this is the generic infrastructure.
-# To actually implement Cloud.com-specific code, search "Cloud.com-specific evolvers and context"
 
 
 class MigratorException(Exception): pass

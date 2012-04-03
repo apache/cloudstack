@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2008 Cloud.Com Inc. All Rights Reserved -->
 
-<project name="Cloud.com Cloud Stack Build Dispatch" default="help" basedir=".">
+<project name="Cloud Stack Build Dispatch" default="help" basedir=".">
     <description>
         This is the overall dispatch file.  It includes other build
         files but doesnot provide targets of its own.  Do not modify
@@ -9,7 +9,7 @@
         developer.xml.
     </description>
   
-    <dirname property="base.dir" file="${ant.file.Cloud.com Cloud Stack Build Dispatch}"/>
+    <dirname property="base.dir" file="${ant.file.Cloud Stack Build Dispatch}"/>
 
     <condition property="build-cloud.properties.file" value="${base.dir}/build/override/build-cloud.properties" else="${base.dir}/build/build-cloud.properties">
       <available file="${base.dir}/build/override/build-cloud.properties" />

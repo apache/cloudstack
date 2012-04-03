@@ -63,7 +63,7 @@ public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
 				
 				boolean noDuplicate = true;
 				StringBuffer helpInfo = new StringBuffer();
-				String note = "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact Cloud.com support team for solution. Below are detialed info, please attach all of them to Cloud.com support. Thank you\n";
+				String note = "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
 				helpInfo.append(note);
 				while (rs.next()) {
 					long poolId = rs.getLong(1);
@@ -216,7 +216,7 @@ public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
                 }
                 
                 if (!checkMissedPremiumUpgradeFor228()) {
-                    s_logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact Cloud.com support and attach log file. Thank you!");
+                    s_logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact CloudStack support and attach log file. Thank you!");
                     throw new CloudRuntimeException("Detected missed premium upgrade");
                 }
             } finally {

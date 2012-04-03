@@ -604,7 +604,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             @Override
             public void run() {
                 // TODO scan vSphere for newly added hosts.
-                // we are going to both support adding host from Cloud.com UI and
+                // we are going to both support adding host from CloudStack UI and
                 // adding host via vSphere server
                 //
                 // will implement host scanning later

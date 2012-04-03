@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Copyright 2008 Cloud.com, Inc. All Rights Reserved -->
 
-<project name="Cloud.com Developer Targets" basedir=".">
+<project name="CloudStack Developer Targets" basedir=".">
   <description>
         This is a developer.xml with tools to start and stop tomcat and 
         generally developer targets that has nothing to do with compiling.
     </description>
 
-  <dirname property="base.dir" file="${ant.file.Cloud.com Developer Targets}/.."/>
+  <dirname property="base.dir" file="${ant.file.CloudStack Developer Targets}/.."/>
   <property name="build.dir" location="${base.dir}/build"/>
   
   <property name="tomcat.home" location="${env.CATALINA_HOME}"/>

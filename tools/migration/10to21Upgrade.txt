@@ -57,7 +57,7 @@ How to run the migration tool:
         * Run "python upgrade.py publicips". This will immediately allocate the public IPs of all users in the 1.0.x system, so that existing 2.1.x users can't allocate them.
 
 8. Run "python upgrade.py" on the 2.1.x management server. Status information will be printed out to the console.
-        * If there is an error, please contact Cloud.com Support and send us the migration log. By default, this file is called "migrationLog" and is in the same directory as upgrade.py. 
+        * If there is an error, please contact CloudStack Support and send us the migration log. By default, this file is called "migrationLog" and is in the same directory as upgrade.py. 
         * After the cause for an error has been resolved, you can run upgrade.py again from the beginning; it will skip over any work that has already been done.
         * If you would like to re-enable a user on 1.0.x system, simply stop all of the user's VMs that have been migrated on the 2.1.x system, and start the user's VMs on the 1.0.x system.
 
