@@ -450,7 +450,7 @@ body.login {
   -moz-box-shadow: inset 0px 1px 0px #AEAEAE;
   -webkit-box-shadow: inset 0px 1px 0px #AEAEAE;
   -o-box-shadow: inset 0px 1px 0px #AEAEAE;
-  box-shadow: inset 0px 1px 0px #AEAEAE;
+  box-shadow: inset 0px 1px #AEAEAE;
   font-size: 14px;
   color: #232323;
   padding: 6px;
@@ -662,7 +662,7 @@ body.login {
   -moz-text-shadow: 0px 1px 0px #FFFFFF;
   -webkit-text-shadow: 0px 1px 0px #FFFFFF;
   -o-text-shadow: 0px 1px 0px #FFFFFF;
-  text-shadow: 0px 1px 0px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
   /*+box-shadow:0px 5px 9px #9F9F9F;*/
   -moz-box-shadow: 0px 5px 9px #9F9F9F;
   -webkit-box-shadow: 0px 5px 9px #9F9F9F;
@@ -1264,16 +1264,22 @@ div.list-view td.state.off span {
 .project-view .ui-tabs ul li.ui-state-active a {
   background: #DBDDDF;
   color: #4F6270;
-  /*+text-shadow:none;*/
+  /*+text-shadow:0px 0px none;*/
+  -moz-text-shadow: 0px 0px none;
+  -webkit-text-shadow: 0px 0px none;
+  -o-text-shadow: 0px 0px none;
+  text-shadow: 0px 0px none;
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
   -o-text-shadow: none;
-  text-shadow: none;
-  /*+box-shadow:none;*/
+  /*+box-shadow:0px 0px none;*/
+  -moz-box-shadow: 0px 0px none;
+  -webkit-box-shadow: 0px 0px none;
+  -o-box-shadow: 0px 0px none;
+  box-shadow: 0px 0px none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   -o-box-shadow: none;
-  box-shadow: none;
 }
 
 .ui-tabs li.ui-state-active.first a,
@@ -1409,12 +1415,16 @@ div.list-view td.state.off span {
 .detail-view .button.cancel {
   background-position: 0px -795px;
   left: 85px;
-  color: gray;
+  color: #808080;
   /*+text-shadow:0px -1px 2px #000000;*/
+  -moz-text-shadow: 0px -1px 2px #000000;
+  -webkit-text-shadow: 0px -1px 2px #000000;
+  -o-text-shadow: 0px -1px 2px #000000;
+  text-shadow: 0px -1px 2px #000000;
   -moz-text-shadow: 0px -1px 2px #CCCCCC;
   -webkit-text-shadow: 0px -1px 2px #CCCCCC;
   -o-text-shadow: 0px -1px 2px #CCCCCC;
-  text-shadow: 0px -1px 2px #CCCCCC; 
+  text-shadow: 0px -1px 2px #CCCCCC;
 }
 
 .detail-view .button.done:hover {
@@ -1440,7 +1450,7 @@ div.group-multiple div.detail-group table.header {
 }
 
 div.group-multiple div.detail-group table.header thead th {
-  background: none;
+  background: transparent;
   border: none;
 }
 
@@ -1677,7 +1687,7 @@ div.detail-group.actions td {
 }
 
 #header div.notifications {
-  background: none;
+  background: transparent;
   height: 18px;
   padding: 1px 0 0;
   margin: 8px 36px 0 50px;
@@ -1706,7 +1716,7 @@ div.detail-group.actions td {
   -moz-text-shadow: 0px -1px 0px #6C7283;
   -webkit-text-shadow: 0px -1px 0px #6C7283;
   -o-text-shadow: 0px -1px 0px #6C7283;
-  text-shadow: 0px -1px 0px #6C7283;
+  text-shadow: 0px -1px #6C7283;
 }
 
 #header div.notifications div.total.pending {
@@ -1732,7 +1742,7 @@ div.detail-group.actions td {
   cursor: default !important;
   display: inline-block;
   float: left;
-  background: none;
+  background: transparent;
 }
 
 #user div.name {
@@ -1903,11 +1913,14 @@ div.detail-group.actions td {
 
 #navigation ul li.disabled:hover span {
   color: #596D7F;
-  /*+text-shadow:none;*/
+  /*+text-shadow:0px 0px none;*/
+  -moz-text-shadow: 0px 0px none;
+  -webkit-text-shadow: 0px 0px none;
+  -o-text-shadow: 0px 0px none;
+  text-shadow: 0px 0px none;
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
   -o-text-shadow: none;
-  text-shadow: none;
 }
 
 #navigation ul li.last {
@@ -2056,7 +2069,7 @@ div.detail-group.actions td {
 
 .detail-view .ui-tabs-panel div.toolbar {
   width: 768px;
-  background: none;
+  background: transparent;
   border: none;
   margin-top: 8px;
 }
@@ -2356,12 +2369,12 @@ div.list-view div.toolbar div.section-switcher div.section.first.last a {
 
 div.list-view div.toolbar div.section-switcher div.section-select {
   float: left;
-  background: #A8AFB6 none;
+  background: #A8AFB6;
   height: 26px;
 }
 
 .project-view div.list-view div.toolbar div.section-switcher div.section-select {
-  background: none;
+  background: transparent;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select select {
@@ -2490,11 +2503,14 @@ div.toolbar div.filters select {
   left: 0px;
   top: 0px;
   color: #CED4D9;
-  /*+text-shadow:none;*/
+  /*+text-shadow:0px 0px none;*/
+  -moz-text-shadow: 0px 0px none;
+  -webkit-text-shadow: 0px 0px none;
+  -o-text-shadow: 0px 0px none;
+  text-shadow: 0px 0px none;
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
   -o-text-shadow: none;
-  text-shadow: none;
   font-weight: bold;
 }
 
@@ -2772,7 +2788,7 @@ Dialogs*/
 }
 
 .ui-dialog.notice .close.ui-button {
-  background: none;
+  background: transparent;
   display: inline;
   padding: 0;
   float: right;
@@ -2959,7 +2975,7 @@ Dialogs*/
   -moz-box-shadow: inset 0px 1px 0px #727272;
   -webkit-box-shadow: inset 0px 1px 0px #727272;
   -o-box-shadow: inset 0px 1px 0px #727272;
-  box-shadow: inset 0px 1px 0px #727272;
+  box-shadow: inset 0px 1px #727272;
   float: left;
 }
 
@@ -3205,7 +3221,7 @@ Dialogs*/
   -moz-text-shadow: 0px 1px 0px #333E49;
   -webkit-text-shadow: 0px 1px 0px #333E49;
   -o-text-shadow: 0px 1px 0px #333E49;
-  text-shadow: 0px 1px 0px #333E49;
+  text-shadow: 0px 1px #333E49;
   padding: 3px 8px 3px 10px;
   background: url(../images/bg-gradients.png) repeat-x 0px -411px;
   border: 1px solid #383838;
@@ -3940,7 +3956,7 @@ Dialogs*/
 .system-chart.dashboard.admin {
   width: 97%;
   height: 96%;
-  background: none;
+  background: transparent;
 }
 
 .system-chart.dashboard.admin .dashboard-container {
@@ -3949,7 +3965,7 @@ Dialogs*/
 }
 
 .system-chart.dashboard.admin .dashboard-container .top {
-  background: none;
+  background: transparent;
 }
 
 .system-chart.dashboard.admin .dashboard-container .top .title {
@@ -3957,11 +3973,11 @@ Dialogs*/
 }
 
 .system-chart.dashboard.admin .dashboard-container .top .title span {
-  /*+text-shadow:none;*/
-  -moz-text-shadow: none;
-  -webkit-text-shadow: none;
-  -o-text-shadow: none;
-  text-shadow: none;
+  /*+text-shadow:0px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 0px #FFFFFF;
+  -o-text-shadow: 0px 0px #FFFFFF;
+  text-shadow: 0px 0px #FFFFFF;
 }
 
 .system-chart.dashboard.admin .dashboard-container .stats .chart {
@@ -4067,12 +4083,15 @@ Dialogs*/
 }
 
 .system-chart.network ul.resources li {
-  background: none;
-  /*+box-shadow:none;*/
+  background: transparent;
+  /*+box-shadow:0px 0px none;*/
+  -moz-box-shadow: 0px 0px none;
+  -webkit-box-shadow: 0px 0px none;
+  -o-box-shadow: 0px 0px none;
+  box-shadow: 0px 0px none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   -o-box-shadow: none;
-  box-shadow: none;
   border: none;
   /*+border-radius:0px;*/
   -moz-border-radius: 0px;
@@ -4451,7 +4470,7 @@ label.error {
   -webkit-text-shadow: 0px -1px 1px #C2BDBD;
   -o-text-shadow: 0px -1px 1px #C2BDBD;
   text-shadow: 0px -1px 1px #C2BDBD;
-  background: none;
+  background: transparent;
 }
 
 .multi-wizard .progress ul li.active span {
@@ -4607,7 +4626,7 @@ label.error {
 
 .multi-wizard .content.tab-view {
   margin: 31px 0px 0px;
-  background: none;
+  background: transparent;
   padding: 0px 8px;
 }
 
@@ -4667,7 +4686,7 @@ label.error {
   margin-top: 7px;
   display: block;
   height: 41px;
-  /*[empty]background:;*/
+  background: transparent;
   border: none;
   /*+placement:shift -6px 5px;*/
   position: relative;
@@ -4862,12 +4881,15 @@ label.error {
   -webkit-border-radius: 0;
   -khtml-border-radius: 0;
   border-radius: 0 0 0 0;
-  background: none;
-  /*+box-shadow:inherit;*/
+  background: transparent;
+  /*+box-shadow:0px 0px inherit;*/
+  -moz-box-shadow: 0px 0px inherit;
+  -webkit-box-shadow: 0px 0px inherit;
+  -o-box-shadow: 0px 0px inherit;
+  box-shadow: 0px 0px inherit;
   -moz-box-shadow: inherit;
   -webkit-box-shadow: inherit;
   -o-box-shadow: inherit;
-  box-shadow: inherit;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
@@ -5566,7 +5588,7 @@ label.error {
 .multi-wizard.zone-wizard .setup-physical-network .content.input-area {
   width: 627px;
   height: 396px;
-  background: none;
+  background: transparent;
   position: relative;
 }
 
@@ -5687,7 +5709,7 @@ label.error {
 .multi-wizard.zone-wizard .traffic-types-drag-area {
   width: 96px;
   height: 370px;
-  background: #F0F1F2 none;
+  background: #F0F1F2;
   border: 1px solid #DCCACA;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -5733,7 +5755,7 @@ label.error {
   float: left;
   font-size: 11px;
   width: 100%;
-  background: none;
+  background: transparent;
   height: 83px;
   margin: 16px 13px 0 0;
 }
@@ -6478,7 +6500,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   left: 492px;
   top: -18px;
   border: none;
-  background: none;
+  background: transparent;
   color: #808B95;
   font-weight: bold;
 }
@@ -6559,7 +6581,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .multi-edit .data .data-body .data-item .expandable-listing table tbody tr td.name span:hover {
-  color: blue;
+  color: #0000FF;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.multi-actions {
@@ -6934,11 +6956,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border: none;
   background-color: transparent;
   border: none;
-  /*+box-shadow:none;*/
+  /*+box-shadow:0px 0px none;*/
+  -moz-box-shadow: 0px 0px none;
+  -webkit-box-shadow: 0px 0px none;
+  -o-box-shadow: 0px 0px none;
+  box-shadow: 0px 0px none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   -o-box-shadow: none;
-  box-shadow: none;
   cursor: default;
 }
 
@@ -7556,14 +7581,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .project-selector .toolbar {
   width: 420px;
   position: relative;
-  background: none;
+  background: transparent;
   border: none;
   border-bottom: 1px solid #93A4B4;
   /*+box-shadow:0px 2px 0px #FFFFFF;*/
   -moz-box-shadow: 0px 2px 0px #FFFFFF;
   -webkit-box-shadow: 0px 2px 0px #FFFFFF;
   -o-box-shadow: 0px 2px 0px #FFFFFF;
-  box-shadow: 0px 2px 0px #FFFFFF;
+  box-shadow: 0px 2px #FFFFFF;
 }
 
 .project-selector .search input[type=text] {
@@ -8150,7 +8175,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: absolute;
   margin-left: 154px;
   margin-top: 29px;
-  background: none;
+  background: transparent;
   width: auto;
   height: auto;
 }
@@ -8168,7 +8193,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-box-shadow: inset 0px 1px 0px #A1A1A1;
   -webkit-box-shadow: inset 0px 1px 0px #A1A1A1;
   -o-box-shadow: inset 0px 1px 0px #A1A1A1;
-  box-shadow: inset 0px 1px 0px #A1A1A1;
+  box-shadow: inset 0px 1px #A1A1A1;
   width: 506px;
   height: 20px;
   margin: 17px 25px 0 0;
@@ -8182,7 +8207,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .new-project .button.cancel {
   color: #808080;
-  background: none;
+  background: transparent;
   font-size: 12px;
   font-weight: bold;
   float: left;
