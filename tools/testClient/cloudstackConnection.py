@@ -97,8 +97,9 @@ class cloudConnection(object):
     def pollAsyncJob(self, jobId, response):
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
         cmd.jobid = jobId
+        timeout = self.asyncTimeout
         
-        while self.asyncTimeout > 0:
+        while timeout > 0:
             asyncResonse = self.make_request(cmd, response, True)
             
             if asyncResonse.jobstatus == 2:
@@ -107,9 +108,10 @@ class cloudConnection(object):
                 return asyncResonse
             
             time.sleep(5)
-            self.asyncTimeout = self.asyncTimeout - 5
+            self.logging.debug("job: %s still processing, will timeout in %ds"%(jobId, timeout))
+            timeout = timeout - 5
             
-        raise cloudstackException.cloudstackAPIException("asyncquery", "Async job timeout")
+        raise cloudstackException.cloudstackAPIException("asyncquery", "Async job timeout %s"%jobId)
     
     def make_request(self, cmd, response = None, raw=False):
         commandName = cmd.__class__.__name__.replace("Cmd", "")
