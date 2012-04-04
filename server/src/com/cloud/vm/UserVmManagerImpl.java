@@ -506,15 +506,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Please specify a valid data volume.");
         }
 
-        // Check that the volume is stored on shared storage
-        if (!(Volume.State.Allocated.equals(volume.getState())) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
-        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()))) {
-            throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
-        }
-
         // Check that the volume is not currently attached to any VM
         if (volume.getInstanceId() != null) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
@@ -556,6 +547,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         //permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
+        
+
+        // Check that the volume is stored on shared storage
+        if (!(Volume.State.Allocated.equals(volume.getState())) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+
+        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()))) {
+            throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
+        }
 
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);

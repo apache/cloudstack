@@ -38,6 +38,7 @@ DROP TABLE IF EXISTS `cloud`.`pricing`;
 DROP TABLE IF EXISTS `cloud`.`sequence`;
 DROP TABLE IF EXISTS `cloud`.`user_vm`;
 DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`upload`;
 DROP TABLE IF EXISTS `cloud`.`template_zone_ref`;
 DROP TABLE IF EXISTS `cloud`.`dc_vnet_alloc`;
@@ -1123,6 +1124,30 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   INDEX `i_template_host_ref__host_id`(`host_id`),
   CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_template_host_ref__template_id`(`template_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`volume_host_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `host_id` bigint unsigned NOT NULL,
+  `volume_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `download_state` varchar(255),
+  `checksum` varchar(255) COMMENT 'checksum for the data disk',
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `url` varchar(255),
+  `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_volume_host_ref__host_id` FOREIGN KEY `fk_volume_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  INDEX `i_volume_host_ref__host_id`(`host_id`),
+  CONSTRAINT `fk_volume_host_ref__volume_id` FOREIGN KEY `fk_volume_host_ref__volume_id` (`volume_id`) REFERENCES `volumes` (`id`),
+  INDEX `i_volume_host_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`template_swift_ref` (

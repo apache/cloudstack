@@ -43,6 +43,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
+import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.InternalErrorException;
@@ -100,8 +101,9 @@ public class DownloadManagerImpl implements DownloadManager {
         private long templatesize;
         private long templatePhysicalSize;
         private long id;
+		private ResourceType resourceType;
 
-        public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
+        public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, ResourceType resourceType) {
             super();
             this.td = td;
             this.jobId = jobId;
@@ -114,6 +116,7 @@ public class DownloadManagerImpl implements DownloadManager {
             this.installPathPrefix = installPathPrefix;
             this.templatesize = 0;
             this.id = id;
+            this.resourceType = resourceType;
         }
 
         public TemplateDownloader getTd() {
@@ -156,7 +159,11 @@ public class DownloadManagerImpl implements DownloadManager {
             return id;
         }
 
-        public void setTmpltPath(String tmpltPath) {
+        public ResourceType getResourceType() {
+			return resourceType;
+		}
+
+		public void setTmpltPath(String tmpltPath) {
             this.tmpltPath = tmpltPath;
         }
 
@@ -206,7 +213,9 @@ public class DownloadManagerImpl implements DownloadManager {
 
     public static final Logger s_logger = Logger.getLogger(DownloadManagerImpl.class);
     private String _templateDir;
+    private String _volumeDir;
     private String createTmpltScr;
+    private String createVolScr;
     private Adapters<Processor> processors;
 
     private ExecutorService threadPool;
@@ -308,19 +317,22 @@ public class DownloadManagerImpl implements DownloadManager {
     private String postDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String templatePath = null;
+        String templatePath = null;        
         templatePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
+        ResourceType resourceType = dnld.getResourceType();
 
         _storage.mkdirs(templatePath);
 
         // once template path is set, remove the parent dir so that the template is installed with a relative path
-        String finalTemplatePath = _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
+        String finalTemplatePath = resourceType == ResourceType.TEMPLATE ? _templateDir : _volumeDir 
+        	+ File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
         dnld.setTmpltPath(finalTemplatePath);
 
         int imgSizeGigs = (int) Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
         long timeout = imgSizeGigs * installTimeoutPerGig;
         Script scr = null;
+        String script = resourceType == ResourceType.TEMPLATE ? createTmpltScr : createVolScr;
         scr = new Script(createTmpltScr, timeout, s_logger);
         scr.add("-s", Integer.toString(imgSizeGigs));
         scr.add("-S", Long.toString(td.getMaxTemplateSizeInBytes()));
@@ -417,7 +429,7 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
@@ -428,8 +440,9 @@ public class DownloadManagerImpl implements DownloadManager {
                 s_logger.warn("Unable to create " + tmpDir);
                 return "Unable to create " + tmpDir;
             }
-
-            File file = _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename);
+            //	TO DO - define constant for volume properties.
+            File file = ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : 
+            	_storage.getFile(tmpDir + File.separator + "volume.properties");
             if ( file.exists() ) {
                 file.delete();
             }
@@ -448,7 +461,7 @@ public class DownloadManagerImpl implements DownloadManager {
             TemplateDownloader td;
             if ((uri != null) && (uri.getScheme() != null)) {
                 if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy);
+                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
                 } else if (uri.getScheme().equalsIgnoreCase("file")) {
                     td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
                 } else if (uri.getScheme().equalsIgnoreCase("scp")) {
@@ -463,7 +476,7 @@ public class DownloadManagerImpl implements DownloadManager {
             } else {
                 throw new CloudRuntimeException("Unable to download from URL: " + url);
             }
-            DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix);
+            DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
             jobs.put(jobId, dj);
             threadPool.execute(td);
 
@@ -555,12 +568,13 @@ public class DownloadManagerImpl implements DownloadManager {
 
     @Override
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
+    	ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
             return handleDownloadProgressCmd( resource, (DownloadProgressCommand) cmd);
         }
 
         if (cmd.getUrl() == null) {
-            return new DownloadAnswer("Template is corrupted on storage due to an invalid url , cannot download", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+            return new DownloadAnswer(resourceType.toString() + " is corrupted on storage due to an invalid url , cannot download", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
         if (cmd.getName() == null) {
@@ -568,7 +582,11 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         String installPathPrefix = null;
-        installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
+        if (ResourceType.TEMPLATE == resourceType){
+        	installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
+        }else {
+        	installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
+        }
 
         String user = null;
         String password = null;
@@ -576,9 +594,9 @@ public class DownloadManagerImpl implements DownloadManager {
             user = cmd.getAuth().getUserName();
             password = new String(cmd.getAuth().getPassword());
         }
-
+        //TO DO - Define Volume max size as well
         long maxDownloadSizeInBytes = (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd.getMaxDownloadSizeInBytes());
-        String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy());
+        String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
         sleep();
         if (jobId == null) {
             return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
@@ -831,6 +849,12 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
+        createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
+        if (createVolScr == null) {
+            throw new ConfigurationException("Unable to find createvolume.sh");
+        }
+        s_logger.info("createvolume.sh found in " + createVolScr);
+
         List<ComponentInfo<Adapter>> processors = new ArrayList<ComponentInfo<Adapter>>();
 
         Processor processor = new VhdProcessor();
@@ -860,6 +884,7 @@ public class DownloadManagerImpl implements DownloadManager {
             _templateDir = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
         }
         _templateDir += File.separator + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
+        _volumeDir = TemplateConstants.DEFAULT_VOLUME_ROOT_DIR;
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;

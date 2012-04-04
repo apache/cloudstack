@@ -37,12 +37,17 @@ import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
+
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -98,9 +103,12 @@ public class DownloadListener implements Listener {
 	private HostVO sserver;
 	private HostVO ssAgent;
 	private VMTemplateVO template;
+	private VolumeVO volume;
 	
 	private boolean downloadActive = true;
 
+	private VolumeHostDao volumeHostDao;
+	private VolumeDao _volumeDao;	
 	private VMTemplateHostDao vmTemplateHostDao;
 	private VMTemplateDao _vmTemplateDao;
 
@@ -119,6 +127,7 @@ public class DownloadListener implements Listener {
 	
 	private final Map<String,  DownloadState> stateMap = new HashMap<String, DownloadState>();
 	private Long templateHostId;
+	private Long volumeHostId;
 	
 	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VMTemplateDao templateDao) {
 	    this.ssAgent = ssAgent;
@@ -136,6 +145,24 @@ public class DownloadListener implements Listener {
 		this._vmTemplateDao = templateDao;
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
+	
+	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao) {
+	    this.ssAgent = ssAgent;
+        this.sserver = host;
+		this.volume = volume;
+		this.volumeHostDao = dao;
+		this.downloadMonitor = downloadMonitor;
+		this.cmd = cmd;
+		this.volumeHostId = volHostId;
+		initStateMachine();
+		this.currState=getState(Status.NOT_DOWNLOADED.toString());
+		this.timer = _timer;
+		this.timeoutTask = new TimeoutTask(this);
+		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+		this._volumeDao = volumeDao;
+		updateDatabase(Status.NOT_DOWNLOADED, "");
+	}
+	
 	
 	public void setCurrState(VMTemplateHostVO.Status currState) {
 		this.currState = getState(currState.toString());
@@ -181,15 +208,27 @@ public class DownloadListener implements Listener {
 	}
 
 	public synchronized void updateDatabase(Status state, String errorString) {
-	    VMTemplateHostVO vo = vmTemplateHostDao.createForUpdate();
-		vo.setDownloadState(state);
-		vo.setLastUpdated(new Date());
-		vo.setErrorString(errorString);
-		vmTemplateHostDao.update(getTemplateHostId(), vo);
+		if (template != null){
+		    VMTemplateHostVO vo = vmTemplateHostDao.createForUpdate();
+			vo.setDownloadState(state);
+			vo.setLastUpdated(new Date());
+			vo.setErrorString(errorString);
+			vmTemplateHostDao.update(getTemplateHostId(), vo);
+		}else {
+		    VolumeHostVO vo = volumeHostDao.createForUpdate();
+			vo.setDownloadState(state);
+			vo.setLastUpdated(new Date());
+			vo.setErrorString(errorString);
+			volumeHostDao.update(getVolumeHostId(), vo);
+		}
 	}
 	
 	public void log(String message, Level level) {
-		s_logger.log(level, message + ", template=" + template.getName() + " at host " + sserver.getName());
+		if (template != null){
+			s_logger.log(level, message + ", template=" + template.getName() + " at host " + sserver.getName());
+		}else {
+			s_logger.log(level, message + ", volume=" + volume.getName() + " at host " + sserver.getName());
+		}
 	}
 
 	private Long getTemplateHostId() {
@@ -199,11 +238,21 @@ public class DownloadListener implements Listener {
 		}
 		return templateHostId;
 	}
+	
+	private Long getVolumeHostId() {
+		if (volumeHostId == null){
+			VolumeHostVO volHost = volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
+			volumeHostId = volHost.getId();
+		}
+		return volumeHostId;
+	}
 
 	public DownloadListener(DownloadMonitorImpl monitor) {
 	    downloadMonitor = monitor;
 	}
+
 	
+
 	@Override
 	public boolean isRecurring() {
 		return false;
@@ -247,23 +296,44 @@ public class DownloadListener implements Listener {
 	}
 
 	public synchronized void updateDatabase(DownloadAnswer answer) {
-        VMTemplateHostVO updateBuilder = vmTemplateHostDao.createForUpdate();
-		updateBuilder.setDownloadPercent(answer.getDownloadPct());
-		updateBuilder.setDownloadState(answer.getDownloadStatus());
-		updateBuilder.setLastUpdated(new Date());
-		updateBuilder.setErrorString(answer.getErrorString());
-		updateBuilder.setJobId(answer.getJobId());
-		updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
-		updateBuilder.setInstallPath(answer.getInstallPath());
-		updateBuilder.setSize(answer.getTemplateSize());
-		updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-		
-		vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
-		
-		if (answer.getCheckSum() != null) {
-			VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
-			templateDaoBuilder.setChecksum(answer.getCheckSum());
-			_vmTemplateDao.update(template.getId(), templateDaoBuilder);
+		if (template != null){
+	        VMTemplateHostVO updateBuilder = vmTemplateHostDao.createForUpdate();
+			updateBuilder.setDownloadPercent(answer.getDownloadPct());
+			updateBuilder.setDownloadState(answer.getDownloadStatus());
+			updateBuilder.setLastUpdated(new Date());
+			updateBuilder.setErrorString(answer.getErrorString());
+			updateBuilder.setJobId(answer.getJobId());
+			updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+			updateBuilder.setInstallPath(answer.getInstallPath());
+			updateBuilder.setSize(answer.getTemplateSize());
+			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+			
+			vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
+			
+			if (answer.getCheckSum() != null) {
+				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
+				templateDaoBuilder.setChecksum(answer.getCheckSum());
+				_vmTemplateDao.update(template.getId(), templateDaoBuilder);
+			}
+		} else {
+	        VolumeHostVO updateBuilder = volumeHostDao.createForUpdate();
+			updateBuilder.setDownloadPercent(answer.getDownloadPct());
+			updateBuilder.setDownloadState(answer.getDownloadStatus());
+			updateBuilder.setLastUpdated(new Date());
+			updateBuilder.setErrorString(answer.getErrorString());
+			updateBuilder.setJobId(answer.getJobId());
+			updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+			updateBuilder.setInstallPath(answer.getInstallPath());
+			updateBuilder.setSize(answer.getTemplateSize());
+			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+			
+			volumeHostDao.update(getVolumeHostId(), updateBuilder);
+			
+			/*if (answer.getCheckSum() != null) {
+				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
+				templateDaoBuilder.setChecksum(answer.getCheckSum());
+				_vmTemplateDao.update(template.getId(), templateDaoBuilder);
+			}*/
 		}
  	}
 
@@ -361,7 +431,11 @@ public class DownloadListener implements Listener {
 
 	public void setDownloadInactive(Status reason) {
 		downloadActive=false;
-		downloadMonitor.handleDownloadEvent(sserver, template, reason);
+		if (template != null){
+			downloadMonitor.handleDownloadEvent(sserver, template, reason);
+		}else {
+			downloadMonitor.handleDownloadEvent(sserver, volume, reason);
+		}
 	}
 
 	public void cancelTimeoutTask() {

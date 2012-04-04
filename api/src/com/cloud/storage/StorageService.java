@@ -21,6 +21,7 @@ import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
+import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;
@@ -107,5 +108,14 @@ public interface StorageService{
     Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
 
     List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
+
+    /**
+     * Uploads the volume to secondary storage
+     * 
+     * @param UploadVolumeCmd cmd 
+     *            
+     * @return Volume object
+     */
+    Volume uploadVolume(UploadVolumeCmd cmd)	throws ResourceAllocationException;
 
 }

@@ -153,6 +153,7 @@ import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateSwiftDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
+import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
@@ -249,6 +250,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ResourceCountDao", ResourceCountDaoImpl.class);
         addDao("UserAccountDao", UserAccountDaoImpl.class);
         addDao("VMTemplateHostDao", VMTemplateHostDaoImpl.class);
+        addDao("VolumeHostDao", VolumeHostDaoImpl.class);
         addDao("VMTemplateSwiftDao", VMTemplateSwiftDaoImpl.class);
         addDao("UploadDao", UploadDaoImpl.class);
         addDao("VMTemplatePoolDao", VMTemplatePoolDaoImpl.class);
