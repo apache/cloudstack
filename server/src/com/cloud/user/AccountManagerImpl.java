@@ -683,6 +683,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
+        
+        if (userName.isEmpty()) {
+            throw new InvalidParameterValueException("Username is empty");
+        }
+        
+        if (firstName.isEmpty()) {
+            throw new InvalidParameterValueException("Firstname is empty");
+        }
+        
+        if (lastName.isEmpty()) {
+            throw new InvalidParameterValueException("Lastname is empty");
+        }
 
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
@@ -796,12 +808,24 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         checkAccess(UserContext.current().getCaller(), null, true, account);
 
         if (firstName != null) {
+            if (firstName.isEmpty()) {
+                throw new InvalidParameterValueException("Firstname is empty");
+            }
+            
             user.setFirstname(firstName);
         }
         if (lastName != null) {
+            if (lastName.isEmpty()) {
+                throw new InvalidParameterValueException("Lastname is empty");
+            }
+            
             user.setLastname(lastName);
         }
         if (userName != null) {
+            if (userName.isEmpty()) {
+                throw new InvalidParameterValueException("Username is empty");
+            }
+            
             // don't allow to have same user names in the same domain
             List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
             for (UserVO duplicatedUser : duplicatedUsers) {
@@ -815,6 +839,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             user.setUsername(userName);
         }
+        
         if (password != null) {
             user.setPassword(password);
         }
