@@ -54,7 +54,7 @@ class dbConnection(object):
                     resultRow.append(r)
             return resultRow
         except pymysql.MySQLError, e:
-            raise cloudstackException.dbException("db Exception:%s"%e[1]) 
+            raise cloudstackException.dbException("db Exception:%s"%e) 
         except:
             raise cloudstackException.internalError(sys.exc_info())
         finally:
