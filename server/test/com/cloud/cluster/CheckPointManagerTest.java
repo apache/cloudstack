@@ -372,6 +372,15 @@ public class CheckPointManagerTest extends TestCase {
 	        // TODO Auto-generated method stub
 	        return false;
         }
+
+        /* (non-Javadoc)
+         * @see com.cloud.cluster.ClusterManager#executeAsync(java.lang.String, long, com.cloud.agent.api.Command[], boolean)
+         */
+        @Override
+        public void executeAsync(String strPeer, long agentId, Command[] cmds, boolean stopOnError) {
+            // TODO Auto-generated method stub
+            
+        }
     }
     
 }
