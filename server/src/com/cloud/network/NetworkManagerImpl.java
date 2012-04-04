@@ -2412,7 +2412,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
             // Create vlan ip range
-            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, null, network.getId(), physicalNetworkId);
+            _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, null, startIP, endIP, gateway, netmask, vlanId, null);
         }
 
         txn.commit();

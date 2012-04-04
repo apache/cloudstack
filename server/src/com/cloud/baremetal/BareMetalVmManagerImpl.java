@@ -239,8 +239,8 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			if (domain == null) {
 				throw new CloudRuntimeException("Unable to find the domain " + dc.getDomainId() + " for the zone: " + dc);
 			}
-			_configMgr.checkAccess(caller, dc);
-			_configMgr.checkAccess(owner, dc);
+			_configMgr.checkZoneAccess(caller, dc);
+			_configMgr.checkZoneAccess(owner, dc);
 		}
 
 		// check if account/domain is with in resource limits to create a new vm

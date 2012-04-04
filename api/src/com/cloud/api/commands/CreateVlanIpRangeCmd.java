@@ -68,7 +68,8 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
     private String startIp;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. If not specified," +
+    		" will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
     private String vlan;
 
     @IdentityMapper(entityTableName="data_center")

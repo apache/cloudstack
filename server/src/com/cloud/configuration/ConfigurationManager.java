@@ -26,7 +26,6 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -34,7 +33,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.Availability;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -143,20 +141,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId);
 
     /**
-     * Adds/deletes private IPs
-     * 
-     * @param add
-     *            - either true or false
-     * @param podId
-     * @param startIP
-     * @param endIP
-     * @return Message to display to user
-     * @throws if
-     *             unable to add private ip range
-     */
-    String changePrivateIPRange(boolean add, long podId, String startIP, String endIP);
-
-    /**
      * Converts a comma separated list of tags to a List
      * 
      * @param tags
@@ -172,14 +156,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     String listToCsvTags(List<String> tags);
 
-    void checkAccess(Account caller, DataCenter zone)
-            throws PermissionDeniedException;
+    void checkZoneAccess(Account caller, DataCenter zone);
 
-    void checkServiceOfferingAccess(Account caller, ServiceOffering so)
-            throws PermissionDeniedException;
-
-    void checkDiskOfferingAccess(Account caller, DiskOffering dof)
-            throws PermissionDeniedException;
+    void checkDiskOfferingAccess(Account caller, DiskOffering dof);
 
     /**
      * Creates a new network offering
@@ -213,8 +192,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
             Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges);
 
-    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, long networkId,
-            Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 
@@ -223,8 +201,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     ClusterVO getCluster(long id);
 
     boolean deleteAccountSpecificVirtualRanges(long accountId);
-
-    DataCenterVO getZone(long id);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
@@ -243,7 +219,5 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
 
     void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
-
-    void checkCidrVlanOverlap(long zoneId, String cidr);
 
 }
