@@ -59,13 +59,19 @@
                                                     selectedNetworkOfferingHavingELB)) {
         return [
           'management',
+          'guest',
+          'public'
+        ];
+      } else if (args.data.zone.networkType == 'Advanced') {
+        return [
+          'management',
+          'public',
           'guest'
         ];
       } else {
         return [
           'management',
-          'guest',
-          'public'
+          'guest'
         ];
       }
     },
@@ -73,9 +79,9 @@
     disabledTrafficTypes: function(args) {
       if (args.data.zone.networkType == 'Basic' && (selectedNetworkOfferingHavingEIP ||
                                                     selectedNetworkOfferingHavingELB)) {
-        return [
-          'public'
-        ];
+        return [];
+      } else if (args.data.zone.networkType == 'Basic') {
+        return ['public'];
       } else {
         return [];
       }
