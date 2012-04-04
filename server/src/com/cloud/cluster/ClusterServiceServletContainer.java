@@ -13,7 +13,6 @@
 package com.cloud.cluster;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -58,17 +57,15 @@ public class ClusterServiceServletContainer {
 		return true;
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void stop() {
 		if(listenerThread != null) {
-			listenerThread.interrupt();
-			listenerThread.stop();
+			listenerThread.stopRunning();
 		}
 	}
 	
     static class ListenerThread extends Thread {
         private HttpService _httpService = null;
-        private ServerSocket _serverSocket = null;
+        private volatile ServerSocket _serverSocket = null;
         private HttpParams _params = null;
         private ExecutorService _executor;
 
@@ -106,12 +103,22 @@ public class ClusterServiceServletContainer {
             _httpService.setParams(_params);
             _httpService.setHandlerResolver(reqistry);
         }
+        
+        public void stopRunning() {
+        	if(_serverSocket != null) {
+        		try {
+					_serverSocket.close();
+				} catch (IOException e) {
+				}
+				_serverSocket = null;
+        	}
+        }
 
         public void run() {
         	if(s_logger.isInfoEnabled())
         		s_logger.info("Cluster service servlet container listening on port " + _serverSocket.getLocalPort());
             
-            while (!Thread.interrupted()) {
+            while (_serverSocket != null) {
                 try {
                     // Set up HTTP connection
                     Socket socket = _serverSocket.accept();
@@ -149,12 +156,15 @@ public class ClusterServiceServletContainer {
                     	}
                     });
                     
-                } catch (InterruptedIOException ex) {
-                    break;
-                } catch (IOException e) {
-                    s_logger.error("Exception when initializing cluster service servlet container : ", e);
-                    break;
-                }
+                } catch (Throwable e) {
+                	s_logger.error("Unexpected exception ", e);
+                
+                	// back off to avoid spinning if the exception condition keeps coming back
+                	try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e1) {
+					}
+                } 
             }
             
             _executor.shutdown();
