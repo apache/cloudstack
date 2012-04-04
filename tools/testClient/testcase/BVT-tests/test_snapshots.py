@@ -1006,7 +1006,8 @@ class TestSnapshots(cloudstackTestCase):
                                                 self.services["sub_dir"],
                                                 self.services["sub_lvl_dir2"],
                                                 self.services["random_data"]
-                                        )
+                                        ),
+		    "sync",
                 ]
 
             for c in cmds:
