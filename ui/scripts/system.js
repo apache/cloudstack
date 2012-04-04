@@ -2110,7 +2110,8 @@
 													poll: pollAsyncJobResult
 												}
 											},
-																						
+											
+                      /*											
                       changeService: {
                         label: 'label.change.service.offering',                       
                         createForm: {
@@ -2165,6 +2166,7 @@
                           }
                         }
                       },
+											*/
 
                       migrate: {
                         label: 'label.action.migrate.router',                       
@@ -7427,15 +7429,15 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("changeService");
+      //allowedActions.push("changeService");
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-	  allowedActions.push("remove");
-      allowedActions.push("changeService");
+	    allowedActions.push("remove");
+      //allowedActions.push("changeService");
     }
     return allowedActions;
   }
