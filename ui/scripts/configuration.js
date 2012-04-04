@@ -374,7 +374,17 @@
                   description: {
                     label: 'label.description',
                     validation: { required: true }
-                  },
+                  },																		
+									systemvmtype: {
+                    label: 'label.system.vm.type',
+                    select: function(args) {
+                      var items = [];											
+                      items.push({id: 'domainrouter', description: dictionary['label.domain.router']}); 
+                      items.push({id: 'consoleproxy', description: dictionary['label.console.proxy']});
+											items.push({id: 'secondarystoragevm', description: dictionary['label.secondary.storage.vm']});
+                      args.response.success({data: items});
+                    }
+                  },									
                   storageType: {
                     label: 'label.storage.type',
                     select: function(args) {
@@ -461,6 +471,7 @@
                 var array1 = [];
                 array1.push("&name=" + args.data.name);
                 array1.push("&displaytext=" + todb(args.data.description));
+								array1.push("&systemvmtype=" + todb(args.data.systemvmtype));
                 array1.push("&storageType=" + todb(args.data.storageType));
                 array1.push("&cpuNumber=" + args.data.cpuNumber);
                 array1.push("&cpuSpeed="+ args.data.cpuSpeed);
@@ -601,7 +612,25 @@
                     displaytext: {
                       label: 'label.description',
                       isEditable: true
-                    },
+                    },								
+										systemvmtype: { 
+										  label: 'label.system.vm.type',
+											converter: function(args) {		                        
+												var text = '';
+												switch(args) {
+												  case 'domainrouter':
+													  text = dictionary['label.domain.router'];
+													  break;
+													case 'consoleproxy':
+													  text = dictionary['label.console.proxy'];
+													  break;
+													case 'secondarystoragevm':
+													  text = dictionary['label.secondary.storage.vm'];
+													  break;
+												}											
+												return text;
+											}
+										},										
                     storagetype: { label: 'label.storage.type' },
                     cpunumber: { label: 'label.num.cpu.cores' },
                     cpuspeed: {
@@ -1732,5 +1761,5 @@
 			
     return allowedActions;		
   };
-
+	
 })(cloudStack, jQuery);
