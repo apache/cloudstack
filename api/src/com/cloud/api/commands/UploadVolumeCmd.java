@@ -1,13 +1,16 @@
 package com.cloud.api.commands;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -15,10 +18,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Uploads a data disk.", responseObject=VolumeResponse.class)
-public class UploadVolumeCmd extends BaseAsyncCreateCmd {
+public class UploadVolumeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
 	
@@ -29,7 +33,7 @@ public class UploadVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the volume. This is usually used for display purposes.", length=4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the volume. Possible values include QCOW2, RAW, and VHD.")
+    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="the target hypervisor for the volume")
@@ -98,33 +102,21 @@ public class UploadVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-	public void create() throws ResourceAllocationException {
-
-	}
-
-	@Override
-	public String getEntityTable() {
-		return "volumes";
-	}
-
-	@Override
-	public String getEventDescription() {
-		return  "creating volume: " + getVolumeName();
-	}
-
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_VOLUME_CREATE;		
-	}
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException,
 			NetworkRuleConflictException {
-		// TODO Auto-generated method stub
 
+	        Volume volume = _storageService.uploadVolume(this);
+	        if (volume != null){	            
+	            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
+	            response.setResponseName(getCommandName());              
+	            this.setResponseObject(response);
+	        } else {
+	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload volume");
+	        }
 	}
 
 	@Override

@@ -60,6 +60,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -70,6 +72,8 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -87,6 +91,8 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 
 
@@ -110,6 +116,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    VolumeHostDao _volumeHostDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -151,6 +161,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	Timer _timer;
 
 	final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
+	final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
 
 
 	public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
@@ -395,6 +406,67 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	    }
 	    return true;
 	}
+	
+	@Override
+	public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum) {
+                                
+	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(zoneId);
+	    Collections.shuffle(ssHosts);
+	    HostVO ssHost = ssHosts.get(0);
+	    downloadVolumeToStorage(volume, ssHost, url, checkSum);
+	    return true;
+	}
+	
+	private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum) {
+		boolean downloadJobExists = false;
+        VolumeHostVO volumeHost = null;
+
+        volumeHost = _volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
+        if (volumeHost == null) {
+            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url, checkSum);
+            _volumeHostDao.persist(volumeHost);
+        } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
+            downloadJobExists = true;
+        }
+                
+        Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
+        String secUrl = sserver.getStorageUrl();
+		if(volumeHost != null) {
+		    start();
+			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url);
+			dcmd.setProxy(getHttpProxy());
+	        if (downloadJobExists) {
+	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
+	        }
+			
+			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
+			if( ssvm == null ) {
+	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
+	             return;
+			}
+			DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(), this, dcmd, _volumeDao);
+			
+			if (downloadJobExists) {
+				dl.setCurrState(volumeHost.getDownloadState());
+	 		}
+            DownloadListener old = null;
+            synchronized (_listenerVolumeMap) {
+                old = _listenerVolumeMap.put(volumeHost, dl);
+            }
+            if( old != null ) {
+                old.abandon();
+            }
+
+			try {
+	            send(ssvm.getId(), dcmd, dl);
+            } catch (AgentUnavailableException e) {
+				s_logger.warn("Unable to start /resume download of template " + volume.getName() + " to " + sserver.getName(), e);
+				dl.setDisconnected();
+				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+            }
+		}
+	}
+
 
 	private void initiateTemplateDownload(Long templateId, HostVO ssHost) {
 		VMTemplateVO template = _templateDao.findById(templateId);
@@ -437,6 +509,37 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
         }
         txn.commit();
+	}
+
+	@DB
+	public void handleDownloadEvent(HostVO host, VolumeVO volume, Status dnldStatus) {
+		if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
+			VolumeHostVO volumeHost = new VolumeHostVO(host.getId(), volume.getId());
+	        synchronized (_listenerVolumeMap) {
+	        	_listenerVolumeMap.remove(volumeHost);
+	        }
+		}
+		
+		VolumeHostVO volumeHost = _volumeHostDao.findByHostVolume(host.getId(), volume.getId());
+		
+		Transaction txn = Transaction.currentTxn();
+        txn.start();		
+
+        if (dnldStatus == Status.DOWNLOADED) {
+            long size = -1;
+            if(volumeHost!=null){
+                size = volumeHost.getPhysicalSize();
+            }
+            else{
+                s_logger.warn("Failed to get size for volume" + volume.getName());
+            }
+            String eventType = EventTypes.EVENT_VOLUME_CREATE;            
+            if(volume.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
+               UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
+               _usageEventDao.persist(usageEvent);
+            }
+        }
+        txn.commit();		
 	}
 	
 	@Override
@@ -752,6 +855,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		}
 	}
 	
+	private Long getMaxVolumeSizeInBytes() {
+		try {
+			return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
 	private Proxy getHttpProxy() {
 		if (_proxy == null) {
 			return null;
@@ -763,7 +874,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		} catch (URISyntaxException e) {
 			return null;
 		}
-	}
+	}	
 	
 }
 	

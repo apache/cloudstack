@@ -39,8 +39,10 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
+import org.jnetpcap.util.resolver.Resolver.ResolverType;
 
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
+import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
@@ -70,15 +72,17 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 
 	private String toDir;
 	private long MAX_TEMPLATE_SIZE_IN_BYTES;
-
+	private ResourceType resourceType = ResourceType.TEMPLATE;
 	private final HttpMethodRetryHandler myretryhandler;
 
-	public HttpTemplateDownloader (StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy) {
+	
+
+	public HttpTemplateDownloader (StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy, ResourceType resourceType) {
 		this._storage = storageLayer;
 		this.downloadUrl = downloadUrl;
 		this.setToDir(toDir);
 		this.status = TemplateDownloader.Status.NOT_STARTED;
-		
+		this.resourceType = resourceType;
 		this.MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
 		
 		this.totalBytes = 0;
@@ -428,7 +432,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		TemplateDownloader td = new HttpTemplateDownloader(null, url,"/tmp/mysql", null, TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null, null, null);
+		TemplateDownloader td = new HttpTemplateDownloader(null, url,"/tmp/mysql", null, TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null, null, null, null);
 		long bytes = td.download(true, null);
 		if (bytes > 0) {
 			System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime()/1000 + " secs");
@@ -448,6 +452,11 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 	@Override
 	public boolean isInited() {
 		return inited;
+	}
+
+
+	public ResourceType getResourceType() {
+		return resourceType;
 	}
 
 }

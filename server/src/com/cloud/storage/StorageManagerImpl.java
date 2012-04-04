@@ -144,6 +144,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -307,6 +308,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected ResourceManager _resourceMgr;
     @Inject
     protected CheckPointManager _checkPointMgr;
+    @Inject
+    protected DownloadMonitor _downloadMonitor;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -1633,12 +1636,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     /*
      * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally
      * created
-     * only when it's attached to a VM.
+     * 
      */
-//    @Override
+    @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
-    public VolumeVO createVolumeEntry(UploadVolumeCmd cmd) throws ResourceAllocationException{
+    public VolumeVO uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException{
     	Account caller = UserContext.current().getCaller();
         long ownerId = cmd.getEntityOwnerId();
         Long zoneId = cmd.getZoneId();
@@ -1646,8 +1649,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String url = cmd.getUrl();
         
     	validateVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
-    	persistVolume();
-		return null;
+    	VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
+    	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum());
+		return volume;
     	
     }
     
@@ -1732,9 +1736,35 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     	
     }
     
-    private boolean persistVolume() {
+    private VolumeVO persistVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) {
     	
-		return false;
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
+        volume.setPoolId(null);
+        volume.setDataCenterId(zoneId);
+        volume.setPodId(null);
+        volume.setAccountId(ownerId);
+        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
+        long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
+        volume.setDiskOfferingId(diskOfferingId);
+        //volume.setSize(size);
+        volume.setInstanceId(null);
+        volume.setUpdated(new Date());
+        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
+
+        volume = _volsDao.persist(volume);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, 0l);
+        _usageEventDao.persist(usageEvent);
+
+        UserContext.current().setEventDetails("Volume Id: " + volume.getId());
+
+        // Increment resource count during allocation; if actual creation fails, decrement it
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+
+        txn.commit();
+		return volume;
 	}
     	    
     
