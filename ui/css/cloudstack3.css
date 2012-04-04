@@ -5829,6 +5829,19 @@ label.error {
   cursor: not-allowed;
 }
 
+.multi-wizard.zone-wizard .traffic-types-drag-area ul > li.disabled {
+  display: none;
+}
+
+.multi-wizard.zone-wizard li.traffic-type-draggable.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .multi-wizard.zone-wizard li.traffic-type-draggable.management {
   background-position: 0px -1161px;
   height: 52px;
