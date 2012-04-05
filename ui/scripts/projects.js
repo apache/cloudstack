@@ -713,7 +713,7 @@
                 notification: { poll: pollAsyncJobResult }
               },
 
-              destroy: {
+              remove: {
                 label: 'label.delete.project',
                 action: function(args) {
                   $.ajax({
@@ -806,7 +806,8 @@
                     },
                     success: function(json) {
                       args.response.success({
-                        data: json.listprojectsresponse.project[0],
+                        data: json.listprojectsresponse.project ?
+                          json.listprojectsresponse.project[0] : {},
                         actionFilter: projectsActionFilter
                       });
                     }
@@ -1014,7 +1015,7 @@
   };
 
   var projectsActionFilter = function(args) {
-    var allowedActions = ['destroy', 'edit'];
+    var allowedActions = ['remove', 'edit'];
 
     if (args.context.item.account == cloudStack.context.users[0].account ||
         isAdmin() || isDomainAdmin()) {
