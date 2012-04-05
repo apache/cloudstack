@@ -743,4 +743,53 @@
     };
     $detailView.find('.action.updateDataTestAsync a').click();
   });
+
+  test('Update context', function() {
+    var detailView = {
+      context: {
+        listViewItemA: [
+          { fieldA: 'fieldAContent' }
+        ]
+        // listViewItemB [not stored yet]
+      },
+
+      tabFilter: function(args) {
+        start();
+        ok($.isArray(args.context.listViewItemB), 'updateContext called before tabFilter');
+        stop();
+
+        return [];
+      },
+
+      // updateContext is executed every time a data provider is called
+      updateContext: function(args) {
+        start();
+        ok(true, 'updateContext called');
+        equal(args.context.listViewItemA[0].fieldA, 'fieldAContent', 'updateContext: Item A present in context');
+        stop();
+
+        return {
+          listViewItemB: [
+            { fieldB: 'fieldBContent' }
+          ]
+        };
+      },
+
+      tabs: {
+        test: {
+          title: 'test',
+          fields: { fieldA: { label: 'fieldA'}, fieldB: { label: 'fieldB' }},
+          dataProvider: function(args) {
+            start();
+            equal(args.context.listViewItemA[0].fieldA, 'fieldAContent', 'dataProvider: Item A present in context');
+            equal(args.context.listViewItemB[0].fieldB, 'fieldBContent', 'dataProvider: Item B present in context');
+          }
+        }
+      }
+    };
+    var $detailView = $('<div></div>');
+
+    stop();
+    $detailView.detailView(detailView);
+  });
 }(jQuery));

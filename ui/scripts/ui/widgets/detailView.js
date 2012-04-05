@@ -870,6 +870,13 @@
     var removedTabs = [];
     var tabFilter = options.tabFilter;
     var context = options.context ? options.context : {};
+    var updateContext = $detailView.data('view-args').updateContext;
+
+    if (updateContext) {
+      $.extend($detailView.data('view-args').context, updateContext({
+        context: $detailView.data('view-args').context
+      }));
+    }
 
     if(options.newData &&
        ($detailView.data('view-args').section != null && context[$detailView.data('view-args').section] != null && context[$detailView.data('view-args').section].length > 0)) {
