@@ -1197,6 +1197,7 @@
 
       return $wizard.dialog({
         title: 'Add zone',
+        closeOnEscape: false,
         width: 750,
         height: 665,
         zIndex: 5000,
