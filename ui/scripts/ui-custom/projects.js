@@ -466,14 +466,14 @@
                         return $review;
                       });
 
-                      $(':ui-dialog').dialog('option', 'position', 'center',closeOnEscape: false);
+                      $(':ui-dialog').dialog('option', 'position', 'center');
                     });
                     $laterButton.html(_l('label.close')).appendTo($userManagement);
 
                     return $userManagement;
                   });
 
-                  $(':ui-dialog').dialog('option', 'position', 'center',closeOnEscape: false);
+                  $(':ui-dialog').dialog('option', 'position', 'center');
 
                   return false;
                 });
