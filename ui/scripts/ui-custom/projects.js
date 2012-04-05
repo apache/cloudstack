@@ -466,14 +466,14 @@
                         return $review;
                       });
 
-                      $(':ui-dialog').dialog('option', 'position', 'center');
+                      $(':ui-dialog').dialog('option', 'position', 'center',closeOnEscape: false);
                     });
                     $laterButton.html(_l('label.close')).appendTo($userManagement);
 
                     return $userManagement;
                   });
 
-                  $(':ui-dialog').dialog('option', 'position', 'center');
+                  $(':ui-dialog').dialog('option', 'position', 'center',closeOnEscape: false);
 
                   return false;
                 });
@@ -596,6 +596,7 @@
           $selector.dialog({
             title: _l('label.select.project'),
             dialogClass: 'project-selector-dialog',
+            closeOnEscape: false ,
             width: 420
           }).closest('.ui-dialog').overlay();
         }
@@ -656,6 +657,7 @@
   var addProject = function() {
     pageElems.newProjectForm().dialog({
       title: 'New Project',
+      closeOnEscape: false,
       width: 760
     }).closest('.ui-dialog').overlay();
   };

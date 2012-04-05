@@ -714,6 +714,7 @@
           title: _l('label.vm.add'),
           width: 800,
           height: 570,
+          closeOnEscape: false,
           zIndex: 5000
         })
           .closest('.ui-dialog').overlay();
