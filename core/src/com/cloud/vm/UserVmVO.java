@@ -38,6 +38,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="display_name", updatable=true, nullable=true)
     private String displayName;
     
+    @Column(name="update_parameters", updatable=true)
+    protected boolean updateParameters = true;
+    
     transient String password;
 
     @Override
@@ -118,5 +121,13 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     public void setDomainId(long domainId){
         this.domainId = domainId;
+    }
+
+    public void setUpdateParameters(boolean updateParameters) {
+        this.updateParameters = updateParameters;
+    }
+
+    public boolean isUpdateParameters() {
+        return updateParameters;
     }
 }

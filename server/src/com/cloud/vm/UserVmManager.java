@@ -14,12 +14,17 @@ package com.cloud.vm;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 
 /**
  *
@@ -91,4 +96,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
     List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
     String getChecksum(Long hostId, String templatePath);
+    
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
 }

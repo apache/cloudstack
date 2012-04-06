@@ -3046,11 +3046,17 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                         }
                         recreateVols.add(vol);
                     } else {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: " + assignedPool);
+                        if (assignedPool.getId() != vol.getPoolId()) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: " + assignedPool);
+                            }
+                            throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
+                            // copy volume usecase - not yet developed.
+                        } else {
+                            StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                            vm.addDisk(new VolumeTO(vol, pool));
                         }
-                        throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
-                        // copy volume usecase - not yet developed.
+                        
                     }
                 }
             } else {

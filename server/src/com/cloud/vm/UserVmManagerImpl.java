@@ -73,12 +73,10 @@ import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -86,7 +84,6 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
@@ -94,7 +91,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -123,13 +119,11 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -173,7 +167,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -197,7 +190,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -221,7 +213,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
@@ -238,13 +229,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected HostDao _hostDao = null;
     @Inject
-    protected DomainRouterDao _routerDao = null;
-    @Inject
     protected ServiceOfferingDao _offeringDao = null;
     @Inject
     protected DiskOfferingDao _diskOfferingDao = null;
-    @Inject
-    protected UserStatisticsDao _userStatsDao = null;
     @Inject
     protected VMTemplateDao _templateDao = null;
     @Inject
@@ -256,8 +243,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected DomainDao _domainDao = null;
     @Inject
-    protected ResourceLimitDao _limitDao = null;
-    @Inject
     protected UserVmDao _vmDao = null;
     @Inject
     protected VolumeDao _volsDao = null;
@@ -268,15 +253,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
     @Inject
-    protected LoadBalancerDao _loadBalancerDao = null;
-    @Inject
     protected PortForwardingRulesDao _portForwardingDao;
     @Inject
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected HostPodDao _podDao = null;
-    @Inject
-    protected CapacityDao _capacityDao = null;
     @Inject
     protected NetworkManager _networkMgr = null;
     @Inject
@@ -296,8 +277,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected GuestOSDao _guestOSDao = null;
     @Inject
-    protected GuestOSCategoryDao _guestOSCategoryDao = null;
-    @Inject
     protected HighAvailabilityManager _haMgr = null;
     @Inject
     protected AlertManager _alertMgr = null;
@@ -308,21 +287,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected AsyncJobManager _asyncMgr;
     @Inject
-    protected VlanDao _vlanDao;
-    @Inject
     protected ClusterDao _clusterDao;
     @Inject
     protected StoragePoolDao _storagePoolDao;
-    @Inject
-    protected VMTemplateHostDao _vmTemplateHostDao;
     @Inject
     protected SecurityGroupManager _securityGroupMgr;
     @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
     protected NetworkOfferingDao _networkOfferingDao;
-    @Inject
-    protected EventDao _eventDao = null;
     @Inject
     protected InstanceGroupDao _vmGroupDao;
     @Inject
@@ -331,8 +304,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected VirtualMachineManager _itMgr;
     @Inject
     protected NetworkDao _networkDao;
-    @Inject
-    protected VirtualNetworkApplianceManager _routerMgr;
     @Inject
     protected NicDao _nicDao;
     @Inject
@@ -363,6 +334,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     SecurityGroupVMMapDao _securityGroupVMMapDao;
+    @Inject
+    protected ItWorkDao _workDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -593,29 +566,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
 
-        HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
-
-        if (volume.getState().equals(Volume.State.Allocated)) {
-            /* Need to create the volume */
-            VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
-            HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
-            StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
-            ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-            DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
-
-            volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
-
-            if (volume == null) {
-                throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getHostName());
-            }
-        }
-
+        HypervisorType rootDiskHyperType = vm.getHypervisorType();
+        
         HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume.getId());
-        if (rootDiskHyperType != dataDiskHyperType) {
+        if (dataDiskHyperType != HypervisorType.None && rootDiskHyperType != dataDiskHyperType) {
             throw new InvalidParameterValueException("Can't attach a volume created by: " + dataDiskHyperType + " to a " + rootDiskHyperType + " vm");
         }
-
+        
+        //allocate deviceId
         List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         if (deviceId != null) {
             if (deviceId.longValue() > 15 || deviceId.longValue() == 0 || deviceId.longValue() == 3) {
@@ -638,46 +596,71 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             deviceId = Long.parseLong(devIds.iterator().next());
         }
-
-        StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
-        DiskOfferingVO volumeDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        String[] volumeTags = volumeDiskOffering.getTagsArray();
-
-        StoragePoolVO sourcePool = _storagePoolDao.findById(volume.getPoolId());
-        List<StoragePoolVO> sharedVMPools = _storagePoolDao.findPoolsByTags(vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), volumeTags, true);
-        boolean moveVolumeNeeded = true;
-        if (sharedVMPools.size() == 0) {
-            String poolType;
-            if (vmRootVolumePool.getClusterId() != null) {
-                poolType = "cluster";
-            } else if (vmRootVolumePool.getPodId() != null) {
-                poolType = "pod";
-            } else {
-                poolType = "zone";
-            }
-            throw new CloudRuntimeException("There are no storage pools in the VM's " + poolType + " with all of the volume's tags (" + volumeDiskOffering.getTags() + ").");
-        } else {
-            Long sourcePoolDcId = sourcePool.getDataCenterId();
-            Long sourcePoolPodId = sourcePool.getPodId();
-            Long sourcePoolClusterId = sourcePool.getClusterId();
-            for (StoragePoolVO vmPool : sharedVMPools) {
-                Long vmPoolDcId = vmPool.getDataCenterId();
-                Long vmPoolPodId = vmPool.getPodId();
-                Long vmPoolClusterId = vmPool.getClusterId();
-
-                if (sourcePoolDcId == vmPoolDcId && sourcePoolPodId == vmPoolPodId && sourcePoolClusterId == vmPoolClusterId) {
-                    moveVolumeNeeded = false;
-                    break;
-                }
-            }
+        
+        boolean createVolumeOnBackend = true;
+        if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
+            createVolumeOnBackend = false;
         }
 
-        if (moveVolumeNeeded) {
-            // Move the volume to a storage pool in the VM's zone, pod, or cluster
-            try {
-                volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
-            } catch (ConcurrentOperationException e) {
-                throw new CloudRuntimeException(e.toString());
+        //create volume on the backend only when vm's root volume is allocated
+        if (createVolumeOnBackend) {
+            if (volume.getState().equals(Volume.State.Allocated)) {
+                /* Need to create the volume */
+                VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
+                DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+                HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
+                StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+                ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+                DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
+                Long clusterId = (rootDiskPool == null ? null : rootDiskPool.getClusterId());
+
+                volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, clusterId, svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
+
+                if (volume == null) {
+                    throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getHostName());
+                }
+            }
+            
+            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+            DiskOfferingVO volumeDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            String[] volumeTags = volumeDiskOffering.getTagsArray();
+
+            StoragePoolVO sourcePool = _storagePoolDao.findById(volume.getPoolId());
+            List<StoragePoolVO> sharedVMPools = _storagePoolDao.findPoolsByTags(vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), volumeTags, true);
+            boolean moveVolumeNeeded = true;
+            if (sharedVMPools.size() == 0) {
+                String poolType;
+                if (vmRootVolumePool.getClusterId() != null) {
+                    poolType = "cluster";
+                } else if (vmRootVolumePool.getPodId() != null) {
+                    poolType = "pod";
+                } else {
+                    poolType = "zone";
+                }
+                throw new CloudRuntimeException("There are no storage pools in the VM's " + poolType + " with all of the volume's tags (" + volumeDiskOffering.getTags() + ").");
+            } else {
+                Long sourcePoolDcId = sourcePool.getDataCenterId();
+                Long sourcePoolPodId = sourcePool.getPodId();
+                Long sourcePoolClusterId = sourcePool.getClusterId();
+                for (StoragePoolVO vmPool : sharedVMPools) {
+                    Long vmPoolDcId = vmPool.getDataCenterId();
+                    Long vmPoolPodId = vmPool.getPodId();
+                    Long vmPoolClusterId = vmPool.getClusterId();
+
+                    if (sourcePoolDcId == vmPoolDcId && sourcePoolPodId == vmPoolPodId && sourcePoolClusterId == vmPoolClusterId) {
+                        moveVolumeNeeded = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (moveVolumeNeeded) {
+                // Move the volume to a storage pool in the VM's zone, pod, or cluster
+                try {
+                    volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
+                } catch (ConcurrentOperationException e) {
+                    throw new CloudRuntimeException(e.toString());
+                }
             }
         }
 
@@ -774,16 +757,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
             throw new InvalidParameterValueException("Please specify a data volume.");
         }
-
-        // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
+        
         // Check that the volume is currently attached to a VM
         if (vmId == null) {
             throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
         }
+
+        // Check that the volume is stored on shared storage
+        if (volume.getState() != Volume.State.Allocated && !_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        } 
 
         // Check that the VM is in the correct state
         UserVmVO vm = _vmDao.findById(vmId);
@@ -1661,9 +1644,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     // used for vm transitioning to error state
     private void updateVmStateForFailedVmCreation(Long vmId) {
+       
         UserVmVO vm = _vmDao.findById(vmId);
+        
+        
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
+                s_logger.debug("Destroying vm " + vm + " as it failed to create");
                 try {
                     _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 } catch (NoTransitionException e1) {
@@ -1815,7 +1802,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId(), cmd.getHostId());
+        return startVirtualMachine(cmd.getId(), cmd.getHostId(), null).first();
     }
 
     @Override
@@ -2522,71 +2509,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams) throws ResourceUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException {
 
-        Host destinationHost = null;
-        if(cmd.getHostId() != null){
-            Account account = UserContext.current().getCaller();
-            if(!_accountService.isRootAdmin(account.getType())){
-                throw new PermissionDeniedException("Parameter hostid can only be specified by a Root Admin, permission denied");
-            }
-            destinationHost = _hostDao.findById(cmd.getHostId());
-            if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + cmd.getHostId());
-            }
-        }
         long vmId = cmd.getEntityId();
+        Long hostId = cmd.getHostId();
         UserVmVO vm = _vmDao.findById(vmId);
-        _vmDao.loadDetails(vm);
-
-        // Check that the password was passed in and is valid
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-
-        String password = "saved_password";
-        if (template.getEnablePassword()) {
-            password = generateRandomPassword();
-        }
-
-        if (!validPassword(password)) {
-            throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
-        }
-
-        // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
-        String sshPublicKey = vm.getDetail("SSH.PublicKey");
-        if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-            String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-            if (encryptedPasswd == null) {
-                throw new CloudRuntimeException("Error encrypting password");
-            }
-
-            vm.setDetail("Encrypted.Password", encryptedPasswd);
-            _vmDao.saveDetails(vm);
-        }
-
-        long userId = UserContext.current().getCallerUserId();
-        UserVO caller = _userDao.findById(userId);
-
-        AccountVO owner = _accountDao.findById(vm.getAccountId());
-
+        
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
         try {
-            Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
-            if (additonalParams != null) {
-                params.putAll(additonalParams);
-            }
-            params.put(VirtualMachineProfile.Param.VmPassword, password);
-
-            DataCenterDeployment plan = null;
-            if (destinationHost != null) {
-                s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
-            }
-
-            vm = _itMgr.start(vm, params, caller, owner, plan);
+            vmParamPair = startVirtualMachine(vmId, hostId, additonalParams);
+            vm = vmParamPair.first();;
         } finally {
             updateVmStateForFailedVmCreation(vm.getId());
         }
         
+        // Check that the password was passed in and is valid
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
         if (template.getEnablePassword()) {
             // this value is not being sent to the backend; need only for api display purposes
-            vm.setPassword(password);
+            vm.setPassword((String)vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));
         }
 
         return vm;
@@ -2804,14 +2743,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account callerAccount = UserContext.current().getCaller();
+        UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
 
         // if account is removed, return error
-        if (caller != null && caller.getRemoved() != null) {
-            throw new InvalidParameterValueException("The account " + caller.getId() + " is removed");
+        if (callerAccount != null && callerAccount.getRemoved() != null) {
+            throw new InvalidParameterValueException("The account " + callerAccount.getId() + " is removed");
         }
         
         UserVmVO vm = _vmDao.findById(vmId);
@@ -2819,7 +2758,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, vm);
+        _accountMgr.checkAccess(callerAccount, null, true, vm);
         
         Account owner = _accountDao.findById(vm.getAccountId());
 
@@ -2842,9 +2781,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
             }
         }
-        
-        UserVO user = _userDao.findById(userId);
-        
+
         //check if vm is security group enabled
         if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkMgr.canAddDefaultSecurityGroup()) {
             //if vm is not mapped to security group, create a mapping
@@ -2865,8 +2802,49 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
             plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
         }
+        
+        //Set parameters
+        Map<VirtualMachineProfile.Param, Object> params = null;
+        if (vm.isUpdateParameters()) {
+            _vmDao.loadDetails(vm);
+            // Check that the password was passed in and is valid
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
-        return _itMgr.start(vm, null, user, caller, plan);
+            String password = "saved_password";
+            if (template.getEnablePassword()) {
+                password = generateRandomPassword();
+            }
+
+            if (!validPassword(password)) {
+                throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
+            }
+
+            // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
+            String sshPublicKey = vm.getDetail("SSH.PublicKey");
+            if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+                if (encryptedPasswd == null) {
+                    throw new CloudRuntimeException("Error encrypting password");
+                }
+
+                vm.setDetail("Encrypted.Password", encryptedPasswd);
+                _vmDao.saveDetails(vm);
+            }
+            
+            params = new HashMap<VirtualMachineProfile.Param, Object>();
+            if (additionalParams != null) {
+                params.putAll(additionalParams);
+            }
+            params.put(VirtualMachineProfile.Param.VmPassword, password);
+        }
+
+        vm = _itMgr.start(vm, params, callerUser, callerAccount, plan);
+        if (vm != null && vm.isUpdateParameters()) {
+            vm.setUpdateParameters(false);
+            _vmDao.update(vm.getId(), vm);
+        }
+        
+        return new Pair(vm, params);
     }
 
     @Override

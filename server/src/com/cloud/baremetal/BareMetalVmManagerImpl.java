@@ -32,6 +32,7 @@ import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
+import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
@@ -383,8 +384,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	}
 	
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-	    long vmId = cmd.getEntityId();
-	    UserVmVO vm = _vmDao.findById(vmId);
+	    UserVmVO vm = _vmDao.findById(cmd.getInstanceId());
 	    
 		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
 	    if (servers.size() == 0) {
@@ -402,6 +402,30 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 
 		return startVirtualMachine(cmd, params);
 	}
+	
+	
+	public UserVm startVirtualMachine(StartVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+        UserVmVO vm = _vmDao.findById(cmd.getInstanceId());
+
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        if (template == null || template.getFormat() != Storage.ImageFormat.BAREMETAL) {
+            throw new InvalidParameterValueException("Invalid template with id = " + vm.getTemplateId());
+        }
+        
+        Map<VirtualMachineProfile.Param, Object> params = null;
+        if (vm.isUpdateParameters()) {
+            List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+            if (servers.size() == 0) {
+                throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
+            }
+            HostVO pxeServer = servers.get(0);
+            params = new HashMap<VirtualMachineProfile.Param, Object>();
+            params.put(Param.PxeSeverType, _pxeMgr.getPxeServerType(pxeServer));
+        }
+        
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmDetailsPair = super.startVirtualMachine(vm.getId(), cmd.getHostId(), params);
+        return vmDetailsPair.first();
+    }
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

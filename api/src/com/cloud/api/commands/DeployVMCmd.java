@@ -132,6 +132,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
     private Long projectId;
     
+    @Parameter(name=ApiConstants.START_VM, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to true if not specified")
+    private Boolean startVm;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -223,7 +226,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                return networks;
            }
        }
-        
         return networkIds;
     }
 
@@ -237,6 +239,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public Long getHostId() {
         return hostId;
+    }
+    
+    public boolean getStartVm() {
+        return startVm == null ? true : startVm;
     }
     
     private Map<Long, String> getIpToNetworkMap() {
@@ -311,32 +317,37 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserVm result;
-        try {
-            UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-            if (getHypervisor() == HypervisorType.BareMetal) {
-                result = _bareMetalVmService.startVirtualMachine(this);
-            } else {
-                result = _userVmService.startVirtualMachine(this);
+        
+        if (getStartVm()) {
+            try {
+                UserContext.current().setEventDetails("Vm Id: "+getEntityId());
+                if (getHypervisor() == HypervisorType.BareMetal) {
+                    result = _bareMetalVmService.startVirtualMachine(this);
+                } else {
+                    result = _userVmService.startVirtualMachine(this);
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Exception: ", ex);
+                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            } catch (ConcurrentOperationException ex) {
+                s_logger.warn("Exception: ", ex);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+            } catch (InsufficientCapacityException ex) {
+                s_logger.info(ex);
+                s_logger.trace(ex);
+                throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
             }
-
-            if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
-            }
-        } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
-        } catch (InsufficientCapacityException ex) {
-            s_logger.info(ex);
-            s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        }       
+        } else {
+            result = _userVmService.getUserVm(getEntityId());
+        }
+        
+        if (result != null) {
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+        }
     }
 
     @Override
