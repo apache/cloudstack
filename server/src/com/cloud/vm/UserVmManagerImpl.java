@@ -2805,10 +2805,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         //Set parameters
         Map<VirtualMachineProfile.Param, Object> params = null;
+        VMTemplateVO template = null;
         if (vm.isUpdateParameters()) {
             _vmDao.loadDetails(vm);
             // Check that the password was passed in and is valid
-            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+            template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
             String password = "saved_password";
             if (template.getEnablePassword()) {
@@ -2839,12 +2840,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         vm = _itMgr.start(vm, params, callerUser, callerAccount, plan);
+           
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
         if (vm != null && vm.isUpdateParameters()) {
-            vm.setUpdateParameters(false);
-            _vmDao.update(vm.getId(), vm);
+         // this value is not being sent to the backend; need only for api display purposes
+            if (template.getEnablePassword()) {
+                vm.setPassword((String)vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));   
+                vm.setUpdateParameters(false);
+                _vmDao.update(vm.getId(), vm);
+            }
         }
         
-        return new Pair(vm, params);
+        return vmParamPair;
     }
 
     @Override
