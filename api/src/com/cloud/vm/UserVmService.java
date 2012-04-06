@@ -50,6 +50,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface UserVmService {
     /**
@@ -363,8 +364,6 @@ public interface UserVmService {
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
 
     UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException;
-
-    UserVm startVirtualMachine(long vmId, Long hostId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     void deletePrivateTemplateRecord(Long templateId);
 

@@ -276,6 +276,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating nics for " + vm);
         }
+        
         try {
             _networkMgr.allocate(vmProfile, networks);
         } catch (ConcurrentOperationException e) {
@@ -736,24 +737,28 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                 try {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM is being started in podId: " + vm.getPodIdToDeployIn());
+                        s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
                     }
-                    _networkMgr.prepare(vmProfile, dest, ctx);
+                    _networkMgr.prepare(vmProfile, dest, ctx); 
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest);
                     }
-                    //since StorageMgr succeeded in volume creation, resue Volume for further tries until current cluster has capacity
+                    //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
                     if(!reuseVolume){
                         reuseVolume = true;
                     }
+                    
+                    VirtualMachineTO vmTO = null;
+                    Commands cmds = null;
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
-                    VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+                    vmTO = hvGuru.implement(vmProfile);
 
-                    Commands cmds = new Commands(OnError.Stop);
+                    cmds = new Commands(OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
+
 
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
@@ -762,7 +767,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     _workDao.updateStep(work, Step.Starting);
 
                     _agentMgr.send(destHostId, cmds);
+                    
                     _workDao.updateStep(work, Step.Started);
+                    
+                    
                     StartAnswer startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
                         String host_guid = startAnswer.getHost_guid();
@@ -797,6 +805,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
+                    
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
                     if (e.isActive()) {

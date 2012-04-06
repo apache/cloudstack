@@ -86,7 +86,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-// tracked
+        // tracked
     }
 
     @Override
@@ -111,7 +111,8 @@ public class StartVMCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         try {
             UserContext.current().setEventDetails("Vm Id: " + getId());
-            UserVm result;
+            
+            UserVm result ;
             if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
                 result = _bareMetalVmService.startVirtualMachine(this);
             } else {

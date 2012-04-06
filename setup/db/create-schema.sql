@@ -1046,6 +1046,7 @@ CREATE TABLE `cloud`.`user_vm` (
   `iso_id` bigint unsigned,
   `display_name` varchar(255),
   `user_data` varchar(2048),
+  `update_parameters` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Defines if the parameters have been updated for the vm',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
