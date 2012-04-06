@@ -45,6 +45,8 @@ class dbConnection(object):
         resultRow = []
         cursor = None
         try:
+            # commit to restart the transaction, else we don't get fresh data
+            self.db.commit()
             cursor = self.db.cursor()
             cursor.execute(sql)
         
