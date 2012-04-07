@@ -139,7 +139,7 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, compile-testclient, compile-usage">
+  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, compile-testclient, compile-usage, build-cloud-bridge">
   </target>
 
   <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">

@@ -127,6 +127,7 @@
 
   <target name="clean-tomcat" depends="stop-tomcat">
     <delete dir="${tomcat.home}/webapps/client"/>
+    <delete dir="${tomcat.home}/webapps/bridge" />
     <delete dir="${tomcat.home}/work/Catalina"/>
     <delete dir="${tomcat.home}/temp" />
     <delete dir="${tomcat.home}/logs" />
@@ -153,7 +154,7 @@
       </copy>
   </target>
 
-  <target name="deploy-server" depends="deploy-common, deploy-ovm" >
+  <target name="deploy-server" depends="deploy-common, deploy-ovm, deploy-cloud-bridge" >
       <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.iso" />
   </target>
 
@@ -215,9 +216,9 @@
     </copy>
   </target>
   
-  <target name="deploydb">
+  <target name="deploy-cloudstack-db">
     <condition property="server-setup.file" value="override/server-setup.xml" else="server-setup.xml">
-      <available file="${setup.db.dir}/override/server-setup.xml" />
+    <available file="${setup.db.dir}/override/server-setup.xml" />
     </condition>
 
     <condition property="templates.file" value="override/templates.sql" else="templates.sql" >
@@ -238,6 +239,9 @@
         <include name="**/*"/>
       </fileset>
     </chmod>
+ </target>
+
+  <target name="deploydb" depends="deploy-cloudstack-db, deploy-cloudbridge-db">
   </target>
   
   <target name="deploydb-simulator">
