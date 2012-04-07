@@ -1,0 +1,561 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements. See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership. The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License. You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<axisconfig name="AxisJava2.0">
+    <!-- ================================================= -->
+    <!-- Parameters -->
+    <!-- ================================================= -->
+    <parameter name="hotdeployment">true</parameter>
+    <parameter name="hotupdate">false</parameter>
+    <parameter name="enableMTOM">false</parameter>
+    <parameter name="enableSwA">false</parameter>
+
+    <!--Uncomment if you want to enable file caching for attachments -->
+    <!--parameter name="cacheAttachments">true</parameter>
+    <parameter name="attachmentDIR"></parameter>
+    <parameter name="sizeThreshold">4000</parameter-->
+
+    <!--Uncomment if you want to plugin your own attachments lifecycle implementation -->
+    <!--<attachmentsLifecycleManager class="org.apache.axiom.attachments.lifecycle.impl.LifecycleManagerImpl"/>-->
+
+
+    <!--Uncomment if you want to enable the reduction of the in-memory cache of WSDL definitions -->
+    <!--In some server environments, the available memory heap is limited and can fill up under load -->
+    <!--Since in-memory copies of WSDL definitions can be large, some steps can be taken-->
+    <!--to reduce the memory needed for the cached WSDL definitions. -->
+    <!--parameter name="reduceWSDLMemoryCache">true</parameter-->
+
+    <!--This will give out the timout of the configuration contexts, in milliseconds-->
+    <parameter name="ConfigContextTimeoutInterval">30000</parameter>
+
+    <!--During a fault, stack trace can be sent with the fault message. The following flag will control -->
+    <!--that behavior.-->
+    <parameter name="sendStacktraceDetailsWithFaults">false</parameter>
+
+    <!--If there aren't any information available to find out the fault reason, we set the message of the exception-->
+    <!--as the faultreason/Reason. But when a fault is thrown from a service or some where, it will be -->
+    <!--wrapped by different levels. Due to this the initial exception message can be lost. If this flag-->
+    <!--is set, then Axis2 tries to get the first exception and set its message as the faultreason/Reason.-->
+    <parameter name="DrillDownToRootCauseForFaultReason">false</parameter>
+
+    <parameter name="userName">admin</parameter>
+    <parameter name="password">axis2</parameter>
+
+    <!--To override repository/services you need to uncomment following parameter and value SHOULD be absolute file path.-->
+    <!--ServicesDirectory only works on the following cases-->
+    <!---File based configurator and in that case the value should be a file URL (http:// not allowed)-->
+    <!---When creating URL Based configurator with URL file:// -->
+    <!--- War based configurator with expanded case , -->
+
+    <!--All the other scenarios it will be ignored.-->
+    <!--<parameter name="ServicesDirectory">service</parameter>-->
+    <!--To override repository/modules you need to uncomment following parameter and value SHOULD be absolute file path-->
+    <!--<parameter name="ModulesDirectory">modules</parameter>-->
+
+
+    <!--Following params will set the proper context paths for invocations. All the endpoints will have a commons context-->
+    <!--root which can configured using the following contextRoot parameter-->
+    <!--<parameter name="contextRoot">axis2</parameter>-->
+
+    <!--Our HTTP endpoints can handle both REST and SOAP. Following parameters can be used to distinguiush those endpoints-->
+    <!--In case of a servlet, if you change this you have to manually change the settings of your servlet container to map this -->
+    <!--context path to proper Axis2 servlets-->
+    <!--<parameter name="servicePath">services</parameter>-->
+    <!--<parameter name="restPath">rest</parameter>-->
+
+    <!-- Following parameter will completely disable REST handling in Axis2-->
+    <parameter name="disableREST" locked="false">false</parameter>
+
+    <!-- Following parameter will suppress generation of SOAP 1.2 bindings in auto-generated WSDL files -->
+    <parameter name="disableSOAP12" locked="true">false</parameter>
+
+    <!--POJO deployer , this will alow users to drop .class file and make that into a service-->
+    <deployer extension=".class" directory="pojo" class="org.apache.axis2.deployment.POJODeployer"/>
+    <deployer extension=".jar" directory="servicejars"
+              class="org.apache.axis2.jaxws.framework.JAXWSDeployer"/>
+    <deployer extension=".jar" directory="transports"
+              class="org.apache.axis2.deployment.TransportDeployer"/>
+
+    <!--CORBA deployer , this will alow users to invoke remote CORBA services through Axis2-->
+    <!--<deployer extension=".xml" directory="corba" class="org.apache.axis2.corba.deployer.CorbaDeployer"/>-->
+
+    <!--<deployer extension=".jsa" directory="rmiservices" class="org.apache.axis2.rmi.deploy.RMIServiceDeployer"/>-->
+
+
+    <!-- Following parameter will set the host name for the epr-->
+    <!--<parameter name="hostname" locked="true">myhost.com</parameter>-->
+
+    <!-- If you have a front end host which exposes this webservice using a different public URL  -->
+    <!-- use this parameter to override autodetected url -->
+    <!--<parameter name="httpFrontendHostUrl">https://someotherhost/context</parameter>-->
+
+
+    <!--    The way of adding listener to the system-->
+    <!--    <listener class="org.apache.axis2.ObserverIMPL">-->
+    <!--        <parameter name="RSS_URL">http://127.0.0.1/rss</parameter>-->
+    <!--    </listener>-->
+
+    <threadContextMigrators>
+        <threadContextMigrator listId="JAXWS-ThreadContextMigrator-List"
+                               class="org.apache.axis2.jaxws.addressing.migrator.EndpointContextMapMigrator"/>
+    </threadContextMigrators>
+
+    <!-- ================================================= -->
+    <!-- Message Receivers -->
+    <!-- ================================================= -->
+    <!--This is the default MessageReceiver for the system , if you want to have MessageReceivers for -->
+    <!--all the other MEP implement it and add the correct entry to here , so that you can refer from-->
+    <!--any operation -->
+    <!--Note : You can override this for a particular service by adding the same element with your requirement-->
+    <messageReceivers>
+        <messageReceiver mep="http://www.w3.org/2004/08/wsdl/in-only"
+                         class="org.apache.axis2.receivers.RawXMLINOnlyMessageReceiver"/>
+        <messageReceiver mep="http://www.w3.org/2004/08/wsdl/in-out"
+                         class="org.apache.axis2.receivers.RawXMLINOutMessageReceiver"/>
+        <messageReceiver mep="http://www.w3.org/2006/01/wsdl/in-only"
+                         class="org.apache.axis2.receivers.RawXMLINOnlyMessageReceiver"/>
+        <messageReceiver mep="http://www.w3.org/2006/01/wsdl/in-out"
+                         class="org.apache.axis2.receivers.RawXMLINOutMessageReceiver"/>
+        <messageReceiver mep="http://www.w3.org/ns/wsdl/in-only"
+                         class="org.apache.axis2.receivers.RawXMLINOnlyMessageReceiver"/>
+        <messageReceiver mep="http://www.w3.org/ns/wsdl/in-out"
+                         class="org.apache.axis2.receivers.RawXMLINOutMessageReceiver"/>
+    </messageReceivers>
+
+    <!-- ================================================= -->
+    <!-- Message Formatter -->
+    <!-- ================================================= -->
+    <!--Following content type to message formatter mapping can be used to implement support for different message -->
+    <!--format  serialization in Axis2. These message formats are expected to be resolved based on the content type. -->
+    <messageFormatters>
+        <messageFormatter contentType="application/x-www-form-urlencoded"
+                          class="org.apache.axis2.transport.http.XFormURLEncodedFormatter"/>
+        <messageFormatter contentType="multipart/form-data"
+                          class="org.apache.axis2.transport.http.MultipartFormDataFormatter"/>
+        <messageFormatter contentType="application/xml"
+                          class="org.apache.axis2.transport.http.ApplicationXMLFormatter"/>
+        <messageFormatter contentType="text/xml"
+                          class="org.apache.axis2.transport.http.SOAPMessageFormatter"/>
+        <messageFormatter contentType="application/soap+xml"
+                          class="org.apache.axis2.transport.http.SOAPMessageFormatter"/>
+    </messageFormatters>
+
+    <!-- ================================================= -->
+    <!-- Message Builders -->
+    <!-- ================================================= -->
+    <!--Following content type to builder mapping can be used to implement support for different message -->
+    <!--formats in Axis2. These message formats are expected to be resolved based on the content type. -->
+    <messageBuilders>
+        <messageBuilder contentType="application/xml"
+                        class="org.apache.axis2.builder.ApplicationXMLBuilder"/>
+        <messageBuilder contentType="application/x-www-form-urlencoded"
+                        class="org.apache.axis2.builder.XFormURLEncodedBuilder"/>
+        <messageBuilder contentType="multipart/form-data"
+                        class="org.apache.axis2.builder.MultipartFormDataBuilder"/>
+    </messageBuilders>
+
+    <!-- ================================================= -->
+    <!-- Transport Ins -->
+    <!-- ================================================= -->
+    <transportReceiver name="http"
+                       class="org.apache.axis2.transport.http.SimpleHTTPServer">
+        <parameter name="port">8080</parameter>
+        <!-- Here is the complete list of supported parameters (see example settings further below):
+            port: the port to listen on (default 6060)
+            hostname:  if non-null, url prefix used in reply-to endpoint references                                 (default null)
+            originServer:  value of http Server header in outgoing messages                                         (default "Simple-Server/1.1")
+            requestTimeout:  value in millis of time that requests can wait for data                                (default 20000)
+            requestTcpNoDelay:  true to maximize performance and minimize latency                                   (default true)
+                                false to minimize bandwidth consumption by combining segments
+            requestCoreThreadPoolSize:  number of threads available for request processing (unless queue fills up)  (default 25)
+            requestMaxThreadPoolSize:  number of threads available for request processing if queue fills up         (default 150)
+                                       note that default queue never fills up:  see HttpFactory
+            threadKeepAliveTime:  time to keep threads in excess of core size alive while inactive                  (default 180)
+                                  note that no such threads can exist with default unbounded request queue
+            threadKeepAliveTimeUnit:  TimeUnit of value in threadKeepAliveTime (default SECONDS)                    (default SECONDS)
+        -->
+        <!-- <parameter name="hostname">http://www.myApp.com/ws</parameter> -->
+        <!-- <parameter name="originServer">My-Server/1.1</parameter>           -->
+        <!-- <parameter name="requestTimeout">10000</parameter>                   -->
+        <!-- <parameter name="requestTcpNoDelay">false</parameter>                   -->
+        <!-- <parameter name="requestCoreThreadPoolSize">50</parameter>                      -->
+        <!-- <parameter name="requestMaxThreadPoolSize">100</parameter>                     -->
+        <!-- <parameter name="threadKeepAliveTime">240000</parameter>                  -->
+        <!-- <parameter name="threadKeepAliveTimeUnit">MILLISECONDS</parameter>            -->
+    </transportReceiver>
+
+    <!--Uncomment if you want to have TCP transport support-->
+    <!--transportReceiver name="tcp"
+                       class="org.apache.axis2.transport.tcp.TCPServer">
+        <parameter name="port">6060</parameter-->>
+    <!--If you want to give your own host address for EPR generation-->
+    <!--uncomment the following paramter , and set it as you required.-->
+    <!--<parameter name="hostname">tcp://myApp.com/ws</parameter>-->
+    <!-- /transportReceiver -->
+
+    <!-- ================================================= -->
+    <!-- Transport Outs -->
+    <!-- ================================================= -->
+
+    <!--Uncomment if you want to have TCP transport support-->
+    <!--
+    <transportSender name="tcp"
+                     class="org.apache.axis2.transport.tcp.TCPTransportSender"/>
+    -->
+    <transportSender name="local"
+                     class="org.apache.axis2.transport.local.LocalTransportSender"/>
+    <transportSender name="http"
+                     class="org.apache.axis2.transport.http.CommonsHTTPTransportSender">
+        <parameter name="PROTOCOL">HTTP/1.1</parameter>
+        <parameter name="Transfer-Encoding">chunked</parameter>
+
+        <!-- If following is set to 'true', optional action part of the Content-Type will not be added to the SOAP 1.2 messages -->
+        <!--  <parameter name="OmitSOAP12Action">true</parameter>  -->
+    </transportSender>
+
+    <transportSender name="https"
+                     class="org.apache.axis2.transport.http.CommonsHTTPTransportSender">
+        <parameter name="PROTOCOL">HTTP/1.1</parameter>
+        <parameter name="Transfer-Encoding">chunked</parameter>
+    </transportSender>
+
+    <!-- Please enable this if you need the java transport -->
+    <!-- <transportSender name="java"
+                     class="org.apache.axis2.transport.java.JavaTransportSender"/> -->
+
+    <!-- ================================================= -->
+    <!-- Global Modules  -->
+    <!-- ================================================= -->
+    <!-- Comment this to disable Addressing -->
+    <!-- <module ref="addressing"/> -->
+
+    <!--Configuring module , providing parameters for modules whether they refer or not-->
+    <!--<moduleConfig name="addressing">-->
+    <!--<parameter name="addressingPara">N/A</parameter>-->
+    <!--</moduleConfig>-->
+
+    <!-- ================================================= -->
+    <!-- Clustering  -->
+    <!-- ================================================= -->
+    <!--
+     To enable clustering for this node, set the value of "enable" attribute of the "cluster"
+     element to "true". The initilization of a node in the cluster is handled by the class
+     corresponding to the "class" attribute of the "cluster" element. It is also responsible for
+     getting this node to join the cluster.
+     -->
+    <cluster class="org.apache.axis2.clustering.tribes.TribesClusterManager" enable="false">
+
+        <!--
+           This parameter indicates whther the cluster has to be automatically initalized
+           when the AxisConfiguration is built. If set to "true" the initialization will not be
+           done at that stage, and some other party will have to explictly initialize the cluster.
+        -->
+        <parameter name="AvoidInitiation">true</parameter>
+
+        <!--
+           Indicates whether this member is active or not. This will be useful in a setup where
+           members are deployed in ACTIVE and/or PASSIVE configuration 
+        -->
+        <parameter name="isActive">true</parameter>
+
+        <!--
+           An implementation of org.apache.axis2.clustering.MembershipListener
+           which will be called on membership changes
+        -->
+        <!--
+        <parameter name="membershipListener">
+            <class>org.apache.axis2.clustering.MembershipListenerImpl</class>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </parameter>
+        -->
+
+        <!--
+           The membership scheme used in this setup. The only values supported at the moment are
+           "multicast" and "wka"
+
+           1. multicast - membership is automatically discovered using multicasting
+           2. wka - Well-Known Address based multicasting. Membership is discovered with the help
+                    of one or more nodes running at a Well-Known Address. New members joining a
+                    cluster will first connect to a well-known node, register with the well-known node
+                    and get the membership list from it. When new members join, one of the well-known
+                    nodes will notify the others in the group. When a member leaves the cluster or
+                    is deemed to have left the cluster, it will be detected by the Group Membership
+                    Service (GMS) using a TCP ping mechanism.
+        -->
+        <parameter name="membershipScheme">multicast</parameter>
+
+        <!--
+         The clustering domain/group. Nodes in the same group will belong to the same multicast
+         domain. There will not be interference between nodes in different groups.
+        -->
+        <parameter name="domain">apache.axis2.domain</parameter>
+
+        <!--
+        This parameter is only valid when the "mode" parameter is set to application. This indicates
+        the domain in which the the applications being load balanced are deployed.
+        -->
+        <parameter name="applicationDomain">apache.axis2.application.domain</parameter>
+
+        <!--
+           When a Web service request is received, and processed, before the response is sent to the
+           client, should we update the states of all members in the cluster? If the value of
+           this parameter is set to "true", the response to the client will be sent only after
+           all the members have been updated. Obviously, this can be time consuming. In some cases,
+           such this overhead may not be acceptable, in which case the value of this parameter
+           should be set to "false"
+        -->
+        <parameter name="synchronizeAll">true</parameter>
+
+        <!--
+          The maximum number of times we need to retry to send a message to a particular node
+          before giving up and considering that node to be faulty
+        -->
+        <parameter name="maxRetries">10</parameter>
+
+        <!-- The multicast address to be used -->
+        <parameter name="mcastAddress">228.0.0.4</parameter>
+
+        <!-- The multicast port to be used -->
+        <parameter name="mcastPort">45564</parameter>
+
+        <!-- The frequency of sending membership multicast messages (in ms) -->
+        <parameter name="mcastFrequency">500</parameter>
+
+        <!-- The time interval within which if a member does not respond, the member will be
+         deemed to have left the group (in ms)
+         -->
+        <parameter name="memberDropTime">3000</parameter>
+
+        <!--
+           The IP address of the network interface to which the multicasting has to be bound to.
+           Multicasting would be done using this interface.
+        -->
+        <parameter name="mcastBindAddress">127.0.0.1</parameter>
+
+        <!-- The host name or IP address of this member -->
+        <parameter name="localMemberHost">127.0.0.1</parameter>
+
+        <!--
+        The TCP port used by this member. This is the port through which other nodes will
+        contact this member
+         -->
+        <parameter name="localMemberPort">4000</parameter>
+
+        <!--
+        Preserve message ordering. This will be done according to sender order.
+        -->
+        <parameter name="preserveMessageOrder">true</parameter>
+
+        <!--
+        Maintain atmost-once message processing semantics
+        -->
+        <parameter name="atmostOnceMessageSemantics">true</parameter>
+
+        <!--
+           The list of static or well-known members. These entries will only be valid if the
+           "membershipScheme" above is set to "wka"
+        -->
+        <members>
+            <member>
+                <hostName>127.0.0.1</hostName>
+                <port>4000</port>
+            </member>
+            <member>
+                <hostName>127.0.0.1</hostName>
+                <port>4001</port>
+            </member>
+        </members>
+
+        <!--
+        Enable the load balancer entry if you need to run this node as a load balancer.
+        Multiple application domains with different LoadBalanceEventHandler implementations
+        can be defined in this section.
+        -->
+        <loadBalancer enable="false">
+            <applicationDomain name="apache.axis2.application.domain"
+                               handler="org.apache.axis2.clustering.DefaultLoadBalanceEventHandler"/>
+        </loadBalancer>
+
+        <!--
+           This interface is responsible for handling configuration management.
+           Configuraion changes include:
+
+            1. Rebooting an entire cluster, in which case, all nodes have to load the new
+               Axis2 configuration in a consistent manner
+            2. Deploying a new service to a cluster or undeploying a service from a cluster
+            3. Changing the policies of a service deployed on the cluster
+
+            The "enable" attribute indicates whether Configuration management has been enabled
+        -->
+        <configurationManager
+                class="org.apache.axis2.clustering.configuration.DefaultConfigurationManager"
+                enable="true">
+            <listener
+                    class="org.apache.axis2.clustering.configuration.DefaultConfigurationManagerListener"/>
+        </configurationManager>
+
+        <!--
+           This interface is responsible for handling context replication. The property changes in
+           the Axis2 context hierarchy in this node, are propagated to all other nodes in the cluster.
+
+           The "excludes" patterns can be used to specify the prefixes (e.g. local_*) or
+           suffixes (e.g. *_local) of the properties to be excluded from replication. The pattern
+           "*" indicates that all properties in a particular context should not be replicated.
+
+            The "enable" attribute indicates whether context replication has been enabled
+        -->
+        <contextManager class="org.apache.axis2.clustering.context.DefaultContextManager"
+                        enable="true">
+            <listener class="org.apache.axis2.clustering.context.DefaultContextManagerListener"/>
+            <replication>
+                <defaults>
+                    <exclude name="local_*"/>
+                    <exclude name="LOCAL_*"/>
+                </defaults>
+                <context class="org.apache.axis2.context.ConfigurationContext">
+                    <exclude name="UseAsyncOperations"/>
+                    <exclude name="SequencePropertyBeanMap"/>
+                </context>
+                <context class="org.apache.axis2.context.ServiceGroupContext">
+                    <exclude name="my.sandesha.*"/>
+                </context>
+                <context class="org.apache.axis2.context.ServiceContext">
+                    <exclude name="my.sandesha.*"/>
+                </context>
+            </replication>
+        </contextManager>
+    </cluster>
+
+    <!-- ================================================= -->
+    <!-- Phases  -->
+    <!-- ================================================= -->
+    <phaseOrder type="InFlow">
+        <!--  System predefined phases       -->
+        <phase name="Transport">
+            <handler name="RequestURIBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.RequestURIBasedDispatcher">
+                <order phase="Transport"/>
+            </handler>
+            <handler name="SOAPActionBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.SOAPActionBasedDispatcher">
+                <order phase="Transport"/>
+            </handler>
+        </phase>
+        <phase name="Addressing">
+            <handler name="AddressingBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.AddressingBasedDispatcher">
+                <order phase="Addressing"/>
+            </handler>
+        </phase>
+        <!-- needs to be before the X509 cert is removed -->
+        <phase name="ec2authentication">
+		      <handler name="InFlowEC2Auth"
+                     class="com.cloud.bridge.auth.ec2.AuthenticationHandler">
+                    <order phase="ec2authentication"/>
+              </handler>
+        </phase>   
+        <phase name="Security"/>
+        <phase name="PreDispatch"/>
+        <phase name="Dispatch" class="org.apache.axis2.engine.DispatchPhase">
+            <handler name="RequestURIBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.RequestURIBasedDispatcher"/>
+            <handler name="SOAPActionBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.SOAPActionBasedDispatcher"/>
+            <handler name="RequestURIOperationDispatcher"
+                     class="org.apache.axis2.dispatchers.RequestURIOperationDispatcher"/>
+            <handler name="SOAPMessageBodyBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher"/>
+            <handler name="HTTPLocationBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.HTTPLocationBasedDispatcher"/>
+            <handler name="GenericProviderDispatcher"
+                     class="org.apache.axis2.jaxws.dispatchers.GenericProviderDispatcher"/>
+            <handler name="MustUnderstandValidationDispatcher"
+                     class="org.apache.axis2.jaxws.dispatchers.MustUnderstandValidationDispatcher"/>
+        </phase>
+        <phase name="RMPhase"/>
+        <!--  System predefined phases       -->
+        <!--   After Postdispatch phase module author or service author can add any phase he want      -->
+        <phase name="OperationInPhase">
+            <handler name="MustUnderstandChecker"
+                     class="org.apache.axis2.jaxws.dispatchers.MustUnderstandChecker">
+                <order phase="OperationInPhase"/>
+            </handler>
+        </phase>
+   	    <phase name="s3authentication">
+		      <handler name="InFlowS3Auth"
+                     class="com.cloud.bridge.auth.s3.AuthenticationHandler">
+                    <order phase="s3authentication"/>
+              </handler>
+        </phase>
+        <phase name="soapmonitorPhase"/>
+    </phaseOrder>
+    <phaseOrder type="OutFlow">
+        <!--      user can add his own phases to this area  -->
+        <phase name="soapmonitorPhase"/>
+        <phase name="OperationOutPhase"/>
+        <!--system predefined phase-->
+        <!--these phase will run irrespective of the service-->
+        <phase name="RMPhase"/>
+        <phase name="PolicyDetermination"/>
+        <phase name="MessageOut"/>
+        <phase name="Security"/>
+    </phaseOrder>
+    <phaseOrder type="InFaultFlow">
+        <phase name="Addressing">
+            <handler name="AddressingBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.AddressingBasedDispatcher">
+                <order phase="Addressing"/>
+            </handler>
+        </phase>
+        <phase name="Security"/>
+        <phase name="PreDispatch"/>
+        <phase name="Dispatch" class="org.apache.axis2.engine.DispatchPhase">
+            <handler name="RequestURIBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.RequestURIBasedDispatcher"/>
+            <handler name="SOAPActionBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.SOAPActionBasedDispatcher"/>
+            <handler name="RequestURIOperationDispatcher"
+                     class="org.apache.axis2.dispatchers.RequestURIOperationDispatcher"/>
+            <handler name="SOAPMessageBodyBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher"/>
+            <handler name="HTTPLocationBasedDispatcher"
+                     class="org.apache.axis2.dispatchers.HTTPLocationBasedDispatcher"/>
+            <handler name="GenericProviderDispatcher"
+                     class="org.apache.axis2.jaxws.dispatchers.GenericProviderDispatcher"/>
+            <handler name="MustUnderstandValidationDispatcher"
+                     class="org.apache.axis2.jaxws.dispatchers.MustUnderstandValidationDispatcher"/>
+        </phase>
+        <phase name="RMPhase"/>
+        <!--      user can add his own phases to this area  -->
+        <phase name="OperationInFaultPhase"/>
+        <phase name="soapmonitorPhase"/>
+    </phaseOrder>
+    <phaseOrder type="OutFaultFlow">
+        <!--      user can add his own phases to this area  -->
+        <phase name="soapmonitorPhase"/>
+        <phase name="OperationOutFaultPhase"/>
+        <phase name="RMPhase"/>
+        <phase name="PolicyDetermination"/>
+        <phase name="MessageOut"/>
+        <phase name="Security"/>
+    </phaseOrder>
+</axisconfig>
+

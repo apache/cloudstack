@@ -1,0 +1,119 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+
+
+
+
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	(cd ../..; ./waf configure --prefix=/usr --libdir=/usr/lib --bindir=/usr/bin --javadir=/usr/share/java --sharedstatedir=/var/lib --localstatedir=/var --sysconfdir=/etc --mandir=/usr/share/man --libexecdir=/usr/bin)
+	(cd ../..; ./waf showconfig)
+
+
+#Architecture
+# build: build-arch build-indep
+build: build-arch
+
+build-arch: build-arch-stamp
+build-arch-stamp: configure-stamp  
+
+
+# build-indep: build-indep-stamp
+# build-indep-stamp: configure-stamp  
+# 
+# 	# Add here commands to compile the indep part of the package.
+# 	#$(MAKE) doc
+# 	touch $@
+# 
+clean: 
+	dh_testdir
+	dh_testroot
+	(cd ../..; ./waf distclean)
+	dh_clean 
+
+install: install-arch
+# install: install-indep install-arch
+# install-indep:
+# 	dh_testdir
+# 	dh_testroot
+# 	dh_prep -i 
+# 	dh_installdirs -i
+# 
+# 	# Add here commands to install the indep part of the package into
+# 	# debian/<package>-doc.
+# 	#INSTALLDOC#
+# 
+# 	dh_install -i
+
+install-arch:
+	dh_testdir
+	dh_testroot
+	dh_prep -s 
+	dh_installdirs -s
+	(cd ../..; ant deploy-debian-install)
+	chmod 755 debian/tmp/etc/init.d/cloud-bridge
+	chmod 755 debian/tmp/usr/bin/cloud-setup-bridge
+	chmod 755 debian/tmp/usr/bin/cloud-bridge-register
+	chmod 755 debian/tmp/usr/bin/cloud-setup-bridge-db
+	dh_install -s
+# Must not depend on anything. This is to be called by
+# binary-arch/binary-indep
+# in another 'make' thread.
+binary-common:
+	dh_testdir
+	dh_testroot
+#	dh_installchangelogs 
+#	dh_installdocs -A README.html
+#	dh_installexamples
+#	dh_installmenu
+#	dh_installdebconf
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_python
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+#	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+	dh_makeshlibs
+	dh_installdeb
+#	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+# Build architecture independant packages using the common target.
+# binary-indep: build-indep install-indep
+# 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
+
+# Build architecture dependant packages using the common target.
+binary-arch: build-arch install-arch
+	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
+
+# binary: binary-arch binary-indep
+binary: binary-arch
+# .PHONY: build clean binary-indep binary-arch binary install install-indep install-arch configure
+.PHONY: build clean binary-arch binary install install-arch configure

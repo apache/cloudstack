@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD//EN" "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+<session-factory>
+	<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+	<property name="hibernate.connection.url">jdbc:mysql://localhost/cloudbridge</property>
+	<property name="hibernate.connection.username">cloud</property>
+    <property name="hibernate.connection.password">cloud</property>
+    <property name="hibernate.connection.pool_size">20</property>
+	<property name="hibernate.connection.autocommit">false</property>
+	
+	<!-- transactiion isolation level : 1 - read uncommitted, 2 - read committed, 4 - repeatable read, 8 - Serializable	 -->
+	<property name="hibernate.connection.isolation">2</property>
+	
+    <property name="hibernate.hbm2ddl.auto">update</property>
+	<property name="hibernate.order_updates">true</property>
+    <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+    
+    <property name="show_sql">true</property>
+    <!--  to debug hibernate generated SQL, open following configuration property -->
+    <!--  
+    <property name="show_sql">true</property>
+    <property name="hibernate.format_sql">true</property>
+    -->
+    
+	<!-- Mapping files -->
+	<mapping resource="com/cloud/bridge/model/UserCredentials.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SHost.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/MHost.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/MHostMount.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SBucket.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SObject.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SObjectItem.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SMeta.hbm.xml"/>
+    <mapping resource="com/cloud/bridge/model/SAcl.hbm.xml"/>
+</session-factory>
+</hibernate-configuration>

@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+"""examines environment, then:
+	- configures classpath as per environment or command-line options
+	- detects Tomcat (on Windows)
+	- detects or configures directories according to command-line options"""
+
+import platform
+import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
+from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
+from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir
+from glob import glob as _glob
+
+
+conf.check_tool('misc')
+conf.check_tool('java')
+conf.check_tool("gnu_dirs")
+
+conf.check_message_1('Detecting distribution')
+if platform.system() == 'Windows': conf.env.DISTRO = "Windows"
+elif platform.system() == 'Darwin': conf.env.DISTRO = "Mac"
+elif _exists("/etc/network"): conf.env.DISTRO = "Ubuntu"
+elif _exists("/etc/fedora-release"): conf.env.DISTRO = "Fedora"
+elif _exists("/etc/centos-release") or _exists("/etc/redhat-release"): conf.env.DISTRO = "CentOS"
+else: conf.env.DISTRO = "unknown"
+if conf.env.DISTRO == "unknown": c = "YELLOW"
+else: 				    c = "GREEN"
+conf.check_message_2(conf.env.DISTRO,c)
+
+# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
+if conf.env.DISTRO in ['Windows']:
+	for pth in [ x for x in conf.env.get_merged_dict().keys() if x.endswith("DIR") ]:
+		conf.env[pth] = conf.env[pth].replace("/","\\")
+
+conf.check_message_1('Detecting Tomcat')
+tomcathome = getattr(Options.options, 'TOMCATHOME', '')
+if tomcathome:
+	conf.env.TOMCATHOME = tomcathome
+	conf.check_message_2("%s (forced through --with-tomcat)"%conf.env.TOMCATHOME,"GREEN")
+else:
+	if    "TOMCAT_HOME" in conf.environ and conf.environ['TOMCAT_HOME'].strip():
+		conf.env.TOMCATHOME = conf.environ["TOMCAT_HOME"]
+		conf.check_message_2("%s (got through environment variable %%TOMCAT_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
+	elif  "CATALINA_HOME" in conf.environ and conf.environ['CATALINA_HOME'].strip():
+		conf.env.TOMCATHOME = conf.environ['CATALINA_HOME']
+		conf.check_message_2("%s (got through environment variable %%CATALINA_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
+	elif _isdir("/usr/share/tomcat6"):
+		conf.env.TOMCATHOME = "/usr/share/tomcat6"
+		conf.check_message_2("%s (detected existence of system directory)"%conf.env.TOMCATHOME,"GREEN")
+	else:
+		conf.env.TOMCATHOME = _join(conf.env.DATADIR,'tomcat6')
+		conf.check_message_2("%s (assumed presence of Tomcat there)"%conf.env.TOMCATHOME,"GREEN")
+
+conf.env.CLOUDBRIDGEPATH = _join(conf.env.PACKAGE,"management")
+
+if conf.env.DISTRO in ['Windows','Mac']:
+	conf.env.CLOUDBRIDGEENVIRON = conf.env.TOMCATHOME
+	conf.env.CLOUDBRIDGESYSCONFDIR  = _join(conf.env.TOMCATHOME,"conf")
+	conf.env.CLOUDBRIDGELOGDIR = _join(conf.env.TOMCATHOME,"logs")
+else:
+	conf.env.CLOUDBRIDGEENVIRON = _join(conf.env.DATADIR,conf.env.CLOUDBRIDGEPATH)
+	conf.env.CLOUDBRIDGESYSCONFDIR    = _join(conf.env.SYSCONFDIR,conf.env.CLOUDBRIDGEPATH)
+	conf.env.CLOUDBRIDGELOGDIR = _join(conf.env.LOCALSTATEDIR,"log",conf.env.CLOUDBRIDGEPATH)
+
+conf.check_message_1('Detecting JAVADIR')
+javadir = getattr(Options.options, 'JAVADIR', '')
+if javadir:
+	conf.env.JAVADIR = javadir
+	conf.check_message_2("%s (forced through --javadir)"%conf.env.JAVADIR,"GREEN")
+elif conf.env.DISTRO in ['Windows','Mac']:
+	conf.env.JAVADIR = _join(conf.env['TOMCATHOME'],'lib')
+	conf.check_message_2("%s (using Tomcat's lib/ directory)"%conf.env.JAVADIR,"GREEN")
+else:
+	conf.env.JAVADIR = _join(conf.env.DATADIR,'java')
+	conf.check_message_2("%s (using default ${DATADIR}/java directory)"%conf.env.JAVADIR,"GREEN")
+
+if conf.env.DISTRO in ["Windows","Mac"]:
+	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
+else: 
+	conf.env.SYSTEMJAVADIR = "/usr/share/java"
+
+in_javadir = lambda name: _join(conf.env.JAVADIR,_basename(name)) # $PREFIX/share/java
+in_system_javadir = lambda name: _join(conf.env.SYSTEMJAVADIR,name) # /usr/share/java
+
+conf.check_message_1('Building classpaths')
+
+# == Here we build the run-time classpaths ==
+
+compilecp = []
+compilecp+= [ jar for directory in ['lib','rampart-lib'] for jar in _glob(_join(directory,"*.jar")) ]
+# 3. the system classpath (system-installed JARs)
+conf.env.CLASSPATH = pathsep.join(compilecp)
+conf.check_message_2('Done','GREEN')
+
+conf.env.VERSION = Utils.g_module.VERSION
+
+Utils.pprint("WHITE","Configure finished.  Use 'python waf showconfig' to show the configure-time environment.")
