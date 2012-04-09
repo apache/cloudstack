@@ -409,19 +409,32 @@ class TestRouterServices(cloudstackTestCase):
             cmd.id = virtual_machine.id
             self.apiclient.stopVirtualMachine(cmd)
 
-        interval = list_configurations(
+        gcinterval = list_configurations(
                                     self.apiclient,
                                     name='network.gc.interval'
                                     )
         self.assertEqual(
-                        isinstance(interval, list),
+                        isinstance(gcinterval, list),
                         True,
                         "Check for list intervals response return valid data"
                         )
-        self.debug("network.gc.interval: %s" % interval[0].value)
+        self.debug("network.gc.interval: %s" % gcinterval[0].value)
+
+        gcwait = list_configurations(
+                                    self.apiclient,
+                                    name='network.gc.wait'
+                                    )
+        self.assertEqual(
+                        isinstance(gcwait, list),
+                        True,
+                        "Check for list intervals response return valid data"
+                        )
+        self.debug("network.gc.wait: %s" % gcwait[0].value)
+
+	total_wait = int(gcinterval[0].value) + int (gcwait[0].value)
         # Router is stopped after (network.gc.interval *2) time. Wait for
-        # (network.gc.interval *4) for moving router to 'Stopped' 
-        time.sleep(int(interval[0].value) * 4)
+        # (network.gc.interval+network.gc.wait) * 2 for moving router to 'Stopped' 
+        time.sleep(total_wait * 2)
 
         routers = list_routers(
                                self.apiclient,

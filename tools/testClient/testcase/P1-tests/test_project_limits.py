@@ -120,7 +120,11 @@ class TestProjectLimits(cloudstackTestCase):
                             cls.services["user"],
                             domainid=cls.domain.id
                             )
-        cls._cleanup = [cls.account]
+        cls._cleanup = [
+			cls.admin,
+			cls.user,
+			cls.domain
+			]
         return
 
     @classmethod
@@ -439,7 +443,7 @@ class TestProjectLimits(cloudstackTestCase):
         return
 
 
-class TestResourceLimitsDomain(cloudstackTestCase):
+class TestResourceLimitsProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -758,7 +762,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         update_resource_limit(
                               self.apiclient,
                               2, # Volume
-                              max=1,
+                              max=2,
                               projectid=self.project.id
                               )
 
@@ -800,6 +804,13 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # 3. Try create 2nd template in the project. It should give the user
         #    appropriate error and an alert should be generated.
 
+        # Reset the volume limits
+        update_resource_limit(
+                              self.apiclient,
+                              2, # Volume
+                              max=5,
+                              projectid=self.project.id
+                              )
         self.debug(
             "Updating template resource limits for domain: %s" % 
                                         self.account.account.domainid)

@@ -655,12 +655,18 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         # Wait for account cleanup interval
         time.sleep(int(interval[0].value) * 2)
 
-        with self.assertRaises(Exception):
-            accounts = list_accounts(
+        accounts = list_accounts(
                                  self.apiclient,
                                  id=self.account.account.id
                                  )
-        uuids = []
+        
+	self.assertEqual(
+		accounts,
+		None,
+		"List accounts should return empty list after account deletion"
+		)
+
+	uuids = []
         for host in hosts:
             # hosts[0].name = "nfs://192.168.100.21/export/test"
             parse_url = (host.name).split('/')
@@ -852,7 +858,8 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                 self.services["sub_dir"],
                                                 self.services["sub_lvl_dir2"],
                                                 self.services["random_data"]
-                                            )
+                                            ),
+		    "sync",
                 ]
             for c in cmds:
                 self.debug(ssh_client.execute(c))
@@ -1143,18 +1150,19 @@ class TestSnapshotLimit(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                          len(snapshots),
                          self.services["recurring_snapshot"]["maxsnaps"],
                          "Check maximum number of recurring snapshots retained"
                         )
+	snapshot = snapshots[0]
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
 
         # Fetch values from database
         qresultset = self.dbclient.execute(
                         "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % self.snapshot.id
+                        % snapshot.id
                         )
         self.assertEqual(
                             isinstance(qresultset, list),

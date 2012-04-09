@@ -192,7 +192,6 @@ class TestUserProjectCreation(cloudstackTestCase):
                             "'allow.user.create.projects' should be true"
                             )
 
-        list_project = list_projects_reponse[0]
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,

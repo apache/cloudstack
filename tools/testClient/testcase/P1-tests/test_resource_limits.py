@@ -1141,7 +1141,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               self.apiclient,
                               2, # Volume
                               domainid=self.account.account.domainid,
-                              max=1
+                              max=2
                               )
 
         self.debug("Deploying VM for account: %s" % self.account.account.name)
@@ -1184,6 +1184,14 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    ready state
         # 4. Try create 3rd template in the domain. It should give the user an
         #    appropriate error and an alert should be generated.
+
+        # Set usage_vm=1 for Account 1
+        update_resource_limit(
+                              self.apiclient,
+                              2, # Volume
+                              domainid=self.account.account.domainid,
+                              max=5
+                              )
 
         self.debug(
             "Updating template resource limits for domain: %s" % 
@@ -1271,4 +1279,194 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             account=self.account.account.name,
                             domainid=self.account.account.domainid,
                             )
+        return
+
+
+class TestResources(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestResources, 
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls._cleanup = []
+	return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created instance, volumes and snapshots
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def test_01_zones(self):
+        """Check the status of zones"""
+        
+        # Validate the following
+        # 1. List zones
+        # 2. Check allocation state is "enabled" or not
+        
+        zones = Zone.list(
+                          self.apiclient,
+                          id=self.zone.id,
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(zones, list),
+                         True,
+                         "Check if listZones returns a valid response"
+                         )
+        for zone in zones:
+            self.assertEqual(
+                             zone.allocationstate,
+                             'Enabled',
+                             "Zone allocation state should be enabled"
+                             )
+        return
+
+    def test_02_pods(self):
+        """Check the status of pods"""
+        
+        # Validate the following
+        # 1. List pods
+        # 2. Check allocation state is "enabled" or not
+        
+        pods = Pod.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(pods, list),
+                         True,
+                         "Check if listPods returns a valid response"
+                         )
+        for pod in pods:
+            self.assertEqual(
+                             pod.allocationstate,
+                             'Enabled',
+                             "Pods allocation state should be enabled"
+                             )
+        return
+    
+    def test_03_clusters(self):
+        """Check the status of clusters"""
+        
+        # Validate the following
+        # 1. List clusters
+        # 2. Check allocation state is "enabled" or not
+        
+        clusters = Cluster.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(clusters, list),
+                         True,
+                         "Check if listClusters returns a valid response"
+                         )
+        for cluster in clusters:
+            self.assertEqual(
+                             cluster.allocationstate,
+                             'Enabled',
+                             "Clusters allocation state should be enabled"
+                             )
+        return
+    
+    def test_04_hosts(self):
+        """Check the status of hosts"""
+        
+        # Validate the following
+        # 1. List hosts with type=Routing
+        # 2. Check state is "Up" or not
+        
+        hosts = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='Routing',
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(hosts, list),
+                         True,
+                         "Check if listHosts returns a valid response"
+                         )
+        for host in hosts:
+            self.assertEqual(
+                             host.state,
+                             'Up',
+                             "Host should be in Up state and running"
+                             )
+        return
+    
+    def test_05_storage_pools(self):
+        """Check the status of Storage pools"""
+        
+        # Validate the following
+        # 1. List storage pools for the zone
+        # 2. Check state is "enabled" or not
+        
+        storage_pools = StoragePool.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(storage_pools, list),
+                         True,
+                         "Check if listStoragePools returns a valid response"
+                         )
+        for storage_pool in storage_pools:
+            self.assertEqual(
+                             storage_pool.state,
+                             'Up',
+                             "storage pool should be in Up state and running"
+                             )
+        return
+    
+    def test_06_secondary_storage(self):
+        """Check the status of secondary storage"""
+        
+        # Validate the following
+        # 1. List secondary storage
+        # 2. Check state is "Up" or not
+        
+        sec_storages = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='SecondaryStorage',
+			  listall=True
+                          )
+        self.assertEqual(
+                         isinstance(sec_storages, list),
+                         True,
+                         "Check if listHosts returns a valid response"
+                         )
+        for sec_storage in sec_storages:
+            self.assertEqual(
+                             sec_storage.state,
+                             'Up',
+                             "Secondary storage should be in Up state"
+                             )
         return
