@@ -59,8 +59,11 @@ public class ConsoleProxyGCThread extends Thread {
 	
 	@Override
     public void run() {
+		
+		boolean bReportLoad = false;
 		while (true) {
 			cleanupLogging();
+			bReportLoad = false;
 			
 			s_logger.info("connMap=" + connMap);
 			Enumeration<String> e = connMap.keys();
@@ -85,7 +88,9 @@ public class ConsoleProxyGCThread extends Thread {
     		    // close the server connection
     		    s_logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
     		    client.closeClient();
-
+		    }
+		    
+		    if(bReportLoad) {
     		    // report load changes
 				String loadInfo = new ConsoleProxyClientStatsCollector(connMap).getStatsReport(); 
 				ConsoleProxy.reportLoadInfo(loadInfo);

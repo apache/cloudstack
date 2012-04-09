@@ -113,7 +113,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			viewer = ConsoleProxy.getAjaxVncViewer(host, port, sid, tag, ticket, ajaxSessionIdStr);
 		} catch(Exception e) {
 
-			s_logger.warn("Failed to create viwer due to " + e.getMessage(), e);
+			s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
 
 			String[] content = new String[] {
 				"<html><head></head><body>",
