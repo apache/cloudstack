@@ -420,6 +420,55 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
     
+    
+    @Override
+    public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
+        SearchBuilder<HostTagVO> hostTagSearch = null;
+        if (haTag != null && !haTag.isEmpty()) {
+            hostTagSearch = _hostTagsDao.createSearchBuilder();
+            hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
+            hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+            hostTagSearch.cp();
+        }
+        
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+     
+        hostSearch.and("type", hostSearch.entity().getType(), SearchCriteria.Op.EQ);
+        hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("podId", hostSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        hostSearch.and("zoneId", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("status", hostSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        hostSearch.and("resourceState", hostSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        
+        if (haTag != null && !haTag.isEmpty()) {
+            hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
+        }
+
+        SearchCriteria<HostVO> sc = hostSearch.create();
+        
+        if (haTag != null && !haTag.isEmpty()) {
+            sc.setJoinParameters("hostTagSearch", "tag", haTag);
+        }
+        
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+        
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        
+        sc.setParameters("zoneId", dcId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+        
+        return listBy(sc);
+    }
+
     @Override
     public void loadDetails(HostVO host) {
         Map<String, String> details = _detailsDao.findDetails(host.getId());

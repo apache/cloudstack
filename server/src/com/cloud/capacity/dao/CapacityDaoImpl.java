@@ -16,11 +16,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.ejb.Local;
 
@@ -28,18 +26,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

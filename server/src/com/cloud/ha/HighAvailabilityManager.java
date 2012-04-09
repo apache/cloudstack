@@ -102,4 +102,9 @@ public interface HighAvailabilityManager extends Manager {
     void scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
 
     void cancelScheduledMigrations(HostVO host);
+
+    /**
+     * @return
+     */
+    String getHaTag();
 }
