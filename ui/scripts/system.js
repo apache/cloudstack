@@ -3914,11 +3914,18 @@
                                 activeviewersessions: { label: 'label.active.sessions' }
                               }
                             ],
-                            dataProvider: function(args) {
-                              args.response.success({
-                                actionFilter: systemvmActionfilter,
-                                data: args.jsonObj
-                              });
+                            dataProvider: function(args) {	
+															$.ajax({
+																url: createURL("listSystemVms&id=" + args.context.systemVMs[0].id),
+																dataType: "json",
+																async: true,
+																success: function(json) {																  															
+																	args.response.success({
+																		actionFilter: systemvmActionfilter,
+																		data: json.listsystemvmsresponse.systemvm[0]
+																	});
+																}
+															});															
                             }
                           }
                         }
