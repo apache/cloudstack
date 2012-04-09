@@ -30,6 +30,7 @@ import javax.crypto.spec.DESKeySpec;
 
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
 import com.cloud.consoleproxy.util.Logger;
+import com.cloud.consoleproxy.util.RawHTTP;
 import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
 import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
 
@@ -124,10 +125,21 @@ public class VncClient {
     clientListener.onClientClose();
   }
 
+  public void connectTo(String host, int port, String path,
+    String session, boolean useSSL) throws UnknownHostException, IOException {
+	RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
+	this.socket = tunnel.connect();
+	doConnect("");
+  }
+  
   public void connectTo(String host, int port, String password) throws UnknownHostException, IOException {
     // Connect to server
 	s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
     this.socket = new Socket(host, port);
+    doConnect(password);
+  }
+  
+  private void doConnect(String password) throws IOException {
     is = new DataInputStream(socket.getInputStream());
     os = new DataOutputStream(socket.getOutputStream());
 

@@ -124,8 +124,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 	}
 
 	@Override
-	public abstract void initClient(String clientHostAddress, int clientHostPort, 
-		String clientHostPassword, String clientTag, String ticket);
+	public abstract void initClient(ConsoleProxyClientParam param);
 		
 	@Override
 	public abstract void closeClient();
