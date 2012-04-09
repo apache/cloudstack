@@ -133,8 +133,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
             s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId()!=null ? "Yes": "No"));
         }
-
-        if(plan.getHostId() != null){
+        
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        
+        if(plan.getHostId() != null && haVmTag == null){
             Long hostIdSpecified = plan.getHostId();
             if (s_logger.isDebugEnabled()){
                 s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
@@ -178,7 +180,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             return null;
         }
 
-        if (vm.getLastHostId() != null) {
+        if (vm.getLastHostId() != null && haVmTag == null) {
             s_logger.debug("This VM has last host_id specified, trying to choose the same host: " +vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
@@ -222,9 +224,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: "+host.getStatus().name() + ", host resource state is: "+host.getResourceState());
                 }
             }
-
             s_logger.debug("Cannot choose the last host to deploy this VM ");
         }
+        
 
         List<Long> clusterList = new ArrayList<Long>();
         if (plan.getClusterId() != null) {
@@ -239,7 +241,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 avoid.addCluster(plan.getClusterId());
                 return null;
             }
-        }else if (plan.getPodId() != null) {
+        } else if (plan.getPodId() != null) {
             //consider clusters under this pod only
             Long podIdSpecified = plan.getPodId();
             s_logger.debug("Searching resources only under specified Pod: "+ podIdSpecified);
@@ -256,7 +258,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 avoid.addPod(plan.getPodId());
                 return null;
             }
-        }else{
+        } else {
             s_logger.debug("Searching all possible resources under this Zone: "+ plan.getDataCenterId());
             
             boolean applyAllocationAtPods = Boolean.parseBoolean(_configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));

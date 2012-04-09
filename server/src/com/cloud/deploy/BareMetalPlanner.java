@@ -32,7 +32,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
@@ -40,7 +39,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -64,9 +62,10 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-
-		
-		if (vm.getLastHostId() != null) {
+        
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        
+		if (vm.getLastHostId() != null && haVmTag == null) {
 			HostVO h = _hostDao.findById(vm.getLastHostId());
 			DataCenter dc = _dcDao.findById(h.getDataCenterId());
 			Pod pod = _podDao.findById(h.getPodId());
@@ -75,7 +74,9 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			return new DeployDestination(dc, pod, c, h);
 		}
 		
-		if (offering.getHostTag() != null) {
+		if (haVmTag != null) {
+		    hostTag = haVmTag;
+		} else if (offering.getHostTag() != null) {
 			String[] tags = offering.getHostTag().split(",");
 			if (tags.length > 0) {
 				hostTag = tags[0];
@@ -110,7 +111,12 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		}
 		
 		for (ClusterVO cluster : clusters) {
-			hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+		    if (haVmTag == null) {
+		        hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+		    } else {
+		        s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" + cluster.getDataCenterId());
+		        return null;
+		    }
 			for (HostVO h : hosts) {
 				if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor, true)) {
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");

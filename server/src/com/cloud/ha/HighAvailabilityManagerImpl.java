@@ -145,6 +145,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     long _timeBetweenFailures;
     long _timeBetweenCleanups;
     boolean _forceHA;
+    String _haTag = null;
 
     protected HighAvailabilityManagerImpl() {
     }
@@ -508,7 +509,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         }
 
         try {
-            VMInstanceVO started = _itMgr.advanceStart(vm, new HashMap<VirtualMachineProfile.Param, Object>(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            HashMap<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
+            if (_haTag != null) {
+                params.put(VirtualMachineProfile.Param.HaTag, _haTag);
+            }
+            VMInstanceVO started = _itMgr.advanceStart(vm, params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            
             if (started != null) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
@@ -731,6 +737,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         if (_instance == null) {
             _instance = "VMOPS";
         }
+        
+        _haTag = params.get("ha.tag");
 
         _haDao.releaseWorkItems(_serverId);
 
@@ -874,4 +882,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     @Override
     public void onManagementNodeIsolated() {
     }
+
+    @Override
+    public String getHaTag() {
+        return _haTag;
+    }
+    
 }

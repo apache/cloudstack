@@ -331,7 +331,9 @@ public enum Config {
 	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
 	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
 	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Service offering used by console proxy; if NULL - system offering will be used", null),
-	SecondaryStorageServiceOffering("Advanced", ManagementServer.class, Long.class, "secstorage.service.offering", null, "Service offering used by secondary storage; if NULL - system offering will be used", null);
+	SecondaryStorageServiceOffering("Advanced", ManagementServer.class, Long.class, "secstorage.service.offering", null, "Service offering used by secondary storage; if NULL - system offering will be used", null),
+	HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null);
+
 	
 	private final String _category;
 	private final Class<?> _componentClass;

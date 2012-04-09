@@ -1999,6 +1999,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		return sc.list();
     }
 	
+	@Override
+    public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId) {
+	    String haTag = _haMgr.getHaTag();
+        return _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, haTag);
+    }
+	
 	@Override 
 	public List<HostVO> findHostByGuid(long dcId, String guid) {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);

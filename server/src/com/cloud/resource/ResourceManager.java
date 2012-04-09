@@ -136,4 +136,13 @@ public interface ResourceManager extends ResourceService{
     Discoverer getMatchingDiscover(HypervisorType hypervisorType);
 
 	List<HostVO> findHostByGuid(long dcId, String guid);
+
+    /**
+     * @param type
+     * @param clusterId
+     * @param podId
+     * @param dcId
+     * @return
+     */
+    List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId);
 }

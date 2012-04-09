@@ -19,8 +19,6 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -66,4 +64,15 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 	HostVO findByGuid(String guid);
 	
 	HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
+
+
+    /**
+     * @param type
+     * @param clusterId
+     * @param podId
+     * @param dcId
+     * @param haTag TODO
+     * @return
+     */
+    List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 }
