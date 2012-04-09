@@ -3233,6 +3233,37 @@ Dialogs*/
   font-weight: bold;
 }
 
+.button.fetch-latest {
+  font-size: 10px;
+  float: right;
+  clear: none;
+  /*+text-shadow:0px 1px 0px #333E49;*/
+  -moz-text-shadow: 0px 1px 0px #333E49;
+  -webkit-text-shadow: 0px 1px 0px #333E49;
+  -o-text-shadow: 0px 1px 0px #333E49;
+  text-shadow: 0px 1px #333E49;
+  padding: 3px 8px 3px 10px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -411px;
+  border: 1px solid #383838;
+  /*+border-radius:6px;*/
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  -khtml-border-radius: 6px;
+  border-radius: 6px 6px 6px 6px;
+  /*+box-shadow:0px 1px 1px #718CA5;*/
+  -moz-box-shadow: 0px 1px 1px #718CA5;
+  -webkit-box-shadow: 0px 1px 1px #718CA5;
+  -o-box-shadow: 0px 1px 1px #718CA5;
+  box-shadow: 0px 1px 1px #718CA5;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.button.fetch-latest:hover {
+  background-position: 0 -132px;
+  border-left: 1px solid #585D60;
+}
+
 .dashboard.admin .dashboard-container.sub .title {
   float: left;
 }
@@ -7214,7 +7245,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   box-shadow: 0px 0px 1px #FFFFFF;
 }
 
-.system-dashboard .head .view-more {
+.system-dashboard .view-more,
+.system-dashboard .view-all {
   float: right;
   padding: 5px 21px 5px 9px;
   margin: -4px 19px 0 0;
@@ -7241,13 +7273,25 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   text-shadow: 0px 1px 1px #000000;
 }
 
-.system-dashboard .head .view-more:hover {
+.system-dashboard .view-more:hover,
+.system-dashboard .view-all:hover {
   background-position: 0px -763px;
   /*+box-shadow:inset 0px 1px 1px #313131;*/
   -moz-box-shadow: inset 0px 1px 1px #313131;
   -webkit-box-shadow: inset 0px 1px 1px #313131;
   -o-box-shadow: inset 0px 1px 1px #313131;
   box-shadow: inset 0px 1px 1px #313131;
+}
+
+.system-dashboard .status_box .view-all {
+  /*+placement:shift 18px 136px;*/
+  position: relative;
+  left: 18px;
+  top: 136px;
+  width: 78%;
+  position: absolute;
+  text-align: center;
+  padding: 5px 0 8px;
 }
 
 .system-dashboard .status_box {
