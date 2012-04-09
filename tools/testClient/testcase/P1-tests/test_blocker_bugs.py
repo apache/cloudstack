@@ -238,6 +238,7 @@ class TestSnapshots(cloudstackTestCase):
                                     self.services["paths"]["sub_lvl_dir2"],
                                     self.services["paths"]["random_data"]
                                     ),
+		    "sync"
                 ]
         for c in cmds:
             self.debug("Command: %s" % c)
@@ -472,7 +473,7 @@ class TestTemplate(cloudstackTestCase):
         list_template_response = Template.list(
                                             self.apiclient,
                                             templatefilter=\
-                                            self.services["templatefilter"],
+                                            self.services["templates"]["templatefilter"],
                                             id=template.id,
                                             zoneid=self.zone.id
                                             )
@@ -1128,6 +1129,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @unittest.skip("Known bug in 2.0")
     def test_03_resuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
         """

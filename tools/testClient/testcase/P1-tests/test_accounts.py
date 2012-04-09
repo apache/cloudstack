@@ -23,72 +23,6 @@ class Services:
                         "domain": {
                                    "name": "Domain",
                                    },
-                        "zone": {
-                                 "dns1": '121.242.190.180',
-                                 "internaldns1": '192.168.100.1',
-                                 "name" : "Test Zone",
-                                 "networktype" : "Basic",
-                                 "dns2": '121.242.190.211',
-                                 },
-                         "pod": {
-                                 "name": "Test Pod",
-                                 "gateway": '192.168.100.1',
-                                 "netmask": '255.255.255.0',
-                                 "startip": '192.168.100.132',
-                                 "endip": '192.168.100.140',
-                                 },
-                         "public_ip": {
-                                 "gateway": '192.168.100.1',
-                                 "netmask": '255.255.255.0',
-                                 "forvirtualnetwork": False,
-                                 "startip": '192.168.100.142',
-                                 "endip": '192.168.100.149',
-                                 "vlan": "untagged",
-                                 },
-                         "cluster": {
-                                "clustername": "Xen Cluster",
-                                "clustertype": "CloudManaged",
-                                # CloudManaged or ExternalManaged"
-                                "hypervisor": "XenServer",
-                                # Hypervisor type
-                                },
-                         "host": {
-                                "hypervisor": 'XenServer',
-                                # Hypervisor type
-                                "clustertype": 'CloudManaged',
-                                # CloudManaged or ExternalManaged"
-                                "url": 'http://192.168.100.211',
-                                "username": "root",
-                                "password": "fr3sca",
-                                "port": 22,
-                                "ipaddress": '192.168.100.211'
-                            },
-
-                         "primary_storage": {
-                                "name": "Test Primary",
-                                "url": "nfs://192.168.100.150/mnt/DroboFS/Shares/nfsclo3",
-                                # Format: File_System_Type/Location/Path
-                            },
-                        "sec_storage": {
-                                 "url": "nfs://192.168.100.150/mnt/DroboFS/Shares/nfsclo4"
-                                 # Format: File_System_Type/Location/Path
-
-
-                            },
-                        "mgmt_server": {
-                                        "ipaddress": '192.168.100.154',
-                                        "port": 22,
-                                        "username": 'root',
-                                        "password": 'fr3sca',
-                        },
-                        "sysVM": {
-                                        "mnt_dir": '/mnt/test',
-                                        "sec_storage": '192.168.100.150',
-                                        "path": 'TestSec',
-                                        "command": '/usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt',
-                                        "download_url": 'http://download.cloud.com/releases/2.2.0/systemvm.vhd.bz2',
-                                        "hypervisor": "xenserver",
-                            },
                         "account": {
                                     "email": "test@test.com",
                                     "firstname": "Test",
@@ -999,7 +933,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
             )
         return
 
-@unittest.skip("Open Questions")
+
 class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
@@ -1008,93 +942,14 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.services = Services().services
 
         # Setup working Environment- Create domain, zone, pod cluster etc.
-        cls.domain = Domain.create(
+        cls.domain = get_domain(
                                    cls.api_client,
-                                   cls.services["domain"]
+                                   cls.services
                                    )
-        cls.zone = Zone.create(
+        cls.zone = get_zone(
                                cls.api_client,
-                               cls.services["zone"],
-                               domainid=cls.domain.id
+                               cls.services
                                )
-        cls.services["pod"]["zoneid"] = cls.zone.id
-
-        cls.pod = Pod.create(
-                             cls.api_client,
-                             cls.services["pod"]
-                             )
-        cls.services["public_ip"]["zoneid"] = cls.zone.id
-        cls.services["public_ip"]["podid"] = cls.pod.id
-
-        cls.public_ip_range = PublicIpRange.create(
-                                              cls.api_client,
-                                              cls.services["public_ip"]
-                                              )
-        cls.services["cluster"]["zoneid"] = cls.zone.id
-        cls.services["cluster"]["podid"] = cls.pod.id
-
-        cls.cluster = Cluster.create(
-                                     cls.api_client,
-                                     cls.services["cluster"]
-                                     )
-
-        cls.services["host"]["zoneid"] = cls.zone.id
-        cls.services["host"]["podid"] = cls.pod.id
-
-        cls.host = Host.create(
-                               cls.api_client,
-                               cls.cluster,
-                               cls.services["host"]
-                               )
-
-        cls.services["primary_storage"]["zoneid"] = cls.zone.id
-        cls.services["primary_storage"]["podid"] = cls.pod.id
-
-        cls.primary_storage = StoragePool.create(
-                                        cls.api_client,
-                                        cls.services["primary_storage"],
-                                        cls.cluster.id
-                                        )
-
-        # before adding Sec Storage, First download System Templates on it
-        download_systemplates_sec_storage(
-                                    cls.services["mgmt_server"],
-                                    cls.services["sysVM"]
-                                    )
-
-        cls.services["sec_storage"]["zoneid"] = cls.zone.id
-        cls.services["sec_storage"]["podid"] = cls.pod.id
-
-        cls.secondary_storage = SecondaryStorage.create(
-                                        cls.api_client,
-                                        cls.services["sec_storage"]
-                                        )
-        # After adding Host, Clusters wait for SSVMs to come up
-        wait_for_ssvms(
-                       cls.api_client,
-                       cls.zone.id,
-                       cls.pod.id
-                       )
-
-        ssvm_response = list_ssvms(
-                                    cls.api_client,
-                                    systemvmtype='secondarystoragevm',
-                                    hostid=cls.host.id,
-                                    sleep=cls.services["sleep"]
-                                )
-        if isinstance(ssvm_response, list):
-            ssvm = ssvm_response[0]
-        else:
-            raise Exception("List SSVM failed")
-        
-        # Download BUILTIN templates
-        download_builtin_templates(
-                                   cls.api_client,
-                                   cls.zone.id,
-                                   cls.services["cluster"]["hypervisor"],
-                                   cls.services["host"],
-                                   ssvm.linklocalip
-                                   )
         cls.sub_domain = Domain.create(
                                    cls.api_client,
                                    cls.services["domain"],
@@ -1145,60 +1000,21 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     domainid=cls.account_2.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls._cleanup = []
+        cls._cleanup = [
+			cls.account_2,
+			cls.account_1,
+			cls.sub_domain,
+			cls.service_offering
+			]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            # Cleanup the accounts
-            cls.account_1.delete(cls.api_client)
-            cls.account_2.delete(cls.api_client)
-
-            cleanup_wait = list_configurations(
-                                          cls.api_client,
-                                          name='account.cleanup.interval'
-                                          )
-            # Sleep for account.cleanup.interval * 2 to wait for expunge of
-            # resources associated with that account
-            if isinstance(cleanup_wait, list):
-                sleep_time = int(cleanup_wait[0].value) * 2
-            
-            time.sleep(sleep_time)
-            
-            # Delete Service offerings and sub-domains
-            cls.service_offering.delete(cls.api_client)
-            cls.sub_domain.delete(cls.api_client)
-
-            # Enable maintenance mode of 
-            cls.host.enableMaintenance(cls.api_client)
-            cls.primary_storage.enableMaintenance(cls.api_client)
-
-            # Destroy SSVMs and wait for volumes to cleanup 
-            ssvms = list_ssvms(
-                               cls.api_client,
-                               zoneid=cls.zone.id
-                               )
-            
-            if isinstance(ssvms, list):
-                for ssvm in ssvms:
-                    cmd = destroySystemVm.destroySystemVmCmd()
-                    cmd.id = ssvm.id
-                    cls.api_client.destroySystemVm(cmd)
-
-            # Sleep for account.cleanup.interval*2 to wait for SSVM volume
-            # to cleanup
-            time.sleep(sleep_time)
-
-            # Cleanup Primary, secondary storage, hosts, zones etc.
-            cls.secondary_storage.delete(cls.api_client)
-            cls.host.delete(cls.api_client)
-            
-            cls.primary_storage.delete(cls.api_client)
-            cls.cluster.delete(cls.api_client)
-            cls.pod.delete(cls.api_client)
-            cls.zone.delete(cls.api_client)
-        except Exception as e:
+            #Clean up, terminate the created resources
+            cleanup_resources(cls.api_client, cls._cleanup)
+        
+	except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
