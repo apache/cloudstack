@@ -791,7 +791,7 @@
           }
         },
 
-        'guest': {
+        'guest': { //physical network + Guest traffic type
           detailView: {
             actions: {
               edit: {
@@ -1438,25 +1438,8 @@
                       }
                     });
 
-										$(items).each(function(){
-											this.networkdomaintext = this.networkdomain;
-											this.networkofferingidText = this.networkofferingid;
-
-											if(this.acltype == "Domain") {
-												if(this.domainid == rootAccountId)
-													this.scope = "All";
-												else
-													this.scope = "Domain (" + this.domain + ")";
-											}
-											else if (this.acltype == "Account"){
-												if(this.project != null)
-													this.scope = "Account (" + this.domain + ", " + this.project + ")";
-												else
-													this.scope = "Account (" + this.domain + ", " + this.account + ")";
-											}
-
-											if(this.vlan == null && this.broadcasturi != null)
-												this.vlan = this.broadcasturi.replace("vlan://", "");
+										$(items).each(function(){ 										  
+											addExtraPropertiesToGuestNetworkObject(this);																			
 										});
 
 										args.response.success({data: items});
@@ -1766,12 +1749,20 @@
 														project: { label: 'label.project' }
                           }
                         ],
-                        dataProvider: function(args) {
-                          selectedGuestNetworkObj = args.context.networks[0];
-                          args.response.success({
-													  actionFilter: cloudStack.actionFilter.guestNetwork,
-													  data: selectedGuestNetworkObj
-													});
+                        dataProvider: function(args) {			
+													$.ajax({
+														url: createURL("listNetworks&id=" + args.context.networks[0].id),
+														dataType: "json",
+														async: false,
+														success: function(json) {														 
+															selectedGuestNetworkObj = json.listnetworksresponse.network[0];		
+                              addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);	
+															args.response.success({
+																actionFilter: cloudStack.actionFilter.guestNetwork,
+																data: selectedGuestNetworkObj
+															});		
+														}
+													});							
                         }
                       }
                     }
@@ -7768,5 +7759,27 @@
 			jsonObj.state = jsonObj.managedstate; //jsonObj.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
 		}
   }
+	
+	var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
+		jsonObj.networkdomaintext = jsonObj.networkdomain;
+		jsonObj.networkofferingidText = jsonObj.networkofferingid;
 
+		if(jsonObj.acltype == "Domain") {
+			if(jsonObj.domainid == rootAccountId)
+				jsonObj.scope = "All";
+			else
+				jsonObj.scope = "Domain (" + jsonObj.domain + ")";
+		}
+		else if (jsonObj.acltype == "Account"){
+			if(jsonObj.project != null)
+				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
+			else
+				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
+		}
+
+		if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
+			jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
+		}
+  }	
+	
 })($, cloudStack);
