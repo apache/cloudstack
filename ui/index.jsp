@@ -951,24 +951,28 @@
         <div class="system-dashboard">
           <div class="head">
             <span><fmt:message key="label.zones"/></span>
-            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
+            <div class="view-all zones" view-all-target="zones"><span><fmt:message key="label.view.all"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
               <span class="header"><fmt:message key="label.number.of.zones"/></span>
               <span class="overview total" data-item="zoneCount"></span>
+              <span class="button view-all zones" view-all-target="zones"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
               <span class="header"><fmt:message key="label.number.of.pods"/></span>
               <span class="overview total" data-item="podCount"></span>
+              <span class="button view-all pods" view-all-target="pods"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
               <span class="header"><fmt:message key="label.number.of.clusters"/></span>
               <span class="overview total" data-item="clusterCount"></span>
+              <span class="button view-all clusters" view-all-target="clusters"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block last">
               <span class="header"><fmt:message key="label.number.of.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
+              <span class="button view-all hosts" view-all-target="hosts"><fmt:message key="label.view.all"/></span>
             </li>
           </ul>
         </div>
@@ -977,7 +981,7 @@
         <div class="system-dashboard">
           <div class="head">
             <span><fmt:message key="label.hosts"/></span>
-            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
+            <div class="view-more" view-all-target="hosts"><span><fmt:message key="label.view.all"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
