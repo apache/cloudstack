@@ -61,7 +61,6 @@ public interface ConsoleProxyClient {
 	//
 	// Setup/house-keeping
 	//
-	void initClient(String clientHostAddress, int clientHostPort, 
-		String clientHostPassword, String clientTag, String ticket);
+	void initClient(ConsoleProxyClientParam param);
 	void closeClient();
 }

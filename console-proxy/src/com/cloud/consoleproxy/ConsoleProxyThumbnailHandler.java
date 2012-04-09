@@ -121,7 +121,13 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 			throw new IllegalArgumentException(e);
 		}
 
-		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(host, port, sid, tag, ticket);
+		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+		param.setClientHostAddress(host);
+		param.setClientHostPort(port);
+		param.setClientHostPassword(sid);
+		param.setClientTag(tag);
+		param.setTicket(ticket);
+		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
 		
 		if (!viewer.isHostConnected()) {
 			// use generated image instead of static

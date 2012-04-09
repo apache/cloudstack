@@ -151,31 +151,36 @@ public class ConsoleProxy {
 		}
 	}
 
-	public static boolean authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket) {
+	public static boolean authenticateConsoleAccess(ConsoleProxyClientParam param) {
 		if(standaloneStart)
 			return true;
 		
 		if(authMethod != null) {
 			Object result;
 			try {
-				result = authMethod.invoke(ConsoleProxy.context, host, port, vmId, sid, ticket);
+				result = authMethod.invoke(ConsoleProxy.context, 
+					param.getClientHostAddress(), 
+					String.valueOf(param.getClientHostPort()), 
+					param.getClientTag(), 
+					param.getClientHostPassword(), 
+					param.getTicket());
 			} catch (IllegalAccessException e) {
-				s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + vmId, e);
+				s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
 				return false;
 			} catch (InvocationTargetException e) {
-				s_logger.error("Unable to invoke authenticateConsoleAccess due to InvocationTargetException " + " for vm: " + vmId, e);
+				s_logger.error("Unable to invoke authenticateConsoleAccess due to InvocationTargetException " + " for vm: " + param.getClientTag(), e);
 				return false;
 			}
 			
 			if(result != null && result instanceof Boolean) {
 				return ((Boolean)result).booleanValue();
 			} else {
-				s_logger.error("Invalid authentication return object " + result + " for vm: " + vmId + ", decline the access");
+				s_logger.error("Invalid authentication return object " + result + " for vm: " + param.getClientTag() + ", decline the access");
 				return false;
 			}
 			
 		} else {
-			s_logger.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + vmId);
+			s_logger.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + param.getClientTag());
 			return true;
 		}
 	}
@@ -343,29 +348,29 @@ public class ConsoleProxy {
 		start(conf);
 	}
 	
-	public static ConsoleProxyClient getVncViewer(String host, int port, String sid, String tag, String ticket) throws Exception {
+	public static ConsoleProxyClient getVncViewer(ConsoleProxyClientParam param) throws Exception {
 		ConsoleProxyClient viewer = null;
 		
 		boolean reportLoadChange = false;
+		String clientKey = param.getClientMapKey();
 		synchronized (connectionMap) {
-			viewer = connectionMap.get(host + ":" + port);
+			viewer = connectionMap.get(clientKey);
 			if (viewer == null) {
 				viewer = new ConsoleProxyVncClient();
-				viewer.initClient(host, port, sid, tag, ticket);
-				connectionMap.put(host + ":" + port, viewer);
+				viewer.initClient(param);
+				connectionMap.put(clientKey, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				
 				reportLoadChange = true;
 			} else if (!viewer.isFrontEndAlive()) {
-				s_logger.info("The rfb thread died, reinitializing the viewer " +
-						viewer);
-				viewer.initClient(host, port, sid, tag, ticket);
+				s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
+				viewer.initClient(param);
 				
 				reportLoadChange = true;
-			} else if (!sid.equals(viewer.getClientHostPassword())) {
+			} else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword()
-					+ ", sid in request: " + sid);
-				viewer.initClient(host, port, sid, tag, ticket);
+					+ ", sid in request: " + param.getClientHostPassword());
+				viewer.initClient(param);
 				
 				reportLoadChange = true;
 			}
@@ -382,32 +387,32 @@ public class ConsoleProxy {
 		return viewer;
 	}
 	
-	public static ConsoleProxyClient getAjaxVncViewer(String host, int port, String sid, String tag, 
-		String ticket, String ajaxSession) throws Exception {
+	public static ConsoleProxyClient getAjaxVncViewer(ConsoleProxyClientParam param, String ajaxSession) throws Exception {
 		
 		boolean reportLoadChange = false;
+		String clientKey = param.getClientMapKey();
 		synchronized (connectionMap) {
-			ConsoleProxyClient viewer = connectionMap.get(host + ":" + port);
+			ConsoleProxyClient viewer = connectionMap.get(clientKey);
 			if (viewer == null) {
 				viewer = new ConsoleProxyVncClient();
-				viewer.initClient(host, port, sid, tag, ticket);
+				viewer.initClient(param);
 				
-				connectionMap.put(host + ":" + port, viewer);
+				connectionMap.put(clientKey, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				reportLoadChange = true;
 			} else if (!viewer.isFrontEndAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
-				viewer.initClient(host, port, sid, tag, ticket);
+				viewer.initClient(param);
 				reportLoadChange = true;
-			} else if (!sid.equals(viewer.getClientHostPassword())) {
+			} else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " 
-					+ viewer.getClientHostPassword() + ", sid in request: " + sid);
-				viewer.initClient(host, port, sid, tag, ticket);
+					+ viewer.getClientHostPassword() + ", sid in request: " + param.getClientHostPassword());
+				viewer.initClient(param);
 				reportLoadChange = true;
 			} else {
 				if(ajaxSession == null || ajaxSession.isEmpty())
-					authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
+					authenticationExternally(param);
 			}
 			
 			if(reportLoadChange) {
@@ -436,11 +441,11 @@ public class ConsoleProxy {
 		return new ConsoleProxyClientStatsCollector(connectionMap);
 	}
 	
-	public static void authenticationExternally(String host, String port, String tag, String sid, String ticket) throws AuthenticationException {
-		if(!authenticateConsoleAccess(host, port, tag, sid, ticket)) {
-    		s_logger.warn("External authenticator failed authencation request for vm " + tag + " with sid " + sid);
+	public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {
+		if(!authenticateConsoleAccess(param)) {
+    		s_logger.warn("External authenticator failed authencation request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
         	
-			throw new AuthenticationException("External authenticator failed request for vm " + tag + " with sid " + sid);
+			throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 		}
 	}
 	

@@ -85,7 +85,13 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 			throw new IllegalArgumentException(e);
 		}
 
-		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(host, port, sid, tag, ticket);
+		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+		param.setClientHostAddress(host);
+		param.setClientHostPort(port);
+		param.setClientHostPassword(sid);
+		param.setClientTag(tag);
+		param.setTicket(ticket);
+		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
 		byte[] img = viewer.getAjaxImageCache().getImage(key);
 		if(img != null) {
 			Headers hds = t.getResponseHeaders();

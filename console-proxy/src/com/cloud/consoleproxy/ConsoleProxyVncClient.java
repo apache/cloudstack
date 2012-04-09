@@ -52,13 +52,12 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	}
 
 	@Override
-	public void initClient(final String clientHostAddress, final int clientHostPort, 
-			final String clientHostPassword, final String clientTag, final String ticket) {
-		this.host = clientHostAddress;
-		this.port = clientHostPort;
-		this.passwordParam = clientHostPassword;
-		this.tag = clientTag;
-		this.ticket = ticket;
+	public void initClient(ConsoleProxyClientParam param) {
+		this.host = param.getClientHostAddress();
+		this.port = param.getClientHostPort();
+		this.passwordParam = param.getClientHostPassword();
+		this.tag = param.getClientTag();
+		this.ticket = param.getTicket();
 		
 		client = new VncClient(this);
 		worker = new Thread(new Runnable() {
@@ -66,7 +65,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 				long startTick = System.currentTimeMillis();
 				while(System.currentTimeMillis() - startTick < 7000) {
 					try {
-						client.connectTo(clientHostAddress, clientHostPort, clientHostPassword);
+						client.connectTo(host, port, passwordParam);
 					} catch (UnknownHostException e) {
 						s_logger.error("Unexpected exception: ", e);
 					} catch (IOException e) {
