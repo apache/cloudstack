@@ -140,9 +140,9 @@
     })
   };
 
-  function virtualRouterProviderActionFilter(args) {
-    var allowedActions = [];
-    var jsonObj = nspMap["virtualRouter"];
+  function virtualRouterProviderActionFilter(args) { 	  
+    var allowedActions = [];    
+		var jsonObj = args.context.item; //args.context.item == nspMap["virtualRouter"]
     if(jsonObj.state == "Enabled")
       allowedActions.push("disable");
     else if(jsonObj.state == "Disabled")
@@ -1917,22 +1917,36 @@
                     PortForwarding: { label: 'Port Forwarding' }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: virtualRouterProviderActionFilter,
-                    data: $.extend(true, {}, nspMap["virtualRouter"], {
-                      Vpn: 'On',
-                      Dhcp: 'On',
-                      Dns: 'On',
-                      Gateway: 'On',
-                      Firewall: 'On',
-                      Lb: 'On',
-                      UserData: 'On',
-                      SourceNat: 'On',
-                      StaticNat: 'On',
-                      PortForwarding: 'On'
-                    })
-                  });
+                dataProvider: function(args) { 					 
+									$.ajax({
+										url: createURL("listNetworkServiceProviders&id=" + nspMap["virtualRouter"].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;											
+											for(var i = 0; i < items.length; i++) {
+												if(items[i].name == "VirtualRouter" ) {
+												  nspMap["virtualRouter"] = items[i];		
+													args.response.success({
+														actionFilter: virtualRouterProviderActionFilter,
+														data: $.extend(true, {}, nspMap["virtualRouter"], {
+															Vpn: 'On',
+															Dhcp: 'On',
+															Dns: 'On',
+															Gateway: 'On',
+															Firewall: 'On',
+															Lb: 'On',
+															UserData: 'On',
+															SourceNat: 'On',
+															StaticNat: 'On',
+															PortForwarding: 'On'
+														})
+													});										
+													break;
+												}
+											}													
+										}
+									});		
                 }
               },
 
