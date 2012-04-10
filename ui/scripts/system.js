@@ -1902,19 +1902,8 @@
                     id: { label: 'label.id' },
                     state: { label: 'label.state' },
                     physicalnetworkid: { label: 'label.physical.network.ID' },
-                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' }
-                  },
-                  {
-                    Vpn: { label: 'VPN' },
-                    Dhcp: { label: 'label.dhcp' },
-                    Dns: { label: 'DNS' },
-                    Gateway: { label: 'label.gateway' },
-                    Firewall: { label: 'Firewall' },
-                    Lb: { label: 'Load Balancer' },
-                    UserData: { label: 'UserData' },
-                    SourceNat: { label: 'Source NAT' },
-                    StaticNat: { label: 'Static NAT' },
-                    PortForwarding: { label: 'Port Forwarding' }
+                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
+										supportedServices: { label: 'label.supported.services' },
                   }
                 ],
                 dataProvider: function(args) { 					 
@@ -1926,22 +1915,13 @@
 											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;											
 											for(var i = 0; i < items.length; i++) {
 												if(items[i].name == "VirtualRouter" ) {
-												  nspMap["virtualRouter"] = items[i];		
+												  nspMap["virtualRouter"] = items[i];													
 													args.response.success({
 														actionFilter: virtualRouterProviderActionFilter,
-														data: $.extend(true, {}, nspMap["virtualRouter"], {
-															Vpn: 'On',
-															Dhcp: 'On',
-															Dns: 'On',
-															Gateway: 'On',
-															Firewall: 'On',
-															Lb: 'On',
-															UserData: 'On',
-															SourceNat: 'On',
-															StaticNat: 'On',
-															PortForwarding: 'On'
+														data: $.extend(nspMap["virtualRouter"], {
+															supportedServices: nspMap["virtualRouter"].servicelist.join(', ')
 														})
-													});										
+													});													
 													break;
 												}
 											}													
