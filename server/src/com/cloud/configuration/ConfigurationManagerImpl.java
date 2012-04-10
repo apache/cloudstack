@@ -2400,6 +2400,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         txn.start();
 
         VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId);
+        s_logger.debug("Saving vlan range " + vlan);
         vlan = _vlanDao.persist(vlan);
 
         if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
