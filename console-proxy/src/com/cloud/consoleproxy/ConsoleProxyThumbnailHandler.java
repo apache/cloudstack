@@ -107,6 +107,9 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 		String sid = queryMap.get("sid");
 		String tag = queryMap.get("tag");
 		String ticket = queryMap.get("ticket");
+		String console_url = queryMap.get("consoleurl");
+		String console_host_session = queryMap.get("sessionref");
+
 		if(tag == null)
 			tag = "";
 		

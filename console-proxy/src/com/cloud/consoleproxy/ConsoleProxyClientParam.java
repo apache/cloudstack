@@ -25,6 +25,9 @@ public class ConsoleProxyClientParam {
 	private String clientTag;
 	private String ticket;
 	
+	private String clientTunnelUrl;
+	private String clientTunnelSession;
+	
 	public ConsoleProxyClientParam() {
 		clientHostPort = 0;
 	}
@@ -69,6 +72,22 @@ public class ConsoleProxyClientParam {
 		this.ticket = ticket;
 	}
 	
+	public String getClientTunnelUrl() {
+		return clientTunnelUrl;
+	}
+
+	public void setClientTunnelUrl(String clientTunnelUrl) {
+		this.clientTunnelUrl = clientTunnelUrl;
+	}
+
+	public String getClientTunnelSession() {
+		return clientTunnelSession;
+	}
+
+	public void setClientTunnelSession(String clientTunnelSession) {
+		this.clientTunnelSession = clientTunnelSession;
+	}
+
 	public String getClientMapKey() {
 		return clientHostAddress + ":" + clientHostPort;
 	}
