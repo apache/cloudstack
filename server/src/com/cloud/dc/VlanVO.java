@@ -139,4 +139,14 @@ public class VlanVO implements Vlan, Identity {
         this.physicalNetworkId = physicalNetworkId;
     }
     
+    transient String toString;
+    @Override
+    public String toString() {
+        if (toString == null) {
+            toString = new StringBuilder("Vlan[").append(vlanTag).append("|").append(vlanGateway).append("|").append(vlanNetmask).
+                    append("|").append(ipRange).append("|").append(networkId).append("]").toString();
+        }
+        return toString;
+    }
+    
 }
