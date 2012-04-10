@@ -75,7 +75,7 @@
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj; 
   var nspMap = {}; //from listNetworkServiceProviders API 
-	var nspArray = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
+	var nspHardcodingArray = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
 	
   var getTrafficType = function(physicalNetwork, typeID) {
     var trafficType = {};
@@ -328,7 +328,7 @@
             }
           });
 
-					nspArray = [
+					nspHardcodingArray = [
 						{
 							id: 'netscaler',
 							name: 'NetScaler',
@@ -342,7 +342,7 @@
 					];
 
 					if(selectedZoneObj.networktype == "Basic") {
-					  nspArray.push(
+					  nspHardcodingArray.push(
 						  {
                 id: 'securityGroups',
                 name: 'Security Groups',
@@ -351,14 +351,14 @@
 						);
 					}
 					else if(selectedZoneObj.networktype == "Advanced"){
-						nspArray.push(
+						nspHardcodingArray.push(
 						  {
 								id: 'f5',
 								name: 'F5',
 								state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
 							}
 						);
-					  nspArray.push(
+					  nspHardcodingArray.push(
 						  {
 								id: 'srx',
 								name: 'SRX',
@@ -368,7 +368,7 @@
 					}
 
           args.response.success({
-            data: nspArray
+            data: nspHardcodingArray
           })
         },
 
@@ -2398,7 +2398,7 @@
                 ],
                 dataProvider: function(args) {
 									var providerObj;
-									$(nspArray).each(function(){
+									$(nspHardcodingArray).each(function(){
 										if(this.id == "netscaler") {
 											providerObj = this;
 											return false; //break each loop
@@ -2632,7 +2632,7 @@
                 ],
                 dataProvider: function(args) {
 									var providerObj;
-									$(nspArray).each(function(){
+									$(nspHardcodingArray).each(function(){
 										if(this.id == "f5") {
 											providerObj = this;
 											return false; //break each loop
@@ -2864,7 +2864,7 @@
                 ],
                 dataProvider: function(args) {
 									var providerObj;
-									$(nspArray).each(function(){
+									$(nspHardcodingArray).each(function(){
 										if(this.id == "srx") {
 											providerObj = this;
 											return false; //break each loop
@@ -3111,7 +3111,7 @@
                 ],
                 dataProvider: function(args) {
 									var providerObj;
-									$(nspArray).each(function(){
+									$(nspHardcodingArray).each(function(){
 										if(this.id == "securityGroups") {
 											providerObj = this;
 											return false; //break each loop
@@ -4650,8 +4650,16 @@
                     timeout: { label: 'label.timeout' }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({data: args.context.srxProviders[0]});
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listSrxFirewalls&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),										
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listsrxfirewallresponse.srxfirewall[0];
+											args.response.success({data: item});
+										}
+									});											
                 }
               }
             }
