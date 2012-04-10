@@ -1707,9 +1707,30 @@ public class EC2Engine {
 	 */
 	private EC2DescribeImagesResponse listTemplates( String templateId, EC2DescribeImagesResponse images ) throws EC2ServiceException {
 		try {
-			List<CloudStackTemplate> resp = getApi().listTemplates("executable", null, null, null, templateId != null ? templateId : null, null, null, null); 
-			if (resp != null && resp.size() > 0) {
-			    for (CloudStackTemplate temp : resp) {
+		    List<CloudStackTemplate> result = new ArrayList<CloudStackTemplate>();
+		    
+		    List<CloudStackTemplate> selfExecutable = getApi().listTemplates("selfexecutable", null, null, null, templateId != null ? templateId : null, null, null, null); 
+            if(selfExecutable != null){
+                result.addAll(selfExecutable);
+            }
+
+            List<CloudStackTemplate> featured = getApi().listTemplates("featured", null, null, null, templateId != null ? templateId : null, null, null, null);
+			if(featured != null){
+			    result.addAll(featured);
+			}
+			
+			List<CloudStackTemplate> sharedExecutable = getApi().listTemplates("sharedexecutable", null, null, null, templateId != null ? templateId : null, null, null, null);
+            if(sharedExecutable != null){
+                result.addAll(sharedExecutable);
+            }
+            
+            List<CloudStackTemplate> community = getApi().listTemplates("community", null, null, null, templateId != null ? templateId : null, null, null, null);
+            if(community != null){
+                result.addAll(community);
+            }
+			
+			if (result != null && result.size() > 0) {
+			    for (CloudStackTemplate temp : result) {
     				EC2Image ec2Image = new EC2Image();
     				ec2Image.setId(temp.getId().toString());
     				ec2Image.setAccountName(temp.getAccount());
