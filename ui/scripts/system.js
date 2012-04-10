@@ -6744,13 +6744,20 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: primarystorageActionfilter,
-                    data: args.context.primarystorages[0]
-                  });
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listStoragePools&id=" + args.context.primarystorages[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.liststoragepoolsresponse.storagepool[0];
+											args.response.success({
+												actionFilter: primarystorageActionfilter,
+												data:item
+											});
+										}
+									});														
                 }
-
               }
             }
           }
