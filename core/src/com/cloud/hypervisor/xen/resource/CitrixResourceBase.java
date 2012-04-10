@@ -1709,7 +1709,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getName());
             if(vms.size() == 1) {
-                return new GetVncPortAnswer(cmd, getVncPort(conn, vms.iterator().next()));
+            	int vncport = getVncPort(conn, vms.iterator().next());
+            	String consoleurl;
+            	consoleurl = "consoleurl=" +getVncUrl(conn, vms.iterator().next()) + "&" +"sessionref="+ conn.getSessionReference();
+                return new GetVncPortAnswer(cmd, consoleurl, vncport);
             } else {
                 return new GetVncPortAnswer(cmd, "There are " + vms.size() + " VMs named " + cmd.getName());
             }
@@ -2612,6 +2615,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VM.Record record;
         try {
             record = vm.getRecord(conn);
+            Set<Console> consoles = record.consoles;
+            if (consoles.isEmpty()) {
+            	s_logger.warn("There are no Consoles available to the vm : " + record.nameDescription);
+            	return -1;
+            }
+            Iterator<Console> i = consoles.iterator();
         } catch (XenAPIException e) {
             String msg = "Unable to get vnc-port due to " + e.toString();
             s_logger.warn(msg, e);
@@ -2634,6 +2643,42 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vncport = vncport.replace("\n", "");
         return NumbersUtil.parseInt(vncport, -1);
     }
+    
+    protected String getVncUrl(Connection conn, VM vm) {
+        VM.Record record;
+        Console c;
+        String consoleurl;
+        try {
+            record = vm.getRecord(conn);
+            Set<Console> consoles = record.consoles;
+            if (consoles.isEmpty()) {
+            	s_logger.warn("There are no Consoles available to the vm : " + record.nameDescription);
+            	return null;
+            }
+            Iterator<Console> i = consoles.iterator();
+            c = i.next();
+            consoleurl = c.getLocation(conn); 
+        } catch (XenAPIException e) {
+            String msg = "Unable to get console url due to " + e.toString();
+            s_logger.warn(msg, e);
+            return null;
+        } catch (XmlRpcException e) {
+            String msg = "Unable to get console url due to " + e.getMessage();
+            s_logger.warn(msg, e);
+            return null;
+        }
+        
+        if (consoleurl.isEmpty())
+        	return null;
+        else 
+        	return consoleurl;
+        
+        
+        
+    }
+    
+    
+    
 
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
