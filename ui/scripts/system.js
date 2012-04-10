@@ -6911,11 +6911,19 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: secondarystorageActionfilter,
-                    data: args.context.secondarystorages[0]
-                  });
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listHosts&type=SecondaryStorage&id=" + args.context.secondarystorages[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listhostsresponse.host[0];
+											args.response.success({
+												actionFilter: secondarystorageActionfilter,
+												data:item
+											});
+										}
+									});										
                 }
               }
             }
