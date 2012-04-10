@@ -62,6 +62,8 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		String tag = queryMap.get("tag");
 		String ticket = queryMap.get("ticket");
 		String keyStr = queryMap.get("key");
+		String console_url = queryMap.get("consoleurl");
+		String console_host_session = queryMap.get("sessionref");
 		int key = 0;
 		
 		if(tag == null)

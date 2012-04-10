@@ -245,6 +245,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		StringBuffer sb = new StringBuffer();
 		sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
 		sb.append("\"></frame></frameset></html>");
+		s_logger.debug("the console url is :: " + sb.toString());
 		sendResponse(resp, sb.toString());
 	}
 	
@@ -310,12 +311,26 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
 		StringBuffer sb = new StringBuffer(rootUrl);
-		
+		String[] console_session = null;
+		String console_url = null;
 		String host = hostVo.getPrivateIpAddress();
 		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+		
+		s_logger.debug("Port info " + portInfo.first());
+		
 		if(portInfo.first() != null) {
-            host = portInfo.first();
+            console_url = host = portInfo.first();
         }
+		
+		System.out.println("Port info " + portInfo.first());
+        if ( console_url !=null && console_url.startsWith("consoleurl")) {
+        	console_session = console_url.split("&");
+        	host = console_url.substring(19,console_url.indexOf('/', 19)).trim();
+        }
+
+		
+		
+		
 		String sid = vm.getVncPassword();
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
@@ -326,6 +341,12 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&sid=").append(sid);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
+		System.out.println("Port info " + portInfo.first());
+		
+		if ( console_session !=null  && console_session.length == 2){
+			sb.append("&").append(console_session[0]);
+			sb.append("&").append(console_session[1]);
+		}
 		
 		// for console access, we need guest OS type to help implement keyboard
 		long guestOs = vm.getGuestOSId();
