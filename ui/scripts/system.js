@@ -4245,8 +4245,16 @@
                     }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({data: args.context.netscalerProviders[0]});
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listNetscalerLoadBalancers&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),									
+										dataType: "json",
+										async: true,
+										success: function(json) {										 
+											var item = json.listnetscalerloadbalancerresponse.netscalerloadbalancer[0];
+											args.response.success({data: item});
+										}
+									});									             
                 }
               }
             }
