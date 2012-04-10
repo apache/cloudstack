@@ -20,7 +20,7 @@ import com.google.gson.annotations.SerializedName;
 public class CloudStackNic {
 	
     @SerializedName(ApiConstants.ID)
-    private Long id;
+    private String id;
 
     @SerializedName(ApiConstants.BROADCAST_URI)
     private String broadcastUri;
@@ -44,7 +44,7 @@ public class CloudStackNic {
     private String netmask;
     
     @SerializedName(ApiConstants.NETWORK_ID)
-    private Long networkid;
+    private String networkid;
     
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
     private String trafficType;
@@ -55,11 +55,11 @@ public class CloudStackNic {
     public CloudStackNic() {
     }
 
-	public Long getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public Long getNetworkid() {
+	public String getNetworkid() {
 		return networkid;
 	}
 

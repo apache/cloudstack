@@ -21,7 +21,7 @@ public class CloudStackResourceLimit {
     @SerializedName(ApiConstants.ACCOUNT)
     private String accountName;
     @SerializedName(ApiConstants.DOMAIN_ID)
-    private Long domainId;
+    private String domainId;
     @SerializedName(ApiConstants.DOMAIN)
     private String domainName;
     @SerializedName(ApiConstants.RESOURCE_TYPE)
@@ -37,9 +37,9 @@ public class CloudStackResourceLimit {
 		return accountName;
 	}
 
-	public Long getDomainId() {
-		return domainId;
-	}
+    public String getDomainId() {
+        return domainId;
+    }
 
 	public String getDomainName() {
 		return domainName;
