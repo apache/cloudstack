@@ -2292,16 +2292,20 @@
                             redundantRouterState: { label: 'label.redundant.state' }
                           }
                         ],
-                        dataProvider: function(args) {
-                          var item = args.context.routers[0];
-                          if(item.isredundantrouter == true)
-                            item["redundantRouterState"] = item.redundantstate;
-                          else
-                            item["redundantRouterState"] = "";
-                          args.response.success({
-                            actionFilter: routerActionfilter,
-                            data: item
-                          });
+                        dataProvider: function(args) {												  
+													$.ajax({
+														url: createURL("listRouters&id=" + args.context.routers[0].id),
+														dataType: 'json',
+														async: true,
+														success: function(json) {
+															var jsonObj = json.listroutersresponse.router[0];													
+															addExtraPropertiesToRouterInstanceObject(jsonObj);															
+															args.response.success({
+																actionFilter: routerActionfilter,
+																data: jsonObj
+															});
+														}
+													});		
                         }
                       }
                     }
@@ -7775,6 +7779,13 @@
 		if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
 			jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
 		}
+  }	
+	
+	var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {  		
+		if(jsonObj.isredundantrouter == true)
+			jsonObj["redundantRouterState"] = jsonObj.redundantstate;
+		else
+			jsonObj["redundantRouterState"] = "";				
   }	
 	
 })($, cloudStack);
