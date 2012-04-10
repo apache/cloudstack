@@ -6049,13 +6049,20 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: hostActionfilter,
-                    data: args.context.hosts[0]
-                  });
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listHosts&id=" + args.context.hosts[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listhostsresponse.host[0];
+											args.response.success({
+												actionFilter: hostActionfilter,
+												data: item
+											});
+										}
+									});											
                 }
-
               },
 
 							stats: {
