@@ -71,6 +71,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		String ticket = queryMap.get("ticket");
 		String ajaxSessionIdStr = queryMap.get("sess");
 		String eventStr = queryMap.get("event");
+		String console_url = queryMap.get("consoleurl");
+		String console_host_session = queryMap.get("sessionref");
 		
 		if(tag == null)
 			tag = "";
@@ -116,6 +118,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			param.setClientHostPassword(sid);
 			param.setClientTag(tag);
 			param.setTicket(ticket);
+			param.setClientTunnelUrl(console_url);
+			param.setClientTunnelSession(console_host_session);
 			
 			viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
 		} catch(Exception e) {
@@ -183,6 +187,11 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			if(paramTokens != null && paramTokens.length == 2) {
 				String name = param.split("=")[0];
 				String value = param.split("=")[1];
+				map.put(name, value);
+			} else if (paramTokens.length == 3) {
+				// very ugly, added for Xen tunneling url
+				String name = paramTokens[0];
+				String value = paramTokens[1] + "=" + paramTokens[2];
 				map.put(name, value);
 			} else {
 				if(s_logger.isDebugEnabled())

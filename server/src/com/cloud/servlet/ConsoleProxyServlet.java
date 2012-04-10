@@ -42,6 +42,7 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
@@ -283,26 +284,50 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sendResponse(resp, "success");
 	}
 	
+	// put the ugly stuff here
+	static private Ternary<String, String, String> parseHostInfo(String hostInfo) {
+		String host = null;
+		String tunnelUrl = null;
+		String tunnelSession = null;
+		
+        if(hostInfo != null && hostInfo.startsWith("consoleurl")) {
+        	String tokens[] = hostInfo.split("&");
+        	
+        	host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
+        	tunnelUrl = tokens[0].substring("consoleurl=".length());
+        	tunnelSession = tokens[1].split("=")[1];
+        } else {
+        	host = hostInfo;
+        }
+        
+        return new Ternary<String, String, String>(host, tunnelUrl, tunnelSession);
+	}
+	
 	private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
 		StringBuffer sb = new StringBuffer(rootUrl);
 
 		String host = hostVo.getPrivateIpAddress();
+		
 		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
-		if(portInfo.first() != null) {
-            host = portInfo.first();
-        }
+		Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+		
 		String sid = vm.getVncPassword();
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 		
-		sb.append("/getscreen?host=").append(host);
+		sb.append("/getscreen?host=").append(parsedHostInfo.first());
 		sb.append("&port=").append(portInfo.second());
 		sb.append("&sid=").append(sid);
 		sb.append("&w=").append(w).append("&h=").append(h);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
 
+		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+			sb.append("&").append("consoleurl=").append(URLEncoder.encode(parsedHostInfo.second()));
+			sb.append("&").append("sessionref=").append(URLEncoder.encode(parsedHostInfo.third()));
+		}
+		
 		if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose thumbnail url: " + sb.toString());
         }
@@ -311,41 +336,28 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
 		StringBuffer sb = new StringBuffer(rootUrl);
-		String[] console_session = null;
-		String console_url = null;
 		String host = hostVo.getPrivateIpAddress();
+		
 		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
-		
-		s_logger.debug("Port info " + portInfo.first());
-		
-		if(portInfo.first() != null) {
-            console_url = host = portInfo.first();
-        }
-		
-		System.out.println("Port info " + portInfo.first());
-        if ( console_url !=null && console_url.startsWith("consoleurl")) {
-        	console_session = console_url.split("&");
-        	host = console_url.substring(19,console_url.indexOf('/', 19)).trim();
-        }
+		if(s_logger.isDebugEnabled())
+			s_logger.debug("Port info " + portInfo.first());
 
-		
-		
-		
+		Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+
 		String sid = vm.getVncPassword();
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 		
-		sb.append("/ajax?host=").append(host);
+		sb.append("/ajax?host=").append(parsedHostInfo.first());
 		sb.append("&port=").append(portInfo.second());
 		sb.append("&sid=").append(sid);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
-		System.out.println("Port info " + portInfo.first());
 		
-		if ( console_session !=null  && console_session.length == 2){
-			sb.append("&").append(console_session[0]);
-			sb.append("&").append(console_session[1]);
+		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+			sb.append("&").append("consoleurl=").append(URLEncoder.encode(parsedHostInfo.second()));
+			sb.append("&").append("sessionref=").append(URLEncoder.encode(parsedHostInfo.third()));
 		}
 		
 		// for console access, we need guest OS type to help implement keyboard

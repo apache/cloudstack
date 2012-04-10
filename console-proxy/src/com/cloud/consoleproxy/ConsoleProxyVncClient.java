@@ -13,6 +13,8 @@
 package com.cloud.consoleproxy;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
@@ -59,13 +61,31 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 		this.tag = param.getClientTag();
 		this.ticket = param.getTicket();
 		
+		final String tunnelUrl = param.getClientTunnelUrl();
+		final String tunnelSession = param.getClientTunnelSession();
+		
 		client = new VncClient(this);
 		worker = new Thread(new Runnable() {
 			public void run() {
 				long startTick = System.currentTimeMillis();
 				while(System.currentTimeMillis() - startTick < 7000) {
 					try {
-						client.connectTo(host, port, passwordParam);
+						if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+							try {
+								URI uri = new URI(tunnelUrl);
+								s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
+								client.connectTo(
+									uri.getHost(), uri.getPort(), 
+									uri.getPath() + "?" + uri.getQuery(), 
+									tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
+									passwordParam);
+							} catch (URISyntaxException e) {
+								s_logger.warn("Invalid tunnel URL " + tunnelUrl);
+							}
+						} else {
+							s_logger.info("Connect to VNC server directly. host: " + host + ", port: " + port);
+							client.connectTo(host, port, passwordParam);
+						}
 					} catch (UnknownHostException e) {
 						s_logger.error("Unexpected exception: ", e);
 					} catch (IOException e) {

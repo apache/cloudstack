@@ -365,14 +365,10 @@ public class ConsoleProxy {
 			} else if (!viewer.isFrontEndAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
 				viewer.initClient(param);
-				
-				reportLoadChange = true;
 			} else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword()
 					+ ", sid in request: " + param.getClientHostPassword());
 				viewer.initClient(param);
-				
-				reportLoadChange = true;
 			}
 		}
 		
@@ -404,12 +400,10 @@ public class ConsoleProxy {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
 				viewer.initClient(param);
-				reportLoadChange = true;
 			} else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " 
 					+ viewer.getClientHostPassword() + ", sid in request: " + param.getClientHostPassword());
 				viewer.initClient(param);
-				reportLoadChange = true;
 			} else {
 				if(ajaxSession == null || ajaxSession.isEmpty())
 					authenticationExternally(param);
