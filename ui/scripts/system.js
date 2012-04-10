@@ -4963,11 +4963,19 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success({
-                    actionFilter: podActionfilter,
-                    data: args.context.pods[0]
-                  });
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listPods&id=" + args.context.pods[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listpodsresponse.pod[0];
+											args.response.success({
+												actionFilter: podActionfilter,
+												data:item
+											});
+										}
+									});									              
                 }
               },
 
