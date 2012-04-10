@@ -4444,8 +4444,16 @@
                     }
                   }
                 ],
-                dataProvider: function(args) {
-                  args.response.success({data: args.context.f5Providers[0]});
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listF5LoadBalancers&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),										
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listf5loadbalancerresponse.f5loadbalancer[0];
+											args.response.success({data: item});
+										}
+									});									
                 }
               }
             }
