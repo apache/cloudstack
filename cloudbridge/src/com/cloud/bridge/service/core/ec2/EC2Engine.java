@@ -1364,9 +1364,11 @@ public class EC2Engine {
 				if (vm.getState().equalsIgnoreCase( "Running" ) || vm.getState().equalsIgnoreCase( "Destroyed" )) continue;
 
 				CloudStackUserVm resp = getApi().startVirtualMachine(vm.getId());
-				
-				if(logger.isDebugEnabled())
-					logger.debug("Starting VM " + vm.getId() + " job " + resp.getJobId());
+				if(resp != null){
+				    vm.setState(resp.getState());
+	                if(logger.isDebugEnabled())
+	                    logger.debug("Starting VM " + vm.getId() + " job " + resp.getJobId());
+				}
 				instances.addInstance(vm);
 			}
 			return instances;
@@ -1408,7 +1410,10 @@ public class EC2Engine {
 					if(logger.isDebugEnabled())
 						logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
 				}
-				if (resp != null) instances.addInstance(vm);
+				if (resp != null) {
+				    vm.setState(resp.getState());
+				    instances.addInstance(vm);
+				}
 			}
 			return instances;
 		} catch( Exception e ) {
@@ -1709,25 +1714,32 @@ public class EC2Engine {
 		try {
 		    List<CloudStackTemplate> result = new ArrayList<CloudStackTemplate>();
 		    
-		    List<CloudStackTemplate> selfExecutable = getApi().listTemplates("selfexecutable", null, null, null, templateId != null ? templateId : null, null, null, null); 
-            if(selfExecutable != null){
-                result.addAll(selfExecutable);
-            }
-
-            List<CloudStackTemplate> featured = getApi().listTemplates("featured", null, null, null, templateId != null ? templateId : null, null, null, null);
-			if(featured != null){
-			    result.addAll(featured);
-			}
-			
-			List<CloudStackTemplate> sharedExecutable = getApi().listTemplates("sharedexecutable", null, null, null, templateId != null ? templateId : null, null, null, null);
-            if(sharedExecutable != null){
-                result.addAll(sharedExecutable);
-            }
-            
-            List<CloudStackTemplate> community = getApi().listTemplates("community", null, null, null, templateId != null ? templateId : null, null, null, null);
-            if(community != null){
-                result.addAll(community);
-            }
+		    if(templateId != null){
+                List<CloudStackTemplate> template = getApi().listTemplates("executable", null, null, null, templateId , null, null, null); 
+                if(template != null){
+                    result.addAll(template);
+                }
+		    }else{
+    		    List<CloudStackTemplate> selfExecutable = getApi().listTemplates("selfexecutable", null, null, null, null, null, null, null); 
+                if(selfExecutable != null){
+                    result.addAll(selfExecutable);
+                }
+    
+                List<CloudStackTemplate> featured = getApi().listTemplates("featured", null, null, null, null, null, null, null);
+    			if(featured != null){
+    			    result.addAll(featured);
+    			}
+    			
+    			List<CloudStackTemplate> sharedExecutable = getApi().listTemplates("sharedexecutable", null, null, null, null, null, null, null);
+                if(sharedExecutable != null){
+                    result.addAll(sharedExecutable);
+                }
+                
+                List<CloudStackTemplate> community = getApi().listTemplates("community", null, null, null, null, null, null, null);
+                if(community != null){
+                    result.addAll(community);
+                }
+		    }
 			
 			if (result != null && result.size() > 0) {
 			    for (CloudStackTemplate temp : result) {

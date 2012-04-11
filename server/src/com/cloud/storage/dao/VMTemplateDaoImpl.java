@@ -455,7 +455,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	//String accountId = null;
         	String guestOSJoin = "";  
         	StringBuilder templateHostRefJoin = new StringBuilder();
-        	String dataCenterJoin = "";
+        	String dataCenterJoin = "", lpjoin = "";
 
         	if (isIso && !hyperType.equals(HypervisorType.None)) { 
         		guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
@@ -468,8 +468,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
         	}
+        	if (templateFilter == TemplateFilter.sharedexecutable){
+        	    lpjoin = " INNER JOIN launch_permission lp ON t.id = lp.template_id ";
+        	}
         	       	
-        	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin;
+        	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin + lpjoin;
         	String whereClause = "";
         	
         	//All joins have to be made before we start setting the condition settings
@@ -551,7 +554,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
                 whereClause += " AND t.account_id IN (" + permittedAccountsStr + ")";
             } else if (templateFilter == TemplateFilter.sharedexecutable) {
-            		whereClause += " LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE" +
+            		whereClause += " AND " +
                 	" (t.account_id IN (" + permittedAccountsStr + ") OR" +
                 	" lp.account_id IN (" + permittedAccountsStr + "))";	
             } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {

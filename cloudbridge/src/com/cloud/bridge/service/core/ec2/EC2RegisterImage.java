@@ -60,7 +60,7 @@ public class EC2RegisterImage {
 	
 	/**
 	 * We redefine the expected format of this field to be:
-	 * "format:zonename:ostypename"
+	 * "format:zonename:ostypename:hypervisor"
 	 * 
 	 * @param param
 	 */
