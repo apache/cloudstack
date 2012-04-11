@@ -1,0 +1,4 @@
+Demo files for use with the tutorial on "Testing with Python".
+
+testDeployVM.py - to be run against a 2.2.y installation of management server
+testSshDeployVM.py - to be run against a 3.0.x installation of management server
