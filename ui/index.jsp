@@ -2928,6 +2928,9 @@ dictionary = {
 'label.vm.state': '<fmt:message key="label.vm.state" />',
 'label.domain.router' : '<fmt:message key="label.domain.router" />',
 'label.console.proxy' : '<fmt:message key="label.console.proxy" />',
-'label.secondary.storage.vm' : '<fmt:message key="label.secondary.storage.vm" />'
+'label.secondary.storage.vm' : '<fmt:message key="label.secondary.storage.vm" />',
+'label.add.netScaler.device': '<fmt:message key="label.add.netScaler.device" />',
+'label.add.F5.device': '<fmt:message key="label.add.F5.device" />',
+'label.add.SRX.device': '<fmt:message key="label.add.SRX.device" />'
 };
 </script>
