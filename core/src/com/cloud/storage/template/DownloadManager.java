@@ -92,5 +92,11 @@ public interface DownloadManager extends Manager {
 	 * @return list of template info for installed templates
 	 */
 	public Map<String, TemplateInfo> gatherTemplateInfo(String templateDir);
+	
+	/**
+	/**
+	 * @return list of volume info for installed volumes
+	 */
+	public Map<String, TemplateInfo> gatherVolumeInfo(String volumeDir);
 
 }

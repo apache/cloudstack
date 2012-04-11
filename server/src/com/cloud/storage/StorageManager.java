@@ -220,4 +220,10 @@ public interface StorageManager extends StorageService, Manager {
 	List<Long> getUpHostsInPool(long poolId);
 
     void cleanupSecondaryStorage(boolean recurring);
+
+	VolumeVO copyVolumeFromSecToPrimary(VolumeVO volume, VMInstanceVO vm,
+			VMTemplateVO template, DataCenterVO dc, HostPodVO pod,
+			Long clusterId, ServiceOfferingVO offering,
+			DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size,
+			HypervisorType hyperType) throws NoTransitionException;
 }

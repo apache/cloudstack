@@ -131,6 +131,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -144,6 +145,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -254,6 +256,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected StoragePoolHostDao _poolHostDao = null;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    VolumeHostDao _volumeHostDao;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
     @Inject
@@ -706,6 +710,53 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
 
+
+    @Override
+    @DB
+    public VolumeVO copyVolumeFromSecToPrimary(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
+            List<StoragePoolVO> avoids, long size, HypervisorType hyperType) throws NoTransitionException {
+    	
+    	final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
+    	DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+    	dskCh.setHyperType(vm.getHypervisorType());
+    	// Find a suitable storage to create volume on 
+    	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
+    	
+    	// Copy the volume from secondary storage to the destination storage pool
+    	stateTransitTo(volume, Event.CopyRequested);    	
+    	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
+    	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
+    	String secondaryStorageURL = secStorage.getStorageUrl();
+    	String[] volumePath = volumeHostVO.getInstallPath().split("/");
+    	String volumeUUID = volumePath[volumePath.length - 1].split("\\.")[0];
+    	
+        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volumeUUID, destPool, secondaryStorageURL, false, _copyvolumewait);
+        CopyVolumeAnswer cvAnswer;
+		try {
+            cvAnswer = (CopyVolumeAnswer) sendToPool(destPool, cvCmd);
+        } catch (StorageUnavailableException e1) {
+        	stateTransitTo(volume, Event.CopyFailed);
+            throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
+        }
+
+        if (cvAnswer == null || !cvAnswer.getResult()) {
+        	stateTransitTo(volume, Event.CopyFailed);
+            throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
+        }        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();        
+        volume.setPath(cvAnswer.getVolumePath());
+        volume.setFolder(destPool.getPath());
+        volume.setPodId(destPool.getPodId());
+        volume.setPoolId(destPool.getId());        
+        volume.setPodId(destPool.getPodId());
+        stateTransitTo(volume, Event.CopySucceeded); 
+        _volumeHostDao.remove(volumeHostVO.getId());
+    	txn.commit();
+		return volume;
+    	
+    }
+    
     @Override
     @DB
     public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
@@ -1748,7 +1799,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setAccountId(ownerId);
         volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
         long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-        volume.setDiskOfferingId(diskOfferingId);
+        volume.setDiskOfferingId(diskOfferingId);        
         //volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
@@ -1757,7 +1808,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume = _volsDao.persist(volume);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, 0l);
         _usageEventDao.persist(usageEvent);
-
+        try {
+			stateTransitTo(volume, Event.UploadRequested);
+		} catch (NoTransitionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
         // Increment resource count during allocation; if actual creation fails, decrement it

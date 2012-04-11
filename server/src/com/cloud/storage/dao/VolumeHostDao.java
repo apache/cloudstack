@@ -7,4 +7,6 @@ public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long> {
 
 	VolumeHostVO findByHostVolume(long id, long id2);
 
+	VolumeHostVO findByVolumeId(long volumeId);
+
 }

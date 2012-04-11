@@ -222,6 +222,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     private final Map<String, DownloadJob> jobs = new ConcurrentHashMap<String, DownloadJob>();
     private String listTmpltScr;
+    private String listVolScr;
     private int installTimeoutPerGig = 180 * 60 * 1000;
     private boolean _sslCopy;
 
@@ -317,23 +318,28 @@ public class DownloadManagerImpl implements DownloadManager {
     private String postDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String templatePath = null;        
-        templatePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
+        String resourcePath = null;               
         ResourceType resourceType = dnld.getResourceType();
-
-        _storage.mkdirs(templatePath);
-
+       
         // once template path is set, remove the parent dir so that the template is installed with a relative path
-        String finalTemplatePath = resourceType == ResourceType.TEMPLATE ? _templateDir : _volumeDir 
-        	+ File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
-        dnld.setTmpltPath(finalTemplatePath);
+        String finalResourcePath = "";
+        if (resourceType == ResourceType.TEMPLATE){
+        	finalResourcePath += _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
+        	resourcePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
+        }else {
+        	finalResourcePath += _volumeDir + File.separator + dnld.getId() + File.separator;
+        	resourcePath = dnld.getInstallPathPrefix() + dnld.getId() + File.separator;// dnld.getTmpltName();
+        }
+        
+        _storage.mkdirs(resourcePath);
+        dnld.setTmpltPath(finalResourcePath);
 
         int imgSizeGigs = (int) Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
         long timeout = imgSizeGigs * installTimeoutPerGig;
         Script scr = null;
         String script = resourceType == ResourceType.TEMPLATE ? createTmpltScr : createVolScr;
-        scr = new Script(createTmpltScr, timeout, s_logger);
+        scr = new Script(script, timeout, s_logger);
         scr.add("-s", Integer.toString(imgSizeGigs));
         scr.add("-S", Long.toString(td.getMaxTemplateSizeInBytes()));
         if (dnld.getDescription() != null && dnld.getDescription().length() > 1) {
@@ -353,10 +359,10 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         String templateFilename = templateName + "." + extension;
-        dnld.setTmpltPath(finalTemplatePath + "/" + templateFilename);
+        dnld.setTmpltPath(finalResourcePath + "/" + templateFilename);
         scr.add("-n", templateFilename);
 
-        scr.add("-t", templatePath);
+        scr.add("-t", resourcePath);
         scr.add("-f", td.getDownloadLocalPath());
         if (dnld.getChecksum() != null && dnld.getChecksum().length() > 1) {
             scr.add("-c", dnld.getChecksum());
@@ -370,18 +376,24 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(templatePath + "/" + templateFilename);
+        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
 
-        // Set permissions for template.properties
-        File templateProperties = new File(templatePath + "/template.properties");
+        // Set permissions for template/volume.properties
+        String propertiesFile = resourcePath;
+        if (resourceType == ResourceType.TEMPLATE){
+        	propertiesFile += "/template.properties";
+        }else{
+        	propertiesFile += "/volume.properties";
+        }
+        File templateProperties = new File(propertiesFile);
         _storage.setWorldReadableAndWriteable(templateProperties);
 
-        TemplateLocation loc = new TemplateLocation(_storage, templatePath);
+        TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
         try {
             loc.create(dnld.getId(), true, dnld.getTmpltName());
         } catch (IOException e) {
-            s_logger.warn("Something is wrong with template location " + templatePath, e);
+            s_logger.warn("Something is wrong with template location " + resourcePath, e);
             loc.purge();
             return "Unable to download due to " + e.getMessage();
         }
@@ -392,7 +404,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
             FormatInfo info = null;
             try {
-                info = processor.process(templatePath, null, templateName);
+                info = processor.process(resourcePath, null, templateName);
             } catch (InternalErrorException e) {
                 s_logger.error("Template process exception ", e);
                 return e.toString();
@@ -432,7 +444,12 @@ public class DownloadManagerImpl implements DownloadManager {
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
-        String tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
+        String tmpDir = "";
+        if(resourceType == ResourceType.TEMPLATE){
+        	tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
+        }else {
+        	tmpDir = installPathPrefix + File.separator + id;
+        }
 
         try {
 
@@ -672,6 +689,19 @@ public class DownloadManagerImpl implements DownloadManager {
 
     }
 
+    
+    private List<String> listVolumes(String rootdir) {
+        List<String> result = new ArrayList<String>();
+        
+        Script script = new Script(listVolScr, s_logger);
+        script.add("-r", rootdir);
+        ZfsPathParser zpp = new ZfsPathParser(rootdir);
+        script.execute(zpp);
+        result.addAll(zpp.getPaths());
+        s_logger.info("found " + zpp.getPaths().size() + " volumes" + zpp.getPaths());
+        return result;
+    }
+    
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
         
@@ -849,6 +879,12 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
+        /*listVolScr = Script.findScript(scriptsDir, "listvolume.sh");
+        if (listVolScr == null) {
+            throw new ConfigurationException("Unable to find the listvolume.sh");
+        }
+        s_logger.info("listvolume.sh found in " + listVolScr);*/
+
         createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
         if (createVolScr == null) {
             throw new ConfigurationException("Unable to find createvolume.sh");
@@ -884,7 +920,7 @@ public class DownloadManagerImpl implements DownloadManager {
             _templateDir = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
         }
         _templateDir += File.separator + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
-        _volumeDir = TemplateConstants.DEFAULT_VOLUME_ROOT_DIR;
+        _volumeDir = TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + File.separator;
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;
@@ -959,4 +995,10 @@ public class DownloadManagerImpl implements DownloadManager {
             return;
         }
     }
+
+	@Override
+	public Map<String, TemplateInfo> gatherVolumeInfo(String volumeDir) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

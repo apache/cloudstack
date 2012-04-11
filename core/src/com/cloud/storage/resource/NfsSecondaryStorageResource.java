@@ -68,6 +68,7 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.SwiftTO;
@@ -700,6 +701,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
             return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
         }
+    }
+    
+    private Answer execute(ListVolumeCommand cmd) {
+        if (!_inSystemVM){
+            return new Answer(cmd, true, null);
+        }
+        
+        String root = getRootDir(cmd.getSecUrl());
+        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        
     }
     
     private Answer execute(SecStorageVMSetupCommand cmd) {

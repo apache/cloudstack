@@ -31,7 +31,10 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Migrating("The volume is migrating to other storage pool"),
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
         Expunging("The volume is being expunging"),
-        Destroy("The volume is destroyed, and can't be recovered.");
+        Destroy("The volume is destroyed, and can't be recovered."),        
+        Uploading ("The volume upload is in progress"),
+        Uploaded ("The volume is uploaded"),
+        UploadError ("The volume couldnt be uploaded");
 
         String _description;
 
@@ -55,7 +58,13 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
+            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);            
+            s_fsm.addTransition(Allocated, Event.UploadRequested, Uploading);
+            s_fsm.addTransition(Uploading, Event.UploadSucceeded, Uploaded);
+            s_fsm.addTransition(Uploading, Event.OperationFailed, UploadError);
+            s_fsm.addTransition(Uploaded, Event.CopyRequested, Creating);
+            s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
+            s_fsm.addTransition(Creating, Event.CopyFailed, Uploaded);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
@@ -70,9 +79,14 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
 
     enum Event {
         CreateRequested,
+        CopyRequested,
+        CopySucceeded,
+        CopyFailed,
         OperationFailed,
         OperationSucceeded,
         OperationRetry,
+        UploadRequested,
+        UploadSucceeded,
         MigrationRequested,
         SnapshotRequested,
         DestroyRequested,
