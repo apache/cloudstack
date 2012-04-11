@@ -70,7 +70,7 @@
       if (item.issourcenat){
         disallowedActions.push('enableStaticNAT');
         disallowedActions.push('disableStaticNAT');
-        disallowedActions.push('destroy');
+        disallowedActions.push('remove');
       }
 
       allowedActions = $.grep(allowedActions, function(item) {
@@ -88,7 +88,7 @@
       if (isSecurityGroupOwner &&
           args.context.item.state != 'Destroyed' &&
           args.context.item.name != 'default') {
-        allowedActions.push('destroy');
+        allowedActions.push('remove');
       }
 
       return allowedActions;
@@ -2891,7 +2891,7 @@
             },
 
             actions: {
-              destroy: {
+              remove: {
                 label: 'label.action.delete.security.group',
                 messages: {
                   confirm: function(args) {
