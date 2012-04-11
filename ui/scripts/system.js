@@ -2815,9 +2815,9 @@
             },
             actions: {
               add: {
-                label: 'label.add.new.SRX',
+                label: 'label.add.SRX.device',
                 createForm: {
-                  title: 'label.add.new.SRX',
+                  title: 'label.add.SRX.device',
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2926,7 +2926,7 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'label.add.new.SRX';
+                    return 'label.add.SRX.device';
                   }
                 },
                 notification: {
@@ -4399,9 +4399,10 @@
         }
       },
 
+			//SRX devices listView
       srxProviders: {
         id: 'srxProviders',
-        title: 'label.srx',
+        title: 'label.devices',
         listView: {
           id: 'srxProviders',
           fields: {
@@ -4411,9 +4412,9 @@
           },
           actions: {
             add: {
-              label: 'label.add.new.SRX',
+              label: 'label.add.SRX.device',
               createForm: {
-                title: 'label.add.new.SRX',
+                title: 'label.add.SRX.device',
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4522,7 +4523,7 @@
               },
               messages: {
                 notification: function(args) {
-                  return 'label.add.new.SRX';
+                  return 'label.add.SRX.device';
                 }
               },
               notification: {
