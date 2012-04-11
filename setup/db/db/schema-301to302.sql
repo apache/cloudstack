@@ -21,3 +21,5 @@ DELETE FROM `cloud`.`configuration` WHERE name='secstorage.vm.ram.size';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'consoleproxy.service.offering', NULL, 'Service offering used by console proxy; if NULL - system offering will be used');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.service.offering', NULL, 'Service offering used by secondary storage; if NULL - system offering will be used');
+
+DROP INDEX `i_host__allocation_state` ON `cloud`.`host`;
