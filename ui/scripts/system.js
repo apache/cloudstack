@@ -2315,9 +2315,9 @@
           // NetScaler provider detail view
           netscaler: {
             type: 'detailView',
-            id: 'netscalerProviders',
+            id: 'netscalerProvider',
             label: 'label.netScaler',
-            viewAll: { label: 'label.devices', path: '_zone.netscalerProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.netscalerDevices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2547,12 +2547,12 @@
             }
           },
 
-					//f5 provider detail view
+		  //f5 provider detail view
           f5: {
             type: 'detailView',
-            id: 'f5Providers',
+            id: 'f5Provider',
             label: 'label.f5',
-            viewAll: { label: 'label.devices', path: '_zone.f5Providers' },
+            viewAll: { label: 'label.devices', path: '_zone.f5Devices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2780,12 +2780,12 @@
             }
           },
 
-          // SRX provider detail view
+          // SRX provider detailView
           srx: {
             type: 'detailView',
-            id: 'srxProviders',
+            id: 'srxProvider',
             label: 'label.srx',
-            viewAll: { label: 'label.devices', path: '_zone.srxProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.srxDevices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2797,7 +2797,7 @@
 									  state: { label: 'label.state' }
                   }
                 ],
-                dataProvider: function(args) {
+                dataProvider: function(args) {            
 								  refreshNspData("JuniperSRX");
 									var providerObj;
 									$(nspHardcodingArray).each(function(){
@@ -3994,11 +3994,11 @@
     }),
     subsections: {
       // netscaler devices listView
-      netscalerProviders: {
-        id: 'netscalerProviders',
+      netscalerDevices: {
+        id: 'netscalerDevices',
         title: 'label.devices',
         listView: {
-          id: 'netscalerProviders',
+          id: 'netscalerDevices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             lbdevicestate: {
@@ -4132,7 +4132,7 @@
           detailView: {
             name: 'NetScaler details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.NetScaler',
                 messages: {
                   confirm: function(args) {
@@ -4144,7 +4144,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteNetscalerLoadBalancer&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),
+                    url: createURL("deleteNetscalerLoadBalancer&lbdeviceid=" + args.context.netscalerDevices[0].lbdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4184,7 +4184,7 @@
                 ],
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listNetscalerLoadBalancers&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),									
+										url: createURL("listNetscalerLoadBalancers&lbdeviceid=" + args.context.netscalerDevices[0].lbdeviceid),									
 										dataType: "json",
 										async: true,
 										success: function(json) {										 
@@ -4200,11 +4200,11 @@
       },
 
 			// F5 devices listView
-      f5Providers: {
-        id: 'f5Providers',
+      f5Devices: {
+        id: 'f5Devices',
         title: 'label.devices',
         listView: {
-          id: 'f5Providers',
+          id: 'f5Devices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             lbdevicestate: {
@@ -4336,7 +4336,7 @@
           detailView: {
             name: 'F5 details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.F5',
                 messages: {
                   confirm: function(args) {
@@ -4348,7 +4348,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteF5LoadBalancer&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),
+                    url: createURL("deleteF5LoadBalancer&lbdeviceid=" + args.context.f5Devices[0].lbdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4384,7 +4384,7 @@
                 ],
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listF5LoadBalancers&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),										
+										url: createURL("listF5LoadBalancers&lbdeviceid=" + args.context.f5Devices[0].lbdeviceid),										
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
@@ -4399,12 +4399,12 @@
         }
       },
 
-			//SRX devices listView
-      srxProviders: {
-        id: 'srxProviders',
+	  //SRX devices listView
+      srxDevices: {
+        id: 'srxDevices',
         title: 'label.devices',
         listView: {
-          id: 'srxProviders',
+          id: 'srxDevices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             fwdevicestate: { label: 'label.status' },
@@ -4546,7 +4546,7 @@
           detailView: {
             name: 'SRX details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.SRX',
                 messages: {
                   confirm: function(args) {
@@ -4556,9 +4556,9 @@
                     return 'label.delete.SRX';
                   }
                 },
-                action: function(args) {
+                action: function(args) {                
                   $.ajax({
-                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
+                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxDevices[0].fwdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4589,9 +4589,9 @@
                     timeout: { label: 'label.timeout' }
                   }
                 ],
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {	
 									$.ajax({
-										url: createURL("listSrxFirewalls&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),										
+										url: createURL("listSrxFirewalls&fwdeviceid=" + args.context.srxDevices[0].fwdeviceid),										
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
