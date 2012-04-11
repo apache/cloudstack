@@ -4132,7 +4132,7 @@
           detailView: {
             name: 'NetScaler details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.NetScaler',
                 messages: {
                   confirm: function(args) {
@@ -4336,7 +4336,7 @@
           detailView: {
             name: 'F5 details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.F5',
                 messages: {
                   confirm: function(args) {
@@ -4546,7 +4546,7 @@
           detailView: {
             name: 'SRX details',
             actions: {
-              'delete': {
+              'remove': {
                 label: 'label.delete.SRX',
                 messages: {
                   confirm: function(args) {
