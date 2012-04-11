@@ -44,7 +44,8 @@ public class EC2InstanceFilterSet {
 		filterTypes.put( "instance-state-name",  "string"  );
 		filterTypes.put( "ip-address",           "string"  );	
 		filterTypes.put( "owner-id",             "string"  );	
-		filterTypes.put( "root-device-name",     "string"  );	
+		filterTypes.put( "root-device-name",     "string"  );
+		filterTypes.put( "private-ip-address",   "string"  );
 	}
 	
 	
