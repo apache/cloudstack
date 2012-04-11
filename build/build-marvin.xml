@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2012 Citrix Systems, Inc. Licensed under the
+Apache License, Version 2.0 (the "License"); you may not use this
+file except in compliance with the License. Citrix Systems, Inc. -->
+
+<project name="Marvin TestClient" default="help" basedir=".">
+    <description>
+        This build file contains simple targets that 
+        - build
+        - package
+        - distribute 
+        the Marvin test client written in python
+    </description>
+
+    <dirname property="base.dir" file="${ant.file.Cloud Stack}/.." />
+    <property name="build.dir" location="${base.dir}/build" />
+
+    <import file="${build.dir}/build-cloud.xml" optional="false" />
+    <import file="${build.dir}/developer.xml" optional="false" />
+
+    <!-- directories for the test client code compilation-->
+    <property name="dist.dir" location="${base.dir}/dist" />
+    <property name="marvin.dir" location="${base.dir}/tools/marvin" />
+    <property name="marvin.dist.dir" location="${base.dir}/tools/marvin/dist" />
+    <property name="marvin.src.dir" location="${base.dir}/tools/marvin/marvin" />
+
+    <target name="build-marvin" depends="build-apidocs" description="generates the cloudstackAPIs for marvin">
+        <echo message="Generating Marvin API Classes"/>
+        <exec dir="${marvin.src.dir}" executable="python">
+            <arg value="codegenerator.py" />
+            <arg value="-s" />
+            <arg value="${dist.dir}/commands.xml" />
+        </exec>
+        <echo message="API classes @ ${marvin.src.dir}/cloudstackAPI"/>
+    </target>
+
+    <target name="package-marvin" depends="build-marvin" description="create a distributable tarball of Marvin">
+        <echo message="Packaging Marvin"/>
+        <exec dir="${marvin.dir}" executable="python">
+            <arg value="setup.py" />
+            <arg value="sdist" />
+        </exec>
+        <echo message="distributable tarball at: ${marvin.dist.dir}/Marvin-*.tar.gz"/>
+    </target>
+</project>

@@ -23,6 +23,7 @@
     <import file="${base.dir}/build/build-cloud.xml" optional="false"/>
     <import file="${base.dir}/build/build-docs.xml" optional="true"/>
     <import file="${base.dir}/build/build-tests.xml" optional="true"/>
+    <import file="${base.dir}/build/build-marvin.xml" optional="true"/>
     <import file="${base.dir}/build/package.xml" optional="true"/>
     <import file="${base.dir}/build/developer.xml" optional="true"/>
     <import file="${base.dir}/build/build-usage.xml" optional="false"/>
