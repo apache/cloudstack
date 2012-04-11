@@ -1,0 +1,15 @@
+Marvin is the testing framework for CloudStack written in python. Writing of
+unittests and functional tests with Marvin makes testing with cloudstack easier
+
+1. INSTALL 
+   untar Marvin-0.1.0.tar.gz 
+   cd Marvin-0.1.0
+   python setup.py install
+
+2. Facility it provides:
+  1. very handy cloudstack API python wrapper
+  2. support async job executing in parallel
+  3. remote ssh login/execute command
+  4. mysql query 
+
+3. sample code is under sandbox
