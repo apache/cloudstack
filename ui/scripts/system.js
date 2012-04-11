@@ -2315,9 +2315,9 @@
           // NetScaler provider detail view
           netscaler: {
             type: 'detailView',
-            id: 'netscalerProviders',
+            id: 'netscalerProvider',
             label: 'label.netScaler',
-            viewAll: { label: 'label.devices', path: '_zone.netscalerProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.netscalerDevices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2547,12 +2547,12 @@
             }
           },
 
-					//f5 provider detail view
+		  //f5 provider detail view
           f5: {
             type: 'detailView',
-            id: 'f5Providers',
+            id: 'f5Provider',
             label: 'label.f5',
-            viewAll: { label: 'label.devices', path: '_zone.f5Providers' },
+            viewAll: { label: 'label.devices', path: '_zone.f5Devices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -3994,11 +3994,11 @@
     }),
     subsections: {
       // netscaler devices listView
-      netscalerProviders: {
-        id: 'netscalerProviders',
+      netscalerDevices: {
+        id: 'netscalerDevices',
         title: 'label.devices',
         listView: {
-          id: 'netscalerProviders',
+          id: 'netscalerDevices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             lbdevicestate: {
@@ -4144,7 +4144,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteNetscalerLoadBalancer&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),
+                    url: createURL("deleteNetscalerLoadBalancer&lbdeviceid=" + args.context.netscalerDevices[0].lbdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4184,7 +4184,7 @@
                 ],
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listNetscalerLoadBalancers&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),									
+										url: createURL("listNetscalerLoadBalancers&lbdeviceid=" + args.context.netscalerDevices[0].lbdeviceid),									
 										dataType: "json",
 										async: true,
 										success: function(json) {										 
@@ -4200,11 +4200,11 @@
       },
 
 			// F5 devices listView
-      f5Providers: {
-        id: 'f5Providers',
+      f5Devices: {
+        id: 'f5Devices',
         title: 'label.devices',
         listView: {
-          id: 'f5Providers',
+          id: 'f5Devices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             lbdevicestate: {
@@ -4348,7 +4348,7 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL("deleteF5LoadBalancer&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),
+                    url: createURL("deleteF5LoadBalancer&lbdeviceid=" + args.context.f5Devices[0].lbdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4384,7 +4384,7 @@
                 ],
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listF5LoadBalancers&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),										
+										url: createURL("listF5LoadBalancers&lbdeviceid=" + args.context.f5Devices[0].lbdeviceid),										
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
