@@ -117,6 +117,7 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.auth = that.getAuth();
 	    this.setSecUrl(that.getSecUrl());
 	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
+	    this.resourceType = that.resourceType;
 	}
 	
 	public DownloadCommand(String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {

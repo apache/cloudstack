@@ -18,7 +18,7 @@ package com.cloud.storage.template;
  */
 public final class TemplateConstants {
 	public static final String DEFAULT_TMPLT_ROOT_DIR = "template";
-	public static final String DEFAULT_VOLUME_ROOT_DIR = "volume";
+	public static final String DEFAULT_VOLUME_ROOT_DIR = "volumes";
 	public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
 	
 	public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";

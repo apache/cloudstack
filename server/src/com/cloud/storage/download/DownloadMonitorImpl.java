@@ -34,6 +34,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
+import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
@@ -57,12 +58,14 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -86,6 +89,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
@@ -126,6 +130,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     protected SwiftManager _swiftMgr;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    StorageManager _storageMgr ;
     
     @Inject
     private final DataCenterDao _dcDao = null;
@@ -423,12 +429,19 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
         volumeHost = _volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
         if (volumeHost == null) {
-            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url, checkSum);
+            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
+            		"jobid0000", null, url, checkSum);
             _volumeHostDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
-                
+        
+        try {
+			_storageMgr.stateTransitTo(volume, Event.UploadRequested);
+		} catch (NoTransitionException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
         String secUrl = sserver.getStorageUrl();
 		if(volumeHost != null) {
@@ -437,6 +450,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
+	            dcmd.setResourceType(ResourceType.VOLUME);
 	        }
 			
 			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
@@ -444,7 +458,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
 	             return;
 			}
-			DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(), this, dcmd, _volumeDao);
+			DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(),
+					this, dcmd, _volumeDao, _storageMgr);
 			
 			if (downloadJobExists) {
 				dl.setCurrState(volumeHost.getDownloadState());

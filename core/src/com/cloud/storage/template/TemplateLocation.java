@@ -48,7 +48,12 @@ public class TemplateLocation {
         }
         _formats = new ArrayList<FormatInfo>(5);
         _props = new Properties();
-        _file = _storage.getFile(_templatePath + Filename);
+        //TO DO remove this hack
+        if (_templatePath.matches(".*"+"volumes"+".*")){
+        	_file = _storage.getFile(_templatePath + "volume.properties");
+        }else {
+        	_file = _storage.getFile(_templatePath + Filename);
+        }
         _isCorrupted = false;
     }
     

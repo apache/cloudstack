@@ -72,9 +72,6 @@ public class VolumeHostVO {
 	
 	@Column (name="url")
 	private String downloadUrl;
-
-	@Column(name="is_copy")
-	private boolean isCopy = false;
     
     @Column(name="destroyed")
     boolean destroyed = false;
@@ -260,16 +257,7 @@ public class VolumeHostVO {
 
 	public String getDownloadUrl() {
 		return downloadUrl;
-	}
-
-	public void setCopy(boolean isCopy) {
-		this.isCopy = isCopy;
-	}
-
-	public boolean isCopy() {
-		return isCopy;
-	}
-	
+	}	
 	
     public long getVolumeSize() {
 	    return -1;
