@@ -319,13 +319,19 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: serviceOfferingActionfilter,
-                      data:args.context.serviceOfferings[0]
-                    }
-                  );
+                dataProvider: function(args) {								  							
+									$.ajax({
+										url: createURL("listServiceOfferings&issystem=false&id=" + args.context.serviceOfferings[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listserviceofferingsresponse.serviceoffering[0];
+											args.response.success({
+												actionFitler: serviceOfferingActionfilter,
+												data: item
+											});
+										}
+									});									
                 }
               }
             }
@@ -661,13 +667,19 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: systemServiceOfferingActionfilter,
-                      data:args.context.systemServiceOfferings[0]
-                    }
-                  );
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listServiceOfferings&issystem=true&id=" + args.context.systemServiceOfferings[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {										  
+											var item = json.listserviceofferingsresponse.serviceoffering[0];
+											args.response.success({
+												actionFitler: systemServiceOfferingActionfilter,
+												data: item
+											});
+										}
+									});	        
                 }
               }
             }
@@ -921,13 +933,19 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  args.response.success(
-                    {
-                      actionFilter: diskOfferingActionfilter,
-                      data:args.context.diskOfferings[0]
-                    }
-                  );
+                dataProvider: function(args) {								 
+									$.ajax({
+										url: createURL("listDiskOfferings&id=" + args.context.diskOfferings[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var item = json.listdiskofferingsresponse.diskoffering[0];
+											args.response.success({
+											  actionFilter: diskOfferingActionfilter,
+											  data: item
+											});
+										}
+									});										              
                 }
               }
             }
@@ -1692,23 +1710,29 @@
                   }
                 ],
 
-                dataProvider: function(args) {
-                  var networkOffering = args.context.networkOfferings[0];
+                dataProvider: function(args) {								
+									$.ajax({
+										url: createURL('listNetworkOfferings&id=' + args.context.networkOfferings[0].id),										
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var item = json.listnetworkofferingsresponse.networkoffering[0]; 			
+											args.response.success({
+												actionFilter: networkOfferingActionfilter,												
+												data: $.extend(item, {
+													supportedServices: $.map(item.service, function(service) {
+														return service.name;
+													}).join(', '),
 
-                  args.response.success({
-                    actionFilter: networkOfferingActionfilter,
-                    data: $.extend(args.context.networkOfferings[0], {
-                      supportedServices: $.map(networkOffering.service, function(service) {
-                        return service.name;
-                      }).join(', '),
-
-                      serviceCapabilities: $.map(networkOffering.service, function(service) {
-                        return service.capability ? $.map(service.capability, function(capability) {
-                          return capability.name + ': ' + capability.value;
-                        }).join(', ') : null;
-                      }).join(', ')
-                    })
-                  });
+													serviceCapabilities: $.map(item.service, function(service) {
+														return service.capability ? $.map(service.capability, function(capability) {
+															return capability.name + ': ' + capability.value;
+														}).join(', ') : null;
+													}).join(', ')
+												})												
+											});
+										}
+									});											
                 }
               }
             }
