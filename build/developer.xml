@@ -372,7 +372,7 @@
   </target>
   
   
-  <target name="build-apidocs" description="Generate api documentation" depends="build-all-with-simulator">
+  <target name="build-apidocs" description="Generate api documentation" depends="build-all">
       <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
       <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
   	  <property name="commands.f5.file" location="${dist.dir}/client/conf/f5bigip_commands.properties" />
