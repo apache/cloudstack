@@ -6025,14 +6025,14 @@
 											var jsonObj = json.listhostsresponse.host[0];			                     									
 											args.response.success({
 												data: {
-													totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
-													cpuused: jsonObj.cpuused,
-													cpuallocated: (jsonObj.cpuallocated == null || jsonObj.cpuallocated == 0)? "N/A": jsonObj.cpuallocated,
-													memorytotal: (jsonObj.memorytotal == null || jsonObj.memorytotal == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memorytotal * 1024),
-													memoryallocated: (jsonObj.memoryallocated == null || jsonObj.memoryallocated == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryallocated * 1024),
-													memoryused: (jsonObj.memoryused == null || jsonObj.memoryused == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryused * 1024),
-													networkkbsread: (jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
-													networkkbswrite: (jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
+											    totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+											    cpuused: jsonObj.cpuused,				
+											    cpuallocated: (jsonObj.cpuallocated == null || jsonObj.cpuallocated == 0)? "N/A": jsonObj.cpuallocated,
+											    memorytotal: (jsonObj.memorytotal == null || jsonObj.memorytotal == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memorytotal),
+											    memoryallocated: (jsonObj.memoryallocated == null || jsonObj.memoryallocated == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryallocated ),
+											    memoryused: (jsonObj.memoryused == null || jsonObj.memoryused == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryused),												
+											    networkkbsread: (jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
+											    networkkbswrite: (jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
 												}
 											});		
 										}
