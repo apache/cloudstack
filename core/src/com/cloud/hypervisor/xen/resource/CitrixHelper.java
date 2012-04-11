@@ -420,6 +420,16 @@ public class CitrixHelper {
         _xenServer600GuestOsMap.put("Ubuntu 10.10 (64-bit)", "Ubuntu Maverick Meerkat 10.10 (64-bit) (experimental)");
         _xenServer600GuestOsMap.put("Other Linux (32-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other Linux (64-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other (32-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other (64-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other (32-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other (64-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other CentOS (32-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other CentOS (64-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other Ubuntu (32-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other Ubuntu (64-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other SUSE Linux(32-bit)", "Other install media");
+        _xenServer600GuestOsMap.put("Other SUSE Linux(64-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
         _xenServer600GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
