@@ -2780,12 +2780,12 @@
             }
           },
 
-          // SRX provider detail view
+          // SRX provider detailView
           srx: {
             type: 'detailView',
-            id: 'srxProviders',
+            id: 'srxProvider',
             label: 'label.srx',
-            viewAll: { label: 'label.devices', path: '_zone.srxProviders' },
+            viewAll: { label: 'label.devices', path: '_zone.srxDevices' },
             tabs: {
               details: {
                 title: 'label.details',
@@ -2797,7 +2797,7 @@
 									  state: { label: 'label.state' }
                   }
                 ],
-                dataProvider: function(args) {
+                dataProvider: function(args) {            
 								  refreshNspData("JuniperSRX");
 									var providerObj;
 									$(nspHardcodingArray).each(function(){
@@ -4399,12 +4399,12 @@
         }
       },
 
-			//SRX devices listView
-      srxProviders: {
-        id: 'srxProviders',
+	  //SRX devices listView
+      srxDevices: {
+        id: 'srxDevices',
         title: 'label.devices',
         listView: {
-          id: 'srxProviders',
+          id: 'srxDevices',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             fwdevicestate: { label: 'label.status' },
@@ -4556,9 +4556,9 @@
                     return 'label.delete.SRX';
                   }
                 },
-                action: function(args) {
+                action: function(args) {                
                   $.ajax({
-                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
+                    url: createURL("deleteSrxFirewall&fwdeviceid=" + args.context.srxDevices[0].fwdeviceid),
                     dataType: "json",
                     async: true,
                     success: function(json) {
@@ -4589,9 +4589,9 @@
                     timeout: { label: 'label.timeout' }
                   }
                 ],
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {	
 									$.ajax({
-										url: createURL("listSrxFirewalls&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),										
+										url: createURL("listSrxFirewalls&fwdeviceid=" + args.context.srxDevices[0].fwdeviceid),										
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
