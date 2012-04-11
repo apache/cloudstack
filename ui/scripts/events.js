@@ -71,8 +71,16 @@
                     created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
-                dataProvider: function(args) {
-								  args.response.success({data: args.context.events[0]});
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listEvents&id=" + args.context.events[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var item = json.listeventsresponse.event[0];
+											args.response.success({data: item});
+										}
+									});									
 								}
               }
             }
@@ -123,8 +131,16 @@
                     sent: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
-                dataProvider: function(args) {
-								  args.response.success({data: args.context.alerts[0]});
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listAlerts&id=" + args.context.alerts[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var item = json.listalertsresponse.alert[0];
+											args.response.success({data: item});
+										}
+									});															 
 								}
               }
             }
