@@ -2009,31 +2009,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
         } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkMgr.canAddDefaultSecurityGroup()) {
-            if (securityGroupIdList == null) {
-                securityGroupIdList = new ArrayList<Long>();
-            }
-            SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
-            if (defaultGroup != null) {
-                //check if security group id list already contains Default security group, and if not - add it
-                boolean defaultGroupPresent = false;
-                for (Long securityGroupId : securityGroupIdList) {
-                    if (securityGroupId.longValue() == defaultGroup.getId()) {
-                        defaultGroupPresent = true;
-                        break;
-                    }
+            //add the default securityGroup only if no security group is specified
+            if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
+                if (securityGroupIdList == null) {
+                    securityGroupIdList = new ArrayList<Long>();
                 }
-
-                if (!defaultGroupPresent) {
+                SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
+                if (defaultGroup != null) {
+                    securityGroupIdList.add(defaultGroup.getId());
+                } else {
+                    //create default security group for the account
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
+                    }
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
                     securityGroupIdList.add(defaultGroup.getId());
                 }
-
-            } else {
-                //create default security group for the account
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
-                }
-                defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
-                securityGroupIdList.add(defaultGroup.getId());
             }
         }
 
