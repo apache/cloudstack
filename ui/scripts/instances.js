@@ -23,7 +23,6 @@
       section: 'instances',
       filters: {
         all: { label: 'ui.listView.filters.all' },
-        mine: { label: 'ui.listView.filters.mine' },
         running: { label: 'state.Running' },
         stopped: { label: 'state.Stopped' },
         destroyed: {
