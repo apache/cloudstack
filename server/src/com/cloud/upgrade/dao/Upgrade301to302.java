@@ -57,6 +57,11 @@ public class Upgrade301to302 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        String script = Script.findScript("", "db/schema-301to302-cleanup.sql");
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find db/schema-301to302-cleanup.sql");
+        }
+
+        return new File[] { new File(script) };
     }
 }
