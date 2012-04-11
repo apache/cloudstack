@@ -2582,9 +2582,9 @@
             },
             actions: {
               add: {
-                label: 'label.add.new.F5',
+                label: 'label.add.F5.device',
                 createForm: {
-                  title: 'label.add.new.F5',
+                  title: 'label.add.F5.device',
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2678,7 +2678,7 @@
                 },
                 messages: {
                   notification: function(args) {
-                    return 'label.add.new.F5';
+                    return 'label.add.F5.device';
                   }
                 },
                 notification: {
@@ -4199,9 +4199,10 @@
         }
       },
 
+			// F5 devices listView
       f5Providers: {
         id: 'f5Providers',
-        title: 'label.f5',
+        title: 'label.devices',
         listView: {
           id: 'f5Providers',
           fields: {
@@ -4216,9 +4217,9 @@
           },
           actions: {
             add: {
-              label: 'label.add.new.F5',
+              label: 'label.add.F5.device',
               createForm: {
-                title: 'label.add.new.F5',
+                title: 'label.add.F5.device',
                 fields: {
                   ip: {
                     label: 'label.ip.address'
