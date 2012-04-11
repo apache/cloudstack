@@ -2673,6 +2673,9 @@
                                 poll: pollAsyncJobResult
                               }
                             });
+                          },
+                          error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
                           }
                         });
                       }
@@ -2908,6 +2911,9 @@
                     async: true,
                     success: function(data) {
                       args.response.success();
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
                 },
