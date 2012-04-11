@@ -422,8 +422,6 @@ public class CitrixHelper {
         _xenServer600GuestOsMap.put("Other Linux (64-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other (32-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other (64-bit)", "Other install media");
-        _xenServer600GuestOsMap.put("Other (32-bit)", "Other install media");
-        _xenServer600GuestOsMap.put("Other (64-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other CentOS (32-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other CentOS (64-bit)", "Other install media");
         _xenServer600GuestOsMap.put("Other Ubuntu (32-bit)", "Other install media");
