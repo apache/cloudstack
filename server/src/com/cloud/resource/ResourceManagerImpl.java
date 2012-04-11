@@ -1067,7 +1067,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
             for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
+                if (hosts == null || hosts.isEmpty() || !answer.getMigrate()) {
                     // for the last host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else {
