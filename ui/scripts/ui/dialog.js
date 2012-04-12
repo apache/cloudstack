@@ -209,8 +209,7 @@
               var dependsOnArgs = {};
 
               $input.find('option').remove();
-              $input.trigger('change');
-
+             
               if (!$target.children().size()) return true;
 
               dependsOnArgs[dependsOn] = $target.val();
