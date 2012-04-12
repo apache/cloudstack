@@ -17,6 +17,9 @@ package com.cloud.upgrade.dao;
  */
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -51,8 +54,22 @@ public class Upgrade301to302 implements DbUpgrade {
         return new File[] { new File(script) };
     }
 
+    private void dropKeysIfExists(Connection conn) {
+        HashMap<String, List<String>> uniqueKeys = new HashMap<String, List<String>>();
+        List<String> keys = new ArrayList<String>();
+        
+        keys.add("i_host__allocation_state");
+        uniqueKeys.put("host", keys);
+        
+        s_logger.debug("Droping i_host__allocation_state key in host table");
+        for (String tableName : uniqueKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), false);
+        }
+    }
+    
     @Override
     public void performDataMigration(Connection conn) {
+        dropKeysIfExists(conn);
     }
 
     @Override
