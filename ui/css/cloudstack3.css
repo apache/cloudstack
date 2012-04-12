@@ -70,7 +70,7 @@ table {
 
 table thead {
   background: url(../images/bg-table-head.png) repeat-x;
-  cursor: pointer;
+  cursor: default;
 }
 
 table thead th {
