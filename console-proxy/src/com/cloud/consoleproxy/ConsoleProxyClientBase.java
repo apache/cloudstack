@@ -43,12 +43,16 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 	protected Object tileDirtyEvent = new Object();
 	protected TileTracker tracker;
 	protected AjaxFIFOImageCache ajaxImageCache = new AjaxFIFOImageCache(2);
-	
+
+/*	
 	protected String host;
 	protected int port;
 	protected String passwordParam;
 	protected String tag = "";
 	protected String ticket = "";
+*/	
+	protected ConsoleProxyClientParam clientParam;
+	
 	protected long createTime = System.currentTimeMillis();
 	protected long lastFrontEndActivityTime = System.currentTimeMillis();
 
@@ -105,22 +109,24 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 	
 	@Override
 	public String getClientHostAddress() {
-		return host;
+		return clientParam.getClientHostAddress();
 	}
 	
 	@Override
 	public int getClientHostPort() {
-		return port;
+		return clientParam.getClientHostPort();
 	}
 	
 	@Override
 	public String getClientHostPassword() {
-		return passwordParam;
+		return clientParam.getClientHostPassword();
 	}
 	
 	@Override
 	public String getClientTag() {
-		return tag;
+		if(clientParam.getClientTag() != null)
+			return clientParam.getClientTag();
+		return "";
 	}
 
 	@Override
@@ -188,9 +194,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 		
 		int key = ajaxImageCache.putImage(imgBits);
 		StringBuffer sb = new StringBuffer("/ajaximg?host=");
-		sb.append(host).append("&port=").append(port).append("&sid=").append(passwordParam);
-		sb.append("&key=").append(key).append("&ts=").append(System.currentTimeMillis());
-		return sb.toString(); 
+		sb.append(getClientHostAddress()).append("&port=").append(getClientHostPort()).append("&sid=").append(getClientHostPassword());
+		sb.append("&key=").append(key).append("&tag=").append(this.getClientTag());
+		sb.append("&ts=").append(System.currentTimeMillis());
+		return sb.toString();
 	}
 	
 	private String prepareAjaxSession(boolean init) {
@@ -202,8 +209,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
 		StringBuffer sb = new StringBuffer();
 		
-		sb.append("/ajax?host=").append(host).append("&port=").append(port);
-		sb.append("&sid=").append(passwordParam).append("&sess=").append(ajaxSessionId);
+		sb.append("/ajax?host=").append(getClientHostAddress()).append("&port=").append(getClientHostPort());
+		sb.append("&sid=").append(getClientHostPassword()).append("&tag=").append(getClientTag()).append("&sess=").append(ajaxSessionId);
 		return sb.toString();
 	}
 
@@ -441,4 +448,12 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 	}
 
 	protected abstract FrameBufferCanvas getFrameBufferCavas();
+
+	public ConsoleProxyClientParam getClientParam() {
+		return clientParam;
+	}
+
+	public void setClientParam(ConsoleProxyClientParam clientParam) {
+		this.clientParam = clientParam;
+	}
 }

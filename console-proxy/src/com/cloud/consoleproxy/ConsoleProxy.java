@@ -397,8 +397,7 @@ public class ConsoleProxy {
 				s_logger.info("Added viewer object " + viewer);
 				reportLoadChange = true;
 			} else if (!viewer.isFrontEndAlive()) {
-				s_logger.info("The rfb thread died, reinitializing the viewer " +
-						viewer);
+				s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
 				viewer.initClient(param);
 			} else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " 
