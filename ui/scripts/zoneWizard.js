@@ -36,7 +36,7 @@
       case 'KVM':
         hypervisorAttr = 'kvmnetworklabel';
         break;
-      case 'VMWare':
+      case 'VMware':
         hypervisorAttr = 'vmwarenetworklabel';
         break;
       case 'BareMetal':
