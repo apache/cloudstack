@@ -83,7 +83,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         migrateUserConcentratedPlannerChoice(conn);
         // update domain router table for element it;
         updateRouters(conn);
-
+        //update host capacities
+        updateHostCapacity(conn);
     }
 
     @Override
@@ -932,6 +933,38 @@ public class Upgrade2214to30 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
+            }
+        }
+    }
+    
+    protected void updateHostCapacity(Connection conn){
+        PreparedStatement pstmt = null;
+        try {
+            s_logger.debug("Updating op_host_capacity table, column capacity_state");
+            pstmt = conn
+                    .prepareStatement("UPDATE op_host_capacity, host SET op_host_capacity.capacity_state='Disabled' where host.id=op_host_capacity.host_id and op_host_capacity.capacity_type in (0,1) and host.resource_state='Disabled';");
+            pstmt.executeUpdate();
+            pstmt = conn
+                    .prepareStatement("UPDATE op_host_capacity, cluster SET op_host_capacity.capacity_state='Disabled' where cluster.id=op_host_capacity.cluster_id and cluster.allocation_state='Disabled';");
+            pstmt.executeUpdate();
+            pstmt = conn
+                    .prepareStatement("UPDATE op_host_capacity, host_pod_ref SET op_host_capacity.capacity_state='Disabled' where host_pod_ref.id=op_host_capacity.pod_id and host_pod_ref.allocation_state='Disabled';");
+            pstmt.executeUpdate();
+            pstmt = conn
+                    .prepareStatement("UPDATE op_host_capacity, data_center SET op_host_capacity.capacity_state='Disabled' where data_center.id=op_host_capacity.data_center_id and data_center.allocation_state='Disabled';");
+            pstmt.executeUpdate();
+            pstmt = conn
+                    .prepareStatement("");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to close statement for op_host_capacity table. ", e);
             }
         }
     }
