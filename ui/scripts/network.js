@@ -2587,7 +2587,7 @@
                     'cidr': { edit: true, label: 'CIDR', isHidden: true },
                     'accountname': {
                       edit: true,
-                      label: _l('label.account') + ', ' + _l('label.security.group'),
+                      label: 'label.account.and.security.group',
                       isHidden: true,
                       range: ['accountname', 'securitygroup']
                     },
@@ -2767,7 +2767,7 @@
                     'cidr': { edit: true, label: 'CIDR', isHidden: true },
                     'accountname': {
                       edit: true,
-                      label: _l('label.account') + ', ' + _l('label.security.group'),
+                      label: 'label.account.and.security.group',
                       isHidden: true,
                       range: ['accountname', 'securitygroup']
                     },
