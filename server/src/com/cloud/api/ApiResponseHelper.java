@@ -597,7 +597,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
-
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
                 // set allocated capacities
                 Long mem = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
@@ -605,7 +604,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryTotal(host.getTotalMemory());
-                hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
+                String hostTags = ApiDBUtils.getHostTags(host.getId());
+                hostResponse.setHostTags(hostTags);
+                
+                String haTag = ApiDBUtils.getHaTag();
+                if (haTag != null && !haTag.isEmpty() && hostTags != null && !hostTags.isEmpty()) {
+                    if (haTag.equalsIgnoreCase(hostTags)) {
+                        hostResponse.setHaHost(true);
+                    }
+                }
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
                 String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
@@ -656,7 +663,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         hostResponse.setResourceState(host.getResourceState().toString());
-
         hostResponse.setObjectName("host");
 
         return hostResponse;
@@ -1665,7 +1671,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
                     } else if (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest) {
-                    	/*In basic zone, public ip has TrafficType.Guest*/
+                        /*In basic zone, public ip has TrafficType.Guest*/
                         vmResponse.setPublicIp(singleNicProfile.getIp4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPublicNetmask(singleNicProfile.getNetmask());

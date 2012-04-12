@@ -74,7 +74,10 @@ public class ListHostsCmd extends BaseListCmd {
     private String resourceState;   
     
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [ min, all, capacity, events, stats]" )
-    private List<String> viewDetails; 
+    private List<String> viewDetails;
+    
+    @Parameter(name=ApiConstants.HA_HOST, type=CommandType.BOOLEAN, description="if true, list only hosts dedicated to HA")
+    private Boolean haHost;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -102,6 +105,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public String getType() {
         return type;
+    }
+    
+    public Boolean getHaHost() {
+        return haHost;
     }
 
     public Long getZoneId() {

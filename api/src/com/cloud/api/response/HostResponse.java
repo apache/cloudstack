@@ -149,6 +149,9 @@ public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
     private String hypervisorVersion;
 
+    @SerializedName(ApiConstants.HA_HOST) @Param(description="true if the host is Ha host (dedicated to vms started by HA process; false otherwise")
+    private Boolean haHost;
+
 
     @Override
     public Long getObjectId() {
@@ -163,122 +166,62 @@ public class HostResponse extends BaseResponse {
         this.id.setValue(id);
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Status getState() {
-        return state;
     }
 
     public void setState(Status state) {
         this.state = state;
     }
 
-    public Date getDisconnectedOn() {
-        return disconnectedOn;
-    }
-
     public void setDisconnectedOn(Date disconnectedOn) {
         this.disconnectedOn = disconnectedOn;
-    }
-
-    public Host.Type getHostType() {
-        return hostType;
     }
 
     public void setHostType(Host.Type hostType) {
         this.hostType = hostType;
     }
 
-    public Long getOsCategoryId() {
-        return osCategoryId.getValue();
-    }
-
     public void setOsCategoryId(Long osCategoryId) {
         this.osCategoryId.setValue(osCategoryId);
-    }
-
-    public String getOsCategoryName() {
-        return osCategoryName;
     }
 
     public void setOsCategoryName(String osCategoryName) {
         this.osCategoryName = osCategoryName;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
-    }
-
-    public Long getZoneId() {
-        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
         this.zoneId.setValue(zoneId);
     }
 
-    public String getZoneName() {
-        return zoneName;
-    }
-
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-    public Long getPodId() {
-        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
         this.podId.setValue(podId);
     }
 
-    public String getPodName() {
-        return podName;
-    }
-
     public void setPodName(String podName) {
         this.podName = podName;
-    }
-
-    public String getVersion() {
-        return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
     }
-
-    public HypervisorType getHypervisor() {
-        return hypervisor;
-    }
-
+    
     public void setHypervisor(HypervisorType hypervisor) {
         this.hypervisor = hypervisor;
-    }
-
-    public Integer getCpuNumber() {
-        return cpuNumber;
     }
 
     public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
-
-    public Long getCpuSpeed() {
-        return cpuSpeed;
-    }
-
+    
     public void setCpuSpeed(Long cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
     }
@@ -291,177 +234,90 @@ public class HostResponse extends BaseResponse {
         this.cpuAllocated = cpuAllocated;
     }
 
-    public String getCpuUsed() {
-        return cpuUsed;
-    }
-
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
-    }
-
-    public Long getAverageLoad() {
-        return averageLoad;
     }
 
     public void setAverageLoad(Long averageLoad) {
         this.averageLoad = averageLoad;
     }
 
-    public Long getNetworkKbsRead() {
-        return networkKbsRead;
-    }
-
     public void setNetworkKbsRead(Long networkKbsRead) {
         this.networkKbsRead = networkKbsRead;
-    }
-
-    public Long getNetworkKbsWrite() {
-        return networkKbsWrite;
     }
 
     public void setNetworkKbsWrite(Long networkKbsWrite) {
         this.networkKbsWrite = networkKbsWrite;
     }
 
-    public Long getMemoryTotal() {
-        return memoryTotal;
-    }
-
     public void setMemoryTotal(Long memoryTotal) {
         this.memoryTotal = memoryTotal;
-    }
-
-    public Long getMemoryAllocated() {
-        return memoryAllocated;
     }
 
     public void setMemoryAllocated(Long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
-    public Long getMemoryUsed() {
-        return memoryUsed;
-    }
-
     public void setMemoryUsed(Long memoryUsed) {
         this.memoryUsed = memoryUsed;
-    }
-
-    public Long getDiskSizeTotal() {
-        return diskSizeTotal;
     }
 
     public void setDiskSizeTotal(Long diskSizeTotal) {
         this.diskSizeTotal = diskSizeTotal;
     }
 
-    public Long getDiskSizeAllocated() {
-        return diskSizeAllocated;
-    }
-
     public void setDiskSizeAllocated(Long diskSizeAllocated) {
         this.diskSizeAllocated = diskSizeAllocated;
-    }
-
-    public String getCapabilities() {
-        return capabilities;
     }
 
     public void setCapabilities(String capabilities) {
         this.capabilities = capabilities;
     }
 
-    public Date getLastPinged() {
-        return lastPinged;
-    }
-
     public void setLastPinged(Date lastPinged) {
         this.lastPinged = lastPinged;
-    }
-
-    public Long getManagementServerId() {
-        return managementServerId;
     }
 
     public void setManagementServerId(Long managementServerId) {
         this.managementServerId = managementServerId;
     }
 
-    public Long getClusterId() {
-        return clusterId.getValue();
-    }
-
     public void setClusterId(Long clusterId) {
         this.clusterId.setValue(clusterId);
-    }
-
-    public String getClusterName() {
-        return clusterName;
     }
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
     }
 
-    public String getClusterType() {
-        return clusterType;
-    }
-
     public void setClusterType(String clusterType) {
         this.clusterType = clusterType;
-    }
-
-    public Boolean isLocalStorageActive() {
-        return localStorageActive;
     }
 
     public void setLocalStorageActive(Boolean localStorageActive) {
         this.localStorageActive = localStorageActive;
     }
 
-    public Date getCreated() {
-        return created;
-    }
-
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public Date getRemoved() {
-        return removed;
     }
 
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
 
-    public String getEvents() {
-        return events;
-    }
-
     public void setEvents(String events) {
         this.events = events;
-    }
-
-    public String getHostTags() {
-        return hostTags;
     }
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
     }
 
-    public Boolean hasEnoughCapacity() {
-        return hasEnoughCapacity;
-    }
-
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
     
-    public Boolean isSuitableForMigration() {
-        return suitableForMigration;
-    }
 
     public void setSuitableForMigration(Boolean suitableForMigration) {
         this.suitableForMigration = suitableForMigration;
@@ -487,8 +343,23 @@ public class HostResponse extends BaseResponse {
         this.hypervisorVersion = hypervisorVersion;
     }
 
-    public String getHypervisorVersion() {
-        return hypervisorVersion;
-    }   
+    public void setOsCategoryId(IdentityProxy osCategoryId) {
+        this.osCategoryId = osCategoryId;
+    }
 
+    public void setZoneId(IdentityProxy zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setPodId(IdentityProxy podId) {
+        this.podId = podId;
+    }
+
+    public void setClusterId(IdentityProxy clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setHaHost(Boolean haHost) {
+        this.haHost = haHost;
+    }
 }

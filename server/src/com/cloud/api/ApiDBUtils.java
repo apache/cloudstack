@@ -40,6 +40,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -182,6 +183,7 @@ public class ApiDBUtils {
     private static ResourceManager _resourceMgr;
     private static AccountDetailsDao _accountDetailsDao;
     private static NetworkDomainDao _networkDomainDao;
+    private static HighAvailabilityManager _haMgr;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -233,6 +235,7 @@ public class ApiDBUtils {
         _resourceMgr = locator.getManager(ResourceManager.class);
         _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
+        _haMgr = locator.getManager(HighAvailabilityManager.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -728,5 +731,9 @@ public class ApiDBUtils {
     
     public static IpAddress findIpByAssociatedVmId(long vmId) {
         return _ipAddressDao.findByAssociatedVmId(vmId);
+    }
+    
+    public static String getHaTag() {
+        return _haMgr.getHaTag();
     }
 }

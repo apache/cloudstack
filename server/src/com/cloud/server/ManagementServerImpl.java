@@ -139,12 +139,15 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
@@ -305,6 +308,10 @@ public class ManagementServerImpl implements ManagementServer {
     private final ResourceManager _resourceMgr;
     @Inject
     SnapshotManager _snapshotMgr;
+    @Inject
+    HighAvailabilityManager _haMgr;
+    @Inject
+    HostTagsDao _hostTagsDao;
 
     private final KeystoreManager _ksMgr;
 
@@ -857,8 +864,9 @@ public class ManagementServerImpl implements ManagementServer {
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Object resourceState = cmd.getResourceState();
+        Object haHosts = cmd.getHaHost();
 
-        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState);
+        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts);
     }
 
     @Override
@@ -920,7 +928,7 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Searching for all hosts in cluster: " + cluster + " for migrating VM " + vm);
         }
 
-        List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null);
+        List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null);
         // filter out the current host
         allHostsInCluster.remove(srcHost);
 
@@ -960,9 +968,35 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
-            Object resourceState) {
+            Object resourceState, Object haHosts) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+        
+        SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        
+        String haTag = _haMgr.getHaTag();
+        SearchBuilder<HostTagVO> hostTagSearch = null;
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
+            hostTagSearch = _hostTagsDao.createSearchBuilder();
+            if ((Boolean)haHosts) {
+                hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
+            } else {
+                hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
+                hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+            }
+
+            hostTagSearch.cp();
+            sb.join("hostTagSearch", hostTagSearch, sb.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER); 
+        }
+        
+        SearchCriteria<HostVO> sc = sb.create();
 
         if (keyword != null) {
             SearchCriteria<HostVO> ssc = _hostDao.createSearchCriteria();
@@ -974,30 +1008,34 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
         if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.LIKE, "%" + type);
+            sc.setParameters("type", "%" + type);
         }
         if (state != null) {
-            sc.addAnd("status", SearchCriteria.Op.EQ, state);
+            sc.setParameters("status", state);
         }
         if (zone != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zone);
+            sc.setParameters("dataCenterId", zone);
         }
         if (pod != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, pod);
+            sc.setParameters("podId", pod);
         }
         if (cluster != null) {
-            sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
+            sc.setParameters("clusterId", cluster);
         }
 
         if (resourceState != null) {
-            sc.addAnd("resourceState", SearchCriteria.Op.EQ, resourceState);
+            sc.setParameters("resourceState", resourceState);
+        }
+        
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
+            sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
 
         return _hostDao.search(sc, searchFilter);
