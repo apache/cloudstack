@@ -65,7 +65,8 @@ public class ConsoleProxyGCThread extends Thread {
 			cleanupLogging();
 			bReportLoad = false;
 			
-			s_logger.info("connMap=" + connMap);
+			if(s_logger.isDebugEnabled())
+				s_logger.debug("connMap=" + connMap);
 			Enumeration<String> e = connMap.keys();
 		    while (e.hasMoreElements()) {
 		    	String key;
@@ -98,7 +99,7 @@ public class ConsoleProxyGCThread extends Thread {
 					s_logger.debug("Report load change : " + loadInfo);
 		    }
 		    
-			try { Thread.sleep(1000); } catch (InterruptedException ex) {}
+			try { Thread.sleep(5000); } catch (InterruptedException ex) {}
 		}
 	}
 }

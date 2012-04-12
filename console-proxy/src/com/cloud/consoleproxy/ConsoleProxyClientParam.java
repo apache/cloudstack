@@ -89,6 +89,9 @@ public class ConsoleProxyClientParam {
 	}
 
 	public String getClientMapKey() {
+		if(clientTag != null && !clientTag.isEmpty())
+			return clientTag;
+		
 		return clientHostAddress + ":" + clientHostPort;
 	}
 }

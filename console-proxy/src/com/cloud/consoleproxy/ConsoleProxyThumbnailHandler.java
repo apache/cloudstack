@@ -130,6 +130,9 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
 		param.setClientHostPassword(sid);
 		param.setClientTag(tag);
 		param.setTicket(ticket);
+		param.setClientTunnelUrl(console_url);
+		param.setClientTunnelSession(console_host_session);
+		
 		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
 		
 		if (!viewer.isHostConnected()) {

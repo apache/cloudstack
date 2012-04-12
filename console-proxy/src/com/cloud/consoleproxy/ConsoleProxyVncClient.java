@@ -55,11 +55,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 
 	@Override
 	public void initClient(ConsoleProxyClientParam param) {
-		this.host = param.getClientHostAddress();
-		this.port = param.getClientHostPort();
-		this.passwordParam = param.getClientHostPassword();
-		this.tag = param.getClientTag();
-		this.ticket = param.getTicket();
+		setClientParam(param);
 		
 		final String tunnelUrl = param.getClientTunnelUrl();
 		final String tunnelSession = param.getClientTunnelSession();
@@ -78,13 +74,13 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 									uri.getHost(), uri.getPort(), 
 									uri.getPath() + "?" + uri.getQuery(), 
 									tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
-									passwordParam);
+									getClientHostPassword());
 							} catch (URISyntaxException e) {
 								s_logger.warn("Invalid tunnel URL " + tunnelUrl);
 							}
 						} else {
-							s_logger.info("Connect to VNC server directly. host: " + host + ", port: " + port);
-							client.connectTo(host, port, passwordParam);
+							s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
+							client.connectTo(getClientHostAddress(), getClientHostPort(), getClientHostPassword());
 						}
 					} catch (UnknownHostException e) {
 						s_logger.error("Unexpected exception: ", e);
