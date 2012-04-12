@@ -293,7 +293,35 @@
             args.$form.find('[rel=networkOfferingId]').hide();
             args.$form.find('[rel=guestcidraddress]').show();
           }
+														
+					args.$form.find('[rel=networkOfferingId]').change(function(){						
+						//reset when different network offering is selected
+						selectedNetworkOfferingHavingSG = false;
+						selectedNetworkOfferingHavingEIP = false;
+						selectedNetworkOfferingHavingELB = false;
+						selectedNetworkOfferingHavingNetscaler = false;
+						
+						var selectedNetworkOfferingId = $(this).val();
 
+						$(networkOfferingObjs).each(function(){
+							if(this.id == selectedNetworkOfferingId) {
+								selectedNetworkOfferingObj = this;
+								return false; //break $.each() loop
+							}
+						});
+
+						if(selectedNetworkOfferingObj.havingNetscaler == true)
+							selectedNetworkOfferingHavingNetscaler = true;
+						if(selectedNetworkOfferingObj.havingSG == true)
+							selectedNetworkOfferingHavingSG = true;
+						if(selectedNetworkOfferingObj.havingEIP == true)
+							selectedNetworkOfferingHavingEIP = true;
+						if(selectedNetworkOfferingObj.havingELB == true)
+							selectedNetworkOfferingHavingELB = true;
+							
+					});
+					//???
+					
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
               $form.find('[rel=domain]').hide();
@@ -346,70 +374,68 @@
           },
           networkOfferingId: {
             label: 'label.network.offering',
-            select: function(args) {
+						dependsOn: 'hypervisor',
+            select: function(args, callbackFn) {	
               $.ajax({
                 url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
                 dataType: "json",
-                async: false,
+                async: true,
                 success: function(json) {
                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+									var availableNetworkOfferingObjs = [];							
+									$(networkOfferingObjs).each(function() {									  
+										var thisNetworkOffering = this;
+										$(this.service).each(function(){
+											var thisService = this;
+																			
+											$(thisService.provider).each(function(){										
+												if(this.name == "Netscaler") {
+													thisNetworkOffering.havingNetscaler = true;
+													return false; //break each loop
+												}
+											});			
+											
+											if(thisService.name == "SecurityGroup") {
+												thisNetworkOffering.havingSG = true;
+											}
+											else if(thisService.name == "StaticNat") {
+												$(thisService.capability).each(function(){
+													if(this.name == "ElasticIp" && this.value == "true") {
+														thisNetworkOffering.havingEIP = true;
+														return false; //break $.each() loop
+													}
+												});
+											}
+											else if(thisService.name == "Lb") {
+												$(thisService.capability).each(function(){
+													if(this.name == "ElasticLb" && this.value == "true") {
+														thisNetworkOffering.havingELB = true;
+														return false; //break $.each() loop
+													}
+												});
+											}
+										});
+										
+										if(args.hypervisor == "XenServer") {
+										  availableNetworkOfferingObjs.push(thisNetworkOffering);
+										}
+										else { //only network offerings that does not include EIP, ELB, SG
+										  if(thisNetworkOffering.havingSG != true && thisNetworkOffering.havingEIP != true && thisNetworkOffering.havingELB != true) {
+											  availableNetworkOfferingObjs.push(thisNetworkOffering);
+											}
+										}		
+									});																	
+									
                   args.response.success({
-                    data: $.map(networkOfferingObjs, function(offering) {
+                    data: $.map(availableNetworkOfferingObjs, function(offering) {
                       return {
                         id: offering.id,
                         description: offering.name
                       };
                     })
-                  });
+                  });									
                 }
-              });
-              args.$select.change(function(){
-                //reset when different network offering is selected
-                selectedNetworkOfferingHavingSG = false;
-                selectedNetworkOfferingHavingEIP = false;
-                selectedNetworkOfferingHavingELB = false;
-                selectedNetworkOfferingHavingNetscaler = false;
-								
-                var selectedNetworkOfferingId = $(this).val();
-
-                $(networkOfferingObjs).each(function(){
-                  if(this.id == selectedNetworkOfferingId) {
-                    selectedNetworkOfferingObj = this;
-                    return false; //break $.each() loop
-                  }
-                });
-
-                $(selectedNetworkOfferingObj.service).each(function(){
-                  var thisService = this;
-																	
-									$(thisService.provider).each(function(){										
-										if(this.name == "Netscaler") {
-											selectedNetworkOfferingHavingNetscaler = true;
-											return false; //break each loop
-										}
-									});			
-									
-                  if(thisService.name == "SecurityGroup") {
-                    selectedNetworkOfferingHavingSG = true;
-                  }
-                  else if(thisService.name == "StaticNat") {
-                    $(thisService.capability).each(function(){
-                      if(this.name == "ElasticIp" && this.value == "true") {
-                        selectedNetworkOfferingHavingEIP = true;
-                        return false; //break $.each() loop
-                      }
-                    });
-                  }
-                  else if(thisService.name == "Lb") {
-                    $(thisService.capability).each(function(){
-                      if(this.name == "ElasticLb" && this.value == "true") {
-                        selectedNetworkOfferingHavingELB = true;
-                        return false; //break $.each() loop
-                      }
-                    });
-                  }
-                });
-              });
+              });										
             }
           },
           networkdomain: {
