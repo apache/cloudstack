@@ -187,7 +187,6 @@ ALTER TABLE `cloud`.`account` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud_usage`.`account` ADD COLUMN `uuid` varchar(40);
-ALTER TABLE `cloud_usage`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`user` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `uc_user__uuid` UNIQUE (`uuid`);
