@@ -292,36 +292,8 @@
           else { //args.data['network-model'] == 'Advanced'
             args.$form.find('[rel=networkOfferingId]').hide();
             args.$form.find('[rel=guestcidraddress]').show();
-          }
-														
-					args.$form.find('[rel=networkOfferingId]').change(function(){						
-						//reset when different network offering is selected
-						selectedNetworkOfferingHavingSG = false;
-						selectedNetworkOfferingHavingEIP = false;
-						selectedNetworkOfferingHavingELB = false;
-						selectedNetworkOfferingHavingNetscaler = false;
-						
-						var selectedNetworkOfferingId = $(this).val();
-
-						$(networkOfferingObjs).each(function(){
-							if(this.id == selectedNetworkOfferingId) {
-								selectedNetworkOfferingObj = this;
-								return false; //break $.each() loop
-							}
-						});
-
-						if(selectedNetworkOfferingObj.havingNetscaler == true)
-							selectedNetworkOfferingHavingNetscaler = true;
-						if(selectedNetworkOfferingObj.havingSG == true)
-							selectedNetworkOfferingHavingSG = true;
-						if(selectedNetworkOfferingObj.havingEIP == true)
-							selectedNetworkOfferingHavingEIP = true;
-						if(selectedNetworkOfferingObj.havingELB == true)
-							selectedNetworkOfferingHavingELB = true;
-							
-					});
-					//???
-					
+          }													
+										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
               $form.find('[rel=domain]').hide();
@@ -433,7 +405,32 @@
                         description: offering.name
                       };
                     })
-                  });									
+                  });		
+                  
+									args.$select.unbind("change").bind("change", function(){									  
+									  //reset when different network offering is selected
+										selectedNetworkOfferingHavingSG = false;
+										selectedNetworkOfferingHavingEIP = false;
+										selectedNetworkOfferingHavingELB = false;
+										selectedNetworkOfferingHavingNetscaler = false;
+										
+										var selectedNetworkOfferingId = $(this).val();                   
+										$(networkOfferingObjs).each(function(){
+											if(this.id == selectedNetworkOfferingId) {
+												selectedNetworkOfferingObj = this;
+												return false; //break $.each() loop
+											}
+										});
+                    
+										if(selectedNetworkOfferingObj.havingNetscaler == true)
+											selectedNetworkOfferingHavingNetscaler = true;
+										if(selectedNetworkOfferingObj.havingSG == true)
+											selectedNetworkOfferingHavingSG = true;
+										if(selectedNetworkOfferingObj.havingEIP == true)
+											selectedNetworkOfferingHavingEIP = true;
+										if(selectedNetworkOfferingObj.havingELB == true)
+											selectedNetworkOfferingHavingELB = true;										
+								  });									
                 }
               });										
             }
