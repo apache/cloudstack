@@ -347,7 +347,33 @@
           networkOfferingId: {
             label: 'label.network.offering',
 						dependsOn: 'hypervisor',
-            select: function(args, callbackFn) {	
+            select: function(args) {							  					
+							args.$select.unbind("change").bind("change", function(){									  
+								//reset when different network offering is selected
+								selectedNetworkOfferingHavingSG = false;
+								selectedNetworkOfferingHavingEIP = false;
+								selectedNetworkOfferingHavingELB = false;
+								selectedNetworkOfferingHavingNetscaler = false;
+								
+								var selectedNetworkOfferingId = $(this).val();  
+								$(networkOfferingObjs).each(function(){
+									if(this.id == selectedNetworkOfferingId) {
+										selectedNetworkOfferingObj = this;
+										return false; //break $.each() loop
+									}
+								});
+								
+								if(selectedNetworkOfferingObj.havingNetscaler == true)
+									selectedNetworkOfferingHavingNetscaler = true;
+								if(selectedNetworkOfferingObj.havingSG == true)
+									selectedNetworkOfferingHavingSG = true;
+								if(selectedNetworkOfferingObj.havingEIP == true)
+									selectedNetworkOfferingHavingEIP = true;
+								if(selectedNetworkOfferingObj.havingELB == true)
+									selectedNetworkOfferingHavingELB = true;	
+							});									
+							
+						
               $.ajax({
                 url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
                 dataType: "json",
@@ -407,30 +433,6 @@
                     })
                   });		
                   
-									args.$select.unbind("change").bind("change", function(){									  
-									  //reset when different network offering is selected
-										selectedNetworkOfferingHavingSG = false;
-										selectedNetworkOfferingHavingEIP = false;
-										selectedNetworkOfferingHavingELB = false;
-										selectedNetworkOfferingHavingNetscaler = false;
-										
-										var selectedNetworkOfferingId = $(this).val();                   
-										$(networkOfferingObjs).each(function(){
-											if(this.id == selectedNetworkOfferingId) {
-												selectedNetworkOfferingObj = this;
-												return false; //break $.each() loop
-											}
-										});
-                    
-										if(selectedNetworkOfferingObj.havingNetscaler == true)
-											selectedNetworkOfferingHavingNetscaler = true;
-										if(selectedNetworkOfferingObj.havingSG == true)
-											selectedNetworkOfferingHavingSG = true;
-										if(selectedNetworkOfferingObj.havingEIP == true)
-											selectedNetworkOfferingHavingEIP = true;
-										if(selectedNetworkOfferingObj.havingELB == true)
-											selectedNetworkOfferingHavingELB = true;										
-								  });									
                 }
               });										
             }
