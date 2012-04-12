@@ -1,0 +1,8 @@
+/etc/cloud/cli/commands.xml
+/usr/bin/cloud-grab-dependent-library-versions
+/usr/bin/cloud-tool
+/usr/bin/cloudvoladm
+/usr/lib/python*/site-packages/cloudapis.py
+/usr/lib/python*/site-packages/cloudtool
+/usr/lib/python*/site-packages/cloudtool/__init__.py
+/usr/lib/python*/site-packages/cloudtool/utils.py
