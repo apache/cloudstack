@@ -172,3 +172,10 @@ Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${sourc
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
+
+Package: cloud-cli
+Provides: cloud-cli
+Architecture: any
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
+Description: CloudStack commandline tool
+ The CloudStack commandline tool for invoking APi
