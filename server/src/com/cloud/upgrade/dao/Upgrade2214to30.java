@@ -864,7 +864,7 @@ public class Upgrade2214to30 implements DbUpgrade {
                      .prepareStatement("");
              pstmt.executeUpdate();
          } catch (SQLException e) {
-             throw new CloudRuntimeException("Unable to update router table. ", e);
+             throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
          } finally {
              try {
                  if (pstmt != null) {
