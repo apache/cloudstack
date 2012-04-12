@@ -21,6 +21,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.service.offering', NULL, 'Service offering used by secondary storage; if NULL - system offering will be used');
 
-DROP INDEX `i_host__allocation_state` ON `cloud`.`host`;
-
 ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`);
