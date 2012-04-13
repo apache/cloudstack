@@ -154,7 +154,7 @@
       </copy>
   </target>
 
-  <target name="deploy-server" depends="deploy-common, deploy-ovm, deploy-cloud-bridge" >
+  <target name="deploy-server" depends="deploy-common, deploy-ovm, deploy-awsapi" >
       <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.iso" />
   </target>
 
@@ -241,7 +241,7 @@
     </chmod>
  </target>
 
-  <target name="deploydb" depends="deploy-cloudstack-db, deploy-cloudbridge-db">
+  <target name="deploydb" depends="deploy-cloudstack-db, deploy-awsapi-db">
   </target>
   
   <target name="deploydb-simulator">

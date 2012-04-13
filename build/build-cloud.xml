@@ -584,7 +584,7 @@
 
   <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>
 
-  <target name="clean-all" depends="clean, clean-cloudbridge" description="Clean all of the generated files, including dependency cache and javadoc">
+  <target name="clean-all" depends="clean, clean-awsapi" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />
   </target>
 </project>
