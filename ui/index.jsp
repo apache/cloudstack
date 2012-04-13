@@ -2938,6 +2938,7 @@ dictionary = {
 'label.add.netScaler.device': '<fmt:message key="label.add.netScaler.device" />',
 'label.add.F5.device': '<fmt:message key="label.add.F5.device" />',
 'label.add.SRX.device': '<fmt:message key="label.add.SRX.device" />',
-'label.account.and.security.group': '<fmt:message key="label.account.and.security.group" />'
+'label.account.and.security.group': '<fmt:message key="label.account.and.security.group" />',
+'label.system.offering': '<fmt:message key="label.system.offering" />'
 };
 </script>
