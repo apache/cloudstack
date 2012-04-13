@@ -62,7 +62,7 @@ moveConfigToBond() {
 
 poolUuid=$(xe pool-list | grep ^uuid | awk '{print $NF}')
 hostMaster=$(xe pool-param-get uuid=$poolUuid param-name=master)
-masterName=$(host-param-get param-name=hostname uuid=$hostMaster)
+masterName=$(xe host-param-get param-name=hostname uuid=$hostMaster)
 masterAddress=$(xe host-param-get param-name=address uuid=$hostMaster)
 
 echo "#Begin check"
