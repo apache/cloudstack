@@ -293,6 +293,12 @@ ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint u
 ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
 UPDATE `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received + current_bytes_received, agg_bytes_sent = net_bytes_sent + current_bytes_sent;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_received`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_sent`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
+DROP TABLE `cloud_usage`.`event`;
+
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
