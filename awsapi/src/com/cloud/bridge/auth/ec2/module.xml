@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="cloud-auth-ec2" class="com.cloud.bridge.auth.ec2.AuthenticationModule">
+   <inflow>
+        <!-- add ec2authentication to the axis2.xml file as first in user phases -->
+        <handler name="InFlowEc2AuthHandler" class="com.cloud.bridge.auth.ec2.AuthenticationHandler">
+        <order phase="ec2authentication" />
+        </handler>    
+   </inflow>
+
+   <INfaultflow>
+        <handler name="FaultInFlowEc2AuthHandler" class="com.cloud.bridge.auth.ec2.AuthenticationHandler">
+        <order phase="ec2authentication"/>
+        </handler>
+   </INfaultflow>
+   
+ </module>
+

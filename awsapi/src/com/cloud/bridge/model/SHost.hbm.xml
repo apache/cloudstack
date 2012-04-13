@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.cloud.bridge.model.SHost" table="shost"  lazy="true">
+   		<id name="id" type="long" column="ID" >
+   			<generator class="native" />
+  		</id>
+
+  		<property name="host">
+     		<column name="Host" />
+  		</property>
+  		<property name="hostType">
+     		<column name="HostType" />
+  		</property>
+  		<property name="exportRoot">
+     		<column name="ExportRoot" />
+  		</property>
+  		<property name="userOnHost">
+    		<column name="UserOnHost"/>
+  		</property>
+  		<property name="userPassword">
+    		<column name="UserPassword"/>
+  		</property>
+  		
+  		<many-to-one name="mhost" column="MHostID" 
+  			class="com.cloud.bridge.model.MHost"
+  			cascade="none" 
+  		/>
+  		
+		<set name="buckets" inverse="true" lazy="true" cascade="all-delete-orphan">
+			<key column="SHostID" />
+			<one-to-many class="com.cloud.bridge.model.SBucket" />
+		</set>
+		
+		<set name="mounts" inverse="true" lazy="true" cascade="all-delete-orphan">
+			<key column="SHostID" />
+			<one-to-many class="com.cloud.bridge.model.MHostMount" />
+		</set>  		
+ 	</class>
+</hibernate-mapping>
+
