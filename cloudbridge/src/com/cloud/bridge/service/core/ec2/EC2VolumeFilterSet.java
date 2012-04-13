@@ -118,7 +118,7 @@ public class EC2VolumeFilterSet {
 		else if (filterName.equalsIgnoreCase( "size" ))  
 			return containsLong(vol.getSize(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "snapshot-id" )) 
-			return containsString(vol.getSnapshotId().toString(), valueSet );	
+			return containsString(String.valueOf(vol.getSnapshotId()), valueSet );	
 		else if (filterName.equalsIgnoreCase( "status" )) 
 			return containsString(vol.getState(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "volume-id" )) 
@@ -128,7 +128,7 @@ public class EC2VolumeFilterSet {
 		else if (filterName.equalsIgnoreCase( "attachment.device" )) 
 			return containsDevice(vol.getDeviceId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "attachment.instance-id" )) 
-			return containsString(vol.getInstanceId().toString(), valueSet );		
+			return containsString(String.valueOf(vol.getInstanceId()), valueSet );		
 		else return false;
 	}
 
@@ -167,6 +167,8 @@ public class EC2VolumeFilterSet {
 
 	private boolean containsDevice(String deviceId, String[] set )
 	{
+            if (deviceId == null)
+	        return false;
 	    Integer devId = new Integer(deviceId);
 		for (String s : set) {
 			switch( devId ) {
