@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -952,9 +953,6 @@ public class Upgrade2214to30 implements DbUpgrade {
             pstmt.executeUpdate();
             pstmt = conn
                     .prepareStatement("UPDATE op_host_capacity, data_center SET op_host_capacity.capacity_state='Disabled' where data_center.id=op_host_capacity.data_center_id and data_center.allocation_state='Disabled';");
-            pstmt.executeUpdate();
-            pstmt = conn
-                    .prepareStatement("");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
