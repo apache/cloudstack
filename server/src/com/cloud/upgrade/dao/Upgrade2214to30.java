@@ -860,9 +860,6 @@ public class Upgrade2214to30 implements DbUpgrade {
              pstmt = conn
                      .prepareStatement("UPDATE op_host_capacity, data_center SET op_host_capacity.capacity_state='Disabled' where data_center.id=op_host_capacity.data_center_id and data_center.allocation_state='Disabled';");
              pstmt.executeUpdate();
-             pstmt = conn
-                     .prepareStatement("");
-             pstmt.executeUpdate();
          } catch (SQLException e) {
              throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
          } finally {
