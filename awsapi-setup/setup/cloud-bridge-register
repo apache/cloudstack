@@ -1,0 +1,61 @@
+#!/cygdrive/c/Python26/python
+
+import base64
+import hmac
+import os
+import sys
+import urllib
+from datetime import datetime
+from optparse import OptionParser
+from urlparse import urlparse
+
+try:
+    from hashlib import sha1 as sha
+except ImportError:
+    import sha
+
+def get_signature(key, url, query):    
+    netloc, path = urlparse(url)[1:3]
+    return urllib.quote_plus(base64.b64encode(
+            hmac.new(key, '\n'.join(['GET', netloc, path, query]), sha).digest()))
+
+def get_url(url, api_key, secret_key, action, query):
+    amzn_string = 'AWSAccessKeyId=' + api_key + '&Action=' + action + '&SignatureMethod=HmacSHA1'
+    amzn_string += '&SignatureVersion=2&Timestamp='+ datetime.now().isoformat()[:19] +'Z&Version=2010-11-15'
+    query = amzn_string + '&' + query
+    url = url + '?' + query + '&Signature=' + get_signature(secret_key, url, query)
+    return urllib.urlretrieve(url)
+
+def register(url, api_key, secret_key, cert):
+    # Register API keys
+    query = 'accesskey=' + api_key + '&secretkey=' + secret_key
+    get_url(url, api_key, secret_key, 'SetUserKeys', query)
+
+    # Tie Certifcate to API keys
+    query = 'cert=' + urllib.quote_plus(cert)
+    get_url(url, api_key, secret_key, 'SetCertificate', query)
+
+def get_opts():
+    parser = OptionParser()
+    parser.add_option('-a', '--apikey') 
+    parser.add_option('-s', '--secretkey') 
+    parser.add_option('-c', '--cert', help='Name of a file containing an X.509 certificate') 
+    parser.add_option('-u', '--url', help='Bridge URL, eg. http://bridge.host:8090/bridge') 
+    (options, args) = parser.parse_args()
+    if None in [options.apikey, options.secretkey, options.cert, options.url]:
+        print 'Error: Missing argument\n'
+        parser.print_help()
+        sys.exit(1)
+    return options
+
+def validate_opts(options):
+    if not os.path.isfile(options.cert):
+        print 'Error reading file: ' + options.cert  
+        sys.exit(1)
+    f = open(options.cert) 
+    options.cert = f.read()
+    return options
+
+if __name__ == '__main__':
+    opts = validate_opts(get_opts())
+    register(opts.url, opts.apikey, opts.secretkey, opts.cert)
