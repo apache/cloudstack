@@ -1270,7 +1270,7 @@
 
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
-                    label: 'label.compute.offering',
+                    label: 'label.system.offering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true&systemvmtype=domainrouter'),
