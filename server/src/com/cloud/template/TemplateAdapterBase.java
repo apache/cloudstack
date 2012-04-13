@@ -246,17 +246,18 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag(), 
 				profile.getDetails(), profile.getSshKeyEnabled());
         
-		if (zoneId == null || zoneId == -1) {
+		if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();
             
             if (dcs.isEmpty()) {
             	throw new CloudRuntimeException("No zones are present in the system, can't add template");
             }
 
+            template.setCrossZones(true);
         	for (DataCenterVO dc: dcs) {
     			_tmpltDao.addTemplateToZone(template, dc.getId());
     		}
-        	template.setCrossZones(true);
+        	
         } else {
 			_tmpltDao.addTemplateToZone(template, zoneId);
         }
