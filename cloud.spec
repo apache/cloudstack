@@ -304,6 +304,14 @@ Group:     System Environment/Libraries
 The CloudStack usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
+%package bridge
+Summary:   CloudStack CloudBridge 
+Group:     System Environment/Libraries
+Requires: java >= 1.6.0
+Requires: tomcat6
+Obsoletes: cloud-bridge < %{version}-%{release}
+%description bridge
+This is the CloudStack CloudBridge
 
 %prep
 
@@ -415,6 +423,19 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 %{name}-console-proxy on > /dev/null 2>&1 || true
 else
     /sbin/service %{name}-console-proxy condrestart >/dev/null 2>&1 || true
+fi
+
+%preun
+/sbin/service cloud-bridge stop || true
+if [ "$1" == "0" ] ; then
+    /sbin/chkconfig --del cloud-bridge  > /dev/null 2>&1 || true
+    /sbin/service cloud-bridge stop > /dev/null 2>&1 || true
+fi
+
+%post
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add cloud-bridge > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloud-bridge on > /dev/null 2>&1 || true
 fi
 
 %files utils
@@ -598,6 +619,20 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+
+%files bridge
+%defattr(0644,cloud,cloud,0755)
+/usr/share/cloud/bridge/conf/*
+/usr/share/cloud/bridge/lib/*
+/usr/share/cloud/bridge/webapps/*
+%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/logs
+%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/work
+%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/temp
+%attr(0644,root,root) /usr/share/cloud/setup/bridge/db/*
+%attr(0755,root,root) /etc/init.d/cloud-bridge
+%attr(0755,root,root) /usr/bin/cloud-bridge-register
+%attr(0755,root,root) /usr/bin/cloud-setup-bridge
+%attr(0755,root,root) /usr/bin/cloud-setup-bridge-db
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
