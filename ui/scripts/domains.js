@@ -192,7 +192,35 @@
                 }
               }
             }
-          }
+          },
+					
+					updateResourceCount: {
+						label: 'label.action.update.resource.count',
+						messages: {
+							confirm: function(args) {
+								return 'message.update.resource.count';
+							},
+							notification: function(args) {
+								return 'label.action.update.resource.count';
+							}
+						},
+						action: function(args) {						  		
+							$.ajax({
+								url: createURL("updateResourceCount&domainid=" + args.context.domains[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									//var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
+									args.response.success();
+								}
+							});
+						},
+						notification: {
+							poll: function(args) {
+								args.complete();
+							}
+						}
+					}	
         },
         tabs: {
           details: {
@@ -362,11 +390,11 @@
     if(isAdmin()) {
       allowedActions.push("create");     
 			if(jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to edit or delete
-        allowedActions.push("edit"); //merge updateResourceCount into edit
+        allowedActions.push("edit"); //merge updateResourceLimit into edit
         allowedActions.push("delete");
       }
     }
-    //allowedActions.push("updateResourceCount");
+    allowedActions.push("updateResourceCount");
     return allowedActions;
   }
 
