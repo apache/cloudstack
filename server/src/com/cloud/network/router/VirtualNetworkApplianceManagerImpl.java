@@ -2086,7 +2086,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             podLevelException = true;
         }
         
-        return applyRules(network, routers, "dhcp entry", podLevelException, podId, new RuleApplier() {
+        return applyRules(network, routers, "dhcp entry", podLevelException, podId, true, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 //for basic zone, send dhcp/dns information to all routers in the basic network only when _dnsBasicZoneUpdates is set to "all" value
@@ -2139,7 +2139,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             podLevelException = true;
         }
         
-        return applyRules(network, routers, "userdata and password entry", podLevelException, podId, new RuleApplier() {
+        return applyRules(network, routers, "userdata and password entry", podLevelException, podId, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 //for basic zone, send vm data/password information only to the router in the same pod
@@ -2648,7 +2648,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
-        return applyRules(network, routers, "ip association", false, null, new RuleApplier() {
+        return applyRules(network, routers, "ip association", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 Commands cmds = new Commands(OnError.Continue);
@@ -2664,7 +2664,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("No firewall rules to be applied for network " + network.getId());
             return true;
         }
-        return applyRules(network, routers, "firewall rules", false, null, new RuleApplier() {
+        return applyRules(network, routers, "firewall rules", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
@@ -2756,7 +2756,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException;
     }
     
-    private boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, boolean isPodLevelException, Long podId, RuleApplier applier) throws ResourceUnavailableException {
+    private boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, boolean isPodLevelException, Long podId, boolean failWhenDisconnect, RuleApplier applier) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply " + typeString , DataCenter.class, network.getDataCenterId());
@@ -2828,7 +2828,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException(msg, DataCenter.class, disconnectedRouters.get(0).getDataCenterIdToDeployIn());
         }
 
-        return !connectedRouters.isEmpty();
+        result = true;
+        if (failWhenDisconnect) {
+            result = !connectedRouters.isEmpty();
+        }
+        return result;
     }
 
     @Override
@@ -2837,7 +2841,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("No static nat rules to be applied for network " + network.getId());
             return true;
         }
-        return applyRules(network, routers, "static nat rules", false, null, new RuleApplier() {
+        return applyRules(network, routers, "static nat rules", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 return applyStaticNat(router, rules);
