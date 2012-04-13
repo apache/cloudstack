@@ -1779,7 +1779,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("unable to find service offering " + id);
         }
 
-        boolean updateNeeded = (name != null || displayText != null);
+        boolean updateNeeded = (name != null || displayText != null || sortKey != null);
         if (!updateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
