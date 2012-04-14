@@ -2335,7 +2335,10 @@
                         action: function(args) {
                           $.ajax({
                             url: createURL('addVpnUser'),
-                            data: args.data,
+                            data: $.extend(args.data, {
+															domainid: args.context.ipAddresses[0].domainid,
+															account: args.context.ipAddresses[0].account
+														}),
                             dataType: 'json',
                             success: function(data) {
                               args.response.success({
