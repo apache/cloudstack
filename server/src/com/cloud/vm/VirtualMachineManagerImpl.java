@@ -828,8 +828,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
                 } finally {
                     if (startedVm == null && canRetry) {
+                        Step prevStep = work.getStep();
                         _workDao.updateStep(work, Step.Release);
-                        cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
+                        if (prevStep == Step.Started || prevStep == Step.Starting) {
+                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
+                        } else {
+                            //if step is not starting/started, send cleanup command with force=true
+                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, true, caller, account);
+                        }
                     }
                 }
             }
