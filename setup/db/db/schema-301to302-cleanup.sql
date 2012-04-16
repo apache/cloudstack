@@ -15,3 +15,9 @@
 
 
 DROP TABLE IF EXISTS `cloud`.`network_tags`;
+
+ALTER TABLE `cloud`.`nics` modify `vm_type` varchar(32) DEFAULT NULL;
+ALTER TABLE `cloud`.`service_offering` modify `default_use` tinyint(1) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `cloud`.`snapshots` modify `hypervisor_type` varchar(32) NOT NULL;
+ALTER TABLE `cloud`.`snapshots` modify `version` varchar(32) DEFAULT NULL;
+ALTER TABLE `cloud`.`volumes` modify `state` varchar(32) DEFAULT NULL;
