@@ -17,6 +17,7 @@ package com.cloud.bridge.service;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.apache.axis2.AxisFault;
 import org.apache.log4j.Logger;
@@ -312,7 +313,7 @@ public class S3SoapServiceImpl implements AmazonS3SkeletonInterface {
 			for(int i = 0; i < engineEntries.length; i++) {
 				entries[i] = new ListAllMyBucketsEntry();
 				entries[i].setName(engineEntries[i].getName());
-				entries[i].setCreationDate(engineEntries[i].getCreationDate());
+				entries[i].setCreationDate(engineEntries[i].getCreationDate());   //setTimeZone(TimeZone.getTimeZone("Z"));
 			}
 
 			ListAllMyBucketsList list = new ListAllMyBucketsList();

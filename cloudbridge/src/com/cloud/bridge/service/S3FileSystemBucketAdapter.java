@@ -29,11 +29,11 @@ import javax.activation.DataSource;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.bridge.io.FileRangeDataSource;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.exception.FileNotExistException;
 import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.OutOfStorageException;
-import com.cloud.bridge.util.FileRangeDataSource;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Tuple;
 

@@ -25,9 +25,11 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Calendar;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
+
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,6 +40,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
+
 import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
 import org.w3c.dom.Document;
@@ -47,6 +50,7 @@ import org.w3c.dom.NodeList;
 import com.amazon.s3.GetBucketAccessControlPolicyResponse;
 import com.amazon.s3.ListAllMyBucketsResponse;
 import com.amazon.s3.ListBucketResponse;
+import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.persist.dao.BucketPolicyDao;
@@ -87,12 +91,13 @@ import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Tuple;
+import com.cloud.bridge.util.XMLAppender;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class S3BucketAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3BucketAction.class);
@@ -378,28 +383,31 @@ public class S3BucketAction implements ServletAction {
 	    throws IOException, XMLStreamException 
 	{
 		Calendar cal = Calendar.getInstance();
-		cal.set( 1970, 1, 1 ); 
+		cal.set( 1970, 1, 1 );    
 		S3ListAllMyBucketsRequest engineRequest = new S3ListAllMyBucketsRequest();
 		engineRequest.setAccessKey(UserContext.current().getAccessKey());
 		engineRequest.setRequestTimestamp( cal );
 		engineRequest.setSignature( "" );
+		
+		
+
 
 		S3ListAllMyBucketsResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 		
-		// -> serialize using the apache's Axiom classes
+		// To allow the all buckets list to be serialized via Axiom classes
 		ListAllMyBucketsResponse allBuckets = S3SoapServiceImpl.toListAllMyBucketsResponse( engineResponse );
-
-		OutputStream os = response.getOutputStream();
+		
+		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
-	    response.setContentType("text/xml; charset=UTF-8");
-		XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		os.write( documentStart.getBytes());
-		MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-        allBuckets.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse", "ns1" ), factory, MTOMWriter );
-        xmlWriter.flush();
-        xmlWriter.close();
-        os.close();
+	    response.setContentType("application/xml");   
+	         // The content-type literally should be "application/xml; charset=UTF-8" 
+	         // but any compliant JVM supplies utf-8 by default
+		
+		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListAllMyBucketsResult", outputStream );
+		resultWriter.startWrite();
+		resultWriter.writeout(allBuckets);
+		resultWriter.stopWrite();
+		
 	}
 
 	public void executeGetBucket(HttpServletRequest request, HttpServletResponse response) 
@@ -415,20 +423,20 @@ public class S3BucketAction implements ServletAction {
 		engineRequest.setMaxKeys(maxKeys);
 		S3ListBucketResponse engineResponse = ServiceProvider.getInstance().getS3Engine().listBucketContents( engineRequest, false );
 		
-		// -> serialize using the apache's Axiom classes
+		// To allow the all list buckets result to be serialized via Axiom classes
 		ListBucketResponse oneBucket = S3SoapServiceImpl.toListBucketResponse( engineResponse );
 	
-		OutputStream os = response.getOutputStream();
+		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
-	    response.setContentType("text/xml; charset=UTF-8");
-		XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		os.write( documentStart.getBytes());
-		MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-        oneBucket.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "ListBucketResponse", "ns1" ), factory, MTOMWriter );
-        xmlWriter.flush();
-        xmlWriter.close();
-        os.close();
+	    response.setContentType("application/xml");   
+	         // The content-type literally should be "application/xml; charset=UTF-8" 
+	         // but any compliant JVM supplies utf-8 by default;
+	    
+		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListBucketResult", outputStream );
+		resultWriter.startWrite();
+		resultWriter.writeout(oneBucket);
+		resultWriter.stopWrite();
+
 	}
 	
 	public void executeGetBucketAcl(HttpServletRequest request, HttpServletResponse response) 
@@ -444,20 +452,21 @@ public class S3BucketAction implements ServletAction {
 
 		S3AccessControlPolicy engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 		
-		// -> serialize using the apache's Axiom classes
+		// To allow the bucket acl policy result to be serialized via Axiom classes
 		GetBucketAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetBucketAccessControlPolicyResponse( engineResponse );
-	
-		OutputStream os = response.getOutputStream();
+
+		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
-	    response.setContentType("text/xml; charset=UTF-8");
-		XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		os.write( documentStart.getBytes());
-		MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-        onePolicy.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketAccessControlPolicyResponse", "ns1" ), factory, MTOMWriter );
-        xmlWriter.flush();
-        xmlWriter.close();
-        os.close();
+	    response.setContentType("application/xml");   
+	         // The content-type literally should be "application/xml; charset=UTF-8" 
+	         // but any compliant JVM supplies utf-8 by default;
+	    
+		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("GetBucketAccessControlPolicyResult", outputStream );
+		resultWriter.startWrite();
+		resultWriter.writeout(onePolicy);
+		resultWriter.stopWrite();
+
+		
 	}
 	
 	public void executeGetBucketVersioning(HttpServletRequest request, HttpServletResponse response) throws IOException

@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloud.bridge.util;
+package com.cloud.bridge.io;
 
 import org.apache.log4j.Logger;
+
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -167,3 +168,4 @@ public class MultiPartDimeInputStream
         return ret;
     }
 }
+

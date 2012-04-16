@@ -48,6 +48,7 @@ import org.w3c.dom.NodeList;
 
 import com.amazon.s3.CopyObjectResponse;
 import com.amazon.s3.GetObjectAccessControlPolicyResponse;
+import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.persist.dao.MultipartLoadDao;
@@ -85,7 +86,7 @@ import com.cloud.bridge.util.ServletRequestDataSource;
 import com.cloud.bridge.util.Tuple;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class S3ObjectAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3ObjectAction.class);
@@ -214,23 +215,23 @@ public class S3ObjectAction implements ServletAction {
         versionId = engineResponse.getPutVersion();
         if (null != versionId) response.addHeader( "x-amz-version-id", versionId );
 	     
-		// -> serialize using the apache's Axiom classes
+		// To allow the copy object result to be serialized via Axiom classes
 		CopyObjectResponse allBuckets = S3SoapServiceImpl.toCopyObjectResponse( engineResponse );
-
-		OutputStream os = response.getOutputStream();
+		
+		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
-	    response.setContentType("text/xml; charset=UTF-8");
-		XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		os.write( documentStart.getBytes());
-		MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-        allBuckets.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "CopyObjectResponse", "ns1" ), factory, MTOMWriter );
-        xmlWriter.flush();
-        xmlWriter.close();
-        os.close();
+	    response.setContentType("application/xml");   
+	         // The content-type literally should be "application/xml; charset=UTF-8" 
+	         // but any compliant JVM supplies utf-8 by default;
+	    
+		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("CopyObjectResult", outputStream );
+		resultWriter.startWrite();
+		resultWriter.writeout(allBuckets);
+		resultWriter.stopWrite();
+
 	}
 
-	private void executeGetObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
+	private void executeGetObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException, XMLStreamException
 	{
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
@@ -253,25 +254,19 @@ public class S3ObjectAction implements ServletAction {
 	    if (null != version) response.addHeader( "x-amz-version-id", version );
 	    
 	
-		// -> serialize using the apache's Axiom classes
-		GetObjectAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetObjectAccessControlPolicyResponse( engineResponse );
-
-		try {
-		    OutputStream os = response.getOutputStream();
-		    response.setStatus( resultCode );	
-	        response.setContentType("text/xml; charset=UTF-8");
-		    XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		    String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		    os.write( documentStart.getBytes());
-		    MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-            onePolicy.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicyResponse", "ns1" ), factory, MTOMWriter );
-            xmlWriter.flush();
-            xmlWriter.close();
-            os.close();
-		}
-		catch( XMLStreamException e ) {
-			throw new IOException( e.toString());
-		}
+		// To allow the get object acl policy result to be serialized via Axiom classes
+		GetObjectAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetObjectAccessControlPolicyResponse( engineResponse );	
+		
+		OutputStream outputStream = response.getOutputStream();
+		response.setStatus(200);	
+	    response.setContentType("application/xml");   
+	         // The content-type literally should be "application/xml; charset=UTF-8" 
+	         // but any compliant JVM supplies utf-8 by default;
+	    
+		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("GetObjectAccessControlPolicyResult", outputStream );
+		resultWriter.startWrite();
+		resultWriter.writeout(onePolicy);
+		resultWriter.stopWrite();
 	}
 	
 	private void executePutObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 

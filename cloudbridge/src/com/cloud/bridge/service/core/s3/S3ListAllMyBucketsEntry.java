@@ -16,6 +16,7 @@
 package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * @author Kelven Yang
@@ -35,8 +36,20 @@ public class S3ListAllMyBucketsEntry {
 		this.name = name;
 	}
 
-	public Calendar getCreationDate() {
-		return creationDate;
+	public Calendar getCreationDate() { 
+		
+		// cal.setTimeZone(TimeZone.getTimeZone("Z"));
+		// java.util.Date d = cal.getTime();
+		
+       // java.util.Date d = creationDate.getTime();
+	   // com.cloud.bridge.util.ISO8601SimpleDateTimeFormat sdf = new com.cloud.bridge.util.ISO8601SimpleDateTimeFormat();
+	   // sdf.format(d); 
+	// java.lang.StringBuffer b = com.cloud.bridge.util.ISO8601SimpleDateTimeFormat.format(d); return b;
+		
+        return creationDate;
+        
+        
+        
 	}
 
 	public void setCreationDate(Calendar creationDate) {
