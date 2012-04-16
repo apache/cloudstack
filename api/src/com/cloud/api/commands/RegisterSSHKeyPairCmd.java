@@ -24,7 +24,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
@@ -91,7 +90,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
 	@Override
 	public void execute() {	
 		SSHKeyPair result = _mgr.registerSSHKeyPair(this);
-        SSHKeyPairResponse response = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+        SSHKeyPairResponse response = _responseGenerator.createSshKeyPairResponse(result);
         response.setResponseName(getCommandName());
 		response.setObjectName("keypair");
         this.setResponseObject(response);

@@ -46,6 +46,14 @@ public class ListSSHKeyPairsCmd extends BaseListCmd {
 	
     @Parameter(name="fingerprint", type=CommandType.STRING, description="A public key fingerprint to look for") 
     private String fingerprint;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List ssh keys for specific account. " +
+    		"Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List ssh keys for specific domain." +
+    		" If used with the account parameter, lists ssh keys for the specified account in this domain.")
+    private Long domainId;
 
     
     /////////////////////////////////////////////////////
@@ -59,6 +67,14 @@ public class ListSSHKeyPairsCmd extends BaseListCmd {
 	public String getFingerprint() {
 		return fingerprint;
 	}
+	
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
     
     
     /////////////////////////////////////////////////////
@@ -70,8 +86,7 @@ public class ListSSHKeyPairsCmd extends BaseListCmd {
 		List<? extends SSHKeyPair> resultList = _mgr.listSSHKeyPairs(this);
 		List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
 		for (SSHKeyPair result : resultList) {
-			SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
-			r.setObjectName("sshkeypair");
+			SSHKeyPairResponse r = _responseGenerator.createSshKeyPairResponse(result);
 			responses.add(r);
 		}
 		

@@ -32,6 +32,12 @@ public class SSHKeyPairResponse extends BaseResponse {
     
     @SerializedName("privatekey") @Param(description="Private key")
     private String privateKey;
+    
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the ssh key")
+    private String accountName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which ssh key exists")
+    private Long domainId;
 
     public SSHKeyPairResponse() {}
     
@@ -45,28 +51,25 @@ public class SSHKeyPairResponse extends BaseResponse {
     	this.privateKey = privateKey;
     }
     
-	public String getName() {
-		return name;
-	}
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getFingerprint() {
-		return fingerprint;
 	}
 
 	public void setFingerprint(String fingerprint) {
 		this.fingerprint = fingerprint;
 	}
 
-	public String getPrivateKey() {
-		return privateKey;
-	}
-
 	public void setPrivateKey(String privateKey) {
 		this.privateKey = privateKey;
 	}
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
     
 }

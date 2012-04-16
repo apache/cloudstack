@@ -62,6 +62,7 @@ import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -144,6 +145,7 @@ import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
+import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -2448,5 +2450,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmResponse.setObjectName("systemvminstance");
         return vmResponse;
     }
+    
+    @Override
+    public SSHKeyPairResponse createSshKeyPairResponse(SSHKeyPair result) {
+        SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+        r.setDomainId(result.getDomainId());
+        //set account information
+        long accountId = result.getAccountId();
+        Account account = ApiDBUtils.findAccountById(accountId);
+        if (account != null) {
+            r.setAccountName(account.getAccountName());
+        }
+        r.setObjectName("sshkeypair");
+        return r;
+    } 
 
 }

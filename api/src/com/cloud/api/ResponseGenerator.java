@@ -46,6 +46,7 @@ import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -94,6 +95,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
@@ -215,5 +217,11 @@ public interface ResponseGenerator {
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
     @Deprecated // This method is only a temporary solution.  Do not use.
     HostResponse createHostResponseTemporary(Host host, int details);
+
+    /**
+     * @param result
+     * @return
+     */
+    SSHKeyPairResponse createSshKeyPairResponse(SSHKeyPair result);
 
 }

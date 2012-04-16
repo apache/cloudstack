@@ -4667,8 +4667,23 @@ public class ManagementServerImpl implements ManagementServer {
         String name = cmd.getName();
         String fingerPrint = cmd.getFingerprint();
         Long accountId = null;
-        Long domainId = null;
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
         String path = null;
+        
+        if (domainId != null) {
+            if (_domainDao.findById(domainId) == null) {
+                throw new InvalidParameterValueException("Unable to find domain id=" + domainId);
+            }
+            
+            if (accountName != null) {
+                Account account= _accountDao.findAccount(accountName, domainId);
+                 if (account == null) {
+                     throw new InvalidParameterValueException("Unable to find domain id=" + domainId);
+                 }
+                 accountId = account.getId();
+            }
+        }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             accountId = caller.getId();
