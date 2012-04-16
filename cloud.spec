@@ -138,6 +138,7 @@ Requires: %{name}-setup = %{version}
 # reqs the agent-scripts package because of xenserver within the management server
 Requires: %{name}-agent-scripts = %{version}
 Requires: %{name}-python = %{version}
+Requires: %{name}-aws-api = %{version}
 # for consoleproxy
 # Requires: %{name}-agent
 Requires: tomcat6
@@ -309,7 +310,6 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
-Requires: %{name}-client = %{version}
 Obsoletes: cloud-bridge < %{version}-%{release}
 %description aws-api
 This is the CloudStack CloudBridge
@@ -427,18 +427,8 @@ else
     /sbin/service %{name}-console-proxy condrestart >/dev/null 2>&1 || true
 fi
 
-%preun
-/sbin/service cloud-bridge stop || true
-if [ "$1" == "0" ] ; then
-    /sbin/chkconfig --del cloud-bridge  > /dev/null 2>&1 || true
-    /sbin/service cloud-bridge stop > /dev/null 2>&1 || true
-fi
-
-%post
+%post aws-api
 if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add cloud-bridge > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloud-bridge on > /dev/null 2>&1 || true
-
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
 
