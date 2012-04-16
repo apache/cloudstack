@@ -3351,5 +3351,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("storagenetworkiprange");
         return response;
     }
+    
+    @Override
+    public Long getIdentiyId(String tableName, String token) {
+        return ApiDispatcher.getIdentiyId(tableName, token);
+    }
 
 }

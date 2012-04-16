@@ -118,7 +118,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
     
-    @IdentityMapper(entityTableName="networks")
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204")
     private Map ipToNetworkList;
     
@@ -250,9 +249,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             Iterator iter = ipsCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> ips = (HashMap<String, String>) iter.next();
-                Long networkId = Long.valueOf(ips.get("networkid"));
+                Long networkId = Long.valueOf(_responseGenerator.getIdentiyId("networks", ips.get("networkid")));
                 String requestedIp = (String) ips.get("ip");
-               
                 ipToNetworkMap.put(networkId, requestedIp);
             }
         }

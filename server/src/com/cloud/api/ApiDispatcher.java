@@ -397,6 +397,10 @@ public class ApiDispatcher {
             }
             clazz = clazz.getSuperclass();
         } while (clazz != Object.class && clazz != null);
-
+    }
+    
+    
+    public static Long getIdentiyId(String tableName, String token) {
+        return s_instance._identityDao.getIdentityId(tableName, token);
     }
 }
