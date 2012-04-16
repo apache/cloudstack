@@ -1295,13 +1295,16 @@
         var context = $listView.data('view-args').context;
 
         if (loadMoreData) {
-          page = page + 1;
+          page = page + 1;					
           loadBody($table, listViewData.dataProvider, listViewData.preFilter, listViewData.fields, true, {
             context: context,
             page: page,
-            filterBy: {
-              search: {},
-              kind: 'all'
+            filterBy: {	
+							kind: $listView.find('select[id=filterBy]').length > 0? $listView.find('select[id=filterBy]').val(): 'all',
+							search: {
+								value: $listView.find('input[type=text]').length > 0? $listView.find('input[type=text]').val(): '',
+								by: 'name'
+							}
             }
           }, actions, {
             reorder: listViewData.reorder
