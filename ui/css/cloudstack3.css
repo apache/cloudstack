@@ -3462,7 +3462,8 @@ Dialogs*/
   margin: 6px 9px 9px;
   padding: 9px;
   color: #FFFFFF;
-  font-size: 11px;
+  /* Adjusting the font size for proper display */
+  font-size: 10px;
   border-left: 1px solid #6A6A6A;
   border-right: 1px solid #6A6A6A;
   border-bottom: 1px solid #FFFFFF;
