@@ -37,6 +37,10 @@ public class DeletePoolCmd extends BaseCmd {
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "Storage pool id")
     private Long id;
+    
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force destroy storage pool " +
+            "(force expunge volumes in Destroyed state as a part of pool removal)")
+    private Boolean forced;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -44,6 +48,10 @@ public class DeletePoolCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+    
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     // ///////////////////////////////////////////////////
