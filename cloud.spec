@@ -304,13 +304,14 @@ Group:     System Environment/Libraries
 The CloudStack usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
-%package bridge
+%package aws-api
 Summary:   CloudStack CloudBridge 
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+Requires: %{name}-client = %{version}
 Obsoletes: cloud-bridge < %{version}-%{release}
-%description bridge
+%description aws-api
 This is the CloudStack CloudBridge
 
 %prep
@@ -331,6 +332,7 @@ echo Doing CloudStack build
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 # we put the build number again here, otherwise state checking will cause an almost-full recompile
 ./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number}
+./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
 
 %clean
 
@@ -436,6 +438,25 @@ fi
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add cloud-bridge > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 cloud-bridge on > /dev/null 2>&1 || true
+
+    root=/usr/share/cloud/bridge
+    target=/usr/share/cloud/management/
+
+    if [ ! -e $target/webapps/awsapi ]; then
+        ln -s $root/webapps/awsapi $target/webapps/awsapi
+    fi
+
+    jars=`ls $root/lib`
+    for j in $jars
+    do
+        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
+    done
+
+    confs="cloud-bridge.properties ec2-service.properties hibernate.cfg.xml log4j-cloud-bridge.xml"
+    for c in $confs
+    do
+        cp -f $root/conf/$c $target/conf
+    done
 fi
 
 %files utils
@@ -620,19 +641,15 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 
-%files bridge
+%files aws-api
 %defattr(0644,cloud,cloud,0755)
-/usr/share/cloud/bridge/conf/*
-/usr/share/cloud/bridge/lib/*
-/usr/share/cloud/bridge/webapps/*
-%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/logs
-%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/work
-%dir %attr(0775,cloud,cloud) /usr/share/cloud/bridge/temp
-%attr(0644,root,root) /usr/share/cloud/setup/bridge/db/*
-%attr(0755,root,root) /etc/init.d/cloud-bridge
-%attr(0755,root,root) /usr/bin/cloud-bridge-register
-%attr(0755,root,root) /usr/bin/cloud-setup-bridge
-%attr(0755,root,root) /usr/bin/cloud-setup-bridge-db
+%{_datadir}/cloud/bridge/conf/*
+%{_datadir}/cloud/bridge/lib/*
+%{_datadir}/cloud/bridge/webapps/*
+%attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
+%attr(0755,root,root) %{_bindir}/cloud-bridge-register
+%attr(0755,root,root) %{_bindir}/cloud-setup-bridge
+%attr(0755,root,root) %{_bindir}/cloud-setup-bridge-db
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12

@@ -77,7 +77,7 @@ def build_jars ():
 			"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 			"cloud-ws-commons-util-1.0.2.jar",
 			"cloud-commons-collections-3.2.1.jar", "vmware*.jar", "cloud-secstorage-extras.jar",
-			"cloud-agent-simulator.jar"]
+			"cloud-agent-simulator.jar", "cloud-awsapi.jar"]
 
 	for a in jars_str:
 		if _basename (a).startswith ("cloud-") \
