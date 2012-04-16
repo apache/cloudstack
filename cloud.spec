@@ -639,7 +639,6 @@ fi
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloud-bridge-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
-%attr(0755,root,root) %{_bindir}/cloud-setup-bridge-db
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
