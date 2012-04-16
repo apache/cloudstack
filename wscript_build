@@ -88,18 +88,18 @@ def build_jars ():
 	bld.install_files ('${JAVADIR}', ant_jars)
 
 
-def build_python_and_daemonize ():
-	obj = bld(features = 'py',name='pythonmodules')
-	obj.find_sources_in_dirs('python/lib', exts=['.py'])
-
-	if bld.env.DISTRO not in ['Windows','Mac']:
-		# build / install declarations of the daemonization utility - except for Windows
-		bld(
-			name='daemonize',
-			features='cc cprogram',
-			source='daemonize/daemonize.c',
-			target='daemonize/cloud-daemonize'
-		   )
+#def build_python_and_daemonize ():
+#	obj = bld(features = 'py',name='pythonmodules')
+#	obj.find_sources_in_dirs('python/lib', exts=['.py'])
+#
+#	if bld.env.DISTRO not in ['Windows','Mac']:
+#		# build / install declarations of the daemonization utility - except for Windows
+#		bld(
+#			name='daemonize',
+#			features='cc cprogram',
+#			source='daemonize/daemonize.c',
+#			target='daemonize/cloud-daemonize'
+#		   )
 
 def build_premium ():
 	if buildpremium: bld.recurse(["cloudstack-proprietary/"],'build')
@@ -120,16 +120,16 @@ def build_dependences ():
 		start_path = bld.path.find_dir ("cloudstack-proprietary/premium/deps")
 		bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
 
-def build_console_proxy ():
+#def build_console_proxy ():
 	# binary unsubstitutable files:
-	start_path = bld.path.find_dir ("console-proxy")
-	bld.install_files("${CPLIBDIR}",start_path.ant_glob("images/**",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
+#	start_path = bld.path.find_dir ("console-proxy")
+#	bld.install_files("${CPLIBDIR}",start_path.ant_glob("images/**",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
 
 	# text substitutable files (substitute with tokens from the environment bld.env):
-	bld.substitute('css/** js/** ui/** scripts/**',install_to="${CPLIBDIR}", cwd=start_path)
+#	bld.substitute('css/** js/** ui/** scripts/**',install_to="${CPLIBDIR}", cwd=start_path)
 	
 	# config files (do not replace them if preserve config option is true)
-	if not Options.options.PRESERVECONFIG: bld.install_files_filtered("${CPSYSCONFDIR}","conf.dom0/*", cwd=start_path)
+#	if not Options.options.PRESERVECONFIG: bld.install_files_filtered("${CPSYSCONFDIR}","conf.dom0/*", cwd=start_path)
 
 def build_patches ():
 	# done here because the patches require substituted files
@@ -139,7 +139,6 @@ def build_patches ():
 	for virttech in Utils.to_list(start_path.ant_glob("*",dir=True)):
 		if virttech in ["shared"]: continue
 		patchfiles = start_path.ant_glob('shared/** %s/debian/config/**'%virttech,src=False,bld=True,dir=False,flat=True)
-
 		tmp = bld.path
 		bld.path = start_path
 		tgen = bld(
@@ -177,7 +176,7 @@ def build_dirs_symlinks ():
 			("${MSLOGDIR}",0770,x),
 			("${AGENTLOGDIR}",0770,x),
 			("${USAGELOGDIR}",0770,x),
-			("${CPLOGDIR}",0770,x),
+#			("${CPLOGDIR}",0770,x),
 			("${IPALLOCATORLOGDIR}",0770,x),
 			("${LOCALSTATEDIR}/cache/${MSPATH}",0770,x),
 			("${LOCALSTATEDIR}/cache/${MSPATH}/temp",0770,x),
@@ -205,10 +204,10 @@ def build_dirs_symlinks ():
 			('${MSENVIRON}/temp', '${LOCALSTATEDIR}/cache/${MSPATH}/temp'),
 			('${MSENVIRON}/work','${LOCALSTATEDIR}/cache/${MSPATH}/work'),
 			('${MSENVIRON}/conf', '${SYSCONFDIR}/${MSPATH}'),
-			("${AGENTLIBDIR}/css", '${CPLIBDIR}/css'),
-			("${AGENTLIBDIR}/images", '${CPLIBDIR}/images'),
-			("${AGENTLIBDIR}/js", '${CPLIBDIR}/js'),
-			("${AGENTLIBDIR}/ui", '${CPLIBDIR}/ui'),
+#			("${AGENTLIBDIR}/css", '${CPLIBDIR}/css'),
+#			("${AGENTLIBDIR}/images", '${CPLIBDIR}/images'),
+#			("${AGENTLIBDIR}/js", '${CPLIBDIR}/js'),
+#			("${AGENTLIBDIR}/ui", '${CPLIBDIR}/ui'),
             ("${MSCONF}/server.xml", '${MSCONF}/server-nonssl.xml'),
             ("${MSCONF}/tomcat6.conf", '${MSCONF}/tomcat6-nonssl.conf'),
 		]
@@ -388,11 +387,10 @@ def build_usage_dir ():
 # Get started to execute here
 build_utils_docs ()
 build_jars ()
-build_python_and_daemonize ()
+#build_python_and_daemonize ()
 build_premium ()
 #build_thirdparty_dir()
 build_dependences ()
-build_console_proxy ()
 #build_patches ()
 build_systemvm_patch ()
 build_dirs_symlinks ()

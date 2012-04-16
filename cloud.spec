@@ -290,6 +290,9 @@ echo Doing CloudStack build
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 # we put the build number again here, otherwise state checking will cause an almost-full recompile
 ./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number}
+rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
+rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
+rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
 
 %clean
 

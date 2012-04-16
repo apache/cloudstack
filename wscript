@@ -815,11 +815,11 @@ def run_agent(args):
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"agent-runner")])
 
 @throws_command_errors
-def run_console_proxy(args):
-	"""runs the console proxy""" # FIXME: make this use the run/debug options
-	conf = _getbuildcontext()
-	if not _exists(_join(conf.env.LIBEXECDIR,"console-proxy-runner")): Scripting.install(conf)
-	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])
+#def run_console_proxy(args):
+#	"""runs the console proxy""" # FIXME: make this use the run/debug options
+#	conf = _getbuildcontext()
+#	if not _exists(_join(conf.env.LIBEXECDIR,"console-proxy-runner")): Scripting.install(conf)
+#	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])
 
 def simulate_agent(args):
 	"""runs the agent simulator, compiling and installing files as needed

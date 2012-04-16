@@ -91,9 +91,6 @@
   <property name="scripts.dir" location="${base.dir}/scripts" />
   <property name="scripts.target.dir" location="${target.dir}/scripts"/>
 
-  <!-- directories for console proxy compilation-->
-  <property name="console-proxy.dir" location="${base.dir}/console-proxy" />
-  <property name="console-proxy.dist.dir" location="${dist.dir}/console-proxy" />
 
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
@@ -112,7 +109,6 @@
   <property name="utils.jar" value="cloud-utils.jar" />
   <property name="server.jar" value="cloud-server.jar" />
   <property name="agent.jar" value="cloud-agent.jar" />
-  <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
   <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
 
@@ -310,95 +306,8 @@
     </copy>
   </target>
 
-  <path id="console-proxy.classpath">
-    <path refid="deps.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-console-proxy" depends="-init" description="Compile the console proxy.">
-    <compile-java jar.name="${console-proxy.jar}" top.dir="${console-proxy.dir}" classpath="console-proxy.classpath" >
-      <include-files>
-        <fileset dir="${console-proxy.dir}/certs">
-          <include name="*.keystore" />
-          <include name="*.crt" />
-          <include name="*.key" />
-        </fileset>
-      </include-files>
-    </compile-java>
-  </target>
 
-  <target name="copy-console-proxy" depends="-init">
-    <property name="copyto.dir" value="${console-proxy.dist.dir}" />
-    <mkdir dir="${copyto.dir}" />
-    <mkdir dir="${copyto.dir}/conf" />
-    <mkdir dir="${copyto.dir}/logs" />
-    <mkdir dir="${copyto.dir}/applet" />
-    <mkdir dir="${copyto.dir}/images" />
-    <mkdir dir="${copyto.dir}/js" />
-    <mkdir dir="${copyto.dir}/ui" />
-    <mkdir dir="${copyto.dir}/css" />
-    <mkdir dir="${copyto.dir}/certs" />
 
-    <copy todir="${copyto.dir}">
-      <fileset dir="${deps.dir}">
-        <include name="log4j-1.2.15.jar" />
-        <include name="apache-log4j-extras-1.0.jar" />
-        <include name="gson.jar" />
-      </fileset>
-    </copy>
-
-    <copy todir="${copyto.dir}">
-      <fileset dir="${jar.dir}">
-        <include name="cloud-console-proxy.jar" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/conf">
-      <fileset dir="${production.dir}/consoleproxy/conf">
-        <include name="log4j-cloud.xml" />
-        <include name="consoleproxy.properties" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/images">
-      <fileset dir="${console-proxy.dir}/images">
-        <include name="*.jpg" />
-        <include name="*.gif" />
-        <include name="*.png" />
-        <include name="*.cur" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/js">
-      <fileset dir="${console-proxy.dir}/js">
-        <include name="*.js" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/ui">
-      <fileset dir="${console-proxy.dir}/ui">
-        <include name="*.ftl" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/css">
-      <fileset dir="${console-proxy.dir}/css">
-        <include name="*.css" />
-      </fileset>
-    </copy>
-    <copy todir="${copyto.dir}/certs">
-      <fileset dir="${console-proxy.dir}/certs">
-          <include name="*.keystore" />
-          <include name="*.crt" />
-          <include name="*.key" />
-      </fileset>
-    </copy>
-  </target>
-
-  <target name="build-console-proxy" depends="-init, compile-console-proxy, copy-console-proxy">
-    <copy todir="${console-proxy.dist.dir}">
-      <fileset dir="${console-proxy.dir}/scripts">
-      </fileset>
-    </copy>
-    <copy todir="${console-proxy.dist.dir}/conf">
-      <fileset dir="${console-proxy.dir}/conf">
-      </fileset>
-    </copy>
-  </target>
 
   <path id="agent.classpath">
     <path refid="deps.classpath" />
@@ -412,7 +321,7 @@
     <compile-java jar.name="${agent.jar}" top.dir="${agent.dir}" classpath="agent.classpath" />
   </target>
 
-  <target name="build-agent" depends="-init, build-console-proxy, compile-agent">
+  <target name="build-agent" depends="-init, compile-agent">
     <mkdir dir="${agent.dist.dir}" />
     <mkdir dir="${agent.dist.dir}/scripts" />
     <mkdir dir="${agent.dist.dir}/conf" />
@@ -463,7 +372,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />

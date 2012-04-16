@@ -209,8 +209,6 @@
         <include name="${api.jar}" />
         <include name="${vmware-base.jar}" />
       </zipfileset>
-      <zipfileset dir="${console-proxy.dist.dir}" filemode="555">
-      </zipfileset>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
         <exclude name="**/.project" />
         <exclude name="**/.classpath" />
@@ -281,7 +279,7 @@
   </target>
 
 <!-- The following target is OBSOLETE.  If you need to add a jar file / target, go to the function def runant(target): in wscrpit_build, and list the jar file and the target in the appropriate places -->
-<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-proxy">
+<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent">
     <copy todir="${waf.artifacts}">
       <fileset dir="${target.dir}/jar"/>
     </copy>
