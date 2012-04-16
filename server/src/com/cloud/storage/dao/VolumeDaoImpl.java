@@ -27,6 +27,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
+import com.cloud.storage.Volume.State;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -268,6 +269,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TotalSizeByPoolSearch.select("count", Func.COUNT, (Object[])null);
         TotalSizeByPoolSearch.and("poolId", TotalSizeByPoolSearch.entity().getPoolId(), Op.EQ);
         TotalSizeByPoolSearch.and("removed", TotalSizeByPoolSearch.entity().getRemoved(), Op.NULL);
+        TotalSizeByPoolSearch.and("state", TotalSizeByPoolSearch.entity().getState(), Op.NEQ);
         TotalSizeByPoolSearch.done();
       
         ActiveTemplateSearch = createSearchBuilder(Long.class);
@@ -378,5 +380,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
         }
+    }
+    
+    @Override @DB(txn=false)
+    public Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId) {
+        SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("state", State.Destroy);
+        List<SumCount> results = customSearch(sc, null);
+        SumCount sumCount = results.get(0);
+        return new Pair<Long, Long>(sumCount.count, sumCount.sum);
     }
 }

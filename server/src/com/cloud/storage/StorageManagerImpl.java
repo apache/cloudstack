@@ -1392,9 +1392,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
     @Override
     @DB
-    public boolean deletePool(DeletePoolCmd command) {
-        Long id = command.getId();
+    public boolean deletePool(DeletePoolCmd cmd) {
+        Long id = cmd.getId();
         boolean deleteFlag = false;
+        boolean forced = cmd.isForced();
 
         // verify parameters
         StoragePoolVO sPool = _storagePoolDao.findById(id);
@@ -1408,14 +1409,29 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
         }
 
-        // Check if the pool has associated volumes in the volumes table
-        // If it does, then you cannot delete the pool
-        Pair<Long, Long> volumeRecords = _volsDao.getCountAndTotalByPool(id);
-
-        if (volumeRecords.first() > 0) {
-            s_logger.warn("Cannot delete pool " + sPool.getName() + " as there are associated vols for this pool");
-            return false; // cannot delete as there are associated vols
+        Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(id);
+        if (forced) {
+            if (vlms.first() > 0) {
+                Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(id);
+                if (nonDstrdVlms.first() > 0) {
+                    throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated " +
+                            "non-destroyed vols for this pool");
+                }
+                //force expunge non-destroyed volumes
+                List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
+                for (VolumeVO vol : vols) {
+                    expungeVolume(vol, true);
+                }
+            }
+        } else {
+            // Check if the pool has associated volumes in the volumes table
+            // If it does , then you cannot delete the pool
+            if (vlms.first() > 0) {
+                throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated vols" +
+                		" for this pool");
+            }
         }
+        
 
         // First get the host_id from storage_pool_host_ref for given pool id
         StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
@@ -1453,8 +1469,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             } else {
                 // Remove the SR associated with the Xenserver
                 for (StoragePoolHostVO host : hostPoolRecords) {
-                    DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(sPool);
-                    final Answer answer = _agentMgr.easySend(host.getHostId(), cmd);
+                    DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(sPool);
+                    final Answer answer = _agentMgr.easySend(host.getHostId(), deleteCmd);
 
                     if (answer != null && answer.getResult()) {
                         deleteFlag = true;
@@ -2104,7 +2120,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
                     for (VolumeVO vol : vols) {
                         try {
-                            expungeVolume(vol);
+                            expungeVolume(vol, false);
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy " + vol.getId(), e);
                         }
@@ -2688,7 +2704,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
 
         try {
-            expungeVolume(volume);
+            expungeVolume(volume, false);
         } catch (Exception e) {
             s_logger.warn("Failed to expunge volume:", e);
             return false;
@@ -3220,7 +3236,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         // add code here
     }
 
-    public void expungeVolume(VolumeVO vol) {
+    public void expungeVolume(VolumeVO vol, boolean force) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunging " + vol);
         }
@@ -3250,18 +3266,36 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
 
         DestroyCommand cmd = new DestroyCommand(pool, vol, vmName);
+        boolean removeVolume = false;
         try {
             Answer answer = sendToPool(pool, cmd);
             if (answer != null && answer.getResult()) {
-                _volsDao.remove(vol.getId());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Volume successfully expunged from " + poolId);
-                }
+                removeVolume = true;
             } else {
                 s_logger.info("Will retry delete of " + vol + " from " + poolId);
             }
         } catch (StorageUnavailableException e) {
-            s_logger.info("Storage is unavailable currently.  Will retry delete of " + vol + " from " + poolId);
+            if (force) {
+                s_logger.info("Storage is unavailable currently, but marking volume id=" + vol.getId() + " as expunged anyway due to force=true");
+                removeVolume = true;
+            } else {
+                s_logger.info("Storage is unavailable currently.  Will retry delete of " + vol + " from " + poolId);
+            }
+        } catch (RuntimeException ex) {
+            if (force) {
+                s_logger.info("Failed to expunge volume, but marking volume id=" + vol.getId() + " as expunged anyway " +
+                		"due to force=true. Volume failed to expunge due to ", ex);
+                removeVolume = true;
+            } else {
+                throw ex;
+            }
+        } finally {
+            if (removeVolume) {
+                _volsDao.remove(vol.getId());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Volume successfully expunged from " + poolId);
+                }
+            }
         }
 
     }
@@ -3293,7 +3327,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         txn.commit();
 
         for (VolumeVO expunge : toBeExpunged) {
-            expungeVolume(expunge);
+            expungeVolume(expunge, false);
         }
     }
 
