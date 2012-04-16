@@ -5728,7 +5728,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId) {
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
         if (network == null) {
-            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
+        	ex.addProxyObject(network, physicalNetworkId, "physicalNetworkId");
+        	throw ex;
         }
 
         return _pNTrafficTypeDao.listBy(physicalNetworkId);
@@ -5740,11 +5742,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
 
         if (networkList.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in zone id=" + zoneId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in the specified zone id");
+        	// Since we don't have a DataCenterVO object at our disposal, we just set the table name that the zoneId's corresponding uuid is looked up from, manually.
+            ex.addProxyObject("data_center", zoneId, "zoneId");
+            throw ex;
         }
 
         if (networkList.size() > 1) {
-            throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" + trafficType);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" + trafficType);
+        	ex.addProxyObject("data_center", zoneId, "zoneId");
+        	throw ex;
         }
 
         return networkList.get(0);
