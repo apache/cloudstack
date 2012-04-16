@@ -338,13 +338,14 @@ public class DownloadListener implements Listener {
 			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
 			
 			volumeHostDao.update(getVolumeHostId(), updateBuilder);
-			try {
-				_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);
-			} catch (NoTransitionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (answer.getDownloadStatus() == Status.DOWNLOADED){
+				try {
+					_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);
+				} catch (NoTransitionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-			
 			/*if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
 				templateDaoBuilder.setChecksum(answer.getCheckSum());
@@ -379,9 +380,10 @@ public class DownloadListener implements Listener {
                     storage.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE  ) {
                 downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
                 downloadMonitor.handleTemplateSync(agent);
+                downloadMonitor.handleVolumeSync(agent);
             }
 	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {        
-	        downloadMonitor.handleTemplateSync(agent.getDataCenterId());
+	        downloadMonitor.handleSync(agent.getDataCenterId());
 	    }
 	}
 

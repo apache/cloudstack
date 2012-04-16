@@ -702,6 +702,8 @@ public class DownloadManagerImpl implements DownloadManager {
         return result;
     }
     
+    
+    
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
         
@@ -771,6 +773,52 @@ public class DownloadManagerImpl implements DownloadManager {
         return result;
     }
 
+	@Override
+	public Map<Long, TemplateInfo> gatherVolumeInfo(String rootDir) {	
+	        Map<Long, TemplateInfo> result = new HashMap<Long, TemplateInfo>();
+	        String volumeDir = rootDir + File.separator + _volumeDir;
+	        
+	        if (! _storage.exists(volumeDir)) {
+	            _storage.mkdirs(volumeDir);
+	        }
+	        
+	        List<String> vols = listVolumes(volumeDir);
+	        for (String vol : vols) {
+	            String path = vol.substring(0, vol.lastIndexOf(File.separator));
+	            TemplateLocation loc = new TemplateLocation(_storage, path);
+	            try {
+	                if (!loc.load()) {
+	                    s_logger.warn("Post download installation was not completed for " + path);
+	                    //loc.purge();
+	                    _storage.cleanup(path, volumeDir);
+	                    continue;
+	                }
+	            } catch (IOException e) {
+	                s_logger.warn("Unable to load volume location " + path, e);
+	                continue;
+	            }
+
+	            TemplateInfo vInfo = loc.getTemplateInfo();
+	            
+	            if ((vInfo.size == vInfo.physicalSize) && (vInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
+	            	try {
+	            	    Processor processor = _processors.get("VMDK Processor");
+	            	    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+	            	    long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.installPath.substring(vInfo.installPath.lastIndexOf(File.separator) + 1));
+	                	vInfo.size = vSize;
+	                	loc.updateVirtualSize(vSize);
+	                	loc.save();
+	            	} catch (Exception e) {
+	            		s_logger.error("Unable to get the virtual size of the volume: " + vInfo.installPath + " due to " + e.getMessage());
+	            	}
+	            }
+
+	            result.put(vInfo.getId(), vInfo);
+	            s_logger.debug("Added volume name: " + vInfo.templateName + ", path: " + vol);
+	        }
+	        return result;
+	    }
+	
     private int deleteDownloadDirectories(File downloadPath, int deleted) {
         try {
             if (downloadPath.exists()) {
@@ -879,11 +927,11 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
-        /*listVolScr = Script.findScript(scriptsDir, "listvolume.sh");
+        listVolScr = Script.findScript(scriptsDir, "listvolume.sh");
         if (listVolScr == null) {
             throw new ConfigurationException("Unable to find the listvolume.sh");
         }
-        s_logger.info("listvolume.sh found in " + listVolScr);*/
+        s_logger.info("listvolume.sh found in " + listVolScr);
 
         createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
         if (createVolScr == null) {
@@ -995,10 +1043,5 @@ public class DownloadManagerImpl implements DownloadManager {
             return;
         }
     }
-
-	@Override
-	public Map<String, TemplateInfo> gatherVolumeInfo(String volumeDir) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
 }

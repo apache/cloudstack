@@ -39,10 +39,12 @@ public interface DownloadMonitor extends Manager{
 
     void handleSysTemplateDownload(HostVO hostId);
 
-    void handleTemplateSync(Long dcId);
+    void handleSync(Long dcId);
 
     void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos);
 
 	boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum);
+
+	void handleVolumeSync(HostVO ssHost);
 
 }

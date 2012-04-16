@@ -54,20 +54,20 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
 import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
@@ -156,7 +156,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ComputeChecksumCommand)cmd);
         } else if (cmd instanceof ListTemplateCommand){
             return execute((ListTemplateCommand)cmd);
-        } else if (cmd instanceof downloadSnapshotFromSwiftCommand){
+        } else if (cmd instanceof ListVolumeCommand){
+            return execute((ListVolumeCommand)cmd);
+        }else if (cmd instanceof downloadSnapshotFromSwiftCommand){
             return execute((downloadSnapshotFromSwiftCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotBackupCommand){
             return execute((DeleteSnapshotBackupCommand)cmd);
@@ -709,8 +711,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         
         String root = getRootDir(cmd.getSecUrl());
-        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
-        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        Map<Long, TemplateInfo> templateInfos = _dlMgr.gatherVolumeInfo(root);
+        return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
         
     }
     
@@ -887,6 +889,54 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!tmpltParent.delete()) {
             details = "Unable to delete directory " + tmpltParent.getName() + " under Template path "
                     + relativeTemplatePath;
+            s_logger.debug(details);
+            return new Answer(cmd, false, details);
+        }
+        return new Answer(cmd, true, null);
+    }
+    
+    protected Answer execute(final DeleteVolumeCommand cmd) {
+        String relativeVolumePath = cmd.getVolumePath();
+        String parent = getRootDir(cmd);
+
+        if (relativeVolumePath.startsWith(File.separator)) {
+            relativeVolumePath = relativeVolumePath.substring(1);
+        }
+
+        if (!parent.endsWith(File.separator)) {
+            parent += File.separator;
+        }
+        String absoluteVolumePath = parent + relativeVolumePath;
+        File tmpltParent = new File(absoluteVolumePath).getParentFile();
+        String details = null;
+        if (!tmpltParent.exists()) {
+            details = "volume parent directory " + tmpltParent.getName() + " doesn't exist";
+            s_logger.debug(details);
+            return new Answer(cmd, true, details);
+        }
+        File[] tmpltFiles = tmpltParent.listFiles();
+        if (tmpltFiles == null || tmpltFiles.length == 0) {
+            details = "No files under volume parent directory " + tmpltParent.getName();
+            s_logger.debug(details);
+        } else {
+            boolean found = false;
+            for (File f : tmpltFiles) {
+                if (!found && f.getName().equals("volume.properties")) {
+                    found = true;
+                }
+                if (!f.delete()) {
+                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path "
+                            + relativeVolumePath);
+                }
+            }
+            if (!found) {
+                details = "Can not find volume.properties under " + tmpltParent.getName();
+                s_logger.debug(details);
+            }
+        }
+        if (!tmpltParent.delete()) {
+            details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path "
+                    + relativeVolumePath;
             s_logger.debug(details);
             return new Answer(cmd, false, details);
         }

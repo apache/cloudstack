@@ -22,6 +22,7 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
@@ -34,6 +35,7 @@ public class TemplateLocation {
     StorageLayer _storage;
     String _templatePath;
     boolean _isCorrupted;
+    ResourceType _resourceType = ResourceType.TEMPLATE;
     
     File _file;
     Properties _props;
@@ -48,9 +50,10 @@ public class TemplateLocation {
         }
         _formats = new ArrayList<FormatInfo>(5);
         _props = new Properties();
-        //TO DO remove this hack
+        //TO DO - remove this hack
         if (_templatePath.matches(".*"+"volumes"+".*")){
         	_file = _storage.getFile(_templatePath + "volume.properties");
+        	_resourceType = ResourceType.VOLUME;
         }else {
         	_file = _storage.getFile(_templatePath + Filename);
         }
@@ -153,7 +156,11 @@ public class TemplateLocation {
         TemplateInfo tmplInfo = new TemplateInfo();       
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
         tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
-        tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
+        if (_resourceType == ResourceType.VOLUME){
+        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));	
+        }else {
+        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
+        }
         tmplInfo.isCorrupted = _isCorrupted;
         tmplInfo.isPublic = Boolean.parseBoolean(_props.getProperty("public"));
         tmplInfo.templateName = _props.getProperty("uniquename");

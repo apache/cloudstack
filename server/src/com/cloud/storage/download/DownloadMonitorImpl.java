@@ -32,7 +32,10 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
+import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
@@ -620,11 +623,12 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
     @Override
-    public void handleTemplateSync(Long dcId) {
+    public void handleSync(Long dcId) {
         if (dcId != null) {
             List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
             for (HostVO ssHost : ssHosts) {
                 handleTemplateSync(ssHost);
+                handleVolumeSync(ssHost);
             }
         }
     }
@@ -638,6 +642,21 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("can not list template for secondary storage host " + ssHost.getId());
+            }
+        } 
+        
+        return null;
+    }
+    
+    private Map<Long, TemplateInfo> listVolume(HostVO ssHost) {
+    	ListVolumeCommand cmd = new ListVolumeCommand(ssHost.getStorageUrl());
+        Answer answer = _agentMgr.sendToSecStorage(ssHost, cmd);
+        if (answer != null && answer.getResult()) {
+        	ListVolumeAnswer tanswer = (ListVolumeAnswer)answer;
+            return tanswer.getTemplateInfo();
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Can not list volumes for secondary storage host " + ssHost.getId());
             }
         } 
         
@@ -660,7 +679,88 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         }
         return null;
     }
+    
+    @Override
+    public void handleVolumeSync(HostVO ssHost) {
+        if (ssHost == null) {
+            s_logger.warn("Huh? ssHost is null");
+            return;
+        }
+        long sserverId = ssHost.getId();        
+        if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage)) {
+            s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
+            return;
+        }
 
+        Map<Long, TemplateInfo> volumeInfos = listVolume(ssHost);
+        if (volumeInfos == null) {
+            return;
+        }
+        
+        List<VolumeHostVO> dbVolumes = _volumeHostDao.listBySecStorage(sserverId);
+        List<VolumeHostVO> toBeDownloaded = new ArrayList<VolumeHostVO>(dbVolumes);
+        for (VolumeHostVO volumeHost : dbVolumes){
+        	VolumeVO volume = _volumeDao.findById(volumeHost.getVolumeId());
+        	//Exists then don't download
+        	if (volumeInfos.containsKey(volume.getId())){
+                TemplateInfo volInfo = volumeInfos.remove(volume.getId());
+                toBeDownloaded.remove(volumeHost);                
+                s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume host table");
+                if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
+                	volumeHost.setErrorString("");
+                }
+                if (volInfo.isCorrupted()) {
+                	volumeHost.setDownloadState(Status.DOWNLOAD_ERROR);
+                    String msg = "Volume " + volume.getUuid() + " is corrupted on secondary storage ";
+                    volumeHost.setErrorString(msg);
+                    s_logger.info("msg");
+                    if (volumeHost.getDownloadUrl() == null) {
+                        msg = "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() + "is corrupted, please check in secondary storage: " + volumeHost.getHostId();
+                        s_logger.warn(msg);
+                    } else {
+                        toBeDownloaded.add(volumeHost);
+                    }
+
+                } else {
+                	volumeHost.setDownloadPercent(100);
+                	volumeHost.setDownloadState(Status.DOWNLOADED);
+                	volumeHost.setInstallPath(volInfo.getInstallPath());
+                	volumeHost.setSize(volInfo.getSize());
+                	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
+                	volumeHost.setLastUpdated(new Date());
+                }
+                _volumeHostDao.update(volumeHost.getId(), volumeHost);                
+        	}
+        }
+        
+        //Download volumes which havent been downloaded yet.
+        if (toBeDownloaded.size() > 0) {
+            for (VolumeHostVO volumeHost : toBeDownloaded) {
+                if (volumeHost.getDownloadUrl() == null) { // If url is null we can't initiate the download
+                    continue;
+                }                                  
+                s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + ssHost.getName());
+                downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), ssHost,  volumeHost.getDownloadUrl(), volumeHost.getChecksum());                
+            }
+        }
+
+        //Delete volumes which are not present on DB.
+        for (Long uniqueName : volumeInfos.keySet()) {
+            TemplateInfo vInfo = volumeInfos.get(uniqueName);
+            DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), vInfo.getInstallPath());
+            try {
+	            _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+            } catch (AgentUnavailableException e) {
+                String err = "Failed to delete " + vInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+                s_logger.error(err);
+                return;
+            }
+            
+            String description = "Deleted volume " + vInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
+            s_logger.info(description);
+        }
+    }
+    
 	@Override
     public void handleTemplateSync(HostVO ssHost) {
         if (ssHost == null) {
