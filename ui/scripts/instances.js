@@ -503,6 +503,8 @@
                 if (group != null && group.length > 0)
                   array1.push("&group="+todb(group));
 
+								//array1.push("&startVm=false");	//for testing only, comment it out before checking in
+									
                 $.ajax({
                   url: createURL("deployVirtualMachine"+array1.join("")),
                   dataType: "json",
@@ -513,8 +515,8 @@
                        {jobId: jid,
                         getUpdatedItem: function(json) {
                           var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                          if (item.passwordenabled == true)
-                            alert("Password of new VM " + getVmName(item.name, item.displayname) + " is  " + item.password);
+                          if (item.password != null)
+                            alert("Password of new VM " + item.displayname + " is  " + item.password);
                           return item;
                         },
                         getActionFilter: function() {
