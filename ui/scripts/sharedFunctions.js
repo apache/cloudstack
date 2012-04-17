@@ -285,9 +285,9 @@ cloudStack.converters = {
       return "";
 
     if (hz < 1000) {
-      return hz + " MHZ";
+      return hz + " MHz";
     } else {
-      return (hz / 1000).toFixed(2) + " GHZ";
+      return (hz / 1000).toFixed(2) + " GHz";
     }
   },
   toDayOfWeekDesp: function(dayOfWeek) {
