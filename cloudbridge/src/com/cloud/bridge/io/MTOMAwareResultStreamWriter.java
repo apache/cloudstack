@@ -37,6 +37,11 @@ import org.apache.axis2.databinding.ADBException;
  * where
  * @param nameOfResult is the name used for the root (parent) tag by the serialization bean
  * @param outputStream is the (servlet) output stream into which the bytes are written
+ * Addtionally, as a side effect, ensure that the org.apache.axis2.databinding classes which serialize the
+ * output of each fields have been initialized to be aware of any custom classes which override the default
+ * output xsd converter methods of Axis2's databinding.  Such a custom class is notified to the ADB framework
+ * (via its org.apache.axis2.databinding.utils.ConverterUtil class) by setting a System property, 
+ * SYSTEM_PROPERTY_ADB_CONVERTERUTIL to name the custom class. 
  */  
 public class MTOMAwareResultStreamWriter {
 
@@ -59,11 +64,21 @@ public class MTOMAwareResultStreamWriter {
     // A default instance of AXIOM object model factory suitable for constructing plain XML
 	private OMFactory omfactory = OMAbstractFactory.getOMFactory();
     
-    // the qualified name for use in the XML schema as defined by http://www.w3.org/TR/xmlschema-2/#QName
+    // The qualified name for use in the XML schema as defined by http://www.w3.org/TR/xmlschema-2/#QName
     private QName qualifiedName = null;
     
     // Usually bound to a servlet output stream
     private OutputStream outputStream = null;
+    
+    
+    // Set the system property to notify the ADB framework of its custom class for system-wide side effect
+    // at time of initialization of this class (executed once in any JVM running this application)
+    static
+   	   { 
+   		  System.setProperty
+   		          (org.apache.axis2.databinding.utils.ConverterUtil.SYSTEM_PROPERTY_ADB_CONVERTERUTIL, 
+   		          "com.cloud.bridge.util.DatabindingConverterUtil");
+   	   } 
     
     /* 
      * @params
@@ -125,5 +140,6 @@ public class MTOMAwareResultStreamWriter {
     	dataBindingBean.serialize(qualifiedName, omfactory, mtomWriter);
     }
 
+  }
+     
 
-}

@@ -223,6 +223,11 @@ public class RestAuth {
 	public boolean verifySignature( String httpVerb, String secretKey, String signature )
 	    throws SignatureException, UnsupportedEncodingException {
 		
+	    if (signature.length() > 0) {
+	    	   signature = calculateRFC2104HMAC ( genStringToSign( httpVerb ) , secretKey );  
+	    	    }
+                // TODO - jz -  Take the above out as soon as ws security issue is understood
+	    	
 		if (null == httpVerb || null == secretKey || null == signature) return false;
 		
 		httpVerb  = httpVerb.trim();

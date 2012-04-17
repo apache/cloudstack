@@ -18,7 +18,9 @@ package com.cloud.bridge.util;
 
 import java.text.SimpleDateFormat;
 
+import java.text.DateFormat;
 import java.text.FieldPosition;
+import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Date;
 import java.util.Calendar;
@@ -33,18 +35,24 @@ import java.util.TimeZone;
  * The purpose of this class is to allow the creation of accurate date time representations following
  * the ISO 8601 format YYYY-MM-DDThh:MM:ss
  * using the letter "T" as the date/time separator
- * This representation may be immediately followed by a "Z" to indicate UTC or, otherwise, to
- * a specific time zone.  If a time zone (tz) is encoded then this is held as the difference between
- * the local time in the tz and UCT, expressed as a positive(+) or negative(-) offset (hhMM) appended to the format.
- * The default case holds no tz information and is referenced to GMT.
- * The advantage of this representation is to allow the date time representation followed by a "Z"
- * to act as the default representation for the encoding of AWS datetime values, because in this representation
- * there is no further time-zone specific information nor arithmetic to post-process.
+ * This representation may be immediately followed by a "Z" (Zulu i.e. at zero offset from GMT) to indicate UTC 
+ * or, otherwise, to a specific time zone.  If a time zone (tz) is encoded then this is held as the difference 
+ * between the local time in the tz and UCT, expressed as a positive(+) or negative(-) offset (hhMM) appended 
+ * to the format.
+ * The default case holds no tz information and assumes that a date time representation referenced to Zulu
+ * (i.e. zero offset from GMT) is required.  When formatting an existing Date transform it into the Zulu timezone
+ * so that it is explicitly at GMT with zero offset.  This provides the default representation for the encoding 
+ * of AWS datetime values.
+ * For testing, it may be useful to note that, as at 2012, a city whose time is always in the Zulu timezone is
+ * Reykjavik, Iceland.
+ * The parsing and formatting methods provided by this class are GMT-referenced and locale insensitive.
  */
 
 public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
 	
 	private static final long serialVersionUID = 7388260211953189670L;
+	
+	protected static TimeZone defaultTimeZone = TimeZone.getTimeZone("Z");
 	
 	  /**
 	   * Construct a new ISO8601DateTimeFormat using the default time zone.
@@ -52,7 +60,7 @@ public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
 	   *
 	   */
 	  public ISO8601SimpleDateTimeFormat() {
-	    setCalendar(Calendar.getInstance());
+	    setCalendar(Calendar.getInstance(defaultTimeZone));
 	  }
 
 	  /**
@@ -65,7 +73,7 @@ public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
 	  }
 
       /**
-       * The abstract class DateFormat has two business methods to override.  These are
+       * The abstract superclass DateFormat has two business methods to override.  These are
        * public StringBuffer format(Date arg0, StringBuffer arg1, FieldPosition arg2)
        * public Date parse(String arg0, ParsePosition arg1)
        */
@@ -76,10 +84,11 @@ public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
       @Override
 	  public StringBuffer format(Date date, StringBuffer stringBuffer, FieldPosition fieldPosition) {
          calendar.setTime(date);
+         calendar.setTimeZone(defaultTimeZone);
          writeYYYYMM(stringBuffer);
          stringBuffer.append('T');
          writehhMMss(stringBuffer);
-         writeTZ(stringBuffer);
+         stringBuffer.append(".000Z");
          return stringBuffer;
 	  }
 
@@ -157,7 +166,9 @@ public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
 	 }
 
 		  /**
-		   * Write the time zone string.
+		   * Write the time zone string.  Remember that in the default TimeZone there is no offset and the
+		   * convention to supply the TimeZone string constant "Z" is applicable.  As an optimization there
+		   * is no need to call this method where the default TimeZone has been set.
 		   * @param stringBuffer The buffer to append the time zone.
 		   */
 		  protected final void writeTZ(StringBuffer stringBuffer) {
@@ -314,7 +325,28 @@ public class ISO8601SimpleDateTimeFormat extends SimpleDateFormat {
 		      calendar.add(Calendar.MILLISECOND, offsetCal - offset);
 		    }
 		    return i;
+		    
 		  }
+
+		  @Override
+		     public int hashCode() {
+		         return (calendar.get(2)+calendar.get(16));
+		         // numberFormat (used by superclass) will not distribute, so use calendar third and penultimate fields
+		         // (i.e. dd and ss) instead
+		         // in Java 6 (Calendar.FIELD_COUNT-1) returns 16
+		     }
+		 
+		  @Override
+		     public boolean equals(Object obj) {
+		         if (this == obj) return true;
+		         if (obj == null || getClass() != obj.getClass()) return false;
+		         DateFormat other = (DateFormat) obj;
+		         Calendar otherCalendar = other.getCalendar();
+		         for (int i = 0; i < Calendar.FIELD_COUNT; i++)
+		        	 if ( calendar.get(i) != (otherCalendar.get(i)) ) return false;
+		         return true;
+		     }
+		 
 
 		
 	}
