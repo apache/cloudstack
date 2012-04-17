@@ -413,8 +413,8 @@
 												});
 											}
 										});
-										
-										if(args.hypervisor == "XenServer") {
+																				
+										if(args.hypervisor != "VMware" && args.hypervisor != "BareMetal") {
 										  availableNetworkOfferingObjs.push(thisNetworkOffering);
 										}
 										else { //only network offerings that does not include EIP, ELB, SG
