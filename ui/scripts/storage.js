@@ -1178,7 +1178,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
-    if (jsonObj.state == 'Destroyed') {
+    if (jsonObj.state == 'Destroyed' || jsonObj.state == 'Migrating') {
       return [];
     }
 
@@ -1191,7 +1191,7 @@
         allowedActions.push("downloadVolume");
       }
     }
-    if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
+    if(jsonObj.state != "Creating") {
       if(jsonObj.type == "ROOT") {
         if (jsonObj.vmstate == "Stopped") {
           allowedActions.push("createTemplate");
