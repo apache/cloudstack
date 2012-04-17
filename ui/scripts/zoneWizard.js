@@ -328,17 +328,19 @@
               $.ajax({
                 url: createURL('listHypervisors'),
                 data: { listAll: true },
-                success: function(json) {
+                success: function(json) {								 
+									var items = json.listhypervisorsresponse.hypervisor;
+									var array1 = [];
+									if(items != null) {
+									  for(var i = 0; i < items.length; i++) {
+										  if(items[i].name == "XenServer")
+											  array1.unshift({id: items[i].name, description: items[i].name});
+											else
+											  array1.push({id: items[i].name, description: items[i].name});
+										}
+									}								  
                   args.response.success({
-                    data: $.map(
-                      json.listhypervisorsresponse.hypervisor,
-                      function(hypervisor) {
-                        return {
-                          id: hypervisor.name,
-                          description: hypervisor.name
-                        };
-                      }
-                    )
+                    data: array1
                   });
                 }
               });
