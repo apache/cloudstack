@@ -278,7 +278,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
-    protected String _localGateway;
 
     public enum SRType {
         NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT;
@@ -2579,13 +2578,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
 
         setupLinkLocalNetwork(conn);
-
-        _localGateway = callHostPlugin(conn, "vmops", "getgateway", "mgmtIP", _host.ip);
-        if (_localGateway == null || _localGateway.isEmpty()) {
-            String msg = "can not get gateway for host :" + _host.uuid;
-            s_logger.warn(msg);
-            return new ReadyAnswer(cmd, msg);
-        }
 
         try {
             boolean result = cleanupHaltedVms(conn);
