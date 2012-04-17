@@ -333,19 +333,26 @@ public class S3RestServlet extends HttpServlet {
     	String bucketName = null;
     	String key = null;
     	
-    	String serviceEndpoint = ServiceProvider.getInstance().getServiceEndpoint();
-    	String host            = request.getHeader("Host");
-		
-    	
     	// Irrespective of whether the requester is using subdomain or full host naming of path expressions
     	// to buckets, wherever the request is made up of a service endpoint followed by a /, in AWS S3 this always
     	// conveys a ListAllMyBuckets command
-    		
-    	if (serviceEndpoint.equalsIgnoreCase( host )) 
-    	{
-    			request.setAttribute(S3Constants.BUCKET_ATTR_KEY, "/");
-    			return new S3BucketAction();   // for ListAllMyBuckets
-    	}
+    	
+    	if ( ( pathInfo == null ) || ( pathInfo.indexOf('/') != 0 ) ) 
+    	   {
+			logger.warn("Invalid REST request URI " + pathInfo);
+			return null;
+		    }
+    	
+    	String serviceEndpoint = ServiceProvider.getInstance().getServiceEndpoint();
+    	String host            = request.getHeader("Host");
+    	
+		if  ( (serviceEndpoint.equalsIgnoreCase( host )) && (pathInfo.equalsIgnoreCase("/")) ) {
+			request.setAttribute(S3Constants.BUCKET_ATTR_KEY, "/");
+			return new S3BucketAction();   // for ListAllMyBuckets
+		}
+
+		// Because there is a leading / at position 0 of pathInfo, now subtract this to process the remainder	
+		pathInfo = pathInfo.substring(1); 
     			
     	if (ServiceProvider.getInstance().getUseSubDomain()) 
     		
@@ -369,19 +376,24 @@ public class S3RestServlet extends HttpServlet {
     			request.setAttribute(S3Constants.OBJECT_ATTR_KEY, objectKey);
     			return new S3ObjectAction();
     		}
-    	} 
+    	}
+    	
     	else 
     		
     	{
-    		if(pathInfo == null || pathInfo.equalsIgnoreCase("/")) {
-    			logger.warn("Invalid REST request URI " + pathInfo);
-    			return null;
-    		}
+    		 		
+    		int endPos = pathInfo.indexOf('/');  // Subsequent / character?
     		
-    		int endPos = pathInfo.indexOf('/', 1);
-    		if ( endPos > 0 ) 
+    	    if (endPos < 1)
+    	    {
+    	    	 bucketName = pathInfo;
+    	    	 S3Engine.verifyBucketName( bucketName, false );
+   			     request.setAttribute(S3Constants.BUCKET_ATTR_KEY, bucketName);
+   			     return new S3BucketAction();
+   		    }
+    	    else
     		{
-    			 bucketName = pathInfo.substring(1, endPos);
+    			 bucketName = pathInfo.substring(0, endPos);
     		     key        = pathInfo.substring(endPos + 1);			
    			     S3Engine.verifyBucketName( bucketName, false );
    			
@@ -395,14 +407,8 @@ public class S3RestServlet extends HttpServlet {
         			  request.setAttribute(S3Constants.BUCKET_ATTR_KEY, bucketName);
         			  return new S3BucketAction();
     			 }
-    		} 
-    		else {
-    			 String bucket = pathInfo.substring(1);
-    			 request.setAttribute(S3Constants.BUCKET_ATTR_KEY, bucket);
-    			 return new S3BucketAction();
     		}
     	}
-    	
     }
     
     
