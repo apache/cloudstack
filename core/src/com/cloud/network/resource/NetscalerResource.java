@@ -604,38 +604,8 @@ public class NetscalerResource implements ServerResource {
             String publicIf = _publicInterface;
             String privateIf = _privateInterface;
 
-            // enable to interfaces which are in use
-            if (publicIf.equals("10/1") || privateIf.equals("10/1")) {
-                ns_obj.set_if_10_1(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/2") || privateIf.equals("10/2")) {
-                ns_obj.set_if_10_2(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/3") || privateIf.equals("10/3")) {
-                ns_obj.set_if_10_3(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/4") || privateIf.equals("10/4")) {
-                ns_obj.set_if_10_4(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/5") || privateIf.equals("10/5")) {
-                ns_obj.set_if_10_5(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/6") || privateIf.equals("10/6")) {
-                ns_obj.set_if_10_6(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/7") || privateIf.equals("10/7")) {
-                ns_obj.set_if_10_7(new Boolean(true));
-            }
-
-            if (publicIf.equals("10/8") || privateIf.equals("10/8")) {
-                ns_obj.set_if_10_8(new Boolean(true));
-            }
+            // enable only the interfaces that will be used by VPX
+            enableVPXInterfaces(_publicInterface, _privateInterface, ns_obj);
 
             // create new VPX instance
             ns newVpx = ns.add(_netscalerSdxService, ns_obj);
@@ -690,22 +660,41 @@ public class NetscalerResource implements ServerResource {
                 s_logger.info("Successfully provisioned VPX instance " + vpxName + " on the Netscaler SDX device " + _ip);
             }
 
-            // physical interfaces on the SDX range from 10/1 to 10/8 of which two different port or same port can be used for public and private interfaces
+            // physical interfaces on the SDX range from 10/1 to 10/8 & 1/1 to 1/8 of which two different port or same port can be used for public and private interfaces
             // However the VPX instances created will have interface range start from 10/1 but will only have as many interfaces enabled while creating the VPX instance
+            // So due to this, we need to map public & private interface on SDX to correct public & private interface of VPX
 
             int publicIfnum = Integer.parseInt(_publicInterface.substring(_publicInterface.lastIndexOf("/") + 1));
             int privateIfnum = Integer.parseInt(_privateInterface.substring(_privateInterface.lastIndexOf("/") + 1));
 
-            // FIXME: check for better way of doing this from API, instead of making assumption on interface name
-            if (publicIfnum == privateIfnum) {
-                publicIf = "10/1";
+            if (_publicInterface.startsWith("10/") && _privateInterface.startsWith("10/")) {
+                if (publicIfnum == privateIfnum) {
+                    publicIf = "10/1";
+                    privateIf = "10/1";
+                } else if (publicIfnum > privateIfnum) {
+                    privateIf = "10/1";
+                    publicIf = "10/2";
+                } else {
+                    publicIf = "10/1";
+                    privateIf = "10/2";
+                }
+            } else if (_publicInterface.startsWith("1/") && _privateInterface.startsWith("1/")) {
+                if (publicIfnum == privateIfnum) {
+                    publicIf = "1/1";
+                    privateIf = "1/1";
+                } else if (publicIfnum > privateIfnum) {
+                    privateIf = "1/1";
+                    publicIf = "1/2";
+                } else {
+                    publicIf = "1/1";
+                    privateIf = "1/2";
+                }
+            } else if (_publicInterface.startsWith("1/") && _privateInterface.startsWith("10/")) {
+                publicIf = "1/1";
                 privateIf = "10/1";
-            } else if (publicIfnum > privateIfnum) {
-                privateIf = "10/1";
-                publicIf = "10/2";
-            } else {
+            } else if (_publicInterface.startsWith("10/") && _privateInterface.startsWith("1/")) {
                 publicIf = "10/1";
-                privateIf = "10/2";
+                privateIf = "1/1";
             }
 
             return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource(),
@@ -715,6 +704,76 @@ public class NetscalerResource implements ServerResource {
                 return retry(cmd, numRetries);
             }
             return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null, null);
+        }
+    }
+
+    private void enableVPXInterfaces(String publicIf, String privateIf, ns ns_obj) {
+        // enable VPX to use 10 gigabit Ethernet interfaces if public/private interface
+        // on SDX is a 10Gig interface
+        if (publicIf.equals("10/1") || privateIf.equals("10/1")) {
+            ns_obj.set_if_10_1(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/2") || privateIf.equals("10/2")) {
+            ns_obj.set_if_10_2(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/3") || privateIf.equals("10/3")) {
+            ns_obj.set_if_10_3(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/4") || privateIf.equals("10/4")) {
+            ns_obj.set_if_10_4(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/5") || privateIf.equals("10/5")) {
+            ns_obj.set_if_10_5(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/6") || privateIf.equals("10/6")) {
+            ns_obj.set_if_10_6(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/7") || privateIf.equals("10/7")) {
+            ns_obj.set_if_10_7(new Boolean(true));
+        }
+
+        if (publicIf.equals("10/8") || privateIf.equals("10/8")) {
+            ns_obj.set_if_10_8(new Boolean(true));
+        }
+
+        // enable VPX to use 1 gigabit Ethernet interfaces if public/private interface
+        // on SDX is a 1Gig interface
+        if (publicIf.equals("1/1") || privateIf.equals("1/1")) {
+            ns_obj.set_if_1_1(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/2") || privateIf.equals("1/2")) {
+            ns_obj.set_if_1_2(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/3") || privateIf.equals("1/3")) {
+            ns_obj.set_if_1_3(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/4") || privateIf.equals("1/4")) {
+            ns_obj.set_if_1_4(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/5") || privateIf.equals("1/5")) {
+            ns_obj.set_if_1_5(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/6") || privateIf.equals("1/6")) {
+            ns_obj.set_if_1_6(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/7") || privateIf.equals("1/7")) {
+            ns_obj.set_if_1_7(new Boolean(true));
+        }
+
+        if (publicIf.equals("1/8") || privateIf.equals("1/8")) {
+            ns_obj.set_if_1_8(new Boolean(true));
         }
     }
 
