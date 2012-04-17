@@ -15,7 +15,7 @@
 
 import SR, VDI, SRCommand, FileSR, util
 import errno
-import os, re, sys
+import os, re, sys, stat
 import time
 import xml.dom.minidom
 import xs_errors
@@ -235,13 +235,16 @@ class NFSFileVDI(FileSR.FileVDI):
         except:
             util.logException("NFSSR:attach")
             pass
-
         return super(NFSFileVDI, self).attach(sr_uuid, vdi_uuid)
 
+    def get_mtime(self, path):
+        st = util.ioretry_stat(lambda: os.stat(path))
+        return st[stat.ST_MTIME]
+
     def clone(self, sr_uuid, vdi_uuid):
-        timestamp_before = int(util.get_mtime(self.sr.path))
+        timestamp_before = int(self.get_mtime(self.sr.path))
         ret = super(NFSFileVDI, self).clone(sr_uuid, vdi_uuid)
-        timestamp_after = int(util.get_mtime(self.sr.path))
+        timestamp_after = int(self.get_mtime(self.sr.path))
         if timestamp_after == timestamp_before:
             util.SMlog("SR dir timestamp didn't change, updating")
             timestamp_after += 1
