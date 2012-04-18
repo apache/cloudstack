@@ -1556,14 +1556,12 @@
 
             fields: [
               {                       
-                id: { label: 'label.id', isEditable: false },
+                
                 displayname: { label: 'label.display.name', isEditable: true },		
                 instancename: { label: 'label.internal.name' },								
-                state: { label: 'label.state', isEditable: false },
-                publicip: { label: 'label.public.ip', isEditable: false },
-                zonename: { label: 'label.zone.name', isEditable: false },
-                hypervisor: { label: 'label.hypervisor', isEditable: false },
-                templatename: { label: 'label.template', isEditable: false },
+                state: { label: 'label.state' },                       
+                hypervisor: { label: 'label.hypervisor' },
+                templatename: { label: 'label.template' },
                 guestosid: {
                   label: 'label.os.type',
                   isEditable: true,
@@ -1582,23 +1580,30 @@
                       }
                     });
                   }
-                },
-
-                serviceofferingname: { label: 'label.compute.offering', isEditable: false },
-                group: { label: 'label.group', isEditable: true },
-                hostname: { label: 'label.host', isEditable: false},
-                haenable: { label: 'label.ha.enabled', isEditable: false, converter:cloudStack.converters.toBooleanText },
-                isoid: {
+                },              
+                                
+                /*
+								isoid: {
                   label: 'label.attached.iso',
                   isEditable: false,
                   converter: function(isoid) {
                     return cloudStack.converters.toBooleanText(isoid != null);
                   }
                 },
-                domain: { label: 'label.domain', isEditable: false },
-                account: { label: 'label.account', isEditable: false },
-                created: { label: 'label.created', isEditable: false, converter: cloudStack.converters.toLocalDate },
-								name: { label: 'label.name', isEditable: false }
+								*/
+								isoname: { label: 'label.attached.iso' },
+								
+								serviceofferingname: { label: 'label.compute.offering' },
+								haenable: { label: 'label.ha.enabled', converter:cloudStack.converters.toBooleanText },
+								group: { label: 'label.group', isEditable: true },
+								zonename: { label: 'label.zone.name', isEditable: false },
+								hostname: { label: 'label.host' },                
+								publicip: { label: 'label.public.ip' },  
+                domain: { label: 'label.domain' },
+                account: { label: 'label.account' },
+                created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+								name: { label: 'label.name' },
+								id: { label: 'label.id' }
               }
             ],
 
