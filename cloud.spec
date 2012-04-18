@@ -510,7 +510,7 @@ fi
 %{_javadir}/jetty-util-6.1.26.jar
 %{_javadir}/%{name}-axis.jar
 %{_javadir}/%{name}-commons-discovery.jar
-%{_javadir}/%{name}-wsdl4j.jar
+%{_javadir}/%{name}-wsdl4j-1.6.2.jar
 %{_javadir}/%{name}-bcprov-jdk16-1.45.jar
 %{_javadir}/%{name}-jsch-0.1.42.jar
 %{_javadir}/%{name}-iControl.jar
