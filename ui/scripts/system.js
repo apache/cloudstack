@@ -6031,8 +6031,8 @@
 											    memorytotal: (jsonObj.memorytotal == null || jsonObj.memorytotal == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memorytotal),
 											    memoryallocated: (jsonObj.memoryallocated == null || jsonObj.memoryallocated == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryallocated ),
 											    memoryused: (jsonObj.memoryused == null || jsonObj.memoryused == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.memoryused),												
-											    networkkbsread: (jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
-											    networkkbswrite: (jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
+											    networkkbsread: (jsonObj.networkkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
+											    networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
 												}
 											});		
 										}
