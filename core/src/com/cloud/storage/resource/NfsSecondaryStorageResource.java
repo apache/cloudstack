@@ -72,6 +72,7 @@ import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -144,7 +145,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
         } else if (cmd instanceof DeleteTemplateCommand) {
         	return execute((DeleteTemplateCommand) cmd);
-        } else if (cmd instanceof ReadyCommand) {
+        } else if (cmd instanceof DeleteVolumeCommand) {
+        	return execute((DeleteVolumeCommand) cmd);
+        }else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof SecStorageFirewallCfgCommand){
         	return execute((SecStorageFirewallCfgCommand)cmd);

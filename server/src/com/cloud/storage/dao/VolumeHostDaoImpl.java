@@ -6,6 +6,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.host.HostVO;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -16,6 +17,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
 	protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;
 	protected final SearchBuilder<VolumeHostVO> VolumeSearch;
 	protected final SearchBuilder<VolumeHostVO> HostSearch;
+	protected final SearchBuilder<VolumeHostVO> HostDestroyedSearch;
 	
 	VolumeHostDaoImpl(){
 		HostVolumeSearch = createSearchBuilder();
@@ -33,6 +35,11 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
 		VolumeSearch.and("volume_id", VolumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
 		VolumeSearch.and("destroyed", VolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
 		VolumeSearch.done();
+		
+		HostDestroyedSearch = createSearchBuilder();
+		HostDestroyedSearch.and("host_id", HostDestroyedSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+		HostDestroyedSearch.and("destroyed", HostDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+		HostDestroyedSearch.done();	
 	}
     
     
@@ -62,6 +69,14 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
 	    sc.setParameters("host_id", ssHostId);
 	    sc.setParameters("destroyed", false);
 	    return listAll();
+	}
+	
+	@Override
+	public List<VolumeHostVO> listDestroyed(long hostId){
+		SearchCriteria<VolumeHostVO> sc = HostDestroyedSearch.create();
+		sc.setParameters("host_id", hostId);
+		sc.setParameters("destroyed", true);
+		return listIncludingRemovedBy(sc);
 	}
 
 }

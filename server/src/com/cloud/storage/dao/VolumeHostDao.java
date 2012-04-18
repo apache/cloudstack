@@ -14,4 +14,6 @@ public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long> {
 
 	List<VolumeHostVO> listBySecStorage(long sserverId);
 
+	List<VolumeHostVO> listDestroyed(long hostId);
+
 }

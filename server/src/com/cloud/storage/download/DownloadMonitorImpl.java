@@ -439,12 +439,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             downloadJobExists = true;
         }
         
-        try {
-			_storageMgr.stateTransitTo(volume, Event.UploadRequested);
-		} catch (NoTransitionException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
         String secUrl = sserver.getStorageUrl();
 		if(volumeHost != null) {
@@ -478,7 +473,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			try {
 	            send(ssvm.getId(), dcmd, dl);
             } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start /resume download of template " + volume.getName() + " to " + sserver.getName(), e);
+				s_logger.warn("Unable to start /resume download of volume " + volume.getName() + " to " + sserver.getName(), e);
 				dl.setDisconnected();
 				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -551,7 +546,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             else{
                 s_logger.warn("Failed to get size for volume" + volume.getName());
             }
-            String eventType = EventTypes.EVENT_VOLUME_CREATE;            
+            String eventType = EventTypes.EVENT_VOLUME_UPLOAD;            
             if(volume.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
                UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
                _usageEventDao.persist(usageEvent);
