@@ -47,26 +47,14 @@
           reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
           actions: {
             add: {
-              label: 'label.action.create.template',
-
-              messages: {
-                confirm: function(args) {
-                  return "create.template.confirm";
-                },
-                success: function(args) {
-                  return "create.template.success";
-                },
+              label: 'label.action.register.template',
+              messages: {    
                 notification: function(args) {
-                  return "create.template.notification";
-                },
-                complete: function(args) {
-                  return "create.template.complete";
+                  return 'label.action.register.template';
                 }
               },
-
               createForm: {
-                title: 'label.action.create.template',
-                desc: 'label.action.create.template',
+                title: 'label.action.register.template',                
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
@@ -700,17 +688,14 @@
 
           actions: {
             add: {
-              label: 'label.add.iso',
-
+              label: 'label.action.register.iso',
               messages: {
                 notification: function(args) {
-                  return 'label.add.iso';
+                  return 'label.action.register.iso';
                 }
               },
-
               createForm: {
-                title: 'label.add.iso',
-                desc: 'label.add.iso',
+                title: 'label.action.register.iso',                
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
