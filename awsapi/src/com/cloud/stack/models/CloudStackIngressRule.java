@@ -20,7 +20,7 @@ import com.google.gson.annotations.SerializedName;
 public class CloudStackIngressRule {
 	
     @SerializedName(ApiConstants.RULE_ID)
-    private Long ruleId;
+    private String ruleId;
 
     @SerializedName(ApiConstants.PROTOCOL)
     private String protocol;
@@ -49,7 +49,7 @@ public class CloudStackIngressRule {
     public CloudStackIngressRule() {
     }
 
-	public Long getRuleId() {
+	public String getRuleId() {
 		return ruleId;
 	}
 

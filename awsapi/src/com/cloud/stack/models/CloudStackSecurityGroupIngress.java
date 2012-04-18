@@ -36,7 +36,7 @@ public class CloudStackSecurityGroupIngress {
 	@SerializedName(ApiConstants.PROTOCOL)
 	private String protocol;
 	@SerializedName(ApiConstants.RULE_ID)
-	private Long ruleId;
+	private String ruleId;
 	@SerializedName(ApiConstants.SECURITY_GROUP_NAME)
 	private String securityGroupName;
 	@SerializedName(ApiConstants.START_PORT)
@@ -102,7 +102,7 @@ public class CloudStackSecurityGroupIngress {
 	/**
 	 * @return the ruleId
 	 */
-	public Long getRuleId() {
+	public String getRuleId() {
 		return ruleId;
 	}
 
