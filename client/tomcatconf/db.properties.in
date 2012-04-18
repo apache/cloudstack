@@ -49,3 +49,6 @@ db.usage.maxActive=100
 db.usage.maxIdle=30
 db.usage.maxWait=10000
 db.usage.autoReconnect=true
+
+# awsapi database settings
+db.awsapi.name=cloudbridge

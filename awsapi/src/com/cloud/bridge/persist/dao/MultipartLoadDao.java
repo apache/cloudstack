@@ -46,9 +46,11 @@ public class MultipartLoadDao {
 	private String     dbName     = null;
 	private String     dbUser     = null;
 	private String     dbPassword = null;
+	private String     dbHost     = null;
+	private String     dbPort     = null; 
 	
 	public MultipartLoadDao() {
-	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
+	    File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
 	    Properties EC2Prop = null;
 	       
 	    if (null != propertiesFile) {
@@ -60,9 +62,11 @@ public class MultipartLoadDao {
 			} catch (IOException e) {
 				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
 			}
-		    dbName     = EC2Prop.getProperty( "dbName" );
-		    dbUser     = EC2Prop.getProperty( "dbUser" );
-		    dbPassword = EC2Prop.getProperty( "dbPassword" );
+            dbHost     = EC2Prop.getProperty( "db.cloud.host" );
+            dbName     = EC2Prop.getProperty( "db.awsapi.name" );
+            dbUser     = EC2Prop.getProperty( "db.cloud.username" );
+            dbPassword = EC2Prop.getProperty( "db.cloud.password" );
+            dbPort     = EC2Prop.getProperty( "db.cloud.port" );
 		}
 	}
 	
@@ -510,7 +514,7 @@ public class MultipartLoadDao {
         throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 	        Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
         }
 	}
 

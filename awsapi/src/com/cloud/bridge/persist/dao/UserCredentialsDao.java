@@ -19,7 +19,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -37,9 +42,10 @@ public class UserCredentialsDao {
 	private String     dbHost     = null;
 	private String     dbUser     = null;
 	private String     dbPassword = null;
+	private String     dbPort     = null; 
 	
 	public UserCredentialsDao() {
-	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
+	    File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
 	    Properties EC2Prop = null;
 	       
 	    if (null != propertiesFile) {
@@ -51,10 +57,11 @@ public class UserCredentialsDao {
 			} catch (IOException e) {
 				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
 			}
-                    dbHost     = EC2Prop.getProperty( "dbHost" );
-		    dbName     = EC2Prop.getProperty( "dbName" );
-		    dbUser     = EC2Prop.getProperty( "dbUser" );
-		    dbPassword = EC2Prop.getProperty( "dbPassword" );
+            dbHost     = EC2Prop.getProperty( "db.cloud.host" );
+		    dbName     = EC2Prop.getProperty( "db.awsapi.name" );
+		    dbUser     = EC2Prop.getProperty( "db.cloud.username" );
+		    dbPassword = EC2Prop.getProperty( "db.cloud.password" );
+		    dbPort     = EC2Prop.getProperty( "db.cloud.port" );
 		}
 	}
 	
@@ -157,7 +164,7 @@ public class UserCredentialsDao {
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 		    Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword );
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
         }
 	}
 	
