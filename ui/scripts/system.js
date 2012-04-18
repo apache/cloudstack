@@ -5391,7 +5391,17 @@
             name: { label: 'label.name' },
             zonename: { label: 'label.zone' },
             podname: { label: 'label.pod' },
-            clustername: { label: 'label.cluster' }
+            clustername: { label: 'label.cluster' },					
+						state: {
+							label: 'label.state',							
+							indicator: {
+								'Up': 'on',
+								'Down': 'off',
+								'Disconnected': 'off',
+								'Alert': 'off',
+								'Error': 'off'
+							}
+						}						
           },
 
           dataProvider: function(args) {
