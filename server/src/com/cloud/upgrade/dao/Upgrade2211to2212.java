@@ -89,17 +89,20 @@ public class Upgrade2211to2212 implements DbUpgrade {
             }           
             rs.close();
 
+            //2.2.12 resource types
+            String[] resourceTypes = {"user_vm", "public_ip", "volume", "snapshot", "template"};
+            
             for (Long accountId : accounts) {  
-                for (ResourceType resourceType : Resource.ResourceType.values()) {
+                for (String resourceType : resourceTypes) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and account_id=?");
-                    pstmt.setString(1, resourceType.toString());
+                    pstmt.setString(1, resourceType);
                     pstmt.setLong(2, accountId);
                     rs = pstmt.executeQuery();
                     if (!rs.next()) {
                         s_logger.debug("Inserting resource_count record of type " + resourceType + " for account id=" + accountId);
                         pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (?, null, ?, 0)");
                         pstmt.setLong(1, accountId);
-                        pstmt.setString(2, resourceType.toString());
+                        pstmt.setString(2, resourceType);
                         pstmt.executeUpdate();
                     }
                     rs.close();
@@ -108,16 +111,16 @@ public class Upgrade2211to2212 implements DbUpgrade {
             }
             
             for (Long domainId : domains) {  
-                for (ResourceType resourceType : Resource.ResourceType.values()) {
+            	for (String resourceType : resourceTypes) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and domain_id=?");
-                    pstmt.setString(1, resourceType.toString());
+                    pstmt.setString(1, resourceType);
                     pstmt.setLong(2, domainId);
                     rs = pstmt.executeQuery();
                     if (!rs.next()) {
                         s_logger.debug("Inserting resource_count record of type " + resourceType + " for domain id=" + domainId);
                         pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (null, ?, ?, 0)");
                         pstmt.setLong(1, domainId);
-                        pstmt.setString(2, resourceType.toString());
+                        pstmt.setString(2, resourceType);
                         pstmt.executeUpdate();
                     }
                     rs.close();
