@@ -60,6 +60,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -751,6 +752,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setPoolId(destPool.getId());        
         volume.setPodId(destPool.getPodId());
         stateTransitTo(volume, Event.CopySucceeded); 
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize());
+        _usageEventDao.persist(usageEvent);
         _volumeHostDao.remove(volumeHostVO.getId());
     	txn.commit();
 		return volume;
@@ -1691,7 +1694,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
      */
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "creating volume", create = true)
     public VolumeVO uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException{
     	Account caller = UserContext.current().getCaller();
         long ownerId = cmd.getEntityOwnerId();
@@ -1806,8 +1809,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
 
         volume = _volsDao.persist(volume);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, 0l);
-        _usageEventDao.persist(usageEvent);
         try {
 			stateTransitTo(volume, Event.UploadRequested);
 		} catch (NoTransitionException e) {
@@ -2353,7 +2354,39 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     s_logger.warn("problem cleaning up snapshots in secondary storage " + secondaryStorageHost, e2);
                 }
             }
+            
+            //CleanUp volumes on Secondary Storage.
+            for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+                try {
+                    long hostId = secondaryStorageHost.getId();
+                    List<VolumeHostVO> destroyedVolumeHostVOs = _volumeHostDao.listDestroyed(hostId);
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedVolumeHostVOs.size() + " templates to cleanup on secondary storage host: "
+                            + secondaryStorageHost.getName());
+                    for (VolumeHostVO destroyedVolumeHostVO : destroyedVolumeHostVOs) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Deleting volume host: " + destroyedVolumeHostVO);
+                        }
 
+                        String installPath = destroyedVolumeHostVO.getInstallPath();
+
+                        if (installPath != null) {
+                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteVolumeCommand(secondaryStorageHost.getStorageUrl(), destroyedVolumeHostVO.getInstallPath()));
+
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.debug("Failed to delete " + destroyedVolumeHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            } else {
+                                _volumeHostDao.remove(destroyedVolumeHostVO.getId());
+                                s_logger.debug("Deleted volume at: " + destroyedVolumeHostVO.getInstallPath());
+                            }
+                        } else {
+                            _volumeHostDao.remove(destroyedVolumeHostVO.getId());
+                        }
+                    }
+                
+                }catch (Exception e2) {
+                    s_logger.warn("problem cleaning up volumes in secondary storage " + secondaryStorageHost, e2);
+                }
+            }
         } catch (Exception e3) {
             s_logger.warn("problem cleaning up secondary storage ", e3);
         }
@@ -3330,6 +3363,22 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunging " + vol);
         }
+        
+        //Find out if the volume is present on secondary storage
+        VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(vol.getId());
+        if(volumeHost != null){
+        	HostVO ssHost = _hostDao.findById(volumeHost.getHostId());
+        	DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), volumeHost.getInstallPath());            
+        	Answer answer = _agentMgr.sendToSecStorage(ssHost, dtCommand);
+             if (answer == null || !answer.getResult()) {
+                 s_logger.debug("Failed to delete " + volumeHost + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                 return;
+             }
+            _volumeHostDao.remove(volumeHost.getId());
+            _volumeDao.remove(vol.getId());
+            return;             
+        }
+        
         String vmName = null;
         if (vol.getVolumeType() == Type.ROOT && vol.getInstanceId() != null) {
             VirtualMachine vm = _vmInstanceDao.findByIdIncludingRemoved(vol.getInstanceId());

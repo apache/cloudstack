@@ -30,9 +30,6 @@ public class UploadVolumeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the volume. This is usually used for display purposes.", length=4096)
-    private String displayText;
-
     @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
@@ -62,10 +59,6 @@ public class UploadVolumeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getDisplayText() {
-        return displayText;
-    }
 
     public String getFormat() {
         return format;
