@@ -1048,13 +1048,12 @@
           attachISO: {
             label: 'label.action.attach.iso',
             createForm: {
-              title: 'label.action.attach.iso',
-              desc: 'label.action.attach.iso',
+              title: 'label.action.attach.iso',             
               fields: {
                 iso: {
                   label: 'ISO',
                   select: function(args) {
-									  var items = [];//???
+									  var items = [];
 										var map = {};
                     $.ajax({
                       url: createURL("listIsos&isReady=true&isofilter=featured"),
@@ -1124,12 +1123,9 @@
                 }
               });
             },
-            messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to attach ISO to instance ' + args.name + '?';
-              },
+            messages: {             
               notification: function(args) {
-                return 'label.attach.iso';
+                return 'label.action.attach.iso';
               }
             },
             notification: {
