@@ -370,11 +370,6 @@ if [ -d %{_datadir}/%{name}/management/webapps/client/ ]; then
 	popd &>/dev/null
 fi
 
-%post client
-if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
-fi
 
 %preun usage
 if [ "$1" == "0" ] ; then
@@ -428,6 +423,11 @@ else
 fi
 
 %post client
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
+fi
+
 if [ "$1" == "1" ] ; then
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
