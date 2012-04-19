@@ -157,8 +157,8 @@ public class S3RestServlet extends HttpServlet {
         } 
         catch(Throwable e) {
     		logger.error("Unexpected exception " + e.getMessage(), e);
-    		response.setStatus(500);
-        	endResponse(response, "Internal server error");
+    		response.setStatus(400);
+        	endResponse(response, "Bad request");
         	
         } finally {
         	try {

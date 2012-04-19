@@ -129,7 +129,7 @@ public class S3ObjectAction implements ServletAction {
 				  else executePutObject(request, response);
 			 } 
 			 else if ( null != (copy = request.getHeader( "x-amz-copy-source" ))) 
-			 {
+			 {    
 				  executeCopyObject(request, response, copy.trim());
 			 }
  		     else executePutObject(request, response);
@@ -454,6 +454,8 @@ public class S3ObjectAction implements ServletAction {
 	// they are not HTTP request headers).  All the values we used to get in the request headers 
 	// are not encoded in the request body.
     //
+	// add ETag header computed as Base64 MD5 whenever object is uploaded or updated
+	//
 	public void executePostObject( HttpServletRequest request, HttpServletResponse response ) throws IOException 
 	{
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
