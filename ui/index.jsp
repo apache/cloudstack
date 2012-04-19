@@ -2939,6 +2939,7 @@ dictionary = {
 'label.add.F5.device': '<fmt:message key="label.add.F5.device" />',
 'label.add.SRX.device': '<fmt:message key="label.add.SRX.device" />',
 'label.account.and.security.group': '<fmt:message key="label.account.and.security.group" />',
-'label.system.offering': '<fmt:message key="label.system.offering" />'
+'label.system.offering': '<fmt:message key="label.system.offering" />',
+'message.validate.instance.name': '<fmt:message key="message.validate.instance.name" />'
 };
 </script>
