@@ -94,7 +94,7 @@ stop() {
 
     until [ "$count" -gt "$SHUTDOWN_WAIT" ]
     do
-        agentPid=`ps aux|grep [j]ava`
+        agentPid=`ps aux|grep [j]ava|grep cloud-agent`
         if [ "$?" -gt "0" ];then
             break
         fi
@@ -102,7 +102,7 @@ stop() {
         let count="${count}+1"
     done
 
-    agentPid=`ps aux|grep [j]ava`
+    agentPid=`ps aux|grep [j]ava|grep cloud-agent`
     if [ "$?" -eq "0" ]; then
          agentPid=`ps aux|grep [j]ava|awk '{print $2}'`
          if [ "$agentPid" != "" ]; then
