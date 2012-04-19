@@ -1,6 +1,7 @@
 build/replace.properties
 build/build.number
 bin/
+*.pem
 cloudstack-proprietary/
 premium/
 .lock-wscript

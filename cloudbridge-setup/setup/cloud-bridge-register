@@ -20,7 +20,7 @@ def get_signature(key, url, query):
             hmac.new(key, '\n'.join(['GET', netloc, path, query]), sha).digest()))
 
 def get_url(url, api_key, secret_key, action, query):
-    amzn_string = 'AWSAccessKeyId=' + api_key + '&Action=' + action + '&SignatureMethod=HmacSHA1'
+    amzn_string = 'AWSAccessKeyId=' + api_key + '&CloudAction=' + action + '&SignatureMethod=HmacSHA1'
     amzn_string += '&SignatureVersion=2&Timestamp='+ datetime.now().isoformat()[:19] +'Z&Version=2010-11-15'
     query = amzn_string + '&' + query
     url = url + '?' + query + '&Signature=' + get_signature(secret_key, url, query)
