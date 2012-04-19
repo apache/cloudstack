@@ -106,7 +106,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
 	}
 
 	private Answer execute(StartConsoleProxyAgentHttpHandlerCommand cmd) {
-		launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword());
+		launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword(), cmd.getEncryptorPassword());
 		return new Answer(cmd);
 	}
 
@@ -347,7 +347,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
 		return _name;
 	}
 
-	private void launchConsoleProxy(final byte[] ksBits, final String ksPassword) {
+	private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
 		final Object resource = this;
 		if (_consoleProxyMain == null) {
 			_consoleProxyMain = new Thread(new Runnable() {
@@ -355,6 +355,10 @@ public class ConsoleProxyResource extends ServerResourceBase implements
 					try {
 						Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
 						try {
+							Method methodSetup = consoleProxyClazz.getMethod(
+									"setEncryptorPassword", String.class);
+							methodSetup.invoke(null, encryptorPassword);
+							
 							Method method = consoleProxyClazz.getMethod(
 									"startWithContext", Properties.class,
 									Object.class, byte[].class, String.class);
@@ -385,7 +389,31 @@ public class ConsoleProxyResource extends ServerResourceBase implements
 			_consoleProxyMain.setDaemon(true);
 			_consoleProxyMain.start();
 		} else {
-			s_logger.error("com.cloud.consoleproxy.ConsoleProxy is already running");
+			s_logger.info("com.cloud.consoleproxy.ConsoleProxy is already running");
+			
+			try {
+				Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
+				Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
+				methodSetup.invoke(null, encryptorPassword);
+			} catch (SecurityException e) {
+				s_logger.error("Unable to launch console proxy due to SecurityException");
+				System.exit(ExitStatus.Error.value());
+			} catch (NoSuchMethodException e) {
+				s_logger.error("Unable to launch console proxy due to NoSuchMethodException");
+				System.exit(ExitStatus.Error.value());
+			} catch (IllegalArgumentException e) {
+				s_logger.error("Unable to launch console proxy due to IllegalArgumentException");
+				System.exit(ExitStatus.Error.value());
+			} catch (IllegalAccessException e) {
+				s_logger.error("Unable to launch console proxy due to IllegalAccessException");
+				System.exit(ExitStatus.Error.value());
+			} catch (InvocationTargetException e) {
+				s_logger.error("Unable to launch console proxy due to InvocationTargetException");
+				System.exit(ExitStatus.Error.value());
+			} catch (final ClassNotFoundException e) {
+				s_logger.error("Unable to launch console proxy due to ClassNotFoundException");
+				System.exit(ExitStatus.Error.value());
+			}
 		}
 	}
 

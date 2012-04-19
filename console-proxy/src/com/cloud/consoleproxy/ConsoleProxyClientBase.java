@@ -44,14 +44,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 	protected TileTracker tracker;
 	protected AjaxFIFOImageCache ajaxImageCache = new AjaxFIFOImageCache(2);
 
-/*	
-	protected String host;
-	protected int port;
-	protected String passwordParam;
-	protected String tag = "";
-	protected String ticket = "";
-*/	
 	protected ConsoleProxyClientParam clientParam;
+	protected String clientToken;
 	
 	protected long createTime = System.currentTimeMillis();
 	protected long lastFrontEndActivityTime = System.currentTimeMillis();
@@ -193,10 +187,11 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 		}
 		
 		int key = ajaxImageCache.putImage(imgBits);
-		StringBuffer sb = new StringBuffer("/ajaximg?host=");
-		sb.append(getClientHostAddress()).append("&port=").append(getClientHostPort()).append("&sid=").append(getClientHostPassword());
-		sb.append("&key=").append(key).append("&tag=").append(this.getClientTag());
+		StringBuffer sb = new StringBuffer();
+		sb.append("/ajaximg?token=").append(clientToken);
+		sb.append("&key=").append(key);
 		sb.append("&ts=").append(System.currentTimeMillis());
+		
 		return sb.toString();
 	}
 	
@@ -208,9 +203,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 		}
 
 		StringBuffer sb = new StringBuffer();
-		
-		sb.append("/ajax?host=").append(getClientHostAddress()).append("&port=").append(getClientHostPort());
-		sb.append("&sid=").append(getClientHostPassword()).append("&tag=").append(getClientTag()).append("&sess=").append(ajaxSessionId);
+		sb.append("/ajax?token=").append(clientToken).append("&sess=").append(ajaxSessionId);
 		return sb.toString();
 	}
 
@@ -455,5 +448,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
 	public void setClientParam(ConsoleProxyClientParam clientParam) {
 		this.clientParam = clientParam;
+		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(ConsoleProxy.getEncryptorPassword());
+		this.clientToken = encryptor.encryptObject(ConsoleProxyClientParam.class, clientParam);
 	}
 }

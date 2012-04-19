@@ -19,11 +19,14 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import org.apache.axis.encoding.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
@@ -61,6 +64,23 @@ public class ConsoleProxy {
 	static int keyboardType = KEYBOARD_RAW;
 	static String factoryClzName;
 	static boolean standaloneStart = false;
+	
+	static String encryptorPassword = genDefaultEncryptorPassword(); 
+	
+	private static String genDefaultEncryptorPassword() {
+		try {
+			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+			
+			byte[] randomBytes = new byte[16];
+			random.nextBytes(randomBytes);
+			return Base64.encode(randomBytes);
+		} catch (NoSuchAlgorithmException e) {
+			s_logger.error("Unexpected exception ", e);
+			assert(false);
+		}
+		
+		return "Dummy";
+	}
 	
 	private static void configLog4j() {
 		URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
@@ -440,6 +460,14 @@ public class ConsoleProxy {
         	
 			throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 		}
+	}
+	
+	public static String getEncryptorPassword() { 
+		return encryptorPassword; 
+	}
+	
+	public static void setEncryptorPassword(String password) {
+		encryptorPassword = password;
 	}
 	
 	static class ThreadExecutor implements Executor {
