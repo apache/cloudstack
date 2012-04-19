@@ -22,3 +22,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.service.offering', NULL, 'Service offering used by secondary storage; if NULL - system offering will be used');
 
 DROP INDEX `i_host__allocation_state` ON `cloud`.`host`;
+
+UPDATE `cloud`.`network_offerings` SET display_text='Offering for Isolated networks with Source Nat service enabled' WHERE name='DefaultIsolatedNetworkOfferingWithSourceNatService' and `cloud`.`network_offerings`.default=1;
+UPDATE `cloud`.`network_offerings` SET display_text='Offering for Isolated networks with no Source Nat service' WHERE name='DefaultIsolatedNetworkOffering' and `cloud`.`network_offerings`.default=1;
+UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared networks' WHERE name='DefaultSharedNetworkOffering' and `cloud`.`network_offerings`.default=1;
