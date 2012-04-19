@@ -62,14 +62,14 @@ public class Upgrade2214to30 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+    	// physical network setup
+        setupPhysicalNetworks(conn);
         // encrypt data
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
         //update templete ID for system Vms
         updateSystemVms(conn);
-        // physical network setup
-        setupPhysicalNetworks(conn);
         // update domain network ref
         updateDomainNetworkRef(conn);
         // update networks that use redundant routers to the new network offering
