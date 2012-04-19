@@ -427,7 +427,7 @@ else
     /sbin/service %{name}-console-proxy condrestart >/dev/null 2>&1 || true
 fi
 
-%post aws-api
+%post client
 if [ "$1" == "1" ] ; then
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
