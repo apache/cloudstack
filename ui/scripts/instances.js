@@ -496,8 +496,10 @@
                 }
 
                 var displayname = args.data.displayname;
-                if(displayname != null && displayname.length > 0)
+                if(displayname != null && displayname.length > 0) {
                   array1.push("&displayname="+todb(displayname));
+									array1.push("&name="+todb(displayname));
+								}
 
                 var group = args.data.groupname;
                 if (group != null && group.length > 0)
