@@ -62,7 +62,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("Handle AJAX request: " + queries);
 		
-		Map<String, String> queryMap = getQueryMap(queries);
+		Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 		
 		String host = queryMap.get("host");
 		String portStr = queryMap.get("port");
@@ -177,28 +177,6 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 				handleClientUpdate(t, viewer);
 			}
 		}
-	}
-	
-	public static Map<String, String> getQueryMap(String query) {
-		String[] params = query.split("&");
-		Map<String, String> map = new HashMap<String, String>();
-		for (String param : params) {
-			String[] paramTokens = param.split("=");
-			if(paramTokens != null && paramTokens.length == 2) {
-				String name = param.split("=")[0];
-				String value = param.split("=")[1];
-				map.put(name, value);
-			} else if (paramTokens.length == 3) {
-				// very ugly, added for Xen tunneling url
-				String name = paramTokens[0];
-				String value = paramTokens[1] + "=" + paramTokens[2];
-				map.put(name, value);
-			} else {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Invalid paramemter in URL found. param: " + param);
-			}
-		}
-		return map;
 	}
 	
 	private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) { 

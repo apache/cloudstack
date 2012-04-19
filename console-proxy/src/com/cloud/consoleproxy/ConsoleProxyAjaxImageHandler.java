@@ -14,7 +14,6 @@ package com.cloud.consoleproxy;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.consoleproxy.util.Logger;
@@ -54,7 +53,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 
 	private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
 		String queries = t.getRequestURI().getQuery();
-		Map<String, String> queryMap = getQueryMap(queries);
+		Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 		
 		String host = queryMap.get("host");
 		String portStr = queryMap.get("port");
@@ -109,16 +108,5 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 				s_logger.info("Image has already been swept out, key: " + key);
 			t.sendResponseHeaders(404, -1);
 		}
-	}
-	
-	public static Map<String, String> getQueryMap(String query) {
-		String[] params = query.split("&");
-		Map<String, String> map = new HashMap<String, String>();
-		for (String param : params) {
-			String name = param.split("=")[0];
-			String value = param.split("=")[1];
-			map.put(name, value);
-		}
-		return map;
 	}
 }

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -89,6 +90,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
@@ -229,7 +231,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
-
     private boolean _use_lvm;
     private boolean _use_storage_vm;
     private boolean _disable_rp_filter = false;
@@ -243,6 +244,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
+    
+    private String _hashKey;
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
 
@@ -1664,8 +1667,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 s_logger.error("Could not find and construct a valid SSL certificate");
             }
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
+            cmd.setEncryptorPassword(getHashKey());
         } else {
             cmd = new StartConsoleProxyAgentHttpHandlerCommand();
+            cmd.setEncryptorPassword(getHashKey());
         }
 
         try {
@@ -1905,5 +1910,14 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();
+    }
+    
+    public String getHashKey() {
+        // although we may have race conditioning here, database transaction serialization should
+        // give us the same key
+        if (_hashKey == null) {
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
+        }
+        return _hashKey;
     }
 }

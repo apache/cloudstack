@@ -64,7 +64,6 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private final static AccountManager _accountMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AccountManager.class);
 	private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
-	private final static DomainManager _domainMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(DomainManager.class);
 	private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
 	private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
 	
@@ -317,30 +316,21 @@ public class ConsoleProxyServlet extends HttpServlet {
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
-		String consoleurl = null;
-		String sessionref= null;
-		
-		sb.append("/getscreen?host=").append(parsedHostInfo.first());
-		sb.append("&port=").append(portInfo.second());
-		sb.append("&sid=").append(sid);
-		sb.append("&w=").append(w).append("&h=").append(h);
-		sb.append("&tag=").append(tag);
-		sb.append("&ticket=").append(ticket);
-		
+
+		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+		param.setClientHostAddress(parsedHostInfo.first());
+		param.setClientHostPort(portInfo.second());
+		param.setClientHostPassword(sid);
+		param.setClientTag(tag);
+		param.setTicket(ticket);
 		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			
-			try {
-				
-				consoleurl = URLEncoder.encode(parsedHostInfo.second(), "UTF-8");
-				sessionref = URLEncoder.encode(parsedHostInfo.third(), "UTF-8");
-				sb.append("&").append("consoleurl=").append(URLDecoder.decode(consoleurl, "UTF-8"));
-				sb.append("&").append("sessionref=").append(URLDecoder.decode(sessionref, "UTF-8"));
-				
-			} catch (UnsupportedEncodingException e) {
-				s_logger.error("Unexpected exception ", e);
-			}
-			
+			param.setClientTunnelUrl(parsedHostInfo.second());
+			param.setClientTunnelSession(parsedHostInfo.third());
 		}
+		
+		sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+		sb.append("&w=").append(w).append("&h=").append(h);
 		
 		if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose thumbnail url: " + sb.toString());
@@ -362,29 +352,19 @@ public class ConsoleProxyServlet extends HttpServlet {
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
-		String consoleurl = null;
-		String sessionref= null;
-		
-		sb.append("/ajax?host=").append(parsedHostInfo.first());
-		sb.append("&port=").append(portInfo.second());
-		sb.append("&sid=").append(sid);
-		sb.append("&tag=").append(tag);
-		sb.append("&ticket=").append(ticket);
-		
+		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+		param.setClientHostAddress(parsedHostInfo.first());
+		param.setClientHostPort(portInfo.second());
+		param.setClientHostPassword(sid);
+		param.setClientTag(tag);
+		param.setTicket(ticket);
 		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			
-			try {
-				
-				consoleurl = URLEncoder.encode(parsedHostInfo.second(), "UTF-8");
-				sessionref = URLEncoder.encode(parsedHostInfo.third(), "UTF-8");
-				sb.append("&").append("consoleurl=").append(URLDecoder.decode(consoleurl, "UTF-8"));
-				sb.append("&").append("sessionref=").append(URLDecoder.decode(sessionref, "UTF-8"));
-				
-			} catch (UnsupportedEncodingException e) {
-				s_logger.error("Unexpected exception ", e);
-			}
-			
+			param.setClientTunnelUrl(parsedHostInfo.second());
+			param.setClientTunnelSession(parsedHostInfo.third());
 		}
+		
+		sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
 		
 		// for console access, we need guest OS type to help implement keyboard
 		long guestOs = vm.getGuestOSId();
