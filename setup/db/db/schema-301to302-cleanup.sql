@@ -28,4 +28,3 @@ ALTER TABLE `cloud_usage`.`usage_ip_address` MODIFY  `is_source_nat` smallint(1)
 ALTER TABLE `cloud_usage`.`usage_network` MODIFY `host_id` bigint(20) UNSIGNED NOT NULL;
 ALTER TABLE `cloud_usage`.`usage_network` MODIFY `host_type` varchar(32) DEFAULT NULL;
 ALTER TABLE `cloud_usage`.`user_statistics` MODIFY `device_id` bigint(20) UNSIGNED NOT NULL;
-
