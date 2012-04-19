@@ -3388,6 +3388,8 @@
                       array1.push("&name="  +todb(args.data.name));
                       array1.push("&dns1=" + todb(args.data.dns1));
                       array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
+                      if(selectedZoneObj.networktype == "Advanced"){
+                      array1.push("&guestcidraddress=" +todb(args.data.guestcidraddress)); }                                                                         
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
                       array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
                       array1.push("&domain=" + todb(args.data.domain));
@@ -3430,7 +3432,7 @@
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
                         networktype: { label: 'label.network.type' },
-                        guestcidraddress : { label: 'label.guest.cidr' },
+                        guestcidraddress : { label: 'label.guest.cidr', isEditable:true },
                         domain: {
                           label: 'label.network.domain',
                           isEditable: true
