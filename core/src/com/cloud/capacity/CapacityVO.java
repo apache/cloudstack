@@ -59,7 +59,7 @@ public class CapacityVO implements Capacity {
     private short capacityType;
     
     @Column(name="capacity_state")
-    private CapacityState capacityState = CapacityState.Enabled;
+    private CapacityState capacityState;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     protected Date created;    
@@ -82,6 +82,7 @@ public class CapacityVO implements Capacity {
         this.totalCapacity = totalCapacity;
         this.capacityType = capacityType;
         this.updateTime = new Date();
+        this.capacityState = CapacityState.Enabled;
     }
     
     public CapacityVO(Long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {        
@@ -90,6 +91,7 @@ public class CapacityVO implements Capacity {
         this.clusterId = clusterId;
         this.capacityType = capacityType;
         this.usedPercentage = usedPercentage;
+        this.capacityState = CapacityState.Enabled;
     }
 
     @Override

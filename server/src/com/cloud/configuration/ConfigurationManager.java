@@ -36,6 +36,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
@@ -245,5 +246,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
 
     void checkCidrVlanOverlap(long zoneId, String cidr);
+
+	AllocationState findPodAllocationState(HostPodVO pod);
+
+	AllocationState findClusterAllocationState(ClusterVO cluster);
 
 }
