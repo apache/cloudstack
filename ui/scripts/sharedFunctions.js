@@ -206,7 +206,7 @@ cloudStack.validate = {
 		var regexp = /^[a-z]{1}[a-z0-9\-]{0,61}[a-z0-9]{0,1}$/;
     var b = regexp.test(args); //true or false		
 		if(b == false)
-	    cloudStack.dialog.notice({ message: 'Instance name can not be longer than 63 characters. Only ASCII letters a~z, digits 0~9, hyphen are allowed. Must start with a letter and end with a letter or a digit.' });			
+	    cloudStack.dialog.notice({ message: 'message.validate.instance.name' });	
 	  return b;
 	}
 }

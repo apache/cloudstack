@@ -2935,6 +2935,7 @@ dictionary = {
 'label.add.SRX.device': '<fmt:message key="label.add.SRX.device" />',
 'label.account.and.security.group': '<fmt:message key="label.account.and.security.group" />',
 'label.system.offering': '<fmt:message key="label.system.offering" />',
+'message.validate.instance.name': '<fmt:message key="message.validate.instance.name" />',
 'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.action.register.iso': '<fmt:message key="label.action.register.iso" />'
 };
