@@ -13,6 +13,8 @@
 package com.cloud.servlet;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -315,6 +317,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+		String consoleurl = null;
+		String sessionref= null;
 		
 		sb.append("/getscreen?host=").append(parsedHostInfo.first());
 		sb.append("&port=").append(portInfo.second());
@@ -322,10 +326,20 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&w=").append(w).append("&h=").append(h);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
-
+		
 		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			sb.append("&").append("consoleurl=").append(URLEncoder.encode(parsedHostInfo.second()));
-			sb.append("&").append("sessionref=").append(URLEncoder.encode(parsedHostInfo.third()));
+			
+			try {
+				
+				consoleurl = URLEncoder.encode(parsedHostInfo.second(), "UTF-8");
+				sessionref = URLEncoder.encode(parsedHostInfo.third(), "UTF-8");
+				sb.append("&").append("consoleurl=").append(URLDecoder.decode(consoleurl, "UTF-8"));
+				sb.append("&").append("sessionref=").append(URLDecoder.decode(sessionref, "UTF-8"));
+				
+			} catch (UnsupportedEncodingException e) {
+				s_logger.error("Unexpected exception ", e);
+			}
+			
 		}
 		
 		if(s_logger.isDebugEnabled()) {
@@ -348,6 +362,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 		String tag = String.valueOf(vm.getId());
 		tag = _identityService.getIdentityUuid("vm_instance", tag);
 		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+		String consoleurl = null;
+		String sessionref= null;
 		
 		sb.append("/ajax?host=").append(parsedHostInfo.first());
 		sb.append("&port=").append(portInfo.second());
@@ -356,8 +372,18 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&ticket=").append(ticket);
 		
 		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			sb.append("&").append("consoleurl=").append(URLEncoder.encode(parsedHostInfo.second()));
-			sb.append("&").append("sessionref=").append(URLEncoder.encode(parsedHostInfo.third()));
+			
+			try {
+				
+				consoleurl = URLEncoder.encode(parsedHostInfo.second(), "UTF-8");
+				sessionref = URLEncoder.encode(parsedHostInfo.third(), "UTF-8");
+				sb.append("&").append("consoleurl=").append(URLDecoder.decode(consoleurl, "UTF-8"));
+				sb.append("&").append("sessionref=").append(URLDecoder.decode(sessionref, "UTF-8"));
+				
+			} catch (UnsupportedEncodingException e) {
+				s_logger.error("Unexpected exception ", e);
+			}
+			
 		}
 		
 		// for console access, we need guest OS type to help implement keyboard
