@@ -385,23 +385,14 @@
                       }
                     });
                   }
-
                 },
 
-                          // Step 6: Review
-                          function(args) {
-                            return false;
-                          }
-                          ],
-              action: function(args) {
-                /*
-                 var isValid = true;
-                 isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);   //optional
-                 isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true); //optional
-                 if (!isValid)
-                 return;
-                 */
-
+								// Step 6: Review
+								function(args) {
+									return false;
+								}
+							],
+              action: function(args) {   
                 // Create a new VM!!!!
                 var array1 = [];
 
@@ -496,8 +487,10 @@
                 }
 
                 var displayname = args.data.displayname;
-                if(displayname != null && displayname.length > 0)
+                if(displayname != null && displayname.length > 0) {
                   array1.push("&displayname="+todb(displayname));
+									array1.push("&name="+todb(displayname));
+								}
 
                 var group = args.data.groupname;
                 if (group != null && group.length > 0)
@@ -514,7 +507,7 @@
                         getUpdatedItem: function(json) {
                           var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;
                           if (item.passwordenabled == true)
-                            alert("Password of new VM " + getVmName(item.name, item.displayname) + " is  " + item.password);
+                            alert("Password of new VM " + item.displayname + " is  " + item.password);
                           return item;
                         },
                         getActionFilter: function() {

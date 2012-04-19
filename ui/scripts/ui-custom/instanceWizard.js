@@ -641,6 +641,16 @@
 							}
 						}											
 						
+						//step 6 - review (spcifiy displyname, group as well)		
+						if ($activeStep.hasClass('review')) {						  
+						  if($activeStep.find('input[name=displayname]').size() > 0 && $activeStep.find('input[name=displayname]').val().length > 0) {
+							  //validate 
+								var b = cloudStack.validate.vmHostName($activeStep.find('input[name=displayname]').val());								
+								if(b == false)
+								  return false;
+							}
+            }
+						
             if (!$form.valid()) {
               if ($form.find('input.error:visible, select.error:visible').size()) {
                 return false;
