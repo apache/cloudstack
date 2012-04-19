@@ -39,10 +39,12 @@ import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -57,6 +59,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
@@ -97,6 +100,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private StoragePoolDao _storagePoolDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private ResourceManager _resourceMgr;
+    @Inject private ConfigurationManager _configMgr;   
     
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
@@ -319,15 +323,15 @@ public class AlertManagerImpl implements AlertManager {
         		
             	// Calculate new Public IP capacity for Virtual Network
         		if (datacenter.getNetworkType() == NetworkType.Advanced){        			
-        			createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
+        			createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
         		}
                 
             	// Calculate new Public IP capacity for Direct Attached Network
-		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
+		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, datacenter.getAllocationState());
                 
                 if (datacenter.getNetworkType() == NetworkType.Advanced){
                 	//Calculate VLAN's capacity
-                	createOrUpdateVlanCapacity(dcId);
+                	createOrUpdateVlanCapacity(dcId, datacenter.getAllocationState());
                 }
 		    }        
         	
@@ -342,7 +346,7 @@ public class AlertManagerImpl implements AlertManager {
 	            long podId = pod.getId();
 	            long dcId = pod.getDataCenterId();
 
-	            createOrUpdateIpCapacity(dcId, podId, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
+	            createOrUpdateIpCapacity(dcId, podId, CapacityVO.CAPACITY_TYPE_PRIVATE_IP, _configMgr.findPodAllocationState(pod));
 	        }
 	        
 	        if (s_logger.isDebugEnabled()) {
@@ -355,7 +359,9 @@ public class AlertManagerImpl implements AlertManager {
         }
     }
     
-    private void createOrUpdateVlanCapacity(long dcId) {
+
+    
+    private void createOrUpdateVlanCapacity(long dcId, AllocationState capacityState) {
     	
     	SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
 
@@ -369,8 +375,11 @@ public class AlertManagerImpl implements AlertManager {
        int allocatedVlans = _dcDao.countZoneVlans(dcId, true);
         
         if (capacities.size() == 0){
-        	CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
-            _capacityDao.persist(newPublicIPCapacity);
+        	CapacityVO newVlanCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
+        	if (capacityState == AllocationState.Disabled){
+        		newVlanCapacity.setCapacityState(CapacityState.Disabled);
+        	} 
+            _capacityDao.persist(newVlanCapacity);
         }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans 
         		&& capacities.get(0).getTotalCapacity() == totalVlans) ){
         	CapacityVO capacity = capacities.get(0);
@@ -382,7 +391,7 @@ public class AlertManagerImpl implements AlertManager {
         
 	}
 
-	public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType){
+	public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType, AllocationState capacityState){
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
 
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
@@ -407,6 +416,9 @@ public class AlertManagerImpl implements AlertManager {
         
         if (capacities.size() == 0){
         	CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
+        	if (capacityState == AllocationState.Disabled){
+        		newPublicIPCapacity.setCapacityState(CapacityState.Disabled);
+        	}        		
             _capacityDao.persist(newPublicIPCapacity);
         }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs 
         		&& capacities.get(0).getTotalCapacity() == totalIPs) ){

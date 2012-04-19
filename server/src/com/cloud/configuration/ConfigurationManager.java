@@ -34,6 +34,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
@@ -219,5 +220,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
 
     void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
+
+	AllocationState findPodAllocationState(HostPodVO pod);
+
+	AllocationState findClusterAllocationState(ClusterVO cluster);
 
 }

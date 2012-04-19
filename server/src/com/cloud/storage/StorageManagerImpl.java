@@ -75,6 +75,7 @@ import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.CheckPointManager;
@@ -121,6 +122,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -1997,14 +1999,16 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            totalOverProvCapacity = _overProvisioningFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All
-// this for the inaccuracy of floats for big number multiplication.
+            totalOverProvCapacity = _overProvisioningFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
         } else {
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
 
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
+            CapacityState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId())) == AllocationState.Disabled ?
+            				CapacityState.Disabled : CapacityState.Enabled;
+            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
@@ -2024,7 +2028,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " + capacityType + " , DataCenterId - "
                 + storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
-
+    
     @Override
     public List<Long> getUpHostsInPool(long poolId) {
         SearchCriteria<Long> sc = UpHostsInPoolSearch.create();

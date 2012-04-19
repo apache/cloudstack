@@ -32,14 +32,17 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
@@ -94,7 +97,9 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     @Inject
     StorageManager _storageMgr;
     @Inject
-    SwiftManager _swiftMgr;    
+    SwiftManager _swiftMgr; 
+    @Inject
+    ConfigurationManager _configMgr;   
 
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
@@ -479,7 +484,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     @DB
     @Override
 	public void updateCapacityForHost(HostVO host){
-    	// prep the service offerings
+    	// prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
         for (ServiceOfferingVO offering : offerings) {
@@ -557,12 +562,15 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 	        }
         }else {
         	Transaction txn = Transaction.currentTxn();
+            CapacityState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId())) == AllocationState.Disabled ?
+            							  CapacityState.Disabled : CapacityState.Enabled;
         	txn.start();
         	CapacityVO capacity = new CapacityVO(host.getId(),
                     host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemory,
                     host.getTotalMemory(),
                     CapacityVO.CAPACITY_TYPE_MEMORY);
             capacity.setReservedCapacity(reservedMemory);
+            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         	
             capacity = new CapacityVO(
@@ -574,6 +582,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                     (long)(host.getCpus().longValue() * host.getSpeed().longValue()),
                     CapacityVO.CAPACITY_TYPE_CPU);
             capacity.setReservedCapacity(reservedCpu);
+            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
             txn.commit();
             

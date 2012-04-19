@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiConstants.LDAPParams;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
@@ -123,6 +124,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.service.ServiceOfferingVO;
@@ -2706,7 +2708,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
     }
-
+    
     private boolean validPod(long podId) {
         return (_podDao.findById(podId) != null);
     }
@@ -3642,7 +3644,31 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public ClusterVO getCluster(long id) {
         return _clusterDao.findById(id);
     }
+    
+    @Override
+    public AllocationState findClusterAllocationState(ClusterVO cluster){
+    	
+    	if(cluster.getAllocationState() == AllocationState.Disabled){
+    		return AllocationState.Disabled;
+    	}else if(ApiDBUtils.findPodById(cluster.getPodId()).getAllocationState() == AllocationState.Disabled){
+    		return AllocationState.Disabled;
+    	}else {
+    		DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+    		return zone.getAllocationState();
+    	}    	
+    }    
 
+    @Override
+    public AllocationState findPodAllocationState(HostPodVO pod){
+    	
+    	if(pod.getAllocationState() == AllocationState.Disabled){
+    		return AllocationState.Disabled;
+    	}else {
+    		DataCenterVO zone = ApiDBUtils.findZoneById(pod.getDataCenterId());
+    		return zone.getAllocationState();
+    	}    	
+    }
+    
     private boolean allowIpRangeOverlap(VlanVO vlan, boolean forVirtualNetwork, long networkId) {
         // FIXME - delete restriction for virtual network in the future
         if (vlan.getVlanType() == VlanType.DirectAttached && !forVirtualNetwork) {
