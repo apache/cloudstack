@@ -43,6 +43,7 @@ import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -60,6 +61,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -95,6 +97,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
@@ -201,6 +204,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected Adapters<PodAllocator> _podAllocators = null;
     @Inject
     protected VMTemplateDao  _templateDao;
+    @Inject
+    protected ConfigurationManager 			 _configMgr;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -1036,7 +1041,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         // TO DO - Make it more granular and have better conversion into capacity type
-        _capacityDao.updateCapacityState(null, null, null, host.getId(), nextState.toString());
+        if(host.getType() == Type.Routing && host.getClusterId() != null){
+        	AllocationState capacityState =  _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId()));
+        	if (capacityState == AllocationState.Enabled && nextState != ResourceState.Enabled){
+        		capacityState = AllocationState.Disabled;
+        	}
+        	_capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString());
+        }
+
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
     
