@@ -141,6 +141,7 @@
             <adapter name="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement"/>
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
+            <adapter name="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement"/>
         </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>

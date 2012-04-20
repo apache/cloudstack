@@ -1,0 +1,6 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### Cisco Nexus 1000v Virtual Supervisor Module (VSM) commands
+addCiscoNexusVSM = com.cloud.api.commands.AddCiscoNexusVSMCmd;7
+deleteCiscoNexusVSM = com.cloud.api.commands.DeleteCiscoNexusVSMCmd;7

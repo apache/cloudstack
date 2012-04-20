@@ -21,12 +21,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 public class PropertiesUtil {
     /**
      * Searches the class path and local paths to find the config file.
      * @param path path to find.  if it starts with / then it's absolute path.
      * @return File or null if not found at all.
      */
+	
     public static File findConfigFile(String path) {
         ClassLoader cl = PropertiesUtil.class.getClassLoader();
         URL url = cl.getResource(path);
