@@ -28,6 +28,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -61,6 +63,11 @@ public class Upgrade2214to30 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+    	// Fail upgrade if encryption is not enabled
+    	if(!EncryptionSecretKeyChecker.useEncryption()){
+    		throw new CloudRuntimeException("Encryption is not enabled. Please Run cloud-setup-encryption to enable encryption");
+    	}
+    	
     	// physical network setup
         setupPhysicalNetworks(conn);
         // encrypt data
