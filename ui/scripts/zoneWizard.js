@@ -349,7 +349,9 @@
           networkOfferingId: {
             label: 'label.network.offering',
 						dependsOn: 'hypervisor',
-            select: function(args) {							  					
+            select: function(args) {
+              var selectedNetworkOfferingObj = {};
+              
 							args.$select.unbind("change").bind("change", function(){									  
 								//reset when different network offering is selected
 								selectedNetworkOfferingHavingSG = false;
