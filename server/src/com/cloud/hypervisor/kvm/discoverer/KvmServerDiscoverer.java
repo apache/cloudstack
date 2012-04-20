@@ -51,6 +51,7 @@ import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -175,26 +176,35 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			}
 			
-            String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.KVM);
+			List <PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
+			String kvmPrivateNic = _kvmPrivateNic;
+			String kvmPublicNic = _kvmPublicNic;
+			String kvmGuestNic = _kvmGuestNic;
 
-            if (privateNetworkLabel != null) {
-            	_kvmPublicNic = privateNetworkLabel;
-            	_kvmPrivateNic = privateNetworkLabel;
-            	_kvmGuestNic = privateNetworkLabel;
-            }
+			for (PhysicalNetworkSetupInfo info : netInfos) {
+			    if (info.getPrivateNetworkName() != null) {
+			        kvmPrivateNic = info.getPrivateNetworkName();
+			    }
+			    if (info.getPublicNetworkName() != null) {
+			        kvmPublicNic = info.getPublicNetworkName();
+			    }
+			    if (info.getGuestNetworkName() != null) {
+			        kvmGuestNic = info.getGuestNetworkName();
+			    }
+			}
 
             String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 			
-			if (_kvmPublicNic != null) {
-				parameters += " --pubNic=" + _kvmPublicNic;
+			if (kvmPublicNic != null) {
+				parameters += " --pubNic=" + kvmPublicNic;
 			}
 			
-			if (_kvmPrivateNic != null) {
-				parameters += " --prvNic=" + _kvmPrivateNic;
+			if (kvmPrivateNic != null) {
+				parameters += " --prvNic=" + kvmPrivateNic;
 			}
 			
-			if (_kvmGuestNic != null) {
-			    parameters += " --guestNic=" + _kvmGuestNic;
+			if (kvmGuestNic != null) {
+			    parameters += " --guestNic=" + kvmGuestNic;
 			}
 		
 			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters, 3);
