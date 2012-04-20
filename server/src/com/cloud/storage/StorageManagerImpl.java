@@ -161,6 +161,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -1701,10 +1702,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
+        String format = cmd.getFormat();
         
-    	validateVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
+    	validateVolume(caller, ownerId, zoneId, volumeName, url, format);
     	VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
-    	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum());
+    	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum(), ImageFormat.valueOf(format.toUpperCase()));
 		return volume;
     	
     }
@@ -1731,6 +1733,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         
 		if (url.toLowerCase().contains("file://")) {
 			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+		}
+		
+		ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
+		if (imgfmt == null) {
+			throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
 		}
 		
         String userSpecifiedName = volumeName;

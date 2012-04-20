@@ -130,8 +130,8 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	}
 	
-	public DownloadCommand(String secUrl, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url) {
-	    super(volume.getName(), url, ImageFormat.VHD, volume.getAccountId());
+	public DownloadCommand(String secUrl, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
+	    super(volume.getName(), url, format, volume.getAccountId());
 	    //this.hvm = volume.isRequiresHvm();
 	    this.checksum = checkSum;
 	    this.id = volume.getId();

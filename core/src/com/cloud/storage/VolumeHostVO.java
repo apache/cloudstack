@@ -72,6 +72,9 @@ public class VolumeHostVO {
 	
 	@Column (name="url")
 	private String downloadUrl;
+	
+	@Column(name="format")
+    private Storage.ImageFormat format;
     
     @Column(name="destroyed")
     boolean destroyed = false;
@@ -259,7 +262,15 @@ public class VolumeHostVO {
 		return downloadUrl;
 	}	
 	
-    public long getVolumeSize() {
+    public Storage.ImageFormat getFormat() {
+		return format;
+	}
+
+	public void setFormat(Storage.ImageFormat format) {
+		this.format = format;
+	}
+
+	public long getVolumeSize() {
 	    return -1;
 	}
 	
