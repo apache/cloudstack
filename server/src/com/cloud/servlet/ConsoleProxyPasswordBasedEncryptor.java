@@ -36,7 +36,7 @@ public class ConsoleProxyPasswordBasedEncryptor {
 		
 		try {
 			Cipher cipher = Cipher.getInstance("DES");
-			int maxKeySize = Cipher.getMaxAllowedKeyLength("DES") / 8;
+			int maxKeySize = 8;
 			SecretKeySpec keySpec = new SecretKeySpec(normalizeKey(password.getBytes(), maxKeySize), "DES");
 			cipher.init(Cipher.ENCRYPT_MODE, keySpec);
 			byte[] encryptedBytes = cipher.doFinal(text.getBytes());
@@ -68,7 +68,7 @@ public class ConsoleProxyPasswordBasedEncryptor {
 
 		try {
 			Cipher cipher = Cipher.getInstance("DES");
-			int maxKeySize = Cipher.getMaxAllowedKeyLength("DES") / 8;
+			int maxKeySize = 8;
 			SecretKeySpec keySpec = new SecretKeySpec(normalizeKey(password.getBytes(), maxKeySize), "DES");
 			cipher.init(Cipher.DECRYPT_MODE, keySpec);
 			
