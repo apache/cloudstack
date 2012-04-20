@@ -382,7 +382,7 @@ public class ApiConstants {
 	public static final String RESTART_NETWORK = "restartNetwork";
 	public static final String RESTART_NETWORK_RESPONSE = "restartnetworkresponse";
 	public static final String REVOKE_SECURITY_GROUP_INGRESS = "revokeSecurityGroupIngress";
-	public static final String REVOKE_SECURITY_GROUP_INGRESS_RESPONSE = "revokesecuritygroupingressresponse";
+	public static final String REVOKE_SECURITY_GROUP_INGRESS_RESPONSE = "revokesecuritygroupingress";
 	public static final String ROOT_DEVICE_ID = "rootdeviceid";
 	public static final String ROOT_DEVICE_TYPE = "rootdevicetype";
 	public static final String RULE_ID = "ruleid";
