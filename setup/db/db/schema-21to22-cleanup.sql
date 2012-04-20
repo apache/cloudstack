@@ -71,7 +71,6 @@ DELETE FROM op_ha_work WHERE taken IS NOT NULL;
 DELETE FROM op_ha_work WHERE host_id NOT IN (SELECT DISTINCT id FROM host);
 
 UPDATE `cloud`.`vm_instance` SET last_host_id=NULL WHERE last_host_id NOT IN (SELECT DISTINCT id FROM host);
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY `fk_vm_instance__last_host_id` (`last_host_id`) REFERENCES `host`(`id`);
 
 UPDATE `cloud`.`vm_instance` SET domain_id=1, account_id=1 where account_id not in (select distinct id from account) or domain_id not in (select distinct id from domain);
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);

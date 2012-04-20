@@ -74,6 +74,7 @@ public class Upgrade301to302 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         dropKeysIfExists(conn);
         updateSharedNetworks(conn);
+        fixLastHostIdKey(conn);
     }
 
     @Override
@@ -150,6 +151,36 @@ public class Upgrade301to302 implements DbUpgrade {
                 if (rs1 != null) {
                     rs1.close();
                 }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void fixLastHostIdKey(Connection conn) {
+        //Drop i_usage_event__created key (if exists) and re-add it again
+        List<String> keys = new ArrayList<String>();
+        
+        //Drop vmInstance keys (if exists) and insert one with correct name
+        keys = new ArrayList<String>();
+        
+        keys.add("fk_vm_instance__last_host_id");
+        keys.add("i_vm_instance__last_host_id");
+        
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, false);
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY (`last_host_id`) REFERENCES `host` (`id`)");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert foreign key in vm_instance table ", e);
+        }finally {
+            try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
