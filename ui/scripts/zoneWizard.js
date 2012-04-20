@@ -326,6 +326,7 @@
             select: function(args) {
               $.ajax({
                 url: createURL('listHypervisors'),
+                async: false,
                 data: { listAll: true },
                 success: function(json) {								 
 									var items = json.listhypervisorsresponse.hypervisor;
@@ -377,11 +378,11 @@
 									selectedNetworkOfferingHavingELB = true;	
 							});									
 							
-						
+
               $.ajax({
                 url: createURL("listNetworkOfferings&state=Enabled&guestiptype=Shared"),
                 dataType: "json",
-                async: true,
+                async: false,
                 success: function(json) {
                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
 									var availableNetworkOfferingObjs = [];							
