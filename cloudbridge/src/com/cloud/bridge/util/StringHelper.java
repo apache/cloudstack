@@ -19,18 +19,31 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author Kelven
+ * @author Kelven, John Zucker
+ * Provide converters for regexp (case independent tokens)
+ * Also provide upper case (default) or lower case converters for hex
  */
 public class StringHelper {
 	public static final String EMPTY_STRING = "";
 
 	private static final char[] hexChars = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }; 
 	
+	private static final char[] hexCharsLowerCase = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+	
 	public static String toHexString(byte[] b) {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < b.length; i++) {
 			sb.append(hexChars[ (int)(((int)b[i] >> 4) & 0x0f)]);
 			sb.append(hexChars[ (int)(((int)b[i]) & 0x0f)]);
+		}
+	    return sb.toString(); 
+	}
+	
+	public static String toHexStringLowerCase(byte[] b) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < b.length; i++) {
+			sb.append(hexCharsLowerCase[ (int)(((int)b[i] >> 4) & 0x0f)]);
+			sb.append(hexCharsLowerCase[ (int)(((int)b[i]) & 0x0f)]);
 		}
 	    return sb.toString(); 
 	}

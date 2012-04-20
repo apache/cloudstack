@@ -428,7 +428,7 @@ public class MultipartLoadDao {
 		    	
 		    	parts[i] = new S3MultipartPart();
 		    	parts[i].setPartNumber( rs.getInt( "partNumber" )); 
-		    	parts[i].setEtag( rs.getString( "MD5" ));
+		    	parts[i].setEtag( rs.getString( "MD5" ).toLowerCase());
 		    	parts[i].setLastModified( tod );
 		    	parts[i].setSize( rs.getInt( "StoredSize" ));
 		    	parts[i].setPath( rs.getString( "StoredPath" ));

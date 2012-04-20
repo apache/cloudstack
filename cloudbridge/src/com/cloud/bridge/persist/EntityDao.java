@@ -24,8 +24,13 @@ import org.hibernate.Session;
 import com.cloud.bridge.util.QueryHelper;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
+ * Provide methods for getting, saving, deleting or updating state per session or, in a given session, returnin a List in
+ * response to queryEntities for a particular instantation of the EntityDao generic class, as defined here.
+ * Any instantation of EntityDao passes in the class for which it is instantiating.  For example a new instance of SBucketDao 
+ * passes in com.cloud.bridge.model.SBucket as its clazz.
  */
+
 public class EntityDao<T> {
 	private Class<?> clazz;
 	

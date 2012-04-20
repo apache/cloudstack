@@ -38,7 +38,7 @@ import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Tuple;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class S3FileSystemBucketAdapter implements S3BucketAdapter {
     protected final static Logger logger = Logger.getLogger(S3FileSystemBucketAdapter.class);
@@ -105,7 +105,7 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
 	        	fos.write(buffer, 0, len);
 	        	md5.update(buffer, 0, len);
 	        }        
-	        return StringHelper.toHexString(md5.digest());
+	        return StringHelper.toHexStringLowerCase(md5.digest());
 	        
 		} 
 		catch(IOException e) {
