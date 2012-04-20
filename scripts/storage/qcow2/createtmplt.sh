@@ -17,10 +17,10 @@
  
 
 # $Id: createtmplt.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/storage/qcow2/createtmplt.sh $
-# createtmplt.sh -- install a template
+# createtmplt.sh -- install a volume
 
 usage() {
-  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -s <size in Gigabytes> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
+  printf "Usage: %s: -t <volume-fs> -n <volumename> -f <root disk file> -s <size in Gigabytes> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
 }
 
 
@@ -118,7 +118,7 @@ create_from_snapshot() {
   $qemu_img convert -f qcow2 -O qcow2 -s "$snapshotName" "$tmpltImg" /$tmpltfs/$tmpltname >& /dev/null
   if [ $? -gt 0 ]
   then
-     printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
+     printf "Failed to create volume /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
      exit 2
   fi
 
@@ -195,14 +195,14 @@ else
    create_from_file $tmpltfs "$tmpltimg" $tmpltname
 fi
 
-touch /$tmpltfs/template.properties
-chmod a+r /$tmpltfs/template.properties
-echo -n "" > /$tmpltfs/template.properties
+touch /$tmpltfs/volume.properties
+chmod a+r /$tmpltfs/volume.properties
+echo -n "" > /$tmpltfs/volume.properties
 
 today=$(date '+%m_%d_%Y')
-echo "filename=$tmpltname" > /$tmpltfs/template.properties
-echo "snapshot.name=$today" >> /$tmpltfs/template.properties
-echo "description=$descr" >> /$tmpltfs/template.properties
+echo "filename=$tmpltname" > /$tmpltfs/volume.properties
+echo "snapshot.name=$today" >> /$tmpltfs/volume.properties
+echo "description=$descr" >> /$tmpltfs/volume.properties
 
 if [ "$cleanup" == "true" ]
 then

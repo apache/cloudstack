@@ -417,16 +417,16 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
 	@Override
-	public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum) {
+	public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format) {
                                 
 	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(zoneId);
 	    Collections.shuffle(ssHosts);
 	    HostVO ssHost = ssHosts.get(0);
-	    downloadVolumeToStorage(volume, ssHost, url, checkSum);
+	    downloadVolumeToStorage(volume, ssHost, url, checkSum, format);
 	    return true;
 	}
 	
-	private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum) {
+	private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum, ImageFormat format) {
 		boolean downloadJobExists = false;
         VolumeHostVO volumeHost = null;
 
@@ -444,7 +444,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         String secUrl = sserver.getStorageUrl();
 		if(volumeHost != null) {
 		    start();
-			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url);
+			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
 			dcmd.setProxy(getHttpProxy());
 	        if (downloadJobExists) {
 	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
@@ -735,7 +735,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                     continue;
                 }                                  
                 s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + ssHost.getName());
-                downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), ssHost,  volumeHost.getDownloadUrl(), volumeHost.getChecksum());                
+                downloadVolumeToStorage(_volumeDao.findById(volumeHost.getVolumeId()), ssHost,  volumeHost.getDownloadUrl(), volumeHost.getChecksum(), volumeHost.getFormat());                
             }
         }
 

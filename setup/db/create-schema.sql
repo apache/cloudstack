@@ -1142,6 +1142,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   `local_path` varchar(255),
   `install_path` varchar(255),
   `url` varchar(255),
+  `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_volume_host_ref__host_id` FOREIGN KEY `fk_volume_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
