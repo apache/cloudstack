@@ -199,13 +199,13 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     protected ClusterManager                 _clusterMgr;
     @Inject
-    ConfigurationManager 					 _configMgr;   
-    @Inject
     protected StoragePoolHostDao             _storagePoolHostDao;
     @Inject(adapter = PodAllocator.class)
     protected Adapters<PodAllocator> _podAllocators = null;
     @Inject
     protected VMTemplateDao  _templateDao;
+    @Inject
+    protected ConfigurationManager 			 _configMgr;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -1069,11 +1069,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         // TO DO - Make it more granular and have better conversion into capacity type
-       AllocationState capacityState =  _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId()));
-       if (capacityState == AllocationState.Enabled && nextState != ResourceState.Enabled){
-    	   capacityState = AllocationState.Disabled;
-       }
-        _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString());
+
+        if(host.getType() == Type.Routing && host.getClusterId() != null){
+        	AllocationState capacityState =  _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId()));
+        	if (capacityState == AllocationState.Enabled && nextState != ResourceState.Enabled){
+        		capacityState = AllocationState.Disabled;
+        	}
+        	_capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString());
+        }
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
     
