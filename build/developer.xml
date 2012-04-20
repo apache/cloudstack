@@ -381,6 +381,7 @@
       <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
   	  <property name="commands.f5.file" location="${dist.dir}/client/conf/f5bigip_commands.properties" />
       <property name="commands.juniper.file" location="${dist.dir}/client/conf/junipersrx_commands.properties" />
+	  <property name="commands.cisco.file" location="${dist.dir}/client/conf/cisconexusvsm_commands.properties" />
   	  <property name="commands.netscaler.file" location="${dist.dir}/client/conf/netscalerloadbalancer_commands.properties" />
   	  <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
   

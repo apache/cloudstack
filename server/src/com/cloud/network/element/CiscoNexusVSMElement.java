@@ -13,6 +13,7 @@
 package com.cloud.network.element;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -27,21 +28,37 @@ import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.CiscoNexusVSMDeviceManagerImpl;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.resource.CiscoNexusVSMResource;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.network.PortProfile;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.component.Manager;
 
 @Local(value = NetworkElement.class)
-public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService {
+public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
 
     private static final Logger s_logger = Logger.getLogger(CiscoNexusVSMElement.class);
 
@@ -70,7 +87,78 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Inject
     ConfigurationDao _configDao;
     
+
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+    	return null;
+    }
     
+    @Override
+    public Provider getProvider() {
+        return null;
+    }
+    
+    @Override
+    public boolean implement(Network network, NetworkOffering offering,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        return true;
+    }
+    
+    @Override
+    public boolean prepare(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        return true;
+    }
+    
+    @Override
+    public boolean release(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return true;
+    }
+    
+    @Override
+    public boolean shutdown(Network network, ReservationContext context,
+    		boolean cleanup) throws ConcurrentOperationException,
+    		ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean destroy(Network network)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
+    
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider,
+    		ReservationContext context) throws ConcurrentOperationException,
+    		ResourceUnavailableException {
+    	return true;
+    }
+    
+    @Override
+    public boolean canEnableIndividualServices() {
+    	return true;
+    }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+    	return true;
+    }
+    
+    @Override
     public CiscoNexusVSMDeviceVO addCiscoNexusVSM(AddCiscoNexusVSMCmd cmd) {
     
     	// This function essentially prepares all the parameters we need to send
@@ -95,11 +183,13 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         return vsmDeviceVO;
     }
 
+    @Override
     public boolean deleteCiscoNexusVSM(DeleteCiscoNexusVSMCmd cmd) {
     	return true;
     }
     
 
+    @Override
     public List<? extends PortProfile> listNetworks(ListCiscoNexusVSMNetworksCmd cmd) {
     
     	/***
@@ -122,11 +212,13 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	return null;
     }
 
+    @Override
     public List<CiscoNexusVSMDeviceVO> listCiscoNexusVSMs(ListCiscoNexusVSMCmd cmd) {
     	return null;
     	
     }
 
+    @Override
     public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {    		
             CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
             response.setId(vsmDeviceVO.getId());
@@ -134,8 +226,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
             return response;
         }
 
-    
+    @Override
     public String getPropertiesFile() {
-    	return null;
+    	return "cisconexusvsm_commands.properties";
     }
 }
