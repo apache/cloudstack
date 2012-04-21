@@ -98,6 +98,7 @@
 		<delete dir="${tomcat.home}/webapps/awsapi" />
 	</target>
 	<path id="awsapi.classpath">
+		<path refid="deps.classpath" />
 		<path refid="thirdparty.classpath" />
 		<path refid="rampart.classpath" />
 		<path refid="dist.classpath" />

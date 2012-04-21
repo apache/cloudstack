@@ -55,6 +55,7 @@ import com.cloud.stack.models.CloudStackPasswordData;
 import com.cloud.stack.models.CloudStackResourceLimit;
 import com.cloud.stack.models.CloudStackSecurityGroup;
 import com.cloud.stack.models.CloudStackSecurityGroupIngress;
+import com.cloud.stack.models.CloudStackServiceOffering;
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
 import com.cloud.stack.models.CloudStackUser;
@@ -1285,9 +1286,17 @@ public class EC2Engine {
 			else 
 				createInstances = request.getMaxCount();
 
-			// the mapping stuff
-			OfferingBundle offer = instanceTypeToOfferBundle( request.getInstanceType());
-
+			//find CS service Offering ID
+			String instanceType = "m1.small";
+			if(request.getInstanceType() != null){ 
+			    instanceType = request.getInstanceType();
+			}
+			CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
+			if(svcOffering == null){
+			    logger.info("No ServiceOffering found to be defined by name, please contact the administrator "+instanceType );
+			    throw new EC2ServiceException(ClientError.Unsupported, "instanceType: [" + instanceType + "] not found!");
+			}
+			
 			// zone stuff
 			String zoneId = toZoneId(request.getZoneName(), null);
 			
@@ -1304,7 +1313,7 @@ public class EC2Engine {
 
 			// now actually deploy the vms
 			for( int i=0; i < createInstances; i++ ) {
-				CloudStackUserVm resp = getApi().deployVirtualMachine(offer.getServiceOfferingId(), 
+				CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
 						request.getTemplateId(), zoneId, null, null, null, null, 
 						null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
 						null, null, request.getSize().longValue(), request.getUserData());
@@ -1324,7 +1333,7 @@ public class EC2Engine {
 				vm.setAccountName(resp.getAccountName());
 				vm.setDomainId(resp.getDomainId());
 				vm.setHypervisor(resp.getHypervisor());
-				vm.setServiceOffering( serviceOfferingIdToInstanceType( offer.getServiceOfferingId()));
+				vm.setServiceOffering( svcOffering.getName());
 				instances.addInstance(vm);
 				countCreated++;
 			}    		
@@ -1576,6 +1585,36 @@ public class EC2Engine {
 		return found;
 			}
 
+	
+	/**
+	 * 
+	 */
+	
+	private CloudStackServiceOffering getCSServiceOfferingId(String instanceType) throws Exception{
+       try {
+           if (null == instanceType) instanceType = "m1.small";                      
+
+           List<CloudStackServiceOffering> svcOfferings = getApi().listServiceOfferings(null, null, null, null, null, 
+                   null, null);
+           
+           if(svcOfferings == null || svcOfferings.isEmpty()){
+               logger.debug("No ServiceOffering found to be defined by name: "+instanceType );
+               return null;    
+           }
+           
+           for(CloudStackServiceOffering offering : svcOfferings){
+               if(instanceType.equalsIgnoreCase(offering.getName())){
+                   return offering;
+               }
+           }
+           
+           return null;
+        } catch(Exception e) {
+            logger.error( "listServiceOfferings - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+	}
+	
 	/**
 	 * Convert from the Cloud serviceOfferingId to the Amazon instanceType strings based
 	 * on the loaded map.

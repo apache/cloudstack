@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.cloud.bridge.persist.CloudStackDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.util.ConfigurationHelper;
 
@@ -18,6 +19,8 @@ public class EC2MainServlet extends HttpServlet{
 	
 	public static final String EC2_REST_SERVLET_PATH="/rest/AmazonEC2/";
 	public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
+	public static final String ENABLE_EC2_API="enable.ec2.api";
+	private static boolean isEC2APIEnabled = false;
 	
 	/**
 	 * We build the path to where the keystore holding the WS-Security X509 certificates
@@ -26,6 +29,13 @@ public class EC2MainServlet extends HttpServlet{
 	public void init( ServletConfig config ) throws ServletException {
 		ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
 		UserCredentialsDao.preCheckTableExistence();
+		// check if API is enabled
+		
+		CloudStackDao csDao = new CloudStackDao();
+		String value = csDao.getConfigValue(ENABLE_EC2_API);
+		if(value != null){
+		    isEC2APIEnabled = Boolean.valueOf(value);
+		}
 	}
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
@@ -37,8 +47,13 @@ public class EC2MainServlet extends HttpServlet{
     }
 
     protected void doGetOrPost(HttpServletRequest request, HttpServletResponse response) {
-    	String action = request.getParameter( "Action" );
-    	if(action!=null){
+        String action = request.getParameter( "Action" );
+        
+        if(!isEC2APIEnabled){
+           throw new RuntimeException("EC2 API is disabled.");
+        }
+        
+    	if(action != null){
     		//We presume it's a Query/Rest call
     		try {
 				RequestDispatcher dispatcher = request.getRequestDispatcher(EC2_REST_SERVLET_PATH);
