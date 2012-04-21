@@ -673,7 +673,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " on pool " + pool;
         try {
-            if (snapshot.getSwiftId() != null) {
+            if (snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0) {
                 _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
             }
             CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
