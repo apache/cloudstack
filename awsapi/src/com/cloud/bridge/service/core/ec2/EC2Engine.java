@@ -1558,33 +1558,6 @@ public class EC2Engine {
 		return zones.getZoneIdAt(0);
 	}
 
-	/**
-	 * Convert from the Amazon instanceType strings to the Cloud APIs diskOfferingId and
-	 * serviceOfferingId based on the loaded map.
-	 * 
-	 * @param instanceType - if null we return the M1Small instance type
-	 * 
-	 * @return an OfferingBundle
-	 * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
-	 */
-	private OfferingBundle instanceTypeToOfferBundle( String instanceType ) 
-			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
-		OfferingBundle found = null;
-		OfferingDao ofDao = new OfferingDao();
-
-		if (null == instanceType) instanceType = "m1.small";                      
-		String cloudOffering = ofDao.getCloudOffering( instanceType );
-
-		if ( null != cloudOffering )
-		{
-			found = new OfferingBundle();
-			found.setServiceOfferingId( cloudOffering );
-		}
-		else throw new EC2ServiceException( ClientError.Unsupported, "Unknown: " + instanceType );   
-
-		return found;
-			}
-
 	
 	/**
 	 * 
@@ -1625,14 +1598,22 @@ public class EC2Engine {
 	 */
 	private String serviceOfferingIdToInstanceType( String serviceOfferingId ) 
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException	{	
-		OfferingDao ofDao = new OfferingDao();
-		String amazonOffering = ofDao.getAmazonOffering( serviceOfferingId.trim());
 
-		if ( null == amazonOffering ) {
-			logger.warn( "No instanceType match for serverOfferingId: [" + serviceOfferingId + "]" );
-			return "m1.small";
-		}
-		else return amazonOffering;
+        try{
+    	    List<CloudStackServiceOffering> svcOfferings = getApi().listServiceOfferings(null, serviceOfferingId, null, null, null, 
+                    null, null);
+    
+            if(svcOfferings == null || svcOfferings.isEmpty()){
+                logger.warn( "No instanceType match for serverOfferingId: [" + serviceOfferingId + "]" );
+                return "m1.small";
+            }
+            
+    		else return svcOfferings.get(0).getName();
+        }
+        catch(Exception e) {
+            logger.error( "serviceOfferingIdToInstanceType - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
 	}
 
 	/**
