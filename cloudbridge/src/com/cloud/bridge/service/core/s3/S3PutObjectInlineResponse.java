@@ -18,7 +18,7 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class S3PutObjectInlineResponse extends S3Response {
 	protected String ETag;
@@ -31,11 +31,10 @@ public class S3PutObjectInlineResponse extends S3Response {
 		uploadId = -1;
 	}
 
-	
 	 // add ETag header computed as Base64 MD5 whenever object is uploaded or updated
 	 // the Base64 is represented in lowercase
 	public String getETag() {
-		return ETag.toLowerCase();
+		return ETag;
 	}
 
 	public void setETag(String eTag) {

@@ -21,25 +21,29 @@ import java.io.InputStream;
 /**
  * @author Kelven, John Zucker
  * Provide converters for regexp (case independent tokens)
- * Also provide upper case (default) or lower case converters for hex
+ * Also provide upper case or lower case (default) converters for byte array b[] to hex String
  */
 public class StringHelper {
 	public static final String EMPTY_STRING = "";
 
-	private static final char[] hexChars = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }; 
+	private static final char[] hexCharsUpperCase = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }; 
 	
-	private static final char[] hexCharsLowerCase = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
-	
-	public static String toHexString(byte[] b) {
+	private static final char[] hexCharsLowerCase = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+   /* Convert byte array b[] into an uppercase hex string
+   */
+	public static String toHexStringUpperCase(byte[] b) {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < b.length; i++) {
-			sb.append(hexChars[ (int)(((int)b[i] >> 4) & 0x0f)]);
-			sb.append(hexChars[ (int)(((int)b[i]) & 0x0f)]);
+			sb.append(hexCharsUpperCase[ (int)(((int)b[i] >> 4) & 0x0f)]);
+			sb.append(hexCharsUpperCase[ (int)(((int)b[i]) & 0x0f)]);
 		}
 	    return sb.toString(); 
 	}
 	
-	public static String toHexStringLowerCase(byte[] b) {
+	/* Convert byte array b[] into a lowercase (default) hex string
+	 */
+	public static String toHexString(byte[] b) {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < b.length; i++) {
 			sb.append(hexCharsLowerCase[ (int)(((int)b[i] >> 4) & 0x0f)]);

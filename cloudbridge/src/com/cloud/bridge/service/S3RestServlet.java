@@ -119,6 +119,10 @@ public class S3RestServlet extends HttpServlet {
     	            setUserKeys(request, response);
     	            return;
     	        }
+    	        
+    	        if (cloudAction.equalsIgnoreCase( "SetCertificate" ))
+    	        	// At present a noop
+    	        	return;
 
     	        if (cloudAction.equalsIgnoreCase( "CloudS3Version" )) {
     	            cloudS3Version(request, response);

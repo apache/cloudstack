@@ -104,8 +104,10 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
 	        while( (len = is.read(buffer)) > 0) {
 	        	fos.write(buffer, 0, len);
 	        	md5.update(buffer, 0, len);
-	        }        
-	        return StringHelper.toHexStringLowerCase(md5.digest());
+	        	
+	        }       
+	        //Convert MD4 digest to (lowercase) hex String
+	        return StringHelper.toHexString(md5.digest());
 	        
 		} 
 		catch(IOException e) {
@@ -180,6 +182,7 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
 	        }        
 	        fos.close();	
 	        return new Tuple<String, Long>(StringHelper.toHexString(md5.digest()), new Long(totalLength));
+	        //Create a tuple whose first element is the MD4 digest as a (lowercase) hex String
 		} 
 		catch(IOException e) {
 			logger.error("concatentateObjects unexpected exception " + e.getMessage(), e);
