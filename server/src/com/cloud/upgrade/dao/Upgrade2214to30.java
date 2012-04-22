@@ -358,6 +358,7 @@ public class Upgrade2214to30 implements DbUpgrade {
                 if(rsTags.next()){
                     boolean isFirstPhysicalNtwk = true;
                     do{
+                        s_logger.debug("Network tags are not empty, might have to create more than one physical network...");
                         //create one physical network per tag
                         String guestNetworkTag = rsTags.getString(1);
                         long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, (isFirstPhysicalNtwk) ? vnet : null, domainId);
@@ -490,10 +491,12 @@ public class Upgrade2214to30 implements DbUpgrade {
     }
 
     private void encryptData(Connection conn) {
+        s_logger.debug("Encrypting the data...");
         encryptConfigValues(conn);
         encryptHostDetails(conn);
         encryptVNCPassword(conn);
         encryptUserCredentials(conn);
+        s_logger.debug("Done encrypting the data");
     }
 
     private void encryptConfigValues(Connection conn) {
