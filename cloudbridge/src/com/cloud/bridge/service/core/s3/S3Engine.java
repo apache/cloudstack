@@ -1052,7 +1052,7 @@ public class S3Engine {
 		SBucket sbucket = bucketDao.getByName( bucketName );
 		if (sbucket == null) {
 			response.setResultCode(404);
-			response.setResultDescription("Bucket does not exist");
+			response.setResultDescription("Bucket " + bucketName + " does not exist");
 			return response;
 		}
 		
@@ -1061,7 +1061,7 @@ public class S3Engine {
 		SObject sobject = objectDao.getByNameKey( sbucket, nameKey );
 		if (sobject == null) {
 			response.setResultCode(404);
-			response.setResultDescription("Bucket does not exist");
+			response.setResultDescription("No object with key " +  nameKey + " exists in bucket " + bucketName);
 			return response;
 		}
 		

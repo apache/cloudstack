@@ -229,11 +229,11 @@ public class RestAuth {
 		secretKey = secretKey.trim();
 		signature = signature.trim();
 		
-		// -> first calculate the StringToSign after the caller has initialized all the header values
+		// First calculate the StringToSign after the caller has initialized all the header values
 		String StringToSign = genStringToSign( httpVerb );
 		String calSig       = calculateRFC2104HMAC( StringToSign, secretKey );
 		
-		// -> was the passed in signature URL encoded? (it must be base64 encoded)
+		// Was the passed in signature URL encoded? (it must be base64 encoded)
 		int offset = signature.indexOf( "%" );
 		if (-1 != offset) signature = URLDecoder.decode( signature, "UTF-8" );
 	

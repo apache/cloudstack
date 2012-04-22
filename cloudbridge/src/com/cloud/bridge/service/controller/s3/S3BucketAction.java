@@ -84,6 +84,7 @@ import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
 import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
+import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.InvalidRequestContentException;
 import com.cloud.bridge.service.exception.NetworkIOException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
@@ -203,7 +204,11 @@ public class S3BucketAction implements ServletAction {
 
 			 }
 			 executeDeleteBucket(request, response);
-		} 
+		}
+		else if ( (method.equalsIgnoreCase("POST")) && (queryString.equalsIgnoreCase("delete")) )
+		{
+			throw new InternalErrorException("Multi-object delete in a single command not yet implemented");
+		}
 		else throw new IllegalArgumentException("Unsupported method in REST request");
 	}
 	

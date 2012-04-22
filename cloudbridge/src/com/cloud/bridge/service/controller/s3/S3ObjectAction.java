@@ -592,7 +592,7 @@ public class S3ObjectAction implements ServletAction {
 	 */
 	private void executeInitiateMultipartUpload( HttpServletRequest request, HttpServletResponse response ) throws IOException
     {
-		// -> this request is via a POST which typically has its auth parameters inside the message
+		// This request is via a POST which typically has its auth parameters inside the message
 		try {
 	        S3RestServlet.authenticateRequest( request, S3RestServlet.extractRequestHeaders( request ));
 	    }
