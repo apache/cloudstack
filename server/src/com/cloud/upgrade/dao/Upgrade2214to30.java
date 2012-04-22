@@ -575,7 +575,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance`");
+            pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` where removed is null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
