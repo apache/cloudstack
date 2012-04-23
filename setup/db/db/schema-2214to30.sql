@@ -663,7 +663,6 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `last_pool_id` bigint unsigned;
 UPDATE `cloud`.`volumes` SET `last_pool_id` = `pool_id`;
 
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `is_system` int(1) unsigned NOT NULL default '0';
-
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__update_count`(`update_count`);
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `type` varchar(10) NOT NULL DEFAULT 'USER';
@@ -721,6 +720,7 @@ UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Securit
 UPDATE `cloud`.`configuration` SET category = 'Secure' where name in ('alert.smtp.password', 'network.loadbalancer.haproxy.stats.auth', 'security.singlesignon.key', 'project.smtp.password');
 
 
+
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (143, 1, 'CentOS 6.0 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (144, 1, 'CentOS 6.0 (64-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (145, 3, 'Oracle Enterprise Linux 5.6 (32-bit)');
@@ -744,4 +744,3 @@ UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZon
 
 UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use exetrnal dns1 and dns2' WHERE name='use.external.dns';
 UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
-
