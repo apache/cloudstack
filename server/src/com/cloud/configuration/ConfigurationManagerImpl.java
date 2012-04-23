@@ -1301,14 +1301,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
             }
-            cvo.setValue(hostname);
+            cvo.setValue(DBEncryptionUtil.encrypt(hostname));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.port.toString());
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.port.toString(), null, "Specify the LDAP port if required, default is 389");
             }
-            cvo.setValue(port.toString());
+            cvo.setValue(DBEncryptionUtil.encrypt(port.toString()));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.queryfilter.toString());
@@ -1316,7 +1316,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.queryfilter.toString(), null,
                         "You specify a query filter here, which narrows down the users, who can be part of this domain");
             }
-            cvo.setValue(queryFilter);
+            cvo.setValue(DBEncryptionUtil.encrypt(queryFilter));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.searchbase.toString());
@@ -1324,21 +1324,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.searchbase.toString(), null,
                         "The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.");
             }
-            cvo.setValue(searchBase);
+            cvo.setValue(DBEncryptionUtil.encrypt(searchBase));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.usessl.toString());
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check Use SSL if the external LDAP server is configured for LDAP over SSL.");
             }
-            cvo.setValue(useSSL.toString());
+            cvo.setValue(DBEncryptionUtil.encrypt(useSSL.toString()));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.dn.toString());
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.dn.toString(), null, "Specify the distinguished name of a user with the search permission on the directory");
             }
-            cvo.setValue(bindDN);
+            cvo.setValue(DBEncryptionUtil.encrypt(bindDN));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.passwd.toString());
@@ -1352,7 +1352,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.truststore.toString(), null, "Enter the path to trusted keystore");
             }
-            cvo.setValue(trustStore);
+            cvo.setValue(DBEncryptionUtil.encrypt(trustStore));
             _configDao.persist(cvo);
 
             cvo = _configDao.findByName(LDAPParams.truststorepass.toString());
