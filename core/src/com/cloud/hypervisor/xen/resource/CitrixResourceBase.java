@@ -660,6 +660,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private synchronized Network configureTunnelNetwork(Connection conn, long networkId, long hostId, int key) {
     	try {
 	    	Network nw = findOrCreateTunnelNetwork(conn, networkId);
+		String nwName = "OVSTunnel" + key;
 	    	//Invoke plugin to setup the bridge which will be used by this network
 	        String bridge = nw.getBridge(conn);
 	        Map<String,String> nwOtherConfig = nw.getOtherConfig(conn);
