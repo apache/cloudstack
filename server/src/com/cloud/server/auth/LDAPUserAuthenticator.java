@@ -67,9 +67,9 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String searchBase = _configDao.getValue(LDAPParams.searchbase.toString());
         String useSSL = _configDao.getValue(LDAPParams.usessl.toString());
         String bindDN = _configDao.getValue(LDAPParams.dn.toString());
-        String bindPasswd = DBEncryptionUtil.decrypt(_configDao.getValue(LDAPParams.passwd.toString()));
+        String bindPasswd = _configDao.getValue(LDAPParams.passwd.toString());
         String trustStore = _configDao.getValue(LDAPParams.truststore.toString());
-        String trustStorePassword = DBEncryptionUtil.decrypt(_configDao.getValue(LDAPParams.truststorepass.toString()));
+        String trustStorePassword = _configDao.getValue(LDAPParams.truststorepass.toString());
         
         try {
             // get all params
