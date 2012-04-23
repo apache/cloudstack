@@ -338,14 +338,6 @@ public class DownloadListener implements Listener {
 			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
 			
 			volumeHostDao.update(getVolumeHostId(), updateBuilder);
-			if (answer.getDownloadStatus() == Status.DOWNLOADED){
-				try {
-					_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);
-				} catch (NoTransitionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
 			/*if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
 				templateDaoBuilder.setChecksum(answer.getCheckSum());
