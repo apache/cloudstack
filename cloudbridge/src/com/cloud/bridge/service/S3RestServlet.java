@@ -51,6 +51,7 @@ import com.cloud.bridge.service.core.s3.S3Grant;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
 import com.cloud.bridge.service.core.s3.S3PutObjectResponse;
+import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.InvalidBucketName;
 import com.cloud.bridge.service.exception.NoSuchObjectException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
@@ -208,7 +209,7 @@ public class S3RestServlet extends HttpServlet {
     	String[] secretKey = null;
     	
     	try {
-		    // -> all these parameters are required
+		    // -> both these parameters are required
             accessKey = request.getParameterValues( "accesskey" );
 		    if ( null == accessKey || 0 == accessKey.length ) { 
 		         response.sendError(530, "Missing accesskey parameter" ); 
@@ -332,23 +333,33 @@ public class S3RestServlet extends HttpServlet {
     
     private ServletAction routeRequest(HttpServletRequest request) 
     {
-    	// Simple URL routing for S3 REST calls.
+    	//  URL routing for S3 REST calls.
     	String pathInfo = request.getPathInfo();
     	String bucketName = null;
     	String key = null;
     	
-    	// Irrespective of whether the requester is using subdomain or full host naming of path expressions
-    	// to buckets, wherever the request is made up of a service endpoint followed by a /, in AWS S3 this always
-    	// conveys a ListAllMyBuckets command
+    	// Check for unrecognized forms of URI information in request
     	
-    	if ( ( pathInfo == null ) || ( pathInfo.indexOf('/') != 0 ) ) 
-    	   {
-			logger.warn("Invalid REST request URI " + pathInfo);
-			return null;
+    	if ( ( pathInfo == null ) || ( pathInfo.indexOf('/') != 0 ) )
+        	if ( "POST".equalsIgnoreCase(request.getMethod()) )
+        		// Case where request is POST operation with no pathinfo
+        	{ 
+        	  logger.warn("POST alternative of PUT not yet implemented");
+        	// TODO - Hi Pri -Implement POST alternative of PUT
+        	// s3.amazonaws.com API doc page 141
+        	  return null; }
+        	else 
+        	{
+			  logger.warn("Invalid REST request URI " + pathInfo);
+			  return null;
 		    }
     	
     	String serviceEndpoint = ServiceProvider.getInstance().getServiceEndpoint();
     	String host            = request.getHeader("Host");
+    	
+    	// Irrespective of whether the requester is using subdomain or full host naming of path expressions
+    	// to buckets, wherever the request is made up of a service endpoint followed by a /, in AWS S3 this always
+    	// conveys a ListAllMyBuckets command
     	
 		if  ( (serviceEndpoint.equalsIgnoreCase( host )) && (pathInfo.equalsIgnoreCase("/")) ) {
 			request.setAttribute(S3Constants.BUCKET_ATTR_KEY, "/");

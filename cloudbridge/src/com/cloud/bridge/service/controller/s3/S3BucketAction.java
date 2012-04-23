@@ -92,7 +92,6 @@ import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Tuple;
-import com.cloud.bridge.util.XMLAppender;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 
@@ -207,6 +206,7 @@ public class S3BucketAction implements ServletAction {
 		}
 		else if ( (method.equalsIgnoreCase("POST")) && (queryString.equalsIgnoreCase("delete")) )
 		{
+			// TODO - Hi Pri - Implement multi-object delete in a single command
 			throw new InternalErrorException("Multi-object delete in a single command not yet implemented");
 		}
 		else throw new IllegalArgumentException("Unsupported method in REST request");
@@ -633,7 +633,7 @@ public class S3BucketAction implements ServletAction {
 				XSerializer serializer = new XSerializer(new XSerializerXmlAdapter()); 
 				objectInContent = serializer.serializeFrom(xml);
 				if(objectInContent != null && !(objectInContent instanceof S3CreateBucketConfiguration)) {
-					throw new InvalidRequestContentException("Invalid rquest content in create-bucket: " + xml);
+					throw new InvalidRequestContentException("Invalid request content in create-bucket: " + xml);
 				}
 				is.close();
 				

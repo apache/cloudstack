@@ -15,6 +15,7 @@
  */
 package com.cloud.bridge.util;
 
+import java.security.InvalidKeyException;
 import java.security.SignatureException;
 import java.util.*;
 import java.io.UnsupportedEncodingException;
@@ -220,6 +221,8 @@ public class RestAuth {
 	 * @return true if request has been authenticated, false otherwise
 	 * @throws UnsupportedEncodingException 
 	 */
+	
+	// TODO - Hi Pri - Make this validate correctly with StringToSign for verb POST and other cases
 	public boolean verifySignature( String httpVerb, String secretKey, String signature )
 	    throws SignatureException, UnsupportedEncodingException {
 	    	
@@ -348,12 +351,16 @@ public class RestAuth {
    	    try { 	
    	    	SecretKeySpec key = new SecretKeySpec( secretKey.getBytes(), "HmacSHA1" );
    	        Mac hmacSha1 = Mac.getInstance( "HmacSHA1" );
-   	        hmacSha1.init( key ); 
+    	    hmacSha1.init( key ); 
             byte [] rawHmac = hmacSha1.doFinal( signIt.getBytes());
             result = new String( Base64.encodeBase64( rawHmac ));
-   	    } catch( Exception e ) {
-   		    throw new SignatureException( "Failed to generate keyed HMAC on REST request: " + e.getMessage());
-   	    }
+   	        } 
+   	    catch( InvalidKeyException e ) {
+   		    throw new SignatureException( "Failed to generate keyed HMAC on REST request because key " + secretKey + " is invalid" + e.getMessage());
+   	         }
+   	    catch (Exception e) {
+ 		    throw new SignatureException( "Failed to generate keyed HMAC on REST request: " + e.getMessage());  
+   	         }
    	    return result.trim();
     }
 }
