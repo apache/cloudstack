@@ -226,7 +226,21 @@ cloudStack.preFilter = {
       }
       args.$form.find('.form-item[rel=isFeatured]').hide();
     }
-  }
+  },
+	addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device	  
+		args.$form.bind('change', function() { 		  
+			var $dedicated = args.$form.find('.form-item[rel=dedicated]');
+			var $capacity = args.$form.find('.form-item[rel=capacity]');											
+			if($dedicated.find('input[type=checkbox]:checked').length > 0) {												
+				$capacity.hide();
+				$capacity.find('input[type=text]').val('1');
+			}
+			else if($dedicated.find('input[type=checkbox]:unchecked').length > 0) {
+				$capacity.css('display', 'inline-block');												
+			}			
+		});			
+		args.$form.change();		
+	}	
 }
 
 cloudStack.actionFilter = {

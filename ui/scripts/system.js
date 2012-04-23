@@ -2349,7 +2349,8 @@
               add: {
                 label: 'label.add.netScaler.device',
                 createForm: {
-                  title: 'label.add.netScaler.device',
+                  title: 'label.add.netScaler.device',									
+									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2389,15 +2390,15 @@
                     //     items.push({id: "true", description: "inline"});
                     //     args.response.success({data: items});
                     //   }
-                    // },
-                    capacity: {
-                      label: 'label.capacity',
-                      validation: { required: false, number: true }
-                    },
+                    // },                    
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
                       isChecked: false
+                    },
+										capacity: {
+                      label: 'label.capacity',											
+                      validation: { required: false, number: true }
                     }
                   }
                 },
