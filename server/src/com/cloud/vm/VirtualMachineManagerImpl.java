@@ -791,7 +791,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                             return startedVm;
                         } else {
-                            canRetry = false;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
@@ -802,6 +801,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
+                            throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
