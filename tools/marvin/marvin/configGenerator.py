@@ -380,7 +380,7 @@ def generate_setup_config(config, file=None):
     
 def get_setup_config(file):
     if not os.path.exists(file):
-        return None
+        raise IOError("config file %s not found. please specify a valid config file"%file)
     config = cloudstackConfiguration()
     fp = open(file, 'r')
     config = json.load(fp)
