@@ -32,3 +32,6 @@ UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared network
 
 ALTER TABLE `cloud`.`op_lock` ENGINE=MEMORY, ROW_FORMAT = FIXED;
 ALTER TABLE `cloud`.`op_nwgrp_work` ENGINE=MEMORY, ROW_FORMAT = FIXED;
+
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('XenServer', '6.0.2', 50, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES ('VMware', '5.0', 128, 0);
