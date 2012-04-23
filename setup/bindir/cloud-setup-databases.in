@@ -127,17 +127,11 @@ class DBDeployer(object):
             mysqlCmds = ['mysql', '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
             if kwargs.has_key('passwd'):
                 mysqlCmds.append('--password=%s'%kwargs['passwd'])
-                passwd = kwargs['passwd']
-            else:
-                passwd = ''
             file(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
             runCmd(mysqlCmds)
             
-            awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
-            awsApiCmds = ['cd %s'%awsApiDbDir, 'sh deploy-db-bridge.sh %s'%passwd, 'cd -']
-            runCmd(awsApiCmds)
         except Exception, e:
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
@@ -246,6 +240,10 @@ for full help
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
+            
+        awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
+        awsApiCmds = ['cd %s;'%awsApiDbDir, 'sh deploy-db-bridge.sh %s;'%self.rootpassword, 'cd -']
+        runCmd(awsApiCmds)
                
     def prepareDBFiles(self):
         def prepareDBDotProperties():
