@@ -742,4 +742,3 @@ UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZon
 
 UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use exetrnal dns1 and dns2' WHERE name='use.external.dns';
 UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
-

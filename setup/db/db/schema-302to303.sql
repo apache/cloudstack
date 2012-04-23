@@ -53,4 +53,25 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 1);
+# Changes for OVS tunnel manager
 
+CREATE TABLE `cloud`.`ovs_tunnel_interface` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ip` varchar(16) DEFAULT NULL,
+  `netmask` varchar(16) DEFAULT NULL,
+  `mac` varchar(18) DEFAULT NULL,
+  `host_id` bigint(20) DEFAULT NULL,
+  `label` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_tunnel_network`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `from` bigint unsigned COMMENT 'from host id',
+  `to` bigint unsigned COMMENT 'to host id',
+  `network_id` bigint unsigned COMMENT 'network identifier',
+  `key` int unsigned COMMENT 'gre key',
+  `port_name` varchar(32) COMMENT 'in port on open vswitch',
+  `state` varchar(16) default 'FAILED' COMMENT 'result of tunnel creatation',
+  PRIMARY KEY(`from`, `to`, `network_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

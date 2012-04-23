@@ -114,7 +114,8 @@ DROP TABLE IF EXISTS `cloud`.`op_nwgrp_work`;
 DROP TABLE IF EXISTS `cloud`.`op_vm_ruleset_log`;
 DROP TABLE IF EXISTS `cloud`.`ovs_host_vlan_alloc`;
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel`;
-DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_network`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_interface`;
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_alloc`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
@@ -1750,6 +1751,18 @@ CREATE TABLE `cloud`.`ovs_tunnel`(
   `key` int unsigned default '0' COMMENT 'current gre key can be used',
   PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_tunnel_interface` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ip` varchar(16) DEFAULT NULL,
+  `netmask` varchar(16) DEFAULT NULL,
+  `mac` varchar(18) DEFAULT NULL,
+  `host_id` bigint DEFAULT NULL,
+  `label` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`ovs_tunnel_interface` (`ip`, `netmask`, `mac`, `host_id`, `label`) VALUES ('0', '0', '0', 0, 'lock');
 
 CREATE TABLE `cloud`.`ovs_tunnel_network`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
