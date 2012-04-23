@@ -1689,71 +1689,10 @@
                                                                   }
                                                                   else {
                                                                     $("body").stopTime(updateNetworkServiceProviderTimer);
-                                                                    if (result.jobstatus == 1) { //Security group provider has been enabled successfully
-                                                                      //"ElasticIP + ElasticLB"
-                                                                      if(selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true) { //inside "selectedNetworkOfferingHavingSG == true" section
-                                                                        //add netscaler provider (start)
-                                                                        $.ajax({
-                                                                          url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
-                                                                          dataType: "json",
-                                                                          async: false,
-                                                                          success: function(json) {
-                                                                            var addNetworkServiceProviderTimer = "asyncJob_" + json.addnetworkserviceproviderresponse.jobid;
-                                                                            $("body").everyTime(2000, addNetworkServiceProviderTimer, function() {
-                                                                              $.ajax({
-                                                                                url: createURL("queryAsyncJobResult&jobId=" + json.addnetworkserviceproviderresponse.jobid),
-                                                                                dataType: "json",
-                                                                                success: function(json) {
-                                                                                  var result = json.queryasyncjobresultresponse;
-                                                                                  if (result.jobstatus == 0) {
-                                                                                    return; //Job has not completed
-                                                                                  }
-                                                                                  else {
-                                                                                    $("body").stopTime(addNetworkServiceProviderTimer);
-                                                                                    if (result.jobstatus == 1) {
-                                                                                      args.data.returnedNetscalerProvider = result.jobresult.networkserviceprovider;
-
-                                                                                      stepFns.addNetscalerDevice({
-                                                                                        data: args.data
-                                                                                      });
-                                                                                    }
-                                                                                    else if (result.jobstatus == 2) {
-                                                                                      alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
-                                                                                    }
-                                                                                  }
-                                                                                },
-                                                                                error: function(XMLHttpResponse) {
-                                                                                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                                                  alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
-                                                                                }
-                                                                              });
-                                                                            });
-                                                                          }
-                                                                        });
-                                                                        //add netscaler provider (end)
-                                                                      }
-                                                                      else { //no "ElasticIP + ElasticLB"
-                                                                        //create a guest network for basic zone
-                                                                        var array2 = [];
-                                                                        array2.push("&zoneid=" + args.data.returnedZone.id);
-                                                                        array2.push("&name=guestNetworkForBasicZone");
-                                                                        array2.push("&displaytext=guestNetworkForBasicZone");
-                                                                        array2.push("&networkofferingid=" + args.data.zone.networkOfferingId);
-                                                                        $.ajax({
-                                                                          url: createURL("createNetwork" + array2.join("")),
-                                                                          dataType: "json",
-                                                                          async: false,
-                                                                          success: function(json) {
-                                                                            //basic zone has only one physical network => addPod() will be called only once => so don't need to double-check before calling addPod()
-                                                                            stepFns.addPod({
-                                                                              data: $.extend(args.data, {
-                                                                                returnedGuestNetwork: json.createnetworkresponse.network
-                                                                              })
-                                                                            });
-                                                                          }
-                                                                        });
-                                                                      }
->>>>>>> 84a44ac... cloudstack 3.0 UI - replace old sanitizeXSS() with new cloudStack.sanitize().
+                                                                    if (result.jobstatus == 1) { //Security group provider has been enabled successfully      
+																																			stepFns.addNetscalerProvider({
+																																				data: args.data
+																																			});																																			
                                                                     }
                                                                     else if (result.jobstatus == 2) {
                                                                       alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
