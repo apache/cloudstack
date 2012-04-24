@@ -177,7 +177,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      * @throws
      */
-    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException, ConcurrentOperationException,
+    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network guestNetwork) throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException;
 
     Nic getNicInNetwork(long vmId, long networkId);
