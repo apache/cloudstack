@@ -757,6 +757,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executePutBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		// TODO -- HiPri - Implement Put Bucket Website
 		response.setStatus(501);
 	}
 
@@ -770,7 +771,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	/**
-	 * This is a very complex function with all the options defined by Amazon.   Part of the functionality is 
+	 * This is a complex function with all the options defined by Amazon.   Part of the functionality is 
 	 * provided by the query done against the database.  The CommonPrefixes functionality is done the same way 
 	 * as done in the listBucketContents function (i.e., by iterating though the list to decide which output 
 	 * element each key is placed).

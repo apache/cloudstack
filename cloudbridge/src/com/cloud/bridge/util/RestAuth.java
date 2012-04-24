@@ -40,7 +40,7 @@ public class RestAuth {
 	// TreeMap: used when constructing the CanonicalizedAmzHeaders Element of the StringToSign
 	protected TreeMap<String, String> AmazonHeaders = null;   // not always present
 	protected String                  bucketName    = null;   // not always present
-	protected String                  queryString   = null;   // only interested in a small set of values
+	protected String                  queryString   = null;   // for CanonicalizedResource - only interested in a string starting with particular values
 	protected String                  uriPath       = null;   // only interested in the resource path
 	protected String                  date          = null;   // only if x-amz-date is not set
 	protected String                  contentType   = null;   // not always present
@@ -94,7 +94,6 @@ public class RestAuth {
 	
 	/**
 	 * Value is used in constructing the StringToSign for signature verification.
-     *
 	 * @param type - the contents of the "Content-MD5:" header, skipping the 'Content-MD5:' preamble.
 	 */
 	public void setContentMD5Header( String md5 ) {
@@ -128,7 +127,11 @@ public class RestAuth {
 	
 	/**
 	 * Used as part of the CanonalizedResource element of the StringToSign.
-	 * 
+	 * CanonicalizedResource = [ "/" + Bucket ] +
+	 * <HTTP-Request-URI, from the protocol name up to the query string> + [sub-resource]
+	 * The list of sub-resources that must be included when constructing the CanonicalizedResource Element are: acl, lifecycle, location, 
+	 * logging, notification, partNumber, policy, requestPayment, torrent, uploadId, uploads, versionId, versioning, versions and website.
+	 * (http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html)
 	 * @param query - results from calling "HttpServletRequest req.getQueryString()"
 	 */
 	public void setQueryString( String query ) {
@@ -140,12 +143,17 @@ public class RestAuth {
 		query = new String( "?" + query.trim());
 		
 		// -> only interested in this subset of parameters
-		if (query.startsWith( "?versioning") || query.startsWith( "?location" ) ||
-		    query.startsWith( "?acl" )       || query.startsWith( "?torrent"  )) {
+		if (query.startsWith( "?acl")            || query.startsWith( "?lifecycle" )        || query.startsWith( "?location" )   ||
+			query.startsWith( "?logging" )       || query.startsWith( "?notification"  )    || query.startsWith( "?partNumber" ) ||
+		    query.startsWith( "?policy" )        || query.startsWith( "?requestPayment" )   || query.startsWith( "?torrent" )    ||
+		    query.startsWith( "?uploadId" )      || query.startsWith( "?uploads" )          || query.startsWith( "?versionId" )  ||
+		    query.startsWith( "?versioning" )    || query.startsWith( "?versions" )         || query.startsWith( "?website" ) 
+           )
+           {
 			
-			// -> include any value (i.e., with '=') and chop of the rest
-			int offset = query.indexOf( "&" );
-			if ( -1 != offset ) query = query.substring( 0, offset );
+			// The query string includes the value given to the start parameter (using =) but ignores all other arguments after &
+		    int offset = query.indexOf( "&" );
+		    if ( -1 != offset ) query = query.substring( 0, offset );
 			this.queryString = query;
 		}
 	}
@@ -264,13 +272,15 @@ public class RestAuth {
 	private String genStringToSign( String httpVerb ) {
 		StringBuffer canonicalized = new StringBuffer();
 		String temp = null;
+		String canonicalizedResourceElement = genCanonicalizedResourceElement();
+		
 	
 		canonicalized.append( httpVerb ).append( "\n" );
-		if (null != this.contentMD5) 
+		if ( (null != this.contentMD5) && (null == canonicalizedResourceElement) ) 
 			canonicalized.append( this.contentMD5 );
 		canonicalized.append( "\n" );
 		
-		if (null != this.contentType) 
+		if ( (null != this.contentType) && (null == canonicalizedResourceElement) )
 			canonicalized.append( this.contentType );
 		canonicalized.append( "\n" );
 
@@ -280,7 +290,7 @@ public class RestAuth {
 		canonicalized.append( "\n" );
 		
 		if (null != (temp = genCanonicalizedAmzHeadersElement())) canonicalized.append( temp );
-		if (null != (temp = genCanonicalizedResourceElement()  )) canonicalized.append( temp );
+		if (null != canonicalizedResourceElement) canonicalized.append( canonicalizedResourceElement );
 		
 		if ( 0 == canonicalized.length())
 			 return null;

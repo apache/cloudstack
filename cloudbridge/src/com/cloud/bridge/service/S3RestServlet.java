@@ -296,7 +296,7 @@ public class S3RestServlet extends HttpServlet {
     	auth.setHostHeader( request.getHeader( "Host" ));
     	auth.setQueryString( request.getQueryString());
     	auth.addUriPath( request.getRequestURI());
-    	
+
     	// -> are their any Amazon specific (i.e. 'x-amz-' ) headers?
     	HeaderParam[] headers = params.getHeaders();
     	for( int i=0; null != headers && i < headers.length; i++ )
