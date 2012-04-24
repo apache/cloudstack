@@ -605,7 +605,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 } else if (addr.getState() == IpAddress.State.Releasing) {
                     // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the
-// system
+                    // system
                     if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
                         _ipAddressDao.unassignIpAddress(addr.getId());
                     } else {
@@ -3042,7 +3042,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
             guru.trash(network, _networkOfferingDao.findById(network.getNetworkOfferingId()), owner);
 
-            if (!deleteVlansInNetwork(network.getId(), context.getCaller().getId())) {
+            if (!deleteVlansInNetwork(network.getId(), context.getCaller().getId(), callerAccount)) {
                 success = false;
                 s_logger.warn("Failed to delete network " + network + "; was unable to cleanup corresponding ip ranges");
             } else {
@@ -3057,11 +3057,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    private boolean deleteVlansInNetwork(long networkId, long userId) {
+    private boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
         List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
         for (VlanVO vlan : vlans) {
-            if (!_configMgr.deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), vlan.getId())) {
+            if (!_configMgr.deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), vlan.getId(), callerAccount)) {
                 s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
                 result = false;
             }

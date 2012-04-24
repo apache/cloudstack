@@ -139,9 +139,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * 
      * @param userId
      * @param vlanDbId
+     * @param caller TODO
      * @return success/failure
      */
-    boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId);
+    boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
     /**
      * Adds/deletes private IPs
