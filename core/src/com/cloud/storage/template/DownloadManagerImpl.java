@@ -317,6 +317,13 @@ public class DownloadManagerImpl implements DownloadManager {
         String finalTemplatePath = _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
         dnld.setTmpltPath(finalTemplatePath);
 
+        File originalTemplate = new File(td.getDownloadLocalPath());
+        String checkSum = computeCheckSum(originalTemplate);
+        if (checkSum == null) {
+            s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+        }
+        dnld.setCheckSum(checkSum);
+
         int imgSizeGigs = (int) Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
         long timeout = imgSizeGigs * installTimeoutPerGig;
@@ -392,9 +399,6 @@ public class DownloadManagerImpl implements DownloadManager {
                 break;
             }
         }
-        
-        String checkSum = computeCheckSum(downloadedTemplate);
-        dnld.setCheckSum(checkSum);
         
         if (!loc.save()) {
             s_logger.warn("Cleaning up because we're unable to save the formats");
