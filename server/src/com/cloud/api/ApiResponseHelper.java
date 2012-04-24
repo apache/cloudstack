@@ -2762,11 +2762,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
 
-        // FIXME - either set broadcast URI or vlan
         if (network.getBroadcastUri() != null) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
-            String vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+            String vlan="N/A";
+            if (broadcastUri.startsWith("vlan")) {
+            	vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+            }
             response.setVlan(vlan);
         }
 
