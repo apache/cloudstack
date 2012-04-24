@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.cloud.bridge.persist.CloudStackDao;
+import com.cloud.bridge.persist.dao.CloudStackDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.util.ConfigurationHelper;
 

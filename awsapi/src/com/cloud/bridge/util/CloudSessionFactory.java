@@ -24,7 +24,10 @@ import java.util.Properties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.jasypt.properties.EncryptableProperties;
 import org.apache.log4j.Logger;
+
 
 /**
  * @author Kelven Yang
@@ -48,7 +51,14 @@ public class CloudSessionFactory {
         String     dbPort     = null; 
                
         if (null != propertiesFile) {
-            dbProp = new Properties();
+            
+            if(EncryptionSecretKeyCheckerUtil.useEncryption()){
+                StandardPBEStringEncryptor encryptor = EncryptionSecretKeyCheckerUtil.getEncryptor();
+                dbProp = new EncryptableProperties(encryptor);
+            } else {
+                dbProp = new Properties();
+            }
+            
             try {
                 dbProp.load( new FileInputStream( propertiesFile ));
             } catch (FileNotFoundException e) {

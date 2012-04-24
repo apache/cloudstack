@@ -30,36 +30,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.bridge.util.ConfigurationHelper;
 
-public class OfferingDao {
+
+public class OfferingDao extends BaseDao {
 	public static final Logger logger = Logger.getLogger(OfferingDao.class);
 
 	private Connection conn       = null;
-    private String     dbName     = null;
-    private String     dbHost     = null;
-    private String     dbUser     = null;
-    private String     dbPassword = null;
-    private String     dbPort     = null; 
 	
 	public OfferingDao() 
 	{
-        File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
-        Properties EC2Prop = null;
-           
-        if (null != propertiesFile) {
-            EC2Prop = new Properties();
-            try {
-                EC2Prop.load( new FileInputStream( propertiesFile ));
-            } catch (FileNotFoundException e) {
-                logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
-            } catch (IOException e) {
-                logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
-            }
-            dbHost     = EC2Prop.getProperty( "db.cloud.host" );
-            dbName     = EC2Prop.getProperty( "db.awsapi.name" );
-            dbUser     = EC2Prop.getProperty( "db.cloud.username" );
-            dbPassword = EC2Prop.getProperty( "db.cloud.password" );
-            dbPort     = EC2Prop.getProperty( "db.cloud.port" );
-        }
 	}
 	
 	public int getOfferingCount()
@@ -177,7 +155,7 @@ public class OfferingDao {
     {
         if (null == conn) {
             Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + awsapi_dbName, dbUser, dbPassword );
         }
     }
 

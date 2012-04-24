@@ -15,54 +15,27 @@
  */
 package com.cloud.bridge.persist.dao;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.model.UserCredentials;
 import com.cloud.bridge.service.exception.NoSuchObjectException;
-import com.cloud.bridge.util.ConfigurationHelper;
 
 
-public class UserCredentialsDao {
+
+
+public class UserCredentialsDao extends BaseDao{
 	public static final Logger logger = Logger.getLogger(UserCredentialsDao.class);
 
 	private Connection conn       = null;
-	private String     dbName     = null;
-	private String     dbHost     = null;
-	private String     dbUser     = null;
-	private String     dbPassword = null;
-	private String     dbPort     = null; 
 	
 	public UserCredentialsDao() {
-	    File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
-	    Properties EC2Prop = null;
-	       
-	    if (null != propertiesFile) {
-	   	    EC2Prop = new Properties();
-	    	try {
-				EC2Prop.load( new FileInputStream( propertiesFile ));
-			} catch (FileNotFoundException e) {
-				logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
-			} catch (IOException e) {
-				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
-			}
-            dbHost     = EC2Prop.getProperty( "db.cloud.host" );
-		    dbName     = EC2Prop.getProperty( "db.awsapi.name" );
-		    dbUser     = EC2Prop.getProperty( "db.cloud.username" );
-		    dbPassword = EC2Prop.getProperty( "db.cloud.password" );
-		    dbPort     = EC2Prop.getProperty( "db.cloud.port" );
-		}
 	}
 	
 	public void setUserKeys( String cloudAccessKey, String cloudSecretKey ) 
@@ -164,7 +137,7 @@ public class UserCredentialsDao {
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 		    Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + awsapi_dbName, dbUser, dbPassword );
         }
 	}
 	
