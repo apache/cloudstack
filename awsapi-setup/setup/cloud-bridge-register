@@ -1,4 +1,4 @@
-#!/cygdrive/c/Python26/python
+#!/usr/bin/python
 
 import base64
 import hmac
