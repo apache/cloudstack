@@ -316,9 +316,8 @@ public class S3RestServlet extends HttpServlet {
 				return;
 			}
 		
-			// -> turn off auth - just for testing
+			// TODO - Remove soon -> turn off auth - just for testing
 			//UserContext.current().initContext("Mark", "123", "Mark", "testing", request);
-            //return;
        
 		} catch (SignatureException e) {
 			throw new PermissionDeniedException(e);
