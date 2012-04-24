@@ -36,7 +36,7 @@ public class EncryptionSecretKeyCheckerUtil {
             
             s_logger.debug("Encryption Type: "+ encryptionType);
 
-            if(encryptionType != null || !encryptionType.equals("none")){
+            if(encryptionType != null && !encryptionType.equals("none")){
                 
                 s_encryptor.setAlgorithm("PBEWithMD5AndDES");
                 String secretKey = null;
