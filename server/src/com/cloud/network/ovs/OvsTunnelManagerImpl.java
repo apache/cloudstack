@@ -279,7 +279,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             if (ta == null || ta.getState().equals("FAILED")) {
             	s_logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
             	if (ta == null) {
-            		this.createTunnelRecord(hostId, rh.longValue(), nw.getId());
+		    this.createTunnelRecord(hostId, rh.longValue(), nw.getId(), key);
             	}
                 if (!toHostIds.contains(rh)) {
                     toHostIds.add(rh);
@@ -291,7 +291,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
             if (ta == null || ta.getState().equals("FAILED")) {
             	s_logger.debug("Attempting to create tunnel from:" + rh.longValue() + " to:" + hostId);
             	if (ta == null) {
-            		this.createTunnelRecord(rh.longValue(), hostId, nw.getId());
+		    this.createTunnelRecord(rh.longValue(), hostId, nw.getId(), key);
             	} 
                 if (!fromHostIds.contains(rh)) {
                     fromHostIds.add(rh);

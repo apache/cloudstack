@@ -16,8 +16,12 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
@@ -27,6 +31,7 @@ import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
