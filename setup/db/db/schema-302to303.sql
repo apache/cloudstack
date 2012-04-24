@@ -75,3 +75,7 @@ CREATE TABLE `cloud`.`ovs_tunnel_network`(
   `state` varchar(16) default 'FAILED' COMMENT 'result of tunnel creatation',
   PRIMARY KEY(`from`, `to`, `network_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`ovs_tunnel_interface` (`ip`, `netmask`, `mac`, `host_id`, `label`) VALUES ('0', '0', '0', 0, 'lock');
+
+INSERT INTO `cloud`.`ovs_tunnel_network` (`from`, `to`, `network_id`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
