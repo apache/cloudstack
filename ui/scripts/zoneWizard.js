@@ -511,6 +511,7 @@
       },
 
       basicPhysicalNetwork: { //"Netscaler" now
+			  preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
         fields: {
          ip: {
             label: 'label.ip.address'
@@ -541,15 +542,15 @@
           numretries: {
             label: 'label.numretries',
             defaultValue: '2'
-          },          
-          capacity: {
-            label: 'label.capacity',
-            validation: { required: false, number: true }
-          },
+          },  
           dedicated: {
             label: 'label.dedicated',
             isBoolean: true,
             isChecked: false
+          },
+					capacity: {
+            label: 'label.capacity',
+            validation: { required: false, number: true }
           }
         }
       },

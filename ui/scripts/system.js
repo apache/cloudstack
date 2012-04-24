@@ -2548,7 +2548,7 @@
             }
           },
 
-		  //f5 provider detail view
+		      //f5 provider detail view
           f5: {
             type: 'detailView',
             id: 'f5Provider',
@@ -2586,6 +2586,7 @@
                 label: 'label.add.F5.device',
                 createForm: {
                   title: 'label.add.F5.device',
+									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2623,15 +2624,15 @@
                     //     items.push({id: "true", description: "inline"});
                     //     args.response.success({data: items});
                     //   }
-                    // },
-                    capacity: {
-                      label: 'label.capacity',
-                      validation: { required: false, number: true }
-                    },
+                    // },                    
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
                       isChecked: false
+                    },
+										capacity: {
+                      label: 'label.capacity',
+                      validation: { required: false, number: true }
                     }
                   }
                 },
@@ -4029,6 +4030,7 @@
               label: 'label.add.netScaler.device',
               createForm: {
                 title: 'label.add.netScaler.device',
+								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4069,15 +4071,15 @@
                   //     args.response.success({data: items});
                   //   }
                   // },
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  },
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
-                  }
+                  },
+									capacity: {
+                    label: 'label.capacity',
+                    validation: { required: false, number: true }
+                  }                  
                 }
               },
               action: function(args) {
@@ -4223,6 +4225,7 @@
               label: 'label.add.F5.device',
               createForm: {
                 title: 'label.add.F5.device',
+								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4260,15 +4263,15 @@
                   //     items.push({id: "true", description: "inline"});
                   //     args.response.success({data: items});
                   //   }
-                  // },
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  },
+                  // },                  
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
+                  },
+									capacity: {
+                    label: 'label.capacity',
+                    validation: { required: false, number: true }
                   }
                 }
               },
