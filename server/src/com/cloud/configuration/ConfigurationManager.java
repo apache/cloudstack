@@ -137,9 +137,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * 
      * @param userId
      * @param vlanDbId
+     * @param caller TODO
      * @return success/failure
      */
-    boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId);
+    boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
     /**
      * Converts a comma separated list of tags to a List
