@@ -75,6 +75,7 @@ public class Upgrade301to302 implements DbUpgrade {
         dropKeysIfExists(conn);
         updateSharedNetworks(conn);
         fixLastHostIdKey(conn);
+        changeEngine(conn);
     }
 
     @Override
@@ -188,4 +189,39 @@ public class Upgrade301to302 implements DbUpgrade {
             }
         }
     }
+    
+    private void changeEngine(Connection conn) {
+        s_logger.debug("Fixing engine and row_format for op_lock and op_nwgrp_work tables");
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_lock` ENGINE=MEMORY, ROW_FORMAT = FIXED");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (Exception e) {
+            s_logger.debug("Failed do execute the statement " + pstmt + ", moving on as it's not critical fix");
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_nwgrp_work` ENGINE=MEMORY, ROW_FORMAT = FIXED");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (Exception e) {
+            s_logger.debug("Failed do execute the statement " + pstmt + ", moving on as it's not critical fix");
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
 }
