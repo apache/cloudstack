@@ -1,0 +1,6 @@
+# This file is loaded in /etc/init.d/vmopsmanagement
+# ATM we only do two things here:
+
+dummy=1 ; export TOMCAT_CFG=@MSCONF@/tomcat6.conf ; . @MSCONF@/tomcat6.conf
+#--------------------------
+

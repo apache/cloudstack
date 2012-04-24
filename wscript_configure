@@ -78,7 +78,19 @@ systemjars = {
 	'Mac':
 	(
 		"servlet-api.jar",
-	),	
+	),
+    'openSUSE':
+    (
+        "tomcat6-servlet-2.5-api.jar",
+        "tomcat6-jsp-2.1-api-6.0.24.jar",
+        "tomcat6-el-1.0-api.jar"
+    ),
+    'SLES':
+    (
+        "tomcat6-servlet-2.5-api.jar",
+        "tomcat6-jsp-2.1-api-6.0.24.jar",
+        "tomcat6-el-1.0-api.jar"
+    )
 }
 
 #A JAR dependency may be:
@@ -133,6 +145,21 @@ elif _exists("/etc/redhat-release"):
         conf.env.DISTRO = "RHEL"
     elif version.find("CentOS release") != -1:
         conf.env.DISTRO = "CentOS"
+elif _exists("/etc/SuSE-release"):
+    content = file("/etc/SuSE-release").readlines()
+    supportedVersion = None
+    if content[0].find("SUSE Linux Enterprise Server 11") != -1:
+        spLevel = eval(content[-1].split()[-1])
+        if spLevel >= 2:
+            conf.env.DISTRO = "SLES"
+            supportedVersion = 1
+    elif content[0].find("openSUSE") != -1:
+        version = eval(content[1].split()[-1])
+        if version >= 12.1:
+            conf.env.DISTRO = "openSUSE"
+            supportedVersion = 1
+    if not supportedVersion:
+        conf.env.DISTRO = "unknown"
 else: conf.env.DISTRO = "unknown"
 if conf.env.DISTRO == "unknown": c = "YELLOW"
 else: 				    c = "GREEN"
