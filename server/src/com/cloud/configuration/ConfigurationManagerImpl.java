@@ -2195,7 +2195,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner);
 
         if (associateIpRangeToAccount) {
-            _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), network);
+            _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
         }
         txn.commit();
 

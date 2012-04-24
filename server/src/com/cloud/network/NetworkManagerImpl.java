@@ -3684,21 +3684,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException,
+    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network guestNetwork)
+            throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException {
         Account owner = _accountMgr.getActiveAccountById(accountId);
         boolean createNetwork = false;
+        
+        if (guestNetwork != null && guestNetwork.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Network " + guestNetwork + " is not of a type " + TrafficType.Guest);
+        }
 
         Transaction txn = Transaction.currentTxn();
-
         txn.start();
 
-        if (network == null) {
+        if (guestNetwork == null) {
             List<? extends Network> networks = getIsolatedNetworksWithSourceNATOwnedByAccountInZone(zoneId, owner);
             if (networks.size() == 0) {
                 createNetwork = true;
             } else if (networks.size() == 1)  {
-                network = networks.get(0);
+                guestNetwork = networks.get(0);
             }else{
                 throw new InvalidParameterValueException("Error, more than 1 Guest Isolated Networks with SourceNAT service enabled found for this account, cannot assosiate the IP range, please provide the network ID");
             }
@@ -3714,9 +3718,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of createVlanIpRange process");
-                network = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, owner, false, null, physicalNetwork, zoneId,
+                guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, owner, false, null, physicalNetwork, zoneId,
                         ACLType.Account, null);
-                if (network == null) {
+                if (guestNetwork == null) {
                     s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                     throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT service enabled as a part of createVlanIpRange, for the account " + accountId + "in zone " + zoneId);
                 }
@@ -3727,7 +3731,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Check if there is a source nat ip address for this account; if not - we have to allocate one
         boolean allocateSourceNat = false;
-        List<IPAddressVO> sourceNat = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+        List<IPAddressVO> sourceNat = _ipAddressDao.listByAssociatedNetwork(guestNetwork.getId(), true);
         if (sourceNat.isEmpty()) {
             allocateSourceNat = true;
         }
@@ -3743,7 +3747,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } else {
                     addr.setSourceNat(false);
                 }
-                addr.setAssociatedWithNetworkId(network.getId());
+                addr.setAssociatedWithNetworkId(guestNetwork.getId());
                 addr.setAllocatedTime(new Date());
                 addr.setAllocatedInDomainId(owner.getDomainId());
                 addr.setAllocatedToAccountId(owner.getId());

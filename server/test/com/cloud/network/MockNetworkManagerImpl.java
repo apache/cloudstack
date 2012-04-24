@@ -861,4 +861,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#listAllNetworksInAllZonesByType(com.cloud.network.Network.GuestType)
+     */
+    @Override
+    public List<NetworkVO> listAllNetworksInAllZonesByType(GuestType type) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
