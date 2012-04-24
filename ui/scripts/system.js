@@ -6641,17 +6641,25 @@
 
               'remove': {
                 label: 'label.action.delete.primary.storage' ,
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.primary.storage';
-                  },
+                messages: {                  
                   notification: function(args) {
                     return 'label.action.delete.primary.storage';
                   }
-                },
-                action: function(args) {
+                },		
+                createForm: {
+                  title: 'label.action.delete.primary.storage',                 
+                  fields: {
+                    isForced: {
+                      label: 'force.remove',
+                      isBoolean: true                      
+                    }
+                  }
+                },									
+                action: function(args) {								
+								  var array1 = [];                  
+                  array1.push("&forced=" + (args.data.isForced == "on"));								
                   $.ajax({
-                    url: createURL("deleteStoragePool&id=" + args.context.primarystorages[0].id),
+                    url: createURL("deleteStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
                     dataType: "json",
                     async: true,
                     success: function(json) {
