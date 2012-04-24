@@ -621,15 +621,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * This method just creates a XenServer network following the tunnel network naming convention
      */
-    private synchronized Network findOrCreateTunnelNetwork(Connection conn, long networkId) {
+    private synchronized Network findOrCreateTunnelNetwork(Connection conn, long key) {
         try {
-            String nwName = "OVSTunnel" + networkId;
+            String nwName = "OVSTunnel" + key;
             Network nw = null;
             Network.Record rec = new Network.Record();
             Set<Network> networks = Network.getByNameLabel(conn, nwName);
 
             if (networks.size() == 0) {
-                rec.nameDescription = "tunnel network id# " + networkId;
+                rec.nameDescription = "tunnel network id# " + key;
                 rec.nameLabel = nwName;
                 //Initialize the ovs-host-setup to avoid error when doing get-param in plugin
                 Map<String,String> otherConfig = new HashMap<String,String>();
@@ -637,7 +637,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
                 // Plug dom0 vif only when creating network
-                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + networkId);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + key);
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);                
             } else {
                 nw = networks.iterator().next();
@@ -655,8 +655,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private synchronized Network configureTunnelNetwork(Connection conn, long networkId, long hostId, int key) {
     	try {
-	    	Network nw = findOrCreateTunnelNetwork(conn, networkId);
-		String nwName = "OVSTunnel" + key;
+	    	Network nw = findOrCreateTunnelNetwork(conn, key);
+	    	String nwName = "OVSTunnel" + key;
 	    	//Invoke plugin to setup the bridge which will be used by this network
 	        String bridge = nw.getBridge(conn);
 	        Map<String,String> nwOtherConfig = nw.getOtherConfig(conn);
