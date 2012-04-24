@@ -2056,6 +2056,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			Connect conn = LibvirtConnection.getConnection();
 			for (NicTO nic : nics) {
 				String vlanId = null;
+				String nicName = _privBridgeName;
+				if (nic.getName() != null) {
+				    nicName = nic.getName();
+				}
 				if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
 					URI broadcastUri = nic.getBroadcastUri();
 					vlanId = broadcastUri.getHost();
@@ -2063,7 +2067,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				if (nic.getType() == TrafficType.Guest) {
 					if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 							&& !vlanId.equalsIgnoreCase("untagged")) {
-						createVlanBr(vlanId, getPhysicalNetwork(nic.getName()));
+						createVlanBr(vlanId, getPhysicalNetwork(nicName));
 					}
 				} else if (nic.getType() == TrafficType.Control) {
 					/* Make sure the network is still there */
@@ -2071,7 +2075,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				} else if (nic.getType() == TrafficType.Public) {
 					if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 							&& !vlanId.equalsIgnoreCase("untagged")) {
-						createVlanBr(vlanId, getPhysicalNetwork(nic.getName()));
+						createVlanBr(vlanId, getPhysicalNetwork(nicName));
 					}
 				}
 			}
