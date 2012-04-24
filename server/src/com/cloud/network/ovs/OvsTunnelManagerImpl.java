@@ -138,10 +138,6 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	
 	private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId){
 		OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer) answers[0];
-		String s = String.format(
-				"(ip:%1$s, netmask:%2$s, mac:%3$s, label:%4$s, host:%5$d)",
-				ans.getIp(), ans.getNetmask(), ans.getMac(), ans.getLabel(), hostId);
-		s_logger.debug("### About to add DB entry for:" + s);
 		OvsTunnelInterfaceVO ti = createInterfaceRecord(ans.getIp(), ans.getNetmask(), ans.getMac(),
 							  						    hostId, ans.getLabel());
 		s_logger.debug("### Interface added to DB - id:" + ti.getId());
@@ -317,7 +313,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 				handleCreateTunnelAnswer(answers);
 				noHost = false;
 			}
-			// If not tunnels have been configured, perform the bridge setup anyway
+			// If no tunnels have been configured, perform the bridge setup anyway
 			// This will ensure VIF rules will be triggered
 			if (noHost) {
 				Commands cmds = new Commands(
