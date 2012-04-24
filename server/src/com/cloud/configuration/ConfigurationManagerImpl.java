@@ -38,8 +38,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiConstants.LDAPParams;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
@@ -110,6 +110,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -155,6 +156,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -219,6 +221,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     SwiftManager _swiftMgr;
     @Inject
     PhysicalNetworkTrafficTypeDao _trafficTypeDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    FirewallRulesDao _firewallDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -2425,24 +2431,78 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) {
+    @DB
+    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if (vlan == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
+        
+        boolean isAccountSpecific = false;
+        List<AccountVlanMapVO> acctVln = _accountVlanMapDao.listAccountVlanMapsByVlan(vlan.getId());
+        // Check for account wide pool. It will have an entry for account_vlan_map.
+        if (acctVln != null && !acctVln.isEmpty()) {
+            isAccountSpecific = true;
+        }
 
         // Check if the VLAN has any allocated public IPs
-        if (_publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true) > 0) {
-            throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
+        long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
+        boolean success = true;
+        if (allocIpCount > 0) {
+            if (isAccountSpecific) { 
+                try {
+                    vlan = _vlanDao.acquireInLockTable(vlanDbId, 30);
+                    if (vlan == null) {
+                        throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
+                    }
+                    
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("lock vlan " + vlanDbId + " is acquired");
+                    }
+                    
+                    List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
+                    
+                    for (IPAddressVO ip : ips) {
+                        if (ip.isOneToOneNat()) {
+                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
+                                    " as ip " + ip + " belonging to the range is used for static nat purposes. Cleanup the rules first");
+                        }
+                        
+                        if (ip.isSourceNat() && _nicDao.findByIp4AddressAndNetworkId(ip.getAddress().addr(), ip.getSourceNetworkId()) != null) {
+                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
+                                    " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() + 
+                                    ". Either delete the network, or Virtual Router instance using this ip address");
+                        }
+                        
+                        if (_firewallDao.countRulesByIpId(ip.getId()) > 0) {
+                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
+                                    " as ip " + ip + " belonging to the range has firewall rules applied. Cleanup the rules first");
+                        }
+                        //release public ip address here
+                        success = success && _networkMgr.releasePublicIpAddress(ip.getId(), userId, caller);
+                    }
+                    if (!success) {
+                        s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
+                    }
+                } finally {
+                    _vlanDao.releaseFromLockTable(vlanDbId);
+                } 
+            } else {
+                throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
+            }
         }
 
-        // Delete all public IPs in the VLAN
-        if (!deletePublicIPRange(vlanDbId)) {
+        if (success) {
+            // Delete all public IPs in the VLAN
+            if (!deletePublicIPRange(vlanDbId)) {
+                return false;
+            }
+
+            // Delete the VLAN
+            return _vlanDao.expunge(vlanDbId);
+        } else {
             return false;
         }
-
-        // Delete the VLAN
-        return _vlanDao.expunge(vlanDbId);
     }
 
     @Override
@@ -2766,7 +2826,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return deleteVlanAndPublicIpRange(UserContext.current().getCallerUserId(), vlanDbId);
+        return deleteVlanAndPublicIpRange(UserContext.current().getCallerUserId(), vlanDbId, UserContext.current().getCaller());
 
     }
 
@@ -3620,7 +3680,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             Transaction txn = Transaction.currentTxn();
             txn.start();
             for (AccountVlanMapVO map : maps) {
-                if (!deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), map.getVlanDbId())) {
+                if (!deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), map.getVlanDbId(), 
+                        _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
                     result = false;
                 }
             }
