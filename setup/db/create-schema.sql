@@ -112,14 +112,8 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_link_local_ip_address_alloc`;
 DROP TABLE IF EXISTS `cloud`.`op_host`;
 DROP TABLE IF EXISTS `cloud`.`op_nwgrp_work`;
 DROP TABLE IF EXISTS `cloud`.`op_vm_ruleset_log`;
-DROP TABLE IF EXISTS `cloud`.`ovs_host_vlan_alloc`;
-DROP TABLE IF EXISTS `cloud`.`ovs_tunnel`;
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_network`;
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_interface`;
-DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_alloc`;
-DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
-DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
-DROP TABLE IF EXISTS `cloud`.`ovs_work`;
 DROP TABLE IF EXISTS `cloud`.`remote_access_vpn`;
 DROP TABLE IF EXISTS `cloud`.`resource_count`;
 DROP TABLE IF EXISTS `cloud`.`security_ingress_rule`;
@@ -1727,31 +1721,6 @@ CREATE TABLE  `cloud`.`usage_event` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `host_id` bigint unsigned COMMENT 'host id',
-  `account_id` bigint unsigned COMMENT 'account id',
-  `vlan` bigint unsigned COMMENT 'vlan id under account #account_id on host #host_id',
-  `ref` int unsigned NOT NULL DEFAULT 0 COMMENT 'reference count',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `from` bigint unsigned COMMENT 'from host id',
-  `to` bigint unsigned COMMENT 'to host id',
-  `in_port` int unsigned COMMENT 'in port on open vswitch',
-  PRIMARY KEY(`from`, `to`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_tunnel`(
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `from` bigint unsigned COMMENT 'from host id',
-  `to` bigint unsigned COMMENT 'to host id',
-  `key` int unsigned default '0' COMMENT 'current gre key can be used',
-  PRIMARY KEY(`from`, `to`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `cloud`.`ovs_tunnel_interface` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `ip` varchar(16) DEFAULT NULL,
@@ -1776,33 +1745,6 @@ CREATE TABLE `cloud`.`ovs_tunnel_network`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`ovs_tunnel_network` (`from`, `to`, `network_id`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
-
-CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `account_id` bigint unsigned COMMENT 'account id',
-  `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_vm_flow_log` (
-  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
-  `created` datetime NOT NULL COMMENT 'time the entry was requested',
-  `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies flow update',
-  `vm_name` varchar(255) NOT NULL COMMENT 'vm name',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_work` (
-  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
-  `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
-  `created` datetime NOT NULL COMMENT 'time the entry was requested',
-  `taken` datetime COMMENT 'time it was taken by the management server',
-  `step` varchar(32) NOT NULL COMMENT 'Step in the work',
-  `seq_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`storage_pool_work` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
