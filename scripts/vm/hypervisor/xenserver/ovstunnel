@@ -1,300 +1,243 @@
 #!/usr/bin/python
-# Version @VERSION@
-#
-# A plugin for executing script needed by vmops cloud 
+# Creates a tunnel mesh across xenserver hosts
+# Enforces broadcast drop rules on ingress GRE tunnels
 
 import cloudstack_pluginlib as lib
 import logging
-import os, sys, time
+import os
+import sys
 import subprocess
+import time
 import XenAPIPlugin
+
 sys.path.append("/opt/xensource/sm/")
 import util
+
 from time import localtime as _localtime, asctime as _asctime
 
-xePath=  "/opt/xensource/bin/xe"
+xePath = "/opt/xensource/bin/xe"
 lib.setup_logging("/var/log/ovstunnel.log")
-
-def find_vifs_v5(xs_nw_uuid):
-	logging.debug("Fetching vifs on networks - for XS version 5.x")
-	vif_uuids_cmd = [xePath, 'network-list', 'uuid=%s' %xs_nw_uuid,
-					'params=VIF-uuids', '--minimal']
-	vif_uuids_str = lib.do_cmd(vif_uuids_cmd)
-	vif_uuids = vif_uuids_str.split(';')
-	vifs = []
-	for vif_uuid in vif_uuids:
-		vif_uuid = vif_uuid.strip()
-		is_attached_cmd = [xePath, 'vif-list', 'uuid=%s' %vif_uuid,
-					       'params=currently-attached', '--minimal']
-		is_attached = lib.do_cmd(is_attached_cmd)
-		# Consider only attached VIFs
-		if is_attached == 'false': 
-			continue
-		vm_uuid_cmd = [xePath, 'vif-list', 'uuid=%s' %vif_uuid,
-					   'params=vm-uuid', '--minimal']
-		vm_uuid = lib.do_cmd(vm_uuid_cmd)
-		dom_id_cmd = [xePath, 'vm-list', 'uuid=%s' %vm_uuid,
-					  'params=dom-id', '--minimal']
-		dom_id = lib.do_cmd(dom_id_cmd)
-		device_cmd = [xePath, 'vif-list', 'uuid=%s' %vif_uuid,
-					  'params=device', '--minimal']
-		device = lib.do_cmd(device_cmd)
-		vifs.append("vif%s.%s" % (dom_id, device))
-	logging.debug("Vifs on network:%s" %vifs)
-	vif_ofports = []
-	for vif in vifs:
-		vif_ofport_cmd=[lib.VSCTL_PATH, 'get', 'interface', vif, 'ofport']
-		vif_ofport = lib.do_cmd(vif_ofport_cmd).strip()
-		if vif_ofport.endswith('\n'):
-			vif_ofport = vif_ofport[:-1]
-		vif_ofports.append(vif_ofport.strip())
-	return vif_ofports
-
-
-def find_vifs_v6(xs_nw_uuid):
-	logging.debug("Fetching vifs on networks - for XS version 6.x")
-	cmd_vif_ofports = [lib.VSCTL_PATH, "--", "--columns=ofport",
-					   "find", "interface",
-					   "external_ids:xs-network-uuid=%s" % xs_nw_uuid,
-					   "type!=gre"]
-	vif_ofports_str = lib.do_cmd(cmd_vif_ofports)
-	vif_ofports = []
-	for line in vif_ofports_str.split('\n'):
-			elements = line.split(':')
-			if len(elements)==2:
-				# ensure no trailing \n is returned
-				if elements[1].endswith('\n'):
-					elements[1] = elements[1][:-1]
-				vif_ofports.append(elements[1].strip())
-	return vif_ofports
-
-vif_ofport_list_handlers = {
-	'5': find_vifs_v5,
-	'6': find_vifs_v6}
 
 
 def block_ipv6_v5(bridge):
-	lib.add_flow(bridge, priority=65000, dl_type='0x86dd', actions='drop')
+    lib.add_flow(bridge, priority=65000, dl_type='0x86dd', actions='drop')
 
 
 def block_ipv6_v6(bridge):
-	lib.add_flow(bridge, priority=65000, proto='ipv6', actions='drop')
+    lib.add_flow(bridge, priority=65000, proto='ipv6', actions='drop')
 
 
 block_ipv6_handlers = {
-	'5': block_ipv6_v5,
-	'6': block_ipv6_v6}
-
-
-class PluginError(Exception):
-	"""Base Exception class for all plugin errors."""
-	def __init__(self, *args):
-		Exception.__init__(self, *args)
+        '5': block_ipv6_v5,
+        '6': block_ipv6_v6}
 
 
 def echo(fn):
-	def wrapped(*v, **k):
-		name = fn.__name__
-		util.SMlog("#### VMOPS enter  %s ####" % name )
-		res = fn(*v, **k)
-		util.SMlog("#### VMOPS exit  %s ####" % name )
-		return res
-	return wrapped
+    def wrapped(*v, **k):
+        name = fn.__name__
+        util.SMlog("#### VMOPS enter  %s ####" % name)
+        res = fn(*v, **k)
+        util.SMlog("#### VMOPS exit  %s ####" % name)
+        return res
+    return wrapped
 
 
 @echo
 def setup_ovs_bridge(session, args):
-	bridge = args.pop("bridge")
-	key = args.pop("key")
-	xs_nw_uuid = args.pop("xs_nw_uuid")
-	cs_host_id = args.pop("cs_host_id")
-	
-	res = lib.check_switch()
-	if res != "SUCCESS":
-		return "FAILURE:%s" %res
+    bridge = args.pop("bridge")
+    key = args.pop("key")
+    xs_nw_uuid = args.pop("xs_nw_uuid")
+    cs_host_id = args.pop("cs_host_id")
 
-	logging.debug("About to manually create the bridge:%s" %bridge)
-	# create a bridge with the same name as the xapi network
-	# also associate gre key in other config attribute
-	res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge,
-					"--", "set", "bridge", bridge,
-					"other_config:gre_key=%s" % key])
-	logging.debug("Bridge has been manually created:%s" %res)
-	# TODO: Make sure xs-network-uuid is set into external_ids
-	lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge, 
-			    "external_ids:xs-network-uuid=%s" % xs_nw_uuid])
-	# Non empty result means something went wrong
-	if res:
-		result = "FAILURE:%s" %res
-	else:
-		# Verify the bridge actually exists, with the gre_key properly set
-		res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
-						  bridge, "other_config:gre_key"])
-		if key in res:
-			result = "SUCCESS:%s" %bridge 
-		else:
-			result = "FAILURE:%s" %res
-		# Finally note in the xenapi network object that the network has 
-		# been configured
-		xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
-							    "bridge=%s" % bridge, "--minimal"])
-		lib.do_cmd([lib.XE_PATH,"network-param-set", "uuid=%s" % xs_nw_uuid,
-				   "other-config:is-ovs-tun-network=True"])
-		conf_hosts = lib.do_cmd([lib.XE_PATH,"network-param-get",
-					 	   "uuid=%s" % xs_nw_uuid,
-					 	   "param-name=other-config",
-					 	   "param-key=ovs-host-setup", "--minimal"])
-		conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
-		lib.do_cmd([lib.XE_PATH,"network-param-set", "uuid=%s" % xs_nw_uuid,
-				   "other-config:ovs-host-setup=%s" %conf_hosts])
-		
-		# BLOCK IPv6 - Flow spec changes with ovs version
-		host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
-		host_list_str = lib.do_cmd(host_list_cmd)
-		host_uuid = host_list_str.split(',')[0].strip()
-		version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
-					   'param-name=software-version',
-					   'param-key=product_version']
-		version = lib.do_cmd(version_cmd).split('.')[0]	
-		block_ipv6_handlers[version](bridge)
-	logging.debug("Setup_ovs_bridge completed with result:%s" %result)
-	return result
+    res = lib.check_switch()
+    if res != "SUCCESS":
+        return "FAILURE:%s" % res
+
+    logging.debug("About to manually create the bridge:%s" % bridge)
+    # create a bridge with the same name as the xapi network
+    # also associate gre key in other config attribute
+    res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge,
+                                     "--", "set", "bridge", bridge,
+                                     "other_config:gre_key=%s" % key])
+    logging.debug("Bridge has been manually created:%s" % res)
+    # TODO: Make sure xs-network-uuid is set into external_ids
+    lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge,
+                            "external_ids:xs-network-uuid=%s" % xs_nw_uuid])
+    # Non empty result means something went wrong
+    if res:
+        result = "FAILURE:%s" % res
+    else:
+        # Verify the bridge actually exists, with the gre_key properly set
+        res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
+                                          bridge, "other_config:gre_key"])
+        if key in res:
+            result = "SUCCESS:%s" % bridge
+        else:
+            result = "FAILURE:%s" % res
+        # Finally note in the xenapi network object that the network has
+        # been configured
+        xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
+                                "bridge=%s" % bridge, "--minimal"])
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:is-ovs-tun-network=True"])
+        conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
+                                "uuid=%s" % xs_nw_uuid,
+                                "param-name=other-config",
+                                "param-key=ovs-host-setup", "--minimal"])
+        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:ovs-host-setup=%s" % conf_hosts])
+
+        # BLOCK IPv6 - Flow spec changes with ovs version
+        host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
+        host_list_str = lib.do_cmd(host_list_cmd)
+        host_uuid = host_list_str.split(',')[0].strip()
+        version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
+                                   'param-name=software-version',
+                                   'param-key=product_version']
+        version = lib.do_cmd(version_cmd).split('.')[0]
+        block_ipv6_handlers[version](bridge)
+    logging.debug("Setup_ovs_bridge completed with result:%s" % result)
+    return result
 
 
 @echo
 def destroy_ovs_bridge(session, args):
-	bridge = args.pop("bridge")
-	res = lib.check_switch()
-	# TODO: Must complete this routine
-	if res != "SUCCESS":
-		return res
-	res = lib.do_cmd([lib.VSCTL_PATH, "del-br", bridge])
-	logging.debug("Bridge has been manually removed:%s" %res)
-	if res:
-		result = "FAILURE:%s" %res
-	else:
-		# Note that the bridge has been removed on xapi network object
-		xs_nw_uuid = lib.do_cmd([xePath, "network-list",
-							    "bridge=%s" % bridge, "--minimal"])
-		#lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
-		#		   "other-config:ovs-setup=False"])
-		result = "SUCCESS:%s" %bridge 
+    bridge = args.pop("bridge")
+    res = lib.check_switch()
+    if res != "SUCCESS":
+        return res
+    res = lib.do_cmd([lib.VSCTL_PATH, "del-br", bridge])
+    logging.debug("Bridge has been manually removed:%s" % res)
+    if res:
+        result = "FAILURE:%s" % res
+    else:
+        # Note that the bridge has been removed on xapi network object
+        xs_nw_uuid = lib.do_cmd([xePath, "network-list",
+                                "bridge=%s" % bridge, "--minimal"])
+        #FIXME: WOW, this an error
+        #lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
+        #                  "other-config:ovs-setup=False"])
+        result = "SUCCESS:%s" % bridge
 
-	logging.debug("Destroy_ovs_bridge completed with result:%s" %result)
-	return result
-	
-	
+    logging.debug("Destroy_ovs_bridge completed with result:%s" % result)
+    return result
+
+
 @echo
 def create_tunnel(session, args):
-	bridge = args.pop("bridge")
-	remote_ip = args.pop("remote_ip")
-	gre_key = args.pop("key")
-	src_host = args.pop("from")
-	dst_host = args.pop("to")
-	
-	logging.debug("Entering create_tunnel")
-	
-	res = lib.check_switch()
-	if res != "SUCCESS":
-		logging.debug("Openvswitch running: NO")
-		return "FAILURE:%s" %res
-	
-	# We need to keep the name below 14 characters
-	# src and target are enough - consider a fixed length hash
-	name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
-	
-	# Verify the xapi bridge to be created
-	# NOTE: Timeout should not be necessary anymore
-	wait = [lib.VSCTL_PATH, "--timeout=30", "wait-until", "bridge", bridge, "--",
-		    "get", "bridge", bridge, "name"]
-	res = lib.do_cmd(wait)
-	if bridge not in res:
-		logging.debug("WARNING:Can't find bridge %s for creating " +
-					  "tunnel!" % bridge)
-		return "FAILURE:NO_BRIDGE"
-	logging.debug("bridge %s for creating tunnel - VERIFIED" % bridge)
-	tunnel_setup = False
-	drop_flow_setup = False
-	try:
-		# Create a port and configure the tunnel interface for it
-		add_tunnel = [lib.VSCTL_PATH, "add-port", bridge, name, "--", "set", "interface",
-					name, "type=gre", "options:key=%s" % gre_key,
-					"options:remote_ip=%s" % remote_ip] 
-		lib.do_cmd(add_tunnel)
-		tunnel_setup = True
-		# verify port
-		verify_port = [lib.VSCTL_PATH, "get", "port", name, "interfaces"]
-		res = lib.do_cmd(verify_port)
-		# Expecting python-style list as output
-		iface_list = []
-		if len(res) > 2:
-			iface_list = res.strip()[1:-1].split(',')
-		if len(iface_list) != 1:
-			logging.debug("WARNING: Unexpected output while verifying " +
-						  "port %s on bridge %s" %(name, bridge))
-			return "FAILURE:VERIFY_PORT_FAILED"
-		
-		# verify interface
-		iface_uuid = iface_list[0]
-		verify_interface_key = [lib.VSCTL_PATH, "get", "interface",
-							    iface_uuid, "options:key"]
-		verify_interface_ip = [lib.VSCTL_PATH, "get", "interface",
-							   iface_uuid, "options:remote_ip"]
-		
-		key_validation = lib.do_cmd(verify_interface_key)
-		ip_validation = lib.do_cmd(verify_interface_ip)
-		
-		if not gre_key in key_validation or not remote_ip in ip_validation:
-			logging.debug("WARNING: Unexpected output while verifying " +
-						  "interface %s on bridge %s" %(name, bridge))
-			return "FAILURE:VERIFY_INTERFACE_FAILED"
-		logging.debug("Tunnel interface validated:%s" %verify_interface_ip)
-		cmd_tun_ofport = [lib.VSCTL_PATH, "get", "interface",
-						  iface_uuid, "ofport"]
-		tun_ofport = lib.do_cmd(cmd_tun_ofport)
-		# Ensure no trailing LF
-		if tun_ofport.endswith('\n'):
-			tun_ofport = tun_ofport[:-1]
-		# add flow entryies for dropping broadcast coming in from gre tunnel
-		lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
-			         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
-		lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
-		             nw_dst='224.0.0.0/24', actions='drop')
-		drop_flow_setup = True
-		logging.debug("Broadcast drop rules added")
-		return "SUCCESS:%s" % name
-	except:
-		logging.debug("An unexpected error occured. Rolling back")
-		if tunnel_setup:
-			logging.debug("Deleting GRE interface")
-			# Destroy GRE port and interface
-			lib.del_port(bridge, name)
-		if drop_flow_setup:
-			# Delete flows
-			logging.debug("Deleting flow entries from GRE interface")
-			lib.del_flows(bridge, in_port=tun_ofport)
-		raise
+    bridge = args.pop("bridge")
+    remote_ip = args.pop("remote_ip")
+    gre_key = args.pop("key")
+    src_host = args.pop("from")
+    dst_host = args.pop("to")
+
+    logging.debug("Entering create_tunnel")
+
+    res = lib.check_switch()
+    if res != "SUCCESS":
+        logging.debug("Openvswitch running: NO")
+        return "FAILURE:%s" % res
+
+    # We need to keep the name below 14 characters
+    # src and target are enough - consider a fixed length hash
+    name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
+
+    # Verify the xapi bridge to be created
+    # NOTE: Timeout should not be necessary anymore
+    wait = [lib.VSCTL_PATH, "--timeout=30", "wait-until", "bridge",
+                    bridge, "--", "get", "bridge", bridge, "name"]
+    res = lib.do_cmd(wait)
+    if bridge not in res:
+        logging.debug("WARNING:Can't find bridge %s for creating " +
+                                  "tunnel!" % bridge)
+        return "FAILURE:NO_BRIDGE"
+    logging.debug("bridge %s for creating tunnel - VERIFIED" % bridge)
+    tunnel_setup = False
+    drop_flow_setup = False
+    try:
+        # Create a port and configure the tunnel interface for it
+        add_tunnel = [lib.VSCTL_PATH, "add-port", bridge,
+                                  name, "--", "set", "interface",
+                                  name, "type=gre", "options:key=%s" % gre_key,
+                                  "options:remote_ip=%s" % remote_ip]
+        lib.do_cmd(add_tunnel)
+        tunnel_setup = True
+        # verify port
+        verify_port = [lib.VSCTL_PATH, "get", "port", name, "interfaces"]
+        res = lib.do_cmd(verify_port)
+        # Expecting python-style list as output
+        iface_list = []
+        if len(res) > 2:
+            iface_list = res.strip()[1:-1].split(',')
+        if len(iface_list) != 1:
+            logging.debug("WARNING: Unexpected output while verifying " +
+                                      "port %s on bridge %s" % (name, bridge))
+            return "FAILURE:VERIFY_PORT_FAILED"
+
+        # verify interface
+        iface_uuid = iface_list[0]
+        verify_interface_key = [lib.VSCTL_PATH, "get", "interface",
+                                iface_uuid, "options:key"]
+        verify_interface_ip = [lib.VSCTL_PATH, "get", "interface",
+                               iface_uuid, "options:remote_ip"]
+
+        key_validation = lib.do_cmd(verify_interface_key)
+        ip_validation = lib.do_cmd(verify_interface_ip)
+
+        if not gre_key in key_validation or not remote_ip in ip_validation:
+            logging.debug("WARNING: Unexpected output while verifying " +
+                          "interface %s on bridge %s" % (name, bridge))
+            return "FAILURE:VERIFY_INTERFACE_FAILED"
+        logging.debug("Tunnel interface validated:%s" % verify_interface_ip)
+        cmd_tun_ofport = [lib.VSCTL_PATH, "get", "interface",
+                                          iface_uuid, "ofport"]
+        tun_ofport = lib.do_cmd(cmd_tun_ofport)
+        # Ensure no trailing LF
+        if tun_ofport.endswith('\n'):
+            tun_ofport = tun_ofport[:-1]
+        # add flow entryies for dropping broadcast coming in from gre tunnel
+        lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
+                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
+        lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
+                     nw_dst='224.0.0.0/24', actions='drop')
+        drop_flow_setup = True
+        logging.debug("Broadcast drop rules added")
+        return "SUCCESS:%s" % name
+    except:
+        logging.debug("An unexpected error occured. Rolling back")
+        if tunnel_setup:
+            logging.debug("Deleting GRE interface")
+            # Destroy GRE port and interface
+            lib.del_port(bridge, name)
+        if drop_flow_setup:
+            # Delete flows
+            logging.debug("Deleting flow entries from GRE interface")
+            lib.del_flows(bridge, in_port=tun_ofport)
+        # This will not cancel the original exception
+        raise
 
 
 @echo
 def destroy_tunnel(session, args):
-	bridge = args.pop("bridge")
-	iface_name = args.pop("in_port")
-	logging.debug("Destroying tunnel at port %s for bridge %s" 
-				% (iface_name, bridge))
-	ofport = get_field_of_interface(iface_name, "ofport")
-	lib.del_flows(bridge, in_port=ofport)
-	lib.del_port(bridge, iface_name)
-	return "SUCCESS"
+    bridge = args.pop("bridge")
+    iface_name = args.pop("in_port")
+    logging.debug("Destroying tunnel at port %s for bridge %s"
+                            % (iface_name, bridge))
+    ofport = get_field_of_interface(iface_name, "ofport")
+    lib.del_flows(bridge, in_port=ofport)
+    lib.del_port(bridge, iface_name)
+    return "SUCCESS"
 
 
 def get_field_of_interface(iface_name, field):
-	get_iface_cmd = [lib.VSCTL_PATH, "get","interface", iface_name, field]
-	res = lib.do_cmd(get_iface_cmd)
-	return res
+    get_iface_cmd = [lib.VSCTL_PATH, "get", "interface", iface_name, field]
+    res = lib.do_cmd(get_iface_cmd)
+    return res
+
 
 if __name__ == "__main__":
-	XenAPIPlugin.dispatch({"create_tunnel":create_tunnel, 
-						   "destroy_tunnel":destroy_tunnel,
-						   "setup_ovs_bridge": setup_ovs_bridge,
-						   "destroy_ovs_bridge": destroy_ovs_bridge})
+    XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,
+                           "destroy_tunnel": destroy_tunnel,
+                           "setup_ovs_bridge": setup_ovs_bridge,
+                           "destroy_ovs_bridge": destroy_ovs_bridge})
