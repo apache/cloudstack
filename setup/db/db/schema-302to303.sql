@@ -55,6 +55,14 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
 INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 1);
 # Changes for OVS tunnel manager
 
+# The Following tables are not used anymore
+DROP TABLE IF EXISTS `cloud`.`ovs_host_vlan_alloc`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_alloc`;
+DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
+DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
+DROP TABLE IF EXISTS `cloud`.`ovs_work`;
+
 CREATE TABLE `cloud`.`ovs_tunnel_interface` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `ip` varchar(16) DEFAULT NULL,
