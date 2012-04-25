@@ -32,6 +32,7 @@ body {
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
+  overflow-x: hidden;
   background: #FFFFFF;
 }
 
@@ -39,6 +40,7 @@ body.install-wizard {
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
+  overflow-x: hidden;
   background: #FFFFFF url(../images/bg-login.png);
 }
 
@@ -535,6 +537,7 @@ body.login {
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .install-wizard .eula-copy p {
@@ -819,6 +822,7 @@ div.notification-box .container ul {
   margin-top: 8px;
   height: 229px;
   overflow: auto;
+  overflow-x: hidden;
   width: 294px;
 }
 
@@ -826,6 +830,7 @@ div.notification-box .container ul li {
   height: 40px;
   border-bottom: 1px solid #CECECE;
   overflow: auto;
+  overflow-x: hidden;
   text-indent: 0;
   font-size: 12px;
   color: #4D5E6E;
@@ -1031,12 +1036,14 @@ div.notification.corner-alert:hover div.message span {
   line-height: 19px;
   padding-bottom: 13px;
   overflow: auto;
+  overflow-x: hidden;
   margin: auto;
 }
 
 /*List view*/
 div.panel div.list-view {
   overflow: auto;
+  overflow-x: hidden;
   height: 652px;
   margin-top: 30px;
   border-bottom: 1px solid #E7E7E7;
@@ -1320,6 +1327,7 @@ div.list-view td.state.off span {
   width: 97%;
   padding-top: 7px;
   overflow: auto;
+  overflow-x: hidden;
   height: 591px;
   margin: -5px 0 0;
 }
@@ -1327,6 +1335,7 @@ div.list-view td.state.off span {
 .detail-view .main-groups {
   max-height: 455px;
   overflow: auto;
+  overflow-x: hidden;
   margin-right: 12px;
 }
 
@@ -1535,6 +1544,7 @@ div.list-view table tbody td span {
   margin-left: 12px;
   line-height: 15px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {
@@ -3085,6 +3095,7 @@ Dialogs*/
   clear: both;
   max-height: 211px;
   overflow: auto;
+  overflow-x: hidden;
   border: 1px solid #CDCDCD;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -3535,6 +3546,7 @@ Dialogs*/
   width: 368px;
   height: 274px;
   overflow: auto;
+  overflow-x: hidden;
   position: relative;
   margin: 0px 0 0 8px;
 }
@@ -3851,6 +3863,7 @@ Dialogs*/
   height: 256px;
   display: block;
   overflow: auto;
+  overflow-x: hidden;
   padding: 0 0px;
 }
 
@@ -3913,6 +3926,7 @@ Dialogs*/
   width: 100%;
   height: 100%;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .system-chart ul.resources li {
@@ -4262,6 +4276,7 @@ Dialogs*/
   display: inline-block;
   height: 442px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .panel .add-first-network-resource .title {
@@ -4564,6 +4579,7 @@ label.error {
   width: 463px;
   max-height: 365px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .multi-wizard .content .section .select-area {
@@ -4664,6 +4680,7 @@ label.error {
   width: 95%;
   margin: auto;
   overflow: auto;
+  overflow-x: hidden;
   height: 591px;
   /*+border-radius:0 3px 10px 10px;*/
   -moz-border-radius: 0 3px 10px 10px;
@@ -4775,6 +4792,7 @@ label.error {
 .multi-wizard .select-container {
   height: 94%;
   overflow: auto;
+  overflow-x: hidden;
   border: 1px solid #D9DFE1;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -5414,6 +5432,7 @@ label.error {
 .multi-wizard.zone-wizard .ui-tabs-panel {
   height: 422px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .multi-wizard.zone-wizard ul.ui-tabs-nav {
@@ -5464,6 +5483,7 @@ label.error {
   float: left;
   text-align: left;
   overflow: auto;
+  overflow-x: hidden;
   padding: 11px;
   width: 698px;
   margin: 29px 0 68px 5px;
@@ -5609,6 +5629,7 @@ label.error {
   min-height: inherit;
   margin: -50px auto auto 4px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 /*** Add physical network -- network form items*/
@@ -6362,6 +6383,7 @@ div.detail-group td.view-all div.view-all div.end {
 .ui-dialog .list-view {
   height: 515px !important;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .ui-dialog .list-view .toolbar {
@@ -6684,6 +6706,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border: 1px solid #CFC9C9;
   max-height: 161px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .multi-edit .data .data-body .data-item .expandable-listing tr {
@@ -7690,6 +7713,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   height: 275px;
   background: #F2F0F0;
   overflow: auto;
+  overflow-x: hidden;
   margin: 18px 0 0;
 }
 
