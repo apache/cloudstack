@@ -1,5 +1,5 @@
 # Common function for Cloudstack's XenAPI plugins
-# 
+#
 # Copyright (C) 2012 Citrix Systems
 
 import ConfigParser
@@ -13,19 +13,21 @@ DEFAULT_LOG_FORMAT = "%(asctime)s %(levelname)8s [%(name)s] %(message)s"
 DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 DEFAULT_LOG_FILE = "/var/log/cloudstack_plugins.log"
 
-PLUGIN_CONFIG_PATH='/etc/xensource/cloudstack_plugins.conf'
+PLUGIN_CONFIG_PATH = "/etc/xensource/cloudstack_plugins.conf"
 OVSDB_PID_PATH = "/var/run/openvswitch/ovsdb-server.pid"
 OVSDB_DAEMON_PATH = "ovsdb-server"
 OVS_PID_PATH = "/var/run/openvswitch/ovs-vswitchd.pid"
 OVS_DAEMON_PATH = "ovs-vswitchd"
-VSCTL_PATH='/usr/bin/ovs-vsctl'
-OFCTL_PATH='/usr/bin/ovs-ofctl'
-XE_PATH=  "/opt/xensource/bin/xe"
+VSCTL_PATH = "/usr/bin/ovs-vsctl"
+OFCTL_PATH = "/usr/bin/ovs-ofctl"
+XE_PATH = "/opt/xensource/bin/xe"
+
 
 class PluginError(Exception):
     """Base Exception class for all plugin errors."""
     def __init__(self, *args):
         Exception.__init__(self, *args)
+
 
 def setup_logging(log_file=None):
     debug = False
@@ -39,15 +41,15 @@ def setup_logging(log_file=None):
         try:
             options = config.options('LOGGING')
             if 'debug' in options:
-                debug = config.getboolean('LOGGING','debug')
+                debug = config.getboolean('LOGGING', 'debug')
             if 'verbose' in options:
-                verbose = config.getboolean('LOGGING','verbose')
+                verbose = config.getboolean('LOGGING', 'verbose')
             if 'format' in options:
-                log_format = config.get('LOGGING','format')
+                log_format = config.get('LOGGING', 'format')
             if 'date_format' in options:
-                log_date_format = config.get('LOGGING','date_format')
+                log_date_format = config.get('LOGGING', 'date_format')
             if 'file' in options:
-                log_file_2 = config.get('LOGGING','file')
+                log_file_2 = config.get('LOGGING', 'file')
         except ValueError:
             # configuration file contained invalid attributes
             # ignore them
@@ -55,7 +57,7 @@ def setup_logging(log_file=None):
         except ConfigParser.NoSectionError:
             # Missing 'Logging' section in configuration file
             pass
-    
+
     root_logger = logging.root
     if debug:
         root_logger.setLevel(logging.DEBUG)
@@ -66,7 +68,7 @@ def setup_logging(log_file=None):
     formatter = logging.Formatter(log_format, log_date_format)
 
     log_filename = log_file or log_file_2 or DEFAULT_LOG_FILE
-    
+
     logfile_handler = logging.FileHandler(log_filename)
     logfile_handler.setFormatter(formatter)
     root_logger.addHandler(logfile_handler)
@@ -94,60 +96,65 @@ def do_cmd(cmd):
     return output
 
 
-def _is_process_run (pidFile, name):
+def _is_process_run(pidFile, name):
     try:
-        fpid = open (pidFile, "r")
-        pid = fpid.readline ()
-        fpid.close ()
+        fpid = open(pidFile, "r")
+        pid = fpid.readline()
+        fpid.close()
     except IOError, e:
         return -1
 
     pid = pid[:-1]
-    ps = os.popen ("ps -ae")
+    ps = os.popen("ps -ae")
     for l in ps:
         if pid in l and name in l:
-            ps.close ()
+            ps.close()
             return 0
 
-    ps.close ()
+    ps.close()
     return -2
 
-def _is_tool_exist (name):
+
+def _is_tool_exist(name):
     if os.path.exists(name):
         return 0
     return -1
 
 
-def check_switch ():
+def check_switch():
     global result
 
-    ret = _is_process_run (OVSDB_PID_PATH, OVSDB_DAEMON_PATH)
+    ret = _is_process_run(OVSDB_PID_PATH, OVSDB_DAEMON_PATH)
     if ret < 0:
-        if ret == -1: return "NO_DB_PID_FILE"
-        if ret == -2: return "DB_NOT_RUN"
+        if ret == -1:
+            return "NO_DB_PID_FILE"
+        if ret == -2:
+            return "DB_NOT_RUN"
 
-    ret = _is_process_run (OVS_PID_PATH, OVS_DAEMON_PATH)
+    ret = _is_process_run(OVS_PID_PATH, OVS_DAEMON_PATH)
     if ret < 0:
-        if ret == -1: return "NO_SWITCH_PID_FILE"
-        if ret == -2: return "SWITCH_NOT_RUN"
+        if ret == -1:
+            return "NO_SWITCH_PID_FILE"
+        if ret == -2:
+            return "SWITCH_NOT_RUN"
 
-    if _is_tool_exist (VSCTL_PATH) < 0:
+    if _is_tool_exist(VSCTL_PATH) < 0:
         return "NO_VSCTL"
 
-    if _is_tool_exist (OFCTL_PATH) < 0:
+    if _is_tool_exist(OFCTL_PATH) < 0:
         return "NO_OFCTL"
 
     return "SUCCESS"
 
 
 def _build_flow_expr(**kwargs):
-    is_delete_expr = kwargs.get('delete', False) 
+    is_delete_expr = kwargs.get('delete', False)
     flow = ""
     if not is_delete_expr:
         flow = "hard_timeout=%s,idle_timeout=%s,priority=%s"\
-                % (kwargs.get('hard_timeout','0'),
-                   kwargs.get('idle_timeout','0'),
-                   kwargs.get('priority','1'))
+                % (kwargs.get('hard_timeout', '0'),
+                   kwargs.get('idle_timeout', '0'),
+                   kwargs.get('priority', '1'))
     in_port = 'in_port' in kwargs and ",in_port=%s" % kwargs['in_port'] or ''
     dl_type = 'dl_type' in kwargs and ",dl_type=%s" % kwargs['dl_type'] or ''
     dl_src = 'dl_src' in kwargs and ",dl_src=%s" % kwargs['dl_src'] or ''
@@ -156,7 +163,7 @@ def _build_flow_expr(**kwargs):
     nw_dst = 'nw_dst' in kwargs and ",nw_dst=%s" % kwargs['nw_dst'] or ''
     proto = 'proto' in kwargs and ",%s" % kwargs['proto'] or ''
     ip = ('nw_src' in kwargs or 'nw_dst' in kwargs) and ',ip' or ''
-    flow = (flow + in_port + dl_type + dl_src + dl_dst + 
+    flow = (flow + in_port + dl_type + dl_src + dl_dst +
             (ip or proto) + nw_src + nw_dst)
     return flow
 
@@ -174,17 +181,18 @@ def add_flow(bridge, **kwargs):
 
 
 def del_flows(bridge, **kwargs):
-    """ 
+    """
     Removes flows according to criteria passed as keyword.
     """
     flow = _build_flow_expr(delete=True, **kwargs)
     # out_port condition does not exist for all flow commands
-    out_port = 'out_port' in kwargs and ",out_port=%s" % kwargs['out_port'] or ''
+    out_port = ("out_port" in kwargs and
+                ",out_port=%s" % kwargs['out_port'] or '')
     flow = flow + out_port
     delFlow = [OFCTL_PATH, 'del-flows', bridge, flow]
     do_cmd(delFlow)
-    
-    
+
+
 def del_all_flows(bridge):
     delFlow = [OFCTL_PATH, "del-flows", bridge]
     do_cmd(delFlow)
