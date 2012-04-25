@@ -605,7 +605,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String root = _parent + "/" + dir;
             mount(root, nfsPath);
 
-            configCerts(cmd.getCerts());
+            //configCerts(cmd.getCerts());
             
             return new SecStorageSetupAnswer(dir);
         } catch (Exception e) {
