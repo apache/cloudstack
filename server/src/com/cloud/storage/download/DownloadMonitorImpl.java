@@ -245,9 +245,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         if (srcTmpltHost == null) {
         	throw new InvalidParameterValueException("Template " + template.getName() + " not associated with " + sourceServer.getName());
         }
-        if( !_secMgr.generateSetupCommand(sourceServer.getId()) ){
-            return false;
-        }       
+
         String url = generateCopyUrl(sourceServer, srcTmpltHost);
 	    if (url == null) {
 			s_logger.warn("Unable to start/resume copy of template " + template.getUniqueName() + " to " + destServer.getName() + ", no secondary storage vm in running state in source zone");
