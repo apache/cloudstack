@@ -35,7 +35,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -66,13 +65,11 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     PortForwardingRulesDao _pfRulesDao;
     @Inject
-    OvsNetworkManager _ovsNetworkMgr;
-    @Inject
     OvsTunnelManager _tunnelMgr;
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }
 
@@ -91,7 +88,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 
-        if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }
         
@@ -174,7 +171,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         
         NicProfile profile = super.allocate(config, nic, vm);
 
-        if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }
 
@@ -193,7 +190,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
         super.deallocate(config, nic, vm);
 
-        if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return;
         }
         
@@ -210,7 +207,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
-        if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return;
         }
         
@@ -244,7 +241,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
-        if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
+        if (_tunnelMgr.isOvsTunnelEnabled()) {
             return true;
         }
 

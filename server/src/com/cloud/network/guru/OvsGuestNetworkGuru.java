@@ -27,7 +27,6 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -45,14 +44,13 @@ import com.cloud.network.Network.State;
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
 	
-	@Inject OvsNetworkManager _ovsNetworkMgr;
 	@Inject NetworkManager _externalNetworkManager;
 	@Inject OvsTunnelManager _ovsTunnelMgr;
 	
 	@Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
       
-		if (!_ovsNetworkMgr.isOvsNetworkEnabled() && !_ovsTunnelMgr.isOvsTunnelEnabled()) {
+		if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
 			return null;
 		}
 		
@@ -73,13 +71,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
-	   		String vnetUri = null;
-	   		if (_ovsNetworkMgr.isOvsNetworkEnabled()) {
-	   		    vnetUri = "vlan" + vnet;
-	   		} else if (_ovsTunnelMgr.isOvsTunnelEnabled()) {
-	   		    vnetUri = vnet;
-	   		}
-            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnetUri));
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -89,7 +81,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	@Override
 	public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
 		 assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
-		 if (!_ovsNetworkMgr.isOvsNetworkEnabled()&& !_ovsTunnelMgr.isOvsTunnelEnabled()) {
+		 if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
 			 return null;
 		 }
 		 NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
