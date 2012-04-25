@@ -67,7 +67,7 @@
             add: {
               label: 'label.add.account',
               preFilter: function(args) {
-                if(isAdmin() || isDomainAdmin())
+                if(isAdmin())
                   return true;
                 else
                   return false;

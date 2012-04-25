@@ -161,7 +161,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String workerVMName = null;
 		String volumePath = cmd.getVolumePath();
 		ManagedObjectReference morDs = null;
-		String snapshotUUID = null;
 		DatastoreMO dsMo=null;
 
 		// By default assume failure
@@ -203,16 +202,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						// attach volume to worker VM
 						String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
 						vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-						snapshotUUID = UUID.randomUUID().toString();
-						if (!vmMo.createSnapshot(snapshotUUID, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
-							throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
-						}
-					}
-				} else {
-	                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
-	                    throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
-	                }
-				}
+					} 
+				} 
+				
+                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
+                    throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
+                }
 				
 	            snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
 	                    hostService.getWorkerName(context, cmd, 1));

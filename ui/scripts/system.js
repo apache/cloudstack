@@ -1684,7 +1684,7 @@
                         ],
                         dataProvider: function(args) {			
 													$.ajax({
-														url: createURL("listNetworks&id=" + args.context.networks[0].id),
+														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
 														dataType: "json",
 														async: false,
 														success: function(json) {														 
@@ -2548,7 +2548,7 @@
             }
           },
 
-		  //f5 provider detail view
+		      //f5 provider detail view
           f5: {
             type: 'detailView',
             id: 'f5Provider',
@@ -2586,6 +2586,7 @@
                 label: 'label.add.F5.device',
                 createForm: {
                   title: 'label.add.F5.device',
+									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2623,15 +2624,15 @@
                     //     items.push({id: "true", description: "inline"});
                     //     args.response.success({data: items});
                     //   }
-                    // },
-                    capacity: {
-                      label: 'label.capacity',
-                      validation: { required: false, number: true }
-                    },
+                    // },                    
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
                       isChecked: false
+                    },
+										capacity: {
+                      label: 'label.capacity',
+                      validation: { required: false, number: true }
                     }
                   }
                 },
@@ -4029,6 +4030,7 @@
               label: 'label.add.netScaler.device',
               createForm: {
                 title: 'label.add.netScaler.device',
+								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4069,15 +4071,15 @@
                   //     args.response.success({data: items});
                   //   }
                   // },
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  },
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
-                  }
+                  },
+									capacity: {
+                    label: 'label.capacity',
+                    validation: { required: false, number: true }
+                  }                  
                 }
               },
               action: function(args) {
@@ -4223,6 +4225,7 @@
               label: 'label.add.F5.device',
               createForm: {
                 title: 'label.add.F5.device',
+								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -4260,15 +4263,15 @@
                   //     items.push({id: "true", description: "inline"});
                   //     args.response.success({data: items});
                   //   }
-                  // },
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  },
+                  // },                  
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
                     isChecked: false
+                  },
+									capacity: {
+                    label: 'label.capacity',
+                    validation: { required: false, number: true }
                   }
                 }
               },
@@ -5958,6 +5961,22 @@
             tabs: {
               details: {
                 title: 'label.details',
+								
+								preFilter: function(args) {								  
+                  var hiddenFields = [];
+                  $.ajax({
+									  url: createURL('listConfigurations&name=ha.tag'),
+										dataType: 'json',		
+                    async: false,										
+										success: function(json) {										  
+											if(json.listconfigurationsresponse.configuration == null || json.listconfigurationsresponse.configuration[0].value == null || json.listconfigurationsresponse.configuration[0].value.length == 0) {
+											  hiddenFields.push('hahost');
+											}
+										}
+									});														
+                  return hiddenFields;
+                },
+								
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -5966,16 +5985,15 @@
                     id: { label: 'label.id' },
                     resourcestate: { label: 'label.resource.state' },
                     state: { label: 'label.state' },
-                    type: { label: 'label.type' },
-                    zonename: { label: 'label.zone' },
-                    podname: { label: 'label.pod' },
-                    clustername: { label: 'label.cluster' },
-                    ipaddress: { label: 'label.ip.address' },
-                    version: { label: 'label.version' },
+                    type: { label: 'label.type' },                    
                     hosttags: {
                       label: 'label.host.tags',
                       isEditable: true
                     },
+										hahost: {
+										  label: 'label.ha.enabled',
+											converter: cloudStack.converters.toBooleanText
+										},
                     oscategoryid: {
                       label: 'label.os.preference',
                       isEditable: true,
@@ -5997,6 +6015,11 @@
                         });
                       }
                     },
+										zonename: { label: 'label.zone' },
+                    podname: { label: 'label.pod' },
+                    clustername: { label: 'label.cluster' },
+                    ipaddress: { label: 'label.ip.address' },
+                    version: { label: 'label.version' },
                     disconnected: { label: 'label.last.disconnected' }
                   }
                 ],
@@ -6638,17 +6661,25 @@
 
               'remove': {
                 label: 'label.action.delete.primary.storage' ,
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.primary.storage';
-                  },
+                messages: {                  
                   notification: function(args) {
                     return 'label.action.delete.primary.storage';
                   }
-                },
-                action: function(args) {
+                },		
+                createForm: {
+                  title: 'label.action.delete.primary.storage',                 
+                  fields: {
+                    isForced: {
+                      label: 'force.remove',
+                      isBoolean: true                      
+                    }
+                  }
+                },									
+                action: function(args) {								
+								  var array1 = [];                  
+                  array1.push("&forced=" + (args.data.isForced == "on"));								
                   $.ajax({
-                    url: createURL("deleteStoragePool&id=" + args.context.primarystorages[0].id),
+                    url: createURL("deleteStoragePool&id=" + args.context.primarystorages[0].id + array1.join("")),
                     dataType: "json",
                     async: true,
                     success: function(json) {
