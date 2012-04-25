@@ -683,12 +683,9 @@
           messages: {
             confirm: function(args) {
               return 'message.action.destroy.instance';
-            },
-            success: function(args) {
-              return args.name + ' is being destroyed.';
-            },
+            },            
             notification: function(args) {
-              return 'Destroying VM: ' + args.name;
+              return 'label.action.destroy.instance';
             }
           },
           action: function(args) {
