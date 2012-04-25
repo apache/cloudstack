@@ -611,8 +611,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (haTag != null && !haTag.isEmpty() && hostTags != null && !hostTags.isEmpty()) {
                     if (haTag.equalsIgnoreCase(hostTags)) {
                         hostResponse.setHaHost(true);
+                    } else {
+                        hostResponse.setHaHost(false);
                     }
+                } else {
+                    hostResponse.setHaHost(false);
                 }
+                
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
                 String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
