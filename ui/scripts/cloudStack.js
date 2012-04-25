@@ -350,7 +350,7 @@
                     eula: eulaHTML,
                     complete: function() {
                       // Show cloudStack main UI
-                      $container.cloudStack(cloudStackArgs);
+                      $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
                     }
                   });
                 };
