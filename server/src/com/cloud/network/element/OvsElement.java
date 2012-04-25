@@ -26,9 +26,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
@@ -40,8 +38,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
 public class OvsElement extends AdapterBase implements NetworkElement {
-    @Inject
-    OvsNetworkManager _ovsVlanMgr;
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
 
@@ -84,14 +80,6 @@ public class OvsElement extends AdapterBase implements NetworkElement {
             return true;
         }
 
-        //NOTE (Salvatore Orlando): 
-        //The code for ovs Vlan Manager has not been touched. Only the OVS tunnel
-        //manager has been restored. Ideally, the code for OVS Vlan Manager should go.
-        _ovsVlanMgr.VmCheckAndCreateTunnel(vm, dest);
-        String command = _ovsVlanMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
-        if (command != null) {
-            nic.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(command));
-        }
         _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, network, dest);
         //_ovsTunnelMgr.applyDefaultFlow(vm.getVirtualMachine(), dest);
 
