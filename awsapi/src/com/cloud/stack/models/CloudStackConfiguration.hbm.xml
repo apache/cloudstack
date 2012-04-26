@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.cloud.stack.models.CloudStackConfiguration" table="configuration"  lazy="true">
+   		<id name="name" type="string" column="name" >
+  		</id>
+  		<property name="category">
+     		<column name="category" />
+  		</property>
+  		<property name="value">
+     		<column name="value" />
+  		</property>
+  		<property name="description">
+     		<column name="description" />
+  		</property>
+ 	</class>
+</hibernate-mapping>
+

@@ -28,6 +28,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import com.cloud.bridge.util.CloudSessionFactory;
+import com.cloud.bridge.util.CloudStackSessionFactory;
 import com.cloud.bridge.util.Tuple;
 
 /**
@@ -48,78 +49,144 @@ public class PersistContext {
     protected final static Logger logger = Logger.getLogger(PersistContext.class);
 	
 	private static final CloudSessionFactory sessionFactory;
-	
+
 	private static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 	private static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
 	private static final ThreadLocal<Map<String, Object>> threadStore = new ThreadLocal<Map<String, Object>>(); 
 	
+    private static final CloudStackSessionFactory cloudStackSessionFactory;
+    private static final ThreadLocal<Session> threadCloudStackSession = new ThreadLocal<Session>();
+    private static final ThreadLocal<Transaction> threadCloudStackTransaction = new ThreadLocal<Transaction>();
+
 	static {
 		try {
 			sessionFactory = CloudSessionFactory.getInstance();
+			cloudStackSessionFactory = CloudStackSessionFactory.getInstance();
 		} catch(HibernateException e) {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		}
+	}
+	
+	public static Session getSession(boolean cloudStackSession) {
+	    Session s = null;
+        try {
+    	    if(cloudStackSession){
+    	        s = threadCloudStackSession.get();
+    	            if(s == null) {
+    	                s = cloudStackSessionFactory.openSession();
+    	                threadCloudStackSession.set(s);
+    	            }
+    	    }else{
+    	        s = threadSession.get();
+	            if(s == null) {
+	                s = sessionFactory.openSession();
+	                threadSession.set(s);
+	            }
+    	    }
+        } catch(HibernateException e) {
+            logger.error("Exception " + e.getMessage(), e);
+            throw new PersistException(e);
+        }
+	    return s;
 	}
 	
 	public static Session getSession() {
-		Session s = threadSession.get();
-		try {
-			if(s == null) {
-				s = sessionFactory.openSession();
-				threadSession.set(s);
-			}
-		} catch(HibernateException e) {
-			logger.error("Exception " + e.getMessage(), e);
-			throw new PersistException(e);
-		}
-		return s;
+		return getSession(false);
 	}
 	
 	public static void closeSession() {
+	    closeSession(false);
+	}
+
+	public static void closeSession(boolean cloudStackSession) {
+        try {
+	        if(cloudStackSession){
+                Session s = (Session) threadCloudStackSession.get();
+                threadCloudStackSession.set(null);
+                if (s != null && s.isOpen())
+                    s.close();
+            }else{
+                Session s = (Session) threadSession.get();
+    			threadSession.set(null);
+    			
+    			if (s != null && s.isOpen())
+    				s.close();
+            }
+        }catch(HibernateException e) {
+            logger.error("Exception " + e.getMessage(), e);
+            throw new PersistException(e);
+        }
+	}
+	
+	public static void beginTransaction(boolean cloudStackTxn) {
+	    Transaction tx = null;
 		try {
-			Session s = (Session) threadSession.get();
-			threadSession.set(null);
-			
-			if (s != null && s.isOpen())
-				s.close();
+     	    if(cloudStackTxn){
+    	        tx = threadCloudStackTransaction.get();
+    	    }else{
+    	        tx = threadTransaction.get();
+    	    }
+
+			if (tx == null) {
+				tx = getSession(cloudStackTxn).beginTransaction();
+				if(cloudStackTxn){
+				    threadCloudStackTransaction.set(tx);
+				}else{
+				    threadTransaction.set(tx);
+				}
+			}
 		} catch(HibernateException e) {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		}		
 	}
-	
+
 	public static void beginTransaction() {
-		Transaction tx = threadTransaction.get();
-		try {
-			if (tx == null) {
-				tx = getSession().beginTransaction();
-				threadTransaction.set(tx);
+	    beginTransaction(false);
+	}
+	
+	public static void commitTransaction(boolean cloudStackTxn) {
+		Transaction tx = null;
+		
+        if(cloudStackTxn){
+            tx = threadCloudStackTransaction.get();
+        }else{
+            tx = threadTransaction.get();
+        }
+		
+        try {
+			if ( tx != null && !tx.wasCommitted() && !tx.wasRolledBack() ){
+				tx.commit();
 			}
-		} catch(HibernateException e) {
+            if(cloudStackTxn){
+                threadCloudStackTransaction.set(null);
+            }else{
+                threadTransaction.set(null);
+            }
+		} catch (HibernateException e) {
 			logger.error("Exception " + e.getMessage(), e);
+			
+			rollbackTransaction(cloudStackTxn);
 			throw new PersistException(e);
 		}		
 	}
 	
 	public static void commitTransaction() {
-		Transaction tx = threadTransaction.get();
-		try {
-			if ( tx != null && !tx.wasCommitted() && !tx.wasRolledBack() )
-				tx.commit();
-			threadTransaction.set(null);
-		} catch (HibernateException e) {
-			logger.error("Exception " + e.getMessage(), e);
-			
-			rollbackTransaction();
-			throw new PersistException(e);
-		}		
+	    commitTransaction(false);
 	}
 	
-	public static void rollbackTransaction() {
-		Transaction tx = (Transaction) threadTransaction.get();
+	public static void rollbackTransaction(boolean cloudStackTxn) {
+		Transaction tx = null;
+		
+        if(cloudStackTxn){
+            tx = (Transaction)threadCloudStackTransaction.get();
+            threadCloudStackTransaction.set(null);
+        }else{
+            tx = (Transaction)threadTransaction.get();
+            threadTransaction.set(null);
+        }
 		try {
-			threadTransaction.set(null);
 			if ( tx != null && !tx.wasCommitted() && !tx.wasRolledBack() ) {
 				tx.rollback();
 			}
@@ -127,8 +194,12 @@ public class PersistContext {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		} finally {
-			closeSession();
+			closeSession(cloudStackTxn);
 		}
+	}
+	
+	public static void rollbackTransaction() {
+	    rollbackTransaction(false);
 	}
 	
   	public static void flush() {

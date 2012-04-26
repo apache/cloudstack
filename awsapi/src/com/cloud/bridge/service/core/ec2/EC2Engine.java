@@ -33,6 +33,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
+import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -1560,30 +1561,19 @@ public class EC2Engine {
 
 	
 	/**
-	 * 
+	 * Convert from the Amazon instanceType strings to Cloud serviceOfferingId
+     * 
 	 */
 	
-	private CloudStackServiceOffering getCSServiceOfferingId(String instanceType) throws Exception{
+	private CloudStackServiceOffering getCSServiceOfferingId(String instanceType){
        try {
            if (null == instanceType) instanceType = "m1.small";                      
-
-           List<CloudStackServiceOffering> svcOfferings = getApi().listServiceOfferings(null, null, null, null, null, 
-                   null, null);
            
-           if(svcOfferings == null || svcOfferings.isEmpty()){
-               logger.debug("No ServiceOffering found to be defined by name: "+instanceType );
-               return null;    
-           }
+           CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
+           return dao.getSvcOfferingByName(instanceType);
            
-           for(CloudStackServiceOffering offering : svcOfferings){
-               if(instanceType.equalsIgnoreCase(offering.getName())){
-                   return offering;
-               }
-           }
-           
-           return null;
         } catch(Exception e) {
-            logger.error( "listServiceOfferings - ", e);
+            logger.error( "Error while retrieving ServiceOffering information by name - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
 	}
@@ -1596,22 +1586,18 @@ public class EC2Engine {
 	 * @return A valid value for the Amazon defined instanceType
 	 * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
 	 */
-	private String serviceOfferingIdToInstanceType( String serviceOfferingId ) 
-			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException	{	
-
+	private String serviceOfferingIdToInstanceType( String serviceOfferingId ){	
         try{
-    	    List<CloudStackServiceOffering> svcOfferings = getApi().listServiceOfferings(null, serviceOfferingId, null, null, null, 
-                    null, null);
-    
-            if(svcOfferings == null || svcOfferings.isEmpty()){
-                logger.warn( "No instanceType match for serverOfferingId: [" + serviceOfferingId + "]" );
+            CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
+            CloudStackServiceOffering offering =  dao.getSvcOfferingById(serviceOfferingId);
+            if(offering == null){
+                logger.warn( "No instanceType match for serviceOfferingId: [" + serviceOfferingId + "]" );
                 return "m1.small";
             }
-            
-    		else return svcOfferings.get(0).getName();
+            return offering.getName();
         }
         catch(Exception e) {
-            logger.error( "serviceOfferingIdToInstanceType - ", e);
+            logger.error( "sError while retrieving ServiceOffering information by id - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
 	}

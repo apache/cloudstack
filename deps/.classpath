@@ -21,7 +21,6 @@
 	<classpathentry exported="true" kind="lib" path="cloud-servlet-api.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-trilead-ssh2-build213.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-ws-commons-util-1.0.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-wsdl4j.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-xenserver-5.6.100-1.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-xmlrpc-client-3.1.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-xmlrpc-common-3.1.3.jar"/>
@@ -46,5 +45,21 @@
 	<classpathentry exported="true" kind="lib" path="cloud-netscaler-sdx.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-configuration-1.8.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-lang-2.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axiom-api-1.2.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axiom-impl-1.2.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-adb-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-ant-plugin-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-jaxbri-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-jaxws-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-jibx-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-json-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-kernel-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-transport-http-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/axis2-transport-local-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/hibernate3.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/neethi-2.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/rampart-lib/wss4j-1.5.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="awsapi-lib/json_simple-1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -29,38 +29,44 @@ import com.cloud.bridge.util.QueryHelper;
 public class EntityDao<T> {
 	private Class<?> clazz;
 	
-	public EntityDao(Class<?> clazz) {
+	private boolean isCloudStackSession = false;
+	
+	public EntityDao(Class<?> clazz){
+	    this(clazz, false);
+	}
+	
+	public EntityDao(Class<?> clazz, boolean isCloudStackSession) {
 		this.clazz = clazz;
-		
+		this.isCloudStackSession = isCloudStackSession;
 		// Note : beginTransaction can be called multiple times
-		PersistContext.beginTransaction();
+		PersistContext.beginTransaction(isCloudStackSession);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public T get(Serializable id) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		return (T)session.get(clazz, id);
 	}
 	
 	public T save(T entity) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		session.saveOrUpdate(entity);
 		return entity;
 	}
 	
 	public T update(T entity) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		session.saveOrUpdate(entity);
 		return entity;
 	}
 	
 	public void delete(T entity) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		session.delete(entity);
 	}
 	
 	public T queryEntity(String hql, Object[] params) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		Query query = session.createQuery(hql);
 		query.setMaxResults(1);
 		QueryHelper.bindParameters(query, params);
@@ -68,7 +74,7 @@ public class EntityDao<T> {
 	}
 	
 	public List<T> queryEntities(String hql, Object[] params) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 		
@@ -76,7 +82,7 @@ public class EntityDao<T> {
 	}
 	
 	public List<T> queryEntities(String hql, int offset, int limit, Object[] params) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 		query.setFirstResult(offset);
@@ -85,7 +91,7 @@ public class EntityDao<T> {
 	}
 	
 	public int executeUpdate(String hql, Object[] params) {
-		Session session = PersistContext.getSession();
+		Session session = PersistContext.getSession(isCloudStackSession);
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 

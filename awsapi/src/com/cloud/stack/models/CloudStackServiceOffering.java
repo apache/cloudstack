@@ -49,7 +49,7 @@ public class CloudStackServiceOffering {
 	private Long memory;
 	@SerializedName(ApiConstants.NAME)
 	private String name;
-	@SerializedName(ApiConstants.OFFER_HA)
+    @SerializedName(ApiConstants.OFFER_HA)
 	private Boolean offerHa;
 	@SerializedName(ApiConstants.STORAGE_TYPE)
 	private String storageType;
@@ -70,6 +70,10 @@ public class CloudStackServiceOffering {
 	 */
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
 	/**
@@ -121,7 +125,11 @@ public class CloudStackServiceOffering {
 		return domainId;
 	}
 
-	/**
+	public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    /**
 	 * @return the hostTags
 	 */
 	public String getHostTags() {
@@ -155,7 +163,11 @@ public class CloudStackServiceOffering {
 	public String getName() {
 		return name;
 	}
-
+    
+	public void setName(String name) {
+        this.name = name;
+    }
+	
 	/**
 	 * @return the offerHa
 	 */
