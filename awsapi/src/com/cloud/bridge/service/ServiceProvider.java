@@ -196,7 +196,7 @@ public class ServiceProvider {
 		if(logger.isInfoEnabled())
 			logger.info("Initializing ServiceProvider...");
 
-		File file = ConfigurationHelper.findConfigurationFile("log4j-cloud-bridge.xml");
+		File file = ConfigurationHelper.findConfigurationFile("log4j-cloud.xml");
 		if(file != null) {
 			System.out.println("Log4j configuration from : " + file.getAbsolutePath());
 			DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
