@@ -101,5 +101,10 @@ UPDATE `cloud`.`configuration` set category='Hidden ' where name='router.ram.siz
 UPDATE `cloud`.`configuration` set category='Hidden ' where name='secondary.storage.vm';
 UPDATE `cloud`.`configuration` set category='Hidden ' where name='security.hash.key';
 
-
- 
+DELETE FROM `cloud`.`configuration` WHERE name='direct.agent.pool.size';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.max.product.version';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.max.version';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.max.xapi.version';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.min.product.version';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.min.version';
+DELETE FROM `cloud`.`configuration` WHERE name='xen.min.xapi.version';
