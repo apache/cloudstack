@@ -125,7 +125,7 @@
     </java>
   </target>
 
-  <target name="clean-tomcat" depends="stop-tomcat">
+  <target name="clean-tomcat" depends="stop-tomcat,clean-awsapi-tomcat">
     <delete dir="${tomcat.home}/webapps/client"/>
     <delete dir="${tomcat.home}/webapps/bridge" />
     <delete dir="${tomcat.home}/work/Catalina"/>
