@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -297,7 +296,7 @@ public enum Config {
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
 	
 	//disabling lb as cluster sync does not work with distributed cluster
-	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
+	AgentLbEnable("Advanced", ManagementServer.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
 	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use exetrnal dns1 and dns2", null),
 	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do UTF-8 encoding for the api response, false by default", null),
@@ -416,7 +415,11 @@ public enum Config {
             return "StorageAllocator";
         } else if (_componentClass == NetworkManager.class) {
             return "NetworkManager";
-        } else {
+        } else if (_componentClass == StorageManager.class) {
+            return "StorageManager";
+        } else if (_componentClass == TemplateManager.class) {
+            return "TemplateManager";
+        }else {
             return "none";
         }
     }

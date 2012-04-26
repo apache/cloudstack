@@ -87,3 +87,19 @@ CREATE TABLE `cloud`.`ovs_tunnel_network`(
 INSERT INTO `cloud`.`ovs_tunnel_interface` (`ip`, `netmask`, `mac`, `host_id`, `label`) VALUES ('0', '0', '0', 0, 'lock');
 
 INSERT INTO `cloud`.`ovs_tunnel_network` (`from`, `to`, `network_id`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
+
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='external.network.stats.interval';
+UPDATE `cloud`.`configuration` set category='Advanced' where name='guest.domain.suffix';
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='network.guest.cidr.limit';
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.cpu.mhz';
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.ram.size';
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.stats.interval';
+UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.template.id';
+UPDATE `cloud`.`configuration` set category='Advanced ' where name='capacity.skipcounting.hours';
+UPDATE `cloud`.`configuration` set category='Advanced ' where name='use.local.storage';
+UPDATE `cloud`.`configuration` set category='Hidden ' where name='router.ram.size';
+UPDATE `cloud`.`configuration` set category='Hidden ' where name='secondary.storage.vm';
+UPDATE `cloud`.`configuration` set category='Hidden ' where name='security.hash.key';
+
+
+ 
