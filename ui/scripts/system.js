@@ -1719,8 +1719,8 @@
                 return str;
               },
               label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off' }
-            },
-            vlan: { label: 'label.vlan.range' }
+            },            
+						isolationmethods: { label: 'label.isolation.method' }
           },
 
 					actions: {
