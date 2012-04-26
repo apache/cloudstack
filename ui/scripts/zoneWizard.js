@@ -1215,9 +1215,20 @@
             var requestedTrafficTypeCount = 2; //request guest traffic type, management traffic type
             if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)
               requestedTrafficTypeCount++; //request public traffic type
-
+						      				
+						//Basic zone has only one physical network
+						var array1 = [];	            
+						if("physicalNetworks" in args.data) {	//from add-zone-wizard		
+							array1.push("&name=" + todb(args.data.physicalNetworks[0].name));
+							if(args.data.physicalNetworks[0].isolationMethod != null && args.data.physicalNetworks[0].isolationMethod.length > 0)
+								array1.push("&isolationmethods=" + todb(args.data.physicalNetworks[0].isolationMethod));	
+						}
+						else { //from quick-install-wizard
+						  array1.push("&name=PhysicalNetworkInBasicZone");
+						}
+							
             $.ajax({
-              url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + "&name=PhysicalNetworkInBasicZone"),
+              url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + array1.join("")),
               dataType: "json",
               success: function(json) {
                 var jobId = json.createphysicalnetworkresponse.jobid;
@@ -1440,9 +1451,13 @@
           }
           else if(args.data.zone.networkType == "Advanced") {
             $(args.data.physicalNetworks).each(function(index) {
-              var thisPhysicalNetwork = this;
+              var thisPhysicalNetwork = this;							
+							var array1 = [];
+							array1.push("&name=" + todb(thisPhysicalNetwork.name));
+							if(thisPhysicalNetwork.isolationMethod != null && thisPhysicalNetwork.isolationMethod.length > 0)
+							  array1.push("&isolationmethods=" + todb(thisPhysicalNetwork.isolationMethod));							
               $.ajax({
-                url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + "&name=" + todb(thisPhysicalNetwork.name)),
+                url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + array1.join("")),
                 dataType: "json",
                 success: function(json) {
                   var jobId = json.createphysicalnetworkresponse.jobid;

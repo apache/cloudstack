@@ -70,6 +70,7 @@
         return {
           id: $network.index(),
           name: $network.find('.field.name input[type=text]').val(),
+          isolationMethod: $network.find('.field.name select').val(),
 
           // Traffic type list
           trafficTypes: $.map(
@@ -561,10 +562,27 @@
       var $icon = $('<div>').addClass('physical-network-icon');
       var $nameField = $('<div>').addClass('field name').append(
         $('<div>').addClass('name').append(
-          $('<span>').html('Physical network name')
+          $('<label>').html('Physical network name')
+				),
+				$('<div>').addClass('value').append(
+					$('<input>').attr({ type: 'text' }).addClass('required')
         ),
-        $('<div>').addClass('value').append(
-          $('<input>').attr({ type: 'text' }).addClass('required')
+				$('<div>').append(
+          $('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
+					$('<select>').append(						
+					  $('<option>').attr({
+							value: ''
+						}).html(''),					
+						$('<option>').attr({
+							value: 'VLAN'
+						}).html('VLAN'),						
+						$('<option>').attr({
+							value: 'L3'
+						}).html('L3'),						
+						$('<option>').attr({
+							value: 'GRE'
+						}).html('GRE')	
+					)
         )
       );
       var $dropContainer = $('<div>').addClass('drop-container').append(
