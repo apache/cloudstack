@@ -716,8 +716,8 @@ public class S3ObjectAction implements ServletAction {
 		
         //  AWS S3 specifies that the keep alive connection is by sending whitespace characters until done
 		// Therefore the XML version prolog is prepended to the stream in advance
-        OutputStream os = response.getOutputStream();
-        os.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>".getBytes());
+        OutputStream outputStream = response.getOutputStream();
+        outputStream.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>".getBytes());
 
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );
@@ -728,7 +728,7 @@ public class S3ObjectAction implements ServletAction {
     	    MultipartLoadDao uploadDao = new MultipartLoadDao();
     	    if (null == uploadDao.multipartExits( uploadId )) {
     	    	response.setStatus(404);
-    			returnErrorXML( 404, "NotFound", os );
+    			returnErrorXML( 404, "NotFound", outputStream );
     	    	return;
     	    }
     	    
@@ -736,7 +736,7 @@ public class S3ObjectAction implements ServletAction {
     	    String initiator = uploadDao.getInitiator( uploadId );
     	    if (null == initiator || !initiator.equals( UserContext.current().getAccessKey())) {
     	    	response.setStatus(403);
-    			returnErrorXML( 403, "Forbidden", os );
+    			returnErrorXML( 403, "Forbidden", outputStream );
     	    	return;   	    	
     	    }
     	    
@@ -747,7 +747,7 @@ public class S3ObjectAction implements ServletAction {
 		catch( Exception e ) {
 		    logger.error("executeCompleteMultipartUpload failed due to " + e.getMessage(), e);	
 			response.setStatus(500);
-			returnErrorXML( 500, "InternalError", os );
+			returnErrorXML( 500, "InternalError", outputStream );
 			return;
 		}
 		
@@ -756,7 +756,7 @@ public class S3ObjectAction implements ServletAction {
 		Tuple<Integer,String> match = verifyParts( request.getInputStream(), parts );
 		if (200 != match.getFirst().intValue()) {
 			response.setStatus(match.getFirst().intValue());
-			returnErrorXML( match.getFirst().intValue(), match.getSecond(), os );
+			returnErrorXML( match.getFirst().intValue(), match.getSecond(), outputStream );
 			return;
 		}
 
@@ -768,12 +768,13 @@ public class S3ObjectAction implements ServletAction {
 		engineRequest.setMetaEntries(meta);
 		engineRequest.setCannedAccess(cannedAccess);
 
-		S3PutObjectInlineResponse engineResponse = ServiceProvider.getInstance().getS3Engine().concatentateMultipartUploads( response, engineRequest, parts, os );
+		S3PutObjectInlineResponse engineResponse = ServiceProvider.getInstance().getS3Engine().concatentateMultipartUploads( response, engineRequest, parts, outputStream );
 		int result = engineResponse.getResultCode();
 		// -> free all multipart state since we now have one concatentated object
 		if (200 == result) ServiceProvider.getInstance().getS3Engine().freeUploadParts( bucket, uploadId, false ); 
 		
-		// -> if all successful then clean up all left over parts
+		// If all successful then clean up all left over parts
+		// Notice that "<?xml version=\"1.0\" encoding=\"utf-8\"?>" has already been written into the servlet output stream at the beginning of section [A]
 		if ( 200 == result ) 
 	    {
  	 	     StringBuffer xml = new StringBuffer();
@@ -784,10 +785,10 @@ public class S3ObjectAction implements ServletAction {
              xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</ETag>" );
              xml.append( "</CompleteMultipartUploadResult>" );
              String xmlString = xml.toString().replaceAll("^\\s+", "");   // Remove leading whitespace characters
-             os.write( xmlString.getBytes());
-             os.close();
+             outputStream.write( xmlString.getBytes());
+             outputStream.close();
 	    }
-		else returnErrorXML( result, null, os );
+		else returnErrorXML( result, null, outputStream );
 	}
 	
 	private void executeAbortMultipartUpload( HttpServletRequest request, HttpServletResponse response ) throws IOException 

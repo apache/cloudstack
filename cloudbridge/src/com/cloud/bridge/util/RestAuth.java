@@ -30,10 +30,16 @@ import org.apache.log4j.Logger;
 
 /**
  * This class expects that the caller pulls the required headers from the standard
- * HTTPServeletRequest structure.   Notes are given below on what values are expected.
+ * HTTPServeletRequest structure.   This class is responsible for providing the
+ * RFC2104 calculation to ensure that the signature is valid for the signing string.
+ * The signing string is a representation of the request.
+ * Notes are given below on what values are expected.
  * This class is used for the Authentication check for REST requests and Query String
  * Authentication requests.
+ *
+ * @author Kelven Yang, John Zucker, Salvatore Orlando
  */
+
 public class RestAuth {
     protected final static Logger logger = Logger.getLogger(RestAuth.class);
 
