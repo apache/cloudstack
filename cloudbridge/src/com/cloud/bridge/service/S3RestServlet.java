@@ -311,7 +311,7 @@ public class S3RestServlet extends HttpServlet {
 		if (info == null) throw new PermissionDeniedException("Unable to authenticate access key: " + AWSAccessKey);
 		
     	try {
-			if (auth.verifySignature( request.getMethod(), info.getSecretKey(), signature )) {
+    		if (auth.verifySignature( request.getMethod(), info.getSecretKey(), signature )) {
 				UserContext.current().initContext(AWSAccessKey, info.getSecretKey(), AWSAccessKey, info.getDescription(), request);
 				return;
 			}

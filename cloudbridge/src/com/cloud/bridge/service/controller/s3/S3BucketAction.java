@@ -604,19 +604,19 @@ public class S3BucketAction implements ServletAction {
 	
 	public void executeGetBucketLogging(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		// TODO -- this is a beta feature of S3
-		response.setStatus(501);
+		response.setStatus(405);
 	}
 	
 	public void executeGetBucketLocation(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setStatus(501);
+		response.setStatus(405);
 	}
 
 	public void executeGetBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setStatus(501);
+		response.setStatus(405);
 	}
 
 	public void executeDeleteBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setStatus(501);
+		response.setStatus(405);
 	}
 
 	public void executePutBucket(HttpServletRequest request, HttpServletResponse response) throws IOException 
@@ -757,8 +757,11 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executePutBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		// TODO -- HiPri - Implement Put Bucket Website
-		response.setStatus(501);
+		// TODO -- HiPri - Undertake checks on Put Bucket Website
+		// Tested using configuration <Directory /Users/john1/S3-Mount>\nAllowOverride FileInfo AuthConfig Limit...</Directory> in httpd.conf
+        // Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
+		// Currently has noop effect in the sense that a running apachectl process sees the directory contents without further action
+		response.setStatus(200);
 	}
 
 	public void executeDeleteBucket(HttpServletRequest request, HttpServletResponse response) throws IOException 

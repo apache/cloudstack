@@ -48,14 +48,33 @@ public class RestAuth {
 	protected boolean                 amzDateSet    = false;
 	protected boolean				  useSubDomain  = false;
 	
+	protected Set<String> allowedQueryParams;
+	
 	public RestAuth() {
 		// these must be lexicographically sorted
 		AmazonHeaders = new TreeMap<String, String>();
+		allowedQueryParams = new HashSet<String>() {{  
+			add("acl");
+			add("lifecycle");
+			add("location");
+			add("logging");
+			add("notification");
+			add("partNumber");
+			add("policy");
+			add("requestPayment");
+			add("torrent");
+			add("uploadId");
+			add("uploads");
+			add("versionId");
+			add("versioning");
+			add("versions");
+			add("website");
+			}}; 
 	}
 
 	public RestAuth(boolean useSubDomain) {
-		// these must be lexicographically sorted
-		AmazonHeaders = new TreeMap<String, String>();
+		//invoke the other constructor
+		this();
 		this.useSubDomain = useSubDomain; 
 	}
 	
@@ -140,22 +159,28 @@ public class RestAuth {
 			return;
 		}
 		
-		query = new String( "?" + query.trim());
+		// Sub-resources (i.e.: query params) must be lex sorted
+		Set<String> subResources = new TreeSet<String>(); 
 		
-		// -> only interested in this subset of parameters
-		if (query.startsWith( "?acl")            || query.startsWith( "?lifecycle" )        || query.startsWith( "?location" )   ||
-			query.startsWith( "?logging" )       || query.startsWith( "?notification"  )    || query.startsWith( "?partNumber" ) ||
-		    query.startsWith( "?policy" )        || query.startsWith( "?requestPayment" )   || query.startsWith( "?torrent" )    ||
-		    query.startsWith( "?uploadId" )      || query.startsWith( "?uploads" )          || query.startsWith( "?versionId" )  ||
-		    query.startsWith( "?versioning" )    || query.startsWith( "?versions" )         || query.startsWith( "?website" ) 
-           )
-           {
-			
-			// The query string includes the value given to the start parameter (using =) but ignores all other arguments after &
-		    int offset = query.indexOf( "&" );
-		    if ( -1 != offset ) query = query.substring( 0, offset );
-			this.queryString = query;
+		String [] queryParams = query.split("&");
+		StringBuffer builtQuery= new StringBuffer();
+		for (String queryParam:queryParams) {
+			// lookup parameter name
+			String paramName = queryParam.split("=")[0];
+			if (allowedQueryParams.contains(paramName)) {
+				subResources.add(queryParam);
+			}
 		}
+		for (String subResource:subResources) {
+			builtQuery.append(subResource + "&");
+		}
+		// If anything inside the string buffer, add a "?" at the beginning, 
+		// and then remove the last '&'
+		if (builtQuery.length() > 0) {
+			builtQuery.insert(0, "?");
+			builtQuery.deleteCharAt(builtQuery.length()-1);
+		}
+		this.queryString = builtQuery.toString();
 	}
 	
 	
@@ -235,7 +260,7 @@ public class RestAuth {
 	    throws SignatureException, UnsupportedEncodingException {
 	    	
 		if (null == httpVerb || null == secretKey || null == signature) return false;
-		
+        
 		httpVerb  = httpVerb.trim();
 		secretKey = secretKey.trim();
 		signature = signature.trim();
@@ -243,7 +268,6 @@ public class RestAuth {
 		// First calculate the StringToSign after the caller has initialized all the header values
 		String StringToSign = genStringToSign( httpVerb );
 		String calSig       = calculateRFC2104HMAC( StringToSign, secretKey );
-		
 		// Was the passed in signature URL encoded? (it must be base64 encoded)
 		int offset = signature.indexOf( "%" );
 		if (-1 != offset) signature = URLDecoder.decode( signature, "UTF-8" );
@@ -273,14 +297,12 @@ public class RestAuth {
 		StringBuffer canonicalized = new StringBuffer();
 		String temp = null;
 		String canonicalizedResourceElement = genCanonicalizedResourceElement();
-		
-	
 		canonicalized.append( httpVerb ).append( "\n" );
-		if ( (null != this.contentMD5) && (null == canonicalizedResourceElement) ) 
+		if ( (null != this.contentMD5) ) 
 			canonicalized.append( this.contentMD5 );
 		canonicalized.append( "\n" );
 		
-		if ( (null != this.contentType) && (null == canonicalizedResourceElement) )
+		if ( (null != this.contentType) )
 			canonicalized.append( this.contentType );
 		canonicalized.append( "\n" );
 
@@ -356,7 +378,6 @@ public class RestAuth {
      */
     private String calculateRFC2104HMAC( String signIt, String secretKey )
         throws SignatureException {
-    	
    	    String result = null;
    	    try { 	
    	    	SecretKeySpec key = new SecretKeySpec( secretKey.getBytes(), "HmacSHA1" );

@@ -105,7 +105,7 @@ public class S3ObjectAction implements ServletAction {
 	    throws IOException, XMLStreamException 
 	{
 		String method      = request.getMethod();
-		String queryString = request.getQueryString();
+		String queryString = request.getQueryString();     
 		String copy        = null;
 	
 		response.addHeader( "x-amz-request-id", UUID.randomUUID().toString());	
@@ -143,9 +143,9 @@ public class S3ObjectAction implements ServletAction {
 			 } 
 			 else executeDeleteObject(request, response);
 		}
-		else if (method.equalsIgnoreCase( "HEAD" )) 
-		{
-			 executeHeadObject(request, response);
+		else if (method.equalsIgnoreCase( "HEAD" ))
+		{	 
+			executeHeadObject(request, response);
 		}
 		else if (method.equalsIgnoreCase( "POST" )) 
 		{	
@@ -302,7 +302,8 @@ public class S3ObjectAction implements ServletAction {
 	private void executeGetObject(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
 		String   bucket    = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		String   key       = (String) request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
+		String   key       = (String) request.getAttribute(S3Constants.OBJECT_ATTR_KEY); 
+		
 	
 		S3GetObjectRequest engineRequest = new S3GetObjectRequest();
 		engineRequest.setBucketName(bucket);
@@ -713,8 +714,10 @@ public class S3ObjectAction implements ServletAction {
 		String cannedAccess = null;
 		int uploadId    = -1;
 		
-        //  -> Amazon defines to keep connection alive by sending whitespace characters until done
+        //  AWS S3 specifies that the keep alive connection is by sending whitespace characters until done
+		// Therefore the XML version prolog is prepended to the stream in advance
         OutputStream os = response.getOutputStream();
+        os.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>".getBytes());
 
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );
@@ -781,7 +784,8 @@ public class S3ObjectAction implements ServletAction {
              xml.append( "<Key>" ).append( key ).append( "</Key>" );
              xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</<ETag>" );
              xml.append( "</CompleteMultipartUploadResult>" );
-             os.write( xml.toString().getBytes());
+             String xmlString = xml.toString().replaceAll("^\\s+", "");   // Remove leading whitespace characters
+             os.write( xmlString.getBytes());
              os.close();
 	    }
 		else returnErrorXML( result, null, os );
