@@ -26,12 +26,14 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -44,6 +46,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -75,6 +78,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
+import com.cloud.network.resource.CiscoNexusVSM;
 
 //public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase implements CiscoNexusVSMDeviceManager, ResourceStateAdapter {
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
@@ -125,12 +129,49 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     NetworkServiceMapDao _ntwkSrvcProviderDao;
     @Inject
     protected HostPodDao _podDao = null;
-
+    @Inject
+    ClusterDao _clusterDao;
+    
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
+    // dummy func, will remove later.
+    private boolean vsmIsReachable(String ipaddress, String username, String password) {
+    	return true;	// dummy true for now.
+    }
+    
     @DB
-    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long zoneId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
+    //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
+    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vsmName) {
 
+    	// In this function, we associate this VSM with the vCenter
+    	// that is associated with the provided clusterId.
+
+    	ClusterVO cluster = _clusterDao.findById(clusterId);
+    	
+    	// Check if the ClusterVO's hypervisor type is "vmware". If not,
+    	// throw an exception.
+    	if (cluster.getHypervisorType() != HypervisorType.VMware) {
+    		InvalidParameterValueException ex = new InvalidParameterValueException("Cluster with specified id is not a VMWare hypervisor cluster");
+    		throw ex;
+    	}
+
+    	// Now we need a reference to the vmWareResource for this cluster.
+    	
+    	
+    	DataCenterVO zone = _dcDao.findById(cluster.getDataCenterId());
+    	
+    	// Else, check if this VSM is reachable. Use the XML-RPC VSM API Java bindings to talk to
+    	// the VSM.
+    	
+    	// Create a new VSM object.
+    	CiscoNexusVSM vsmObj = new CiscoNexusVSM(ipaddress, username, password);
+    	    	
+    	if (!vsmObj.connectToVSM()) {
+    		throw new CloudRuntimeException("Couldn't login to the specified VSM");    		
+    	}
+
+    	// Since we can reached the VSM, and are logged into it, let's add it to the vCenter.
+    	
     	// In this function, we create a record for this Cisco Nexus VSM, in the database.
     	// We also hand off interaction with the actual Cisco Nexus VSM via XML-RPC, to the
     	// Resource Manager. The resource manager invokes the CiscoNexusVSMResource class's
@@ -144,10 +185,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         // Q1) Do we need a zoneUuid to dbzoneId translation? How will the user send in the zoneId?
         // We get the zoneId as a uuid, so we need to look up the db zoneId.
         // Ask Frank how to do this lookup.
-        long dbZoneId = zoneId;
-        
-        // Q2) Do we need to have the user send in a "DedicatedUse" parameter? What is it's use
-        // for Netscaler?
+        long dbZoneId = clusterId;
         
         hostDetails.put(ApiConstants.ZONE_ID, dbZoneId);
         hostDetails.put(ApiConstants.GUID, UUID.randomUUID().toString());

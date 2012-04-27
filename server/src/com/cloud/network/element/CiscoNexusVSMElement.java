@@ -174,12 +174,13 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         String vsmusername = cmd.getUsername();
         String vsmpassword = cmd.getPassword();
         String vsmName = cmd.getVSMName();
-        long zoneId = cmd.getZoneId();
+        long clusterId = cmd.getClusterId();
         
         // Invoke the addCiscoNexusVSM() function defined in the upper layer (DeviceMgrImpl).
         // The  upper layer function will create a resource of type "host" to represent this VSM.
         // It will add this VSM to the db.
-        CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(zoneId, vsmipaddress, vsmusername, vsmpassword, (ServerResource) new CiscoNexusVSMResource(), vsmName);
+        //CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, (ServerResource) new CiscoNexusVSMResource(), vsmName);
+        CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, vsmName);
         return vsmDeviceVO;
     }
 
