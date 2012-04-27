@@ -53,4 +53,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.additional.vnc.portrange.start', '50000', 'Start port number of additional VNC port range');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.percluster.host.max', '8', 'maxmium hosts per vCenter cluster(do not let it grow over 8)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.reserve.cpu', 'false', 'Specify whether or not to reserve CPU based on CPU overprovisioning factor');
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.reserve.mem', 'false', 'Specify whether or not to reserve memory based on memory overprovisioning factor');
+
+UPDATE `cloud`.`storage_pool` SET removed=now() WHERE path='lvm' AND id NOT IN (select pool_id from storage_pool_host_ref);
