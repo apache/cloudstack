@@ -81,8 +81,8 @@
       $container: $container,
 
       // Use this for checking the session, to bypass login screen
-      bypassLoginCheck: function(args) { //before login screen
-			  if (g_loginResponse == null) { //not single-sign-on
+      bypassLoginCheck: function(args) { //determine to show or bypass login screen
+			  if (g_loginResponse == null) { //show login screen
 					g_mySession = $.cookie('JSESSIONID');
 					g_sessionKey = $.cookie('sessionKey');
 					g_role = $.cookie('role');        
@@ -97,7 +97,7 @@
 					else
 						g_timezoneoffset = null;   
         }
-				else { //single-sign-on		
+				else { //single-sign-on	(bypass login screen)	
 					g_mySession = $.cookie('JSESSIONID');
 					g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
 					g_role = g_loginResponse.type;            
@@ -317,9 +317,11 @@
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
 						
+						onLogoutCallback();	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
             document.location.reload();
           },
           error: function() {
+					  onLogoutCallback();	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
             document.location.reload();
           },			
 					beforeSend : function(XMLHttpResponse) {
