@@ -54,8 +54,8 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the Cisco Nexus 1000v VSM appliance.")
     private String ipaddr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.STRING, required = true, description="Id of the zone in which the Cisco Nexus 1000v VSM appliance.")
-    private long zoneId;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    private long clusterId;
     
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="username to reach the Cisco Nexus 1000v VSM device")
     private String username;
@@ -86,14 +86,17 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     	return vsmName;
     }
     
-    public long getZoneId() {
-    	return zoneId;
+    public long getClusterId() {
+    	return clusterId;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    // NOTE- The uuid that is sent in during the invocation of the API AddCiscoNexusVSM()
+    // automagically gets translated to the corresponding db id before this execute() method
+    // is invoked. That's the reason why we don't have any uuid-dbid translation code here.
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
