@@ -777,12 +777,11 @@ public class S3ObjectAction implements ServletAction {
 		if ( 200 == result ) 
 	    {
  	 	     StringBuffer xml = new StringBuffer();
-             xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
              xml.append( "<CompleteMultipartUploadResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" );
              xml.append( "<Location>" ).append( "http://" + bucket + ".s3.amazonaws.com/" + key ).append( "</Location>" );
              xml.append( "<Bucket>" ).append( bucket ).append( "</Bucket>" );
              xml.append( "<Key>" ).append( key ).append( "</Key>" );
-             xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</<ETag>" );
+             xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</ETag>" );
              xml.append( "</CompleteMultipartUploadResult>" );
              String xmlString = xml.toString().replaceAll("^\\s+", "");   // Remove leading whitespace characters
              os.write( xmlString.getBytes());
