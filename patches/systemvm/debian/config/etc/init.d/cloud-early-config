@@ -700,7 +700,7 @@ setup_default() {
 auto lo eth0
 iface lo inet loopback
 
-iface eth0 inet dhcp
+iface eth0 inet static
 
 EOF
 }
