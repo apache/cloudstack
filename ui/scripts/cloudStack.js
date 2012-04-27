@@ -316,12 +316,15 @@
 						$.cookie('timezoneoffset', null);
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
-						
-						onLogoutCallback();	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
-            document.location.reload();
+												
+						if(onLogoutCallback()) {	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
+              document.location.reload();
+						}
           },
           error: function() {
-					  onLogoutCallback();	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
+					  if(onLogoutCallback()) {	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
+              document.location.reload();
+						}
             document.location.reload();
           },			
 					beforeSend : function(XMLHttpResponse) {
