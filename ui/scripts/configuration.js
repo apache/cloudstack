@@ -1027,11 +1027,15 @@
                   // Check whether there are any advanced zones
                   $.ajax({
                     url: createURL('listZones'),
-                    data: { listAll: true, networktype: 'advanced' },
+                    data: { listAll: true },
                     async: false,
-                    success: function(json) {
-                      if (json.listzonesresponse.zone && json.listzonesresponse.zone.length) {
-                        hasAdvancedZones = true;
+                    success: function(json) {										  
+											var zones = json.listzonesresponse.zone;
+                      if (zones != null && zones.length > 0) {
+											  for(var i = 0; i < zones.length; i++) {
+												  if(zones[i].networktype == "Advanced")
+													  hasAdvancedZones = true; 
+												}			
                       }
                     }
                   });
