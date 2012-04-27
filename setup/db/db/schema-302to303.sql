@@ -17,7 +17,6 @@ DELETE FROM `cloud`.`configuration` WHERE name='consoleproxy.cpu.mhz';
 DELETE FROM `cloud`.`configuration` WHERE name='secstorage.vm.cpu.mhz';
 DELETE FROM `cloud`.`configuration` WHERE name='consoleproxy.ram.size';
 DELETE FROM `cloud`.`configuration` WHERE name='secstorage.vm.ram.size';
-DELETE FROM `cloud`.`configuration` WHERE name='secstorage.vm.ram.size';
 DELETE FROM `cloud`.`configuration` WHERE name='open.vswitch.vlan.network';
 DELETE FROM `cloud`.`configuration` WHERE name='open.vswitch.tunnel.network';
 
