@@ -19,7 +19,8 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
+ * A model of stored ACLs to remember the ACL permissions per canonicalUserID and grantee
  */
 public class SAcl implements Serializable {
 	private static final long serialVersionUID = 7900837117165018850L;

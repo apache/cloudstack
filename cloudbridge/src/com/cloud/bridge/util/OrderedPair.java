@@ -15,18 +15,19 @@
  */
 package com.cloud.bridge.util;
 
-/**
- * 
- * @author Kelven Yang
- *
+/** 
+ * @author Kelven Yang, John Zucker
+ * Reusable class whose instances encode any ordered pair (or 2-tuple) of values of types T1 and T2
+ * Provide getters: getFirst(), getSecond()
+ * Provide setters: setFirst(val), setSecond(val)
  * @param <T1>
  * @param <T2>
  */
-public class Tuple <T1, T2> {
+public class OrderedPair <T1, T2> {
 	T1 first;
 	T2 second;
 
-	public Tuple(T1 t1, T2 t2) {
+	public OrderedPair(T1 t1, T2 t2) {
 		first = t1;
 		second = t2;
 	}
@@ -35,7 +36,7 @@ public class Tuple <T1, T2> {
 		return first;
 	}
 	
-	public Tuple<T1, T2> setFirst(T1 t1) {
+	public OrderedPair<T1, T2> setFirst(T1 t1) {
 		first = t1;
 		return this;
 	}
@@ -44,7 +45,7 @@ public class Tuple <T1, T2> {
 		return second;
 	}
 	
-	public Tuple<T1, T2> setSecond(T2 t2) {
+	public OrderedPair<T1, T2> setSecond(T2 t2) {
 		second = t2;
 		return this;
 	}

@@ -261,7 +261,6 @@ public class RestAuth {
 	 * @throws UnsupportedEncodingException 
 	 */
 	
-	// TODO - Hi Pri - Make this validate correctly with StringToSign for verb POST and other cases
 	public boolean verifySignature( String httpVerb, String secretKey, String signature )
 	    throws SignatureException, UnsupportedEncodingException {
 	    	

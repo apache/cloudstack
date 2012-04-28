@@ -30,17 +30,11 @@ import javax.activation.DataHandler;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -55,9 +49,6 @@ import com.cloud.bridge.persist.dao.MultipartLoadDao;
 import com.cloud.bridge.persist.dao.SBucketDao;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
-import com.cloud.bridge.service.S3SoapServiceImpl;
-import com.cloud.bridge.service.ServiceProvider;
-import com.cloud.bridge.service.ServletAction;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
 import com.cloud.bridge.service.core.s3.S3AuthParams;
@@ -83,7 +74,7 @@ import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.ServletRequestDataSource;
-import com.cloud.bridge.util.Tuple;
+import com.cloud.bridge.util.OrderedPair;
 
 /**
  * @author Kelven Yang, John Zucker
@@ -92,8 +83,6 @@ public class S3ObjectAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3ObjectAction.class);
 
     private DocumentBuilderFactory dbf = null;
-	private OMFactory factory = OMAbstractFactory.getOMFactory();
-	private XMLOutputFactory xmlOutFactory = XMLOutputFactory.newInstance();
     
 	public S3ObjectAction() {
 		dbf = DocumentBuilderFactory.newInstance();
@@ -216,7 +205,7 @@ public class S3ObjectAction implements ServletAction {
         if (null != versionId) response.addHeader( "x-amz-version-id", versionId );
 	     
 		// To allow the copy object result to be serialized via Axiom classes
-		CopyObjectResponse allBuckets = S3SoapServiceImpl.toCopyObjectResponse( engineResponse );
+		CopyObjectResponse allBuckets = S3SerializableServiceImplementation.toCopyObjectResponse( engineResponse );
 		
 		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
@@ -255,7 +244,7 @@ public class S3ObjectAction implements ServletAction {
 	    
 	
 		// To allow the get object acl policy result to be serialized via Axiom classes
-		GetObjectAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetObjectAccessControlPolicyResponse( engineResponse );	
+		GetObjectAccessControlPolicyResponse onePolicy = S3SerializableServiceImplementation.toGetObjectAccessControlPolicyResponse( engineResponse );	
 		
 		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
@@ -273,21 +262,29 @@ public class S3ObjectAction implements ServletAction {
 	{
 		S3PutObjectRequest putRequest = null;
 		
-		// -> reuse the Access Control List parsing code that was added to support DIME
+		String ACLsetting = request.getHeader("x-amz-acl");
+		
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
-		try {
-		    putRequest = S3RestServlet.toEnginePutObjectRequest( request.getInputStream());
-		}
-		catch( Exception e ) {
-			throw new IOException( e.toString());
-		}
+				   
+		if ( null == ACLsetting )		
+	      	// -> reuse the Access Control List parsing code that was added to support DIME
+		   try {
 			
+      		    putRequest = S3RestServlet.toEnginePutObjectRequest( request.getInputStream());
+	        	}
+		   catch( Exception e ) {
+			   throw new IOException( e.toString());
+	    	}
+		
 		// -> reuse the SOAP code to save the passed in ACLs
 		S3SetObjectAccessControlPolicyRequest engineRequest = new S3SetObjectAccessControlPolicyRequest();
 		engineRequest.setBucketName( bucketName );
 		engineRequest.setKey( key );
-		engineRequest.setAcl( putRequest.getAcl());
+//		if (null == putRequest)
+//			engineRequest.setAcl (an S3AccessContolList)  //		(ACLsetting);
+//		else 
+			engineRequest.setAcl( putRequest.getAcl());
 
 		// -> is this a request for a specific version of the object?  look for "versionId=" in the query string
 		String queryString = request.getQueryString();
@@ -357,7 +354,7 @@ public class S3ObjectAction implements ServletAction {
 			S3RestServlet.writeResponse(response, "HTTP/1.1 100 Continue\r\n");
 		}
 
-		String contentType = request.getHeader( "Content-Type" );
+		// String contentType = request.getHeader( "Content-Type" );  TODO - Needed?
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
 
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
@@ -644,7 +641,7 @@ public class S3ObjectAction implements ServletAction {
 
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
 
-		String md5 = request.getHeader( "Content-MD5" );
+		// String md5 = request.getHeader( "Content-MD5" );   TODO _ Needed?
 
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );
@@ -753,7 +750,7 @@ public class S3ObjectAction implements ServletAction {
 		
 		
 		// [C] Parse the given XML body part and perform error checking
-		Tuple<Integer,String> match = verifyParts( request.getInputStream(), parts );
+		OrderedPair<Integer,String> match = verifyParts( request.getInputStream(), parts );
 		if (200 != match.getFirst().intValue()) {
 			response.setStatus(match.getFirst().intValue());
 			returnErrorXML( match.getFirst().intValue(), match.getSecond(), outputStream );
@@ -840,7 +837,7 @@ public class S3ObjectAction implements ServletAction {
 	
     	try {
 	        MultipartLoadDao uploadDao = new MultipartLoadDao();
-	        Tuple<String,String> exists = uploadDao.multipartExits( uploadId );
+	        OrderedPair<String,String> exists = uploadDao.multipartExits( uploadId );
 	        if (null == exists) {
 	    	   response.setStatus(404);
 	    	   return;
@@ -1122,7 +1119,7 @@ public class S3ObjectAction implements ServletAction {
 	 * @return error code, and error string
 	 * @throws ParserConfigurationException, IOException, SAXException 
 	 */
-    private Tuple<Integer,String> verifyParts( InputStream is, S3MultipartPart[] parts ) 
+    private OrderedPair<Integer,String> verifyParts( InputStream is, S3MultipartPart[] parts ) 
     {
     	try {
 		    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -1147,7 +1144,7 @@ public class S3ObjectAction implements ServletAction {
 		    	nodeSet = doc.getElementsByTagName( "Part" );
 			    count = nodeSet.getLength();
 		    }
-		    if (count != parts.length) return new Tuple<Integer, String>(400, "InvalidPart");
+		    if (count != parts.length) return new OrderedPair<Integer, String>(400, "InvalidPart");
 
 		    // -> get a list of all the children elements of the 'Part' parent element
 		    for( int i=0; i < count; i++ )
@@ -1179,20 +1176,20 @@ public class S3ObjectAction implements ServletAction {
 				 
 			   // -> do the parts given in the call XML match what was previously uploaded?
 			   if (lastNumber >= partNumber) {
-		           return new Tuple<Integer, String>(400, "InvalidPartOrder"); 
+		           return new OrderedPair<Integer, String>(400, "InvalidPartOrder"); 
 			   }
 			   if (partNumber != parts[i].getPartNumber() || 
 				   eTag == null || 
 				   !eTag.equalsIgnoreCase( "\"" + parts[i].getETag() + "\"" )) {
-		           return new Tuple<Integer, String>(400, "InvalidPart");
+		           return new OrderedPair<Integer, String>(400, "InvalidPart");
 		       }
 				 
 			   lastNumber = partNumber;
 		    } 
-		    return new Tuple<Integer, String>(200, "Success");
+		    return new OrderedPair<Integer, String>(200, "Success");
     	}
     	catch( Exception e ) {
-    		return new Tuple<Integer, String>(500, e.toString());
+    		return new OrderedPair<Integer, String>(500, e.toString());
     	}
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloud.bridge.service;
+package com.cloud.bridge.io;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,13 +29,13 @@ import javax.activation.DataSource;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.bridge.io.FileRangeDataSource;
+import com.cloud.bridge.service.core.s3.S3BucketAdapter;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.exception.FileNotExistException;
 import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.OutOfStorageException;
 import com.cloud.bridge.util.StringHelper;
-import com.cloud.bridge.util.Tuple;
+import com.cloud.bridge.util.OrderedPair;
 
 /**
  * @author Kelven Yang, John Zucker
@@ -136,10 +136,10 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
 	 * @param sourceBucket - special bucket used to save uploaded file parts
 	 * @param parts - an array of file names in the sourceBucket
 	 * @param client - if not null, then keep the servlet connection alive while this potentially long concatentation takes place
-	 * @return Tuple with the first value the MD5 of the final object, and the second value the length of the final object
+	 * @return OrderedPair with the first value the MD5 of the final object, and the second value the length of the final object
 	 */
 	@Override
-	public Tuple<String,Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream client) 
+	public OrderedPair<String,Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream client) 
 	{
 		MessageDigest md5;
 		long totalLength = 0;
@@ -181,8 +181,8 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
 	           }
 	        }        
 	        fos.close();	
-	        return new Tuple<String, Long>(StringHelper.toHexString(md5.digest()), new Long(totalLength));
-	        //Create a tuple whose first element is the MD4 digest as a (lowercase) hex String
+	        return new OrderedPair<String, Long>(StringHelper.toHexString(md5.digest()), new Long(totalLength));
+	        //Create an ordered pair whose first element is the MD4 digest as a (lowercase) hex String
 		} 
 		catch(IOException e) {
 			logger.error("concatentateObjects unexpected exception " + e.getMessage(), e);

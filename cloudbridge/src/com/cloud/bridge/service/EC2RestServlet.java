@@ -95,6 +95,7 @@ import com.amazon.ec2.TerminateInstancesResponse;
 import com.cloud.bridge.model.UserCredentials;
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.service.controller.s3.ServiceProvider;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
 import com.cloud.bridge.service.core.ec2.EC2CreateImage;

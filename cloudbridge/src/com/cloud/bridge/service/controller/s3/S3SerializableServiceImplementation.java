@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloud.bridge.service;
+package com.cloud.bridge.service.controller.s3;
 
-import java.io.IOException;
 import java.util.Calendar;
-import java.util.TimeZone;
 
 import org.apache.axis2.AxisFault;
 import org.apache.log4j.Logger;
@@ -108,12 +106,38 @@ import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3SetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.exception.InternalErrorException;
 
-public class S3SoapServiceImpl implements AmazonS3SkeletonInterface {
-    protected final static Logger logger = Logger.getLogger(S3SoapServiceImpl.class);
+/* @Author Kelven Yang, John Zucker
+ *  Implementation of S3 service requests as operations defined by the interface, com.amazon.s3.AmazonS3SkeletonInterface.
+ * The operations dispatched from this class are of the form of SOAP operations which define business logic to be executed by the request.  
+ * The methods required for S3 services in accordance with the skeleton are either implementations of the following
+ * getBucketLoggingStatus
+ * copyObject
+ * getBucketAccessControlPolicy
+ * listBucket
+ * putObject
+ * createBucket
+ * listAllMyBuckets
+ * getObject
+ * deleteBucket
+ * setBucketLoggingStatus
+ * getObjectAccessControlPolicy
+ * deleteObject
+ * setBucketAccessControlPolicy
+ * setObjectAccessControlPolicy
+ * putObjectInline
+ * getObjectExtended
+ * or throw and Axis2 fault otherwise.
+ * These skeleton methods can be used as the implementation of services to satisfy SOAP calls, but also to provide the output
+ * to be serialized by the AXIOM XML processor.
+ * 
+ * */
+
+public class S3SerializableServiceImplementation implements AmazonS3SkeletonInterface {
+    protected final static Logger logger = Logger.getLogger(S3SerializableServiceImplementation.class);
     
     private S3Engine engine;
     
-    public S3SoapServiceImpl(S3Engine engine) {
+    public S3SerializableServiceImplementation(S3Engine engine) {
     	this.engine = engine;
     }
     
@@ -152,7 +176,7 @@ public class S3SoapServiceImpl implements AmazonS3SkeletonInterface {
  
 	public GetBucketAccessControlPolicyResponse getBucketAccessControlPolicy(
 		GetBucketAccessControlPolicy getBucketAccessControlPolicy) {
-		// after authentication, we should setup user context
+		// TODO - after authentication, we should setup user context
 		return toGetBucketAccessControlPolicyResponse(engine.handleRequest(
 			toEngineGetBucketAccessControlPolicyRequest(getBucketAccessControlPolicy)));
     }
@@ -182,7 +206,7 @@ public class S3SoapServiceImpl implements AmazonS3SkeletonInterface {
 		request.setBucketName(setBucketAccessControlPolicy.getBucket());
 		request.setAcl(toEngineAccessControlList(setBucketAccessControlPolicy.getAccessControlList()));
 		
-		S3Response basicResponse = engine.handleRequest(request);
+		// S3Response basicResponse = engine.handleRequest(request);   TODO - Needed?
 		SetBucketAccessControlPolicyResponse response = new SetBucketAccessControlPolicyResponse();
 		return response;
     }

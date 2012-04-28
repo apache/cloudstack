@@ -44,6 +44,8 @@ import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.controller.s3.S3BucketAction;
 import com.cloud.bridge.service.controller.s3.S3ObjectAction;
+import com.cloud.bridge.service.controller.s3.ServiceProvider;
+import com.cloud.bridge.service.controller.s3.ServletAction;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3AuthParams;
 import com.cloud.bridge.service.core.s3.S3Engine;
@@ -316,8 +318,6 @@ public class S3RestServlet extends HttpServlet {
 				return;
 			}
 		
-			// TODO - Remove soon -> turn off auth - just for testing
-			//UserContext.current().initContext("Mark", "123", "Mark", "testing", request);
        
 		} catch (SignatureException e) {
 			throw new PermissionDeniedException(e);

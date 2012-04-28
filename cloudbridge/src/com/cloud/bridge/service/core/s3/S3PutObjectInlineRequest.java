@@ -22,7 +22,7 @@ import java.io.InputStream;
 import javax.activation.DataHandler;
 
 /**
-  * @author Kelven Yang
+  * @author Kelven Yang, John Zucker
  */
 public class S3PutObjectInlineRequest extends S3Request {
 	protected String bucketName;
@@ -30,7 +30,7 @@ public class S3PutObjectInlineRequest extends S3Request {
 	protected long contentLength;
 	protected S3MetaDataEntry[] metaEntries;
 	protected S3AccessControlList acl;
-	protected String cannedAccessPolicy;    // -> REST only sets an acl with a simple keyword
+	protected String cannedAccessPolicy;    // Canned ACLs are public-read, public-read-write, private, authenticated-read or log-delivery-write
 	protected DataHandler data;
 	protected String dataAsString;
 	

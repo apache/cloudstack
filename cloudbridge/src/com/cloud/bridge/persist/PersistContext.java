@@ -28,7 +28,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import com.cloud.bridge.util.CloudSessionFactory;
-import com.cloud.bridge.util.Tuple;
+import com.cloud.bridge.util.OrderedPair;
 
 /**
  * @author Kelven Yang
@@ -212,7 +212,7 @@ public class PersistContext {
   	@SuppressWarnings("deprecation")
 	private static Connection getJDBCConnection(String name, boolean allocNew) {
   		String registryKey = "JDBC-Connection." + name;
-  		Tuple<Session, Connection> info = (Tuple<Session, Connection>)getThreadStoreObject(registryKey);
+  		OrderedPair<Session, Connection> info = (OrderedPair<Session, Connection>)getThreadStoreObject(registryKey);
   		if(info == null && allocNew) {
   			Session session = sessionFactory.openSession();
   			Connection connection = session.connection();
@@ -234,7 +234,7 @@ public class PersistContext {
 				return null;
   			}
   			
-  			registerThreadStoreObject(registryKey, new Tuple<Session, Connection>(session, connection));
+  			registerThreadStoreObject(registryKey, new OrderedPair<Session, Connection>(session, connection));
   			return connection;
   		}
   		
@@ -246,7 +246,7 @@ public class PersistContext {
   	
   	private static void releaseJDBCConnection(String name) {
   		String registryKey = "JDBC-Connection." + name;
-  		Tuple<Session, Connection> info = (Tuple<Session, Connection>)unregisterThreadStoreObject(registryKey);
+  		OrderedPair<Session, Connection> info = (OrderedPair<Session, Connection>)unregisterThreadStoreObject(registryKey);
   		if(info != null) {
   			try {
   				info.getSecond().close();

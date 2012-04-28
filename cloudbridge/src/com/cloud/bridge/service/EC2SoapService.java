@@ -18,6 +18,7 @@ package com.cloud.bridge.service;
 import org.apache.log4j.Logger;
 
 import com.amazon.ec2.*;
+import com.cloud.bridge.service.controller.s3.ServiceProvider;
 
 public class EC2SoapService implements AmazonEC2SkeletonInterface {
 	    protected final static Logger logger = Logger.getLogger(EC2SoapService.class);

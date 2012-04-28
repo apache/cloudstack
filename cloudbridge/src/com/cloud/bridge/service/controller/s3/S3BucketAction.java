@@ -25,21 +25,13 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Calendar;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 
-import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 
 import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
@@ -58,9 +50,6 @@ import com.cloud.bridge.persist.dao.MultipartLoadDao;
 import com.cloud.bridge.persist.dao.SBucketDao;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
-import com.cloud.bridge.service.S3SoapServiceImpl;
-import com.cloud.bridge.service.ServiceProvider;
-import com.cloud.bridge.service.ServletAction;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy;
@@ -91,7 +80,7 @@ import com.cloud.bridge.service.exception.PermissionDeniedException;
 import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
-import com.cloud.bridge.util.Tuple;
+import com.cloud.bridge.util.OrderedPair;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 
@@ -103,9 +92,6 @@ public class S3BucketAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3BucketAction.class);
     
     private DocumentBuilderFactory dbf = null;
-	private OMFactory factory = OMAbstractFactory.getOMFactory();
-	private XMLOutputFactory xmlOutFactory = XMLOutputFactory.newInstance();
-    
 	public S3BucketAction() {
 		dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware( true );
@@ -400,7 +386,7 @@ public class S3BucketAction implements ServletAction {
 		S3ListAllMyBucketsResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 		
 		// To allow the all buckets list to be serialized via Axiom classes
-		ListAllMyBucketsResponse allBuckets = S3SoapServiceImpl.toListAllMyBucketsResponse( engineResponse );
+		ListAllMyBucketsResponse allBuckets = S3SerializableServiceImplementation.toListAllMyBucketsResponse( engineResponse );
 		
 		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
@@ -429,7 +415,7 @@ public class S3BucketAction implements ServletAction {
 		S3ListBucketResponse engineResponse = ServiceProvider.getInstance().getS3Engine().listBucketContents( engineRequest, false );
 		
 		// To allow the all list buckets result to be serialized via Axiom classes
-		ListBucketResponse oneBucket = S3SoapServiceImpl.toListBucketResponse( engineResponse );
+		ListBucketResponse oneBucket = S3SerializableServiceImplementation.toListBucketResponse( engineResponse );
 	
 		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
@@ -452,13 +438,13 @@ public class S3BucketAction implements ServletAction {
 		cal.set( 1970, 1, 1 ); 
 		engineRequest.setAccessKey(UserContext.current().getAccessKey());
 		engineRequest.setRequestTimestamp( cal );
-		engineRequest.setSignature( "" );
+		engineRequest.setSignature( "" );   // TODO - Provide signature
 		engineRequest.setBucketName((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY));
 
 		S3AccessControlPolicy engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 		
 		// To allow the bucket acl policy result to be serialized via Axiom classes
-		GetBucketAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetBucketAccessControlPolicyResponse( engineResponse );
+		GetBucketAccessControlPolicyResponse onePolicy = S3SerializableServiceImplementation.toGetBucketAccessControlPolicyResponse( engineResponse );
 
 		OutputStream outputStream = response.getOutputStream();
 		response.setStatus(200);	
@@ -757,7 +743,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executePutBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		// TODO -- HiPri - Undertake checks on Put Bucket Website
+		// TODO -- LoPri - Undertake checks on Put Bucket Website
 		// Tested using configuration <Directory /Users/john1/S3-Mount>\nAllowOverride FileInfo AuthConfig Limit...</Directory> in httpd.conf
         // Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
 		// Currently has noop effect in the sense that a running apachectl process sees the directory contents without further action
@@ -825,7 +811,7 @@ public class S3BucketAction implements ServletAction {
 		// [B] Query the multipart table to get the list of current uploads
     	try {
 	        MultipartLoadDao uploadDao = new MultipartLoadDao();
-	        Tuple<S3MultipartUpload[],Boolean> result = uploadDao.getInitiatedUploads( bucketName, maxUploads, prefix, keyMarker, uploadIdMarker );
+	        OrderedPair<S3MultipartUpload[],Boolean> result = uploadDao.getInitiatedUploads( bucketName, maxUploads, prefix, keyMarker, uploadIdMarker );
     	    uploads = result.getFirst();
     	    isTruncated = result.getSecond().booleanValue();
     	}
