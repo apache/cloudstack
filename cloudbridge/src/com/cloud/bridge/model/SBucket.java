@@ -21,7 +21,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
+ * Holds the relation
+ *  Id,
+ *  Name, 
+ *  OwnerCanonicalId,
+ *  SHost, 
+ *  CreateTime, 
+ *  VersioningStatus
+ * For ORM see "com/cloud/bridge/model/SHost.hbm.xml"
  */
 public class SBucket implements Serializable {
 	private static final long serialVersionUID = 7430267766019671273L;

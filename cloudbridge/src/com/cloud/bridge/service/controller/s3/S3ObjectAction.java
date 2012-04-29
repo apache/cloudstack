@@ -50,6 +50,7 @@ import com.cloud.bridge.persist.dao.SBucketDao;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
 import com.cloud.bridge.service.UserContext;
+import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
 import com.cloud.bridge.service.core.s3.S3AuthParams;
 import com.cloud.bridge.service.core.s3.S3ConditionalHeaders;
@@ -60,6 +61,7 @@ import com.cloud.bridge.service.core.s3.S3Engine;
 import com.cloud.bridge.service.core.s3.S3GetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3GetObjectRequest;
 import com.cloud.bridge.service.core.s3.S3GetObjectResponse;
+import com.cloud.bridge.service.core.s3.S3Grant;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.core.s3.S3PolicyContext;
@@ -67,6 +69,7 @@ import com.cloud.bridge.service.core.s3.S3PutObjectInlineRequest;
 import com.cloud.bridge.service.core.s3.S3PutObjectInlineResponse;
 import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
 import com.cloud.bridge.service.core.s3.S3Response;
+import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3SetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
@@ -259,41 +262,49 @@ public class S3ObjectAction implements ServletAction {
 	}
 	
 	private void executePutObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
-	{
-		S3PutObjectRequest putRequest = null;
-		
-		String ACLsetting = request.getHeader("x-amz-acl");
+	{ 
+		// [A] Determine that there is an applicable bucket which might have an ACL set
 		
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
-				   
-		if ( null == ACLsetting )		
-	      	// -> reuse the Access Control List parsing code that was added to support DIME
-		   try {
-			
-      		    putRequest = S3RestServlet.toEnginePutObjectRequest( request.getInputStream());
-	        	}
-		   catch( Exception e ) {
-			   throw new IOException( e.toString());
-	    	}
 		
-		// -> reuse the SOAP code to save the passed in ACLs
-		S3SetObjectAccessControlPolicyRequest engineRequest = new S3SetObjectAccessControlPolicyRequest();
-		engineRequest.setBucketName( bucketName );
-		engineRequest.setKey( key );
-//		if (null == putRequest)
-//			engineRequest.setAcl (an S3AccessContolList)  //		(ACLsetting);
-//		else 
-			engineRequest.setAcl( putRequest.getAcl());
-
-		// -> is this a request for a specific version of the object?  look for "versionId=" in the query string
-		String queryString = request.getQueryString();
-		if (null != queryString) engineRequest.setVersion( returnParameter( queryString, "versionId=" ));
-
-	    S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
-	    String version = engineResponse.getVersion();
-	    if (null != version) response.addHeader( "x-amz-version-id", version );
-	    response.setStatus( engineResponse.getResultCode());
+		SBucketDao bucketDao = new SBucketDao();
+		SBucket bucket = bucketDao.getByName( bucketName );
+		String owner = null;        
+        if ( null != bucket ) 
+        	 owner = bucket.getOwnerCanonicalId();
+        if (null == owner)
+                {
+            	   logger.error( "ACL update failed since " + bucketName + " does not exist" );
+                   throw new IOException("ACL update failed");
+                 }
+        if (null == key)
+        	   {
+        	      logger.error( "ACL update failed since " + bucketName + " does not contain the expected key" );
+                  throw new IOException("ACL update failed");
+                }
+        
+         // [B] Obtain the grant request which applies to the acl request string.  This latter is supplied as the value of the x-amz-acl header.
+        
+         S3SetObjectAccessControlPolicyRequest engineRequest = new S3SetObjectAccessControlPolicyRequest();
+         S3Grant grantRequest = new S3Grant();
+     	 S3AccessControlList aclRequest = new S3AccessControlList();
+     		
+     	 String aclRequestString = request.getHeader("x-amz-acl");
+     	 OrderedPair <Integer,Integer> accessControlsForObjectOwner = SAcl.getCannedAccessControls(aclRequestString,"SObject");
+     	 grantRequest.setPermission(accessControlsForObjectOwner.getFirst());
+     	 grantRequest.setGrantee(accessControlsForObjectOwner.getSecond());
+     	 grantRequest.setCanonicalUserID(owner);
+     	 aclRequest.addGrant(grantRequest);
+     	 engineRequest.setAcl(aclRequest);
+     	 engineRequest.setBucketName(bucketName);
+     	 engineRequest.setKey(key);
+        
+     	
+ 		 // [C] Allow an S3Engine to handle the S3SetObjectAccessControlPolicyRequest
+ 	     S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
+ 	     response.setStatus( engineResponse.getResultCode());
+     
 	}
 
 	private void executeGetObject(HttpServletRequest request, HttpServletResponse response) throws IOException 
@@ -354,7 +365,6 @@ public class S3ObjectAction implements ServletAction {
 			S3RestServlet.writeResponse(response, "HTTP/1.1 100 Continue\r\n");
 		}
 
-		// String contentType = request.getHeader( "Content-Type" );  TODO - Needed?
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
 
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
@@ -640,8 +650,6 @@ public class S3ObjectAction implements ServletAction {
 		int uploadId    = -1;
 
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
-
-		// String md5 = request.getHeader( "Content-MD5" );   TODO _ Needed?
 
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );

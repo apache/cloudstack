@@ -38,6 +38,8 @@ public class EntityDao<T> {
 		this.clazz = clazz;
 		
 		// Note : beginTransaction can be called multiple times
+		// "If a new underlying transaction is required, begin the transaction. Otherwise continue the new work in the 
+		// context of the existing underlying transaction." from the Hibernate spec
 		PersistContext.beginTransaction();
 	}
 	

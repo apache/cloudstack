@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class S3AccessControlList {
 	private List<S3Grant> list = new ArrayList<S3Grant>();

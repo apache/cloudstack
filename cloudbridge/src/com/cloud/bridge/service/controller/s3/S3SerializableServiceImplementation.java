@@ -206,7 +206,6 @@ public class S3SerializableServiceImplementation implements AmazonS3SkeletonInte
 		request.setBucketName(setBucketAccessControlPolicy.getBucket());
 		request.setAcl(toEngineAccessControlList(setBucketAccessControlPolicy.getAccessControlList()));
 		
-		// S3Response basicResponse = engine.handleRequest(request);   TODO - Needed?
 		SetBucketAccessControlPolicyResponse response = new SetBucketAccessControlPolicyResponse();
 		return response;
     }

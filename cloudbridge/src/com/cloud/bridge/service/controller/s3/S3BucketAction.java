@@ -45,13 +45,18 @@ import com.amazon.s3.ListBucketResponse;
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SBucket;
+import com.cloud.bridge.model.SHost;
+import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.BucketPolicyDao;
 import com.cloud.bridge.persist.dao.MultipartLoadDao;
+import com.cloud.bridge.persist.dao.SAclDao;
 import com.cloud.bridge.persist.dao.SBucketDao;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
 import com.cloud.bridge.service.UserContext;
+import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
+import com.cloud.bridge.service.core.s3.S3BucketAdapter;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy;
 import com.cloud.bridge.service.core.s3.S3CanonicalUser;
 import com.cloud.bridge.service.core.s3.S3CreateBucketConfiguration;
@@ -60,6 +65,7 @@ import com.cloud.bridge.service.core.s3.S3CreateBucketResponse;
 import com.cloud.bridge.service.core.s3.S3DeleteBucketRequest;
 import com.cloud.bridge.service.core.s3.S3Engine;
 import com.cloud.bridge.service.core.s3.S3GetBucketAccessControlPolicyRequest;
+import com.cloud.bridge.service.core.s3.S3Grant;
 import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsRequest;
 import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsResponse;
 import com.cloud.bridge.service.core.s3.S3ListBucketObjectEntry;
@@ -74,13 +80,18 @@ import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
 import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
 import com.cloud.bridge.service.exception.InternalErrorException;
+import com.cloud.bridge.service.exception.InvalidBucketName;
 import com.cloud.bridge.service.exception.InvalidRequestContentException;
 import com.cloud.bridge.service.exception.NetworkIOException;
+import com.cloud.bridge.service.exception.ObjectAlreadyExistsException;
+import com.cloud.bridge.service.exception.OutOfServiceException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
 import com.cloud.bridge.util.Converter;
+import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
+import com.cloud.bridge.util.Triple;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 
@@ -438,7 +449,7 @@ public class S3BucketAction implements ServletAction {
 		cal.set( 1970, 1, 1 ); 
 		engineRequest.setAccessKey(UserContext.current().getAccessKey());
 		engineRequest.setRequestTimestamp( cal );
-		engineRequest.setSignature( "" );   // TODO - Provide signature
+		engineRequest.setSignature( "" );   // TODO - Consider providing signature in a future release which allows additional user description
 		engineRequest.setBucketName((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY));
 
 		S3AccessControlPolicy engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
@@ -644,25 +655,41 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executePutBucketAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
-	{
-		S3PutObjectRequest putRequest = null;
+	{ 
+		// [A] Determine that there is an applicable bucket which might have an ACL set
 		
-		// -> reuse the Access Control List parsing code that was added to support DIME
-		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		try {
-		    putRequest = S3RestServlet.toEnginePutObjectRequest( request.getInputStream());
-		}
-		catch( Exception e ) {
-			throw new IOException( e.toString());
-		}
-		
-		// -> reuse the SOAP code to save the passed in ACLs
+		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);	
+		SBucketDao bucketDao = new SBucketDao();
+		SBucket bucket = bucketDao.getByName( bucketName );
+		String owner = null;        
+        if ( null != bucket ) 
+        	 owner = bucket.getOwnerCanonicalId();
+        if (null == owner)
+                {
+            	   logger.error( "ACL update failed since " + bucketName + " does not exist" );
+                   throw new IOException("ACL update failed");
+                 }
+        
+        // [B] Obtain the grant request which applies to the acl request string.  This latter is supplied as the value of the x-amz-acl header.
+        
 		S3SetBucketAccessControlPolicyRequest engineRequest = new S3SetBucketAccessControlPolicyRequest();
-		engineRequest.setBucketName( bucketName );
-		engineRequest.setAcl( putRequest.getAcl());
+		S3Grant grantRequest = new S3Grant();
+		S3AccessControlList aclRequest = new S3AccessControlList();
 		
+		String aclRequestString = request.getHeader("x-amz-acl");
+		OrderedPair <Integer,Integer> accessControlsForBucketOwner = SAcl.getCannedAccessControls(aclRequestString,"SBucket");
+		grantRequest.setPermission(accessControlsForBucketOwner.getFirst());
+		grantRequest.setGrantee(accessControlsForBucketOwner.getSecond());
+		grantRequest.setCanonicalUserID(owner);
+		aclRequest.addGrant(grantRequest);
+		engineRequest.setAcl(aclRequest);
+		engineRequest.setBucketName(bucketName);
+		
+		
+		// [C] Allow an S3Engine to handle the S3SetBucketAccessControlPolicyRequest
 	    S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
 	    response.setStatus( engineResponse.getResultCode());
+
 	}
 	
 	public void executePutBucketVersioning(HttpServletRequest request, HttpServletResponse response) throws IOException 
@@ -700,8 +727,8 @@ public class S3BucketAction implements ServletAction {
 		}
 	     
 	    try {
-			// -> does not matter what the ACLs say only the owner can turn on versioning on a bucket
-	        // -> the bucket owner may want to restrict the IP address from which this can occur
+			// Irrespective of what the ACLs say only the owner can turn on versioning on a bucket.
+	        // The bucket owner may want to restrict the IP address from which this can occur.
 			SBucketDao bucketDao = new SBucketDao();
 			SBucket sbucket = bucketDao.getByName( bucketName );
 		
@@ -760,7 +787,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	/**
-	 * This is a complex function with all the options defined by Amazon.   Part of the functionality is 
+	 * Multipart upload is a complex operation with all the options defined by Amazon.   Part of the functionality is 
 	 * provided by the query done against the database.  The CommonPrefixes functionality is done the same way 
 	 * as done in the listBucketContents function (i.e., by iterating though the list to decide which output 
 	 * element each key is placed).

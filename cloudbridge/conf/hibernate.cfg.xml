@@ -19,10 +19,10 @@
     
     <property name="show_sql">true</property>
     <!--  to debug hibernate generated SQL, open following configuration property -->
-    <!--  
+ <!--
     <property name="show_sql">true</property>
     <property name="hibernate.format_sql">true</property>
-    -->
+-->
     
 	<!-- Mapping files -->
 	<mapping resource="com/cloud/bridge/model/UserCredentials.hbm.xml"/>

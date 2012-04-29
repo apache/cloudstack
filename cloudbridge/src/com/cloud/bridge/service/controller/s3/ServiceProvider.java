@@ -116,13 +116,13 @@ public class ServiceProvider {
 	}
 
 	/** 
-	 * We return a tuple to distinguish between two cases:
+	 * We return a 2-tuple to distinguish between two cases:
 	 * (1) there is no entry in the map for bucketName, and (2) there is a null entry
 	 * in the map for bucketName.   In case 2, the database was inspected for the
 	 * bucket policy but it had none so we cache it here to reduce database lookups.
 	 * @param bucketName
 	 * @return Integer in the tuple means: -1 if no policy defined for the bucket, 0 if one defined
-	 *         even if its set at null.
+	 *         even if it is set at null.
 	 */
 	public OrderedPair<S3BucketPolicy,Integer> getBucketPolicy(String bucketName) {
 

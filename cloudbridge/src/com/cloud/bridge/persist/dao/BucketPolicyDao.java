@@ -33,7 +33,7 @@ import com.cloud.bridge.util.ConfigurationHelper;
 public class BucketPolicyDao {
 	public static final Logger logger = Logger.getLogger(BucketPolicyDao.class);
 
-	private Connection conn       = null;
+	private Connection jdbcConnection       = null;
 	private String     dbName     = null;
 	private String     dbUser     = null;
 	private String     dbPassword = null;
@@ -65,7 +65,7 @@ public class BucketPolicyDao {
 
         openConnection();	
         try {            
-            statement = conn.prepareStatement ( "INSERT INTO bucket_policies (BucketName, OwnerCanonicalID, Policy) VALUES (?,?,?)" );
+            statement = jdbcConnection.prepareStatement ( "INSERT INTO bucket_policies (BucketName, OwnerCanonicalID, Policy) VALUES (?,?,?)" );
             statement.setString( 1, bucketName );
             statement.setString( 2, owner  );
             statement.setString( 3, policy );
@@ -89,7 +89,7 @@ public class BucketPolicyDao {
 
         openConnection();	
         try {            
-            statement = conn.prepareStatement ( "SELECT OwnerCanonicalID FROM bucket_policies WHERE BucketName=?" );
+            statement = jdbcConnection.prepareStatement ( "SELECT OwnerCanonicalID FROM bucket_policies WHERE BucketName=?" );
             statement.setString( 1, bucketName );
             ResultSet rs = statement.executeQuery();
 	        if (rs.next()) owner = rs.getString( "OwnerCanonicalID" );
@@ -109,7 +109,7 @@ public class BucketPolicyDao {
 	
         openConnection();	
         try {            
-	        statement = conn.prepareStatement ( "SELECT Policy FROM bucket_policies WHERE BucketName=?" );
+	        statement = jdbcConnection.prepareStatement ( "SELECT Policy FROM bucket_policies WHERE BucketName=?" );
             statement.setString( 1, bucketName );
             ResultSet rs = statement.executeQuery();
 	        if (rs.next()) policy = rs.getString( "Policy" );
@@ -128,7 +128,7 @@ public class BucketPolicyDao {
 	
         openConnection();	
         try {
-	        statement = conn.prepareStatement ( "DELETE FROM bucket_policies WHERE BucketName=?" );
+	        statement = jdbcConnection.prepareStatement ( "DELETE FROM bucket_policies WHERE BucketName=?" );
             statement.setString( 1, bucketName );
             int count = statement.executeUpdate();
             statement.close();	
@@ -141,14 +141,14 @@ public class BucketPolicyDao {
 	private void openConnection() 
         throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException 
     {
-        if (null == conn) {
+        if (null == jdbcConnection) {
             Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
+            jdbcConnection = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
         }
     }
 
     private void closeConnection() throws SQLException {
-        if (null != conn) conn.close();
-        conn = null;
+        if (null != jdbcConnection) jdbcConnection.close();
+        jdbcConnection = null;
     }
 }

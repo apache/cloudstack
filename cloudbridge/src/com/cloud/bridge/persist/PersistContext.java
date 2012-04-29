@@ -145,15 +145,15 @@ public class PersistContext {
   	 * @return
   	 */
   	public static boolean acquireNamedLock(String name, int timeoutSeconds) {
-  		Connection conn = getJDBCConnection(name, true);
-  		if(conn == null) {
+  		Connection jdbcConnection = getJDBCConnection(name, true);
+  		if(jdbcConnection == null) {
   			logger.warn("Unable to acquire named lock connection for named lock: " + name);
   			return false;
   		}
   		
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
+            pstmt = jdbcConnection.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
 
             pstmt.setString(1, name);
             pstmt.setInt(2, timeoutSeconds);
@@ -185,15 +185,15 @@ public class PersistContext {
   	}
   	
     public static boolean releaseNamedLock(String name) {
-        Connection conn = getJDBCConnection(name, false);
-        if(conn == null) {
+        Connection jdbcConnection = getJDBCConnection(name, false);
+        if(jdbcConnection == null) {
             logger.error("Unable to acquire DB connection for global lock system");
         	return false;
         }
         
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
+            pstmt = jdbcConnection.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
             pstmt.setString(1, name);
             ResultSet rs = pstmt.executeQuery();
             if(rs != null && rs.first())
