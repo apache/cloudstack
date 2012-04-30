@@ -317,7 +317,7 @@
                   <!-- Add to group -->
                   <div class="select odd">
                     <div class="name">
-                      <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/></span>
+                      <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                     </div>
                     <div class="value">
                       <input type="text" name="groupname" />
