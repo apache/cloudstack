@@ -35,6 +35,9 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
+    
+    @SerializedName(ApiConstants.DEFAULT_ZONE_ID) @Param(description="the default zone of the account")
+    private IdentityProxy defaultZoneId = new IdentityProxy("data_center");
 
     @SerializedName(ApiConstants.RECEIVED_BYTES) @Param(description="the total number of network traffic bytes received")
     private Long bytesReceived;
@@ -265,5 +268,9 @@ public class AccountResponse extends BaseResponse {
 
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
+    }
+    
+    public void setDefaultZone(Long defaultZoneId) {
+    	this.defaultZoneId.setValue(defaultZoneId);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2012 Citrix Systems, Inc. Licensed under the
+﻿// Copyright 2012 Citrix Systems, Inc. Licensed under the
 // Apache License, Version 2.0 (the "License"); you may not use this
 // file except in compliance with the License.  Citrix Systems, Inc.
 // reserves all rights not expressly granted by the License.
@@ -331,6 +331,7 @@ public class ApiConstants {
     public static final String START_VM = "startvm";
     public static final String HA_HOST = "hahost";
 
+    public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

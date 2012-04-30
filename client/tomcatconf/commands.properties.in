@@ -9,6 +9,7 @@ disableAccount=com.cloud.api.commands.DisableAccountCmd;7
 enableAccount=com.cloud.api.commands.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7
 listAccounts=com.cloud.api.commands.ListAccountsCmd;15
+markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
 
 #### User commands
 createUser=com.cloud.api.commands.CreateUserCmd;3
