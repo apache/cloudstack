@@ -690,7 +690,7 @@ public class Upgrade2214to30 implements DbUpgrade {
     	try{
     		//Get all hypervisors in use
     		try {
-    			pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster`");
+    			pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
     			rs = pstmt.executeQuery();
     			while(rs.next()){
     				if("XenServer".equals(rs.getString(1))){
