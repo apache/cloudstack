@@ -41,7 +41,7 @@
           if ($target.closest('[view-all-target]').size()) {
             var targetID = $target.closest('[view-all-target]').attr('view-all-target');
             args.$browser.cloudBrowser('addPanel', {
-              title: targetID.charAt(0).toUpperCase() + targetID.substr(1).toLowerCase(),
+              title: $target.closest('[view-all-title]').attr('view-all-title'),
               data: '',
               noSelectPanel: true,
               maximizeIfSelected: true,

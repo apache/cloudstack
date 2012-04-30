@@ -948,58 +948,70 @@
         </div>
 
         <!-- Zone dashboard -->
-        <div class="system-dashboard">
+        <div class="system-dashboard zone">
           <div class="head">
-            <span><fmt:message key="label.zones"/></span>
-            <div class="view-all zones" view-all-target="zones"><span><fmt:message key="label.view.all"/></span></div>
+            <span><fmt:message key="label.menu.infrastructure"/></span>
+            <div class="view-all zones"
+                 view-all-title="Zones"
+                 view-all-target="zones"><span><fmt:message key="label.view.all"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
-              <span class="header"><fmt:message key="label.number.of.zones"/></span>
+              <span class="header"><fmt:message key="label.zones"/></span>
               <span class="overview total" data-item="zoneCount"></span>
-              <span class="button view-all zones" view-all-target="zones"><fmt:message key="label.view.all"/></span>
+              <span class="button view-all zones"
+                    view-all-title="<fmt:message key="label.zones"/>"
+                    view-all-target="zones"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
-              <span class="header"><fmt:message key="label.number.of.pods"/></span>
+              <span class="header"><fmt:message key="label.pods"/></span>
               <span class="overview total" data-item="podCount"></span>
-              <span class="button view-all pods" view-all-target="pods"><fmt:message key="label.view.all"/></span>
+              <span class="button view-all pods"
+                    view-all-title="<fmt:message key="label.pods"/>"
+                    view-all-target="pods"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
-              <span class="header"><fmt:message key="label.number.of.clusters"/></span>
+              <span class="header"><fmt:message key="label.clusters"/></span>
               <span class="overview total" data-item="clusterCount"></span>
-              <span class="button view-all clusters" view-all-target="clusters"><fmt:message key="label.view.all"/></span>
+              <span class="button view-all clusters"
+                    view-all-title="<fmt:message key="label.clusters"/>"
+                    view-all-target="clusters"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block last">
-              <span class="header"><fmt:message key="label.number.of.hosts"/></span>
+              <span class="header"><fmt:message key="label.hosts"/></span>
               <span class="overview total" data-item="hostCount"></span>
-              <span class="button view-all hosts" view-all-target="hosts"><fmt:message key="label.view.all"/></span>
+              <span class="button view-all hosts"
+                    view-all-title="<fmt:message key="label.hosts"/>"
+                    view-all-target="hosts"><fmt:message key="label.view.all"/></span>
             </li>
-          </ul>
-        </div>
-
-        <!-- Host dashboard -->
-        <div class="system-dashboard">
-          <div class="head">
-            <span><fmt:message key="label.hosts"/></span>
-            <div class="view-more" view-all-target="hosts"><span><fmt:message key="label.view.all"/></span></div>
-          </div>
-          <ul class="status_box good">
             <li class="block">
-              <span class="header"><fmt:message key="label.total.hosts"/></span>
-              <span class="overview total" data-item="hostCount"></span>
+              <span class="header"><fmt:message key="label.primary.storage"/></span>
+              <span class="overview total" data-item="primaryStorageCount"></span>
+              <span class="button view-all zones"
+                    view-all-title="<fmt:message key="label.primary.storage"/>"
+                    view-all-target="primaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block capacity">
-              <span class="header"><fmt:message key="label.total.CPU"/></span>
-              <span class="overview total" data-item="cpuCapacityTotal"></span>
+            <li class="block">
+              <span class="header"><fmt:message key="label.secondary.storage"/></span>
+              <span class="overview total" data-item="secondaryStorageCount"></span>
+              <span class="button view-all pods"
+                    view-all-title="<fmt:message key="label.secondary.storage"/>"
+                    view-all-target="secondaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block capacity">
-              <span class="header"><fmt:message key="label.total.memory"/></span>
-              <span class="overview total" data-item="memCapacityTotal"></span>
+            <li class="block">
+              <span class="header"><fmt:message key="label.system.vms"/></span>
+              <span class="overview total" data-item="systemVmCount"></span>
+              <span class="button view-all clusters"
+                    view-all-title="<fmt:message key="label.system.vms"/>"
+                    view-all-target="systemVms"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block last capacity">
-              <span class="header"><fmt:message key="label.total.storage"/></span>
-              <span class="overview total" data-item="storageCapacityTotal"></span>
-            </li>
+            <li class="block last">
+              <span class="header"><fmt:message key="label.virtual.routers"/></span>
+              <span class="overview total" data-item="virtualRouterCount"></span>
+              <span class="button view-all hosts"
+                    view-all-title="<fmt:message key="label.virtual.routers"/>"
+                    view-all-target="virtualRouters"><fmt:message key="label.view.all"/></span>
+            </li> 
           </ul>
         </div>
       </div>
@@ -1666,6 +1678,11 @@ dictionary = {
 'message.edit.traffic.type': '<fmt:message key="message.edit.traffic.type"/>',
 'label.label': '<fmt:message key="label.label"/>',
 'message.configure.all.traffic.types': '<fmt:message key="message.configure.all.traffic.types"/>',
+'label.virtual.routers': '<fmt:message key="label.virtual.routers"/>',
+'label.primary.storage.count': '<fmt:message key="label.primary.storage.count"/>',
+'label.secondary.storage.count': '<fmt:message key="label.secondary.storage.count"/>',
+'label.number.of.system.vms': '<fmt:message key="label.number.of.system.vms"/>',
+'label.number.of.virtual.routers': '<fmt:message key="label.number.of.virtual.routers"/>',
 'label.max.networks': '<fmt:message key="label.max.networks"/>',
 'label.latest.events': '<fmt:message key="label.latest.events"/>',
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
