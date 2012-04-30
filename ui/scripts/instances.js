@@ -1590,6 +1590,8 @@
 								
 								serviceofferingname: { label: 'label.compute.offering' },
 								haenable: { label: 'label.ha.enabled', converter:cloudStack.converters.toBooleanText },
+								publicip: { label: 'label.public.ip' },								
+								
 								group: { label: 'label.group', isEditable: true },
 								zonename: { label: 'label.zone.name', isEditable: false },
 								hostname: { label: 'label.host' },                
