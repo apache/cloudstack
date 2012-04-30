@@ -5,9 +5,15 @@ public class HeaderParam {
 	protected String name;
 	protected String value;
 	
+	
 	public HeaderParam() {
 		name  = null;
 		value = null;
+	}
+	
+	public HeaderParam (String name, String value) {
+         this.name = name;
+         this.name = value;     
 	}
 	
 	public void setName( String name ) {

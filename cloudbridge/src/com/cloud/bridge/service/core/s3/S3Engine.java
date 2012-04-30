@@ -59,6 +59,7 @@ import com.cloud.bridge.persist.dao.SHostDao;
 import com.cloud.bridge.persist.dao.SMetaDao;
 import com.cloud.bridge.persist.dao.SObjectDao;
 import com.cloud.bridge.persist.dao.SObjectItemDao;
+import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
@@ -1473,9 +1474,10 @@ public class S3Engine {
 		S3PolicyContext context = new S3PolicyContext( PolicyActions.PutObject, bucket.getName());
 		context.setKeyName( nameKey );
 		context.setEvalParam( ConditionKeys.Acl, cannedAccessPolicy);
-		verifyAccess( context, "SBucket", bucket.getId(), SAcl.PERMISSION_WRITE );
 
-		// [A] If versioning is off them we over write a null object item
+		verifyAccess( context, "SBucket", bucket.getId(), SAcl.PERMISSION_WRITE );  // TODO - check this validates plain POSTs
+
+		// [B] If versioning is off them we over write a null object item
 		SObject object = objectDao.getByNameKey(bucket, nameKey);
 		if ( object != null ) 
 		{

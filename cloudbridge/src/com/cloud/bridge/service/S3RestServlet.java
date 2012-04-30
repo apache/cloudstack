@@ -337,24 +337,19 @@ public class S3RestServlet extends HttpServlet {
     	String bucketName = null;
     	String key = null;
     	
+    	String serviceEndpoint = ServiceProvider.getInstance().getServiceEndpoint();
+    	String host            = request.getHeader("Host");
+    	
     	// Check for unrecognized forms of URI information in request
     	
     	if ( ( pathInfo == null ) || ( pathInfo.indexOf('/') != 0 ) )
         	if ( "POST".equalsIgnoreCase(request.getMethod()) )
         		// Case where request is POST operation with no pathinfo
+        		// This is the POST alternative to PUT described at s3.amazonaws.com API doc page 141
         	{ 
-        	  logger.warn("POST alternative of PUT not yet implemented");
-        	// TODO - Hi Pri -Implement POST alternative of PUT
-        	// s3.amazonaws.com API doc page 141
-        	  return null; }
-        	else 
-        	{
-			  logger.warn("Invalid REST request URI " + pathInfo);
-			  return null;
+        		return routePlainPostRequest (request);       	
 		    }
     	
-    	String serviceEndpoint = ServiceProvider.getInstance().getServiceEndpoint();
-    	String host            = request.getHeader("Host");
     	
     	// Irrespective of whether the requester is using subdomain or full host naming of path expressions
     	// to buckets, wherever the request is made up of a service endpoint followed by a /, in AWS S3 this always
@@ -451,6 +446,52 @@ public class S3RestServlet extends HttpServlet {
     		response.getOutputStream().write(data, 0, length);
     	}
     }
+
+    // Route for the case where request is POST operation with no pathinfo
+    // This is the POST alternative to PUT described at s3.amazonaws.com API doc, Amazon Simple
+    // Storage Service API Reference API Version 2006-03-01 page 141.
+    // The purpose of the plain POST operation is to add an object to a specified bucket using HTML forms.
+    
+private S3ObjectAction routePlainPostRequest (HttpServletRequest request)    
+    {	
+	// TODO - Remove the unnecessary fields below    
+	// Obtain the mandatory fields from the HTML form or otherwise fail with a logger message
+	  String keyString = request.getParameter("key");
+	  String metatagString = request.getParameter("x-amz-meta-tag");
+	  String bucketString = request.getParameter("Bucket");
+	  String aclString = request.getParameter("acl");
+	  String fileString = request.getParameter("file");
+	  
+	  String accessKeyString = request.getParameter("AWSAccessKeyId");
+	  String signatureString = request.getParameter("Signature");
+
+	  // Obtain the discretionary fields from the HTML form 
+	  String policyKeyString = request.getParameter("Policy");
+	  String metauuidString = request.getParameter("x-amz-meta-uuid");
+	  String redirectString = request.getParameter("redirect");  
+	  
+	  // if none of the above are null then ...
+	  request.setAttribute(S3Constants.BUCKET_ATTR_KEY, bucketString);
+	  request.setAttribute(S3Constants.OBJECT_ATTR_KEY, keyString);
+	  request.setAttribute(S3Constants.PLAIN_POST_ACCESS_KEY, accessKeyString);
+	  request.setAttribute(S3Constants.PLAIN_POST_SIGNATURE, signatureString);
+	  
+	    // -> authenticated calls
+		try {
+		    // S3AuthParams params = extractRequestHeaders( request );
+			S3AuthParams params = new S3AuthParams();
+			HeaderParam headerParam1 = new HeaderParam("accessKey", accessKeyString);
+			params.addHeader(headerParam1);
+			HeaderParam headerParam2 = new HeaderParam("secretKey", signatureString);
+			params.addHeader(headerParam2);
+			authenticateRequest( request, params );
+		    }
+		catch (Exception e)
+		{ logger.warn("Authentication details insufficient"); }
+
+	  return new S3ObjectAction();
+	  
+	}
     
     /**
      * A DIME request is really a SOAP request that we are dealing with, and so its

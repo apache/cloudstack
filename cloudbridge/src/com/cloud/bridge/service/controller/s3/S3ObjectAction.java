@@ -146,7 +146,11 @@ public class S3ObjectAction implements ServletAction {
 			           if (queryString.contains("uploads"))  executeInitiateMultipartUpload(request, response);	
 			      else if (queryString.contains("uploadId")) executeCompleteMultipartUpload(request, response);
 			 } 
-			 else executePostObject(request, response);
+			 else if ( request.getAttribute(S3Constants.PLAIN_POST_ACCESS_KEY) !=null )
+			         executePlainPostObject (request, response);
+			         // TODO - Having implemented the request, now provide an informative HTML page response
+			 else 
+				     executePostObject(request, response);
 		}
 		else throw new IllegalArgumentException( "Unsupported method in REST request");
 	}
@@ -411,6 +415,54 @@ public class S3ObjectAction implements ServletAction {
 		String version = engineRequest.getVersion();
 		if (null != version) response.addHeader( "x-amz-version-id", version );		
 	}
+	
+	/*
+	 * The purpose of a plain POST operation is to add an object to a specified bucket using HTML forms.
+	 * The capability is for developer and tester convenience providing a simple browser-based upload
+	 * feature as an alternative to using PUTs.
+	 * In the case of PUTs the upload information is passed through HTTP headers.  However in the case of a
+	 * POST this information must be supplied as form fields.  Many of these are mandatory or otherwise
+	 * the POST request will be rejected.
+	 * The requester using the HTML page must submit valid credentials sufficient for checking that
+	 * the bucket to which the object is to be added has WRITE permission for that user.  The AWS access
+	 * key field on the form is taken to be synonymous with the user canonical ID for this purpose.
+	 */
+	private void executePlainPostObject(HttpServletRequest request, HttpServletResponse response) throws IOException  
+	{
+		String continueHeader = request.getHeader( "Expect" );
+		if (continueHeader != null && continueHeader.equalsIgnoreCase("100-continue")) {
+			S3RestServlet.writeResponse(response, "HTTP/1.1 100 Continue\r\n");
+		}
+
+		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
+
+		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
+		String key    = (String) request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
+		String accessKey = (String) request.getAttribute(S3Constants.PLAIN_POST_ACCESS_KEY);
+		String signature = (String) request.getAttribute(S3Constants.PLAIN_POST_SIGNATURE);
+		S3Grant grant = new S3Grant();
+		grant.setCanonicalUserID(accessKey);
+		grant.setGrantee(SAcl.GRANTEE_USER);
+		grant.setPermission(SAcl.PERMISSION_FULL);
+		S3AccessControlList acl = new S3AccessControlList();
+		acl.addGrant(grant);
+		S3PutObjectInlineRequest engineRequest = new S3PutObjectInlineRequest();
+		engineRequest.setBucketName(bucket);
+		engineRequest.setKey(key);
+		engineRequest.setAcl(acl);
+		engineRequest.setContentLength(contentLength);
+		engineRequest.setMetaEntries( extractMetaData( request ));
+		engineRequest.setCannedAccess( request.getHeader( "x-amz-acl" ));
+
+		DataHandler dataHandler = new DataHandler(new ServletRequestDataSource(request));
+		engineRequest.setData(dataHandler);
+
+		S3PutObjectInlineResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
+		response.setHeader("ETag", "\"" + engineResponse.getETag() + "\"");
+		String version = engineResponse.getVersion();
+		if (null != version) response.addHeader( "x-amz-version-id", version );		
+	}
+
 
 	private void executeHeadObject(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
@@ -467,7 +519,7 @@ public class S3ObjectAction implements ServletAction {
     //
 	// add ETag header computed as Base64 MD5 whenever object is uploaded or updated
 	//
-	public void executePostObject( HttpServletRequest request, HttpServletResponse response ) throws IOException 
+	private void executePostObject( HttpServletRequest request, HttpServletResponse response ) throws IOException 
 	{
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String contentType  = request.getHeader( "Content-Type" );
