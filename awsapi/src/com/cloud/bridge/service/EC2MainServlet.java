@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.util.ConfigurationHelper;
@@ -27,13 +28,20 @@ public class EC2MainServlet extends HttpServlet{
 	 * are stored.
 	 */
 	public void init( ServletConfig config ) throws ServletException {
-		ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
-		// check if API is enabled
-		CloudStackConfigurationDao csDao = new CloudStackConfigurationDao();
-		String value = csDao.getConfigValue(ENABLE_EC2_API);
-		if(value != null){
-		    isEC2APIEnabled = Boolean.valueOf(value);
-		}
+		try{
+    	    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+    		UserCredentialsDao.preCheckTableExistence();
+    		// check if API is enabled
+    		CloudStackConfigurationDao csDao = new CloudStackConfigurationDao();
+    		String value = csDao.getConfigValue(ENABLE_EC2_API);
+    		if(value != null){
+    		    isEC2APIEnabled = Boolean.valueOf(value);
+    		}
+    		PersistContext.commitTransaction(true);
+		}finally {
+            PersistContext.closeSession(true);
+        }
+		
 	}
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {

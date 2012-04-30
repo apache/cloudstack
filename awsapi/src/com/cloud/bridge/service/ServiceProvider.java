@@ -325,6 +325,7 @@ public class ServiceProvider {
 				try {
 					result = method.invoke(serviceObject, args);
 					PersistContext.commitTransaction();
+					PersistContext.commitTransaction(true);
 				} catch (PersistException e) {
 				} catch (SessionException e) {
 				} catch(Throwable e) {
@@ -343,6 +344,7 @@ public class ServiceProvider {
 					}
 				} finally {
 					PersistContext.closeSession();
+					PersistContext.closeSession(true);
 				}
 				return result;
 			}
