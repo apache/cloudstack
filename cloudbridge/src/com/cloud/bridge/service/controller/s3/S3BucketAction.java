@@ -600,7 +600,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executeGetBucketLogging(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		// TODO -- this is a beta feature of S3
+		// TODO -- Review this in future.  Currently this is a beta feature of S3
 		response.setStatus(405);
 	}
 	
@@ -765,7 +765,7 @@ public class S3BucketAction implements ServletAction {
 	}
 	
 	public void executePutBucketLogging(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		// TODO -- this is a S3 beta feature
+		// TODO -- Review this in future.  Currently this is a S3 beta feature
 		response.setStatus(501);
 	}
 	

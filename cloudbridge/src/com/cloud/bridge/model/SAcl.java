@@ -23,13 +23,16 @@ import com.cloud.bridge.util.OrderedPair;
 import com.cloud.bridge.util.Triple;
 
 /**
- * @author Kelven Yang, John Zucker
+ * @author John Zucker, Kelven Yang
  * A model of stored ACLs to remember the ACL permissions per canonicalUserID per grantee
- * Hold the AWS S3 grantee and permission constants
- * Implement two forms of getCannedAccessControls mappings
+ * Hold the AWS S3 grantee and permission constants.
+ * 
+ * This class implements two forms of getCannedAccessControls mappings, as static methods,
+ * 
  * (a) an OrderedPair which provides a maplet across
  *         < permission, grantee >
  * when given an aclRequestString and a target (i.e. bucket or object),
+ * 
  * (b) a Triplet
  *         < permission1, permission2, symbol >
  * when given an aclRequestString, a target (i.e. bucket or object) and the ID of the owner.
@@ -41,7 +44,7 @@ public class SAcl implements Serializable {
 	public static final int GRANTEE_ALLUSERS = 1;
 	public static final int GRANTEE_AUTHENTICATED = 2;
 
-	public static final int PERMISSION_PASS = -1;   // -> no ACL test required
+	public static final int PERMISSION_PASS = -1;   // No ACL test required
 	public static final int PERMISSION_NONE = 0;
 	public static final int PERMISSION_READ = 1;
 	public static final int PERMISSION_WRITE = 2;

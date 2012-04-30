@@ -23,7 +23,7 @@ import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 
 /**
- * @author Kelven Yang
+ * @author Kelven Yang, John Zucker
  */
 public class SMetaDao extends EntityDao<SMeta> {
 	public SMetaDao() {
@@ -46,7 +46,7 @@ public class SMetaDao extends EntityDao<SMeta> {
 	}
 	
 	public void save(String target, long targetId, S3MetaDataEntry[] entries) {
-		// -> the target's meta data are being redefined
+		// To redefine the target's metadaa
 		executeUpdate("delete from SMeta where target=? and targetId=?", new Object[] { target, new Long(targetId)});
 
 		if(entries != null) {

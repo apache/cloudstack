@@ -164,7 +164,7 @@ public class S3ObjectAction implements ServletAction {
 		String sourceKey        = null;
 
 		// [A] Parse the x-amz-copy-source header into usable pieces
-		// -> is there a ?versionId= value
+		// Check to find a ?versionId= value if any
 		int index = copy.indexOf( '?' );
 		if (-1 != index)
 		{
@@ -173,15 +173,18 @@ public class S3ObjectAction implements ServletAction {
 			copy = copy.substring( 0, index );
 		}
 		
-		// -> the value of copy should look like: "/bucket-name/object-name"
+		// The value of copy should look like: "bucket-name/object-name"
 		index = copy.indexOf( '/' );
-		if ( 0 != index )
-			 throw new IllegalArgumentException( "Invalid x-amz-copy-sourse header value [" + copy + "]" );
-		else copy = copy.substring( 1 );
 		
-		index = copy.indexOf( '/' );
+		// In case it looks like "/bucket-name/object-name" discard a leading '/' if it exists
+		if ( 0 == index )
+		{
+			copy = copy.substring(1);
+			index = copy.indexOf( '/' );
+		}
+		
 		if ( -1 == index )
-			 throw new IllegalArgumentException( "Invalid x-amz-copy-sourse header value [" + copy + "]" );
+			 throw new IllegalArgumentException( "Invalid x-amz-copy-source header value [" + copy + "]" );
 		
 		sourceBucketName = copy.substring( 0, index );
 		sourceKey        = copy.substring( index+1 );

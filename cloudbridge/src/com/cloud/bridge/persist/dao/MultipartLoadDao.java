@@ -50,6 +50,8 @@ public class MultipartLoadDao {
 	public MultipartLoadDao() {
 	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
 	    Properties EC2Prop = null;
+	    
+	    // The settings for the CLOUDBRIDGE database are shared with the EC2 API
 	       
 	    if (null != propertiesFile) {
 	   	    EC2Prop = new Properties();

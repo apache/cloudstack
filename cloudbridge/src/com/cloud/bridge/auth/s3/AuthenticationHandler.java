@@ -33,6 +33,9 @@ import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.util.S3SoapAuth;
 
+/*
+ *  For SOAP compatibility.
+ */
 
 public class AuthenticationHandler implements Handler {
      protected final static Logger logger = Logger.getLogger(AuthenticationHandler.class);

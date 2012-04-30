@@ -34,7 +34,7 @@ import java.util.Set;
 public class SBucket implements Serializable {
 	private static final long serialVersionUID = 7430267766019671273L;
 	
-	public static final int VERSIONING_NULL = 0;     // -> initial set, not set to anything yet
+	public static final int VERSIONING_NULL = 0;   
 	public static final int VERSIONING_ENABLED = 1;
 	public static final int VERSIONING_SUSPENDED = 2;
 
