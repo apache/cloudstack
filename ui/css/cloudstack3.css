@@ -3473,7 +3473,7 @@ Dialogs*/
   margin: 6px 9px 9px;
   padding: 9px;
   color: #FFFFFF;
-  /* Adjusting the font size for proper display */
+/*Adjusting the font size for proper display*/
   font-size: 10px;
   border-left: 1px solid #6A6A6A;
   border-right: 1px solid #6A6A6A;
@@ -5967,7 +5967,7 @@ label.error {
   width: 59px;
   height: 23px;
   padding: 2px 9px 0 12px;
-  background: url(../images/bg-gradients.png) 0px 53px;
+  background: url(../images/bg-gradients.png) 0px -1342px;
   border: 1px solid #C4C4C4;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -7249,6 +7249,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   font-weight: bold;
 }
 
+.system-dashboard.zone {
+  height: 609px;
+  background-position: 0px -1423px;
+  background-color: #FFFFFF;
+}
+
 .system-dashboard-view .toolbar {
   position: relative;
 }
@@ -7347,6 +7353,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
 }
 
+.system-dashboard.zone .status_box li {
+  margin-bottom: 120px;
+  height: 176px;
+  background-position: 0px -1005px;
+  background-color: #35404B;
+}
+
 .system-dashboard .status_box li span {
   color: #FFFFFF;
   /*+text-shadow:0px 1px 1px #000000;*/
@@ -7386,6 +7399,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-text-shadow: 0px 1px 2px #000000;
   -o-text-shadow: 0px 1px 2px #000000;
   text-shadow: 0px 1px 2px #000000;
+}
+
+.system-dashboard.zone .status_box li span.header {
+  font-size: 13px;
 }
 
 .system-dashboard .status_box li span.status {

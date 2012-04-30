@@ -202,9 +202,63 @@
                 type: 'routing'
               },
               success: function(json) {
-                dataFns.capacity($.extend(data, {
+                dataFns.primaryStorageCount($.extend(data, {
                   hostCount: json.listhostsresponse.count ?
                     json.listhostsresponse.count : 0
+                }));
+              }
+            });
+          },
+
+          primaryStorageCount: function(data) {
+            $.ajax({
+              url: createURL('listStoragePools'),
+              success: function(json) {
+                dataFns.secondaryStorageCount($.extend(data, {
+                  primaryStorageCount: json.liststoragepoolsresponse.count ?
+                    json.liststoragepoolsresponse.count : 0
+                }));
+              }
+            });
+          },
+
+          secondaryStorageCount: function(data) {
+            $.ajax({
+              url: createURL('listHosts'),
+              data: {
+                type: 'SecondaryStorage'
+              },
+              success: function(json) {
+                dataFns.systemVmCount($.extend(data, {
+                  secondaryStorageCount: json.listhostsresponse.count ?
+                    json.listhostsresponse.count : 0
+                }));
+              }
+            });
+          },
+
+          systemVmCount: function(data) {
+            $.ajax({
+              url: createURL('listSystemVms'),
+              success: function(json) {
+                dataFns.virtualRouterCount($.extend(data, {
+                  systemVmCount: json.listsystemvmsresponse.count ?
+                    json.listsystemvmsresponse.count : 0
+                }));
+              }
+            });
+          },
+
+          virtualRouterCount: function(data) {
+            $.ajax({
+              url: createURL('listRouters'),
+              data: {
+                listAll: true
+              },
+              success: function(json) {
+                dataFns.capacity($.extend(data, {
+                  virtualRouterCount: json.listroutersresponse.count ?
+                    json.listroutersresponse.count : 0
                 }));
               }
             });
@@ -880,7 +934,7 @@
                       action: function(args) {
                         var array1 = [];
                         array1.push("&podid=" + args.data.podid);
-												array1.push("&networkid=" + selectedGuestNetworkObj.id)
+												array1.push("&networkid=" + selectedGuestNetworkObj.id);
                         array1.push("&gateway=" + args.data.gateway);
                         array1.push("&netmask=" + args.data.netmask);
                         array1.push("&startip=" + args.data.startip);
@@ -1836,7 +1890,7 @@
                     state: { label: 'label.state' },
                     physicalnetworkid: { label: 'label.physical.network.ID' },
                     destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
-										supportedServices: { label: 'label.supported.services' },
+										supportedServices: { label: 'label.supported.services' }
                   }
                 ],
                 dataProvider: function(args) { 					 
@@ -3854,18 +3908,18 @@
                                 activeviewersessions: { label: 'label.active.sessions' }
                               }
                             ],
-                            dataProvider: function(args) {	
-															$.ajax({
-																url: createURL("listSystemVms&id=" + args.context.systemVMs[0].id),
-																dataType: "json",
-																async: true,
-																success: function(json) {																  															
-																	args.response.success({
-																		actionFilter: systemvmActionfilter,
-																		data: json.listsystemvmsresponse.systemvm[0]
-																	});
-																}
-															});															
+                            dataProvider: function(args) {
+                              $.ajax({
+                                url: createURL("listSystemVms&id=" + args.context.systemVMs[0].id),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                  args.response.success({
+                                    actionFilter: systemvmActionfilter,
+                                    data: json.listsystemvmsresponse.systemvm[0]
+                                  });
+                                }
+                              });
                             }
                           }
                         }
@@ -3878,9 +3932,12 @@
             pods: function() {
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections.pods.listView, {
                 dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
                   $.ajax({
-                    url: createURL('listPods'),
-                    data: { listAll: true },
+                    url: createURL('listPods' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
                       args.response.success({ data: json.listpodsresponse.pod });
                     },
@@ -3917,9 +3974,12 @@
             clusters: function() {
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections.clusters.listView, {
                 dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
                   $.ajax({
-                    url: createURL('listClusters'),
-                    data: { listAll: true },
+                    url: createURL('listClusters' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
                       args.response.success({ data: json.listclustersresponse.cluster });
                     },
@@ -3956,9 +4016,12 @@
             hosts: function() {
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections.hosts.listView, {
                 dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
                   $.ajax({
-                    url: createURL('listHosts'),
-                    data: { type: 'routing', listAll: true },
+                    url: createURL('listHosts' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, type: 'routing', listAll: true },
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -3991,13 +4054,965 @@
               });
 
               return listView;
+            },
+            primaryStorage: function() {
+              var listView = $.extend(true, {}, cloudStack.sections.system.subsections['primary-storage'].listView, {
+                dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
+                  $.ajax({
+                    url: createURL('listStoragePools' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    success: function (json) {
+                      args.response.success({ data: json.liststoragepoolsresponse.storagepool });
+                    },
+                    error: function (json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+
+                detailView: {
+                  updateContext: function (args) {
+                    var zone;
+
+                    $.ajax({
+                      url: createURL('listZones'),
+                      data: { id: args.context.primarystorages[0].zoneid },
+                      async: false,
+                      success: function (json) {
+                        zone = json.listzonesresponse.zone[0];
+                      }
+                    });
+
+                    selectedZoneObj = zone;
+
+                    return {
+                      zones: [zone]
+                    };
+                  }
+                }
+              });
+
+              return listView;
+            },
+            secondaryStorage: function() {
+              var listView = $.extend(true, {}, cloudStack.sections.system.subsections['secondary-storage'].listView, {
+                dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
+                  $.ajax({
+                    url: createURL('listHosts' + searchByArgs),
+                    data: { type: 'SecondaryStorage', page: args.page, pageSize: pageSize, listAll: true },
+                    success: function (json) {
+                      args.response.success({ data: json.listhostsresponse.host });
+                    },
+                    error: function (json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+
+                detailView: {
+                  updateContext: function (args) {
+                    var zone;
+
+                    $.ajax({
+                      url: createURL('listZones'),
+                      data: { id: args.context.secondarystorages[0].zoneid },
+                      async: false,
+                      success: function (json) {
+                        zone = json.listzonesresponse.zone[0];
+                      }
+                    });
+
+                    selectedZoneObj = zone;
+
+                    return {
+                      zones: [zone]
+                    };
+                  }
+                }
+              });
+
+              return listView;
+            },
+            systemVms: function() {
+              var listView = $.extend(true, {}, cloudStack.sections.system.subsections.systemVms.listView, {
+                dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
+                  $.ajax({
+                    url: createURL('listSystemVms' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    success: function (json) {
+                      args.response.success({ data: json.listsystemvmsresponse.systemvm });
+                    },
+                    error: function (json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+
+                detailView: {
+                  updateContext: function (args) {
+                    var zone;
+
+                    $.ajax({
+                      url: createURL('listZones'),
+                      data: { id: args.context.systemVMs[0].zoneid },
+                      async: false,
+                      success: function (json) {
+                        zone = json.listzonesresponse.zone[0];
+                      }
+                    });
+
+                    selectedZoneObj = zone;
+
+                    return {
+                      zones: [zone]
+                    };
+                  }
+                }
+              });
+
+              return listView;
+            },
+            virtualRouters: function() {
+              var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
+                dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
+                  $.ajax({
+                    url: createURL('listRouters' + searchByArgs),
+                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    success: function (json) {
+                      args.response.success({ data: json.listroutersresponse.router });
+                    },
+                    error: function (json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+
+                detailView: {
+                  updateContext: function (args) {
+                    var zone;
+
+                    $.ajax({
+                      url: createURL('listZones'),
+                      data: { id: args.context.routers[0].zoneid },
+                      async: false,
+                      success: function (json) {
+                        zone = json.listzonesresponse.zone[0];
+                      }
+                    });
+
+                    selectedZoneObj = zone;
+
+                    return {
+                      zones: [zone]
+                    };
+                  }
+                }
+              });
+
+              return listView;
             }
           }
         }
       }
     }),
     subsections: {
-      // netscaler devices listView
+      virtualRouters: {
+        listView: {
+          label: 'label.virtual.appliances',
+          id: 'routers',
+          fields: {
+            name: { label: 'label.name' },
+            zonename: { label: 'label.zone' },
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'label.status',
+              indicator: {
+                'Running': 'on',
+                'Stopped': 'off',
+                'Error': 'off'
+              }
+            }
+          },
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                  case "name":
+                    if(args.filterBy.search.value.length > 0)
+                      array1.push("&keyword=" + args.filterBy.search.value);
+                    break;
+                }
+              }
+            }
+
+            $.ajax({
+              url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: 'json',
+              async: true,
+              success: function(json) {
+                var items = json.listroutersresponse.router;
+                args.response.success({
+                  actionFilter: routerActionfilter,
+                  data: items
+                });
+              }
+            });
+
+            // Get project routers
+            $.ajax({
+              url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+              dataType: 'json',
+              async: true,
+              success: function(json) {
+                var items = json.listroutersresponse.router;
+                args.response.success({
+                  actionFilter: routerActionfilter,
+                  data: items
+                });
+              }
+            });
+          },
+          detailView: {
+            name: 'Virtual applicance details',
+            actions: {
+              start: {
+                label: 'label.action.start.router',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.start.router';
+                  },
+                  notification: function(args) {
+                    return 'label.action.start.router';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('startRouter&id=' + args.context.routers[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.startrouterresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                          },
+                          getActionFilter: function() {
+                            return routerActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              stop: {
+                label: 'label.action.stop.router',
+                createForm: {
+                  title: 'label.action.stop.router',
+                  desc: 'message.action.stop.router',
+                  fields: {
+                    forced: {
+                      label: 'force.stop',
+                      isBoolean: true,
+                      isChecked: false
+                    }
+                  }
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.action.stop.router';
+                  }
+                },
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&forced=" + (args.data.forced == "on"));
+                  $.ajax({
+                    url: createURL('stopRouter&id=' + args.context.routers[0].id + array1.join("")),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.stoprouterresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                          },
+                          getActionFilter: function() {
+                            return routerActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              'remove': {
+                label: 'label.destroy.router',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.destroy.router';
+                  },
+                  notification: function(args) {
+                    return 'label.destroy.router';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("destroyRouter&id=" + args.context.routers[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.destroyrouterresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              /*
+               changeService: {
+               label: 'label.change.service.offering',
+               createForm: {
+               title: 'label.change.service.offering',
+               desc: '',
+               fields: {
+               serviceOfferingId: {
+               label: 'label.compute.offering',
+               select: function(args) {
+               $.ajax({
+               url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
+               dataType: "json",
+               async: true,
+               success: function(json) {
+               var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+               var items = [];
+               $(serviceofferings).each(function() {
+               if(this.id != args.context.routers[0].serviceofferingid) {
+               items.push({id: this.id, description: this.displaytext});
+               }
+               });
+               args.response.success({data: items});
+               }
+               });
+               }
+               }
+               }
+               },
+               messages: {
+               notification: function(args) {
+               return 'label.change.service.offering';
+               }
+               },
+               action: function(args) {
+               $.ajax({
+               url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+               dataType: "json",
+               async: true,
+               success: function(json) {
+               var jsonObj = json.changeserviceforrouterresponse.domainrouter;
+               args.response.success({data: jsonObj});
+               },
+               error: function(XMLHttpResponse) {
+               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+               args.response.error(errorMsg);
+               }
+               });
+               },
+               notification: {
+               poll: function(args) {
+               args.complete();
+               }
+               }
+               },
+               */
+
+              migrate: {
+                label: 'label.action.migrate.router',
+                createForm: {
+                  title: 'label.action.migrate.router',
+                  desc: '',
+                  fields: {
+                    hostId: {
+                      label: 'label.host',
+                      validation: { required: true },
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var hostObjs = json.listhostsresponse.host;
+                            var items = [];
+                            $(hostObjs).each(function() {
+                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      },
+                      error: function(XMLHttpResponse) {
+                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                        args.response.error(errorMsg);
+                      }
+                    }
+                  }
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.action.migrate.router';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.routers[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.migratesystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
+                            $.ajax({
+                              url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                              dataType: "json",
+                              async: false,
+                              success: function(json) {
+                                var items = json.listroutersresponse.router;
+                                if(items != null && items.length > 0) {
+                                  return items[0];
+                                }
+                              }
+                            });
+                          },
+                          getActionFilter: function() {
+                            return routerActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              viewConsole: {
+                label: 'label.view.console',
+                action: {
+                  externalLink: {
+                    url: function(args) {
+                      return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
+                    },
+                    title: function(args) {
+                      return args.context.routers[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+                    },
+                    width: 820,
+                    height: 640
+                  }
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                preFilter: function(args) {
+                  var hiddenFields = [];
+                  if (!args.context.routers[0].project) {
+                    hiddenFields.push('project');
+                    hiddenFields.push('projectid');
+                  }
+                  if(selectedZoneObj.networktype == 'Basic') {
+                    hiddenFields.push('publicip'); //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
+                  }
+                  return hiddenFields;
+                },
+                fields: [
+                  {
+                    name: { label: 'label.name' },
+                    project: { label: 'label.project' }
+                  },
+                  {
+                    id: { label: 'label.id' },
+                    projectid: { label: 'label.project.id' },
+                    state: { label: 'label.state' },
+                    publicip: { label: 'label.public.ip' },
+                    guestipaddress: { label: 'label.guest.ip' },
+                    linklocalip: { label: 'label.linklocal.ip' },
+                    hostname: { label: 'label.host' },
+                    serviceofferingname: { label: 'label.compute.offering' },
+                    networkdomain: { label: 'label.network.domain' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                    isredundantrouter: {
+                      label: 'label.redundant.router',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    redundantRouterState: { label: 'label.redundant.state' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL("listRouters&id=" + args.context.routers[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jsonObj = json.listroutersresponse.router[0];
+                      addExtraPropertiesToRouterInstanceObject(jsonObj);
+                      args.response.success({
+                        actionFilter: routerActionfilter,
+                        data: jsonObj
+                      });
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      },
+      systemVms: {
+        listView: {
+          label: 'label.system.vms',
+          id: 'systemVMs',
+          fields: {
+            name: { label: 'label.name' },
+            systemvmtype: {
+              label: 'label.type',
+              converter: function(args) {
+                if(args == "consoleproxy")
+                  return "Console Proxy VM";
+                else if(args == "secondarystoragevm")
+                  return "Secondary Storage VM";
+                else
+                  return args;
+              }
+            },
+            zonename: { label: 'label.zone' },
+            state: {
+              label: 'label.status',
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              indicator: {
+                'Running': 'on',
+                'Stopped': 'off',
+                'Error': 'off',
+                'Destroyed': 'off'
+              }
+            }
+          },
+          dataProvider: function(args) {
+            var array1 = [];
+            if(args.filterBy != null) {
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                  case "name":
+                    if(args.filterBy.search.value.length > 0)
+                      array1.push("&keyword=" + args.filterBy.search.value);
+                    break;
+                }
+              }
+            }
+
+            var selectedZoneObj = args.context.physicalResources[0];
+            $.ajax({
+              url: createURL("listSystemVms&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var items = json.listsystemvmsresponse.systemvm;
+                args.response.success({
+                  actionFilter: systemvmActionfilter,
+                  data: items
+                });
+              }
+            });
+          },
+
+          detailView: {
+            name: 'System VM details',
+            actions: {
+              start: {
+                label: 'label.action.start.systemvm',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.start.systemvm';
+                  },
+                  notification: function(args) {
+                    return 'label.action.start.systemvm';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('startSystemVm&id=' + args.context.systemVMs[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.startsystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.systemvm;
+                          },
+                          getActionFilter: function() {
+                            return systemvmActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              stop: {
+                label: 'label.action.stop.systemvm',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.stop.systemvm';
+                  },
+                  notification: function(args) {
+                    return 'label.action.stop.systemvm';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('stopSystemVm&id=' + args.context.systemVMs[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.stopsystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.systemvm;
+                          },
+                          getActionFilter: function() {
+                            return systemvmActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              restart: {
+                label: 'label.action.reboot.systemvm',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.reboot.systemvm';
+                  },
+                  notification: function(args) {
+                    return 'label.action.reboot.systemvm';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.rebootsystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return json.queryasyncjobresultresponse.jobresult.systemvm;
+                          },
+                          getActionFilter: function() {
+                            return systemvmActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              changeService: {
+                label: 'label.change.service.offering',
+                createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+                    serviceOfferingId: {
+                      label: 'label.compute.offering',
+                      select: function(args) {
+                        var apiCmd = "listServiceOfferings&issystem=true";
+                        if(args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
+                          apiCmd += "&systemvmtype=secondarystoragevm";
+                        else if(args.context.systemVMs[0].systemvmtype == "consoleproxy")
+                          apiCmd += "&systemvmtype=consoleproxy";
+                        $.ajax({
+                          url: createURL(apiCmd),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                            var items = [];
+                            $(serviceofferings).each(function() {
+                              if(this.id != args.context.systemVMs[0].serviceofferingid) {
+                                items.push({id: this.id, description: this.displaytext});
+                              }
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.change.service.offering';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("changeServiceForSystemVm&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jsonObj = json.changeserviceforsystemvmresponse.systemvm;
+                      args.response.success({data: jsonObj});
+                    },
+                    error: function(XMLHttpResponse) {
+                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                      args.response.error(errorMsg);
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              },
+
+              remove: {
+                label: 'label.action.destroy.systemvm',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.destroy.systemvm';
+                  },
+                  notification: function(args) {
+                    return 'label.action.destroy.systemvm';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('destroySystemVm&id=' + args.context.systemVMs[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jid = json.destroysystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          getUpdatedItem: function() {
+                            return { state: 'Destroyed' };
+                          },
+                          jobId: jid
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              migrate: {
+                label: 'label.action.migrate.systemvm',
+                messages: {
+                  notification: function(args) {
+                    return 'label.action.migrate.systemvm';
+                  }
+                },
+                createForm: {
+                  title: 'label.action.migrate.systemvm',
+                  desc: '',
+                  fields: {
+                    hostId: {
+                      label: 'label.host',
+                      validation: { required: true },
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
+                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var hostObjs = json.listhostsresponse.host;
+                            var items = [];
+                            $(hostObjs).each(function() {
+                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      },
+                      error: function(XMLHttpResponse) {
+                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                        args.response.error(errorMsg);
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.systemVMs[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.migratesystemvmresponse.jobid;
+                      args.response.success({
+                        _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                            //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
+                            $.ajax({
+                              url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                              dataType: "json",
+                              async: false,
+                              success: function(json) {
+                                var items = json.listsystemvmsresponse.systemvm;
+                                if(items != null && items.length > 0) {
+                                  return items[0];
+                                }
+                              }
+                            });
+                          },
+                          getActionFilter: function() {
+                            return systemvmActionfilter;
+                          }
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              viewConsole: {
+                label: 'label.view.console',
+                action: {
+                  externalLink: {
+                    url: function(args) {
+                      return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
+                    },
+                    title: function(args) {
+                      return args.context.systemVMs[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+                    },
+                    width: 820,
+                    height: 640
+                  }
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    id: { label: 'label.id' },
+                    state: { label: 'label.state' },
+                    systemvmtype: {
+                      label: 'label.type',
+                      converter: function(args) {
+                        if(args == "consoleproxy")
+                          return "Console Proxy VM";
+                        else if(args == "secondarystoragevm")
+                          return "Secondary Storage VM";
+                        else
+                          return args;
+                      }
+                    },
+                    zonename: { label: 'label.zone' },
+                    publicip: { label: 'label.public.ip' },
+                    privateip: { label: 'label.private.ip' },
+                    linklocalip: { label: 'label.linklocal.ip' },
+                    hostname: { label: 'label.host' },
+                    gateway: { label: 'label.gateway' },
+                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                    activeviewersessions: { label: 'label.active.sessions' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL("listSystemVms&id=" + args.context.systemVMs[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      args.response.success({
+                        actionFilter: systemvmActionfilter,
+                        data: json.listsystemvmsresponse.systemvm[0]
+                      });
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      },
+  // netscaler devices listView
       netscalerDevices: {
         id: 'netscalerDevices',
         title: 'label.devices',
@@ -6129,13 +7144,38 @@
               createForm: {
                 title: 'label.add.primary.storage',
                 fields: {
-                  //always appear (begin)
+                  zoneid: {
+                    label: 'Zone',
+                    validation: { required: true },
+                    select: function(args) {
+                      var data = args.context.zones ?
+                      { id: args.context.zones[0].id } : { listAll: true };
+
+                      $.ajax({
+                        url: createURL('listZones'),
+                        data: data,
+                        success: function(json) {
+                          var zones = json.listzonesresponse.zone;
+
+                          args.response.success({
+                            data: $.map(zones, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
+                        }
+                      });
+                    }
+                  },
                   podId: {
                     label: 'label.pod',
+                    dependsOn: 'zoneid',
                     validation: { required: true },
                     select: function(args) {
                       $.ajax({
-                        url: createURL("listPods&zoneid=" + args.context.zones[0].id),
+                        url: createURL("listPods&zoneid=" + args.zoneid),
                         dataType: "json",
                         async: true,
                         success: function(json) {
@@ -6460,7 +7500,7 @@
 
               action: function(args) {
                 var array1 = [];
-                array1.push("&zoneid=" + args.context.zones[0].id);
+                array1.push("&zoneid=" + args.data.zoneid);
                 array1.push("&podId=" + args.data.podId);
                 array1.push("&clusterid=" + args.data.clusterId);
                 array1.push("&name=" + todb(args.data.name));
@@ -6810,6 +7850,31 @@
               createForm: {
                 title: 'label.add.secondary.storage',
                 fields: {
+                  zoneid: {
+                    label: 'Zone',
+                    validation: { required: true },
+                    select: function(args) {
+                      var data = args.context.zones ?
+                      { id: args.context.zones[0].id } : { listAll: true };
+
+                      $.ajax({
+                        url: createURL('listZones'),
+                        data: data,
+                        success: function(json) {
+                          var zones = json.listzonesresponse.zone;
+
+                          args.response.success({
+                            data: $.map(zones, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
+                        }
+                      });
+                    }
+                  },
                   nfsServer: {
                     label: 'label.nfs.server',
                     validation: { required: true }
@@ -6822,7 +7887,7 @@
               },
 
               action: function(args) {
-                var zoneId = args.context.zones[0].id;
+                var zoneId = args.data.zoneid;
                 var nfs_server = args.data.nfsServer;
                 var path = args.data.path;
                 var url = nfsURL(nfs_server, path);
@@ -7581,7 +8646,7 @@
 				});
 			}
 		});
-	}
+	};
 
   //action filters (begin)
   var zoneActionfilter = function(args) {
