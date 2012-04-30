@@ -61,7 +61,7 @@ public class AccountVO implements Account, Identity {
     private String uuid;
     
     @Column(name="default_zone_id")
-    private long defaultZoneId;
+    private Long defaultZoneId = null;
 
     public AccountVO() {
     	this.uuid = UUID.randomUUID().toString();
