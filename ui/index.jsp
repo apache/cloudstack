@@ -392,7 +392,7 @@
                   <!-- Primary network -->
                   <div class="select odd">
                     <div class="name">
-                      <span><fmt:message key="label.primary.storage"/></span>
+                      <span><fmt:message key="label.network"/></span>
                     </div>
                     <div class="value">
                       <span wizard-field="default-network"></span>
