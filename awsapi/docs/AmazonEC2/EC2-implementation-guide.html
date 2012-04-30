@@ -1,0 +1,146 @@
+<HTML>
+<HEAD>
+<TITLE>Cloud.com's EC2 API Implementation Guide</TITLE>
+</HEAD>
+<BODY>
+<H1>Cloud.com's EC2 API Implementation Guide</H1>
+3/24/2011
+<H2>Table of Contents</H2>
+<UL>
+<LI><A href="#conf">1. Configuration Parameters</A></LI>
+<LI><A href="#party">2. Required 3rd Party Software</A></LI>
+<LI><A href="#maintenace">3. Maintenance</A></LI>
+<LI><A href="#install">4. Installation Instructions</A></LI>
+<LI><A href="#refs">5. References</A></LI>
+</UL>
+<P>
+<H2 id="conf">1. Configuration Parameters</H2>
+Several configuration parameters are required to make Cloud.com's EC2 service work properly.
+The following parameters are defined in the file:</BR> &lt;install directory>"/apache-tomcat-6.0.18/conf/ec2-service.properties":
+<pre>
+managementServer=192.168.154.36
+cloudAPIPort=8080
+WSDLVersion=2010-08-31
+keystore=xes.keystore
+keystorePass=apache
+dbName=cloudsbridge
+dbUser=root
+dbPassword=
+pollInterval1=100
+pollInterval2=100
+pollInterval3=100
+pollInterval4=1000
+pollInterval5=100
+pollInterval6=100
+</pre>
+<I>managementServer</I> - FQDN or IP address of a Cloud.com management server.   This is the address that
+the EC2 service makes Cloud.com REST API calls against.</BR>
+<I>cloudAPIPort</I> - The TCP port that the CloudStack, User API is running on.   If this property is not defined,
+then no port is used by the EC2 service when it queries the CloudStack.</BR>
+<I>WSDLVersion</I> - The string that defines the WSDL used by the SOAP API which the REST API also implements.
+This string is compared to the "Version=" parameter on each and every authorized REST request.</BR>
+<I>keystore</I> - The file name of the keystore used by EC2 which must be placed at the directory:
+"../apache-tomcat-6.0.18/webapps/bridge/WEB-INF/classes"</BR>
+<I>keystorePass</I> - The password to the EC2 keystore specified by the "keystore" parameter.</BR>
+<I>dbName</I> - The MySql database name holding the EC2 service's required tables.</BR>
+<I>dbUser=</I> - The user name used to access the "dbName" MySql database.</BR>
+<I>dbPassword</I> - The password (if any) the "dbUser" needs to access the EC2 MySql database.</BR>
+<I>pollInterval1</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API call: createTemplate.  Default value is 100.</BR>
+<I>pollInterval2</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API call: deployVirtualMachine.  Default value is 100.</BR>
+<I>pollInterval3</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API call: createVolume.  Default value is 100.</BR>
+<I>pollInterval4</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API call: createSnapshot.  Default value is 1000.</BR>
+<I>pollInterval5</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API calls:  deleteSnapshot, deleteTemplate, deleteVolume, attachVolume, detachVolume, disassociateIpAddress, enableStaticNat, disableStaticNat.  Default value is 100.</BR>
+<I>pollInterval6</I> - Time in milliseconds between asynchronous job completion polling for the following Cloud.com
+API calls: startVirtualMachine, destroyVirtualMachine, stopVirtualMachine.  Default value is 100.</BR>
+<P>
+<BR>
+The following REST calls are used to configure a mapping between Amazon's instance types and CloudStack service offerings:
+<P>
+http://&lt;fqdn-or-ip&gt;:&lt;port&gt;/bridge/rest/AmazonEC2?Action=SetOfferMapping&amazonoffer=m1.large&cloudoffer=1<BR>
+<P>
+The 'amazonoffer' parameter defines the standard Amazon instance types while the 'cloudoffer' parameter defines its associated
+CloudStack service offering identifer.  The result of this REST call is to save the defined relationship.  A second call with the
+same value for amazonoffer but with a different cloudoffer value will overwrite a previously saved setting.
+<BR>
+SetOfferMapping is an authenticated REST call using the same authentication scheme as all other EC2 REST calls. This means that the following standard EC2 REST paramters must also be part of the request: Signature, SignatureMethod, Version, SignatureVersion, and Expires.
+A HTTP 200 result code is returned on success and a 404 on failure.
+<P>
+http://&lt;fqdn-or-ip&gt;:&lt;port&gt;/bridge/rest/AmazonEC2?Action=DeleteOfferMapping&amazonoffer=m1.large<BR>
+<P>
+The result of this REST call is to delete any relationship previously defined by a call to the SetOfferMapping call for the
+value passed in the 'amazonoffer' parameter.<BR>
+DeleteOfferMapping is an authenticated REST call using the same authentication scheme as all other EC2 REST calls. This means that the following standard EC2 REST paramters must also be part of the request: Signature, SignatureMethod, Version, SignatureVersion, and Expires.
+A HTTP 200 result code is returned on success and a 404 on failure.
+<P>
+Examples of other Amazon instance types are:  
+{ "m1.small", "m1.large", "m1.xlarge", "c1.medium", "c1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge" }.</BR>
+Service offering IDs can be obtained from the following Cloud.com API calls: listServiceOfferings.
+Cloud.com's service offerings are configurable and thus can be different per installation, and they
+can also be viewed from the Cloud.com's Admin UI.
+<P>
+<H2 id="party">2. Required 3rd Party Software</H2>
+Cloud.com's EC2 service has been built and tested on the following set of 3rd party software:
+<pre>
+MySql
+apache-tomcat 6.0.18
+axis2 1.5.1
+rampart 1.5 (installed into axis2 for WS-Security)
+used for testing: ec2-api-tools-1.3-53907
+</pre>
+<P>
+<H2 id="maintenace">3. Maintenance</H2>
+As a result of the SetCertificate REST call <A href="#ref1">[1]</A>, X509 Certificates used for SOAP authentication are 
+stored in the following keystore:
+<pre>
+&lt;install directory>/apache-tomcat-6.0.18/webapps/bridge/WEB-INF/classes/xes.keystore
+</pre>
+The keytool <A href="#ref2">[2]</A> command line tool can be used to delete certificates no longer in use.
+<P>
+As a result of the SetUserKeys REST call <A href="#ref1">[1]</A>, entries are inserted into 
+the "usercredentials" table of the "cloudbridge" MySql database.  
+The MySql command line client can be used to delete usercredentials entries no longer in use.
+<P>
+<H2 id="install">4. Installation Instructions</H2>
+<P>
+On the very first install an EC2/S3 MySql database is created by running the following
+scripts in the given order: cloudsbridge_db.sql, cloudsbridge_schema.sql, cloudbridge_index.sql
+<P>
+After a successful installation the following directory and file structure should exist:
+<pre>
+&lt;install directory>
+   apache-tomcat-6.0.18
+      conf
+        ec2-service.properties  (EC2 service's configuration parameters)
+        server.xml		
+      lib
+        &lt;many axis2 jar files>	  
+      webapps
+        bridge
+          WEB-INF
+            classes
+               crypto.properties
+               xes.keystore  (holds X509 certificates for SOAP authentication)
+            modules
+               cloud-auth-ec2.mar
+               rampart-1.5.mar 
+               rahas-1.5.mar   
+               addressing-1.5.1.mar
+            services
+               cloud-ec2.aar  (the Axis2 EC2 service)
+</pre>
+The "../modules/cloud-auth-ec2.mar" module performs a mapping from an X509 certificate appearing in a SOAP
+request (since its signed via WS-Security) to a matching user's Cloud.com API access and secret keys.   This association
+is first created via the SetUserKeys and SetCertificate REST calls [1].
+<P>
+<H2 id="refs">5. References</H2>
+<OL>
+<LI id="ref1">Cloud.com's EC2 API User's Guide, 7/15/2010</LI>
+<LI id="ref2"><A href="http://download.oracle.com/docs/cd/E17476_01/javase/1.4.2/docs/tooldocs/windows/keytool.html">keytool - Key and Certificate Management Tool</A></LI>
+</OL>
+</BODY>
+</HTML>

@@ -1,0 +1,4 @@
+/usr/share/cloud/bridge/*
+/usr/share/cloud/setup/bridge/*
+/usr/bin/*
+/etc/init.d/*

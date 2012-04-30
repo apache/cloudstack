@@ -1,0 +1,257 @@
+<HTML>
+<HEAD>
+<TITLE>Cloud.com's EC2 API User's Guide</TITLE>
+</HEAD>
+<BODY>
+<H1>Cloud.com's EC2 API User's Guide</H1>
+4/17/2010
+<H2>Table of Contents</H2>
+<UL>
+<LI><A href="#part1">Part 1. Cloud.com's Specific Implementation Details</A></LI>
+   <UL>
+     <LI><A href="#registration">1. User Registration</A></LI>
+       <UL>
+         <LI><A href="#cloudkeys">1.1 Setting Cloud.com API Keys</A></LI>
+         <LI><A href="#certifiates">1.2 Setting a User's X509 Certificate</A></LI>
+       </UL>
+     <LI><A href="#endpoints">2. Endpoints</LI>
+     <LI><A href="#differences">3. Differences between Amazon's and Cloud.com's EC2 Implementations</A></LI>
+	 <LI><A href="#misc">4. Miscellaneous</A><P></LI>
+   </UL>
+<LI><A href="#part2">Part 2. Generic EC2 Details</A></LI>
+<UL>
+<LI><A href="#functions">List of EC2 Functions Implemented</A></LI>
+<LI><A href="#wsdl">Supported WSDL Version</A><P></LI>
+</UL>
+<LI><A href="#refs">References</A></LI>
+</UL>
+<P></BR>
+<H2 id="part1">Part 1. Cloud.com's Specific Implementation Details</H2>
+<H3 id="registration">1. User Registration</H3>
+To access Cloud.com's EC2 service via REST follow the instructions in Section 1.1.
+To access Cloud.com's EC2 service via SOAP follow instructions in both Section 1.1 and 1.2 below.  
+<P>
+<H3 id="cloudkeys">1.1 Setting Cloud.com API Keys</H3>
+The EC2 service needs to be given the user's Cloud.com API access and secret keys <A href="#ref2">[2]</A> so that it
+can make Cloud.com API calls on the user's behalf.   This is done by the following REST command.
+
+<pre>
+http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonEC2?Action=SetUserKeys&accesskey=&lt;key>&secretkey=&lt;key>
+</pre>
+SetUserKeys is an <I>unauthorized</I> REST call.</br>
+A HTTP 200 result code is returned on success and a 401 on failure.
+<P>
+<H3 id="certifiates">1.2 Setting a User's X509 Certificate</H3>
+EC2 uses WS-Security <A href="#ref4">[4]</A> for authentication on SOAP access.  WS-Security signs the entire SOAP request 
+using a public/private key pair.   The user of Cloud.com's EC2 service must 
+generate a public/private key pair with the public key defined in an X509
+certificate.   The private key is used by a SOAP client in generating
+the WS-Security signature of a SOAP request.  The matching public key is stored on 
+a server and is used to verify the signature on each request.
+<P>
+The following REST command must be used by a Cloud.com's EC2 service user to
+load their certificate into the service.   No access via the SOAP API is
+possible until this step is performed.  Also for this REST command to be 
+successful the instructions in Section 1.1 must be performed first.
+
+<pre>
+http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonEC2?Action=SetCertificate&AWSAccessKeyId=&lt;Cloud.com API AccessKey>&cert=&lt;pem encoded cert>
+</pre>
+SetCertificate is an <I>authenticated</I> REST call using the same authentication scheme as all other EC2 REST calls.
+This means that the following standard EC2 REST paramters must also be part of the request: Signature, SignatureMethod, Version, 
+SignatureVersion, and Expires <A href="#ref3">[3]</A>.</br>
+A HTTP 200 result code is returned on success and a 404 on failure.
+<P>
+An example of a PEM encoded X509 Certificate is <A href="#ref5">[5]</A>:
+<pre>
+-----BEGIN CERTIFICATE-----
+MIICdzCCAeCgAwIBAgIGAPCRHu3UMA0GCSqGSIb3DQEBBQUAMFMxCzAJBgNVBAYT
+AlVTMRMwEQYDVQQKEwpBbWF6b24uY29tMQwwCgYDVQQLEwNBV1MxITAfBgNVBAMT
+GEFXUyBMaW1pdGVkLUFzc3VyYW5jZSBDQTAeFw0xMDA2MjMxODE4MTZaFw0xMTA2
+MjMxODE4MTZaMFIxCzAJBgNVBAYTAlVTMRMwEQYDVQQKEwpBbWF6b24uY29tMRcw
+FQYDVQQLEw5BV1MtRGV2ZWxvcGVyczEVMBMGA1UEAxMMZWZieDQ0eXF1d3E2MIGf
+MA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCw+RO1QV7t5EbluyAAD11SoZ4ats5t
+DBSta/QB3G9T0y3p2gURrYMDYVJ1BZmyel/DuMANx6UG6Vw+0o0SXOS3mH8Yu/lO
+OOH9WxWiXulGMIrpPCiUpnWMrWhIlHu8mqLLhBx+5k4I92plMfH97BySunbv9zaf
+ZRKXX3cXIYbUMwIDAQABo1cwVTAOBgNVHQ8BAf8EBAMCBaAwFgYDVR0lAQH/BAww
+CgYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUCzKwCQvocPYFki/9
+NORZFTsjcZ8wDQYJKoZIhvcNAQEFBQADgYEAXmIe6+XsNHYIiLGQO6dh8nvHHzDw
+3sltNa7z6BSdNr7WDxpJg9oFUcddQVca1LZsjsqx6dIc1WxQUjPE9oOfSYqQZuMD
+/GOpWyXMb/oJ2MLI1Vp1ABKhHoHUJmPOrIou4UbCifMeD7MFZkezkKDqqH3jQMjA
+4YDNkSWLnJ9xba8=
+-----END CERTIFICATE-----
+</pre>
+<P>
+To remove a previously loaded certificate the user can simply execute
+the following REST command.
+<pre>
+http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonEC2?Action=DeleteCertificate&AWSAccessKeyId=&lt;Cloud.com API AccessKey>
+where the same value for the 'AWSAccessKeyId' parameter as was used in a previous call to SetCertificate.
+</pre>
+DeleteCertificate is an <I>authenticated</I> REST call using the same authentication scheme (and having all the same
+required parameters) as all other EC2 REST calls.</br>
+A HTTP 200 result code is returned on success and a 404 on failure.
+<P>
+<H3 id="endpoints">2. Endpoints</H3>
+For SOAP access the endpoint is:  
+<pre>http://&lt;fqdn-or-ip>:&lt;port>/bridge/services/AmazonEC2</pre>
+For REST access the endpoint is:
+<pre>http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonEC2</pre>
+<P>
+
+<H3 id="differences">3. Differences between Amazon's and Cloud.com's EC2 Implementations</H3>
+<font size=+1><I>EC2's RegisterImage Function</I></font>
+<P>
+This function maps to the Cloud.com's API "registerTemplate" function <A href="#ref2">[2]</A>.   However the registerTemplate function
+requires the following additional parameters that are not present in the RegisterImage function:
+<pre>
+format - the format for the template. Possible values include QCOW2, RAW, and VHD.</br>
+osTypeId - the ID of the OS Type that best represents the OS of this template.</br>
+zoneId - the ID of the zone the template is to be hosted on.</br>
+</pre>
+These parameters must be provided for a successful registerTemplate call and thus a RegsiterImage call.
+To accomidate these values we have redefined the "architecture" parameter defined for RegisterImage.
+The Amazon defined valid values are: "i386 | x86_64" and it is of type xsd:string.   Neither of these
+defined values has any meaning in the context of the Cloud.com API.
+
+The new definition of the architecture field is a three part value of the form:
+"&lt;format>:&lt;zoneName>:&lt;osTypeName>", where ":" is the field delimitor.   A valid example
+would be: "VHD:ZONE1:Centos 4.5".   Cloud.com's EC2 code translates the "zoneName" value into a valid zoneId,
+and the "osTypeName" value into a matching osTypeId.  In addition, whereas the architecture field
+is optional in Amazon's definition of RegisterImage, it is required in Cloud.com's modified version.
+<P>
+Another difference for the RegisterImage function concerns the use of the "imageLocation" parameter.
+As defined by Amazon <A href="#ref3">[3]</A>: 
+<pre>
+imageLocation - a full path to your AMI manifest in Amazon S3 storage.
+</pre>
+As defined for Cloud.com's EC2 implementation:
+<pre>
+imageLocation - is a URL of where the template is hosted. Possible URL include http:// and https://
+</pre>
+<P>
+<font size=+1><I>EC2's DescribeInstances Function</I></font>
+<P>
+Only the following list of filters are currently supported:
+<pre>
+availability-zone
+hypervisor
+image-id
+instance-id
+instance-type
+instance-state-code
+instance-state-name
+ip-address	
+owner-id
+root-device-name	
+</pre>
+<P>
+<font size=+1><I>EC2's DescribeVolumes Function</I></font>
+<P>
+Only the following list of filters are currently supported:
+<pre>
+attachment.attach-time
+attachment.device
+attachment.instance-id
+availability-zone
+create-time
+size
+snapshot-id
+status
+volume-id	
+</pre>
+<P>
+<font size=+1><I>EC2's DescribeSnapshots Function</I></font>
+<P>
+Only the following list of filters are currently supported:
+<pre>
+owner-alias
+owner-id (here its the CloudStack API key)
+snapshot-id
+start-time
+status
+volume-id
+volume-size
+</pre>
+<P>
+<P>
+<font size=+1><I>EC2's DescribeSecurityGroups Function</I></font>
+<P>
+Only the following list of filters are currently supported:
+<pre>
+description
+group-id
+group-name
+ip-permission.cidr
+ip-permission.from-port
+ip-permission.to-port
+ip-permission.protocol
+owner-id
+</pre>
+<P>
+<H3 id="misc">4. Miscellaneous</H3>
+The EC2 service provides a Cloud.com extension to obtain the release version of the EC2 software.
+
+<pre>
+http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonEC2?Action=CloudEC2Version
+</pre>
+CloudEC2Version is an <I>unauthorized</I> REST call.</br>
+An example of a valid response from this function is:
+<pre>
+&lt;CloudEC2Version>1.01&lt;/CloudEC2Version>
+</pre>
+<P></BR>
+<H2 id="part2">Part 2. Generic EC2 Details</H2>
+<H3 id="functions">List of EC2 Functions Implemented</H3>
+Refer to the Amazon EC2 documentation <A href="#ref3">[3]</A> for a description of each function.   
+Also see Part1, section 3 above, for differences between Amazon's and Cloud.com's EC2 implementations.
+<pre>
+AllocateAddress
+AssociateAddress
+AttachVolume 
+AuthorizeSecurityGroupIngress
+CreateImage 
+CreateSecurityGroup
+CreateSnapshot
+CreateVolume
+DeleteSecurityGroup
+DeleteSnapshot  
+DeleteVolume   
+DeregisterImage   
+DescribeAvailabilityZones  
+DescribeImageAttribute   
+DescribeImages   
+DescribeInstanceAttribute  
+DescribeInstances  
+DescribeSecurityGroups
+DescribeSnapshots   
+DescribeVolumes  
+DetachVolume
+DisassociateAddress  
+ModifyImageAttribute  
+RebootInstances   
+ReleaseAddress
+RegisterImage  
+RevokeSecurityGroupIngress
+ResetImageAttribute   
+RunInstances  
+StartInstances  
+StopInstances  
+TerminateInstances  
+</pre>
+<P>
+<H3 id="wsdl">Supported WSDL Version</H3>
+<A href="http://ec2.amazonaws.com/doc/2010-08-31/">http://ec2.amazonaws.com/doc/2010-08-31/</A></BR>
+Amazon EC2 Command Line Tool used for testing was version 1.3-57419.
+<P>
+</BR>
+<H2 id="refs">References</H2>
+<OL>
+<LI id="ref1"><A href="http://en.wikipedia.org/wiki/Public_Key_Cryptography">Public-key cryptograph</A></LI>
+<LI id="ref2"><A href="http://cloud.com/community/kb">Cloud.com's Developer API</A></LI>
+<LI id="ref3"><A href="http://aws.amazon.com/documentation/ec2/">Amazon's EC2 API</A></LI>
+<LI id="ref4"><A href="http://en.wikipedia.org/wiki/WS-Security">WS-Security</A></LI>
+<LI id="ref5"><A href="http://en.wikipedia.org/wiki/X.509">X.509 Certificates</A></LI>
+</OL>
+</BODY>
+</HTML>
