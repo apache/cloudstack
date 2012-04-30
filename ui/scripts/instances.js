@@ -714,16 +714,16 @@
             poll: pollAsyncJobResult
           }
         },
-        restore: {
-          label: 'Restore instance',
-          messages: {
-            confirm: function(args) {
-              return 'Are you sure you want to restore ' + args.name + '?';
-            },
-            notification: function(args) {
-              return 'Restoring VM: ' + args.name;
-            }
-          },
+        restore: {     
+					label: 'label.action.restore.instance',
+					messages: {
+						confirm: function(args) {
+							return 'message.action.restore.instance';
+						},
+						notification: function(args) {
+							return 'label.action.restore.instance';
+						}
+					},					
           action: function(args) {
             $.ajax({
               url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
