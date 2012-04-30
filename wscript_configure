@@ -231,6 +231,7 @@ conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf
 conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
 
 conf.env.MSLOG = _join(conf.env.MSLOGDIR,"management-server.log")
+conf.env.AWSAPILOG = _join(conf.env.MSLOGDIR,"awsapi.log")
 conf.env.APISERVERLOG = _join(conf.env.MSLOGDIR,"api-server.log")
 conf.env.AGENTLOG = _join(conf.env.AGENTLOGDIR,"agent.log")
 conf.env.USAGELOG = _join(conf.env.USAGELOGDIR,"usage.log")
