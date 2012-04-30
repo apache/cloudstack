@@ -1,4 +1,4 @@
-﻿// Copyright 2012 Citrix Systems, Inc. Licensed under the
+// Copyright 2012 Citrix Systems, Inc. Licensed under the
 // Apache License, Version 2.0 (the "License"); you may not use this
 // file except in compliance with the License.  Citrix Systems, Inc.
 // reserves all rights not expressly granted by the License.
@@ -240,6 +240,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
         accountResponse.setState(account.getState().toString());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
+        accountResponse.setDefaultZone(account.getDefaultZoneId());
 
         // get network stat
         List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
