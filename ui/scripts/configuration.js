@@ -1129,7 +1129,33 @@
 											}											
 										}
 										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (end) *****
+																				
 										
+										//show Elastic LB checkbox, LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared 
+										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
+										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')
+											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
+										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').css('display', 'inline-block');	
+											args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');	
+										}
+										else {
+										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').hide();	
+											args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').find('input[type=checkbox]').attr('checked', false);
+											args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').hide();	
+										}
+										
+										
+							      //show Elastic IP checkbox only when (1)StaticNat Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared 										
+										if((args.$form.find('.form-item[rel=\"service.StaticNat.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
+										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
+											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
+										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');												
+										}
+										else {		
+										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').hide();			
+                      args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);											
+										}
+							
                   });
 									
 									args.$form.change();
@@ -1352,14 +1378,12 @@
                   },
 									"service.Lb.elasticLbCheckbox" : {
                     label: "label.elastic.LB",
-                    isHidden: true,
-                    dependsOn: 'service.Lb.isEnabled',
+                    isHidden: true,                    
                     isBoolean: true
                   },
                   "service.Lb.lbIsolationDropdown": {
                     label: 'label.LB.isolation',
-                    isHidden: true,
-                    dependsOn: 'service.Lb.isEnabled',
+                    isHidden: true,                   
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1371,8 +1395,7 @@
                   },									
 									"service.StaticNat.elasticIpCheckbox" : {
 										label: "label.elastic.IP",
-										isHidden: true,
-										dependsOn: 'service.StaticNat.isEnabled',
+										isHidden: true,										
 										isBoolean: true
 									},	
                   //show or hide upon checked services and selected providers above (end)
