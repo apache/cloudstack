@@ -189,7 +189,13 @@ public class NetscalerResource implements ServerResource {
                 _publicIPGateway = (String) params.get("publicipgateway");
                 _publicIPNetmask = (String) params.get("publicipnetmask");
                 _publicIPVlan = (String) params.get("publicipvlan");
-                addGuestVlanAndSubnet(Long.parseLong(_publicIPVlan), _publicIP, _publicIPNetmask, false);
+                if ("untagged".equalsIgnoreCase(_publicIPVlan)) {
+                	// if public network is un-tagged just add subnet IP
+                    addSubnetIP(_publicIP, _publicIPNetmask);
+                } else {
+                	// if public network is tagged then add vlan and bind subnet IP to the vlan
+                    addGuestVlanAndSubnet(Long.parseLong(_publicIPVlan), _publicIP, _publicIPNetmask, false);
+                }
             }
 
             return true;
@@ -895,6 +901,23 @@ public class NetscalerResource implements ServerResource {
             } else {
                 return new ExternalNetworkResourceUsageAnswer(cmd, e);
             }
+        }
+    }
+
+    private void addSubnetIP(String snip, String netmask)  throws ExecutionException {
+        try {
+            nsip selfIp = new nsip();
+            selfIp.set_ipaddress(snip);
+            selfIp.set_netmask(netmask);
+            selfIp.set_type("SNIP");
+            apiCallResult = nsip.add(_netscalerService, selfIp);
+            if (apiCallResult.errorcode != 0) {
+                throw new ExecutionException("Failed to add SNIP object on the Netscaler device due to "+ apiCallResult.message);
+            }
+        } catch (nitro_exception e) {
+            throw new ExecutionException("Failed to add SNIP object on the Netscaler device due to " + e.getMessage());
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to add SNIP object on the Netscaler device due to " + e.getMessage());
         }
     }
 
