@@ -27,6 +27,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
     final SearchBuilder<CiscoNexusVSMDeviceVO> mgmtVlanIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> domainIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> nameSearch;
+    final SearchBuilder<CiscoNexusVSMDeviceVO> ipaddrSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> genericVlanIdSearch;
     // We will add more searchbuilder objects.
     
@@ -35,14 +36,14 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         super();
         
         mgmtVlanIdSearch = createSearchBuilder();
-        mgmtVlanIdSearch.and("management_vlan", mgmtVlanIdSearch.entity().getManagementVlan(), Op.EQ);
+        mgmtVlanIdSearch.and("managementVlan", mgmtVlanIdSearch.entity().getManagementVlan(), Op.EQ);
         mgmtVlanIdSearch.done();
         
         genericVlanIdSearch = createSearchBuilder();
-        genericVlanIdSearch.and("management_vlan", genericVlanIdSearch.entity().getManagementVlan(), Op.EQ);
-        genericVlanIdSearch.or("control_vlan", genericVlanIdSearch.entity().getControlVlan(), Op.EQ);
-        genericVlanIdSearch.or("packet_vlan", genericVlanIdSearch.entity().getPacketVlan(), Op.EQ);
-        genericVlanIdSearch.or("storage_vlan", genericVlanIdSearch.entity().getStorageVlan(), Op.EQ);
+        genericVlanIdSearch.and("managementVlan", genericVlanIdSearch.entity().getManagementVlan(), Op.EQ);
+        genericVlanIdSearch.or("controlVlan", genericVlanIdSearch.entity().getControlVlan(), Op.EQ);
+        genericVlanIdSearch.or("packetVlan", genericVlanIdSearch.entity().getPacketVlan(), Op.EQ);
+        genericVlanIdSearch.or("storageVlan", genericVlanIdSearch.entity().getStorageVlan(), Op.EQ);
         genericVlanIdSearch.done();
 
         domainIdSearch = createSearchBuilder();
@@ -53,6 +54,9 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         nameSearch.and("vsmName", nameSearch.entity().getvsmName(), Op.EQ);
         nameSearch.done();
         
+        ipaddrSearch = createSearchBuilder();
+        ipaddrSearch.and("vsmIp", nameSearch.entity().getvsmName(), Op.EQ);
+        ipaddrSearch.done();
         
         // We may add more and conditions by specifying more fields, like say, accountId.
     }
@@ -69,18 +73,24 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
     	return findOneBy(sc);
     }
     
+    public CiscoNexusVSMDeviceVO getVSMbyIpaddress(String ipaddress) {
+    	SearchCriteria<CiscoNexusVSMDeviceVO> sc = ipaddrSearch.create();
+    	sc.setParameters("vsmMgmtIPAddr", ipaddress);
+    	return findOneBy(sc);
+    }
+    
     public List<CiscoNexusVSMDeviceVO> listByMgmtVlan(int vlanId) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = mgmtVlanIdSearch.create();
-        sc.setParameters("management_vlan", vlanId);        
+        sc.setParameters("managementVlan", vlanId);        
         return search(sc, null);
     }
 
     public List<CiscoNexusVSMDeviceVO> listByVlanId(int vlanId) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = genericVlanIdSearch.create();
-        sc.setParameters("management_vlan", vlanId);
-        sc.setParameters("storage_vlan", vlanId);
-        sc.setParameters("packet_vlan", vlanId);
-        sc.setParameters("control_vlan", vlanId);
+        sc.setParameters("managementVlan", vlanId);
+        sc.setParameters("storageVlan", vlanId);
+        sc.setParameters("packetVlan", vlanId);
+        sc.setParameters("controlVlan", vlanId);
         return search(sc, null);
     }
 }

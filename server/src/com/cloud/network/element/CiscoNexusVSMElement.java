@@ -45,7 +45,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.resource.CiscoNexusVSMResource;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;

@@ -13,6 +13,7 @@
 package com.cloud.network;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,10 +24,13 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -34,9 +38,11 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,6 +53,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -63,6 +70,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -79,8 +87,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.resource.CiscoNexusVSM;
+import com.cloud.exception.ResourceInUseException;
 
-//public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase implements CiscoNexusVSMDeviceManager, ResourceStateAdapter {
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
 	@Inject
@@ -95,8 +103,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     NicDao _nicDao;
     @Inject
     AgentManager _agentMgr;
-    @Inject
-    ResourceManager _resourceMgr;
+
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
@@ -121,133 +128,181 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     PortForwardingRulesDao _portForwardingRulesDao;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    HostDetailsDao _hostDetailDao;
+
     @Inject
     NetworkExternalLoadBalancerDao _networkLBDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcProviderDao;
     @Inject
     protected HostPodDao _podDao = null;
+
+    
     @Inject
     ClusterDao _clusterDao;
+    @Inject
+    ClusterVSMMapDao _clusterVSMDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    
+	@Inject VmwareManager _vmwareMgr;
+    @Inject AlertManager _alertMgr;
+    @Inject VMTemplateDao _tmpltDao;
+    @Inject ClusterDetailsDao _clusterDetailsDao;
+
+    @Inject
+    HostDetailsDao _hostDetailDao;
     
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
-
-    // dummy func, will remove later.
-    private boolean vsmIsReachable(String ipaddress, String username, String password) {
-    	return true;	// dummy true for now.
-    }
     
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
     public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vsmName) {
 
-    	// In this function, we associate this VSM with the vCenter
-    	// that is associated with the provided clusterId.
+    	// In this function, we associate this VSM with each host
+    	// in the clusterId specified.
 
+    	// First check if the cluster is of type vmware. If not,
+    	// throw an exception. VSMs are tightly integrated with vmware clusters.
     	ClusterVO cluster = _clusterDao.findById(clusterId);
-    	
-    	// Check if the ClusterVO's hypervisor type is "vmware". If not,
-    	// throw an exception.
     	if (cluster.getHypervisorType() != HypervisorType.VMware) {
     		InvalidParameterValueException ex = new InvalidParameterValueException("Cluster with specified id is not a VMWare hypervisor cluster");
     		throw ex;
     	}
 
-    	// Now we need a reference to the vmWareResource for this cluster.
+    	// Next, check if the cluster already has a VSM associated with it.
+    	// If so, throw an exception disallowing this operation. The user must first
+    	// delete the current VSM and then only attempt to add the new one.
     	
+    	if (_clusterVSMDao.findByClusterId(clusterId) != null) {
+    		// We can't have two VSMs for the same cluster. Throw exception.
+    		throw new InvalidParameterValueException("Cluster with specified id already has a VSM tied to it. Please remove that first and retry the operation.");
+    	}
+
+    	// TODO: Confirm whether we should be checking for VSM reachability here.
     	
-    	DataCenterVO zone = _dcDao.findById(cluster.getDataCenterId());
-    	
-    	// Else, check if this VSM is reachable. Use the XML-RPC VSM API Java bindings to talk to
+    	// Next, check if this VSM is reachable. Use the XML-RPC VSM API Java bindings to talk to
     	// the VSM.
-    	
-    	// Create a new VSM object.
     	CiscoNexusVSM vsmObj = new CiscoNexusVSM(ipaddress, username, password);
-    	    	
     	if (!vsmObj.connectToVSM()) {
     		throw new CloudRuntimeException("Couldn't login to the specified VSM");    		
     	}
-
-    	// Since we can reached the VSM, and are logged into it, let's add it to the vCenter.
     	
-    	// In this function, we create a record for this Cisco Nexus VSM, in the database.
-    	// We also hand off interaction with the actual Cisco Nexus VSM via XML-RPC, to the
-    	// Resource Manager. The resource manager invokes the CiscoNexusVSMResource class's
-    	// functionality to talk to the VSM via Java bindings for the VSM's XML-RPC commands.
+    	// Now, go ahead and associate the cluster with this VSM.
+    	// First, check if VSM already exists in the table "virtual_supervisor_module".
+    	// If it's not there already, create it.
+    	// If it's there already, return success.
     	
-        Map hostDetails = new HashMap<String, String>();
-        // Do we need guid, zone id, account id, etc???
-        hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
-        hostDetails.put(ApiConstants.USERNAME, username);
-        hostDetails.put(ApiConstants.PASSWORD, password);
-        // Q1) Do we need a zoneUuid to dbzoneId translation? How will the user send in the zoneId?
-        // We get the zoneId as a uuid, so we need to look up the db zoneId.
-        // Ask Frank how to do this lookup.
-        long dbZoneId = clusterId;
+    	// TODO - Right now, we only check if the ipaddress matches for both requests.
+    	// We must really check whether every field of the VSM matches. Anyway, the
+    	// advantage of our approach for now is that existing infrastructure using
+    	// the existing VSM won't be affected if the new request to add the VSM
+    	// assumed different information on the VSM (mgmt vlan, username, password etc).
+    	CiscoNexusVSMDeviceVO VSMObj = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress);
+    	
+    	if (VSMObj == null) {
+    		// Create the VSM record. For now, we aren't using the vsmName field.
+    		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password);
+    		Transaction txn = Transaction.currentTxn();
+    		try {
+   				txn.start();
+   	            _ciscoNexusVSMDeviceDao.persist(VSMObj);
+   	            txn.commit();
+    		} catch (Exception e) {
+    			txn.rollback();
+    			throw new CloudRuntimeException(e.getMessage());
+    		}
+    	}
+    	
+    	// At this stage, we have a VSM record for sure. Connect the VSM to the cluster Id.
+    	ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId());
+    	Transaction txn = Transaction.currentTxn();
+    	try {
+    		txn.start();
+    		_clusterVSMDao.persist(connectorObj);
+    		txn.commit();
+    	} catch (Exception e) {
+    		txn.rollback();
+    		throw new CloudRuntimeException(e.getMessage());
+    	}
+    	
+    	// Now, get a list of all the ESXi servers in this cluster.
+    	// This is effectively a select * from host where cluster_id=clusterId;
+    	// All ESXi servers are stored in the host table, and their resource
+    	// type is vmwareresource.
+    	
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         
-        hostDetails.put(ApiConstants.ZONE_ID, dbZoneId);
-        hostDetails.put(ApiConstants.GUID, UUID.randomUUID().toString());
-
-        // leave parameter validation to be part of server resource configure
-        Map<String, String> configParams = new HashMap<String, String>();
-        hostDetails.putAll(configParams);
-
+        // Iterate through each of the hosts in this list. Each host has a host id.
+        // Given this host id, we can reconfigure the in-memory resource representing
+        // the host via the agent manager. Thus we inject VSM related information
+        // into each host's resource. Also, we first configure each resource's
+        // entries in the database to contain this VSM information before the injection.
+    	
+        for (HostVO host : hosts) {
+        	// Create a host details VO object and write it out for this hostid.
+        	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
+        	Long hostid = new Long(vsmId);
+        	DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
+        	Transaction tx = Transaction.currentTxn();
+        	try {
+        		tx.start();
+        		_hostDetailDao.persist(vsmDetail);
+        		tx.commit();
+        	} catch (Exception e) {
+        		tx.rollback();
+        		throw new CloudRuntimeException(e.getMessage());
+        	}
+        	// Reconfigure the resource.
+        	Map hostDetails = new HashMap<String, String>();
+        	hostDetails.put(ApiConstants.ID, vsmId);
+        	hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
+            hostDetails.put(ApiConstants.USERNAME, username);
+            hostDetails.put(ApiConstants.PASSWORD, password);
+            //_agentMrg.send(host.getId(), )
+        }
+        return VSMObj;
+        
+    }
+    
+    @DB
+    public boolean deleteCiscoNexusVSM(long vsmId) throws ResourceInUseException {
+        CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
+        if (cisconexusvsm == null) {
+        	// This entry is already not present. Return success.
+        	return true;
+        }
+        
+        // First, check whether this VSM is part of any non-empty cluster.
+        // Search ClusterVSMMap's table for a list of clusters using this vsmId.
+        List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsmId);
+        
+        for (ClusterVSMMapVO record : clusterList) {
+        	// If this cluster id has any hosts in it, fail this operation.
+        	Long clusterId = record.getClusterId();
+        	List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
+        	if (hosts != null && hosts.size() > 0) {
+        		throw new ResourceInUseException("Non-empty cluster with id" + clusterId + "still uses VSM. Please empty the cluster first");
+        	}
+        }
+        
+        // Iterate through the cluster list again, this time, delete the VSM.
         Transaction txn = Transaction.currentTxn();
         try {
-            resource.configure(vsmName, hostDetails);
-            //resource.discover(vsmName, hostDetails);
-
-            // we get a hostVO object.
-            Host host = _resourceMgr.addHost(dbZoneId, resource, Host.Type.ExternalVirtualSwitchSupervisor, hostDetails);
-            if (host != null) {            	
-                txn.start();
-                // host.getId() is the zoneId
-                // Create a VO object from the info that came in from the command.
-                CiscoNexusVSMDeviceVO vsmDeviceVO = new CiscoNexusVSMDeviceVO(host.getId(), ipaddress, username, password);
-                // Write the VO record to the table for our Cisco N1KV VSM (external_virtual_switch_management_devices).
-                _ciscoNexusVSMDeviceDao.persist(vsmDeviceVO);
-
-                // Write out another standard VO to another table host_details. We always do this when adding a host.
-                DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID, String.valueOf(vsmDeviceVO.getId()));
-                _hostDetailDao.persist(hostDetail);
-
-                txn.commit();
-                return vsmDeviceVO;
-            } else {
-                throw new CloudRuntimeException("Failed to add load balancer device due to internal error.");
+            txn.start();
+            for (ClusterVSMMapVO record : clusterList) {
+            	// Remove the VSM entry in CiscoNexusVSMDeviceVO's table.
+            	_ciscoNexusVSMDeviceDao.remove(vsmId);
+            	// Remove the current record as well from ClusterVSMMapVO's table.
+            	_clusterVSMDao.removeByVsmId(vsmId);
+            	// There are no hosts at this stage in the cluster, so we don't need
+            	// to notify any resources or remove host details.
             }
-        } catch (ConfigurationException e) {
-            txn.rollback();
-            throw new CloudRuntimeException(e.getMessage());
+            txn.commit();
+        } catch (CloudRuntimeException e) {
+        	throw e;
         }
-    }
-
-
-    public boolean deleteCiscoNexusVSM(long hostId) {
-        HostVO cisconexusvsm = _hostDao.findById(hostId);
-        if (cisconexusvsm == null) {
-            throw new InvalidParameterValueException("Could not find a Cisco Nexus 1000v VSM with specified ID" + hostId);
-        }
-
-        DetailVO vsmHostDetails = _hostDetailDao.findDetail(hostId, ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID);
-        long vsmDeviceId = Long.parseLong(vsmHostDetails.getValue());
-
-        //CiscoNexusVSMDeviceVO vsmDeviceVO = _ciscoNexusVSMDeviceDao.findById(vsmDeviceId);
-
-        try {            
-            _hostDao.update(hostId, cisconexusvsm);
-            _resourceMgr.deleteHost(hostId, false, false);
-
-            // delete the db entry
-            _ciscoNexusVSMDeviceDao.remove(vsmDeviceId);
-            
-            return true;
-        } catch (Exception e) {
-            s_logger.debug(e);
-            return false;
-        }
+        
+        return true;
     }
 
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
