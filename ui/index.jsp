@@ -951,9 +951,6 @@
         <div class="system-dashboard zone">
           <div class="head">
             <span><fmt:message key="label.menu.infrastructure"/></span>
-            <div class="view-all zones"
-                 view-all-title="Zones"
-                 view-all-target="zones"><span><fmt:message key="label.view.all"/></span></div>
           </div>
           <ul class="status_box good">
             <li class="block">
