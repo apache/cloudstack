@@ -40,6 +40,8 @@ consoleproxy_svcs() {
    chkconfig apache2 off
    chkconfig nfs-common off
    chkconfig portmap off
+   chkconfig keepalived off
+   chkconfig conntrackd off
    echo "cloud postinit ssh" > /var/cache/cloud/enabled_svcs
    echo "cloud-passwd-srvr haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
    mkdir -p /var/log/cloud
@@ -55,6 +57,8 @@ secstorage_svcs() {
    chkconfig nfs-common on
    chkconfig ssh on
    chkconfig apache2 off
+   chkconfig keepalived off
+   chkconfig conntrackd off
    echo "cloud postinit ssh nfs-common portmap" > /var/cache/cloud/enabled_svcs
    echo "cloud-passwd-srvr haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
    mkdir -p /var/log/cloud
@@ -72,14 +76,19 @@ routing_svcs() {
    if [ $RROUTER -eq 0 ]
    then
        chkconfig dnsmasq off
+       chkconfig keepalived on
+       chkconfig conntrackd on
        chkconfig postinit on
-       echo "postinit" > /var/cache/cloud/enabled_svcs
+       echo "keepalived conntrackd postinit" > /var/cache/cloud/enabled_svcs
+       echo "dnsmasq " > /var/cache/cloud/disabled_svcs
    else
        chkconfig dnsmasq on
        chkconfig keepalived off
        chkconfig conntrackd off
+       echo "dnsmasq " > /var/cache/cloud/enabled_svcs
+       echo "keepalived conntrackd " > /var/cache/cloud/disabled_svcs
    fi
-   echo "cloud-passwd-srvr ssh dnsmasq haproxy apache2" >> /var/cache/cloud/enabled_svcs
+   echo "cloud-passwd-srvr ssh haproxy apache2" >> /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
@@ -91,6 +100,8 @@ dhcpsrvr_svcs() {
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
+   chkconfig keepalived off
+   chkconfig conntrackd off
    echo "cloud-passwd-srvr ssh dnsmasq apache2" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common haproxy portmap" > /var/cache/cloud/disabled_svcs
 }
@@ -101,6 +112,8 @@ elbvm_svcs() {
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
+   chkconfig keepalived off
+   chkconfig conntrackd off
    echo "ssh haproxy" > /var/cache/cloud/enabled_svcs
    echo "cloud cloud-passwd-srvr dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
