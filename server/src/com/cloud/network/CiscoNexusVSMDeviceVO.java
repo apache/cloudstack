@@ -36,7 +36,7 @@ import javax.persistence.Table;
  */
 
 @Entity
-@Table(name="external_virtual_switch_management_devices")
+@Table(name="virtual_supervisor_module")
 public class CiscoNexusVSMDeviceVO {
 	
 	// We need to know what properties a VSM has. Put them here.
@@ -271,15 +271,23 @@ public class CiscoNexusVSMDeviceVO {
         
     // Constructor methods.
     
-    public CiscoNexusVSMDeviceVO(long id, String vsmIpAddr, String username, String password) {    	
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {    	
     	// Set all the VSM's properties here.
-    	this.id = id;
         this.uuid = UUID.randomUUID().toString();
         this.vsmMgmtIPAddr = vsmIpAddr;
         this.vsmUserName = username;
         this.vsmPassword = password;        
     }
-
+    
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, String vsmName) {    	
+    	// Set all the VSM's properties here.
+        this.uuid = UUID.randomUUID().toString();
+        this.vsmMgmtIPAddr = vsmIpAddr;
+        this.vsmUserName = username;
+        this.vsmPassword = password;
+        this.vsmName = vsmName;
+    }
+    
     public CiscoNexusVSMDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }    

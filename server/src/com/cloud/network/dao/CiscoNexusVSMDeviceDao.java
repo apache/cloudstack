@@ -33,6 +33,12 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
     CiscoNexusVSMDeviceVO getVSMbyName(String vsmName);
     
     /**
+     * Return a Cisco Nexus VSM VO (db record) given its ipaddress.
+     * @param vsmIpaddr
+     */
+    CiscoNexusVSMDeviceVO getVSMbyIpaddress(String ipaddress);
+    
+    /**
      * Return a list of VSM devices that use the same VLAN for no matter what interface. Unlikely, but oh well.
      * @param vlanId
      * 	- Needs to filter results by the invoker's account Id. So we may end up adding another param
