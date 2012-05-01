@@ -496,6 +496,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         encryptHostDetails(conn);
         encryptVNCPassword(conn);
         encryptUserCredentials(conn);
+        encryptVPNPassword(conn);
         s_logger.debug("Done encrypting the data");
     }
 
@@ -666,6 +667,46 @@ public class Upgrade2214to30 implements DbUpgrade {
         s_logger.debug("Done encrypting user keys");
     }
 
+    private void encryptVPNPassword(Connection conn) {
+    	s_logger.debug("Encrypting vpn_users password");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, password from `cloud`.`vpn_users`");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String password = rs.getString(2);
+                String encryptedpassword = DBEncryptionUtil.encrypt(password);
+                pstmt = conn.prepareStatement("update `cloud`.`vpn_users` set password=? where id=?");
+                if (encryptedpassword == null) {
+                    pstmt.setNull(1, Types.VARCHAR);
+                } else {
+                    pstmt.setBytes(1, encryptedpassword.getBytes("UTF-8"));
+                }
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt vpn_users password ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt vpn_users password ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting vpn_users password");
+    }
+
+    
     private void dropKeysIfExist(Connection conn) {
         HashMap<String, List<String>> uniqueKeys = new HashMap<String, List<String>>();
         List<String> keys = new ArrayList<String>();
