@@ -24,6 +24,7 @@ import org.hibernate.Session;
 import com.cloud.bridge.util.QueryHelper;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
  */
 public class EntityDao<T> {
@@ -40,33 +41,72 @@ public class EntityDao<T> {
 		this.isCloudStackSession = isCloudStackSession;
 		// Note : beginTransaction can be called multiple times
 		PersistContext.beginTransaction(isCloudStackSession);
+=======
+ * @author Kelven Yang, John Zucker
+ * Provide methods for getting, saving, deleting or updating state per session or, in a given session, returnin a List in
+ * response to queryEntities for a particular instantation of the EntityDao generic class, as defined here.
+ * Any instantation of EntityDao passes in the class for which it is instantiating.  For example a new instance of SBucketDao 
+ * passes in com.cloud.bridge.model.SBucket as its clazz.
+ */
+
+public class EntityDao<T> {
+	private Class<?> clazz;
+	
+	public EntityDao(Class<?> clazz) {
+		this.clazz = clazz;
+		
+		// Note : beginTransaction can be called multiple times
+		// "If a new underlying transaction is required, begin the transaction. Otherwise continue the new work in the 
+		// context of the existing underlying transaction." from the Hibernate spec
+		PersistContext.beginTransaction();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	@SuppressWarnings("unchecked")
 	public T get(Serializable id) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		return (T)session.get(clazz, id);
 	}
 	
 	public T save(T entity) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		session.saveOrUpdate(entity);
 		return entity;
 	}
 	
 	public T update(T entity) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		session.saveOrUpdate(entity);
 		return entity;
 	}
 	
 	public void delete(T entity) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		session.delete(entity);
 	}
 	
 	public T queryEntity(String hql, Object[] params) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		Query query = session.createQuery(hql);
 		query.setMaxResults(1);
 		QueryHelper.bindParameters(query, params);
@@ -74,7 +114,11 @@ public class EntityDao<T> {
 	}
 	
 	public List<T> queryEntities(String hql, Object[] params) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 		
@@ -82,7 +126,11 @@ public class EntityDao<T> {
 	}
 	
 	public List<T> queryEntities(String hql, int offset, int limit, Object[] params) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 		query.setFirstResult(offset);
@@ -91,7 +139,11 @@ public class EntityDao<T> {
 	}
 	
 	public int executeUpdate(String hql, Object[] params) {
+<<<<<<< HEAD
 		Session session = PersistContext.getSession(isCloudStackSession);
+=======
+		Session session = PersistContext.getSession();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		Query query = session.createQuery(hql);
 		QueryHelper.bindParameters(query, params);
 

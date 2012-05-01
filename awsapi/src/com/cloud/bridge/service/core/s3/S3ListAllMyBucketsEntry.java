@@ -16,6 +16,10 @@
 package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
+<<<<<<< HEAD
+=======
+import java.util.TimeZone;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 /**
  * @author Kelven Yang
@@ -35,8 +39,25 @@ public class S3ListAllMyBucketsEntry {
 		this.name = name;
 	}
 
+<<<<<<< HEAD
 	public Calendar getCreationDate() {
 		return creationDate;
+=======
+	public Calendar getCreationDate() { 
+		
+		// cal.setTimeZone(TimeZone.getTimeZone("Z"));
+		// java.util.Date d = cal.getTime();
+		
+       // java.util.Date d = creationDate.getTime();
+	   // com.cloud.bridge.util.ISO8601SimpleDateTimeFormat sdf = new com.cloud.bridge.util.ISO8601SimpleDateTimeFormat();
+	   // sdf.format(d); 
+	// java.lang.StringBuffer b = com.cloud.bridge.util.ISO8601SimpleDateTimeFormat.format(d); return b;
+		
+        return creationDate;
+        
+        
+        
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	public void setCreationDate(Calendar creationDate) {

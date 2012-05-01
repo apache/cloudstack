@@ -22,7 +22,11 @@ import java.io.InputStream;
 import javax.activation.DataHandler;
 
 /**
+<<<<<<< HEAD
   * @author Kelven Yang
+=======
+  * @author Kelven Yang, John Zucker
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class S3PutObjectInlineRequest extends S3Request {
 	protected String bucketName;
@@ -30,7 +34,11 @@ public class S3PutObjectInlineRequest extends S3Request {
 	protected long contentLength;
 	protected S3MetaDataEntry[] metaEntries;
 	protected S3AccessControlList acl;
+<<<<<<< HEAD
 	protected String cannedAccessPolicy;    // -> REST only sets an acl with a simple keyword
+=======
+	protected String cannedAccessPolicy;    // Canned ACLs are public-read, public-read-write, private, authenticated-read or log-delivery-write
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	protected DataHandler data;
 	protected String dataAsString;
 	

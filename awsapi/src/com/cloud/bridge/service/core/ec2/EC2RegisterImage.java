@@ -23,7 +23,10 @@ public class EC2RegisterImage {
 	private String  format;
 	private String  zoneName;
 	private String  osTypeName;
+<<<<<<< HEAD
 	private String  hypervisor;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	
 	public EC2RegisterImage() {
 		location    = null;
@@ -60,7 +63,11 @@ public class EC2RegisterImage {
 	
 	/**
 	 * We redefine the expected format of this field to be:
+<<<<<<< HEAD
 	 * "format:zonename:ostypename:hypervisor"
+=======
+	 * "format:zonename:ostypename"
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	 * 
 	 * @param param
 	 */
@@ -71,7 +78,10 @@ public class EC2RegisterImage {
 				format = parts[0];
 				zoneName = parts[1];
 				osTypeName = parts[2];
+<<<<<<< HEAD
 				hypervisor = parts[3];
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			}
 		}
 	}
@@ -87,8 +97,11 @@ public class EC2RegisterImage {
 	public String getOsTypeName() {
 		return this.osTypeName;
 	}
+<<<<<<< HEAD
 
     public String getHypervisor() {
         return hypervisor;
     }
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 }

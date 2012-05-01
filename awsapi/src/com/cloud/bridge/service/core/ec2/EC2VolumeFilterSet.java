@@ -118,7 +118,11 @@ public class EC2VolumeFilterSet {
 		else if (filterName.equalsIgnoreCase( "size" ))  
 			return containsLong(vol.getSize(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "snapshot-id" )) 
+<<<<<<< HEAD
 			return containsString(String.valueOf(vol.getSnapshotId()), valueSet );	
+=======
+			return containsString(vol.getSnapshotId().toString(), valueSet );	
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		else if (filterName.equalsIgnoreCase( "status" )) 
 			return containsString(vol.getState(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "volume-id" )) 
@@ -128,7 +132,11 @@ public class EC2VolumeFilterSet {
 		else if (filterName.equalsIgnoreCase( "attachment.device" )) 
 			return containsDevice(vol.getDeviceId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "attachment.instance-id" )) 
+<<<<<<< HEAD
 			return containsString(String.valueOf(vol.getInstanceId()), valueSet );		
+=======
+			return containsString(vol.getInstanceId().toString(), valueSet );		
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		else return false;
 	}
 
@@ -167,8 +175,11 @@ public class EC2VolumeFilterSet {
 
 	private boolean containsDevice(String deviceId, String[] set )
 	{
+<<<<<<< HEAD
             if (deviceId == null)
 	        return false;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	    Integer devId = new Integer(deviceId);
 		for (String s : set) {
 			switch( devId ) {

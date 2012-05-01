@@ -16,31 +16,41 @@
 package com.cloud.bridge.util;
 
 import java.io.File;
+<<<<<<< HEAD
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+<<<<<<< HEAD
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.properties.EncryptableProperties;
 import org.apache.log4j.Logger;
 
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 /**
  * @author Kelven Yang
  */
 public class CloudSessionFactory {
 	private static CloudSessionFactory instance;
+<<<<<<< HEAD
 	public static final Logger logger = Logger.getLogger(CloudSessionFactory.class);
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	
 	private SessionFactory factory;
 	
 	private CloudSessionFactory() {
 		Configuration cfg = new Configuration();
 		File file = ConfigurationHelper.findConfigurationFile("hibernate.cfg.xml");
+<<<<<<< HEAD
 
         File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
         Properties dbProp = null;
@@ -70,10 +80,15 @@ public class CloudSessionFactory {
 	        
 
 	    //
+=======
+		
+		//
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		// we are packaging hibernate mapping files along with the class files, 
     	// make sure class loader use the same class path when initializing hibernate mapping.
 		// This is important when we are deploying and testing at different environment (Tomcat/JUnit test runner)
 		//
+<<<<<<< HEAD
         if(file != null && dbProp != null){
         	Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
         	cfg.configure(file);
@@ -94,6 +109,10 @@ public class CloudSessionFactory {
             logger.warn("Unable to open load db configuration");
             throw new RuntimeException("nable to open load db configuration");
         }
+=======
+    	Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+		factory = cfg.configure(file).buildSessionFactory();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	public synchronized static CloudSessionFactory getInstance() {

@@ -9,8 +9,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+<<<<<<< HEAD
 import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.util.ConfigurationHelper;
 
@@ -20,14 +23,18 @@ public class EC2MainServlet extends HttpServlet{
 	
 	public static final String EC2_REST_SERVLET_PATH="/rest/AmazonEC2/";
 	public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
+<<<<<<< HEAD
 	public static final String ENABLE_EC2_API="enable.ec2.api";
 	private static boolean isEC2APIEnabled = false;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	
 	/**
 	 * We build the path to where the keystore holding the WS-Security X509 certificates
 	 * are stored.
 	 */
 	public void init( ServletConfig config ) throws ServletException {
+<<<<<<< HEAD
 		try{
     	    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
     		UserCredentialsDao.preCheckTableExistence();
@@ -42,6 +49,10 @@ public class EC2MainServlet extends HttpServlet{
             PersistContext.closeSession(true);
         }
 		
+=======
+		ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+		UserCredentialsDao.preCheckTableExistence();
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
@@ -53,6 +64,7 @@ public class EC2MainServlet extends HttpServlet{
     }
 
     protected void doGetOrPost(HttpServletRequest request, HttpServletResponse response) {
+<<<<<<< HEAD
         String action = request.getParameter( "Action" );
         
         if(!isEC2APIEnabled){
@@ -60,6 +72,10 @@ public class EC2MainServlet extends HttpServlet{
         }
         
     	if(action != null){
+=======
+    	String action = request.getParameter( "Action" );
+    	if(action!=null){
+>>>>>>> 6472e7b... Now really adding the renamed files!
     		//We presume it's a Query/Rest call
     		try {
 				RequestDispatcher dispatcher = request.getRequestDispatcher(EC2_REST_SERVLET_PATH);

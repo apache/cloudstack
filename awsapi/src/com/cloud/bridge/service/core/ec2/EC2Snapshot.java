@@ -35,7 +35,11 @@ public class EC2Snapshot {
 		id         	= null;
 		name       	= null;
 		volumeId   	= null;
+<<<<<<< HEAD
 		volumeSize 	= new Long(0);
+=======
+		volumeSize 	= null;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		type       	= null;
 		state       = null;
 		created    	= null;
@@ -72,7 +76,11 @@ public class EC2Snapshot {
 	}
 	
 	public Long getVolumeSize() {
+<<<<<<< HEAD
 	    return this.volumeSize;
+=======
+		return this.volumeSize;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	public void setType( String type ) {

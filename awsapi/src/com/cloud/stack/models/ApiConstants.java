@@ -283,7 +283,11 @@ public class ApiConstants {
     public static final String LIST_SNAPSHOT_POLICIES = "listSnapshotPolicies";
     public static final String LIST_SNAPSHOT_POLICIES_RESPONSE = "listsnapshotpoliciesresponse";
     public static final String LIST_SNAPSHOTS = "listSnapshots";
+<<<<<<< HEAD
     public static final String LIST_SNAPSHOTS_RESPONSE = "listsnapshotsresponse";
+=======
+    public static final String LIST_SNAPSHOTS_RESPONSE = "listsnapshotsresponsee";
+>>>>>>> 6472e7b... Now really adding the renamed files!
     public static final String LIST_SSH_KEY_PAIRS = "listSSHKeyPairs";
     public static final String LIST_SSH_KEY_PAIRS_RESPONSE = "listsshkeypairsresponse";
     public static final String LIST_TEMPLATE_PERMISSIONS = "listTemplatePermissions";
@@ -382,7 +386,11 @@ public class ApiConstants {
 	public static final String RESTART_NETWORK = "restartNetwork";
 	public static final String RESTART_NETWORK_RESPONSE = "restartnetworkresponse";
 	public static final String REVOKE_SECURITY_GROUP_INGRESS = "revokeSecurityGroupIngress";
+<<<<<<< HEAD
 	public static final String REVOKE_SECURITY_GROUP_INGRESS_RESPONSE = "revokesecuritygroupingress";
+=======
+	public static final String REVOKE_SECURITY_GROUP_INGRESS_RESPONSE = "revokesecuritygroupingressresponse";
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	public static final String ROOT_DEVICE_ID = "rootdeviceid";
 	public static final String ROOT_DEVICE_TYPE = "rootdevicetype";
 	public static final String RULE_ID = "ruleid";

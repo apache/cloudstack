@@ -19,7 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
+=======
+ * @author Kelven Yang, John Zucker
+ * An S3AccessControlList is simply a holder of grants depicted as instances of S3Grant.
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class S3AccessControlList {
 	private List<S3Grant> list = new ArrayList<S3Grant>();

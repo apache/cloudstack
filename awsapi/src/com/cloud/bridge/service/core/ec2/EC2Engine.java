@@ -28,12 +28,17 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+<<<<<<< HEAD
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
 import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
+=======
+import org.apache.log4j.Logger;
+
+>>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -56,7 +61,10 @@ import com.cloud.stack.models.CloudStackPasswordData;
 import com.cloud.stack.models.CloudStackResourceLimit;
 import com.cloud.stack.models.CloudStackSecurityGroup;
 import com.cloud.stack.models.CloudStackSecurityGroupIngress;
+<<<<<<< HEAD
 import com.cloud.stack.models.CloudStackServiceOffering;
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
 import com.cloud.stack.models.CloudStackUser;
@@ -508,9 +516,14 @@ public class EC2Engine {
 		try {
 			
 			CloudStackInfoResponse resp = getApi().deleteSnapshot(snapshotId);
+<<<<<<< HEAD
 			if(resp != null) {
 			    return resp.getSuccess();
 			}
+=======
+			if(resp.getJobId() != null)
+				return true;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 			return false;
 		} catch(Exception e) {
@@ -943,10 +956,13 @@ public class EC2Engine {
 			if (resp == null || resp.getId() == null) {
 				throw new EC2ServiceException(ServerError.InternalError, "An upexpected error occurred.");
 			}
+<<<<<<< HEAD
 			
 			//if template was created succesfully, create the new image response
 			response = new EC2CreateImageResponse();
 			response.setId(resp.getId());
+=======
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 			// [C] If we stopped the virtual machine now we need to restart it
 			if (needsRestart) {
@@ -977,8 +993,13 @@ public class EC2Engine {
 				throw new EC2ServiceException(ServerError.InternalError, "Missing parameter - location/architecture/name");
 
 			List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), 
+<<<<<<< HEAD
 					request.getFormat(), request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), 
 					toZoneId(request.getZoneName(), null), null, null, null, null, null, null, null, null, null);
+=======
+					request.getFormat(), null, request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), 
+					toZoneId(request.getZoneName(), caller.getDomainId()), null, null, null, null, null, null, null, null, null);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			if (templates != null) {
 			    // technically we will only ever register a single template...
 			    for (CloudStackTemplate template : templates) {
@@ -1040,7 +1061,11 @@ public class EC2Engine {
 		try {
 		    CloudStackAccount caller = getCurrentAccount();
 		    
+<<<<<<< HEAD
 			return listZones(request.getZoneSet(), null);
+=======
+			return listZones(request.getZoneSet(), caller.getDomainId());
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 		} catch( EC2ServiceException error ) {
 			logger.error( "EC2 DescribeAvailabilityZones - ", error);
@@ -1088,7 +1113,11 @@ public class EC2Engine {
 	 */
 	public EC2Volume attachVolume( EC2Volume request ) {
 		try {   
+<<<<<<< HEAD
 			request.setDeviceId(mapDeviceToCloudDeviceId(request.getDevice()));
+=======
+			request.setDeviceId( mapDeviceToCloudDeviceId(request.getDevice()));
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			EC2Volume resp = new EC2Volume();
 			
 			CloudStackVolume vol = getApi().attachVolume(request.getId(), request.getInstanceId(), request.getDeviceId());
@@ -1176,7 +1205,11 @@ public class EC2Engine {
 			}
 
 //			// -> no volume name is given in the Amazon request but is required in the cloud API
+<<<<<<< HEAD
 			CloudStackVolume vol = getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), null));
+=======
+			CloudStackVolume vol = getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), caller.getDomainId()));
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			if (vol != null) {
 				EC2Volume resp = new EC2Volume();
 				resp.setAttached(vol.getAttached());
@@ -1287,6 +1320,7 @@ public class EC2Engine {
 			else 
 				createInstances = request.getMaxCount();
 
+<<<<<<< HEAD
 			//find CS service Offering ID
 			String instanceType = "m1.small";
 			if(request.getInstanceType() != null){ 
@@ -1300,6 +1334,13 @@ public class EC2Engine {
 			
 			// zone stuff
 			String zoneId = toZoneId(request.getZoneName(), null);
+=======
+			// the mapping stuff
+			OfferingBundle offer = instanceTypeToOfferBundle( request.getInstanceType());
+
+			// zone stuff
+			String zoneId = toZoneId(request.getZoneName(), caller.getDomainId());
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			
 			List<CloudStackZone> zones = getApi().listZones(null, null, zoneId, null);
 			if (zones == null || zones.size() == 0) {
@@ -1314,7 +1355,11 @@ public class EC2Engine {
 
 			// now actually deploy the vms
 			for( int i=0; i < createInstances; i++ ) {
+<<<<<<< HEAD
 				CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
+=======
+				CloudStackUserVm resp = getApi().deployVirtualMachine(offer.getServiceOfferingId(), 
+>>>>>>> 6472e7b... Now really adding the renamed files!
 						request.getTemplateId(), zoneId, null, null, null, null, 
 						null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
 						null, null, request.getSize().longValue(), request.getUserData());
@@ -1334,7 +1379,11 @@ public class EC2Engine {
 				vm.setAccountName(resp.getAccountName());
 				vm.setDomainId(resp.getDomainId());
 				vm.setHypervisor(resp.getHypervisor());
+<<<<<<< HEAD
 				vm.setServiceOffering( svcOffering.getName());
+=======
+				vm.setServiceOffering( serviceOfferingIdToInstanceType( offer.getServiceOfferingId()));
+>>>>>>> 6472e7b... Now really adding the renamed files!
 				instances.addInstance(vm);
 				countCreated++;
 			}    		
@@ -1374,11 +1423,17 @@ public class EC2Engine {
 				if (vm.getState().equalsIgnoreCase( "Running" ) || vm.getState().equalsIgnoreCase( "Destroyed" )) continue;
 
 				CloudStackUserVm resp = getApi().startVirtualMachine(vm.getId());
+<<<<<<< HEAD
 				if(resp != null){
 				    vm.setState(resp.getState());
 	                if(logger.isDebugEnabled())
 	                    logger.debug("Starting VM " + vm.getId() + " job " + resp.getJobId());
 				}
+=======
+				
+				if(logger.isDebugEnabled())
+					logger.debug("Starting VM " + vm.getId() + " job " + resp.getJobId());
+>>>>>>> 6472e7b... Now really adding the renamed files!
 				instances.addInstance(vm);
 			}
 			return instances;
@@ -1420,10 +1475,14 @@ public class EC2Engine {
 					if(logger.isDebugEnabled())
 						logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
 				}
+<<<<<<< HEAD
 				if (resp != null) {
 				    vm.setState(resp.getState());
 				    instances.addInstance(vm);
 				}
+=======
+				if (resp != null) instances.addInstance(vm);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			}
 			return instances;
 		} catch( Exception e ) {
@@ -1559,6 +1618,7 @@ public class EC2Engine {
 		return zones.getZoneIdAt(0);
 	}
 
+<<<<<<< HEAD
 	
 	/**
 	 * Convert from the Amazon instanceType strings to Cloud serviceOfferingId
@@ -1578,6 +1638,35 @@ public class EC2Engine {
         }
 	}
 	
+=======
+	/**
+	 * Convert from the Amazon instanceType strings to the Cloud APIs diskOfferingId and
+	 * serviceOfferingId based on the loaded map.
+	 * 
+	 * @param instanceType - if null we return the M1Small instance type
+	 * 
+	 * @return an OfferingBundle
+	 * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
+	 */
+	private OfferingBundle instanceTypeToOfferBundle( String instanceType ) 
+			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+		OfferingBundle found = null;
+		OfferingDao ofDao = new OfferingDao();
+
+		if (null == instanceType) instanceType = "m1.small";                      
+		String cloudOffering = ofDao.getCloudOffering( instanceType );
+
+		if ( null != cloudOffering )
+		{
+			found = new OfferingBundle();
+			found.setServiceOfferingId( cloudOffering );
+		}
+		else throw new EC2ServiceException( ClientError.Unsupported, "Unknown: " + instanceType );   
+
+		return found;
+			}
+
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	/**
 	 * Convert from the Cloud serviceOfferingId to the Amazon instanceType strings based
 	 * on the loaded map.
@@ -1586,6 +1675,7 @@ public class EC2Engine {
 	 * @return A valid value for the Amazon defined instanceType
 	 * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
 	 */
+<<<<<<< HEAD
 	private String serviceOfferingIdToInstanceType( String serviceOfferingId ){	
         try{
             CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
@@ -1600,6 +1690,18 @@ public class EC2Engine {
             logger.error( "sError while retrieving ServiceOffering information by id - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
+=======
+	private String serviceOfferingIdToInstanceType( String serviceOfferingId ) 
+			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException	{	
+		OfferingDao ofDao = new OfferingDao();
+		String amazonOffering = ofDao.getAmazonOffering( serviceOfferingId.trim());
+
+		if ( null == amazonOffering ) {
+			logger.warn( "No instanceType match for serverOfferingId: [" + serviceOfferingId + "]" );
+			return "m1.small";
+		}
+		else return amazonOffering;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	/**
@@ -1718,6 +1820,7 @@ public class EC2Engine {
 	 */
 	private EC2DescribeImagesResponse listTemplates( String templateId, EC2DescribeImagesResponse images ) throws EC2ServiceException {
 		try {
+<<<<<<< HEAD
 		    List<CloudStackTemplate> result = new ArrayList<CloudStackTemplate>();
 		    
 		    if(templateId != null){
@@ -1749,6 +1852,11 @@ public class EC2Engine {
 			
 			if (result != null && result.size() > 0) {
 			    for (CloudStackTemplate temp : result) {
+=======
+			List<CloudStackTemplate> resp = getApi().listTemplates("executable", null, null, null, templateId != null ? templateId : null, null, null, null); 
+			if (resp != null && resp.size() > 0) {
+			    for (CloudStackTemplate temp : resp) {
+>>>>>>> 6472e7b... Now really adding the renamed files!
     				EC2Image ec2Image = new EC2Image();
     				ec2Image.setId(temp.getId().toString());
     				ec2Image.setAccountName(temp.getAccount());
@@ -1859,7 +1967,11 @@ public class EC2Engine {
 	 * @return
 	 * @throws Exception
 	 */
+<<<<<<< HEAD
 	public CloudStackAccount getCurrentAccount() throws Exception {
+=======
+	private CloudStackAccount getCurrentAccount() throws Exception {
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	    if (currentAccount != null) {
 	        // verify this is the same account!!!
 	        for (CloudStackUser user : currentAccount.getUser()) { 
@@ -1911,9 +2023,15 @@ public class EC2Engine {
 	 * @return
 	 * @throws Exception
 	 */
+<<<<<<< HEAD
 	private CloudStackNetwork createDefaultGuestNetwork(String zoneId, CloudStackNetworkOffering offering, CloudStackAccount owner) throws Exception {
 		return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network",  offering.getId(), zoneId, owner.getName(), 
 				owner.getDomainId(), true, null, null, null, null, null, null, null, null);
+=======
+	private CloudStackNetwork createNetwork(String zoneId, CloudStackNetworkOffering offering, CloudStackAccount owner) throws Exception {
+		return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network",  offering.getId(), zoneId, owner.getName(), 
+				null, null, null, null, null, null, null, null, null, null);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	/**
@@ -1926,6 +2044,7 @@ public class EC2Engine {
 	private CloudStackNetwork getNetworksWithoutSecurityGroupEnabled(String zoneId) throws Exception {
 		// grab current account
 		CloudStackAccount caller = getCurrentAccount();
+<<<<<<< HEAD
 		
 		//check if account has any networks in the system
 		List<CloudStackNetwork> networks = getApi().listNetworks(caller.getName(), caller.getDomainId(), null, true, null, null, null, null, null, zoneId);
@@ -1964,6 +2083,31 @@ public class EC2Engine {
 	        }
 		}
 		
+=======
+
+		List<CloudStackNetwork> networks = getApi().listNetworks(null, caller.getDomainId(), null, null, null, null, null, null, null, zoneId);
+		
+		List<CloudStackNetworkOffering> offerings = getApi().listNetworkOfferings("Required", null, null, null, true,  null, null, null, null, null, zoneId); 
+		if (offerings != null && !offerings.isEmpty()) {
+			for (CloudStackNetwork network : networks) 
+				for (CloudStackNetworkOffering offering : offerings) { 
+				    logger.debug("[reqd/virtual} offering: " + offering.getId() + " network " + network.getNetworkOfferingId());
+					if (network.getNetworkOfferingId().equals(offering.getId())) 
+						return network;
+				}
+			// if we get this far, we didn't find a network, so create one and return it.
+			return createNetwork(zoneId, offerings.get(0), caller);
+		}
+		offerings = getApi().listNetworkOfferings("Optional", null, null, null, true, null, null, null, null, null, zoneId);
+		if (offerings != null && !offerings.isEmpty()) {
+			for (CloudStackNetwork network : networks) 
+				for (CloudStackNetworkOffering offering : offerings) { 
+                    logger.debug("[optional] offering: " + offering.getId() + " network " + network.getNetworkOfferingId());
+					if (network.getNetworkOfferingId().equals(offering.getId())) 
+						return network;
+				}
+		}
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		// if we get this far and haven't returned already return an error
 		throw new EC2ServiceException(ServerError.InternalError, "Unable to find an appropriate network for account " + caller.getName());
 	}

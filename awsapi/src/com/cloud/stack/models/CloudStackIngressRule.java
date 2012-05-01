@@ -20,7 +20,11 @@ import com.google.gson.annotations.SerializedName;
 public class CloudStackIngressRule {
 	
     @SerializedName(ApiConstants.RULE_ID)
+<<<<<<< HEAD
     private String ruleId;
+=======
+    private Long ruleId;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
     @SerializedName(ApiConstants.PROTOCOL)
     private String protocol;
@@ -49,7 +53,11 @@ public class CloudStackIngressRule {
     public CloudStackIngressRule() {
     }
 
+<<<<<<< HEAD
 	public String getRuleId() {
+=======
+	public Long getRuleId() {
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		return ruleId;
 	}
 

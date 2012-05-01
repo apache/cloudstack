@@ -22,7 +22,11 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
+=======
+ * @author Kelven Yang, John Zucker
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class SObject implements Serializable {
 	private static final long serialVersionUID = 8566744941395660486L;
@@ -33,7 +37,11 @@ public class SObject implements Serializable {
 	private String ownerCanonicalId;
 	
 	private int nextSequence;
+<<<<<<< HEAD
 	private String deletionMark;   // -> this must also a unique ID to give to the REST client
+=======
+	private String deletionMark;   // This must also a unique ID to give to the REST client
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	
 	private Date createTime;
 	
@@ -133,7 +141,11 @@ public class SObject implements Serializable {
 		{
 			SObjectItem item = it.next();
 			
+<<<<<<< HEAD
 		    // -> If versioning is off then return the item with the null version string (if exists)
+=======
+		    //    If versioning is off then return the item with the null version string (if exists)
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			//    For example, the bucket could have allowed versioning and then it was suspended
 			//    If an application wants a specific version it will need to explicitly ask for it
 			try {

@@ -19,11 +19,18 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+<<<<<<< HEAD
  * @author Kelven
+=======
+ * @author Kelven, John Zucker
+ * Provide converters for regexp (case independent tokens)
+ * Also provide upper case or lower case (default) converters for byte array b[] to hex String
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class StringHelper {
 	public static final String EMPTY_STRING = "";
 
+<<<<<<< HEAD
 	private static final char[] hexChars = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }; 
 	
 	public static String toHexString(byte[] b) {
@@ -31,6 +38,30 @@ public class StringHelper {
 		for (int i = 0; i < b.length; i++) {
 			sb.append(hexChars[ (int)(((int)b[i] >> 4) & 0x0f)]);
 			sb.append(hexChars[ (int)(((int)b[i]) & 0x0f)]);
+=======
+	private static final char[] hexCharsUpperCase = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }; 
+	
+	private static final char[] hexCharsLowerCase = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+   /* Convert byte array b[] into an uppercase hex string
+   */
+	public static String toHexStringUpperCase(byte[] b) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < b.length; i++) {
+			sb.append(hexCharsUpperCase[ (int)(((int)b[i] >> 4) & 0x0f)]);
+			sb.append(hexCharsUpperCase[ (int)(((int)b[i]) & 0x0f)]);
+		}
+	    return sb.toString(); 
+	}
+	
+	/* Convert byte array b[] into a lowercase (default) hex string
+	 */
+	public static String toHexString(byte[] b) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < b.length; i++) {
+			sb.append(hexCharsLowerCase[ (int)(((int)b[i] >> 4) & 0x0f)]);
+			sb.append(hexCharsLowerCase[ (int)(((int)b[i]) & 0x0f)]);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		}
 	    return sb.toString(); 
 	}

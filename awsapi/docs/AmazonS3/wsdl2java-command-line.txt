@@ -1,0 +1,47 @@
+To generate the Java AXIS2 classes from the Amazon EC2 wsdl use the following command line, assuming source definitions in the local directory:
+$ wsdl2java.sh -ss -sd -ssi -g -p com.amazon.s3 -ns2p "http://s3.amazonaws.com/doc/2006-03-01/"=com.amazon.s3 -uri cloud-AmazonS3.wsdl
+
+This runs the wsdl2java code generation tool to produce stubs with asynchronous invocation methods, such as those useful for REST using the com.amazon.s3 package.
+
+This creates the following java source files in the src/com/amazon/s3 subdirectory …
+
+AccessControlList.java				ListAllMyBucketsResponse.java
+AccessControlPolicy.java			ListAllMyBucketsResult.java
+AmazonCustomerByEmail.java			ListBucket.java
+AmazonS3CallbackHandler.java			ListBucketResponse.java
+AmazonS3MessageReceiverInOut.java		ListBucketResult.java
+AmazonS3Skeleton.java				ListEntry.java
+AmazonS3SkeletonInterface.java			ListVersionsResponse.java
+AmazonS3Stub.java				ListVersionsResult.java
+BucketLoggingStatus.java			ListVersionsResultChoice_type0.java
+CanonicalUser.java				LocationConstraint.java
+CopyObject.java					LoggingSettings.java
+CopyObjectResponse.java				MetadataDirective.java
+CopyObjectResult.java				MetadataEntry.java
+CreateBucket.java				MfaDeleteStatus.java
+CreateBucketConfiguration.java			NotificationConfiguration.java
+CreateBucketResponse.java			Payer.java
+CreateBucketResult.java				Permission.java
+DeleteBucket.java				PostResponse.java
+DeleteBucketResponse.java			PrefixEntry.java
+DeleteMarkerEntry.java				PutObject.java
+DeleteObject.java				PutObjectInline.java
+DeleteObjectResponse.java			PutObjectInlineResponse.java
+ExtensionMapper.java				PutObjectResponse.java
+GetBucketAccessControlPolicy.java		PutObjectResult.java
+GetBucketAccessControlPolicyResponse.java	RequestPaymentConfiguration.java
+GetBucketLoggingStatus.java			Result.java
+GetBucketLoggingStatusResponse.java		SetBucketAccessControlPolicy.java
+GetObject.java					SetBucketAccessControlPolicyResponse.java
+GetObjectAccessControlPolicy.java		SetBucketLoggingStatus.java
+GetObjectAccessControlPolicyResponse.java	SetBucketLoggingStatusResponse.java
+GetObjectExtended.java				SetObjectAccessControlPolicy.java
+GetObjectExtendedResponse.java			SetObjectAccessControlPolicyResponse.java
+GetObjectResponse.java				Status.java
+GetObjectResult.java				StorageClass.java
+Grant.java					TopicConfiguration.java
+Grantee.java					User.java
+Group.java					VersionEntry.java
+ListAllMyBuckets.java				VersioningConfiguration.java
+ListAllMyBucketsEntry.java			VersioningStatus.java
+ListAllMyBucketsList.java

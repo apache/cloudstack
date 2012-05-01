@@ -18,7 +18,11 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
+=======
+ * @author Kelven Yang, John Zucker
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class S3PutObjectInlineResponse extends S3Response {
 	protected String ETag;
@@ -31,6 +35,11 @@ public class S3PutObjectInlineResponse extends S3Response {
 		uploadId = -1;
 	}
 
+<<<<<<< HEAD
+=======
+	 // add ETag header computed as Base64 MD5 whenever object is uploaded or updated
+	 // the Base64 is represented in lowercase
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	public String getETag() {
 		return ETag;
 	}

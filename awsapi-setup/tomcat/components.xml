@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!--
+  components.xml is the configuration file for the VM Ops
+  insertion servers.  Someone can quickly pull together an
+  insertion server by selecting the correct adapters to use.
+
+  Here are some places to look for information.
+    - To find out the general functionality that each Manager 
+      or Adapter provide, look at the javadoc for the interface
+      that it implements.  The interface is usually the
+      "key" attribute in the declaration.
+    - To find specific implementation of each Manager or
+      Adapter, look at the javadoc for the actual class.  The 
+      class can be found in the <class> element.
+    - To find out the configuration parameters for each Manager 
+      or Adapter, look at the javadoc for the actual implementation
+      class.  It should be documented in the description of the 
+      class.
+    - To know more about the components.xml in general, look for
+      the javadoc for ComponentLocator.java.
+
+  If you found that the Manager or Adapter are not properly 
+  documented, please contact the author.
+-->
+<components.xml>
+    <interceptor library="com.cloud.configuration.DefaultIntercetorLibrary"/>
+    <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
+        <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
+            <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>
+            <!--adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/-->
+        </adapters>
+        <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
+            <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
+            <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
+            <adapter name="GarbageCollecting" class="com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
+            <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
+            <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.network.guru.NetworkGuru">
+            <adapter name="GuestNetworkGuru" class="com.cloud.network.guru.GuestNetworkGuru"/>
+            <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
+            <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
+            <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
+            <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
+            <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
+        </adapters>
+        <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
+            <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.network.IpAddrAllocator">
+            <adapter name="Basic" class="com.cloud.network.ExteralIpAddressAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.server.auth.UserAuthenticator">
+            <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
+        </adapters>
+        <adapters key="com.cloud.ha.Investigator">
+            <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
+            <adapter name="PingInvestigator" class="com.cloud.ha.InvestigatorImpl"/>
+        </adapters>
+        <adapters key="com.cloud.ha.FenceBuilder">
+            <adapter name="StorageFenceBuilder" class="com.cloud.ha.StorageFence"/>
+        </adapters>
+        <adapters key="com.cloud.hypervisor.HypervisorGuru">
+            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
+            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
+            <adapter name="VMwareGuru" class="com.cloud.hypervisor.VMwareGuru"/>
+        </adapters>
+        <adapters key="com.cloud.resource.Discoverer">
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
+            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+        </adapters>
+        <adapters key="com.cloud.deploy.DeploymentPlanner">
+            <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
+        </adapters>
+        <adapters key="com.cloud.utils.fsm.StateListener">
+            <adapter name="VMStateListener" class="com.cloud.stateListener.VMStateListener"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.NetworkElement">
+            <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="Dhcp" class="com.cloud.network.element.DhcpElement"/>
+        </adapters>
+        <adapters key="com.cloud.acl.SecurityChecker">
+            <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
+        </adapters>
+    </management-server>
+
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+             <param name="premium">false</param>
+        </dao>
+        <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" singleton="false"/>
+        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>         
+        <dao name="ServiceOffering configuration server" class="com.cloud.service.dao.ServiceOfferingDaoImpl" singleton="false"/>
+        <dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
+        <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl" singleton="false"/>
+        <dao name="DomainDao" class="com.cloud.domain.dao.DomainDaoImpl" singleton="false"/>
+        <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" singleton="false"/>
+        <dao name="DataCenterDao" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
+        <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/>
+        <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>     
+        <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>        
+    </configuration-server>
+</components.xml>

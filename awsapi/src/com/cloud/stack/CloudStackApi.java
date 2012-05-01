@@ -1194,7 +1194,11 @@ public class CloudStackApi {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.DELETE_SNAPSHOT);
 		if (cmd != null) 
 			cmd.setParam(ApiConstants.ID, id);
+<<<<<<< HEAD
 		return _client.call(cmd, apiKey, secretKey, true, ApiConstants.DELETE_SNAPSHOT_RESPONSE, null, CloudStackInfoResponse.class);
+=======
+		return _client.call(cmd, apiKey, secretKey, true, ApiConstants.DELETE_SNAPSHOT_RESPONSE, ApiConstants.SNAPSHOT, CloudStackInfoResponse.class);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	/**
@@ -1235,7 +1239,11 @@ public class CloudStackApi {
 			if (id != null) cmd.setParam(ApiConstants.ID, id);
 			if (ids != null) cmd.setParam(ApiConstants.IDS, ids);
 		}
+<<<<<<< HEAD
 		return _client.call(cmd, apiKey, secretKey, false, ApiConstants.DELETE_SNAPSHOT_POLICIES_RESPONSE, null, CloudStackInfoResponse.class);
+=======
+		return _client.call(cmd, apiKey, secretKey, false, ApiConstants.DELETE_SNAPSHOT_POLICIES_RESPONSE, ApiConstants.SNAPSHOT, CloudStackInfoResponse.class);
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	/**
@@ -1947,6 +1955,7 @@ public class CloudStackApi {
 	 * @param zoneId
 	 * @param account
 	 * @param domainId
+<<<<<<< HEAD
 	 * @param isDefault
 	 * @param startIp
 	 * @param endIp
@@ -1954,13 +1963,26 @@ public class CloudStackApi {
 	 * @param netmask
 	 * @param isShared
 	 * @param networkDomain
+=======
+	 * @param endIp
+	 * @param gateway
+	 * @param isDefault
+	 * @param isShared
+	 * @param netmask
+	 * @param networkDomain
+	 * @param startIp
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	 * @param tags
 	 * @param vlan
 	 * @return
 	 * @throws Exception
 	 */
 	public CloudStackNetwork createNetwork(String displayText, String name, String networkOfferingId, String zoneId, String account, String domainId,
+<<<<<<< HEAD
 			Boolean isDefault, String startIp, String endIp, String gateway, String netmask, Boolean isShared, String networkDomain, String tags, 
+=======
+			String endIp, String gateway, Boolean isDefault, Boolean isShared, String netmask, String networkDomain, String startIp, String tags, 
+>>>>>>> 6472e7b... Now really adding the renamed files!
 			String vlan) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.CREATE_NETWORK);
 		if (cmd != null) {

@@ -23,7 +23,11 @@ import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
+=======
+ * @author Kelven Yang, John Zucker
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class SMetaDao extends EntityDao<SMeta> {
 	public SMetaDao() {
@@ -46,7 +50,11 @@ public class SMetaDao extends EntityDao<SMeta> {
 	}
 	
 	public void save(String target, long targetId, S3MetaDataEntry[] entries) {
+<<<<<<< HEAD
 		// -> the target's meta data are being redefined
+=======
+		// To redefine the target's metadaa
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		executeUpdate("delete from SMeta where target=? and targetId=?", new Object[] { target, new Long(targetId)});
 
 		if(entries != null) {

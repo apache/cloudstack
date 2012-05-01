@@ -20,7 +20,11 @@ import com.google.gson.annotations.SerializedName;
 public class CloudStackNic {
 	
     @SerializedName(ApiConstants.ID)
+<<<<<<< HEAD
     private String id;
+=======
+    private Long id;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
     @SerializedName(ApiConstants.BROADCAST_URI)
     private String broadcastUri;
@@ -44,7 +48,11 @@ public class CloudStackNic {
     private String netmask;
     
     @SerializedName(ApiConstants.NETWORK_ID)
+<<<<<<< HEAD
     private String networkid;
+=======
+    private Long networkid;
+>>>>>>> 6472e7b... Now really adding the renamed files!
     
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
     private String trafficType;
@@ -55,11 +63,19 @@ public class CloudStackNic {
     public CloudStackNic() {
     }
 
+<<<<<<< HEAD
     public String getId() {
         return id;
     }
 
 	public String getNetworkid() {
+=======
+	public Long getId() {
+		return id;
+	}
+
+	public Long getNetworkid() {
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		return networkid;
 	}
 

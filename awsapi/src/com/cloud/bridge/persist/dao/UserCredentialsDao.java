@@ -15,13 +15,23 @@
  */
 package com.cloud.bridge.persist.dao;
 
+<<<<<<< HEAD
 import java.sql.*;
 
+=======
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.sql.*;
+import java.util.Properties;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.model.UserCredentials;
 import com.cloud.bridge.service.exception.NoSuchObjectException;
+<<<<<<< HEAD
 
 
 public class UserCredentialsDao extends BaseDao {
@@ -30,6 +40,40 @@ public class UserCredentialsDao extends BaseDao {
 	private Connection conn       = null;
 	
 	public UserCredentialsDao() {
+=======
+import com.cloud.bridge.util.ConfigurationHelper;
+
+
+public class UserCredentialsDao {
+	public static final Logger logger = Logger.getLogger(UserCredentialsDao.class);
+
+	private Connection conn       = null;
+	private String     dbName     = null;
+	private String     dbHost     = null;
+	private String     dbUser     = null;
+	private String     dbPassword = null;
+	
+	public UserCredentialsDao() {
+	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
+	    Properties EC2Prop = null;
+	    
+	    // The settings for the CLOUDBRIDGE database are shared with the EC2 API
+	       
+	    if (null != propertiesFile) {
+	   	    EC2Prop = new Properties();
+	    	try {
+				EC2Prop.load( new FileInputStream( propertiesFile ));
+			} catch (FileNotFoundException e) {
+				logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
+			} catch (IOException e) {
+				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
+			}
+                    dbHost     = EC2Prop.getProperty( "dbHost" );
+		    dbName     = EC2Prop.getProperty( "dbName" );
+		    dbUser     = EC2Prop.getProperty( "dbUser" );
+		    dbPassword = EC2Prop.getProperty( "dbPassword" );
+		}
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	public void setUserKeys( String cloudAccessKey, String cloudSecretKey ) 
@@ -131,7 +175,11 @@ public class UserCredentialsDao extends BaseDao {
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 		    Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
+<<<<<<< HEAD
             conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + "/" + awsapi_dbName, dbUser, dbPassword );
+=======
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword );
+>>>>>>> 6472e7b... Now really adding the renamed files!
         }
 	}
 	

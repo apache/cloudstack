@@ -33,6 +33,12 @@ import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.util.S3SoapAuth;
 
+<<<<<<< HEAD
+=======
+/*
+ *  For SOAP compatibility.
+ */
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 public class AuthenticationHandler implements Handler {
      protected final static Logger logger = Logger.getLogger(AuthenticationHandler.class);

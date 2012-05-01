@@ -37,7 +37,11 @@ import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.core.s3.S3MultipartUpload;
 import com.cloud.bridge.util.ConfigurationHelper;
+<<<<<<< HEAD
 import com.cloud.bridge.util.Tuple;
+=======
+import com.cloud.bridge.util.OrderedPair;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 
 public class MultipartLoadDao {
 	public static final Logger logger = Logger.getLogger(MultipartLoadDao.class);
@@ -46,12 +50,21 @@ public class MultipartLoadDao {
 	private String     dbName     = null;
 	private String     dbUser     = null;
 	private String     dbPassword = null;
+<<<<<<< HEAD
 	private String     dbHost     = null;
 	private String     dbPort     = null; 
 	
 	public MultipartLoadDao() {
 	    File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
 	    Properties EC2Prop = null;
+=======
+	
+	public MultipartLoadDao() {
+	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
+	    Properties EC2Prop = null;
+	    
+	    // The settings for the CLOUDBRIDGE database are shared with the EC2 API
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	       
 	    if (null != propertiesFile) {
 	   	    EC2Prop = new Properties();
@@ -62,11 +75,17 @@ public class MultipartLoadDao {
 			} catch (IOException e) {
 				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
 			}
+<<<<<<< HEAD
             dbHost     = EC2Prop.getProperty( "db.cloud.host" );
             dbName     = EC2Prop.getProperty( "db.awsapi.name" );
             dbUser     = EC2Prop.getProperty( "db.cloud.username" );
             dbPassword = EC2Prop.getProperty( "db.cloud.password" );
             dbPort     = EC2Prop.getProperty( "db.cloud.port" );
+=======
+		    dbName     = EC2Prop.getProperty( "dbName" );
+		    dbUser     = EC2Prop.getProperty( "dbUser" );
+		    dbPassword = EC2Prop.getProperty( "dbPassword" );
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		}
 	}
 	
@@ -78,7 +97,11 @@ public class MultipartLoadDao {
 	 * @return creator of the multipart upload, and NameKey of upload
 	 * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
 	 */
+<<<<<<< HEAD
 	public Tuple<String,String> multipartExits( int uploadId ) 
+=======
+	public OrderedPair<String,String> multipartExits( int uploadId ) 
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
 	{
 	    PreparedStatement statement = null;
@@ -93,7 +116,11 @@ public class MultipartLoadDao {
 		    if ( rs.next()) {
 		    	 accessKey = rs.getString( "AccessKey" );
 		    	 nameKey = rs.getString( "NameKey" );
+<<<<<<< HEAD
 		    	 return new Tuple<String,String>( accessKey, nameKey );
+=======
+		    	 return new OrderedPair<String,String>( accessKey, nameKey );
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		    }
 		    else return null;
         
@@ -338,10 +365,17 @@ public class MultipartLoadDao {
 	 * @param prefix - can be null
 	 * @param keyMarker - can be null
 	 * @param uploadIdMarker - can be null, should only be defined if keyMarker is not-null
+<<<<<<< HEAD
 	 * @return Tuple<S3MultipartUpload[], isTruncated>
 	 * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
 	 */
 	public Tuple<S3MultipartUpload[],Boolean> getInitiatedUploads( String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker )
+=======
+	 * @return OrderedPair<S3MultipartUpload[], isTruncated>
+	 * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
+	 */
+	public OrderedPair<S3MultipartUpload[],Boolean> getInitiatedUploads( String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker )
+>>>>>>> 6472e7b... Now really adding the renamed files!
         throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
 	{
 		S3MultipartUpload[] inProgress = new S3MultipartUpload[maxParts];
@@ -387,7 +421,11 @@ public class MultipartLoadDao {
             statement.close();		
             
             if (i < maxParts) inProgress = (S3MultipartUpload[])resizeArray(inProgress,i);
+<<<<<<< HEAD
             return new Tuple<S3MultipartUpload[], Boolean>(inProgress, isTruncated);
+=======
+            return new OrderedPair<S3MultipartUpload[], Boolean>(inProgress, isTruncated);
+>>>>>>> 6472e7b... Now really adding the renamed files!
         
         } finally {
             closeConnection();
@@ -432,7 +470,11 @@ public class MultipartLoadDao {
 		    	
 		    	parts[i] = new S3MultipartPart();
 		    	parts[i].setPartNumber( rs.getInt( "partNumber" )); 
+<<<<<<< HEAD
 		    	parts[i].setEtag( rs.getString( "MD5" ));
+=======
+		    	parts[i].setEtag( rs.getString( "MD5" ).toLowerCase());
+>>>>>>> 6472e7b... Now really adding the renamed files!
 		    	parts[i].setLastModified( tod );
 		    	parts[i].setSize( rs.getInt( "StoredSize" ));
 		    	parts[i].setPath( rs.getString( "StoredPath" ));
@@ -514,7 +556,11 @@ public class MultipartLoadDao {
         throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 	        Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
+<<<<<<< HEAD
             conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
+=======
+            conn = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
+>>>>>>> 6472e7b... Now really adding the renamed files!
         }
 	}
 

@@ -19,7 +19,11 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
+<<<<<<< HEAD
  * @author Kelven Yang
+=======
+ * @author Kelven Yang, John Zucker
+>>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class SObjectItem implements Serializable {
 	private static final long serialVersionUID = -7351173256185687851L;
@@ -76,7 +80,11 @@ public class SObjectItem implements Serializable {
 	}
 	
 	public void setStoredPath(String storedPath) {
+<<<<<<< HEAD
 		this.storedPath = storedPath;
+=======
+		this.storedPath = storedPath;   // TODO - storedpath holds integer, called from S3Engine.allocObjectItem
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	public long getStoredSize() {

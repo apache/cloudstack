@@ -1606,6 +1606,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	    EC2Snapshot[] snaps = engineResponse.getSnapshotSet();
 	    for (EC2Snapshot snap : snaps) {
 	         DescribeSnapshotsSetItemResponseType param3 = new DescribeSnapshotsSetItemResponseType();
+<<<<<<< HEAD
 	         param3.setSnapshotId( snap.getId());
 	         param3.setVolumeId( snap.getVolumeId());
 
@@ -1627,6 +1628,15 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 //	         param3.setStatus( snap.getState());
 	         
 	         String ownerId = snap.getDomainId() + ":" + snap.getAccountName();
+=======
+	         param3.setSnapshotId( snap.getId().toString());
+	         param3.setVolumeId( snap.getVolumeId().toString());
+	         param3.setStatus( snap.getState());
+	         
+	         String accountName = snap.getAccountName();
+	         String domainId = snap.getDomainId().toString();
+				String ownerId = domainId + ":" + accountName;
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	         
 	         // -> CloudStack seems to have issues with timestamp formats so just in case
 		     Calendar cal = snap.getCreated();
@@ -1636,10 +1646,19 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		     }
 	         param3.setStartTime( cal );
 	         
+<<<<<<< HEAD
 	         param3.setOwnerId(ownerId);
 	         param3.setVolumeSize( snap.getVolumeSize().toString());
 	         param3.setDescription( snap.getName());
 	         param3.setOwnerAlias( snap.getAccountName() );
+=======
+	         param3.setProgress( "" );
+	         param3.setOwnerId(ownerId);
+	         Long volSize = new Long( snap.getVolumeSize());
+	         param3.setVolumeSize( volSize.toString());
+	         param3.setDescription( snap.getName());
+	         param3.setOwnerAlias( "" );
+>>>>>>> 6472e7b... Now really adding the renamed files!
 	         
 	         ResourceTagSetType param18 = new ResourceTagSetType();
 	         ResourceTagSetItemType param19 = new ResourceTagSetItemType();
