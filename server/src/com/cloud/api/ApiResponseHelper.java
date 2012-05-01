@@ -1019,13 +1019,35 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
-
+        if(volume.getState() == Volume.State.Uploading || volume.getState() == Volume.State.Uploaded){
+        	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
+            volResponse.setSize(volumeHostRef.getSize());
+            volResponse.setCreated(volumeHostRef.getCreated());
+            if (volumeHostRef.getDownloadState() != Status.DOWNLOADED) {
+                String volumeStatus = "Processing";
+                if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                    if (volumeHostRef.getDownloadPercent() == 100) {
+                        volumeStatus = "Checking Volume";
+                    } else {
+                        volumeStatus = volumeHostRef.getDownloadPercent() + "% Uploaded";
+                    }
+                } else {
+                    volumeStatus = volumeHostRef.getErrorString();
+                }
+                volResponse.setStatus(volumeStatus);
+            } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+            	volResponse.setStatus("Upload Complete");
+            } else {
+            	volResponse.setStatus("Successfully Installed");
+            }            
+        }
+        
         populateOwner(volResponse, volume);
 
         String storageType;
         try {
             if (volume.getPoolId() == null) {
-                if (volume.getState() == Volume.State.Allocated) {
+                if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.Uploaded || volume.getState() == Volume.State.Uploading) {
                     /* set it as shared, so the UI can attach it to VM */
                     storageType = "shared";
                 } else {

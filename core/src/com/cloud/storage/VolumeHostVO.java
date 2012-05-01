@@ -14,6 +14,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 //import com.cloud.storage.VMVolumeStorageResourceAssoc.Status;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 
@@ -34,6 +35,9 @@ public class VolumeHostVO {
 	
 	@Column(name="volume_id")
 	private long volumeId;
+	
+	@Column(name="zone_id")
+	private long zoneId;
 	
 	@Column(name=GenericDaoBase.CREATED_COLUMN)
 	private Date created = null;
@@ -103,7 +107,15 @@ public class VolumeHostVO {
 	}
 
 	
-    public int getDownloadPercent() {
+    public long getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(long zoneId) {
+		this.zoneId = zoneId;
+	}
+
+	public int getDownloadPercent() {
 		return downloadPercent;
 	}
 
@@ -161,13 +173,14 @@ public class VolumeHostVO {
 		this.volumeId = volumeId;
 	}
 
-	public VolumeHostVO(long hostId, long volumeId, Date lastUpdated,
+	public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated,
 			int downloadPercent, Status downloadState,
 			String localDownloadPath, String errorString, String jobId,
-			String installPath, String downloadUrl, String checksum) {
+			String installPath, String downloadUrl, String checksum, ImageFormat format) {
 		//super();
 		this.hostId = hostId;
 		this.volumeId = volumeId;
+		this.zoneId = zoneId;
 		this.lastUpdated = lastUpdated;
 		this.downloadPercent = downloadPercent;
 		this.downloadState = downloadState;
@@ -177,6 +190,7 @@ public class VolumeHostVO {
 		this.installPath = installPath;
 		this.setDownloadUrl(downloadUrl);
 		this.checksum = checksum;
+		this.format = format;
 	}
 
 	protected VolumeHostVO() {
