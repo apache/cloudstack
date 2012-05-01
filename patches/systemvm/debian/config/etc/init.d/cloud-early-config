@@ -205,10 +205,9 @@ setup_interface() {
       ifdown $intf
   else
       ifdown $intf
-      ifup $intf
-      if [ "$RROUTER" == "1" -a "$1" == "2" ]
+      if [ "$RROUTER" != "1" -o "$1" != "2" ]
       then
-        ifdown $intf
+            ifup $intf
       fi
   fi
 }
