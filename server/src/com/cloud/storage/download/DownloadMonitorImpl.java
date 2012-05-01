@@ -435,8 +435,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
         volumeHost = _volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
         if (volumeHost == null) {
-            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
-            		"jobid0000", null, url, checkSum);
+            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), sserver.getDataCenterId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
+            		"jobid0000", null, url, checkSum, format);
             _volumeHostDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;

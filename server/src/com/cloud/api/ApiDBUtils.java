@@ -91,6 +91,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -104,6 +105,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -170,6 +172,7 @@ public class ApiDBUtils {
     private static UserVmDao _userVmDao;
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
+    private static VolumeHostDao _volumeHostDao;
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
@@ -222,6 +225,7 @@ public class ApiDBUtils {
         _userVmDao = locator.getDao(UserVmDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
+        _volumeHostDao = locator.getDao(VolumeHostDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
@@ -496,7 +500,7 @@ public class ApiDBUtils {
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
         return findTemplateHostRef(templateId, zoneId, false);
     }
-    
+
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId, boolean readyOnly) {
         VMTemplateVO vmTemplate = findTemplateById(templateId);
         if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
@@ -508,6 +512,9 @@ public class ApiDBUtils {
     }
     
     
+    public static VolumeHostVO findVolumeHostRef(long volumeId, long zoneId) {
+        return _volumeHostDao.findVolumeByZone(volumeId, zoneId);
+    }
     
     public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {
         return _templateSwiftDao.findOneByTemplateId(templateId);

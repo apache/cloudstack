@@ -33,9 +33,6 @@ public class UploadVolumeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="the target hypervisor for the volume")
-    private String hypervisor;
-
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the volume")
     private String volumeName;
 
@@ -62,10 +59,6 @@ public class UploadVolumeCmd extends BaseCmd {
 
     public String getFormat() {
         return format;
-    }
-
-    public String getHypervisor() {
-        return hypervisor;
     }
 
     public String getVolumeName() {

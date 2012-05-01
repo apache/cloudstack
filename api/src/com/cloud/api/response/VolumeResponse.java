@@ -142,6 +142,10 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("isextractable")
     @Param(description = "true if the volume is extractable, false otherwise")
     private Boolean extractable;
+    
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description="the status of the volume")
+    private String status;
 
     @Override
     public Long getObjectId() {
@@ -260,7 +264,11 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
+    public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
         this.serviceOfferingDisplayText = serviceOfferingDisplayText;
     }
 
