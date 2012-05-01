@@ -22,9 +22,6 @@ package com.cloud.bridge.service;
 public interface S3Constants {
 	public final String BUCKET_ATTR_KEY = "s3-bucket";
 	public final String OBJECT_ATTR_KEY = "s3-object-key";
-<<<<<<< HEAD
-=======
 	public final String PLAIN_POST_ACCESS_KEY = "s3-access-key";
 	public final String PLAIN_POST_SIGNATURE = "s3-signature";
->>>>>>> 6472e7b... Now really adding the renamed files!
 }

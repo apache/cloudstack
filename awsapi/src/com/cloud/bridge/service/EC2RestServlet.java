@@ -93,15 +93,9 @@ import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
 import com.cloud.bridge.model.UserCredentials;
-<<<<<<< HEAD
 import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
-=======
-import com.cloud.bridge.persist.dao.OfferingDao;
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
-import com.cloud.bridge.service.controller.s3.ServiceProvider;
->>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
 import com.cloud.bridge.service.core.ec2.EC2CreateImage;
@@ -142,10 +136,7 @@ import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
-<<<<<<< HEAD
 import com.cloud.stack.models.CloudStackAccount;
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 
 public class EC2RestServlet extends HttpServlet {
@@ -160,10 +151,7 @@ public class EC2RestServlet extends HttpServlet {
 	private String pathToKeystore   = null;
 	private String keystorePassword = null;
 	private String wsdlVersion      = null;
-<<<<<<< HEAD
 	private String version          = null;
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 	
 	boolean debug=true;
 
@@ -190,10 +178,7 @@ public class EC2RestServlet extends HttpServlet {
 	       String keystore  = EC2Prop.getProperty( "keystore" );
 	       keystorePassword = EC2Prop.getProperty( "keystorePass" );
 	   	   wsdlVersion      = EC2Prop.getProperty( "WSDLVersion", "2009-11-30" );
-<<<<<<< HEAD
            version = EC2Prop.getProperty( "cloudbridgeVersion", "UNKNOWN VERSION" );
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 	       
 	       String installedPath = System.getenv("CATALINA_HOME");
 	       if (installedPath == null) installedPath = System.getenv("CATALINA_BASE");
@@ -290,13 +275,9 @@ public class EC2RestServlet extends HttpServlet {
         		logger.error("Unsupported action " + action);
         		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
     	    }
-<<<<<<< HEAD
     	    PersistContext.commitTransaction();     
     	    PersistContext.commitTransaction(true);
     	    
-=======
-    	         
->>>>>>> 6472e7b... Now really adding the renamed files!
         } catch( EC2ServiceException e ) {
     		response.setStatus(e.getErrorCode());
     		
@@ -322,11 +303,8 @@ public class EC2RestServlet extends HttpServlet {
 			} catch (IOException e) {
 	    		logger.error("Unexpected exception " + e.getMessage(), e);
 			}
-<<<<<<< HEAD
 			PersistContext.closeSession();
 			PersistContext.closeSession(true);
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
         }       
     }
    
@@ -336,15 +314,9 @@ public class EC2RestServlet extends HttpServlet {
      * This is an unauthenticated REST call.
      */
     private void cloudEC2Version( HttpServletRequest request, HttpServletResponse response ) {
-<<<<<<< HEAD
         String version_response = new String( "<?xml version=\"1.0\" encoding=\"utf-8\"?><CloudEC2Version>" + version + "</CloudEC2Version>" );
         response.setStatus(200);
         endResponse(response, version_response);
-=======
-        String version = new String( "<?xml version=\"1.0\" encoding=\"utf-8\"?><CloudEC2Version>1.03</CloudEC2Version>" );       		
-        response.setStatus(200);
-        endResponse(response, version);
->>>>>>> 6472e7b... Now really adding the renamed files!
     }
     
     /**
@@ -553,7 +525,6 @@ public class EC2RestServlet extends HttpServlet {
         	endResponse(response, "SetOfferMapping exception " + e.getMessage());
 		    return;
         }
-<<<<<<< HEAD
     	
     	// validate account is admin level
     	try {
@@ -571,8 +542,6 @@ public class EC2RestServlet extends HttpServlet {
     	    endResponse(response, e.toString());
     	    return;
     	}
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 
         try {
     	    OfferingDao ofDao = new OfferingDao();
@@ -605,7 +574,6 @@ public class EC2RestServlet extends HttpServlet {
         	endResponse(response, "DeleteOfferMapping exception " + e.getMessage());
 		    return;
         }
-<<<<<<< HEAD
     	
     	// validate account is admin level
     	try {
@@ -623,8 +591,6 @@ public class EC2RestServlet extends HttpServlet {
             endResponse(response, e.toString());
             return;
         }
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 
         try {
     	    OfferingDao ofDao = new OfferingDao();

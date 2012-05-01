@@ -15,32 +15,17 @@
  */
 package com.cloud.bridge.persist.dao;
 
-<<<<<<< HEAD
-import java.sql.*;
-
-=======
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.model.UserCredentials;
 import com.cloud.bridge.service.exception.NoSuchObjectException;
-<<<<<<< HEAD
-
-
-public class UserCredentialsDao extends BaseDao {
-	public static final Logger logger = Logger.getLogger(UserCredentialsDao.class);
-
-	private Connection conn       = null;
-	
-	public UserCredentialsDao() {
-=======
 import com.cloud.bridge.util.ConfigurationHelper;
 
 
@@ -73,7 +58,6 @@ public class UserCredentialsDao {
 		    dbUser     = EC2Prop.getProperty( "dbUser" );
 		    dbPassword = EC2Prop.getProperty( "dbPassword" );
 		}
->>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	public void setUserKeys( String cloudAccessKey, String cloudSecretKey ) 
@@ -175,11 +159,7 @@ public class UserCredentialsDao {
 	    throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         if (null == conn) {
 		    Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-<<<<<<< HEAD
-            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + "/" + awsapi_dbName, dbUser, dbPassword );
-=======
             conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword );
->>>>>>> 6472e7b... Now really adding the renamed files!
         }
 	}
 	

@@ -18,10 +18,6 @@ package com.cloud.bridge.model;
 import java.io.Serializable;
 import java.util.Date;
 
-<<<<<<< HEAD
-/**
- * @author Kelven Yang
-=======
 import com.cloud.bridge.service.exception.UnsupportedException;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.bridge.util.Triple;
@@ -40,7 +36,6 @@ import com.cloud.bridge.util.Triple;
  * (b) a Triplet
  *         < permission1, permission2, symbol >
  * when given an aclRequestString, a target (i.e. bucket or object) and the ID of the owner.
->>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class SAcl implements Serializable {
 	private static final long serialVersionUID = 7900837117165018850L;
@@ -49,11 +44,7 @@ public class SAcl implements Serializable {
 	public static final int GRANTEE_ALLUSERS = 1;
 	public static final int GRANTEE_AUTHENTICATED = 2;
 
-<<<<<<< HEAD
-	public static final int PERMISSION_PASS = -1;   // -> no ACL test required
-=======
 	public static final int PERMISSION_PASS = -1;   // No ACL test required
->>>>>>> 6472e7b... Now really adding the renamed files!
 	public static final int PERMISSION_NONE = 0;
 	public static final int PERMISSION_READ = 1;
 	public static final int PERMISSION_WRITE = 2;
@@ -149,8 +140,6 @@ public class SAcl implements Serializable {
 	public void setLastModifiedTime(Date lastModifiedTime) {
 		this.lastModifiedTime = lastModifiedTime;
 	}
-<<<<<<< HEAD
-=======
 	
 	/** Return an OrderedPair 
 	 *              < permission, grantee >
@@ -247,5 +236,4 @@ public class SAcl implements Serializable {
 	    else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
 	}
 		
->>>>>>> 6472e7b... Now really adding the renamed files!
 }

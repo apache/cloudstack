@@ -15,10 +15,7 @@ package com.cloud.consoleproxy.vnc.packet.server;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-<<<<<<< HEAD
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
-=======
->>>>>>> 52ebf15... Console proxy refactoring incremental check-in - new VNC protocol implementation
 import com.cloud.consoleproxy.vnc.BufferedImageCanvas;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;

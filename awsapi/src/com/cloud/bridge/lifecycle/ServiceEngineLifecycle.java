@@ -19,11 +19,7 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.ServiceLifeCycle;
 
-<<<<<<< HEAD
 import com.cloud.bridge.service.ServiceProvider;
-=======
-import com.cloud.bridge.service.controller.s3.ServiceProvider;
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 /**
  * @author Kelven Yang

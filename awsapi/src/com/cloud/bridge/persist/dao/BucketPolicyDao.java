@@ -33,7 +33,6 @@ import com.cloud.bridge.util.ConfigurationHelper;
 public class BucketPolicyDao {
 	public static final Logger logger = Logger.getLogger(BucketPolicyDao.class);
 
-<<<<<<< HEAD
 	private Connection conn       = null;
 	private String     dbName     = null;
 	private String     dbUser     = null;
@@ -44,16 +43,6 @@ public class BucketPolicyDao {
 	public BucketPolicyDao() 
 	{
 	    File propertiesFile = ConfigurationHelper.findConfigurationFile("db.properties");
-=======
-	private Connection jdbcConnection       = null;
-	private String     dbName     = null;
-	private String     dbUser     = null;
-	private String     dbPassword = null;
-	
-	public BucketPolicyDao() 
-	{
-	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
->>>>>>> 6472e7b... Now really adding the renamed files!
 	    Properties EC2Prop = null;
 	       
 	    if (null != propertiesFile) {
@@ -65,17 +54,11 @@ public class BucketPolicyDao {
 			} catch (IOException e) {
 				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
 			}
-<<<<<<< HEAD
             dbHost     = EC2Prop.getProperty( "db.cloud.host" );
             dbName     = EC2Prop.getProperty( "db.awsapi.name" );
             dbUser     = EC2Prop.getProperty( "db.cloud.username" );
             dbPassword = EC2Prop.getProperty( "db.cloud.password" );
             dbPort     = EC2Prop.getProperty( "db.cloud.port" );
-=======
-		    dbName     = EC2Prop.getProperty( "dbName" );
-		    dbUser     = EC2Prop.getProperty( "dbUser" );
-		    dbPassword = EC2Prop.getProperty( "dbPassword" );
->>>>>>> 6472e7b... Now really adding the renamed files!
 		}
 	}
 
@@ -86,11 +69,7 @@ public class BucketPolicyDao {
 
         openConnection();	
         try {            
-<<<<<<< HEAD
             statement = conn.prepareStatement ( "INSERT INTO bucket_policies (BucketName, OwnerCanonicalID, Policy) VALUES (?,?,?)" );
-=======
-            statement = jdbcConnection.prepareStatement ( "INSERT INTO bucket_policies (BucketName, OwnerCanonicalID, Policy) VALUES (?,?,?)" );
->>>>>>> 6472e7b... Now really adding the renamed files!
             statement.setString( 1, bucketName );
             statement.setString( 2, owner  );
             statement.setString( 3, policy );
@@ -114,11 +93,7 @@ public class BucketPolicyDao {
 
         openConnection();	
         try {            
-<<<<<<< HEAD
             statement = conn.prepareStatement ( "SELECT OwnerCanonicalID FROM bucket_policies WHERE BucketName=?" );
-=======
-            statement = jdbcConnection.prepareStatement ( "SELECT OwnerCanonicalID FROM bucket_policies WHERE BucketName=?" );
->>>>>>> 6472e7b... Now really adding the renamed files!
             statement.setString( 1, bucketName );
             ResultSet rs = statement.executeQuery();
 	        if (rs.next()) owner = rs.getString( "OwnerCanonicalID" );
@@ -138,11 +113,7 @@ public class BucketPolicyDao {
 	
         openConnection();	
         try {            
-<<<<<<< HEAD
 	        statement = conn.prepareStatement ( "SELECT Policy FROM bucket_policies WHERE BucketName=?" );
-=======
-	        statement = jdbcConnection.prepareStatement ( "SELECT Policy FROM bucket_policies WHERE BucketName=?" );
->>>>>>> 6472e7b... Now really adding the renamed files!
             statement.setString( 1, bucketName );
             ResultSet rs = statement.executeQuery();
 	        if (rs.next()) policy = rs.getString( "Policy" );
@@ -161,11 +132,7 @@ public class BucketPolicyDao {
 	
         openConnection();	
         try {
-<<<<<<< HEAD
 	        statement = conn.prepareStatement ( "DELETE FROM bucket_policies WHERE BucketName=?" );
-=======
-	        statement = jdbcConnection.prepareStatement ( "DELETE FROM bucket_policies WHERE BucketName=?" );
->>>>>>> 6472e7b... Now really adding the renamed files!
             statement.setString( 1, bucketName );
             int count = statement.executeUpdate();
             statement.close();	
@@ -178,25 +145,14 @@ public class BucketPolicyDao {
 	private void openConnection() 
         throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException 
     {
-<<<<<<< HEAD
         if (null == conn) {
             Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
             conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
-=======
-        if (null == jdbcConnection) {
-            Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            jdbcConnection = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
->>>>>>> 6472e7b... Now really adding the renamed files!
         }
     }
 
     private void closeConnection() throws SQLException {
-<<<<<<< HEAD
         if (null != conn) conn.close();
         conn = null;
-=======
-        if (null != jdbcConnection) jdbcConnection.close();
-        jdbcConnection = null;
->>>>>>> 6472e7b... Now really adding the renamed files!
     }
 }

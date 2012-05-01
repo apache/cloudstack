@@ -36,11 +36,7 @@ public class CloudStackSecurityGroupIngress {
 	@SerializedName(ApiConstants.PROTOCOL)
 	private String protocol;
 	@SerializedName(ApiConstants.RULE_ID)
-<<<<<<< HEAD
 	private String ruleId;
-=======
-	private Long ruleId;
->>>>>>> 6472e7b... Now really adding the renamed files!
 	@SerializedName(ApiConstants.SECURITY_GROUP_NAME)
 	private String securityGroupName;
 	@SerializedName(ApiConstants.START_PORT)
@@ -106,11 +102,7 @@ public class CloudStackSecurityGroupIngress {
 	/**
 	 * @return the ruleId
 	 */
-<<<<<<< HEAD
 	public String getRuleId() {
-=======
-	public Long getRuleId() {
->>>>>>> 6472e7b... Now really adding the renamed files!
 		return ruleId;
 	}
 

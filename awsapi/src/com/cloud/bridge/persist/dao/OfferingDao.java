@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.bridge.util.ConfigurationHelper;
 
-<<<<<<< HEAD
 
 public class OfferingDao extends BaseDao {
 	public static final Logger logger = Logger.getLogger(OfferingDao.class);
@@ -39,36 +38,6 @@ public class OfferingDao extends BaseDao {
 	
 	public OfferingDao() 
 	{
-=======
-public class OfferingDao {
-	public static final Logger logger = Logger.getLogger(OfferingDao.class);
-
-	private Connection conn       = null;
-	private String     dbName     = null;
-	private String     dbUser     = null;
-	private String     dbPassword = null;
-	
-	public OfferingDao() 
-	{
-	    File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
-	    Properties EC2Prop = null;
-	    
-	    // The settings for the CLOUDBRIDGE database are shared with the EC2 API
-	       
-	    if (null != propertiesFile) {
-	   	    EC2Prop = new Properties();
-	    	try {
-				EC2Prop.load( new FileInputStream( propertiesFile ));
-			} catch (FileNotFoundException e) {
-				logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
-			} catch (IOException e) {
-				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
-			}
-		    dbName     = EC2Prop.getProperty( "dbName" );
-		    dbUser     = EC2Prop.getProperty( "dbUser" );
-		    dbPassword = EC2Prop.getProperty( "dbPassword" );
-		}
->>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	public int getOfferingCount()
@@ -186,11 +155,7 @@ public class OfferingDao {
     {
         if (null == conn) {
             Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-<<<<<<< HEAD
             conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + awsapi_dbName, dbUser, dbPassword );
-=======
-            conn = DriverManager.getConnection( "jdbc:mysql://localhost:3306/"+dbName, dbUser, dbPassword );
->>>>>>> 6472e7b... Now really adding the renamed files!
         }
     }
 

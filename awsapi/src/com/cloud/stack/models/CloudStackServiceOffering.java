@@ -23,13 +23,8 @@ import com.google.gson.annotations.SerializedName;
  *
  */
 public class CloudStackServiceOffering {
-<<<<<<< HEAD
     @SerializedName(ApiConstants.ID)
     private String id;
-=======
-	@SerializedName(ApiConstants.ID)
-	private Long id;
->>>>>>> 6472e7b... Now really adding the renamed files!
 	@SerializedName(ApiConstants.CPU_NUMBER)
 	private Long cpuNumber;
 	@SerializedName(ApiConstants.CPU_SPEED)
@@ -43,11 +38,7 @@ public class CloudStackServiceOffering {
 	@SerializedName(ApiConstants.DOMAIN)
 	private String domain;
 	@SerializedName(ApiConstants.DOMAIN_ID)
-<<<<<<< HEAD
 	private String domainId;
-=======
-	private Long domainId;
->>>>>>> 6472e7b... Now really adding the renamed files!
 	@SerializedName(ApiConstants.HOST_TAGS)
 	private String hostTags;
 	@SerializedName(ApiConstants.IS_SYSTEM)
@@ -58,11 +49,7 @@ public class CloudStackServiceOffering {
 	private Long memory;
 	@SerializedName(ApiConstants.NAME)
 	private String name;
-<<<<<<< HEAD
     @SerializedName(ApiConstants.OFFER_HA)
-=======
-	@SerializedName(ApiConstants.OFFER_HA)
->>>>>>> 6472e7b... Now really adding the renamed files!
 	private Boolean offerHa;
 	@SerializedName(ApiConstants.STORAGE_TYPE)
 	private String storageType;
@@ -81,7 +68,6 @@ public class CloudStackServiceOffering {
 	/**
 	 * @return the id
 	 */
-<<<<<<< HEAD
     public String getId() {
         return id;
     }
@@ -89,11 +75,6 @@ public class CloudStackServiceOffering {
     public void setId(String id) {
         this.id = id;
     }
-=======
-	public Long getId() {
-		return id;
-	}
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 	/**
 	 * @return the cpuNumber
@@ -140,7 +121,6 @@ public class CloudStackServiceOffering {
 	/**
 	 * @return the domainId
 	 */
-<<<<<<< HEAD
 	public String getDomainId() {
 		return domainId;
 	}
@@ -150,13 +130,6 @@ public class CloudStackServiceOffering {
     }
 
     /**
-=======
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	/**
->>>>>>> 6472e7b... Now really adding the renamed files!
 	 * @return the hostTags
 	 */
 	public String getHostTags() {
@@ -190,15 +163,11 @@ public class CloudStackServiceOffering {
 	public String getName() {
 		return name;
 	}
-<<<<<<< HEAD
     
 	public void setName(String name) {
         this.name = name;
     }
-	
-=======
 
->>>>>>> 6472e7b... Now really adding the renamed files!
 	/**
 	 * @return the offerHa
 	 */

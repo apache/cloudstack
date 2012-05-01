@@ -30,25 +30,11 @@ import javax.activation.DataHandler;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
-<<<<<<< HEAD
-import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
-=======
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 
->>>>>>> 6472e7b... Now really adding the renamed files!
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -56,25 +42,15 @@ import org.w3c.dom.NodeList;
 
 import com.amazon.s3.CopyObjectResponse;
 import com.amazon.s3.GetObjectAccessControlPolicyResponse;
-<<<<<<< HEAD
-=======
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
->>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.persist.dao.MultipartLoadDao;
 import com.cloud.bridge.persist.dao.SBucketDao;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
-<<<<<<< HEAD
-import com.cloud.bridge.service.S3SoapServiceImpl;
-import com.cloud.bridge.service.ServiceProvider;
-import com.cloud.bridge.service.ServletAction;
-import com.cloud.bridge.service.UserContext;
-=======
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
->>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
 import com.cloud.bridge.service.core.s3.S3AuthParams;
 import com.cloud.bridge.service.core.s3.S3ConditionalHeaders;
@@ -85,10 +61,7 @@ import com.cloud.bridge.service.core.s3.S3Engine;
 import com.cloud.bridge.service.core.s3.S3GetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3GetObjectRequest;
 import com.cloud.bridge.service.core.s3.S3GetObjectResponse;
-<<<<<<< HEAD
-=======
 import com.cloud.bridge.service.core.s3.S3Grant;
->>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.core.s3.S3PolicyContext;
@@ -96,10 +69,7 @@ import com.cloud.bridge.service.core.s3.S3PutObjectInlineRequest;
 import com.cloud.bridge.service.core.s3.S3PutObjectInlineResponse;
 import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
 import com.cloud.bridge.service.core.s3.S3Response;
-<<<<<<< HEAD
-=======
 import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
->>>>>>> 6472e7b... Now really adding the renamed files!
 import com.cloud.bridge.service.core.s3.S3SetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
@@ -107,27 +77,15 @@ import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.ServletRequestDataSource;
-<<<<<<< HEAD
-import com.cloud.bridge.util.Tuple;
-
-/**
- * @author Kelven Yang
-=======
 import com.cloud.bridge.util.OrderedPair;
 
 /**
  * @author Kelven Yang, John Zucker
->>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class S3ObjectAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3ObjectAction.class);
 
     private DocumentBuilderFactory dbf = null;
-<<<<<<< HEAD
-	private OMFactory factory = OMAbstractFactory.getOMFactory();
-	private XMLOutputFactory xmlOutFactory = XMLOutputFactory.newInstance();
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
     
 	public S3ObjectAction() {
 		dbf = DocumentBuilderFactory.newInstance();
@@ -139,11 +97,7 @@ public class S3ObjectAction implements ServletAction {
 	    throws IOException, XMLStreamException 
 	{
 		String method      = request.getMethod();
-<<<<<<< HEAD
-		String queryString = request.getQueryString();
-=======
 		String queryString = request.getQueryString();     
->>>>>>> 6472e7b... Now really adding the renamed files!
 		String copy        = null;
 	
 		response.addHeader( "x-amz-request-id", UUID.randomUUID().toString());	
@@ -167,11 +121,7 @@ public class S3ObjectAction implements ServletAction {
 				  else executePutObject(request, response);
 			 } 
 			 else if ( null != (copy = request.getHeader( "x-amz-copy-source" ))) 
-<<<<<<< HEAD
-			 {
-=======
 			 {    
->>>>>>> 6472e7b... Now really adding the renamed files!
 				  executeCopyObject(request, response, copy.trim());
 			 }
  		     else executePutObject(request, response);
@@ -185,15 +135,9 @@ public class S3ObjectAction implements ServletAction {
 			 } 
 			 else executeDeleteObject(request, response);
 		}
-<<<<<<< HEAD
-		else if (method.equalsIgnoreCase( "HEAD" )) 
-		{
-			 executeHeadObject(request, response);
-=======
 		else if (method.equalsIgnoreCase( "HEAD" ))
 		{	 
 			executeHeadObject(request, response);
->>>>>>> 6472e7b... Now really adding the renamed files!
 		}
 		else if (method.equalsIgnoreCase( "POST" )) 
 		{	
@@ -202,15 +146,11 @@ public class S3ObjectAction implements ServletAction {
 			           if (queryString.contains("uploads"))  executeInitiateMultipartUpload(request, response);	
 			      else if (queryString.contains("uploadId")) executeCompleteMultipartUpload(request, response);
 			 } 
-<<<<<<< HEAD
-			 else executePostObject(request, response);
-=======
 			 else if ( request.getAttribute(S3Constants.PLAIN_POST_ACCESS_KEY) !=null )
 			         executePlainPostObject (request, response);
 			         // TODO - Having implemented the request, now provide an informative HTML page response
 			 else 
 				     executePostObject(request, response);
->>>>>>> 6472e7b... Now really adding the renamed files!
 		}
 		else throw new IllegalArgumentException( "Unsupported method in REST request");
 	}
@@ -228,11 +168,7 @@ public class S3ObjectAction implements ServletAction {
 		String sourceKey        = null;
 
 		// [A] Parse the x-amz-copy-source header into usable pieces
-<<<<<<< HEAD
-		// -> is there a ?versionId= value
-=======
 		// Check to find a ?versionId= value if any
->>>>>>> 6472e7b... Now really adding the renamed files!
 		int index = copy.indexOf( '?' );
 		if (-1 != index)
 		{
@@ -241,17 +177,6 @@ public class S3ObjectAction implements ServletAction {
 			copy = copy.substring( 0, index );
 		}
 		
-<<<<<<< HEAD
-		// -> the value of copy should look like: "/bucket-name/object-name"
-		index = copy.indexOf( '/' );
-		if ( 0 != index )
-			 throw new IllegalArgumentException( "Invalid x-amz-copy-sourse header value [" + copy + "]" );
-		else copy = copy.substring( 1 );
-		
-		index = copy.indexOf( '/' );
-		if ( -1 == index )
-			 throw new IllegalArgumentException( "Invalid x-amz-copy-sourse header value [" + copy + "]" );
-=======
 		// The value of copy should look like: "bucket-name/object-name"
 		index = copy.indexOf( '/' );
 		
@@ -264,7 +189,6 @@ public class S3ObjectAction implements ServletAction {
 		
 		if ( -1 == index )
 			 throw new IllegalArgumentException( "Invalid x-amz-copy-source header value [" + copy + "]" );
->>>>>>> 6472e7b... Now really adding the renamed files!
 		
 		sourceBucketName = copy.substring( 0, index );
 		sourceKey        = copy.substring( index+1 );
@@ -290,25 +214,6 @@ public class S3ObjectAction implements ServletAction {
         versionId = engineResponse.getPutVersion();
         if (null != versionId) response.addHeader( "x-amz-version-id", versionId );
 	     
-<<<<<<< HEAD
-		// -> serialize using the apache's Axiom classes
-		CopyObjectResponse allBuckets = S3SoapServiceImpl.toCopyObjectResponse( engineResponse );
-
-		OutputStream os = response.getOutputStream();
-		response.setStatus(200);	
-	    response.setContentType("text/xml; charset=UTF-8");
-		XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		os.write( documentStart.getBytes());
-		MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-        allBuckets.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "CopyObjectResponse", "ns1" ), factory, MTOMWriter );
-        xmlWriter.flush();
-        xmlWriter.close();
-        os.close();
-	}
-
-	private void executeGetObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
-=======
 		// To allow the copy object result to be serialized via Axiom classes
 		CopyObjectResponse allBuckets = S3SerializableServiceImplementation.toCopyObjectResponse( engineResponse );
 		
@@ -326,7 +231,6 @@ public class S3ObjectAction implements ServletAction {
 	}
 
 	private void executeGetObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException, XMLStreamException
->>>>>>> 6472e7b... Now really adding the renamed files!
 	{
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
@@ -349,57 +253,6 @@ public class S3ObjectAction implements ServletAction {
 	    if (null != version) response.addHeader( "x-amz-version-id", version );
 	    
 	
-<<<<<<< HEAD
-		// -> serialize using the apache's Axiom classes
-		GetObjectAccessControlPolicyResponse onePolicy = S3SoapServiceImpl.toGetObjectAccessControlPolicyResponse( engineResponse );
-
-		try {
-		    OutputStream os = response.getOutputStream();
-		    response.setStatus( resultCode );	
-	        response.setContentType("text/xml; charset=UTF-8");
-		    XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
-		    String documentStart = new String( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-		    os.write( documentStart.getBytes());
-		    MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
-            onePolicy.serialize( new QName( "http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicyResponse", "ns1" ), factory, MTOMWriter );
-            xmlWriter.flush();
-            xmlWriter.close();
-            os.close();
-		}
-		catch( XMLStreamException e ) {
-			throw new IOException( e.toString());
-		}
-	}
-	
-	private void executePutObjectAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
-	{
-		S3PutObjectRequest putRequest = null;
-		
-		// -> reuse the Access Control List parsing code that was added to support DIME
-		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
-		try {
-		    putRequest = S3RestServlet.toEnginePutObjectRequest( request.getInputStream());
-		}
-		catch( Exception e ) {
-			throw new IOException( e.toString());
-		}
-			
-		// -> reuse the SOAP code to save the passed in ACLs
-		S3SetObjectAccessControlPolicyRequest engineRequest = new S3SetObjectAccessControlPolicyRequest();
-		engineRequest.setBucketName( bucketName );
-		engineRequest.setKey( key );
-		engineRequest.setAcl( putRequest.getAcl());
-
-		// -> is this a request for a specific version of the object?  look for "versionId=" in the query string
-		String queryString = request.getQueryString();
-		if (null != queryString) engineRequest.setVersion( returnParameter( queryString, "versionId=" ));
-
-	    S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
-	    String version = engineResponse.getVersion();
-	    if (null != version) response.addHeader( "x-amz-version-id", version );
-	    response.setStatus( engineResponse.getResultCode());
-=======
 		// To allow the get object acl policy result to be serialized via Axiom classes
 		GetObjectAccessControlPolicyResponse onePolicy = S3SerializableServiceImplementation.toGetObjectAccessControlPolicyResponse( engineResponse );	
 		
@@ -459,18 +312,13 @@ public class S3ObjectAction implements ServletAction {
  	     S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
  	     response.setStatus( engineResponse.getResultCode());
      
->>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 
 	private void executeGetObject(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
 		String   bucket    = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-<<<<<<< HEAD
-		String   key       = (String) request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
-=======
 		String   key       = (String) request.getAttribute(S3Constants.OBJECT_ATTR_KEY); 
 		
->>>>>>> 6472e7b... Now really adding the renamed files!
 	
 		S3GetObjectRequest engineRequest = new S3GetObjectRequest();
 		engineRequest.setBucketName(bucket);
@@ -524,10 +372,6 @@ public class S3ObjectAction implements ServletAction {
 			S3RestServlet.writeResponse(response, "HTTP/1.1 100 Continue\r\n");
 		}
 
-<<<<<<< HEAD
-		String contentType = request.getHeader( "Content-Type" );
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
 
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
@@ -571,8 +415,6 @@ public class S3ObjectAction implements ServletAction {
 		String version = engineRequest.getVersion();
 		if (null != version) response.addHeader( "x-amz-version-id", version );		
 	}
-<<<<<<< HEAD
-=======
 	
 	/*
 	 * The purpose of a plain POST operation is to add an object to a specified bucket using HTML forms.
@@ -621,7 +463,6 @@ public class S3ObjectAction implements ServletAction {
 		if (null != version) response.addHeader( "x-amz-version-id", version );		
 	}
 
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 	private void executeHeadObject(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
@@ -676,13 +517,9 @@ public class S3ObjectAction implements ServletAction {
 	// they are not HTTP request headers).  All the values we used to get in the request headers 
 	// are not encoded in the request body.
     //
-<<<<<<< HEAD
-	public void executePostObject( HttpServletRequest request, HttpServletResponse response ) throws IOException 
-=======
 	// add ETag header computed as Base64 MD5 whenever object is uploaded or updated
 	//
 	private void executePostObject( HttpServletRequest request, HttpServletResponse response ) throws IOException 
->>>>>>> 6472e7b... Now really adding the renamed files!
 	{
 		String bucket = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String contentType  = request.getHeader( "Content-Type" );
@@ -818,11 +655,7 @@ public class S3ObjectAction implements ServletAction {
 	 */
 	private void executeInitiateMultipartUpload( HttpServletRequest request, HttpServletResponse response ) throws IOException
     {
-<<<<<<< HEAD
-		// -> this request is via a POST which typically has its auth parameters inside the message
-=======
 		// This request is via a POST which typically has its auth parameters inside the message
->>>>>>> 6472e7b... Now really adding the renamed files!
 		try {
 	        S3RestServlet.authenticateRequest( request, S3RestServlet.extractRequestHeaders( request ));
 	    }
@@ -873,11 +706,6 @@ public class S3ObjectAction implements ServletAction {
 
 		long contentLength = Converter.toLong(request.getHeader("Content-Length"), 0);
 
-<<<<<<< HEAD
-		String md5 = request.getHeader( "Content-MD5" );
-
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );
 
@@ -946,15 +774,10 @@ public class S3ObjectAction implements ServletAction {
 		String cannedAccess = null;
 		int uploadId    = -1;
 		
-<<<<<<< HEAD
-        //  -> Amazon defines to keep connection alive by sending whitespace characters until done
-        OutputStream os = response.getOutputStream();
-=======
         //  AWS S3 specifies that the keep alive connection is by sending whitespace characters until done
 		// Therefore the XML version prolog is prepended to the stream in advance
         OutputStream outputStream = response.getOutputStream();
         outputStream.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>".getBytes());
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 		String temp = request.getParameter("uploadId");
     	if (null != temp) uploadId = Integer.parseInt( temp );
@@ -965,11 +788,7 @@ public class S3ObjectAction implements ServletAction {
     	    MultipartLoadDao uploadDao = new MultipartLoadDao();
     	    if (null == uploadDao.multipartExits( uploadId )) {
     	    	response.setStatus(404);
-<<<<<<< HEAD
-    			returnErrorXML( 404, "NotFound", os );
-=======
     			returnErrorXML( 404, "NotFound", outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
     	    	return;
     	    }
     	    
@@ -977,11 +796,7 @@ public class S3ObjectAction implements ServletAction {
     	    String initiator = uploadDao.getInitiator( uploadId );
     	    if (null == initiator || !initiator.equals( UserContext.current().getAccessKey())) {
     	    	response.setStatus(403);
-<<<<<<< HEAD
-    			returnErrorXML( 403, "Forbidden", os );
-=======
     			returnErrorXML( 403, "Forbidden", outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
     	    	return;   	    	
     	    }
     	    
@@ -992,27 +807,16 @@ public class S3ObjectAction implements ServletAction {
 		catch( Exception e ) {
 		    logger.error("executeCompleteMultipartUpload failed due to " + e.getMessage(), e);	
 			response.setStatus(500);
-<<<<<<< HEAD
-			returnErrorXML( 500, "InternalError", os );
-=======
 			returnErrorXML( 500, "InternalError", outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
 			return;
 		}
 		
 		
 		// [C] Parse the given XML body part and perform error checking
-<<<<<<< HEAD
-		Tuple<Integer,String> match = verifyParts( request.getInputStream(), parts );
-		if (200 != match.getFirst().intValue()) {
-			response.setStatus(match.getFirst().intValue());
-			returnErrorXML( match.getFirst().intValue(), match.getSecond(), os );
-=======
 		OrderedPair<Integer,String> match = verifyParts( request.getInputStream(), parts );
 		if (200 != match.getFirst().intValue()) {
 			response.setStatus(match.getFirst().intValue());
 			returnErrorXML( match.getFirst().intValue(), match.getSecond(), outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
 			return;
 		}
 
@@ -1024,40 +828,20 @@ public class S3ObjectAction implements ServletAction {
 		engineRequest.setMetaEntries(meta);
 		engineRequest.setCannedAccess(cannedAccess);
 
-<<<<<<< HEAD
-		S3PutObjectInlineResponse engineResponse = ServiceProvider.getInstance().getS3Engine().concatentateMultipartUploads( response, engineRequest, parts, os );
-=======
 		S3PutObjectInlineResponse engineResponse = ServiceProvider.getInstance().getS3Engine().concatentateMultipartUploads( response, engineRequest, parts, outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
 		int result = engineResponse.getResultCode();
 		// -> free all multipart state since we now have one concatentated object
 		if (200 == result) ServiceProvider.getInstance().getS3Engine().freeUploadParts( bucket, uploadId, false ); 
 		
-<<<<<<< HEAD
-		// -> if all successful then clean up all left over parts
-		if ( 200 == result ) 
-	    {
- 	 	     StringBuffer xml = new StringBuffer();
-             xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
-=======
 		// If all successful then clean up all left over parts
 		// Notice that "<?xml version=\"1.0\" encoding=\"utf-8\"?>" has already been written into the servlet output stream at the beginning of section [A]
 		if ( 200 == result ) 
 	    {
  	 	     StringBuffer xml = new StringBuffer();
->>>>>>> 6472e7b... Now really adding the renamed files!
              xml.append( "<CompleteMultipartUploadResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" );
              xml.append( "<Location>" ).append( "http://" + bucket + ".s3.amazonaws.com/" + key ).append( "</Location>" );
              xml.append( "<Bucket>" ).append( bucket ).append( "</Bucket>" );
              xml.append( "<Key>" ).append( key ).append( "</Key>" );
-<<<<<<< HEAD
-             xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</<ETag>" );
-             xml.append( "</CompleteMultipartUploadResult>" );
-             os.write( xml.toString().getBytes());
-             os.close();
-	    }
-		else returnErrorXML( result, null, os );
-=======
              xml.append( "<ETag>\"" ).append( engineResponse.getETag()).append( "\"</ETag>" );
              xml.append( "</CompleteMultipartUploadResult>" );
              String xmlString = xml.toString().replaceAll("^\\s+", "");   // Remove leading whitespace characters
@@ -1065,7 +849,6 @@ public class S3ObjectAction implements ServletAction {
              outputStream.close();
 	    }
 		else returnErrorXML( result, null, outputStream );
->>>>>>> 6472e7b... Now really adding the renamed files!
 	}
 	
 	private void executeAbortMultipartUpload( HttpServletRequest request, HttpServletResponse response ) throws IOException 
@@ -1117,11 +900,7 @@ public class S3ObjectAction implements ServletAction {
 	
     	try {
 	        MultipartLoadDao uploadDao = new MultipartLoadDao();
-<<<<<<< HEAD
-	        Tuple<String,String> exists = uploadDao.multipartExits( uploadId );
-=======
 	        OrderedPair<String,String> exists = uploadDao.multipartExits( uploadId );
->>>>>>> 6472e7b... Now really adding the renamed files!
 	        if (null == exists) {
 	    	   response.setStatus(404);
 	    	   return;
@@ -1403,11 +1182,7 @@ public class S3ObjectAction implements ServletAction {
 	 * @return error code, and error string
 	 * @throws ParserConfigurationException, IOException, SAXException 
 	 */
-<<<<<<< HEAD
-    private Tuple<Integer,String> verifyParts( InputStream is, S3MultipartPart[] parts ) 
-=======
     private OrderedPair<Integer,String> verifyParts( InputStream is, S3MultipartPart[] parts ) 
->>>>>>> 6472e7b... Now really adding the renamed files!
     {
     	try {
 		    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -1432,11 +1207,7 @@ public class S3ObjectAction implements ServletAction {
 		    	nodeSet = doc.getElementsByTagName( "Part" );
 			    count = nodeSet.getLength();
 		    }
-<<<<<<< HEAD
-		    if (count != parts.length) return new Tuple<Integer, String>(400, "InvalidPart");
-=======
 		    if (count != parts.length) return new OrderedPair<Integer, String>(400, "InvalidPart");
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 		    // -> get a list of all the children elements of the 'Part' parent element
 		    for( int i=0; i < count; i++ )
@@ -1468,35 +1239,20 @@ public class S3ObjectAction implements ServletAction {
 				 
 			   // -> do the parts given in the call XML match what was previously uploaded?
 			   if (lastNumber >= partNumber) {
-<<<<<<< HEAD
-		           return new Tuple<Integer, String>(400, "InvalidPartOrder"); 
-=======
 		           return new OrderedPair<Integer, String>(400, "InvalidPartOrder"); 
->>>>>>> 6472e7b... Now really adding the renamed files!
 			   }
 			   if (partNumber != parts[i].getPartNumber() || 
 				   eTag == null || 
 				   !eTag.equalsIgnoreCase( "\"" + parts[i].getETag() + "\"" )) {
-<<<<<<< HEAD
-		           return new Tuple<Integer, String>(400, "InvalidPart");
-=======
 		           return new OrderedPair<Integer, String>(400, "InvalidPart");
->>>>>>> 6472e7b... Now really adding the renamed files!
 		       }
 				 
 			   lastNumber = partNumber;
 		    } 
-<<<<<<< HEAD
-		    return new Tuple<Integer, String>(200, "Success");
-    	}
-    	catch( Exception e ) {
-    		return new Tuple<Integer, String>(500, e.toString());
-=======
 		    return new OrderedPair<Integer, String>(200, "Success");
     	}
     	catch( Exception e ) {
     		return new OrderedPair<Integer, String>(500, e.toString());
->>>>>>> 6472e7b... Now really adding the renamed files!
     	}
     }
 }

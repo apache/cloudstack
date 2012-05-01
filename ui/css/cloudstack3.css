@@ -530,25 +530,14 @@ body.login {
   -webkit-box-shadow: 0px 4px 10px #B9B9B9;
   -o-box-shadow: 0px 4px 10px #B9B9B9;
   box-shadow: 0px 4px 10px #B9B9B9;
-<<<<<<< HEAD
-<<<<<<< HEAD
   padding: 5px;
-=======
-  padding: 0;
->>>>>>> 6d8a11c... Complete localization for quick install wizard
-=======
-  padding: 5px;
->>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   overflow: auto;
-<<<<<<< HEAD
   overflow-x: hidden;
-=======
->>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
 }
 
 .install-wizard .eula-copy p {
@@ -2857,7 +2846,6 @@ Dialogs*/
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  padding-bottom: 40px;
 }
 
 .ui-dialog span.message ul {

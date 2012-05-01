@@ -287,7 +287,6 @@
       var $inputs = $detailView.find('input, select');
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
-
       var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide();
       var $cancelButton = $('<div>').addClass('button cancel').html(_l('label.cancel')).hide();
 
@@ -310,10 +309,8 @@
           else if ($input.is('input[type=checkbox]')) {
             var val = $input.is(':checked');
 
-
             $value.data('detail-view-boolean-value', _s(val));
             $value.html(_s(val) ? _l('label.yes') : _l('label.no'));
-
           }
           else if ($input.is('select')) {
             $value.html(_s(

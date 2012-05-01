@@ -666,15 +666,9 @@
       launchInfo: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-<<<<<<< HEAD
               .html(_l('label.congratulations'));
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html(_l('label.installWizard.click.launch'));
-=======
-          .html(_l('label.congratulations'));
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html(_l('label.installWizard.click.launch'));
->>>>>>> 6d8a11c... Complete localization for quick install wizard
         var $continue = elems.nextButton(_l('label.launch'));
         var $prev = elems.prevButton(_l('label.back'));
 

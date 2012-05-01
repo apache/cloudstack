@@ -59,10 +59,7 @@
               <select name="language">
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
-<<<<<<< HEAD
 								<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
-=======
->>>>>>> d3cc43e... bug 13815
               </select>
             </div>
           </div>
@@ -267,11 +264,7 @@
 
                                 <!-- Service offering -->
                                 <div class="select-desc field service-offering hide-if-unselected">
-<<<<<<< HEAD
                                   <div class="name"><fmt:message key="label.network.offering"/></div>
-=======
-                                  <div class="name"><fmt:message key="label.compute.offering"/></div>
->>>>>>> 240dabe... Navigation organizational changes
                                   <div class="desc">
                                     <select name="new-network-networkofferingid">
                                     </select>
@@ -497,23 +490,11 @@
                zone-wizard-step-id="setupPhysicalNetwork"
                zone-wizard-prefilter="setupPhysicalNetwork">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="physical-network active"><fmt:message key="label.physical.network"/></li>
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
-=======
-              <li class="physical-network active">Physical Network</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
             <div class="info-desc conditional advanced">
               <fmt:message key="message.setup.physical.network.during.zone.creation"/>
@@ -521,12 +502,6 @@
             <div class="info-desc conditional basic">
               <fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>
             </div>
-=======
-            </ul>
-            <div class="info-desc">
-              <fmt:message key="message.setup.physical.network.during.zone.creation"/>
-            </div>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             <div class="button add new-physical-network"><span class="icon">&nbsp;</span><span><fmt:message key="label.add.physical.network"/></span></div>
 
             <!-- Traffic types drag area -->
@@ -616,26 +591,11 @@
                zone-wizard-form="basicPhysicalNetwork"
                zone-wizard-prefilter="addNetscalerDevice">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
               <li class="conditional netscaler physical-network active"><fmt:message key="label.netScaler"/></li>
-=======
-              <li class="conditional elb physical-network active"><fmt:message key="label.netScaler"/></li>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
-=======
-              <li class="conditional elb physical-network active">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
-=======
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </ul>
 
             <div class="info-desc"><fmt:message key="label.please.specify.netscaler.info"/></div>
@@ -648,40 +608,16 @@
           <div class="setup-public-traffic" zone-wizard-prefilter="addPublicNetwork"
                zone-wizard-step-id="configurePublicTraffic">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
-=======
-              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network active"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
-=======
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network active">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc" id="add_zone_public_traffic_desc">
               <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
 							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
-=======
-            </ul>
-
-            <div class="info-desc" id="add_zone_public_traffic_desc">
-<<<<<<< HEAD
-              
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
-=======
-              <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
-							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
->>>>>>> a56d465... cloudstack 3.0 new UI - add zone wizard - public traffic - show different description for basic zone and advanced zone.
             </div>
             <div ui-custom="publicTrafficIPRange"></div>
           </div>
@@ -690,26 +626,11 @@
           <div class="add-pod" zone-wizard-form="pod"
                zone-wizard-step-id="addPod">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
-=======
-              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod active"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
-=======
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod active">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
-=======
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </ul>
 
             <div class="info-desc">
@@ -726,40 +647,16 @@
                zone-wizard-step-id="configureGuestTraffic"
                zone-wizard-prefilter="configureGuestTraffic">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
-=======
-              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/></li>
               <li class="guest-traffic active"><fmt:message key="label.guest.traffic"/></li>
               <li class="conditional storage-traffic"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
-=======
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic active">Guest Traffic</li>
-              <li class="conditional storage-traffic">Storage Traffic</li>
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
             </ul>
 
             <div class="info-desc" id="add_zone_guest_traffic_desc">
               <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
 							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
-=======
-            </ul>
-
-            <div class="info-desc" id="add_zone_guest_traffic_desc">
-<<<<<<< HEAD
-             
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
-=======
-              <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
-							<span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
->>>>>>> f0e3cad... cloudstack 3.0 new UI - add zone wizard - guest traffic - show different description for basic zone and advanced zone.
             </div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -770,38 +667,15 @@
           <div class="setup-storage-traffic" zone-wizard-prefilter="configureStorageTraffic"
                zone-wizard-step-id="configureStorageTraffic">
             <ul class="subnav">
-<<<<<<< HEAD
-<<<<<<< HEAD
               <li class="conditional netscaler physical-network"><fmt:message key="label.netScaler"/></li>
-=======
-              <li class="conditional elb physical-network"><fmt:message key="label.netScaler"/></li>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
               <li class="public-network"><fmt:message key="label.public.traffic"/></li>
               <li class="pod"><fmt:message key="label.pod"/><</li>
               <li class="guest-traffic"><fmt:message key="label.guest.traffic"/></li>
               <li class="storage-traffic active"><fmt:message key="label.storage.traffic"/></li>
-<<<<<<< HEAD
             </ul>
 
             <div class="info-desc">
               <fmt:message key="message.storage.traffic"/>
-=======
-              <li class="conditional elb physical-network">Netscaler</li>
-              <li class="public-network">Public traffic</li>
-              <li class="pod">Pod</li>
-              <li class="guest-traffic">Guest Traffic</li>
-              <li class="storage-traffic active">Storage Traffic</li>
-            </ul>
-
-            <div class="info-desc">
-              Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs. Please configure storage traffic here.
->>>>>>> 5c06960... bug 13743: New zone wizard step -- configure storage traffic
-=======
-            </ul>
-
-            <div class="info-desc">
-              <fmt:message key="message.storage.traffic"/>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             </div>
             <div ui-custom="storageTrafficIPRange"></div>
           </div>
@@ -877,11 +751,7 @@
 
           <!-- Step 5: Launch -->
           <div class="review" zone-wizard-step-id="launch">
-<<<<<<< HEAD
             <div class="main-desc pre-setup"><fmt:message key="message.launch.zone"/></div>
-=======
-            <div class="main-desc"><fmt:message key="label.launch.zone"/></div>
->>>>>>> 2f682ea... cloudstack 3.0 new UI - add zone wizard - localize text in html code.
             <div class="main-desc launch" style="display:none;">
               <fmt:message key="message.please.wait.while.zone.is.being.created"/>
             </div>
@@ -928,12 +798,8 @@
           </li>
           <li class="firewall">
             <div class="name"><span><fmt:message key="label.firewall"/></span></div>
-<<<<<<< HEAD
             <!--<div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>-->
 						<div class="view-details" net-target="firewall"><fmt:message key="label.view.all"/>
-=======
-            <div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
           </li>
         </ul>
       </div>
@@ -1072,24 +938,18 @@
       <!-- System dashboard -->
       <div class="system-dashboard-view">
         <div class="toolbar">
-<<<<<<< HEAD
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
           <div id="update_ssl_button" class="button action main-action reduced-hide lock">
             <span class="icon">&nbsp;</span>            
             <span>Update SSL Certificate</span>
-=======
-          <div class="button refresh">
-            <span><fmt:message key="label.refresh"/></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
           </div>
         </div>
 
         <!-- Zone dashboard -->
         <div class="system-dashboard zone">
           <div class="head">
-<<<<<<< HEAD
             <span><fmt:message key="label.menu.infrastructure"/></span>
             <div class="view-all zones"
                  view-all-title="Zones"
@@ -1098,53 +958,32 @@
           <ul class="status_box good">
             <li class="block">
               <span class="header"><fmt:message key="label.zones"/></span>
-=======
-            <span><fmt:message key="label.zones"/></span>
-            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
-          </div>
-          <ul class="status_box good">
-            <li class="block">
-              <span class="header"><fmt:message key="label.number.of.zones"/></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
               <span class="overview total" data-item="zoneCount"></span>
               <span class="button view-all zones"
                     view-all-title="<fmt:message key="label.zones"/>"
                     view-all-target="zones"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
-<<<<<<< HEAD
               <span class="header"><fmt:message key="label.pods"/></span>
-=======
-              <span class="header"><fmt:message key="label.number.of.pods"/></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
               <span class="overview total" data-item="podCount"></span>
               <span class="button view-all pods"
                     view-all-title="<fmt:message key="label.pods"/>"
                     view-all-target="pods"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block">
-<<<<<<< HEAD
               <span class="header"><fmt:message key="label.clusters"/></span>
-=======
-              <span class="header"><fmt:message key="label.number.of.clusters"/></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
               <span class="overview total" data-item="clusterCount"></span>
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.clusters"/>"
                     view-all-target="clusters"><fmt:message key="label.view.all"/></span>
             </li>
             <li class="block last">
-<<<<<<< HEAD
               <span class="header"><fmt:message key="label.hosts"/></span>
-=======
-              <span class="header"><fmt:message key="label.number.of.hosts"/></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
               <span class="overview total" data-item="hostCount"></span>
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.hosts"/>"
                     view-all-target="hosts"><fmt:message key="label.view.all"/></span>
             </li>
-<<<<<<< HEAD
             <li class="block">
               <span class="header"><fmt:message key="label.primary.storage"/></span>
               <span class="overview total" data-item="primaryStorageCount"></span>
@@ -1165,33 +1004,6 @@
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.system.vms"/>"
                     view-all-target="systemVms"><fmt:message key="label.view.all"/></span>
-=======
-          </ul>
-        </div>
-
-        <!-- Host dashboard -->
-        <div class="system-dashboard">
-          <div class="head">
-            <span<fmt:message key="label.hosts"/></span>
-            <div class="view-more"><span><fmt:message key="label.view.more"/></span></div>
-          </div>
-          <ul class="status_box good">
-            <li class="block">
-              <span class="header"><fmt:message key="label.total.hosts"/></span>
-              <span class="overview total" data-item="hostCount"></span>
-            </li>
-            <li class="block capacity">
-              <span class="header"><fmt:message key="label.total.CPU"/></span>
-              <span class="overview total" data-item="cpuCapacityTotal"></span>
-            </li>
-            <li class="block capacity">
-              <span class="header"><fmt:message key="label.total.memory"/></span>
-              <span class="overview total" data-item="memCapacityTotal"></span>
-            </li>
-            <li class="block last capacity">
-              <span class="header"><fmt:message key="label.total.storage"/></span>
-              <span class="overview total" data-item="storageCapacityTotal"></span>
->>>>>>> fab34ce... cloudstack 3.0 new UI - system - network chart - localize text in html code.
             </li>
             <li class="block last">
               <span class="header"><fmt:message key="label.virtual.routers"/></span>
@@ -1859,9 +1671,6 @@
 
 <script language="javascript">
 dictionary = {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
@@ -1882,8 +1691,6 @@ dictionary = {
 'label.guest': '<fmt:message key="label.guest"/>',
 'label.network.service.providers': '<fmt:message key="label.network.service.providers"/>',
 'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
-=======
->>>>>>> 240dabe... Navigation organizational changes
 'label.compute.offering': '<fmt:message key="label.compute.offering"/>',
 'label.add.compute.offering': '<fmt:message key="label.add.compute.offering"/>',
 'label.compute.offerings': '<fmt:message key="label.compute.offerings"/>',
@@ -1913,17 +1720,10 @@ dictionary = {
 'label.nat.port.range': '<fmt:message key="label.nat.port.range"/>',
 'label.static.nat.vm.details': '<fmt:message key="label.static.nat.vm.details"/>',
 'label.edit.lb.rule': '<fmt:message key="label.edit.lb.rule"/>',
-=======
->>>>>>> 4b2709c... Add missing localization for instances.js
 'message.migrate.instance.to.host': '<fmt:message key="message.migrate.instance.to.host"/>',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host"/>',
 'message.migrate.instance.to.ps': '<fmt:message key="message.migrate.instance.to.ps"/>',
 'label.migrate.instance.to.ps': '<fmt:message key="label.migrate.instance.to.ps"/>',
-<<<<<<< HEAD
-=======
->>>>>>> 6d8a11c... Complete localization for quick install wizard
-=======
->>>>>>> 4b2709c... Add missing localization for instances.js
 'label.corrections.saved': '<fmt:message key="label.corrections.saved"/>',
 'message.installWizard.copy.whatIsSecondaryStorage': '<fmt:message key="message.installWizard.copy.whatIsSecondaryStorage"/>',
 'message.installWizard.copy.whatIsPrimaryStorage': '<fmt:message key="message.installWizard.copy.whatIsPrimaryStorage"/>',
@@ -2045,7 +1845,6 @@ dictionary = {
 'label.select.a.template': '<fmt:message key="label.select.a.template"/>',
 'label.setup': '<fmt:message key="label.setup"/>',
 'state.Allocated': '<fmt:message key="state.Allocated"/>',
-
 'changed.item.properties': '<fmt:message key="changed.item.properties"/>',
 'label.apply': '<fmt:message key="label.apply"/>',
 'label.default': '<fmt:message key="label.default"/>',
@@ -3029,10 +2828,6 @@ dictionary = {
 'label.created.by.system': '<fmt:message key="label.created.by.system" />',
 'label.menu.system.service.offerings': '<fmt:message key="label.menu.system.service.offerings" />',
 'label.add.system.service.offering': '<fmt:message key="label.add.system.service.offering" />',
-<<<<<<< HEAD
-
-=======
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
 'label.redundant.router.capability': '<fmt:message key="label.redundant.router.capability" />',
 'label.supported.source.NAT.type': '<fmt:message key="label.supported.source.NAT.type" />',
 'label.elastic.LB': '<fmt:message key="label.elastic.LB" />',
@@ -3045,27 +2840,10 @@ dictionary = {
 'label.start.IP': '<fmt:message key="label.start.IP" />',
 'label.end.IP': '<fmt:message key="label.end.IP" />',
 'label.remove.ip.range': '<fmt:message key="label.remove.ip.range" />',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 'label.ip.ranges': '<fmt:message key="label.ip.ranges" />',
 'label.start.vlan': '<fmt:message key="label.start.vlan" />',
 'label.end.vlan': '<fmt:message key="label.end.vlan" />',
 'label.broadcast.domain.range': '<fmt:message key="label.broadcast.domain.range" />',
-<<<<<<< HEAD
-=======
-'storage.traffic.type.is.updated': '<fmt:message key="storage.traffic.type.is.updated" />',
-'management.traffic.type.is.updated': '<fmt:message key="management.traffic.type.is.updated" />',
-'public.traffic.type.is.updated': '<fmt:message key="public.traffic.type.is.updated" />',
-'guest.traffic.type.is.updated': '<fmt:message key="guest.traffic.type.is.updated" />',
-'IP.ranges': '<fmt:message key="IP.ranges" />',
-'start.Vlan': '<fmt:message key="start.Vlan" />',
-'end.Vlan': '<fmt:message key="end.Vlan" />',
-'broadcast.domain.range': '<fmt:message key="broadcast.domain.range" />',
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 'label.compute': '<fmt:message key="label.compute" />',
 'message.add.guest.network': '<fmt:message key="message.add.guest.network" />',
 'label.subdomain.access': '<fmt:message key="label.subdomain.access" />',
@@ -3080,10 +2858,6 @@ dictionary = {
 'label.change.service.offering': '<fmt:message key="label.change.service.offering" />',
 'label.view.console': '<fmt:message key="label.view.console" />',
 'label.redundant.state': '<fmt:message key="label.redundant.state" />',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'label.enable.provider': '<fmt:message key="label.enable.provider" />',
 'message.confirm.enable.provider': '<fmt:message key="message.confirm.enable.provider" />',
 'label.disable.provider': '<fmt:message key="label.disable.provider" />',
@@ -3103,32 +2877,6 @@ dictionary = {
 'label.public.network': '<fmt:message key="label.public.network" />',
 'label.private.network': '<fmt:message key="label.private.network" />',
 'label.enable.swift': '<fmt:message key="label.enable.swift" />',
-<<<<<<< HEAD
-=======
-'enable.provider': '<fmt:message key="enable.provider" />',
-'confirm.enable.provider': '<fmt:message key="confirm.enable.provider" />',
-'disable.provider': '<fmt:message key="disable.provider" />',
-'confirm.disable.provider': '<fmt:message key="confirm.disable.provider" />',
-'shutdown.provider': '<fmt:message key="shutdown.provider" />',
-'confirm.shutdown.provider': '<fmt:message key="confirm.shutdown.provider" />',
-'NetScaler': '<fmt:message key="NetScaler" />',
-'add.new.NetScaler': '<fmt:message key="add.new.NetScaler" />',
-'number.of.retries': '<fmt:message key="number.of.retries" />',
-'capacity': '<fmt:message key="capacity" />',
-'dedicated': '<fmt:message key="dedicated" />',
-'F5': '<fmt:message key="F5" />',
-'add.new.F5': '<fmt:message key="add.new.F5" />',
-'SRX': '<fmt:message key="SRX" />',
-'providers': '<fmt:message key="providers" />',
-'add.new.SRX': '<fmt:message key="add.new.SRX" />',
-'timeout': '<fmt:message key="timeout" />',
-'public.network': '<fmt:message key="public.network" />',
-'private.network': '<fmt:message key="private.network" />',
-'public': '<fmt:message key="public" />',
-'enable.swift': '<fmt:message key="enable.swift" />',
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
-=======
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'confirm.enable.swift': '<fmt:message key="confirm.enable.swift" />',
 'message.after.enable.swift': '<fmt:message key="message.after.enable.swift" />',
 'label.key': '<fmt:message key="label.key" />',
@@ -3139,16 +2887,11 @@ dictionary = {
 'label.delete.SRX': '<fmt:message key="label.delete.SRX" />',
 'message.confirm.delete.SRX': '<fmt:message key="message.confirm.delete.SRX" />',
 'label.pods': '<fmt:message key="label.pods" />',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 'label.pod.name': '<fmt:message key="label.pod.name" />',
 'label.reserved.system.gateway': '<fmt:message key="label.reserved.system.gateway" />',
 'label.reserved.system.netmask': '<fmt:message key="label.reserved.system.netmask" />',
 'label.start.reserved.system.IP': '<fmt:message key="label.start.reserved.system.IP" />',
 'label.end.reserved.system.IP': '<fmt:message key="label.end.reserved.system.IP" />',
-<<<<<<< HEAD
 'label.clusters': '<fmt:message key="label.clusters" />',
 'label.cluster.name': '<fmt:message key="label.cluster.name" />',
 'label.host.MAC': '<fmt:message key="label.host.MAC" />',
@@ -3213,98 +2956,5 @@ dictionary = {
 'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.action.register.iso': '<fmt:message key="label.action.register.iso" />',
 'label.isolation.method': '<fmt:message key="label.isolation.method" />'
-=======
-'pod.name': '<fmt:message key="pod.name" />',
-'reserved.system.gateway': '<fmt:message key="reserved.system.gateway" />',
-'reserved.system.netmask': '<fmt:message key="reserved.system.netmask" />',
-'start.reserved.system.IP': '<fmt:message key="start.reserved.system.IP" />',
-'end.reserved.system.IP': '<fmt:message key="end.reserved.system.IP" />',
-'label.clusters': '<fmt:message key="label.clusters" />',
-'cluster.name': '<fmt:message key="cluster.name" />',
-'host.MAC': '<fmt:message key="host.MAC" />',
-'agent.username': '<fmt:message key="agent.username" />',
-'agent.password': '<fmt:message key="agent.password" />',
-'confirm.action.force.reconnect': '<fmt:message key="confirm.action.force.reconnect" />',
-<<<<<<< HEAD
-'resource.state': '<fmt:message key="resource.state" />'
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-'resource.state': '<fmt:message key="resource.state" />',
-<<<<<<< HEAD
-'LUN.number': '<fmt:message key="LUN.number" />'
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
-=======
-'LUN.number': '<fmt:message key="LUN.number" />',
-<<<<<<< HEAD
-'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />'
->>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
-=======
-'confirm.remove.IP.range': '<fmt:message key="confirm.remove.IP.range" />',
-=======
-'label.clusters': '<fmt:message key="label.clusters" />',
-'label.cluster.name': '<fmt:message key="label.cluster.name" />',
-'label.host.MAC': '<fmt:message key="label.host.MAC" />',
-'label.agent.username': '<fmt:message key="label.agent.username" />',
-'label.agent.password': '<fmt:message key="label.agent.password" />',
-'message.confirm.action.force.reconnect': '<fmt:message key="message.confirm.action.force.reconnect" />',
-'label.resource.state': '<fmt:message key="label.resource.state" />',
-'label.LUN.number': '<fmt:message key="label.LUN.number" />',
-'message.confirm.remove.IP.range': '<fmt:message key="message.confirm.remove.IP.range" />',
-<<<<<<< HEAD
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
-'tooltip.zone.name': '<fmt:message key="tooltip.zone.name" />',
-'tooltip.dns.1': '<fmt:message key="tooltip.dns.1" />',
-'tooltip.dns.2': '<fmt:message key="tooltip.dns.2" />',
-'tooltip.internal.dns.1': '<fmt:message key="tooltip.internal.dns.1" />',
-'tooltip.internal.dns.2': '<fmt:message key="tooltip.internal.dns.2" />',
-'tooltip.network.domain': '<fmt:message key="tooltip.network.domain" />',
-'tooltip.pod.name': '<fmt:message key="tooltip.pod.name" />',
-'tooltip.reserved.system.gateway': '<fmt:message key="tooltip.reserved.system.gateway" />',
-'tooltip.reserved.system.netmask': '<fmt:message key="tooltip.reserved.system.netmask" />',
-'creating.zone': '<fmt:message key="creating.zone" />',
-'creating.physical.networks': '<fmt:message key="creating.physical.networks" />',
-'configuring.physical.networks': '<fmt:message key="configuring.physical.networks" />',
-'adding.Netscaler.device': '<fmt:message key="adding.Netscaler.device" />',
-'creating.pod': '<fmt:message key="creating.pod" />',
-'configuring.public.traffic': '<fmt:message key="configuring.public.traffic" />',
-'configuring.storage.traffic': '<fmt:message key="configuring.storage.traffic" />',
-'configuring.guest.traffic': '<fmt:message key="configuring.guest.traffic" />',
-'creating.cluster': '<fmt:message key="creating.cluster" />',
-'adding.host': '<fmt:message key="adding.host" />',
-'creating.primary.storage': '<fmt:message key="creating.primary.storage" />',
-'creating.secondary.storage': '<fmt:message key="creating.secondary.storage" />',
-'Zone.creation.complete': '<fmt:message key="Zone.creation.complete" />',
-=======
-'message.tooltip.zone.name': '<fmt:message key="message.tooltip.zone.name" />',
-'message.tooltip.dns.1': '<fmt:message key="message.tooltip.dns.1" />',
-'message.tooltip.dns.2': '<fmt:message key="message.tooltip.dns.2" />',
-'message.tooltip.internal.dns.1': '<fmt:message key="message.tooltip.internal.dns.1" />',
-'message.tooltip.internal.dns.2': '<fmt:message key="message.tooltip.internal.dns.2" />',
-'message.tooltip.network.domain': '<fmt:message key="message.tooltip.network.domain" />',
-'message.tooltip.pod.name': '<fmt:message key="message.tooltip.pod.name" />',
-'message.tooltip.reserved.system.gateway': '<fmt:message key="message.tooltip.reserved.system.gateway" />',
-'message.tooltip.reserved.system.netmask': '<fmt:message key="message.tooltip.reserved.system.netmask" />',
-'message.creating.zone': '<fmt:message key="message.creating.zone" />',
-'message.creating.physical.networks': '<fmt:message key="message.creating.physical.networks" />',
-'message.configuring.physical.networks': '<fmt:message key="message.configuring.physical.networks" />',
-'message.adding.Netscaler.device': '<fmt:message key="message.adding.Netscaler.device" />',
-'message.creating.pod': '<fmt:message key="message.creating.pod" />',
-'message.configuring.public.traffic': '<fmt:message key="message.configuring.public.traffic" />',
-'message.configuring.storage.traffic': '<fmt:message key="message.configuring.storage.traffic" />',
-'message.configuring.guest.traffic': '<fmt:message key="message.configuring.guest.traffic" />',
-'message.creating.cluster': '<fmt:message key="message.creating.cluster" />',
-'message.adding.host': '<fmt:message key="message.adding.host" />',
-'message.creating.primary.storage': '<fmt:message key="message.creating.primary.storage" />',
-'message.creating.secondary.storage': '<fmt:message key="message.creating.secondary.storage" />',
-'message.Zone.creation.complete': '<fmt:message key="message.Zone.creation.complete" />',
->>>>>>> 9f86abc... cloudstack 3.0 new UI - add more localization labels.
-'message.enabling.zone': '<fmt:message key="message.enabling.zone" />',
-'error.something.went.wrong.please.correct.the.following': '<fmt:message key="error.something.went.wrong.please.correct.the.following" />',
-'error.could.not.enable.zone': '<fmt:message key="error.could.not.enable.zone" />',
-'message.zone.creation.complete.would.you.like.to.enable.this.zone': '<fmt:message key="message.zone.creation.complete.would.you.like.to.enable.this.zone" />',
-'message.please.add.at.lease.one.traffic.range': '<fmt:message key="message.please.add.at.lease.one.traffic.range" />',
-'message.you.must.have.at.least.one.physical.network': '<fmt:message key="message.you.must.have.at.least.one.physical.network" />',
-'message.please.select.a.different.public.and.management.network.before.removing': '<fmt:message key="message.please.select.a.different.public.and.management.network.before.removing" />'
->>>>>>> 68f12d9... cloudstack 3.0 new UI - localize messages during zone creation.
 };
 </script>

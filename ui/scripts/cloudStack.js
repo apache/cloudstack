@@ -347,11 +347,7 @@
           context: context,
           response: {
             success: function(args) {
-<<<<<<< HEAD
               if (args.doInstall && isAdmin()) {
-=======
-              if (args.doInstall && cloudStack.context.users[0].role == 'admin') {
->>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
                 var initInstallWizard = function(eulaHTML) {
                   cloudStack.uiCustom.installWizard({
                     $container: $container,
@@ -359,34 +355,12 @@
                     eula: eulaHTML,
                     complete: function() {
                       // Show cloudStack main UI
-<<<<<<< HEAD
                       $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
-=======
-                      $container.cloudStack(cloudStackArgs);
->>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
                     }
                   });
                 };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
                 initInstallWizard(loginArgs.eula);
-=======
-                // EULA check
-                $.ajax({
-                  url: 'eula.html',
-                  dataType: 'html',
-                  success: function(html) {
-                    initInstallWizard(html);
-                  },
-                  error: function() {
-                    initInstallWizard(null);
-                  }
-                });
->>>>>>> ccd7d8b... Install wizard: Conditionally load EULA
-=======
-                initInstallWizard(loginArgs.eula);
->>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
               } else {
                 // Show cloudStack main UI
                 $container.cloudStack($.extend(cloudStackArgs, { hasLogo: loginArgs.eula }));
@@ -403,35 +377,20 @@
         });
       }
     };
-<<<<<<< HEAD
 		
     // EULA check
     $.ajax({
       url: 'eula.' + g_lang + '.html',
-=======
-
-    // EULA check
-    $.ajax({
-<<<<<<< HEAD
-      url: 'eula.html',
->>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
-=======
-      url: 'eula.' + $.cookie('lang') + '.html',
->>>>>>> 4f35fb7... Get EULA specific to selected language
       dataType: 'html',
       success: function(html) {
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
       },
       error: function() {
         cloudStack.uiCustom.login(loginArgs);
-<<<<<<< HEAD
       },	
 			beforeSend : function(XMLHttpResponse) {
 				return true;
 			}		
-=======
-      }
->>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     });
 
     // Localization

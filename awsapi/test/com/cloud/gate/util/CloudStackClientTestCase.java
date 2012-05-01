@@ -26,7 +26,7 @@ public class CloudStackClientTestCase extends BaseTestCase {
 		command.setParam("id", "246446");
 		try {
 			CloudStackUserVm vm = client.call(command, API_KEY, SECRET_KEY, true, "startvirtualmachineresponse", "virtualmachine", CloudStackUserVm.class);
-			Assert.assertTrue(vm.getId() == 246446);
+			Assert.assertTrue(vm.getId() == "246446");
 		} catch(Exception e) {
 			logger.error("Unexpected exception ", e);
 		}

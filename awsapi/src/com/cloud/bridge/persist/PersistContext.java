@@ -28,12 +28,8 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import com.cloud.bridge.util.CloudSessionFactory;
-<<<<<<< HEAD
 import com.cloud.bridge.util.CloudStackSessionFactory;
-import com.cloud.bridge.util.Tuple;
-=======
 import com.cloud.bridge.util.OrderedPair;
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 /**
  * @author Kelven Yang
@@ -53,16 +49,11 @@ public class PersistContext {
     protected final static Logger logger = Logger.getLogger(PersistContext.class);
 	
 	private static final CloudSessionFactory sessionFactory;
-<<<<<<< HEAD
-
-=======
 	
->>>>>>> 6472e7b... Now really adding the renamed files!
 	private static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 	private static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
 	private static final ThreadLocal<Map<String, Object>> threadStore = new ThreadLocal<Map<String, Object>>(); 
 	
-<<<<<<< HEAD
     private static final CloudStackSessionFactory cloudStackSessionFactory;
     private static final ThreadLocal<Session> threadCloudStackSession = new ThreadLocal<Session>();
     private static final ThreadLocal<Transaction> threadCloudStackTransaction = new ThreadLocal<Transaction>();
@@ -71,18 +62,12 @@ public class PersistContext {
 		try {
 			sessionFactory = CloudSessionFactory.getInstance();
 			cloudStackSessionFactory = CloudStackSessionFactory.getInstance();
-=======
-	static {
-		try {
-			sessionFactory = CloudSessionFactory.getInstance();
->>>>>>> 6472e7b... Now really adding the renamed files!
 		} catch(HibernateException e) {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		}
 	}
 	
-<<<<<<< HEAD
 	public static Session getSession(boolean cloudStackSession) {
 	    Session s = null;
         try {
@@ -150,48 +135,12 @@ public class PersistContext {
 				}else{
 				    threadTransaction.set(tx);
 				}
-=======
-	public static Session getSession() {
-		Session s = threadSession.get();
-		try {
-			if(s == null) {
-				s = sessionFactory.openSession();
-				threadSession.set(s);
-			}
-		} catch(HibernateException e) {
-			logger.error("Exception " + e.getMessage(), e);
-			throw new PersistException(e);
-		}
-		return s;
-	}
-	
-	public static void closeSession() {
-		try {
-			Session s = (Session) threadSession.get();
-			threadSession.set(null);
-			
-			if (s != null && s.isOpen())
-				s.close();
-		} catch(HibernateException e) {
-			logger.error("Exception " + e.getMessage(), e);
-			throw new PersistException(e);
-		}		
-	}
-	
-	public static void beginTransaction() {
-		Transaction tx = threadTransaction.get();
-		try {
-			if (tx == null) {
-				tx = getSession().beginTransaction();
-				threadTransaction.set(tx);
->>>>>>> 6472e7b... Now really adding the renamed files!
 			}
 		} catch(HibernateException e) {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		}		
 	}
-<<<<<<< HEAD
 
 	public static void beginTransaction() {
 	    beginTransaction(false);
@@ -219,24 +168,10 @@ public class PersistContext {
 			logger.error("Exception " + e.getMessage(), e);
 			
 			rollbackTransaction(cloudStackTxn);
-=======
-	
-	public static void commitTransaction() {
-		Transaction tx = threadTransaction.get();
-		try {
-			if ( tx != null && !tx.wasCommitted() && !tx.wasRolledBack() )
-				tx.commit();
-			threadTransaction.set(null);
-		} catch (HibernateException e) {
-			logger.error("Exception " + e.getMessage(), e);
-			
-			rollbackTransaction();
->>>>>>> 6472e7b... Now really adding the renamed files!
 			throw new PersistException(e);
 		}		
 	}
 	
-<<<<<<< HEAD
 	public static void commitTransaction() {
 	    commitTransaction(false);
 	}
@@ -252,12 +187,6 @@ public class PersistContext {
             threadTransaction.set(null);
         }
 		try {
-=======
-	public static void rollbackTransaction() {
-		Transaction tx = (Transaction) threadTransaction.get();
-		try {
-			threadTransaction.set(null);
->>>>>>> 6472e7b... Now really adding the renamed files!
 			if ( tx != null && !tx.wasCommitted() && !tx.wasRolledBack() ) {
 				tx.rollback();
 			}
@@ -265,7 +194,6 @@ public class PersistContext {
 			logger.error("Exception " + e.getMessage(), e);
 			throw new PersistException(e);
 		} finally {
-<<<<<<< HEAD
 			closeSession(cloudStackTxn);
 		}
 	}
@@ -274,12 +202,6 @@ public class PersistContext {
 	    rollbackTransaction(false);
 	}
 	
-=======
-			closeSession();
-		}
-	}
-	
->>>>>>> 6472e7b... Now really adding the renamed files!
   	public static void flush() {
   		commitTransaction();
   		beginTransaction();
@@ -294,24 +216,15 @@ public class PersistContext {
   	 * @return
   	 */
   	public static boolean acquireNamedLock(String name, int timeoutSeconds) {
-<<<<<<< HEAD
-  		Connection conn = getJDBCConnection(name, true);
-  		if(conn == null) {
-=======
   		Connection jdbcConnection = getJDBCConnection(name, true);
   		if(jdbcConnection == null) {
->>>>>>> 6472e7b... Now really adding the renamed files!
   			logger.warn("Unable to acquire named lock connection for named lock: " + name);
   			return false;
   		}
   		
         PreparedStatement pstmt = null;
         try {
-<<<<<<< HEAD
-            pstmt = conn.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
-=======
             pstmt = jdbcConnection.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
->>>>>>> 6472e7b... Now really adding the renamed files!
 
             pstmt.setString(1, name);
             pstmt.setInt(2, timeoutSeconds);
@@ -343,24 +256,15 @@ public class PersistContext {
   	}
   	
     public static boolean releaseNamedLock(String name) {
-<<<<<<< HEAD
-        Connection conn = getJDBCConnection(name, false);
-        if(conn == null) {
-=======
         Connection jdbcConnection = getJDBCConnection(name, false);
         if(jdbcConnection == null) {
->>>>>>> 6472e7b... Now really adding the renamed files!
             logger.error("Unable to acquire DB connection for global lock system");
         	return false;
         }
         
         PreparedStatement pstmt = null;
         try {
-<<<<<<< HEAD
-            pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
-=======
             pstmt = jdbcConnection.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
->>>>>>> 6472e7b... Now really adding the renamed files!
             pstmt.setString(1, name);
             ResultSet rs = pstmt.executeQuery();
             if(rs != null && rs.first())
@@ -379,11 +283,7 @@ public class PersistContext {
   	@SuppressWarnings("deprecation")
 	private static Connection getJDBCConnection(String name, boolean allocNew) {
   		String registryKey = "JDBC-Connection." + name;
-<<<<<<< HEAD
-  		Tuple<Session, Connection> info = (Tuple<Session, Connection>)getThreadStoreObject(registryKey);
-=======
   		OrderedPair<Session, Connection> info = (OrderedPair<Session, Connection>)getThreadStoreObject(registryKey);
->>>>>>> 6472e7b... Now really adding the renamed files!
   		if(info == null && allocNew) {
   			Session session = sessionFactory.openSession();
   			Connection connection = session.connection();
@@ -405,11 +305,7 @@ public class PersistContext {
 				return null;
   			}
   			
-<<<<<<< HEAD
-  			registerThreadStoreObject(registryKey, new Tuple<Session, Connection>(session, connection));
-=======
   			registerThreadStoreObject(registryKey, new OrderedPair<Session, Connection>(session, connection));
->>>>>>> 6472e7b... Now really adding the renamed files!
   			return connection;
   		}
   		
@@ -421,11 +317,7 @@ public class PersistContext {
   	
   	private static void releaseJDBCConnection(String name) {
   		String registryKey = "JDBC-Connection." + name;
-<<<<<<< HEAD
-  		Tuple<Session, Connection> info = (Tuple<Session, Connection>)unregisterThreadStoreObject(registryKey);
-=======
   		OrderedPair<Session, Connection> info = (OrderedPair<Session, Connection>)unregisterThreadStoreObject(registryKey);
->>>>>>> 6472e7b... Now really adding the renamed files!
   		if(info != null) {
   			try {
   				info.getSecond().close();

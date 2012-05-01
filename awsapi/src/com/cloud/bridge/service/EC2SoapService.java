@@ -18,10 +18,6 @@ package com.cloud.bridge.service;
 import org.apache.log4j.Logger;
 
 import com.amazon.ec2.*;
-<<<<<<< HEAD
-=======
-import com.cloud.bridge.service.controller.s3.ServiceProvider;
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 public class EC2SoapService implements AmazonEC2SkeletonInterface {
 	    protected final static Logger logger = Logger.getLogger(EC2SoapService.class);

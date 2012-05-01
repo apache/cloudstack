@@ -64,7 +64,8 @@
    * @param sectionID Section's ID to show
    * @param args CloudStack3 configuration
    */
-  var showSection = function(sectionID, args, $browser) {
+  var showSection = function(sectionID, args) {
+    var $browser = $('#browser div.container');
     var $navItem = $('#navigation').find('li').filter(function() {
       return $(this).hasClass(sectionID);
     });
@@ -255,7 +256,7 @@
 
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
-          .appendTo($container.find('#header'));
+          .appendTo($('#header'));
     $(['label.logout', 'label.help']).each(function() {
       var $link = $('<a>')
             .attr({ href: '#' })
@@ -274,8 +275,8 @@
     });
 
     // Initialize browser
-    $container.find('#browser div.container').cloudBrowser();
-    $container.find('#navigation li')
+    $('#browser div.container').cloudBrowser();
+    $('#navigation li')
       .filter(function() {
         return $(this).hasClass(args.home);
       })
@@ -299,11 +300,7 @@
         response: {
           success: function(args) {
             if (!args.data.length) return;
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> 6d9928b... Only show invitations if projects UI is initialized
             var projectList = $.map(args.data, function(invitation) {
               return '<li>' + invitation.project + '</li>';
             }).join('');
@@ -315,26 +312,12 @@
             });
           }
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
       });
     }
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header .controls').addClass('nologo');
 
-=======
-      }
-    });
-=======
-      });
-    }
->>>>>>> 6d9928b... Only show invitations if projects UI is initialized
-
-    // Hide logo conditionally
-    if (!args.hasLogo) $('#header .controls').addClass('nologo');
-    
->>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     return this;
   };
 
@@ -354,7 +337,6 @@
       var $target = $(event.target);
       var $container = $target.closest('[cloudStack-container]');
       var args = $container.data('cloudStack-args');
-      var $browser = $container.find('#browser .container');
 
       if (!$container.size()) return true;
 
@@ -363,14 +345,14 @@
         var $navItem = $target.closest('li.navigation-item');
 
         if ($navItem.is('.disabled')) return false;
-        showSection($navItem.data('cloudStack-section-id'), args, $browser);
+        showSection($navItem.data('cloudStack-section-id'), args);
 
         return false;
       }
 
       // Browser expand
       if ($target.hasClass('control expand') && $target.closest('div.panel div.toolbar').size()) {
-        $browser.cloudBrowser('toggleMaximizePanel', {
+        $('#browser div.container').cloudBrowser('toggleMaximizePanel', {
           panel: $target.closest('div.panel')
         });
 
@@ -379,7 +361,7 @@
 
       // Home breadcrumb
       if ($target.is('#breadcrumbs div.home')) {
-        showSection(args.home, args, $browser);
+        showSection(args.home, args);
         return false;
       }
 

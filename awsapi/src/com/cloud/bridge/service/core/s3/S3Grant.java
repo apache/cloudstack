@@ -18,11 +18,6 @@ package com.cloud.bridge.service.core.s3;
 import java.util.List;
 
 import com.cloud.bridge.model.SAcl;
-<<<<<<< HEAD
-
-/**
- * @author Kelven Yang
-=======
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.service.exception.UnsupportedException;
 
@@ -33,7 +28,6 @@ import com.cloud.bridge.service.exception.UnsupportedException;
  * a permission - which is one of SAcl.PERMISSION_PASS, SAcl.PERMISSION_NONE, SAcl.PERMISSION_READ,
  *     SAcl.PERMISSION_WRITE, SAcl.PERMISSION_READ_ACL, SAcl.PERMISSION_WRITE_ACL, SAcl.PERMISSION_FULL
  * canonicalUserID
->>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class S3Grant {
 	private int grantee;			// SAcl.GRANTEE_USER etc
@@ -67,12 +61,9 @@ public class S3Grant {
 		this.canonicalUserID = canonicalUserID;
 	}
 	
-<<<<<<< HEAD
-=======
 	/* Return an array of S3Grants holding the permissions of grantees by grantee type and their canonicalUserIds.
 	 * Used by S3 engine to get ACL policy requests for buckets and objects.
 	 */
->>>>>>> 6472e7b... Now really adding the renamed files!
 	public static S3Grant[] toGrants(List<SAcl> grants) {
 		if(grants != null) 
 		{
@@ -89,8 +80,5 @@ public class S3Grant {
 		}
 		return null;
 	}
-<<<<<<< HEAD
-=======
 		
->>>>>>> 6472e7b... Now really adding the renamed files!
 }

@@ -61,11 +61,7 @@
 
     if (!args.hasLogo) $login.addClass('nologo');
 
-<<<<<<< HEAD
     // Labels cause related input to be focused
-=======
-   // Labels cause related input to be focused
->>>>>>> 2e82439... Hide Citrix logo if no EULA is present (i.e., is OSS version)
     $login.find('label').click(function() {
       var $input = $inputs.filter('[name=' + $(this).attr('for') + ']');
 
@@ -105,22 +101,12 @@
       $.cookie('lang', $(this).val());
       document.location.reload();
     });
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> cebbce4... Make default language English, if no cookie set
 
     // Set default language
     if (!$.cookie('lang')) {
       $.cookie('lang', 'en');
     }
-<<<<<<< HEAD
 
-=======
->>>>>>> d3cc43e... bug 13815
-=======
-        
->>>>>>> cebbce4... Make default language English, if no cookie set
     $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);

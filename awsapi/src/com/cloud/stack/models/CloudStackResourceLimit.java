@@ -21,11 +21,7 @@ public class CloudStackResourceLimit {
     @SerializedName(ApiConstants.ACCOUNT)
     private String accountName;
     @SerializedName(ApiConstants.DOMAIN_ID)
-<<<<<<< HEAD
     private String domainId;
-=======
-    private Long domainId;
->>>>>>> 6472e7b... Now really adding the renamed files!
     @SerializedName(ApiConstants.DOMAIN)
     private String domainName;
     @SerializedName(ApiConstants.RESOURCE_TYPE)
@@ -41,15 +37,9 @@ public class CloudStackResourceLimit {
 		return accountName;
 	}
 
-<<<<<<< HEAD
     public String getDomainId() {
         return domainId;
     }
-=======
-	public Long getDomainId() {
-		return domainId;
-	}
->>>>>>> 6472e7b... Now really adding the renamed files!
 
 	public String getDomainName() {
 		return domainName;

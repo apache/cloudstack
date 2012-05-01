@@ -66,11 +66,7 @@ public class UserCredentials implements Serializable {
 		
 		if (!(other instanceof UserCredentials)) return false;
 		
-<<<<<<< HEAD
-		// -> the cert id can be null in both or either, since it is only used for the SOAP API
-=======
 		// The cert id can be null.  The cert is unused in the REST API.
->>>>>>> 6472e7b... Now really adding the renamed files!
 		if ( getAccessKey().equals(((UserCredentials)other).getAccessKey()) && 
 		     getSecretKey().equals(((UserCredentials)other).getSecretKey()))
 		{
@@ -89,11 +85,7 @@ public class UserCredentials implements Serializable {
 		int hashCode = 0;
 		String thisCertId = getCertUniqueId();
 		
-<<<<<<< HEAD
-		// -> the cert id can be null, since it is only used for the SOAP API
-=======
 		// The cert id can be null.  The cert is unused in the REST API.
->>>>>>> 6472e7b... Now really adding the renamed files!
 		hashCode = hashCode*17 + getAccessKey().hashCode();
 		hashCode = hashCode*17 + getSecretKey().hashCode();
 		if (null != thisCertId) hashCode = hashCode*17 + thisCertId.hashCode();

@@ -353,53 +353,7 @@
           }
         },
         dataProvider: function(args) {
-<<<<<<< HEAD
 					refreshNspData();
-=======
-          cloudStack.sections.system.naas.networkProviders.statusCheck({
-            context: args.context
-          });
-
-					var networkProviderData = [
-						{
-							id: 'netscaler',
-							name: 'NetScaler',
-							state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
-						},						
-						{
-							id: 'virtualRouter',
-							name: 'Virtual Router',
-							state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
-						}
-					];
-					
-					if(selectedZoneObj.networktype == "Basic") {
-					  networkProviderData.push(
-						  {
-                id: 'securityGroups',
-                name: 'Security Groups',
-                state: nspMap.securityGroups ? nspMap.securityGroups.state : 'Disabled'
-              }
-						);
-					}
-					else if(selectedZoneObj.networktype == "Advanced"){					  
-						networkProviderData.push(
-						  {
-								id: 'f5',
-								name: 'F5',
-								state: nspMap.f5 ? nspMap.f5.state : 'Disabled'
-							}						
-						);					
-					  networkProviderData.push(
-						  {
-								id: 'srx',
-								name: 'SRX',
-								state: nspMap.srx ? nspMap.srx.state : 'Disabled'
-							}		
-						);
-					}
-
->>>>>>> 07dc16c... bug 13629: system page - network providers section - basic zone: no F5 and SRX.
           args.response.success({
             data: nspHardcodingArray
           })
@@ -423,10 +377,6 @@
                   updateTrafficLabels(trafficType, args.data, function () {
                     args.response.success();
                   });
-<<<<<<< HEAD
-
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 }
               }
             },
@@ -468,10 +418,6 @@
               },
 
               ipAddresses: {
-<<<<<<< HEAD
-
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -483,7 +429,6 @@
                       'vlan': { edit: true, label: 'label.vlan', isOptional: true },
                       'startip': { edit: true, label: 'label.start.IP' },
                       'endip': { edit: true, label: 'label.end.IP' },
-<<<<<<< HEAD
                       'account': {
                         label: 'label.account',
                         custom: {
@@ -491,8 +436,6 @@
                           action: cloudStack.publicIpRangeAccount.dialog()
                         }
                       },
-=======
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                       'add-rule': { label: 'label.add', addButton: true }
                     },
                     add: {
@@ -644,10 +587,6 @@
               },
 
               ipAddresses: {
-<<<<<<< HEAD
-
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                 title: 'label.ip.ranges',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
@@ -802,12 +741,7 @@
                 }
               },
               ipAddresses: { //read-only listView (no actions) filled with pod info (not VlanIpRange info)
-<<<<<<< HEAD
-
                 title: 'label.ip.ranges',
-=======
-                title: 'label.ip.ranges',               
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 								listView: {
 									fields: {
 										name: { label: 'label.pod' }, //pod name
@@ -904,10 +838,6 @@
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
                     startVlan: {
-<<<<<<< HEAD
-
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                       label: 'label.start.vlan',
                       isEditable: true
                     },
@@ -915,19 +845,10 @@
                       label: 'label.end.vlan',
                       isEditable: true
                     },
-<<<<<<< HEAD
 										tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
-=======
-                    broadcastdomainrange: { label: 'label.broadcast.domain.range' }                    
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   },
-<<<<<<< HEAD
                   { //updateTrafficType API
-=======
-                  {
-                    tags: { label: 'Tags', isEditable: true },
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     xennetworklabel: { label: 'label.xen.traffic.label', isEditable: true },
                     kvmnetworklabel: { label: 'label.kvm.traffic.label', isEditable: true },
                     vmwarenetworklabel: { label: 'label.vmware.traffic.label', isEditable: true }
@@ -1003,11 +924,7 @@
 												}
 											},
                       'gateway': { edit: true, label: 'label.gateway' },
-<<<<<<< HEAD
                       'netmask': { edit: true, label: 'label.netmask' },
-=======
-                      'netmask': { edit: true, label: 'label.netmask' },                     
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                       'startip': { edit: true, label: 'label.start.IP' },
                       'endip': { edit: true, label: 'label.end.IP' },
                       'add-rule': { label: 'label.add', addButton: true }
@@ -1226,10 +1143,6 @@
                               args.response.success({data: items});
                             }
                           },
-<<<<<<< HEAD
-
-=======
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                           subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
                           account: { label: 'label.account' },
 
@@ -1252,7 +1165,6 @@
                               args.response.success({data: items});
                             }
                           },
-
 
                           networkOfferingId: {
                             label: 'label.network.offering',
@@ -1522,19 +1434,11 @@
 
                   detailView: {
                     name: 'Guest network details',
-<<<<<<< HEAD
                     viewAll: {
 										  path: '_zone.guestIpRanges',
 											label: 'label.ip.ranges',
                       preFilter: function(args) {
 												if(selectedGuestNetworkObj.type == "Isolated") {
-=======
-                    viewAll: { 
-										  path: '_zone.guestIpRanges', 
-											label: 'label.ip.ranges',
-                      preFilter: function(args) {                        
-												if(selectedGuestNetworkObj.type == "Isolated") {												  
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 													var services = selectedGuestNetworkObj.service;
 													if(services != null) {
 														for(var i=0; i < services.length; i++) {
@@ -1723,7 +1627,7 @@
                     },
                     tabs: {
                       details: {
-                        title: 'label.details', 
+                        title: 'label.details',
                         preFilter: function(args) {
                           var hiddenFields = [];
                           if(selectedZoneObj.networktype == "Basic") {
@@ -1822,13 +1726,8 @@
                             },
 
 														domain: { label: 'label.domain' },
-<<<<<<< HEAD
                             subdomainaccess: {
 														  label: 'label.subdomain.access',
-=======
-                            subdomainaccess: { 
-														  label: 'label.subdomain.access', 
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 															converter: function(data) {
 																return data ? 'Yes' : 'No';
 															}
@@ -1990,25 +1889,8 @@
                     id: { label: 'label.id' },
                     state: { label: 'label.state' },
                     physicalnetworkid: { label: 'label.physical.network.ID' },
-<<<<<<< HEAD
                     destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
 										supportedServices: { label: 'label.supported.services' }
-
-=======
-                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' }
-                  },
-                  {
-                    Vpn: { label: 'VPN' },
-                    Dhcp: { label: 'label.dhcp' },
-                    Dns: { label: 'DNS' },
-                    Gateway: { label: 'label.gateway' },
-                    Firewall: { label: 'Firewall' },
-                    Lb: { label: 'Load Balancer' },
-                    UserData: { label: 'UserData' },
-                    SourceNat: { label: 'Source NAT' },
-                    StaticNat: { label: 'Static NAT' },
-                    PortForwarding: { label: 'Port Forwarding' }
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   }
                 ],
                 dataProvider: function(args) { 					 
@@ -2179,15 +2061,9 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
-<<<<<<< HEAD
                       },
 
 											'remove': {
-=======
-                      },      
-											
-											'destroy': {
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
 												label: 'label.destroy.router',
 												messages: {
 													confirm: function(args) {
@@ -2219,11 +2095,7 @@
 
                       /*
                       changeService: {
-<<<<<<< HEAD
                         label: 'label.change.service.offering',
-=======
-                        label: 'label.change.service.offering',                       
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                         createForm: {
                           title: 'label.change.service.offering',
                           desc: '',
@@ -2430,11 +2302,7 @@
             },
             actions: {
               enable: {
-<<<<<<< HEAD
                 label: 'label.enable.provider',
-=======
-                label: 'label.enable.provider', 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
@@ -2458,13 +2326,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.enable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.enable.provider';
-=======
-                  notification: function() { 
-									  return 'label.enable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2494,13 +2357,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.disable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.disable.provider';
-=======
-                  notification: function() { 
-									  return 'label.disable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2511,15 +2369,9 @@
           // NetScaler provider detail view
           netscaler: {
             type: 'detailView',
-<<<<<<< HEAD
             id: 'netscalerProvider',
             label: 'label.netScaler',
             viewAll: { label: 'label.devices', path: '_zone.netscalerDevices' },
-=======
-            id: 'netscalerProviders',
-            label: 'label.netScaler',
-            viewAll: { label: 'label.providers', path: '_zone.netscalerProviders' },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
             tabs: {
               details: {
                 title: 'label.details',
@@ -2549,16 +2401,10 @@
             },
             actions: {
               add: {
-<<<<<<< HEAD
                 label: 'label.add.netScaler.device',
                 createForm: {
                   title: 'label.add.netScaler.device',									
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
-=======
-                label: 'label.add.new.NetScaler',
-                createForm: {
-                  title: 'label.add.new.NetScaler',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2598,15 +2444,7 @@
                     //     items.push({id: "true", description: "inline"});
                     //     args.response.success({data: items});
                     //   }
-<<<<<<< HEAD
                     // },                    
-=======
-                    // },
-                    capacity: {
-                      label: 'label.capacity',
-                      validation: { required: false, number: true }
-                    },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
@@ -2620,11 +2458,7 @@
                 },
 								messages: {
                   notification: function(args) {
-<<<<<<< HEAD
                     return 'label.add.netScaler.device';
-=======
-                    return 'label.add.new.NetScaler';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   }
                 },
                 action: function(args) {
@@ -2698,13 +2532,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.enable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.enable.provider';
-=======
-                  notification: function() { 
-									  return 'label.enable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 								  }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2734,23 +2563,14 @@
 								  confirm: function(args) {
 									  return 'message.confirm.disable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.disable.provider';
-=======
-                  notification: function() { 
-									  return 'label.disable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               destroy: {
-<<<<<<< HEAD
                 label: 'label.shutdown.provider',
-=======
-                label: 'label.shutdown.provider', 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["netscaler"].id),
@@ -2773,13 +2593,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.shutdown.provider';
 									},
-<<<<<<< HEAD
                   notification: function(args) {
 									  return 'label.shutdown.provider';
-=======
-                  notification: function(args) { 
-									  return 'label.shutdown.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2790,15 +2605,9 @@
 		      //f5 provider detail view
           f5: {
             type: 'detailView',
-<<<<<<< HEAD
             id: 'f5Provider',
             label: 'label.f5',
             viewAll: { label: 'label.devices', path: '_zone.f5Devices' },
-=======
-            id: 'f5Providers',
-            label: 'label.f5',
-            viewAll: { label: 'label.providers', path: '_zone.f5Providers' },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
             tabs: {
               details: {
                 title: 'label.details',
@@ -2828,16 +2637,10 @@
             },
             actions: {
               add: {
-<<<<<<< HEAD
                 label: 'label.add.F5.device',
                 createForm: {
                   title: 'label.add.F5.device',
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
-=======
-                label: 'label.add.new.F5',
-                createForm: {
-                  title: 'label.add.new.F5',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -2875,7 +2678,6 @@
                     //     items.push({id: "true", description: "inline"});
                     //     args.response.success({data: items});
                     //   }
-<<<<<<< HEAD
                     // },                    
                     dedicated: {
                       label: 'label.dedicated',
@@ -2886,18 +2688,6 @@
                       label: 'label.capacity',
                       validation: { required: false, number: true }
                     }
-=======
-                    // },
-                    capacity: {
-                      label: 'label.capacity',
-                      validation: { required: false, number: true }
-                    }
-                    // dedicated: {
-                    //   label: 'label.dedicated',
-                    //   isBoolean: true,
-                    //   isChecked: false
-                    // }
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   }
                 },
                 action: function(args) {
@@ -2944,11 +2734,7 @@
                 },
                 messages: {
                   notification: function(args) {
-<<<<<<< HEAD
                     return 'label.add.F5.device';
-=======
-                    return 'label.add.new.F5';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   }
                 },
                 notification: {
@@ -2980,13 +2766,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.enable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.enable.provider';
-=======
-                  notification: function() { 
-									  return 'label.enable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 								  }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3016,13 +2797,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.disable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.disable.provider';
-=======
-                  notification: function() { 
-									  return 'label.disable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3051,13 +2827,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.shutdown.provider';
 									},
-<<<<<<< HEAD
                   notification: function(args) {
 									  return 'label.shutdown.provider';
-=======
-                  notification: function(args) { 
-									  return 'label.shutdown.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3068,15 +2839,9 @@
           // SRX provider detailView
           srx: {
             type: 'detailView',
-<<<<<<< HEAD
             id: 'srxProvider',
             label: 'label.srx',
             viewAll: { label: 'label.devices', path: '_zone.srxDevices' },
-=======
-            id: 'srxProviders',
-            label: 'label.srx',
-            viewAll: { label: 'label.providers', path: '_zone.srxProviders' },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
             tabs: {
               details: {
                 title: 'label.details',
@@ -3106,15 +2871,9 @@
             },
             actions: {
               add: {
-<<<<<<< HEAD
                 label: 'label.add.SRX.device',
                 createForm: {
                   title: 'label.add.SRX.device',
-=======
-                label: 'label.add.new.SRX',
-                createForm: {
-                  title: 'label.add.new.SRX',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   fields: {
                     ip: {
                       label: 'label.ip.address'
@@ -3223,11 +2982,7 @@
                 },
                 messages: {
                   notification: function(args) {
-<<<<<<< HEAD
                     return 'label.add.SRX.device';
-=======
-                    return 'label.add.new.SRX';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   }
                 },
                 notification: {
@@ -3259,13 +3014,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.enable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.enable.provider';
-=======
-                  notification: function() { 
-									  return 'label.enable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3295,13 +3045,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.disable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.disable.provider';
-=======
-                  notification: function() { 
-									  return 'label.disable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3330,13 +3075,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.shutdown.provider';
 									},
-<<<<<<< HEAD
                   notification: function(args) {
 									  return 'label.shutdown.provider';
-=======
-                  notification: function(args) { 
-									  return 'label.shutdown.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3358,13 +3098,7 @@
                     name: { label: 'label.name' }
                   },
                   {
-<<<<<<< HEAD
                     state: { label: 'label.state' }
-=======
-                    state: { label: 'label.state' },
-                    id: { label: 'label.id' },
-                    physicalnetworkid: { label: 'label.physical.network.ID' }
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                   }
                 ],
                 dataProvider: function(args) {
@@ -3417,13 +3151,8 @@
                   confirm: function(args) {
 									  return 'message.confirm.enable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.enable.provider';
-=======
-                  notification: function() { 
-									  return 'label.enable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3453,13 +3182,8 @@
 								  confirm: function(args) {
 									  return 'message.confirm.disable.provider';
 									},
-<<<<<<< HEAD
                   notification: function() {
 									  return 'label.disable.provider';
-=======
-                  notification: function() { 
-									  return 'label.disable.provider'; 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
 									}
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -3481,7 +3205,6 @@
           type: 'select',
           title: 'Physical Resources',
           listView: {
-<<<<<<< HEAD
             zones: {
               id: 'physicalResources',
               label: 'label.menu.physical.resources',
@@ -3495,45 +3218,6 @@
                       return "Yes";
                     else
                       return "No";
-=======
-            id: 'physicalResources',
-            label: 'label.menu.physical.resources',
-            fields: {
-              name: { label: 'label.zone' },
-              networktype: { label: 'label.network.type' },
-              domainid: {
-                label: 'label.public',
-                converter: function(args) {
-                  if(args == null)
-                    return "Yes";
-                  else
-                    return "No";
-                }
-              },
-              allocationstate: {
-                label: 'label.allocation.state',
-                converter: function(str) {
-                  // For localization
-                  return str;
-                },
-                indicator: { 
-                  'Enabled': 'on',
-                  'Disabled': 'off'
-                }
-              }
-            },
-            actions: {
-              add: {
-                label: 'label.add.zone',
-                action: {
-                  custom: cloudStack.uiCustom.zoneWizard(
-                    cloudStack.zoneWizard
-                  )
-                },
-                messages: {                  
-                  notification: function(args) {
-                    return 'label.add.zone';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   }
                 },
                 allocationstate: {
@@ -3548,7 +3232,6 @@
                   }
                 }
               },
-<<<<<<< HEAD
               actions: {
                 add: {
                   label: 'label.add.zone',
@@ -3567,63 +3250,6 @@
                       args.complete({
                         actionFilter: zoneActionfilter,
                         data: args._custom.zone
-=======
-
-              // Enable swift
-              enableSwift: {
-                label: 'label.enable.swift',
-                isHeader: true,
-                addRow: false,
-                preFilter: function(args) {
-                  var swiftEnabled = false;
-                  $.ajax({
-                    url: createURL('listConfigurations'),
-                    data: {
-                      name: 'swift.enable'
-                    },
-                    async: false,
-                    success: function(json) {
-                      swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingSwift ?
-                        true : false;
-                    },
-
-                    error: function(json) {
-                      cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
-                    }
-                  });
-                  
-                  return swiftEnabled;
-                },
-                messages: {
-                  notification: function(args) {
-                    return 'label.enable.swift';
-                  }
-                },
-                createForm: {
-                  desc: 'confirm.enable.swift',
-                  fields: {
-                    url: { label: 'label.url', validation: { required: true } },
-                    account: { label: 'label.account' },
-                    username: { label: 'label.username' },
-                    key: { label: 'label.key' }
-                  }
-                },
-                action: function(args) {
-                  $.ajax({
-                    url: createURL('addSwift'),
-                    data: {
-                      url: args.data.url,
-                      account: args.data.account,
-                      username: args.data.username,
-                      key: args.data.key
-                    },
-                    success: function(json) {
-										  havingSwift = true;
-                      args.response.success();
-                      
-                      cloudStack.dialog.notice({
-                        message: 'message.after.enable.swift'
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                       });
                     }
                   }
@@ -3723,7 +3349,6 @@
                   }
                 },
 
-<<<<<<< HEAD
                 disable: {
                   label: 'label.action.disable.zone',
                   messages: {
@@ -3753,19 +3378,6 @@
                       args.complete();
                     }
                   }
-=======
-                compute: {
-                  title: 'label.compute.and.storage',
-                  custom: cloudStack.uiCustom.systemChart('compute')
-                },
-                network: {
-                  title: 'label.network',
-                  custom: cloudStack.uiCustom.systemChart('network')
-                },
-                resources: {
-                  title: 'label.resources',
-                  custom: cloudStack.uiCustom.systemChart('resources')
->>>>>>> 240dabe... Navigation organizational changes
                 },
 
                 'remove': {
@@ -3792,7 +3404,6 @@
                     poll: function(args) { args.complete(); }
                   }
                 }
-
 
               },
 
@@ -5168,7 +4779,6 @@
                   poll: pollAsyncJobResult
                 }
               },
-<<<<<<< HEAD
 
               changeService: {
                 label: 'label.change.service.offering',
@@ -5199,36 +4809,6 @@
                             args.response.success({data: items});
                           }
                         });
-=======
-              tabs: {
-                details: {
-                  title: 'label.details',
-									
-									preFilter: function(args) {
-										var hiddenFields = [];		                   
-                    if(selectedZoneObj.networktype == "Basic")										
-										  hiddenFields.push("guestcidraddress");										
-										return hiddenFields;
-									},
-									
-                  fields: [
-                    {
-                      name: { label: 'label.zone', isEditable: true }
-                    },
-                    {
-                      id: { label: 'label.id' },
-                      allocationstate: { label: 'label.allocation.state' },
-                      dns1: { label: 'label.dns.1', isEditable: true },
-                      dns2: { label: 'label.dns.2', isEditable: true },
-                      internaldns1: { label: 'label.internal.dns.1', isEditable: true },
-                      internaldns2: { label: 'label.internal.dns.2', isEditable: true },
-                      domainname: { label: 'label.domain' },
-											networktype: { label: 'label.network.type' },     
-                      guestcidraddress : { label: 'label.guest.cidr' },											
-                      domain: {
-                        label: 'label.network.domain',
-                        isEditable: true
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                       }
                     }
                   }
@@ -5354,68 +4934,8 @@
                               }
                             });
                           },
-<<<<<<< HEAD
                           getActionFilter: function() {
                             return systemvmActionfilter;
-=======
-                          notification: {
-                            poll: pollAsyncJobResult
-                          }
-                        },
-
-                        viewConsole: {
-                          label: 'label.view.console',  
-                          action: {
-                            externalLink: {
-                              url: function(args) {
-                                return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
-                              },
-                              title: function(args) {						
-																return args.context.systemVMs[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
-															},
-                              width: 820,
-                              height: 640
-                            }
-                          }
-                        }
-                      },
-                      tabs: {
-                        details: {
-                          title: 'label.details',
-                          fields: [
-                            {
-                              name: { label: 'label.name' }
-                            },
-                            {
-                              id: { label: 'label.id' },
-                              state: { label: 'label.state' },
-                              systemvmtype: {
-                                label: 'label.type',
-                                converter: function(args) {
-                                  if(args == "consoleproxy")
-                                    return "Console Proxy VM";
-                                  else if(args == "secondarystoragevm")
-                                    return "Secondary Storage VM";
-																	else
-																	  return args;
-                                }
-                              },
-                              zonename: { label: 'label.zone' },
-                              publicip: { label: 'label.public.ip' },
-                              privateip: { label: 'label.private.ip' },
-                              linklocalip: { label: 'label.linklocal.ip' },
-                              hostname: { label: 'label.host' },
-                              gateway: { label: 'label.gateway' },
-                              created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
-                              activeviewersessions: { label: 'label.active.sessions' }
-                            }
-                          ],
-                          dataProvider: function(args) {
-                            args.response.success({
-                              actionFilter: systemvmActionfilter,
-                              data: args.jsonObj
-                            });
->>>>>>> e8c309b... cloudstack 3.0 new UI - add more localization labels.
                           }
                         }
                       });
@@ -5491,21 +5011,11 @@
             }
           }
         }
-<<<<<<< HEAD
       },
   // netscaler devices listView
       netscalerDevices: {
         id: 'netscalerDevices',
         title: 'label.devices',
-=======
-      }
-    }),
-    subsections: {
-      // Provider list views
-      netscalerProviders: {
-        id: 'netscalerProviders',
-        title: 'label.netScaler',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
         listView: {
           id: 'netscalerDevices',
           fields: {
@@ -5532,16 +5042,10 @@
           },
           actions: {
             add: {
-<<<<<<< HEAD
               label: 'label.add.netScaler.device',
               createForm: {
                 title: 'label.add.netScaler.device',
 								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
-=======
-              label: 'label.add.new.NetScaler',
-              createForm: {
-                title: 'label.add.new.NetScaler',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -5582,13 +5086,6 @@
                   //     args.response.success({data: items});
                   //   }
                   // },
-<<<<<<< HEAD
-=======
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
@@ -5644,11 +5141,7 @@
               },
               messages: {
                 notification: function(args) {
-<<<<<<< HEAD
                   return 'label.add.netScaler.device';
-=======
-                  return 'label.add.new.NetScaler';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 }
               },
               notification: {
@@ -5659,21 +5152,12 @@
           detailView: {
             name: 'NetScaler details',
             actions: {
-<<<<<<< HEAD
               'remove': {
                 label: 'label.delete.NetScaler',
                 messages: {
                   confirm: function(args) {
                     return 'message.confirm.delete.NetScaler';
                   },
-=======
-              'delete': {
-                label: 'label.delete.NetScaler', 
-                messages: {
-                  confirm: function(args) {
-                    return 'message.confirm.delete.NetScaler';
-                  },                
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   notification: function(args) {
                     return 'label.delete.NetScaler';
                   }
@@ -5704,7 +5188,7 @@
             },
             tabs: {
               details: {
-                title: 'label.details', 
+                title: 'label.details',
                 fields: [
                   {
                     lbdeviceid: { label: 'label.id' },
@@ -5735,16 +5219,10 @@
         }
       },
 
-<<<<<<< HEAD
 			// F5 devices listView
       f5Devices: {
         id: 'f5Devices',
         title: 'label.devices',
-=======
-      f5Providers: { 
-        id: 'f5Providers',
-        title: 'label.f5',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
         listView: {
           id: 'f5Devices',
           fields: {
@@ -5759,16 +5237,10 @@
           },
           actions: {
             add: {
-<<<<<<< HEAD
               label: 'label.add.F5.device',
               createForm: {
                 title: 'label.add.F5.device',
 								preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
-=======
-              label: 'label.add.new.F5',
-              createForm: {
-                title: 'label.add.new.F5',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -5806,7 +5278,6 @@
                   //     items.push({id: "true", description: "inline"});
                   //     args.response.success({data: items});
                   //   }
-<<<<<<< HEAD
                   // },                  
                   dedicated: {
                     label: 'label.dedicated',
@@ -5817,18 +5288,6 @@
                     label: 'label.capacity',
                     validation: { required: false, number: true }
                   }
-=======
-                  // },
-                  capacity: {
-                    label: 'label.capacity',
-                    validation: { required: false, number: true }
-                  }
-                  // dedicated: {
-                  //   label: 'label.dedicated',
-                  //   isBoolean: true,
-                  //   isChecked: false
-                  // }
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 }
               },
               action: function(args) {
@@ -5895,23 +5354,15 @@
               }
             });
           },
-          detailView: {  
+          detailView: {
             name: 'F5 details',
             actions: {
-<<<<<<< HEAD
               'remove': {
-=======
-              'delete': {
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 label: 'label.delete.F5',
                 messages: {
                   confirm: function(args) {
                     return 'message.confirm.delete.F5';
-<<<<<<< HEAD
                   },
-=======
-                  },                 
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   notification: function(args) {
                     return 'label.delete.F5';
                   }
@@ -5969,16 +5420,10 @@
         }
       },
 
-<<<<<<< HEAD
 	  //SRX devices listView
       srxDevices: {
         id: 'srxDevices',
         title: 'label.devices',
-=======
-      srxProviders: {  
-        id: 'srxProviders',
-        title: 'label.srx',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
         listView: {
           id: 'srxDevices',
           fields: {
@@ -5988,15 +5433,9 @@
           },
           actions: {
             add: {
-<<<<<<< HEAD
               label: 'label.add.SRX.device',
               createForm: {
                 title: 'label.add.SRX.device',
-=======
-              label: 'label.add.new.SRX',
-              createForm: {
-                title: 'label.add.new.SRX',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 fields: {
                   ip: {
                     label: 'label.ip.address'
@@ -6105,11 +5544,7 @@
               },
               messages: {
                 notification: function(args) {
-<<<<<<< HEAD
                   return 'label.add.SRX.device';
-=======
-                  return 'label.add.new.SRX';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 }
               },
               notification: {
@@ -6132,21 +5567,12 @@
           detailView: {
             name: 'SRX details',
             actions: {
-<<<<<<< HEAD
               'remove': {
                 label: 'label.delete.SRX',
                 messages: {
                   confirm: function(args) {
                     return 'message.confirm.delete.SRX';
                   },
-=======
-              'delete': {
-                label: 'label.delete.SRX',  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.confirm.delete.SRX';
-                  },                  
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                   notification: function(args) {
                     return 'label.delete.SRX';
                   }
@@ -6182,11 +5608,7 @@
                     fwdevicename: { label: 'label.type' },
                     fwdevicecapacity: { label: 'label.capacity' },
                     timeout: { label: 'label.timeout' }
-<<<<<<< HEAD
-                 }
-=======
                   }
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                 ],
                 dataProvider: function(args) {	
 									$.ajax({
@@ -6392,19 +5814,11 @@
               },
 
               enable: {
-<<<<<<< HEAD
                 label: 'label.action.enable.pod',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.enable.pod';
                   },
-=======
-                label: 'label.action.enable.pod', 
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.enable.pod';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.pod';
                   }
@@ -6430,20 +5844,12 @@
                 }
               },
 
-<<<<<<< HEAD
               disable: {
-=======
-              disable: { 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 label: 'label.action.disable.pod',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.disable.pod';
-<<<<<<< HEAD
                   },
-=======
-                  },                  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.disable.pod';
                   }
@@ -6469,21 +5875,12 @@
                 }
               },
 
-<<<<<<< HEAD
               'remove': {
                 label: 'label.delete' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.pod';
                   },
-=======
-              'delete': {
-                label: 'label.delete' , 
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.pod';
-                  },                  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.delete.pod';
                   }
@@ -6513,33 +5910,15 @@
                   {
                     id: { label: 'label.id' },
                     netmask: { label: 'label.netmask', isEditable: true },
-<<<<<<< HEAD
-<<<<<<< HEAD
                     startip: { label: 'label.start.IP', isEditable: true },
                     endip: { label: 'label.end.IP', isEditable: true },
-=======
-                    startip: { label: 'start.IP', isEditable: true },
-                    endip: { label: 'end.IP', isEditable: true },
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    startip: { label: 'label.start.IP', isEditable: true },
-                    endip: { label: 'label.end.IP', isEditable: true },
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                     gateway: { label: 'label.gateway', isEditable: true },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
                         return str;
                       },
-<<<<<<< HEAD
-<<<<<<< HEAD
                       label: 'label.allocation.state'
-=======
-                      label: 'allocation.state'
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                      label: 'label.allocation.state'
->>>>>>> c05a040... cloudstack 3.0 new UI - add more localization labels.
                     }
                   }
                 ],
@@ -6561,29 +5940,15 @@
               },
 
               ipAllocations: {
-<<<<<<< HEAD
                 title: 'label.ip.allocations',
-=======
-                title: 'label.ip.allocations',  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 multiple: true,
                 fields: [
                   {
                     id: { label: 'label.id' },
                     gateway: { label: 'label.gateway' },
                     netmask: { label: 'label.netmask' },
-<<<<<<< HEAD
-<<<<<<< HEAD
                     startip: { label: 'label.start.IP' },
                     endip: { label: 'label.end.IP' }
-=======
-                    startip: { label: 'start.IP' },
-                    endip: { label: 'end.IP' }
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    startip: { label: 'label.start.IP' },
-                    endip: { label: 'label.end.IP' }
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                   }
                 ],
                 dataProvider: function(args) {
@@ -6601,11 +5966,7 @@
           }
         }
       },
-<<<<<<< HEAD
       clusters: {
-=======
-      clusters: {  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
         title: 'label.clusters',
         listView: {
           id: 'clusters',
@@ -6659,24 +6020,16 @@
             });
           },
 
-          actions: {  
+          actions: {
             add: {
               label: 'label.add.cluster',
-<<<<<<< HEAD
               messages: {
-=======
-              messages: {                
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 notification: function(args) {
                   return 'label.add.cluster';
                 }
               },
               createForm: {
-<<<<<<< HEAD
                 title: 'label.add.cluster',
-=======
-                title: 'label.add.cluster',                
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -6766,15 +6119,7 @@
                     }
                   },
                   name: {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     label: 'label.cluster.name',
-=======
-                    label: 'cluster.name',
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    label: 'label.cluster.name',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     validation: { required: true }
                   },
 
@@ -6863,11 +6208,7 @@
           },
 
           detailView: {
-<<<<<<< HEAD
             viewAll: { path: '_zone.hosts', label: 'label.hosts' },
-=======
-            viewAll: { path: '_zone.hosts', label: 'label.hosts' },  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 
             actions: {
               enable: {
@@ -6875,11 +6216,7 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.enable.cluster';
-<<<<<<< HEAD
                   },
-=======
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.cluster';
                   }
@@ -6907,19 +6244,11 @@
               },
 
               disable: {
-<<<<<<< HEAD
                 label: 'label.action.disable.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.disable.cluster';
                   },
-=======
-                label: 'label.action.disable.cluster',  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.disable.cluster';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.disable.cluster';
                   }
@@ -6947,19 +6276,11 @@
               },
 
               manage: {
-<<<<<<< HEAD
                 label: 'label.action.manage.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.manage.cluster';
                   },
-=======
-                label: 'label.action.manage.cluster',  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.manage.cluster';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.manage.cluster';
                   }
@@ -6987,19 +6308,11 @@
               },
 
               unmanage: {
-<<<<<<< HEAD
                 label: 'label.action.unmanage.cluster',
                 messages: {
                   confirm: function(args) {
                     return 'message.action.unmanage.cluster';
                   },
-=======
-                label: 'label.action.unmanage.cluster',  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.unmanage.cluster';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.unmanage.cluster';
                   }
@@ -7026,21 +6339,12 @@
                 }
               },
 
-<<<<<<< HEAD
               'remove': {
                 label: 'label.action.delete.cluster' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.cluster';
                   },
-=======
-              'delete': {
-                label: 'label.action.delete.cluster' , 
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.cluster';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.delete.cluster';
                   }
@@ -7063,7 +6367,7 @@
 
             tabs: {
               details: {
-                title: 'label.details', 
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -7074,15 +6378,7 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
-<<<<<<< HEAD
-<<<<<<< HEAD
                     //allocationstate: { label: 'label.allocation.state' },
-=======
-                    //allocationstate: { label: 'allocation.state' },
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    //allocationstate: { label: 'label.allocation.state' },
->>>>>>> c05a040... cloudstack 3.0 new UI - add more localization labels.
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
                   }
@@ -7107,11 +6403,7 @@
         }
       },
       hosts: {
-<<<<<<< HEAD
         title: 'label.hosts',
-=======
-        title: 'label.hosts', 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
         id: 'hosts',
         listView: {
           section: 'hosts',
@@ -7166,11 +6458,7 @@
 
           actions: {
             add: {
-<<<<<<< HEAD
               label: 'label.add.host',
-=======
-              label: 'label.add.host',  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 
               createForm: {
                 title: 'label.add.host',
@@ -7395,15 +6683,7 @@
                     isHidden: true
                   },
                   baremetalMAC: {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     label: 'label.host.MAC',
-=======
-                    label: 'host.MAC',
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    label: 'label.host.MAC',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -7411,28 +6691,12 @@
 
                   //input_group="OVM" starts here
                   agentUsername: {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     label: 'label.agent.username',
-=======
-                    label: 'agent.username',
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    label: 'label.agent.username',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     validation: { required: false },
                     isHidden: true
                   },
                   agentPassword: {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     label: 'label.agent.password',
-=======
-                    label: 'agent.password',
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-                    label: 'label.agent.password',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -7525,13 +6789,8 @@
               }
             }
           },
-<<<<<<< HEAD
           detailView: {
             name: "Host details",
-=======
-          detailView: {  
-            name: "Host details",												
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
 						viewAll: {
 							label: 'label.instances',
 							path: 'instances'
@@ -7560,11 +6819,7 @@
               },
 
               enableMaintenanceMode: {
-<<<<<<< HEAD
                 label: 'label.action.enable.maintenance.mode',
-=======
-                label: 'label.action.enable.maintenance.mode',  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 action: function(args) {
                   $.ajax({
                     url: createURL("prepareHostForMaintenance&id=" + args.context.hosts[0].id),
@@ -7590,11 +6845,7 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.host.enable.maintenance.mode';
-<<<<<<< HEAD
                   },
-=======
-                  },                  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.enable.maintenance.mode';
                   }
@@ -7604,11 +6855,7 @@
                 }
               },
 
-<<<<<<< HEAD
               cancelMaintenanceMode: {
-=======
-              cancelMaintenanceMode: {  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 label: 'label.action.cancel.maintenance.mode' ,
                 action: function(args) {
                   $.ajax({
@@ -7635,11 +6882,7 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.cancel.maintenance.mode';
-<<<<<<< HEAD
                   },
-=======
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.cancel.maintenance.mode';
                   }
@@ -7650,11 +6893,7 @@
               },
 
               forceReconnect: {
-<<<<<<< HEAD
                 label: 'label.action.force.reconnect',
-=======
-                label: 'label.action.force.reconnect',  
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                 action: function(args) {
                   $.ajax({
                     url: createURL("reconnectHost&id=" + args.context.hosts[0].id),
@@ -7679,17 +6918,8 @@
                 },
                 messages: {
                   confirm: function(args) {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     return 'message.confirm.action.force.reconnect';
                   },
-=======
-                    return 'confirm.action.force.reconnect';
-=======
-                    return 'message.confirm.action.force.reconnect';
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.force.reconnect';
                   }
@@ -7699,18 +6929,9 @@
                 }
               },
 
-<<<<<<< HEAD
               'remove': {
                 label: 'label.action.remove.host' ,
                 messages: {
-=======
-              'delete': {  
-                label: 'label.action.remove.host' ,
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.remove.host';
-                  },                 
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   notification: function(args) {
                     return 'label.action.remove.host';
                   }
@@ -7722,10 +6943,7 @@
                 },
                 createForm: {
                   title: 'label.action.remove.host',
-<<<<<<< HEAD
                   desc: 'message.action.remove.host',
-=======
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                   fields: {
                     isForced: {
                       label: 'force.remove',
@@ -7755,7 +6973,7 @@
               }
 
             },
-            tabs: {  
+            tabs: {
               details: {
                 title: 'label.details',
 								
@@ -7780,23 +6998,9 @@
                   },
                   {
                     id: { label: 'label.id' },
-<<<<<<< HEAD
-<<<<<<< HEAD
                     resourcestate: { label: 'label.resource.state' },
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },                    
-=======
-                    resourcestate: { label: 'resource.state' },
-=======
-                    resourcestate: { label: 'label.resource.state' },
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
-                    state: { label: 'label.state' },
-                    zonename: { label: 'label.zone' },
-                    podname: { label: 'label.pod' },
-                    clustername: { label: 'label.cluster' },
-                    ipaddress: { label: 'label.ip.address' },
-                    version: { label: 'label.version' },
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     hosttags: {
                       label: 'label.host.tags',
                       isEditable: true
@@ -7826,14 +7030,11 @@
                         });
                       }
                     },
-<<<<<<< HEAD
 										zonename: { label: 'label.zone' },
                     podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
                     ipaddress: { label: 'label.ip.address' },
                     version: { label: 'label.version' },
-=======
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
                     disconnected: { label: 'label.last.disconnected' }
                   }
                 ],
@@ -7893,28 +7094,14 @@
           }
         }
       },
-<<<<<<< HEAD
-<<<<<<< HEAD
       'primary-storage': {
         title: 'label.primary.storage',
-=======
-      'primary-storage': {  //Jes
-        title: 'Primary Storage',
->>>>>>> 3536a2e... cloudstack 3.0 new UI - system page - localize host section.
-=======
-      'primary-storage': {  
-        title: 'label.primary.storage',
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
         id: 'primarystorages',
         listView: {
           id: 'primarystorages',
           section: 'primary-storage',
           fields: {
-<<<<<<< HEAD
             name: { label: 'label.name' },
-=======
-            name: { label: 'label.name' },            
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
             ipaddress: { label: 'label.server' },
 						path: { label: 'label.path' }
           },
@@ -7955,11 +7142,7 @@
               label: 'label.add.primary.storage',
 
               createForm: {
-<<<<<<< HEAD
                 title: 'label.add.primary.storage',
-=======
-                title: 'label.add.primary.storage',              
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -8263,11 +7446,7 @@
                   //always appear (end)
 
                   server: {
-<<<<<<< HEAD
                     label: 'label.server',
-=======
-                    label: 'label.server',  
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8286,15 +7465,7 @@
                     isHidden: true
                   },
                   lun: {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     label: 'label.LUN.number',
-=======
-                    label: 'LUN.number',
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
-=======
-                    label: 'label.LUN.number',
->>>>>>> c3c5b65... cloudstack 3.0 new UI - add more localization labels.
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8425,28 +7596,15 @@
 
               messages: {
                 notification: function(args) {
-<<<<<<< HEAD
                   return 'label.add.primary.storage';
-=======
-                  return 'label.add.primary.storage';  
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 }
               }
             }
           },
 
           detailView: {
-<<<<<<< HEAD
-<<<<<<< HEAD
             name: "Primary storage details",
             actions: {
-=======
-            name: "Primary storage details", //Jes
-=======
-            name: "Primary storage details", 
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
-            actions: {						 
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
 							edit: {
                 label: 'label.edit',
                 action: function(args) {
@@ -8494,11 +7652,7 @@
                 messages: {
                   confirm: function(args) {
                     return 'message.action.primarystorage.enable.maintenance.mode';
-<<<<<<< HEAD
                   },
-=======
-                  },                 
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.enable.maintenance.mode';
                   }
@@ -8509,19 +7663,11 @@
               },
 
               cancelMaintenanceMode: {
-<<<<<<< HEAD
                 label: 'label.action.cancel.maintenance.mode' ,
 								messages: {
                   confirm: function(args) {
                     return 'message.action.cancel.maintenance.mode';
                   },
-=======
-                label: 'label.action.cancel.maintenance.mode' , 
-								messages: {
-                  confirm: function(args) {
-                    return 'message.action.cancel.maintenance.mode';
-                  },                  
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.cancel.maintenance.mode';
                   }
@@ -8547,28 +7693,15 @@
                       );
                     }
                   });
-<<<<<<< HEAD
                 },
-=======
-                },                
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                 notification: {
                   poll: pollAsyncJobResult
                 }
               },
 
-<<<<<<< HEAD
               'remove': {
                 label: 'label.action.delete.primary.storage' ,
                 messages: {                  
-=======
-              'delete': {
-                label: 'label.action.delete.primary.storage' ,  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.primary.storage';
-                  },                 
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
                   notification: function(args) {
                     return 'label.action.delete.primary.storage';
                   }
@@ -8603,7 +7736,7 @@
 
             tabs: {
               details: {
-                title: 'label.details', 
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -8661,18 +7794,8 @@
         }
       },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
       'secondary-storage': {
         title: 'label.secondary.storage',
-=======
-      'secondary-storage': {  //Jes
-        title: 'Secondary Storage',
->>>>>>> 50fadb4... cloudstack 3.0 new UI - system page - localize primary storage section.
-=======
-      'secondary-storage': {  
-        title: 'label.secondary.storage',
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
         id: 'secondarystorages',
         listView: {
           id: 'secondarystorages',
@@ -8722,17 +7845,10 @@
 
           actions: {
             add: {
-<<<<<<< HEAD
               label: 'label.add.secondary.storage',
 
               createForm: {
                 title: 'label.add.secondary.storage',
-=======
-              label: 'label.add.secondary.storage', 
-
-              createForm: {
-                title: 'label.add.secondary.storage',               
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                 fields: {
                   zoneid: {
                     label: 'Zone',
@@ -8811,21 +7927,12 @@
           detailView: {
             name: 'Secondary storage details',
             actions: {
-<<<<<<< HEAD
               remove: {
                 label: 'label.action.delete.secondary.storage' ,
                 messages: {
                   confirm: function(args) {
                     return 'message.action.delete.secondary.storage';
                   },
-=======
-              'delete': {
-                label: 'label.action.delete.secondary.storage' ,  
-                messages: {
-                  confirm: function(args) {
-                    return 'message.action.delete.secondary.storage';
-                  },                 
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                   notification: function(args) {
                     return 'label.action.delete.secondary.storage';
                   }
@@ -8848,7 +7955,7 @@
             },
             tabs: {
               details: {
-                title: 'label.details',  
+                title: 'label.details',
                 fields: [
                   {
                     name: { label: 'label.name' }
@@ -8879,41 +7986,17 @@
         }
       },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
       guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges
         title: 'label.guest.ip.range',
-=======
-      guestIpRanges: {
-=======
-      guestIpRanges: { //Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges 
-<<<<<<< HEAD
->>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
-        title: 'label.guest.ip.range', //Jes
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
-=======
-        title: 'label.guest.ip.range', 
->>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
         id: 'guestIpRanges',
         listView: {
           section: 'guest-IP-range',
-<<<<<<< HEAD
           fields: {
             startip: { label: 'label.start.IP' },
             endip: { label: 'label.end.IP' }
-=======
-          fields: {            
-<<<<<<< HEAD
-            startip: { label: 'start.IP' },
-            endip: { label: 'end.IP' }
->>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
-=======
-            startip: { label: 'label.start.IP' },
-            endip: { label: 'label.end.IP' }
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
           },
 
-          dataProvider: function(args) {				
+          dataProvider: function(args) {
             $.ajax({
               url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkid=" + args.context.networks[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -8928,32 +8011,12 @@
           actions: {
             add: {
               label: 'label.add.ip.range',
-<<<<<<< HEAD
-<<<<<<< HEAD
               createForm: {
                 title: 'label.add.ip.range',
-=======
-
-              createForm: {
-                title: 'label.add.ip.range',
-
-                preFilter: function(args) {
-                  if(selectedZoneObj.networktype == "Basic") {
-                    args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
-                    args.$form.find('.form-item[rel=guestGateway]').css('display', 'inline-block');
-                    args.$form.find('.form-item[rel=guestNetmask]').css('display', 'inline-block');
-                  }
-                  else {  //"Advanced"
-                    args.$form.find('.form-item[rel=podId]').hide();
-                    args.$form.find('.form-item[rel=guestGateway]').hide();
-                    args.$form.find('.form-item[rel=guestNetmask]').hide();
-                  }
-                },
-
->>>>>>> 6ee8ecf... cloudstack 3.0 new UI - system page - localize secondary storage section.
                 fields: {
                   guestStartIp: { label: 'label.guest.start.ip' },
                   guestEndIp: { label: 'label.guest.end.ip' }
+                }
               },
               action: function(args) {
                 var array2 = [];
@@ -8973,33 +8036,6 @@
                     args.response.error(errorMsg);
                   }
                 });
-=======
-              createForm: {
-                title: 'label.add.ip.range',
-                fields: {   
-                  guestStartIp: { label: 'label.guest.start.ip' },
-                  guestEndIp: { label: 'label.guest.end.ip' }
-                }
-              },
-              action: function(args) {		                
-								var array2 = [];
-								array2.push("&startip=" + args.data.guestStartIp);
-								var endip = args.data.guestEndIp;
-								if(endip != null && endip.length > 0)
-									array2.push("&endip=" + endip);
-								$.ajax({
-									url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
-									dataType: "json",
-									success: function(json) {
-										var item = json.createvlaniprangeresponse.vlan;
-										args.response.success({data:item});
-									},
-									error: function(XMLHttpResponse) {
-										var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-										args.response.error(errorMsg);
-									}
-								});                
->>>>>>> 250b296... cloudstack 3.0 new UI - system page - Advanced zone - Guest traffic type - Network tab - Network detailView - View IP Ranges - remove obsolete code for Basic zone since this section is only available for Advanced zone now.
               },
               notification: {
                 poll: function(args) {
@@ -9013,7 +8049,6 @@
               }
             },
 
-<<<<<<< HEAD
             'remove': {
               label: 'label.remove.ip.range' ,
               messages: {
@@ -9022,20 +8057,6 @@
                 },
                 notification: function(args) {
                   return 'label.remove.ip.range';
-=======
-            'delete': {
-              label: 'label.remove.ip.range' , 
-              messages: {
-                confirm: function(args) {
-                  return 'message.confirm.remove.IP.range';
-                },                
-                notification: function(args) {
-<<<<<<< HEAD
-                  return 'remove.IP.range';
->>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
-=======
-                  return 'label.remove.ip.range';
->>>>>>> 577f3a5... cloudstack 3.0 new UI - correct localization label format
                 }
               },
               action: function(args) {
@@ -9060,13 +8081,8 @@
       }
     }
   };
-<<<<<<< HEAD
 
   function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
-=======
-  
-  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) { 
->>>>>>> 0341d00... cloudstack 3.0 new UI - system page - localize IP Ranges sections.
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
     array1.push("&username=" + todb(args.data.username));
