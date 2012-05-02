@@ -2781,6 +2781,7 @@ dictionary = {
 'message.number.zones': '<fmt:message key="message.number.zones" />',
 'message.remove.vpn.access': '<fmt:message key="message.remove.vpn.access" />',
 'message.restart.mgmt.server': '<fmt:message key="message.restart.mgmt.server" />',
+'message.restart.mgmt.usage.server': '<fmt:message key="message.restart.mgmt.usage.server" />',
 'message.security.group.usage': '<fmt:message key="message.security.group.usage" />',
 'message.snapshot.schedule': '<fmt:message key="message.snapshot.schedule" />',
 'message.step.1.continue': '<fmt:message key="message.step.1.continue" />',

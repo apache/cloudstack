@@ -38,7 +38,10 @@
                   async: true,
                   success: function(json) {                
                     var item = json.updateconfigurationresponse.configuration;
-                    cloudStack.dialog.notice({ message: _l('message.restart.mgmt.server') });
+                    if(item.category == "Usage")
+                      cloudStack.dialog.notice({ message: _l('message.restart.mgmt.usage.server') });
+                    else
+                      cloudStack.dialog.notice({ message: _l('message.restart.mgmt.server') });	
                     args.response.success({data: item});
                   },
                   error: function(json) {                
