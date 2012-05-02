@@ -15,8 +15,6 @@
  */
 package com.cloud.test.demo.response;
 
-import java.util.List;
-
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackUserVm {
@@ -98,10 +96,6 @@ public class CloudStackUserVm {
     private String zoneId;
     @SerializedName(ApiConstants.ZONE_NAME)
     private String zoneName;
-    @SerializedName(ApiConstants.NIC) 
-    private List<CloudStackNic> nics;
-    @SerializedName(ApiConstants.SECURITY_GROUP)
-    private List<CloudStackSecurityGroup> securityGroupList;
     
 	public CloudStackUserVm() {
 	}
@@ -377,20 +371,6 @@ public class CloudStackUserVm {
 	 */
 	public String getZoneName() {
 		return zoneName;
-	}
-
-	/**
-	 * @return the nics
-	 */
-	public List<CloudStackNic> getNics() {
-		return nics;
-	}
-
-	/**
-	 * @return the securityGroupList
-	 */
-	public List<CloudStackSecurityGroup> getSecurityGroupList() {
-		return securityGroupList;
 	}
 
 }
