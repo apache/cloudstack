@@ -24,7 +24,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.service.offering', NULL, 'Service offering used by secondary storage; if NULL - system offering will be used');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller', NULL, 'Enabled Open vSwitch SDN controller for L2-in-L3 overlay networks');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller', NULL, 'Enable/Disable Open vSwitch SDN controller for L2-in-L3 overlay networks');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller.default.label', NULL, 'Default network label to be used when fetching interface for GRE endpoints');
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `update_parameters` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Defines if the parameters need to be set for the vm';
 UPDATE `cloud`.`user_vm` SET update_parameters=0 where id>0;
