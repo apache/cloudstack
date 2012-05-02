@@ -744,8 +744,16 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 	volumeHost.setSize(volInfo.getSize());
                 	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
                 	volumeHost.setLastUpdated(new Date());
+                	if (volume.getState() == Volume.State.Uploading){
+                		try {
+                			_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);			
+                		} catch (NoTransitionException e) {
+                			e.printStackTrace();
+                		}
+                	}
+                
+                	_volumeHostDao.update(volumeHost.getId(), volumeHost);
                 }
-                _volumeHostDao.update(volumeHost.getId(), volumeHost);                
         	}
         }
         
