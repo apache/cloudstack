@@ -32,10 +32,12 @@ UPDATE `cloud`.`user_vm` SET update_parameters=0 where id>0;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ha.tag', NULL, 'HA tag defining that the host marked with this tag can be used for HA purposes only');
 
+# Changes for Upload Volume
 CREATE TABLE  `cloud`.`volume_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `job_id` varchar(255),
@@ -57,7 +59,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   INDEX `i_volume_host_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 1);
+INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 0);
 # Changes for OVS tunnel manager
 
 # The Following tables are not used anymore
