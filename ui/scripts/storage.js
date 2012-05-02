@@ -171,8 +171,74 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }
+            },
+            uploadVolume: {
+              isHeader: true,
+              label: 'label.upload.volume',
+              messages: {
+                notification: function() { return 'label.upload.volume'; }
+              },
+              notification: { poll: function(args) { args.complete(); } },
+              action: {
+                custom: cloudStack.uiCustom.uploadVolume({
+                  listView: $.extend(true, {}, cloudStack.sections.instances, {
+                    listView: {
+                      filters: false,
+                      dataProvider: function(args) {
+                        var searchByArgs = args.filterBy.search.value &&
+                              args.filterBy.search.value.length ?
+                              '&name=' + args.filterBy.search.value : '';
 
+                        $.ajax({
+                          url: createURL('listVirtualMachines' + searchByArgs),
+                          data: {
+                            page: args.page,
+                            pageSize: pageSize,
+                            listAll: true
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(data) {
+                            args.response.success({
+                              data: $.grep(
+                                data.listvirtualmachinesresponse.virtualmachine ?
+                                  data.listvirtualmachinesresponse.virtualmachine : [],
+                                function(instance) {
+                                  return $.inArray(instance.state, [
+                                    'Destroyed', 'Error', 'Stopping', 'Starting'
+                                  ]) == -1;
+                                }
+                              )
+                            });
+                          },
+                          error: function(data) {
+                            args.response.error(parseXMLHttpResponse(data));
+                          }
+                        });
+                      }
+                    }
+                  }),
+                  action: function(args) {
+                    $.ajax({
+                      url: createURL('uploadVolume'),
+                      data: {
+                        hypervisor: 'XenServer', // Replace with instances' hypervisor
+                        format: 'VHD', // Replace with format of uploaded volume
+                        name: args.data.name,
+                        url: args.data.url,
+                        zoneid: 1 // Replace with instances' zone ID
+                      },
+                      success: function(json) {
+                        args.response.success();
+                      },
+                      error: function(json) {
+                        args.response.error(parseXMLHttpResponse(json));
+                      }
+                    });
+                  }
+                })
+              }
+            }
           },
 
           dataProvider: function(args) {

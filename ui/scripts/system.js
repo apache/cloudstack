@@ -1257,9 +1257,8 @@
 															  var $form = $(this).closest("form");
 																var selectedNetworkOfferingId = $(this).val();
 																$(networkOfferingObjs).each(function(){
-																  if(this.id == selectedNetworkOfferingId) {
-																	  //networkoffering.specifyipranges
-																		if(this.guestiptype == "Isolated") {
+																  if(this.id == selectedNetworkOfferingId) {																	  
+																		if(this.guestiptype == "Isolated") {																		  
 																			if(this.specifyipranges == false) {
 																				$form.find('.form-item[rel=guestStartIp]').hide();
 																				$form.find('.form-item[rel=guestEndIp]').hide();
@@ -1268,18 +1267,25 @@
 																				$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
 																				$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
 																			}
+																																								
+                                      //cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestGateway]'));	//make guestGateway optional 	                                      							
+                                      //cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestNetmask]'));	//make guestNetmask optional  																			
 																		}
 																		else {  //this.guestiptype == "Shared"
 																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
-																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
+																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');																			
+																			
+                                      //cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
+																			//cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required			
 																		}
-
-																		//networkoffering.specifyvlan
+																		
 																		if(this.specifyvlan == false) {
 																		  $form.find('.form-item[rel=vlanId]').hide();
+																			//cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]'));	//make vlanId optional 	 	
 																		}
 																		else {
-																		  $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
+																		  $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');																			
+																			//cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=vlanId]'));		//make vlanId required		
 																		}
 																		return false; //break each loop
 																	}

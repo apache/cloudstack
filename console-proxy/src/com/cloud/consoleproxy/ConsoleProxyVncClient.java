@@ -83,9 +83,12 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 							client.connectTo(getClientHostAddress(), getClientHostPort(), getClientHostPassword());
 						}
 					} catch (UnknownHostException e) {
-						s_logger.error("Unexpected exception: ", e);
+						s_logger.error("Unexpected exception", e);
+						break;
 					} catch (IOException e) {
-						s_logger.error("Unexpected exception: ", e);
+						s_logger.error("Unexpected exception (will retry until timeout) ", e);
+					} catch (Throwable e) {
+						s_logger.error("Unexpected exception (will retry until timeout) ", e);
 					}
 					
 					try {
