@@ -7079,6 +7079,90 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   display: none;
 }
 
+/*Upload volume*/
+.upload-volume {
+}
+
+.upload-volume .list-view {
+  margin-top: 5px !important;
+}
+
+.upload-volume .listView-container {
+  background: #FFFFFF;
+  width: 823px;
+  margin: 71px 0px 20px 28px;
+  border: 1px solid #DADADA;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.upload-volume div.list-view .data-table div.fixed-header {
+  top: 115px !important;
+  left: 56px !important;
+  background: #FFFFFF !important;
+}
+
+.upload-volume .data-table table.body {
+  margin-top: 66px !important;
+  margin-left: 19px;
+}
+
+.upload-volume .list-view .toolbar {
+  top: 118px;
+  width: 801px;
+  left: 43px;
+  background: transparent;
+  border: none;
+}
+
+.upload-volume .top-fields {
+  float: left;
+  clear: none;
+  margin-left: 24px;
+}
+
+.upload-volume .top-fields .field {
+  float: left;
+  margin-right: 50px;
+}
+
+.upload-volume .top-fields input {
+  float: right;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px 3px 3px 3px;
+  padding: 2px;
+  width: 186px;
+}
+
+.upload-volume .top-fields label,
+.upload-volume .desc {
+  display: block;
+  float: left;
+  padding: 6px;
+  font-size: 12px;
+  color: #4C5D6C;
+  /*+text-shadow:0px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 0px #FFFFFF;
+  -o-text-shadow: 0px 0px #FFFFFF;
+  text-shadow: 0px 0px #FFFFFF;
+}
+
+.upload-volume .desc {
+  position: absolute;
+  width: 825px;
+  text-align: left;
+  top: 79px;
+  left: 32px;
+  border-top: 1px solid #CFCFCF;
+}
+
 /*Network detail chat*/
 .network-chart {
   width: 100%;
@@ -8884,5 +8968,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .moveDrag:hover .icon {
   background-color: #FFFFFF;
   cursor: move !important;
+}
+
+.uploadVolume .icon {
+  background-position: -232px -34px;
+}
+
+.uploadVolume:hover .icon {
+  background-position: -230px -615px;
 }
 

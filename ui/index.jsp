@@ -1639,6 +1639,7 @@
     <script src="scripts/ui-custom/securityRules.js" type="text/javascript"></script>
     <script src="scripts/network.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/recurringSnapshots.js" type="text/javascript"></script>
+    <script src="scripts/ui-custom/uploadVolume.js" type="text/javascript"></script>
     <script src="scripts/storage.js" type="text/javascript"></script>
     <script src="scripts/templates.js" type="text/javascript"></script>
     <script src="scripts/accounts.js" type="text/javascript"></script>
@@ -1668,6 +1669,10 @@
 
 <script language="javascript">
 dictionary = {
+'message.specify.url': '<fmt:message key="message.specify.url"/>',
+'label.select.instance.to.attach.volume.to': '<fmt:message key="label.select.instance.to.attach.volume.to"/>',
+'label.upload': '<fmt:message key="label.upload"/>',
+'label.upload.volume': '<fmt:message key="label.upload.volume"/>',
 'label.virtual.routers': '<fmt:message key="label.virtual.routers"/>',
 'label.primary.storage.count': '<fmt:message key="label.primary.storage.count"/>',
 'label.secondary.storage.count': '<fmt:message key="label.secondary.storage.count"/>',
