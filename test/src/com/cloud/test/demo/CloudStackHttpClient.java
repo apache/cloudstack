@@ -57,14 +57,12 @@ public class CloudStackHttpClient {
                 if(followToAsyncResult) {
                     
                     long startMs = System.currentTimeMillis();
-    
-                    String queryJobResult = "http://localhost:8096/client/api?command=queryAsyncJobResult&response=json&jobId=";
-    
+                    
                     JsonElement response = getChildElement(jsonElement, responseName);
                     JsonElement jobIdEle = getChildElement(response, "jobid");
                     
                     String jobId = jobIdEle.getAsString();
-                    queryJobResult = queryJobResult+jobId;
+                    String queryJobResult = Demo.getQueryAsyncCommandString(jobId);
                     
                     while(System.currentTimeMillis() -  startMs < _pollTimeoutMs) {
     
@@ -77,9 +75,10 @@ public class CloudStackHttpClient {
                             int jobStatus = jobStatusEle.getAsInt();
                             switch(jobStatus) {
                             case 2:
-                                throw new Exception();//queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errorcode") + " " + 
-                                    //queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errortext"));
-                                
+                                JsonElement joberrorObj = getChildElement(response2,"jobresult");
+                                JsonElement errorCodeObj = getChildElement(joberrorObj,"errorcode");
+                                JsonElement errorTextObj = getChildElement(joberrorObj,"errortext");
+                                throw new Exception("Error: "+errorCodeObj.getAsString() + " " + errorTextObj.getAsString());
                             case 0 :
                                 try { 
                                     Thread.sleep( _pollIntervalMs ); 
@@ -120,6 +119,7 @@ public class CloudStackHttpClient {
             }
         }
     
+
     private JsonElement execute(String request) throws Exception {
         JsonParser parser = new JsonParser();
         URL url = new URL(request);

@@ -341,5 +341,13 @@ public class Demo {
         return url;
     }
     
+    public static String getQueryAsyncCommandString(String jobId){
+        String req = "command=queryAsyncJobResult&response=json&jobId=" + jobId;
+        String url = signUrl(req, properties.getProperty("apikey"),
+                properties.getProperty("secretkey"));
+        String requestUrl = _host + url;
+        return requestUrl;
+    }
+    
 }
 
