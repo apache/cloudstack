@@ -447,7 +447,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceLimitsDomain, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(TestResourceLimitsProject, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
