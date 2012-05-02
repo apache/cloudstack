@@ -55,7 +55,7 @@ public class Demo {
         //create the deployment
         String publicIp = createDeployment();
         //setup web server on user vm
-        setupHttpd(publicIp, "password");
+        setupHttpd(publicIp, "cloud.com");
         
         //return web access url
         System.out.println("\nURL is " + "http://" + publicIp + "/cloudcom-faq.html");
