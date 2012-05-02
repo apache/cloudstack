@@ -18,10 +18,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
+import com.cloud.test.demo.response.CloudStackPortForwardingRule;
+import com.cloud.test.demo.response.CloudStackIpAddress;
+import com.cloud.test.demo.response.CloudStackUserVm;
 import com.cloud.test.utils.UtilsForTest;
 import com.cloud.utils.PropertiesUtil;
+import com.google.gson.reflect.TypeToken;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
@@ -180,31 +185,52 @@ public class Demo {
                 "&templateId=" + properties.getProperty("templateId") + "&zoneId=" + properties.getProperty("zoneId");
         String url = UtilsForTest.signUrl(urlToSign, properties.getProperty("apikey"),
                 properties.getProperty("secretkey"));
-        System.out.println("http://" + properties.getProperty("hostname") + ":8080/client/api?" + url);
-        long vmId=3;
+        String requestUrl = "http://" + properties.getProperty("hostname") + ":8080/client/api?" + url;
+        System.out.println(requestUrl);
+        
+        CloudStackHttpClient client = new CloudStackHttpClient();
+        
+        CloudStackUserVm vm = client.execute(requestUrl, _apiCommands.get("deployVirtualMachine"), "deployvirtualmachineresponse", "virtualmachine", CloudStackUserVm.class);
+        
+        String vmId = null;
+        if(vm != null){
+            vmId = vm.getId();
+        }
+        
         
         //2) List public IP address - source nat
         urlToSign = "command=listPublicIpAddresses&zoneId=" + properties.getProperty("zoneId");
         url = UtilsForTest.signUrl(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
-        System.out.println("http://" + properties.getProperty("hostname") + ":8080/client/api?" + url);
+        requestUrl = "http://" + properties.getProperty("hostname") + ":8080/client/api?" + url;
+        System.out.println(requestUrl);
+        
+        List<CloudStackIpAddress> ipList = client.execute(requestUrl,"listpublicipaddressesresponse", "publicipaddress", new TypeToken<List<CloudStackIpAddress>>(){}.getType());
+        
+        
         long ipId=67;
+        String ip = "10.223.153.76";
         
         //3) create portForwarding rules for port 22 and 80
         urlToSign = "command=createPortForwardingRule&privateport=22&publicport=22&protocol=tcp&ipaddressid=" + ipId + 
                 "&virtualmachineid=" + vmId;
         url = UtilsForTest.signUrl(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
-        System.out.println("http://" + properties.getProperty("hostname") + ":8080/client/api?" + url);
+        requestUrl = "http://" + properties.getProperty("hostname") + ":8080/client/api?" + url;
+        System.out.println(requestUrl);
+        CloudStackPortForwardingRule pfrule1 = client.execute(requestUrl, _apiCommands.get("createPortForwardingRule"), "createportforwardingruleresponse", "portforwardingrule", CloudStackPortForwardingRule.class);
         
         urlToSign = "command=createPortForwardingRule&privateport=80&publicport=80&protocol=tcp&ipaddressid=" + ipId + 
                 "&virtualmachineid=" + vmId;
         url = UtilsForTest.signUrl(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
-        System.out.println("http://" + properties.getProperty("hostname") + ":8080/client/api?" + url);
+
+        requestUrl = "http://" + properties.getProperty("hostname") + ":8080/client/api?" + url;
+        System.out.println(requestUrl);
+        CloudStackPortForwardingRule pfrule2 = client.execute(requestUrl, _apiCommands.get("createPortForwardingRule"), "createportforwardingruleresponse", "portforwardingrule", CloudStackPortForwardingRule.class);
 
         
-        return "10.223.153.76";
+        return ip;
     }
     
 }
