@@ -87,7 +87,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                          },
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '8531d1df-faac-4895-a741-238d3b10e6e6',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -164,6 +164,23 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         # 2. add one account to multiple project. Verify at step 2 an account
         #    is allowed to added to multiple project
 
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
+
         # Create project as a domain admin
         project_1 = Project.create(
                                  self.apiclient,
@@ -181,7 +198,6 @@ class TestMultipleProjectCreation(cloudstackTestCase):
                                              id=project_1.id,
                                              listall=True
                                              )
-
         self.assertEqual(
                             isinstance(list_projects_reponse, list),
                             True,
@@ -369,6 +385,23 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
         # 2. Add different domain account to the project. Add account should
         #    fail
 
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
+
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
@@ -479,6 +512,23 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         # 2. Delete account who is owner of the project. Delete account should
         #    fail
 
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
+
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
@@ -581,6 +631,23 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         # 1. Create a project in a domain
         # 2. Delete domain forcefully. Verify that project is also deleted as
         #    as part of domain cleanup
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -717,6 +784,23 @@ class TestProjectOwners(cloudstackTestCase):
         # 2. Add account to the project. Edit account to make it a project
         #    owner. verify new user is project owner and old account is
         #    regular user of the project.
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -858,6 +942,23 @@ class TestProjectOwners(cloudstackTestCase):
         # 2. Add account to the project. Edit account to make it a project
         #    owner. 
         # 3. Update project to add another account as an owner
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -1140,6 +1241,23 @@ class TestProjectResources(cloudstackTestCase):
         # 3. Delete the account. Verify resources are still there after
         #    account deletion.
 
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
+
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
@@ -1255,6 +1373,23 @@ class TestProjectResources(cloudstackTestCase):
         # 3. Delete the project. Verify resources are freed after
         #    account deletion.
         # 4. Verify all accounts are unassigned from project.
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -1460,6 +1595,23 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         # 3. Delete the account. Verify resources are still there after
         #    account deletion.
 
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
+
         self.debug("Adding %s user to project: %s" % (
                                                 self.user.account.name,
                                                 self.project.name
@@ -1593,6 +1745,23 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         # Validate the following
         # 1. Activate the project
         # 2. Verify project is activated and we are able to add resources 
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      self.apiclient,
+                                      name='project.invite.required'
+                                      )
+        self.assertEqual(
+                            isinstance(configs, list),
+                            True,
+                            "Check for a valid list configurations response"
+                            )
+        config = configs[0]
+        self.assertEqual(
+                    (config.value).lower(),
+                    'false',
+                    "'project.invite.required' should be set to false" 
+                    )
 
         # Activating the project
         self.debug("Activating project: %s" % self.project.name)
