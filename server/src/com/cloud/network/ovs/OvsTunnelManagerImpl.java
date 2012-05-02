@@ -138,10 +138,19 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	
 	private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId){
 		OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer) answers[0];
-		OvsTunnelInterfaceVO ti =
-				createInterfaceRecord(ans.getIp(), ans.getNetmask(),
-									  ans.getMac(), hostId, ans.getLabel());
-		return ti.getIp();
+		if (ans.getResult()) {
+			if (ans.getIp() != null && 
+				!("".equals(ans.getIp()))) {
+				OvsTunnelInterfaceVO ti =
+						createInterfaceRecord(ans.getIp(), ans.getNetmask(),
+											  ans.getMac(), hostId, ans.getLabel());
+				return ti.getIp();
+			}
+		}
+		// Fetch interface failed!
+	    s_logger.warn("Unable to fetch the IP address for the GRE tunnel endpoint" +
+	    			  ans.getDetails());
+		return null;
 	}
 
 	private void handleCreateTunnelAnswer(Answer[] answers){
@@ -177,10 +186,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	private String getGreEndpointIP(Host host, Network nw) throws
 		AgentUnavailableException, OperationTimedoutException {
 		String endpointIp = null;
-		// Fetch physical network and associated tags
-        // If no tag specified, look for this network
-		// Default name for network label
-		String physNetLabel = "cloud-public";
+		// Fetch fefault name for network label from configuration
+		String physNetLabel = _configDao.getValue(Config.OvsTunnelNetworkDefaultLabel.key());
         Long physNetId = nw.getPhysicalNetworkId();
         PhysicalNetworkTrafficType physNetTT = 
         		_physNetTTDao.findBy(physNetId, TrafficType.Guest);
@@ -310,13 +317,21 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
                 }
             }
         }
-		//FIXME: Why are we cancelling the exception here?
-		try {
+		//TODO: Should we propagate the exception here?
+        try {
             String myIp = getGreEndpointIP(dest.getHost(), nw);
+            if (myIp == null)
+            	throw new GreTunnelException("Unable to retrieve the source " +
+            								 "endpoint for the GRE tunnel." +
+            								 "Failure is on host:" + dest.getHost().getId());
             boolean noHost = true;
 			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i);
 				String otherIp = getGreEndpointIP(rHost, nw);
+	            if (otherIp == null)
+	            	throw new GreTunnelException("Unable to retrieve the remote " +
+	            								 "endpoint for the GRE tunnel." +
+	            								 "Failure is on host:" + rHost.getId());
 				Commands cmds = new Commands(
 						new OvsCreateTunnelCommand(otherIp, key, 
 								Long.valueOf(hostId), i, nw.getId(), myIp));
@@ -351,7 +366,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 				handleSetupBridgeAnswer(answers);
 			}
 		} catch (Exception e) {
-		    s_logger.warn("Ovs Tunnel network created tunnel failed", e);
+		    // I really thing we should do a better handling of these exceptions
+			s_logger.warn("Ovs Tunnel network created tunnel failed", e);
 		}	
 	}
 	

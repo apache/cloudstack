@@ -4949,22 +4949,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
         
     	String label = cmd.getLabel();
-    	s_logger.debug("### Will look for network with name-label:" + label + " on host " + _host.ip);
+    	s_logger.debug("Will look for network with name-label:" + label + " on host " + _host.ip);
         Connection conn = getConnection();
         try {
             XsLocalNetwork nw = this.getNetworkByName(conn, label);
-            s_logger.debug("### Network object:" + nw.getNetwork().getUuid(conn));
+            s_logger.debug("Network object:" + nw.getNetwork().getUuid(conn));
             PIF pif = nw.getPif(conn);
             Record pifRec = pif.getRecord(conn);
-            s_logger.debug("### PIF object:" + pifRec.uuid + "(" + pifRec.device + ")");
+            s_logger.debug("PIF object:" + pifRec.uuid + "(" + pifRec.device + ")");
             return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + pifRec.device + " retrieved successfully", 
             		pifRec.IP, pifRec.netmask, pifRec.MAC);
         } catch (Exception e) {
             e.printStackTrace();
+            s_logger.error("An error occurred while fetching the interface for " +
+            				label + " on host " + _host.ip + ":" + e.toString() + 
+            				"(" + e.getClass() + ")");
             return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:" + e.getMessage());
         }
-
-        
     }
 
     
@@ -4989,6 +4990,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         } catch (Exception e) {
             e.printStackTrace();
+            s_logger.error("An error occurred while creating a GRE tunnel to " +
+    				cmd.getRemoteIp() + " on host " + _host.ip + ":" + e.getMessage() + 
+    				"(" + e.getClass() + ")");
+            
         }
 
         return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
