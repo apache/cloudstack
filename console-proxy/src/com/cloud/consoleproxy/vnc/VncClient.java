@@ -154,6 +154,8 @@ public class VncClient {
     handshake();
     authenticate(password);
     initialize();
+    
+	s_logger.info("Connecting to VNC server succeeded, start session");
 
     // Run client-to-server packet sender
     sender = new VncClientPacketSender(os, screen, this);
@@ -219,8 +221,10 @@ public class VncClient {
     String rfbProtocol = new String(buf);
 
     // Server should use RFB protocol 3.x
-    if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR))
+    if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR)) {
+      s_logger.error("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
       throw new RuntimeException("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
+    }
 
     // Send response: we support RFB 3.3 only
     String ourProtocolString = RfbConstants.RFB_PROTOCOL_VERSION + "\n";
@@ -243,7 +247,8 @@ public class VncClient {
       byte[] buf = new byte[length];
       is.readFully(buf);
       String reason = new String(buf, RfbConstants.CHARSET);
-
+      
+      s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
       throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
     }
 
@@ -253,11 +258,13 @@ public class VncClient {
     }
 
     case RfbConstants.VNC_AUTH: {
+      s_logger.info("VNC server requires password authentication");
       doVncAuth(password);
       break;
     }
 
     default:
+      s_logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
       throw new RuntimeException("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
     }
   }
@@ -276,6 +283,7 @@ public class VncClient {
     try {
       response = encodePassword(challenge, password);
     } catch (Exception e) {
+      s_logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
       throw new RuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
     }
 
@@ -293,12 +301,15 @@ public class VncClient {
     }
 
     case RfbConstants.VNC_AUTH_TOO_MANY:
+      s_logger.error("Connection to VNC server failed: too many wrong attempts.");
       throw new RuntimeException("Connection to VNC server failed: too many wrong attempts.");
 
     case RfbConstants.VNC_AUTH_FAILED:
+        s_logger.error("Connection to VNC server failed: wrong password.");
       throw new RuntimeException("Connection to VNC server failed: wrong password.");
 
     default:
+      s_logger.error("Connection to VNC server failed, reason code: " + authResult);
       throw new RuntimeException("Connection to VNC server failed, reason code: " + authResult);
     }
   }
