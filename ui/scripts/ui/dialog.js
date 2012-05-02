@@ -398,6 +398,42 @@
       }).closest('.ui-dialog').overlay();
     },
 
+		/**
+     * to change a property(e.g. validation) of a createForm field after a createForm is rendered
+     */
+		createFormField: {
+			validation: {
+				required: {					
+					add: function($formField) {            
+						if($formField.find('.name').find('label').find('span.field-required').length == 0) {																			
+							$formField.find('.name').find('label').prepend($('<span>').addClass('field-required').html('*'));
+							
+							var $input = $formField.find('input');
+							var validationRules = $input.data('validation-rules');																				
+							if(validationRules == null)
+								validationRules = {};																		
+							validationRules.required = true;																				
+							$input.data('validation-rules', validationRules);																				
+						}						
+					},
+					remove: function($formField) {            
+						if($formField.find('.name').find('label').find('span.field-required').length > 0) {																						
+							$formField.find('.name').find('label').find('span.field-required').remove();	
+							
+							var $input = $formField.find('input');
+							var validationRules = $input.data('validation-rules');	
+							if(validationRules != null && validationRules.required != null)																				  														
+								delete validationRules.required;																				
+							$input.data('validation-rules', validationRules);		
+														
+							//$formField.find('.value').find('label.error[generated=true]').remove();
+							$formField.find('.value').find('label.error').hide();																				
+						}						
+					}
+				}
+			}  
+		},
+		
     /**
      * Confirmation dialog
      */
