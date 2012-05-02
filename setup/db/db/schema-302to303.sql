@@ -58,7 +58,8 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   INDEX `i_volume_host_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 0);
+INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( 'Custom', 'Custom Disk', 1, 'Cloud.com-Custom', 0, 0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.upload.size', 500, 'The maximum size for a uploaded volume(in GB).');
 # Changes for OVS tunnel manager
 
 # The Following tables are not used anymore
