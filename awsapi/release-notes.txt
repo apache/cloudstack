@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 1.0.2.RC6
 =========
 
@@ -11,8 +10,6 @@
 
 * Fixed ec2-register/registerTemplate calls
 
-=======
->>>>>>> 6472e7b... Now really adding the renamed files!
 1.0.2.RC4
 =========
 

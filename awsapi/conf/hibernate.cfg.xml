@@ -4,12 +4,9 @@
 <hibernate-configuration>
 <session-factory>
 	<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
-<<<<<<< HEAD
-=======
 	<property name="hibernate.connection.url">jdbc:mysql://localhost/cloudbridge</property>
 	<property name="hibernate.connection.username">cloud</property>
     <property name="hibernate.connection.password">cloud</property>
->>>>>>> 6472e7b... Now really adding the renamed files!
     <property name="hibernate.connection.pool_size">20</property>
 	<property name="hibernate.connection.autocommit">false</property>
 	
@@ -22,18 +19,10 @@
     
     <property name="show_sql">true</property>
     <!--  to debug hibernate generated SQL, open following configuration property -->
-<<<<<<< HEAD
     <!--  
     <property name="show_sql">true</property>
     <property name="hibernate.format_sql">true</property>
     -->
-=======
- <!--
-    <property name="show_sql">true</property>
-    <property name="hibernate.format_sql">true</property>
--->
->>>>>>> 6472e7b... Now really adding the renamed files!
-    
 	<!-- Mapping files -->
 	<mapping resource="com/cloud/bridge/model/UserCredentials.hbm.xml"/>
     <mapping resource="com/cloud/bridge/model/SHost.hbm.xml"/>
