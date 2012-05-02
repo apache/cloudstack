@@ -14,12 +14,17 @@ package com.cloud.test.utils;
 
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -228,6 +233,61 @@ public class UtilsForTest {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+	
+	public static String signUrl(String url, String apiKey, String secretKey) {
+	    
+	    //sorted map (sort by key)
+	    TreeMap<String, String> param = new TreeMap<String, String>();
+        
+        String temp = "";
+        param.put("apikey", apiKey);
+        
+        //1) Parse the URL and put all parameters to sorted map
+        StringTokenizer str1 = new StringTokenizer (url, "&");
+        while(str1.hasMoreTokens()) {
+            String newEl = str1.nextToken();
+            StringTokenizer str2 = new StringTokenizer(newEl, "=");
+            String name = str2.nextToken();
+            String value= str2.nextToken();
+            param.put(name, value);
+        }
+        
+        //2) URL encode parameters' values
+        Set<Map.Entry<String, String>> c = param.entrySet();
+        Iterator<Map.Entry<String,String>> it = c.iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, String> me = (Map.Entry<String, String>)it.next();
+            String key = (String) me.getKey();
+            String value = (String) me.getValue();
+            try {
+                temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
+            } catch (Exception ex) {
+                System.out.println("Unable to set parameter " + value + " for the command " + param.get("command"));
+                System.exit(1);
+            }
+            
+        }
+        temp = temp.substring(0, temp.length()-1 );
+        
+        //3) Lower case the request
+        String requestToSign = temp.toLowerCase();
+        
+        //4) Generate the signature
+        String signature = UtilsForTest.signRequest(requestToSign, secretKey);
+        
+        //5) Encode the signature
+        String encodedSignature = "";
+        try {
+            encodedSignature = URLEncoder.encode(signature, "UTF-8");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            System.exit(1);
+        }
+        
+        //6) append the signature to the url
+        url = temp + "&signature=" + encodedSignature;
+        return url;
 	}
 	
 }

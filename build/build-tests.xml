@@ -132,6 +132,8 @@
         <include name="deploy.xml" />
         <include name="config.xml" />
         <include name="tool.properties" />
+      	<include name="demo/commandstype.properties" />
+      	<include name="demo/setup.properties" />
       </fileset>
     </copy>
 

@@ -5446,7 +5446,11 @@ label.error {
 .multi-wizard.zone-wizard .select-container {
   height: 333px;
   overflow: auto;
-  /*[empty]display:;*/
+}
+
+.multi-wizard.zone-wizard .setup-guest-traffic .select-container {
+  background: #E9EAEB;
+  overflow: hidden;
 }
 
 .multi-wizard.zone-wizard .main-desc {
@@ -6027,7 +6031,7 @@ label.error {
 /*** Configure guest network -- tabs*/
 .multi-wizard.zone-wizard .setup-guest-traffic .ui-widget-content {
   width: 682px;
-  height: 244px;
+  height: 281px;
   border-bottom: none;
   border-right: none;
   /*+placement:shift -1px -7px;*/

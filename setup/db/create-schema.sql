@@ -1125,6 +1125,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `job_id` varchar(255),

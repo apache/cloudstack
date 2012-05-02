@@ -3374,13 +3374,18 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         //Find out if the volume is present on secondary storage
         VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(vol.getId());
         if(volumeHost != null){
-        	HostVO ssHost = _hostDao.findById(volumeHost.getHostId());
-        	DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), volumeHost.getInstallPath());            
-        	Answer answer = _agentMgr.sendToSecStorage(ssHost, dtCommand);
-             if (answer == null || !answer.getResult()) {
-                 s_logger.debug("Failed to delete " + volumeHost + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
-                 return;
-             }
+        	if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
+        		HostVO ssHost = _hostDao.findById(volumeHost.getHostId());
+        		DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), volumeHost.getInstallPath());            
+        		Answer answer = _agentMgr.sendToSecStorage(ssHost, dtCommand);
+        		if (answer == null || !answer.getResult()) {
+        			s_logger.debug("Failed to delete " + volumeHost + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+        			return;
+        		}
+        	}else if(volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS){									
+					s_logger.debug("Volume: " + vol.getName() + " is currently being uploaded; cant' delete it.");
+					throw new CloudRuntimeException("Please specify a volume that is not currently being uploaded.");
+        	}
             _volumeHostDao.remove(volumeHost.getId());
             _volumeDao.remove(vol.getId());
             return;             

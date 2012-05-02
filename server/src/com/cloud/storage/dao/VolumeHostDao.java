@@ -16,4 +16,6 @@ public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long> {
 
 	List<VolumeHostVO> listDestroyed(long hostId);
 
+	VolumeHostVO findVolumeByZone(long zoneId, long volumeId);
+
 }

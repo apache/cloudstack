@@ -435,8 +435,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
         volumeHost = _volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
         if (volumeHost == null) {
-            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
-            		"jobid0000", null, url, checkSum);
+            volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), sserver.getDataCenterId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
+            		"jobid0000", null, url, checkSum, format);
             _volumeHostDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
@@ -744,8 +744,16 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 	volumeHost.setSize(volInfo.getSize());
                 	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
                 	volumeHost.setLastUpdated(new Date());
+                	if (volume.getState() == Volume.State.Uploading){
+                		try {
+                			_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);			
+                		} catch (NoTransitionException e) {
+                			e.printStackTrace();
+                		}
+                	}
+                
+                	_volumeHostDao.update(volumeHost.getId(), volumeHost);
                 }
-                _volumeHostDao.update(volumeHost.getId(), volumeHost);                
         	}
         }
         

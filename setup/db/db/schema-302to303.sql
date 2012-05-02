@@ -24,17 +24,20 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.service.offering', NULL, 'Service offering used by secondary storage; if NULL - system offering will be used');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller', NULL, 'Enabled Open vSwitch SDN controller for L2-in-L3 overlay networks');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller', NULL, 'Enable/Disable Open vSwitch SDN controller for L2-in-L3 overlay networks');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'sdn.ovs.controller.default.label', NULL, 'Default network label to be used when fetching interface for GRE endpoints');
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `update_parameters` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Defines if the parameters need to be set for the vm';
 UPDATE `cloud`.`user_vm` SET update_parameters=0 where id>0;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ha.tag', NULL, 'HA tag defining that the host marked with this tag can be used for HA purposes only');
 
+# Changes for Upload Volume
 CREATE TABLE  `cloud`.`volume_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `volume_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `job_id` varchar(255),
@@ -56,7 +59,8 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   INDEX `i_volume_host_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( "Custom", "Custom Disk", 1, "Cloud.com-Custom", 0, 1);
+INSERT IGNORE INTO `cloud`.`disk_offering` (name, display_text, customized, unique_name, disk_size, system_use) VALUES ( 'Custom', 'Custom Disk', 1, 'Cloud.com-Custom', 0, 0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.upload.size', 500, 'The maximum size for a uploaded volume(in GB).');
 # Changes for OVS tunnel manager
 
 # The Following tables are not used anymore

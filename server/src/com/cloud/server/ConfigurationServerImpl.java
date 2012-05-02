@@ -198,7 +198,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null, false, false);
             createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null, false, false);
             createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null, false, false);
-            createdefaultDiskOffering(null, "Custom", "Custom Disk", 0, null, true, true);
+            createdefaultDiskOffering(null, "Custom", "Custom Disk", 0, null, true, false);
 
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
