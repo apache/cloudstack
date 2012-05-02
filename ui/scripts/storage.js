@@ -172,73 +172,93 @@
                 poll: pollAsyncJobResult
               }
             },
-            uploadVolume: {
-              isHeader: true,
-              label: 'label.upload.volume',
+						            					
+						//???
+						uploadVolume: {
+              isHeader: true,							
+              label: 'label.upload.volume',							
               messages: {
-                notification: function() { return 'label.upload.volume'; }
+                notification: function() { 
+								  return 'label.upload.volume'; 
+								}
               },
-              notification: { poll: function(args) { args.complete(); } },
-              action: {
-                custom: cloudStack.uiCustom.uploadVolume({
-                  listView: $.extend(true, {}, cloudStack.sections.instances, {
-                    listView: {
-                      filters: false,
-                      dataProvider: function(args) {
-                        var searchByArgs = args.filterBy.search.value &&
-                              args.filterBy.search.value.length ?
-                              '&name=' + args.filterBy.search.value : '';
-
-                        $.ajax({
-                          url: createURL('listVirtualMachines' + searchByArgs),
-                          data: {
-                            page: args.page,
-                            pageSize: pageSize,
-                            listAll: true
-                          },
-                          dataType: 'json',
-                          async: true,
-                          success: function(data) {
-                            args.response.success({
-                              data: $.grep(
-                                data.listvirtualmachinesresponse.virtualmachine ?
-                                  data.listvirtualmachinesresponse.virtualmachine : [],
-                                function(instance) {
-                                  return $.inArray(instance.state, [
-                                    'Destroyed', 'Error', 'Stopping', 'Starting'
-                                  ]) == -1;
-                                }
-                              )
-                            });
-                          },
-                          error: function(data) {
-                            args.response.error(parseXMLHttpResponse(data));
-                          }
-                        });
-                      }
+              createForm: {
+                title: 'label.upload.volume',                
+                fields: {
+                  name: {
+                    label: 'label.name',
+                    validation: { required: true }
+                  },
+                  availabilityZone: {
+                    label: 'label.availability.zone',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL("listZones&available=true"),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var items = json.listzonesresponse.zone;
+                          args.response.success({descriptionField: 'name', data: items});
+                        }
+                      });
                     }
-                  }),
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL('uploadVolume'),
-                      data: {
-                        hypervisor: 'XenServer', // Replace with instances' hypervisor
-                        format: 'VHD', // Replace with format of uploaded volume
-                        name: args.data.name,
-                        url: args.data.url,
-                        zoneid: 1 // Replace with instances' zone ID
-                      },
-                      success: function(json) {
-                        args.response.success();
-                      },
-                      error: function(json) {
-                        args.response.error(parseXMLHttpResponse(json));
+                  },
+                  format: {
+									  label: 'label.format',
+										select: function(args) {
+										  var items = [];
+											items.push({ id: 'VHD', description: 'VHD' });
+											items.push({ id: 'OVA', description: 'OVA' });
+											items.push({ id: 'QCOW2', description: 'QCOW2' });
+											args.response.success({ data: items });
+										}
+									},
+									url: {
+									  label: 'label.url',
+										validation: { required: true }
+									}                  
+                }
+              },
+
+              action: function(args) {
+                var array1 = [];
+                array1.push("&name=" + todb(args.data.name));
+                array1.push("&zoneId=" + args.data.availabilityZone);
+								array1.push("&format=" + args.data.format);
+								array1.push("&url=" + todb(args.data.url));
+                
+                $.ajax({
+                  url: createURL("uploadVolume" + array1.join("")),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+									  debugger;
+                    var jid = json.uploadvolumeresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.volume;
+                        },
+                        getActionFilter: function() {
+                          return volumeActionfilter;
+                        }
+                       }
                       }
-                    });
+                    );
+                  },
+                  error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
                   }
-                })
+                });
+              },
+
+              notification: {
+                poll: pollAsyncJobResult
               }
             }
+						//???					
+						
           },
 
           dataProvider: function(args) {
