@@ -47,6 +47,10 @@ public class EntityDao<T> {
 	private boolean isCloudStackSession = false;
 	
 	// Constructor to implement CloudStackSvcOffering: see class CloudStackSvcOfferingDao
+	public EntityDao(Class<?> clazz){
+	    this(clazz, false);
+	}
+	
 	public EntityDao(Class<?> clazz, boolean isCloudStackSession) {
 		this.clazz = clazz;
 		this.isCloudStackSession = isCloudStackSession;
@@ -54,17 +58,6 @@ public class EntityDao<T> {
 		// "If a new underlying transaction is required, begin the transaction. Otherwise continue the new work in the 
 		// context of the existing underlying transaction." from the Hibernate spec
 		PersistContext.beginTransaction(isCloudStackSession);
-	}
-
-	// Standard constructor to implement MHostDao, MHostMountDao, SAclDao, SBucketDao, SHostDao, SMetaDao, SObjectDao, SObjectItemDao
-	public EntityDao(Class<?> clazz) {
-		this.clazz = clazz;
-		
-		// Note : beginTransaction can be called multiple times
-		// "If a new underlying transaction is required, begin the transaction. Otherwise continue the new work in the 
-		// context of the existing underlying transaction." from the Hibernate spec
-		PersistContext.beginTransaction();
-
 	}
 	
 	@SuppressWarnings("unchecked")
