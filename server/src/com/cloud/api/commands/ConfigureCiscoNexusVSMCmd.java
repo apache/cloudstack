@@ -54,7 +54,7 @@ public class ConfigureCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_virtual_switch_management_devices")
+    @IdentityMapper(entityTableName="virtual_supervisor_module")
     @Parameter(name=ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID, type=CommandType.LONG, required=true, description="Cisco Nexus 1000v VSM device ID")
     private Long vsmDeviceId;
 
