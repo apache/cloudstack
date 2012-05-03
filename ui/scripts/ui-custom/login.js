@@ -98,15 +98,13 @@
     // Select language
     var $languageSelect = $login.find('select[name=language]');
     $languageSelect.change(function() {
-      $.cookie('lang', $(this).val());
+		  if($(this).val() != '') //language dropdown is not blank
+        $.cookie('lang', $(this).val()); //the selected option in language dropdown will be used (instead of browser's default language) 
+			else //language dropdown is blank
+			  $.cookie('lang', null); //null $.cookie('lang'), so browser's default language will be used.
       document.location.reload();
     });
-
-    // Set default language
-    if (!$.cookie('lang')) {
-      $.cookie('lang', 'en');
-    }
-
+    
     $languageSelect.val($.cookie('lang'));
   };
 })(jQuery, cloudStack);
