@@ -49,8 +49,6 @@ public class CiscoNexusVSM {
 	private String vsmPassword;
 	private String vsmSubsystem;
 	com.trilead.ssh2.Connection sshConnection;
-	private String _helloClientCmd = "<?xml version=\"1.0\"?><nc:hello xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\"><nc:capabilities><nc:capability>urn:ietf:params:xml:ns:netconf:base:1.0</nc:capability></nc:capabilities></nc:hello>]]>]]>";
-	private String _clientCmd1 = "<?xml version=\"1.0\"?><nc:rpc message-id=\"1\" xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\"xmlns=\"http://www.cisco.com/nxos:1.0:xml\"><nc:get><nc:filter type=\"subtree\"><show><xml><server><status/></server></xml></show></nc:filter></nc:get></nc:rpc>]]>]]>";
 	
     private static final Logger s_logger = Logger.getLogger(CiscoNexusVSM.class);
 
@@ -58,7 +56,6 @@ public class CiscoNexusVSM {
     CiscoNexusVSMService _vsmService;
 
     Long _timeout = new Long(100000);
-    //base_response apiCallResult;
     
     // We need to store the result of the XML-RPC command sent to
     // the VSM. For now it's a string. We should make this the appropriate XSD object.
@@ -88,15 +85,15 @@ public class CiscoNexusVSM {
     	return vsmIpaddr;
     }
     
-    public String getvsmUsername() {
+    public String getVsmUsername() {
     	return vsmUsername;
     }
     
-    public String getvsmPassword() {
+    public String getVsmPassword() {
     	return vsmPassword;
     }
     
-    public String getvsmSubsystem() {
+    public String getVsmSubsystem() {
     	return vsmSubsystem;
     }
     
@@ -111,5 +108,4 @@ public class CiscoNexusVSM {
 		}
 		return true;
     }
-
 }
