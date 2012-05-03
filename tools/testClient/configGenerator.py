@@ -392,5 +392,5 @@ if __name__ == "__main__":
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
-    config = describe_setup_in_basic_mode()
+    config = describe_setup_in_advanced_mode()
     generate_setup_config(config, options.output)
