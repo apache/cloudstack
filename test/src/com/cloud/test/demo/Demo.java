@@ -58,7 +58,7 @@ public class Demo {
         setupHttpd(publicIp, "cloud.com");
         
         //return web access url
-        System.out.println("\nURL is " + "http://" + publicIp + "/cloudcom-faq.html");
+        System.out.println("\nApache server is running on " + "http://" + publicIp);
     }
     
     private static void readProperties() {
@@ -138,6 +138,7 @@ public class Demo {
 
             boolean success = false;
             String linuxCommand = "yum install httpd -y && service httpd start && service iptables stop && cd /var/www/html && wget cloud.com";
+            //String linuxCommand = "yum install tomcat* -y && service iptables stop && /etc/init.d/tomcat5 start";
 
             Session sess = conn.openSession();
             System.out.println("User root executing : " + linuxCommand);
