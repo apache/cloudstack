@@ -58,7 +58,7 @@ public class Demo {
         setupHttpd(publicIp, "cloud.com");
         
         //return web access url
-        System.out.println("\nURL is " + "http://" + publicIp + "/cloudcom-faq.html");
+        System.out.println("\nApache server is running on " + "http://" + publicIp);
     }
     
     private static void readProperties() {
@@ -120,9 +120,9 @@ public class Demo {
         }
 
         try {  
-            System.out.println("Sleeping for 1 min before trying to ssh into linux host ");
+            System.out.println("\nSleeping for 1 min before trying to ssh into linux host ");
             Thread.sleep(60000);
-            System.out.println("Attempting to SSH into linux host " + host);
+            System.out.println("\nAttempting to SSH into linux host " + host);
 
             Connection conn = new Connection(host);
             conn.connect(null, 60000, 60000);
@@ -137,7 +137,8 @@ public class Demo {
             }
 
             boolean success = false;
-            String linuxCommand = "yum install httpd -y && service httpd start && service iptables stop && cd /var/www/html && wget cloud.com";
+            String linuxCommand = "yum install httpd -y && service httpd start && service iptables stop";
+            //String linuxCommand = "yum install tomcat* -y && service iptables stop && /etc/init.d/tomcat5 start";
 
             Session sess = conn.openSession();
             System.out.println("User root executing : " + linuxCommand);
@@ -186,22 +187,21 @@ public class Demo {
             System.out.println("ERROR: SSH Linux Network test fail with error " + e.getMessage());
             System.exit(1);
         }
-        System.out.println("Httpd is setup succesfully on the user vm");
+        System.out.println("Apache is setup succesfully on the user vm");
     }
     
     public static String createDeployment() {
+        System.out.println("\nCreating cloudStack deployment...");
         CloudStackHttpClient client = new CloudStackHttpClient();
-        boolean success = true;
         
         //1) deployVm
         String urlToSign = "command=deployVirtualMachine&serviceOfferingId=" + properties.getProperty("serviceOfferingId") + 
                 "&networkIds=" + properties.getProperty("networkId") + 
                 "&templateId=" + properties.getProperty("templateId") + "&zoneId=" + properties.getProperty("zoneId") + 
                 "&response=json";
-        String url = signUrl(urlToSign, properties.getProperty("apikey"),
+        String url = signRequest(urlToSign, properties.getProperty("apikey"),
                 properties.getProperty("secretkey"));
         String requestUrl = _host + url;
-        System.out.println(requestUrl);
         
         
         CloudStackUserVm vm = client.execute(requestUrl, _apiCommands.get("deployVirtualMachine"), "deployvirtualmachineresponse", 
@@ -210,7 +210,7 @@ public class Demo {
         String vmId = null;
         if(vm != null){
             vmId = vm.getId();
-            System.out.println("Successfully deployed vm with id " + vmId);
+            System.out.println("\nDeployed vm with id " + vmId);
         } else {
             System.out.println("ERROR: failed to deploy the vm");
             System.exit(1);
@@ -218,7 +218,7 @@ public class Demo {
         
         //2) List public IP address - source nat
         urlToSign = "command=listPublicIpAddresses&zoneId=" + properties.getProperty("zoneId") + "&response=json";
-        url = signUrl(urlToSign, properties.getProperty("apikey"), 
+        url = signRequest(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
         requestUrl = _host + url;
         
@@ -228,7 +228,7 @@ public class Demo {
         if (ipList.isEmpty()) {
             System.out.println("ERROR: account doesn't own any public ip address");
             System.exit(1);
-        }
+        } 
         
         CloudStackIpAddress ip = ipList.get(0);
         String ipId = ip.getId();
@@ -238,7 +238,7 @@ public class Demo {
         //3) create portForwarding rules for port 22 and 80
         urlToSign = "command=createPortForwardingRule&privateport=22&publicport=22&protocol=tcp&ipaddressid=" + ipId + 
                 "&virtualmachineid=" + vmId + "&response=json";
-        url = signUrl(urlToSign, properties.getProperty("apikey"), 
+        url = signRequest(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
         requestUrl = _host + url;
         CloudStackPortForwardingRule pfrule1 = client.execute(requestUrl, _apiCommands.get("createPortForwardingRule"), 
@@ -247,23 +247,24 @@ public class Demo {
         if (pfrule1 == null) {
             System.out.println("ERROR: failed to create pf rule for the port 22");
             System.exit(1);
-        } else {
-            
         }
         
         urlToSign = "command=createPortForwardingRule&privateport=80&publicport=80&protocol=tcp&ipaddressid=" + ipId + 
                 "&virtualmachineid=" + vmId + "&response=json";
-        url = signUrl(urlToSign, properties.getProperty("apikey"), 
+        url = signRequest(urlToSign, properties.getProperty("apikey"), 
                 properties.getProperty("secretkey"));
 
         requestUrl = _host + url;
         CloudStackPortForwardingRule pfrule2 = client.execute(requestUrl, _apiCommands.get("createPortForwardingRule"), 
                 "createportforwardingruleresponse", "portforwardingrule", CloudStackPortForwardingRule.class);
 
-        if (pfrule1 == null) {
+        if (pfrule2 == null) {
             System.out.println("ERROR: failed to create pf rule for the port 80");
             System.exit(1);
         }
+        
+        System.out.println("\nCreated PF rules for ports 22 and 80 ");
+        System.out.println("\nCloudStack finished the deployment ");
         
         return ipAddress;
     }
@@ -277,25 +278,24 @@ public class Demo {
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            //System.out.println("HmacSHA1 hash: " + encryptedBytes);
             return Base64.encodeBytes(encryptedBytes);
         } catch (Exception ex) {
-            System.out.println("unable to sign request");
-            ex.printStackTrace();
+            System.out.println("unable to sign request due to exception " + ex.getMessage());
+            System.exit(1);
         }
         return null;
     }
     
-    public static String signUrl(String url, String apiKey, String secretKey) {
+    public static String signRequest(String request, String apiKey, String secretKey) {
         
         //sorted map (sort by key)
         TreeMap<String, String> param = new TreeMap<String, String>();
         
-        String temp = "";
+        String finalRequest = "";
         param.put("apikey", apiKey);
         
         //1) Parse the URL and put all parameters to sorted map
-        StringTokenizer str1 = new StringTokenizer (url, "&");
+        StringTokenizer str1 = new StringTokenizer (request, "&");
         while(str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
             StringTokenizer str2 = new StringTokenizer(newEl, "=");
@@ -304,25 +304,29 @@ public class Demo {
             param.put(name, value);
         }
         
-        //2) URL encode parameters' values
+        //2) Go through sorted map, pull out the parameters, form the url and URL encode parameters' values
         Set<Map.Entry<String, String>> c = param.entrySet();
         Iterator<Map.Entry<String,String>> it = c.iterator();
+        boolean firstElement = true;
         while (it.hasNext()) {
+            if (!firstElement) {
+                finalRequest = finalRequest + "&";
+            }
             Map.Entry<String, String> me = (Map.Entry<String, String>)it.next();
             String key = (String) me.getKey();
             String value = (String) me.getValue();
             try {
-                temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
+                //url encode values only
+                finalRequest = finalRequest + key + "=" + URLEncoder.encode(value, "UTF-8");
             } catch (Exception ex) {
                 System.out.println("Unable to set parameter " + value + " for the command " + param.get("command"));
                 System.exit(1);
             }
-            
+            firstElement = false;
         }
-        temp = temp.substring(0, temp.length()-1 );
         
         //3) Lower case the request
-        String requestToSign = temp.toLowerCase();
+        String requestToSign = finalRequest.toLowerCase();
         
         //4) Generate the signature
         String signature = generateSignature(requestToSign, secretKey);
@@ -337,13 +341,13 @@ public class Demo {
         }
         
         //6) append the signature to the url
-        url = temp + "&signature=" + encodedSignature;
-        return url;
+        request = finalRequest + "&signature=" + encodedSignature;
+        return request;
     }
     
     public static String getQueryAsyncCommandString(String jobId){
         String req = "command=queryAsyncJobResult&response=json&jobId=" + jobId;
-        String url = signUrl(req, properties.getProperty("apikey"),
+        String url = signRequest(req, properties.getProperty("apikey"),
                 properties.getProperty("secretkey"));
         String requestUrl = _host + url;
         return requestUrl;
