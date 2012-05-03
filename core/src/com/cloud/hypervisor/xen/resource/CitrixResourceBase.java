@@ -3971,9 +3971,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean getHostInfo(Connection conn) throws IllegalArgumentException{
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
+            Set<HostCpu> hcs = null;
+            for (int i = 0; i < 10; i++) {
+                hcs = myself.getHostCPUs(conn);
+                _host.cpus = hcs.size();
+                if (_host.cpus > 0) {
+                    break;
+                }
+                Thread.sleep(5000);
+            }
+            if (_host.cpus <= 0) {
+                throw new CloudRuntimeException("Cannot get the numbers of cpu from XenServer host " + _host.ip);
+            }
 
-            Set<HostCpu> hcs = myself.getHostCPUs(conn);
-            _host.cpus = hcs.size();
             for (final HostCpu hc : hcs) {
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
@@ -4047,7 +4057,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (XenAPIException e) {
             s_logger.warn("Unable to get host information for " + _host.ip, e);
             return false;
-        } catch (XmlRpcException e) {
+        } catch (Exception e) {
             s_logger.warn("Unable to get host information for " + _host.ip, e);
             return false;
         }
