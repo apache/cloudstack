@@ -27,14 +27,9 @@ else:
       url="http://jenkins.cloudstack.org:8080/job/marvin",
       packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
       license="LICENSE.txt",
-      setup_requires=[
-                "paramiko",
-                "Python",
-                "nose"
-                ],
       install_requires=[
-                "paramiko >1.4",
-                "Python >=2.7",
-                "nose >=0.9"
-                ]          
+                "Python>=2.7",
+                "paramiko",
+                "nose"
+                ],         
      )
