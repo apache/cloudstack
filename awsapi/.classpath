@@ -62,5 +62,6 @@
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/rampart-lib/wss4j-1.5.8.jar"/>
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/rampart-lib/xmlsec-1.4.2.jar"/>
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/rampart-lib/xmltooling-1.2.0.jar"/>
+	<classpathentry kind="lib" path="/Users/john1/qgit/deps/cloudbridge-lib/servlet-api.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
