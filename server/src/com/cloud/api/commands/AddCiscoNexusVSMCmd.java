@@ -50,7 +50,7 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_virtual_switch_management_devices")
+    @IdentityMapper(entityTableName="virtual_supervisor_module")
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the Cisco Nexus 1000v VSM appliance.")
     private String ipaddr;
 

@@ -15,11 +15,10 @@ package com.cloud.dc.dao;
 import java.util.List;
 
 import com.cloud.dc.ClusterVSMMapVO;
-
 import com.cloud.utils.db.GenericDao;
 
 public interface ClusterVSMMapDao extends GenericDao<ClusterVSMMapVO, Long> {
-    public ClusterVSMMapVO findByClusterId(long clusterId);
-    public List<ClusterVSMMapVO> listByVSMId(long vsmId);
-    public boolean removeByVsmId(long vsmId);
+    ClusterVSMMapVO findByClusterId(long clusterId);
+    List<ClusterVSMMapVO> listByVSMId(long vsmId);
+    boolean removeByVsmId(long vsmId);
 }

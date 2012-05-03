@@ -13,23 +13,25 @@
 package com.cloud.dc.dao;
 
 import java.util.List;
-
 import javax.ejb.Local;
 
 import com.cloud.dc.ClusterVSMMapVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value=ClusterVSMMapDao.class)
+@DB(txn = false)
 public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> implements ClusterVSMMapDao {
 
-    protected final SearchBuilder<ClusterVSMMapVO> ClusterSearch;
-    protected final SearchBuilder<ClusterVSMMapVO> VsmSearch;
+    final SearchBuilder<ClusterVSMMapVO> ClusterSearch;
+    final SearchBuilder<ClusterVSMMapVO> VsmSearch;
     
-    protected ClusterVSMMapDaoImpl() {
-        super();
+    public ClusterVSMMapDaoImpl() {
+        //super();
         
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);

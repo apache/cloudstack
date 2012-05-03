@@ -55,7 +55,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         nameSearch.done();
         
         ipaddrSearch = createSearchBuilder();
-        ipaddrSearch.and("vsmIp", nameSearch.entity().getvsmName(), Op.EQ);
+        ipaddrSearch.and("vsmMgmtIPAddr", ipaddrSearch.entity().getvsmName(), Op.EQ);
         ipaddrSearch.done();
         
         // We may add more and conditions by specifying more fields, like say, accountId.

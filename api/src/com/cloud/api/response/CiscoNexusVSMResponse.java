@@ -21,7 +21,7 @@ public class CiscoNexusVSMResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID) @Param(description="device id of the Cisco N1KV VSM device")
     // Do we need a new table name for this? During discussion with Frank, we thought we could just use the host table.
-    private IdentityProxy id = new IdentityProxy("external_virtual_switch_management_devices");
+    private IdentityProxy id = new IdentityProxy("virtual_supervisor_module");
 
     // A Cisco n1kv vsm could be plumbed in multiple VLANs.. not sure what a physical network id is, so commenting it
     // out for now.
