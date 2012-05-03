@@ -35,6 +35,10 @@ public class ClusterVSMMapVO {
         this.clusterId = clusterId;
         this.vsmId = vsmId;
     }
+    
+    public ClusterVSMMapVO() {
+    	// Do nothing.
+    }  
 
     public long getClusterId() {
         return clusterId;
