@@ -20,11 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
-<<<<<<< HEAD
- * @author Kelven Yang
-=======
  * @author Kelven Yang, John Zucker
->>>>>>> 6472e7b... Now really adding the renamed files!
  */
 public class SHost implements Serializable {
 	private static final long serialVersionUID = 213346565810468018L;

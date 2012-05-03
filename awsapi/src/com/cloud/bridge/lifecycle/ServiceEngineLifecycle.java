@@ -18,8 +18,8 @@ package com.cloud.bridge.lifecycle;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.ServiceLifeCycle;
+import com.cloud.bridge.service.controller.s3.ServiceProvider;
 
-import com.cloud.bridge.service.ServiceProvider;
 
 /**
  * @author Kelven Yang

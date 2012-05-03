@@ -1,6 +1,7 @@
 build/replace.properties
 build/build.number
 bin/
+*.000
 *.pem
 *.patch
 *.xml000

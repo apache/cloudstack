@@ -15,6 +15,7 @@
  */
 package com.cloud.bridge.util;
 
+import java.security.InvalidKeyException;
 import java.security.SignatureException;
 import java.util.*;
 import java.io.UnsupportedEncodingException;
@@ -29,17 +30,23 @@ import org.apache.log4j.Logger;
 
 /**
  * This class expects that the caller pulls the required headers from the standard
- * HTTPServeletRequest structure.   Notes are given below on what values are expected.
+ * HTTPServeletRequest structure.   This class is responsible for providing the
+ * RFC2104 calculation to ensure that the signature is valid for the signing string.
+ * The signing string is a representation of the request.
+ * Notes are given below on what values are expected.
  * This class is used for the Authentication check for REST requests and Query String
  * Authentication requests.
+ *
+ * @author Kelven Yang, John Zucker, Salvatore Orlando
  */
+
 public class RestAuth {
     protected final static Logger logger = Logger.getLogger(RestAuth.class);
 
 	// TreeMap: used when constructing the CanonicalizedAmzHeaders Element of the StringToSign
 	protected TreeMap<String, String> AmazonHeaders = null;   // not always present
 	protected String                  bucketName    = null;   // not always present
-	protected String                  queryString   = null;   // only interested in a small set of values
+	protected String                  queryString   = null;   // for CanonicalizedResource - only interested in a string starting with particular values
 	protected String                  uriPath       = null;   // only interested in the resource path
 	protected String                  date          = null;   // only if x-amz-date is not set
 	protected String                  contentType   = null;   // not always present
@@ -47,14 +54,33 @@ public class RestAuth {
 	protected boolean                 amzDateSet    = false;
 	protected boolean				  useSubDomain  = false;
 	
+	protected Set<String> allowedQueryParams;
+	
 	public RestAuth() {
 		// these must be lexicographically sorted
 		AmazonHeaders = new TreeMap<String, String>();
+		allowedQueryParams = new HashSet<String>() {{  
+			add("acl");
+			add("lifecycle");
+			add("location");
+			add("logging");
+			add("notification");
+			add("partNumber");
+			add("policy");
+			add("requestPayment");
+			add("torrent");
+			add("uploadId");
+			add("uploads");
+			add("versionId");
+			add("versioning");
+			add("versions");
+			add("website");
+			}}; 
 	}
 
 	public RestAuth(boolean useSubDomain) {
-		// these must be lexicographically sorted
-		AmazonHeaders = new TreeMap<String, String>();
+		//invoke the other constructor
+		this();
 		this.useSubDomain = useSubDomain; 
 	}
 	
@@ -93,7 +119,6 @@ public class RestAuth {
 	
 	/**
 	 * Value is used in constructing the StringToSign for signature verification.
-     *
 	 * @param type - the contents of the "Content-MD5:" header, skipping the 'Content-MD5:' preamble.
 	 */
 	public void setContentMD5Header( String md5 ) {
@@ -127,7 +152,11 @@ public class RestAuth {
 	
 	/**
 	 * Used as part of the CanonalizedResource element of the StringToSign.
-	 * 
+	 * CanonicalizedResource = [ "/" + Bucket ] +
+	 * <HTTP-Request-URI, from the protocol name up to the query string> + [sub-resource]
+	 * The list of sub-resources that must be included when constructing the CanonicalizedResource Element are: acl, lifecycle, location, 
+	 * logging, notification, partNumber, policy, requestPayment, torrent, uploadId, uploads, versionId, versioning, versions and website.
+	 * (http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html)
 	 * @param query - results from calling "HttpServletRequest req.getQueryString()"
 	 */
 	public void setQueryString( String query ) {
@@ -136,17 +165,28 @@ public class RestAuth {
 			return;
 		}
 		
-		query = new String( "?" + query.trim());
+		// Sub-resources (i.e.: query params) must be lex sorted
+		Set<String> subResources = new TreeSet<String>(); 
 		
-		// -> only interested in this subset of parameters
-		if (query.startsWith( "?versioning") || query.startsWith( "?location" ) ||
-		    query.startsWith( "?acl" )       || query.startsWith( "?torrent"  )) {
-			
-			// -> include any value (i.e., with '=') and chop of the rest
-			int offset = query.indexOf( "&" );
-			if ( -1 != offset ) query = query.substring( 0, offset );
-			this.queryString = query;
+		String [] queryParams = query.split("&");
+		StringBuffer builtQuery= new StringBuffer();
+		for (String queryParam:queryParams) {
+			// lookup parameter name
+			String paramName = queryParam.split("=")[0];
+			if (allowedQueryParams.contains(paramName)) {
+				subResources.add(queryParam);
+			}
 		}
+		for (String subResource:subResources) {
+			builtQuery.append(subResource + "&");
+		}
+		// If anything inside the string buffer, add a "?" at the beginning, 
+		// and then remove the last '&'
+		if (builtQuery.length() > 0) {
+			builtQuery.insert(0, "?");
+			builtQuery.deleteCharAt(builtQuery.length()-1);
+		}
+		this.queryString = builtQuery.toString();
 	}
 	
 	
@@ -220,20 +260,20 @@ public class RestAuth {
 	 * @return true if request has been authenticated, false otherwise
 	 * @throws UnsupportedEncodingException 
 	 */
+	
 	public boolean verifySignature( String httpVerb, String secretKey, String signature )
 	    throws SignatureException, UnsupportedEncodingException {
-		
+	    	
 		if (null == httpVerb || null == secretKey || null == signature) return false;
-		
+        
 		httpVerb  = httpVerb.trim();
 		secretKey = secretKey.trim();
 		signature = signature.trim();
 		
-		// -> first calculate the StringToSign after the caller has initialized all the header values
+		// First calculate the StringToSign after the caller has initialized all the header values
 		String StringToSign = genStringToSign( httpVerb );
 		String calSig       = calculateRFC2104HMAC( StringToSign, secretKey );
-		
-		// -> was the passed in signature URL encoded? (it must be base64 encoded)
+		// Was the passed in signature URL encoded? (it must be base64 encoded)
 		int offset = signature.indexOf( "%" );
 		if (-1 != offset) signature = URLDecoder.decode( signature, "UTF-8" );
 	
@@ -261,13 +301,13 @@ public class RestAuth {
 	private String genStringToSign( String httpVerb ) {
 		StringBuffer canonicalized = new StringBuffer();
 		String temp = null;
-	
+		String canonicalizedResourceElement = genCanonicalizedResourceElement();
 		canonicalized.append( httpVerb ).append( "\n" );
-		if (null != this.contentMD5) 
+		if ( (null != this.contentMD5) ) 
 			canonicalized.append( this.contentMD5 );
 		canonicalized.append( "\n" );
 		
-		if (null != this.contentType) 
+		if ( (null != this.contentType) )
 			canonicalized.append( this.contentType );
 		canonicalized.append( "\n" );
 
@@ -277,7 +317,7 @@ public class RestAuth {
 		canonicalized.append( "\n" );
 		
 		if (null != (temp = genCanonicalizedAmzHeadersElement())) canonicalized.append( temp );
-		if (null != (temp = genCanonicalizedResourceElement()  )) canonicalized.append( temp );
+		if (null != canonicalizedResourceElement) canonicalized.append( canonicalizedResourceElement );
 		
 		if ( 0 == canonicalized.length())
 			 return null;
@@ -343,17 +383,20 @@ public class RestAuth {
      */
     private String calculateRFC2104HMAC( String signIt, String secretKey )
         throws SignatureException {
-    	
    	    String result = null;
    	    try { 	
    	    	SecretKeySpec key = new SecretKeySpec( secretKey.getBytes(), "HmacSHA1" );
    	        Mac hmacSha1 = Mac.getInstance( "HmacSHA1" );
-   	        hmacSha1.init( key ); 
+    	    hmacSha1.init( key ); 
             byte [] rawHmac = hmacSha1.doFinal( signIt.getBytes());
             result = new String( Base64.encodeBase64( rawHmac ));
-   	    } catch( Exception e ) {
-   		    throw new SignatureException( "Failed to generate keyed HMAC on REST request: " + e.getMessage());
-   	    }
+   	        } 
+   	    catch( InvalidKeyException e ) {
+   		    throw new SignatureException( "Failed to generate keyed HMAC on REST request because key " + secretKey + " is invalid" + e.getMessage());
+   	         }
+   	    catch (Exception e) {
+ 		    throw new SignatureException( "Failed to generate keyed HMAC on REST request: " + e.getMessage());  
+   	         }
    	    return result.trim();
     }
 }

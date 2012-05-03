@@ -29,19 +29,34 @@ import com.cloud.bridge.util.QueryHelper;
  * response to queryEntities for a particular instantation of the EntityDao generic class, as defined here.
  * Any instantation of EntityDao passes in the class for which it is instantiating.  For example a new instance of SBucketDao 
  * passes in com.cloud.bridge.model.SBucket as its clazz.
+ * Instantiators, providing an Entity definition, are the classes
+ *     MHostDao, 
+ *     MHostMountDao, 
+ *     SAclDao, 
+ *     SBucketDao, 
+ *     SHostDao, 
+ *     SMetaDao, 
+ *     SObjectDao, 
+ *     SObjectItemDao,
+ *     CloudStackSvcOfferingDao
  */
 
 public class EntityDao<T> {
 	private Class<?> clazz;
 	
 	private boolean isCloudStackSession = false;
+	
+	// Constructor to implement CloudStackSvcOffering: see class CloudStackSvcOfferingDao
 	public EntityDao(Class<?> clazz, boolean isCloudStackSession) {
 		this.clazz = clazz;
 		this.isCloudStackSession = isCloudStackSession;
 		// Note : beginTransaction can be called multiple times
+		// "If a new underlying transaction is required, begin the transaction. Otherwise continue the new work in the 
+		// context of the existing underlying transaction." from the Hibernate spec
 		PersistContext.beginTransaction(isCloudStackSession);
 	}
 
+	// Standard constructor to implement MHostDao, MHostMountDao, SAclDao, SBucketDao, SHostDao, SMetaDao, SObjectDao, SObjectItemDao
 	public EntityDao(Class<?> clazz) {
 		this.clazz = clazz;
 		
