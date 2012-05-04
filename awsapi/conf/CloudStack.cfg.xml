@@ -24,5 +24,6 @@
 	<!-- Mapping files -->
 	<mapping resource="com/cloud/stack/models/CloudStackConfiguration.hbm.xml"/>
 	<mapping resource="com/cloud/stack/models/CloudStackServiceOffering.hbm.xml"/>
+	<mapping resource="com/cloud/stack/models/CloudStackAccount.hbm.xml"/>
 </session-factory>
 </hibernate-configuration>

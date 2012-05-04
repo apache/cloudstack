@@ -92,6 +92,7 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crosszones";
     public static final String CUSTOMIZED = "customized";
     public static final String DEFAULT_USE = "defaultuse";
+    public static final String DEFAULT_ZONE_ID= "defaultzoneid";
     public static final String DELETE_INSTANCE_GROUP = "deleteInstanceGroup";
     public static final String DELETE_INSTANCE_GROUP_RESPONSE = "deleteinstancegroupresponse";
     public static final String DELETE_IP_FORWARDING_RULE = "deleteIpForwardingRule";

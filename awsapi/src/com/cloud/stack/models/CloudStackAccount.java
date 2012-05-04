@@ -75,6 +75,8 @@ public class CloudStackAccount {
 	private String enabled;
 	@SerializedName(ApiConstants.USER)
 	private CloudStackUser[] user;
+	@SerializedName(ApiConstants.DEFAULT_ZONE_ID)     
+	private String defaultZoneId;
 	
 	/**
 	 * 
@@ -88,14 +90,22 @@ public class CloudStackAccount {
 	 */
 	public String getId() {
 		return id;
-	}
+    }
+	
+    public void setId(String id) {
+        this.id = id;
+    }
 
 	/**
 	 * @return the name
 	 */
 	public String getName() {
 		return name;
-	}
+    }
+	
+    public void setName(String name) {
+        this.name = name;
+    }
 
 	/**
 	 * @return the accountType
@@ -264,4 +274,15 @@ public class CloudStackAccount {
 	public CloudStackUser[] getUser() {
 		return user;
 	}
+	
+    /**        
+     * @return the defaultZoneId
+     */
+    public String getDefaultZoneId() {
+        return defaultZoneId;
+    }
+	
+    public void setdefaultZoneId(String defaultZoneId) {
+        this.defaultZoneId = defaultZoneId;
+    }
 }

@@ -35,6 +35,7 @@ import org.hibernate.ejb.criteria.expression.UnaryArithmeticOperation.Operation;
 import org.xml.sax.SAXException;
 
 import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
+import com.cloud.bridge.persist.dao.CloudStackAccountDao;
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.service.UserContext;
 
@@ -2089,16 +2090,37 @@ public class EC2Engine {
 		}
 	}
 	
-	private CloudStackZone findZone() throws Exception {
-	    CloudStackAccount caller = getCurrentAccount();
-	    // caller.getDomainId doesn't work in user mode
-//	    List<CloudStackZone> cloudZones = getApi().listZones(true, caller.getDomainId(), null, null);
-	    List<CloudStackZone> cloudZones = getApi().listZones(true, null, null, null);
-	    if (cloudZones != null && cloudZones.size() > 0) {
-	        return cloudZones.get(0);
-	    }
-	    return null;
-	}
+        private CloudStackZone findZone() throws Exception {
+            CloudStackAccount caller = getCurrentAccount();
+            List<CloudStackZone> cloudZones;
+
+            String defaultZoneId = getDefaultZoneId(caller.getId());
+            if (defaultZoneId != null) {
+                cloudZones = getApi().listZones(true, null, defaultZoneId, null);
+            } else {
+            // caller.getDomainId doesn't work in user mode
+            // List<CloudStackZone> cloudZones = getApi().listZones(true, caller.getDomainId(), null, null);
+                cloudZones = getApi().listZones(true, null, null, null);
+            }
+            if (cloudZones != null && cloudZones.size() > 0) {
+                return cloudZones.get(0);
+            }
+            return null;
+        }
+
+        /**
+         * Finds the defaultZone marked for the account
+         */
+        private String getDefaultZoneId(String accountId) {
+            try {
+                CloudStackAccountDao dao = new CloudStackAccountDao();
+                CloudStackAccount account = dao.getdefaultZoneId(accountId);
+                return account.getDefaultZoneId();
+            } catch(Exception e) {
+                logger.error( "Error while retrieving Account information by id - ", e);
+                throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            }
+        }
 
 	/**
 	 * Windows has its own device strings.
