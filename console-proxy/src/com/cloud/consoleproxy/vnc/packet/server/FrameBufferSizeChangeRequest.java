@@ -23,7 +23,8 @@ public class FrameBufferSizeChangeRequest extends AbstractRect {
 
   public FrameBufferSizeChangeRequest(BufferedImageCanvas canvas, int width, int height) {
     super(0, 0, width, height);
-    this.canvas=canvas;
+    this.canvas = canvas;
+    canvas.setCanvasSize(width, height);
   }
 
   @Override
