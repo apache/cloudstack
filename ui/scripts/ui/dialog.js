@@ -53,6 +53,7 @@
       var fields = $.map(args.form.fields, function(value, key) {
         return key;
       })
+			
       $(fields).each(function() {
         var key = this;
         var field = args.form.fields[key];
@@ -86,15 +87,21 @@
          closeOnEscape: false
          }); */
         // Label field
+				
+				//if( field.label == 'label.network.offering' || field.label == 'label.guest.gateway')
+				//  debugger;
+				
         var $name = $('<div>').addClass('name')
               .appendTo($formItem)
               .append(
                 $('<label>').html(_l(field.label) + ':')
               );
 
-        // Add 'required asterisk' if field is required
-        if (field.validation && field.validation.required) {
-          $name.find('label').prepend($('<span>').addClass('field-required').html('*'));
+        // red asterisk
+				var $astersikSpan = $('<span>').addClass('field-required').html('*');
+				$name.find('label').prepend($astersikSpan);        
+				if (field.validation == null || field.validation.required == false) {
+          $astersikSpan.hide();
         }
 
         // Tooltip description
@@ -314,25 +321,31 @@
           $input.addClass("disallowSpecialCharacters");
         }
 
-        $input.data('validation-rules', field.validation);
-        $('<label>').addClass('error').appendTo($value).html('*' + _l('label.required'));
+				if(field.validation != null)
+          $input.data('validation-rules', field.validation);
+				else
+          $input.data('validation-rules', {});	
+					
       });
-
-      $form.find('select').trigger('change');
-
+     
       var getFormValues = function() {
         var formValues = {};
         $.each(args.form.fields, function(key) {});
       };
 
-      // Setup form validation
+      // Setup form validation			
       $formContainer.find('form').validate();
-      $formContainer.find('input, select').each(function() {
+      $formContainer.find('input, select').each(function() {			  
         if ($(this).data('validation-rules')) {
           $(this).rules('add', $(this).data('validation-rules'));
         }
-      });
-
+				else {
+				  $(this).rules('add', {});
+				}
+      });			
+      $form.find('select').trigger('change'); 
+			
+			
       var complete = function($formContainer) {
         var $form = $formContainer.find('form');
         var data = cloudStack.serializeForm($form);
@@ -404,31 +417,36 @@
 		createFormField: {
 			validation: {
 				required: {					
-					add: function($formField) {            
-						if($formField.find('.name').find('label').find('span.field-required').length == 0) {																			
-							$formField.find('.name').find('label').prepend($('<span>').addClass('field-required').html('*'));
-							
-							var $input = $formField.find('input');
-							var validationRules = $input.data('validation-rules');																				
+					add: function($formField) {         
+            var $input = $formField.find('input, select');						
+						var validationRules = $input.data('validation-rules');		
+											
+					  if(validationRules == null || validationRules.required == null || validationRules.required == false) {					
+							$formField.find('.name').find('label').find('span.field-required').css('display', 'inline'); //show red asterisk
+																																
 							if(validationRules == null)
-								validationRules = {};																		
+								validationRules = {};										
 							validationRules.required = true;																				
-							$input.data('validation-rules', validationRules);																				
-						}						
-					},
-					remove: function($formField) {            
-						if($formField.find('.name').find('label').find('span.field-required').length > 0) {																						
-							$formField.find('.name').find('label').find('span.field-required').remove();	
-							
-							var $input = $formField.find('input');
-							var validationRules = $input.data('validation-rules');	
-							if(validationRules != null && validationRules.required != null)																				  														
-								delete validationRules.required;																				
 							$input.data('validation-rules', validationRules);		
 														
-							//$formField.find('.value').find('label.error[generated=true]').remove();
-							$formField.find('.value').find('label.error').hide();																				
-						}						
+							$input.rules('add', { required: true });					
+						}		
+            			
+					},
+					remove: function($formField) {      
+            var $input = $formField.find('input, select');
+						var validationRules = $input.data('validation-rules');		
+											
+					  if(validationRules != null && validationRules.required != null && validationRules.required == true) {						
+							$formField.find('.name').find('label').find('span.field-required').hide(); //hide red asterisk
+																																	  														
+							delete validationRules.required;																				
+							$input.data('validation-rules', validationRules);	
+
+              $input.rules('remove', 'required');									
+														
+							$formField.find('.value').find('label.error').hide();																		
+						}		            		
 					}
 				}
 			}  
