@@ -33,7 +33,7 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Expunging("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered."),        
         Uploading ("The volume upload is in progress"),
-        Uploaded ("The volume is uploaded"),
+        Uploaded ("The volume is uploaded and present on secondary storage"),
         UploadError ("The volume couldnt be uploaded");
 
         String _description;
