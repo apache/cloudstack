@@ -1258,7 +1258,7 @@
 																var selectedNetworkOfferingId = $(this).val();
 																$(networkOfferingObjs).each(function(){
 																  if(this.id == selectedNetworkOfferingId) {																	  
-																		if(this.guestiptype == "Isolated") {																		  
+																		if(this.guestiptype == "Isolated") { //*** Isolated	***															  
 																			if(this.specifyipranges == false) {
 																				$form.find('.form-item[rel=guestStartIp]').hide();
 																				$form.find('.form-item[rel=guestEndIp]').hide();
@@ -1266,12 +1266,26 @@
 																			else {
 																				$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
 																				$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
+																			}																					
+                                      
+																		  var includingSourceNat = false;
+																			var serviceObjArray = this.service;
+																			for(var k = 0; k < serviceObjArray.length; k++) {
+																				if(serviceObjArray[k].name == "SourceNat") {
+																					includingSourceNat = true;
+																					break;
+																				}
+																			}																			
+																			if(includingSourceNat == true) { //Isolated with SourceNat
+																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestGateway]'));	//make guestGateway optional 	                                      							
+                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestNetmask]'));	//make guestNetmask optional  		
 																			}
-																																								
-                                      cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestGateway]'));	//make guestGateway optional 	                                      							
-                                      cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestNetmask]'));	//make guestNetmask optional  																			
+																			else { //Isolated with no SourceNat
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required
+																			}																
 																		}
-																		else {  //this.guestiptype == "Shared"
+																		else {  //*** Shared ***
 																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
 																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');																			
 																			
