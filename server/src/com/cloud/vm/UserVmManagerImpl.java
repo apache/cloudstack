@@ -590,6 +590,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
             }else {
             	try {
+                	// Format of data disk should be the same as root disk
+                	if(_storageMgr.getSupportedImageFormatForCluster(rootDiskPool.getClusterId()) != volHostVO.getFormat().getFileExtension()){
+                		throw new InvalidParameterValueException("Failed to attach volume to VM since volumes format " +volHostVO.getFormat().getFileExtension()+
+                				" is not compatible with the vm hypervisor type" );
+                	}
 					volume = _storageMgr.copyVolumeFromSecToPrimary(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
 				} catch (NoTransitionException e) {				
 					e.printStackTrace();

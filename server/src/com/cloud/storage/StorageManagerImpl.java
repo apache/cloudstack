@@ -3802,4 +3802,21 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return _volumeDao.search(sc, searchFilter);
     }
 
+    @Override
+    public String getSupportedImageFormatForCluster(Long clusterId) {
+        ClusterVO cluster = ApiDBUtils.findClusterById(clusterId);
+
+        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
+            return "vhd";
+        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
+            return "qcow2";
+        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
+            return "ova";
+        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
+            return "raw";
+        } else {
+            return null;
+        }
+    }
+    
 }
