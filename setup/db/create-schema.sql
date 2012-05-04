@@ -134,6 +134,8 @@ DROP TABLE IF EXISTS `cloud`.`physical_network_service_providers`;
 DROP TABLE IF EXISTS `cloud`.`virtual_router_elements`;
 DROP TABLE IF EXISTS `cloud`.`dc_storage_network_ip_range`;
 DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
+DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
+DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2078,6 +2080,33 @@ CREATE TABLE  `cloud`.`op_user_stats_log` (
   `agg_bytes_sent` bigint unsigned NOT NULL default '0',
   `updated` datetime COMMENT 'stats update timestamp',
   UNIQUE KEY (`user_stats_id`, `updated`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`cluster_vsm_map` (
+  `cluster_id` bigint unsigned NOT NULL,
+  `vsm_id` bigint unsigned NOT NULL,
+  PRIMARY KEY (`cluster_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`virtual_supervisor_module` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `host_id` bigint NOT NULL,
+  `vsm_name` varchar(255),
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `vsmmgmtipaddr` varchar(80) NOT NULL,
+  `vcenteripaddr` varchar(80) NOT NULL,
+  `vcenterdcname` varchar(255) NOT NULL,
+  `management_vlan` int(32),
+  `control_vlan` int(32),
+  `packet_vlan` int(32),
+  `storage_vlan` int(32),
+  `vsmDomainId` bigint unsigned,
+  `config_mode` varchar(20),
+  `ConfigState` varchar(20),
+  `vsmDeviceState` varchar(20),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

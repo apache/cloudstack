@@ -14,10 +14,10 @@ package com.cloud.utils.exception;
 
 import java.util.HashMap;
 import org.apache.log4j.Logger;
-import org.apache.commons.codec.binary.Base64;
 
 /**
  * CSExceptionErrorCode lists the CloudStack error codes that correspond
+ * to each exception thrown by the CloudStack API.
  */
 
 public class CSExceptionErrorCode {
