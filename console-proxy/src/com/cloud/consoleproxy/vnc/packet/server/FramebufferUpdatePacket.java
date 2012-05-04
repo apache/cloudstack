@@ -71,6 +71,8 @@ public class FramebufferUpdatePacket {
 
       case RfbConstants.ENCODING_DESKTOP_SIZE: {
         rect = new FrameBufferSizeChangeRequest(canvas, width, height);
+        if(this.clientListener != null)
+          this.clientListener.onFramebufferSizeChange(width, height);
         break;
       }
 
