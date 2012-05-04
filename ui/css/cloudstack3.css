@@ -1,5 +1,4 @@
 /*[fmt]1C20-1C0D-E*/
-/*dmin*/
 /*+clearfix {*/
 div.toolbar:after,
 .multi-wizard .progress ul li:after,
@@ -5451,6 +5450,10 @@ label.error {
 .multi-wizard.zone-wizard .setup-guest-traffic .select-container {
   background: #E9EAEB;
   overflow: hidden;
+}
+
+.multi-wizard.zone-wizard .setup-guest-traffic.basic .select-container {
+  background: #FFFFFF;
 }
 
 .multi-wizard.zone-wizard .main-desc {
