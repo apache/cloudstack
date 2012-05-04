@@ -35,14 +35,12 @@
             type: { label: 'label.type' },
             storagetype: { label: 'label.storage.type' },
             vmdisplayname: { label: 'label.vm.display.name' },
-            state: {
-              converter: function(str) {
-                // For localization
-                return 'state.' + str;
-              },
-              label: 'State',
-              indicator: { 'Ready': 'on' }
-            }
+            state: { 
+						  label: 'State',
+							indicator: {               
+                'Ready': 'on'
+              }
+						}
           },
 
           // List view actions
@@ -1000,16 +998,11 @@
             volumename: { label: 'label.volume' },
             intervaltype: { label: 'label.interval.type' },
             created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
-            state: {
-              converter: function(str) {
-                // For localization
-                return 'state.'+str;
-              },
-              label: 'label.state', indicator: {
-                converter: function(str) {
-                  return 'state.' + str;
-                },
-                'BackedUp': 'on', 'Destroyed': 'off'
+            state: {              
+              label: 'label.state', 
+							indicator: {               
+                'BackedUp': 'on', 
+								'Destroyed': 'off'
               }
             }
           },

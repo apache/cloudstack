@@ -576,16 +576,13 @@
             displaytext: { label: 'label.display.name' },
             domain: { label: 'label.domain' },
             account: { label: 'label.owner.account' },
-            state: {
-              converter: function(str) {
-                // For localization
-                return 'state.' + str;
-              },
-              label: 'label.status', indicator: {
-                converter: function(str) {
-                  return 'state.' + str;
-                },
-                'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off'
+            state: {              
+              label: 'label.status', 
+							indicator: {                
+                'Active': 'on', 
+								'Destroyed': 'off', 
+								'Disabled': 'off', 
+								'Left Project': 'off'
               }
             }
           },
@@ -870,11 +867,7 @@
             project: { label: 'label.project' },
             domain: { label: 'label.domain' },
             state: {
-              label: 'label.status',
-              converter: function(str) {
-                // For localization
-                return 'state.' + str;
-              },
+              label: 'label.status',              
               indicator: {
                 'Accepted': 'on', 'Completed': 'on',
                 'Pending': 'off', 'Declined': 'off'
