@@ -99,7 +99,7 @@ public class CSExceptionErrorCode {
 			// Have a special error code for ServerApiException when it is
 			// thrown in a standalone manner when failing to detect any of the above
 			// standard exceptions.
-			ExceptionErrorCodeMap.put("ServerApiException", 9999);
+			ExceptionErrorCodeMap.put("com.cloud.api.ServerApiException", 9999);
 		} catch (Exception e) {
 			throw new ExceptionInInitializerError(e);
 		}
