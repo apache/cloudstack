@@ -7829,10 +7829,7 @@
                 'Enabled': 'on',
                 'Disabled': 'off',
                 'Destroyed': 'off'
-              },
-              converter: function(str) {
-                return 'state.' + str;
-              }
+              }              
             }
           },
 
