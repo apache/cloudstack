@@ -54,7 +54,7 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the Cisco Nexus 1000v VSM appliance.")
     private String ipaddr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
     private long clusterId;
     
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="username to reach the Cisco Nexus 1000v VSM device")
