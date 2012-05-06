@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="src" path="deps"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/antlr-2.7.6.jar"/>
@@ -64,6 +63,5 @@
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/rampart-lib/xmlsec-1.4.2.jar"/>
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/awsapi-lib/rampart-lib/xmltooling-1.2.0.jar"/>
 	<classpathentry kind="lib" path="/Users/john1/qgit/deps/cloudbridge-lib/servlet-api.jar"/>
-	<classpathentry kind="lib" path="/Users/john1/rgit/deps/awsapi-lib/cloud-jasypt-1.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
