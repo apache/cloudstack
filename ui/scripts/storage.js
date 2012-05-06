@@ -170,7 +170,8 @@
                 poll: pollAsyncJobResult
               }
             },
-						 
+						            					
+						//???
 						uploadVolume: {
               isHeader: true,							
               label: 'label.upload.volume',							
@@ -228,9 +229,21 @@
                   url: createURL("uploadVolume" + array1.join("")),
                   dataType: "json",
                   async: true,
-                  success: function(json) {	
-                    var items = json.uploadvolumeresponse.volume;  
-                    args.response.success({data:items[0]});
+                  success: function(json) {
+									  debugger;
+                    var jid = json.uploadvolumeresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.volume;
+                        },
+                        getActionFilter: function() {
+                          return volumeActionfilter;
+                        }
+                       }
+                      }
+                    );
                   },
                   error: function(json) {
                     args.response.error(parseXMLHttpResponse(json));
@@ -239,12 +252,11 @@
               },
 
               notification: {
-                poll: function(args) {
-                  args.complete();
-                }
+                poll: pollAsyncJobResult
               }
             }
-							
+						//???					
+						
           },
 
           dataProvider: function(args) {
