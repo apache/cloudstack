@@ -12,9 +12,6 @@
 
 package com.cloud.utils.cisco.n1kv.vsm;
 
-import com.cloud.utils.cisco.n1kv.vsm.VSMCommand;
-import com.cloud.utils.cisco.n1kv.vsm.VSMResponse;
-
 import org.apache.log4j.Logger;
 
 // import all the packages we need here.
@@ -37,14 +34,6 @@ public class CiscoNexusVSMService extends Object {
 	public static void disconnectFromVSM(int sessionId) {
 		return;	// Always return success for this one. Layers calling this will simply clean up
 				// any state info regarding this session.
-	}
-	
-	public static VSMResponse executeVSMCommand(VSMCommand cmd) {
-		VSMResponse resp = new VSMResponse();
-		return resp;	// for now we just return a dummy response. We define these new
-						// VSMCommand and VSMResponse classes in this same package. The
-						// input params to this function may change as we put in more
-						// concrete functionality.
 	}
 	
 }
