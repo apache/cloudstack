@@ -1377,7 +1377,7 @@ public class EC2Engine {
 			}
 
 			if ( canCreateInstances < request.getMaxCount()) 
-				createInstances = canCreateInstances;
+				createInstances = request.getMinCount();
 			else 
 				createInstances = request.getMaxCount();
 
