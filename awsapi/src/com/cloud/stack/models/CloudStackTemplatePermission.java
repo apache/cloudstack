@@ -26,13 +26,13 @@ import com.google.gson.annotations.SerializedName;
  */
 public class CloudStackTemplatePermission {
 	@SerializedName(ApiConstants.ID)
-	private Long id;
+	private String id;
 	@SerializedName(ApiConstants.IS_PUBLIC)
 	private Boolean isPublic;
 	@SerializedName(ApiConstants.DOMAIN_ID)
-	private Long domainId;
+	private String domainId;
 	@SerializedName(ApiConstants.ACCOUNT)
-	private List<CloudStackAccount> accounts;
+	private List<String> accounts;
 	
 
 	/**
@@ -45,7 +45,7 @@ public class CloudStackTemplatePermission {
 	/**
 	 * @return the id
 	 */
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
@@ -61,7 +61,7 @@ public class CloudStackTemplatePermission {
 	/**
 	 * @return the domainId
 	 */
-	public Long getDomainId() {
+	public String getDomainId() {
 		return domainId;
 	}
 
@@ -69,7 +69,7 @@ public class CloudStackTemplatePermission {
 	/**
 	 * @return the accounts
 	 */
-	public List<CloudStackAccount> getAccounts() {
+	public List<String> getAccounts() {
 		return accounts;
 	}
 

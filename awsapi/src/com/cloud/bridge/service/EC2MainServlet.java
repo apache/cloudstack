@@ -37,8 +37,9 @@ public class EC2MainServlet extends HttpServlet{
     		if(value != null){
     		    isEC2APIEnabled = Boolean.valueOf(value);
     		}
-    		PersistContext.commitTransaction(true);
+    		
 		}finally {
+		    PersistContext.commitTransaction(true);
             PersistContext.closeSession(true);
         }
 		

@@ -566,15 +566,15 @@ public class CloudStackApi {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<CloudStackTemplatePermission> listTemplatePermissions(String id, String account, String domainId) throws Exception {
+	public CloudStackTemplatePermission listTemplatePermissions(String id, String account, String domainId) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_TEMPLATE_PERMISSIONS);
 		if (cmd  != null) {
 			cmd.setParam(ApiConstants.ID, id);
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
 			if (domainId != null) cmd.setParam(ApiConstants.DOMAIN_ID, domainId);
 		}
-		return _client.listCall(cmd, apiKey, secretKey, ApiConstants.LIST_TEMPLATE_PERMISSIONS_RESPONSE, ApiConstants.TEMPLATE_PERMISSION, 
-				new TypeToken<List<CloudStackTemplatePermission>>() {}.getType());
+        return _client.call(cmd, apiKey, secretKey, false, ApiConstants.LIST_TEMPLATE_PERMISSIONS_RESPONSE, ApiConstants.TEMPLATE_PERMISSION, 
+                CloudStackTemplatePermission.class);
 	}
 
 	/**
