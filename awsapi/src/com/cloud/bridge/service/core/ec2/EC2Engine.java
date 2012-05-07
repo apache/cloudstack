@@ -1795,6 +1795,11 @@ public class EC2Engine {
     			}
     			instances.addInstance(ec2Vm);
     		}
+		}else{
+		    if(instanceId != null){
+		        //no such instance found
+		        throw new EC2ServiceException(ServerError.InternalError, "Instance:" + instanceId + " not found");
+		    }
 		}
 		return instances;
 	}
