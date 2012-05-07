@@ -47,11 +47,7 @@
 				instancename: { label: 'label.internal.name' },
         zonename: { label: 'label.zone.name' },
         state: {
-          label: 'label.state',
-          converter: function(str) {
-            // For localization
-            return 'state.' + str;
-          },
+          label: 'label.state',         
           indicator: {
             'Running': 'on',
             'Stopped': 'off',

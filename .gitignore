@@ -1,4 +1,5 @@
 build/replace.properties
+.classpath
 build/build.number
 bin/
 *.000

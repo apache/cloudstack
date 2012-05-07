@@ -51,10 +51,7 @@
                 // For localization
                 return str;
               },
-              label: 'label.state',
-              converter: function(str) {
-                return 'state.' + str;
-              },
+              label: 'label.state',             
               indicator: {
                 'enabled': 'on',
                 'Destroyed': 'off',
