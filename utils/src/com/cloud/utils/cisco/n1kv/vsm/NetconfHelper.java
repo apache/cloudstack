@@ -121,16 +121,14 @@ public class NetconfHelper {
             switchport2.appendChild(access2);
 
             // Command : vmware port-group
-            Element vmware1 = doc.createElement("vmware");
+            Element vmware = doc.createElement("vmware");
             Element portgroup = doc.createElement("port-group");
-            vmware1.appendChild(portgroup);
+            vmware.appendChild(portgroup);
 
-            // Command : vmware state enabled.
-            Element vmware2 = doc.createElement("vmware");
+            // Command : state enabled.
             Element state = doc.createElement("state");
             Element enabled = doc.createElement("enabled");
             state.appendChild(enabled);
-            vmware2.appendChild(state);
 
             // Command : no shutdown.
             Element no = doc.createElement("no");
@@ -140,8 +138,8 @@ public class NetconfHelper {
             // Put the port profile details together.
             portProf.appendChild(switchport1);
             portProf.appendChild(switchport2);
-            portProf.appendChild(vmware1);
-            portProf.appendChild(vmware2);
+            portProf.appendChild(vmware);
+            portProf.appendChild(state);
             portProf.appendChild(no);
 
             // Put the xml-rpc together.
@@ -167,12 +165,24 @@ public class NetconfHelper {
         }
     }
 
-    public boolean addPortProfile(String name, int vlan) {
+    public void addPortProfile(String name, int vlan) {
         String command = getAddPortProfile(name, vlan) + SSH_NETCONF_TERMINATOR;
         send(command);
+
         // parse the rpc reply and the return success or failure.
-        String reply = receive();
-        return true;
+        String reply = receive().trim();
+        if (reply.endsWith(SSH_NETCONF_TERMINATOR)) {
+            reply = reply.substring(0, reply.length() - (new String(SSH_NETCONF_TERMINATOR).length()));
+        }
+        else {
+            throw new CloudRuntimeException("Malformed repsonse from vsm for add " +
+                    "port profile request: " + reply);
+        }
+
+        VsmResponse response = new VsmResponse(reply);
+        if (!response.isResponseOk()) {
+            throw new CloudRuntimeException(response.toString());
+        }
     }
 
     private String getDeletePortProfile(String portName) {
@@ -227,12 +237,24 @@ public class NetconfHelper {
         }
     }
 
-    public boolean deletePortProfile(String name) {
+    public void deletePortProfile(String name) {
         String command = getDeletePortProfile(name) + SSH_NETCONF_TERMINATOR;
         send(command);
+
         // parse the rpc reply and the return success or failure.
-        String reply = receive();
-        return true;
+        String reply = receive().trim();
+        if (reply.endsWith(SSH_NETCONF_TERMINATOR)) {
+            reply = reply.substring(0, reply.length() - (new String(SSH_NETCONF_TERMINATOR).length()));
+        }
+        else {
+            throw new CloudRuntimeException("Malformed repsonse from vsm for delete " +
+                    "port profile request :" + reply);
+        }
+
+        VsmResponse response = new VsmResponse(reply);
+        if (!response.isResponseOk()) {
+            throw new CloudRuntimeException(response.toString());
+        }
     }
 
     private String getHello() {
