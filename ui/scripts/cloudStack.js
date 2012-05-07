@@ -317,15 +317,14 @@
 						$.cookie('timezone', null);
 						$.cookie('supportELB', null);
 												
-						if(onLogoutCallback()) {	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
-              document.location.reload();
+						if(onLogoutCallback()) {	 //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
+              document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
 						}
           },
           error: function() {
-					  if(onLogoutCallback()) {	 //set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
-              document.location.reload();
-						}
-            document.location.reload();
+					  if(onLogoutCallback()) {	 //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
+              document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
+						}            
           },			
 					beforeSend : function(XMLHttpResponse) {
 						return true;
