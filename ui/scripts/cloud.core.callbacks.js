@@ -23,10 +23,14 @@ the session ID has been changed (i.e. another user logging into the UI via a dif
 or it's the first time the user has come to this page.
 */
 function onLogoutCallback() {
-	// Returning true means the LOGIN page will be show.  If you wish to redirect the user
-	// to different login page, this is where you would do that.
-	g_loginResponse = null;
-	return true;
+  g_loginResponse = null; //clear single signon variable g_loginResponse
+	
+	
+	return true;  // return true means the login page will show 	
+	/*
+	window.location.replace("http://www.google.com"); //redirect to a different location
+  return false;	//return false means it will stay in the location window.location.replace() sets it to (i.e. "http://www.google.com") 
+	*/
 }
 
 var g_loginResponse = null;
