@@ -348,7 +348,7 @@ public class CloudStackApi {
 		if (cmd != null) 
 			cmd.setParam(ApiConstants.ID, id);
 		// TODO: This probably isn't right.  Need to test with an instance that has a VM Password  
-		return _client.call(cmd, apiKey, secretKey, true, ApiConstants.GET_VM_PASSWORD_RESPONSE, null, CloudStackPasswordData.class);
+		return _client.call(cmd, apiKey, secretKey, true, ApiConstants.GET_VM_PASSWORD_RESPONSE, ApiConstants.PASSWORD, CloudStackPasswordData.class);
 	}
 	
 	// Templates
