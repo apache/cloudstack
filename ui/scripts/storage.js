@@ -213,7 +213,10 @@
 									url: {
 									  label: 'label.url',
 										validation: { required: true }
-									}                  
+									},
+                  checksum : {
+                    label: 'label.checksum'
+                  }                  
                 }
               },
 
@@ -223,6 +226,8 @@
                 array1.push("&zoneId=" + args.data.availabilityZone);
 								array1.push("&format=" + args.data.format);
 								array1.push("&url=" + todb(args.data.url));
+								if(args.data.checksum != null && args.data.checksum.length > 0)
+								  array1.push("&checksum=" + todb(args.data.checksum));
                 
                 $.ajax({
                   url: createURL("uploadVolume" + array1.join("")),
