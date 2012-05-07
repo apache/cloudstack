@@ -751,6 +751,7 @@
                 },
                 createForm: {
                   title: 'label.create.template',
+                  preFilter: cloudStack.preFilter.createTemplate,
                   desc: '',
                   fields: {
                     name: { label: 'label.name', validation: { required: true }},
@@ -774,7 +775,8 @@
                       }
                     },
                     isPublic: { label: 'label.public', isBoolean: true },
-                    isPasswordEnabled: { label: 'label.password.enabled', isBoolean: true }
+                    isPasswordEnabled: { label: 'label.password.enabled', isBoolean: true },
+                    isFeatured: { label: "label.featured", isBoolean: true }
                   }
                 },
                 action: function(args) {
@@ -793,6 +795,8 @@
                   array1.push("&osTypeId=" + args.data.osTypeId);
                   array1.push("&isPublic=" + (args.data.isPublic=="on"));
                   array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
+                  if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
+                      array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
 
                   $.ajax({
                     url: createURL("createTemplate&volumeId=" + args.context.volumes[0].id + array1.join("")),
