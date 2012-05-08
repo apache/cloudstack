@@ -281,7 +281,7 @@
               });
 
               $.ajax({
-                url: createURL("listVirtualMachines&domainid=" + domainObj.id),
+                url: createURL("listVirtualMachines&details=min&domainid=" + domainObj.id),
                 async: false,
                 dataType: "json",
                 success: function(json) {
