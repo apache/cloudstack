@@ -110,12 +110,12 @@ public class S3RestServlet extends HttpServlet {
         	logRequest(request);
         	
         	// Our extensions to the S3 REST API for simple management actions
-        	// are conveyed with Request parameter CloudAction.
+        	// are conveyed with Request parameter "Action".
         	// The present extensions are either to set up the user credentials
         	// (see the cloud-bridge-register script for more detail) or
         	// to report our version of this capability.
         	// -> unauthenticated calls, should still be done over HTTPS
-        	String cloudAction = request.getParameter( "CloudAction" );
+        	String cloudAction = request.getParameter( "Action" );
             if (null != cloudAction) 
             {
     	        if (cloudAction.equalsIgnoreCase( "SetUserKeys" )) {
