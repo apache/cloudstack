@@ -99,19 +99,19 @@ public class VsmResponse {
         StringBuffer error = new StringBuffer("");
 
         error.append(" Severity: " + _severity)
-             .append(" Error code: " + _tag)
-             .append(" Error type: " + _type);
+             .append(", Error code: " + _tag)
+             .append(", Error type: " + _type);
 
         if (_message != null) {
-            error.append(" Error Message: " + _message);
+            error.append(", Error Message: " + _message);
         }
 
         if (_info != null) {
-            error.append(" Error info: " + _info);
+            error.append(", Error info: " + _info);
         }
 
         if (_path != null) {
-            error.append(" Path: " + _path);
+            error.append(", Path: " + _path);
         }
 
         return error.toString();
