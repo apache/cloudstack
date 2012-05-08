@@ -40,7 +40,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=CiscoNexusVSMResponse.class, description="Adds a Cisco Nexus 1000v Virtual Switch Manager device")
-public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
+public class AddCiscoNexusVSMCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "addciscon1kvvsmresponse";
@@ -50,12 +50,12 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="virtual_supervisor_module")
+    @IdentityMapper(entityTableName="cluster")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    private long id;
+    
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the Cisco Nexus 1000v VSM appliance.")
-    private String ipaddr;
-
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
-    private long clusterId;
+    private String ipaddress;
     
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="username to reach the Cisco Nexus 1000v VSM device")
     private String username;
@@ -63,7 +63,13 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="password to reach the Cisco Nexus 1000v VSM device")
     private String password;
     
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required = false, description="name of Cisco Nexus 1000v VSM device")
+    @Parameter(name=ApiConstants.VCENTER_IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the VMWare vCenter the VSM connects to")
+    private String vcenteripaddr;
+    
+    @Parameter(name=ApiConstants.VCENTER_DC_NAME, type=CommandType.STRING, required = true, description="Name of the DataCenter the VSM monitors")
+    private String vcenterdcName;
+    
+    @Parameter(name=ApiConstants.CISCO_NEXUS_VSM_NAME, type=CommandType.STRING, required = false, description="Name of the VSM")
     private String vsmName;
 
     /////////////////////////////////////////////////////
@@ -71,7 +77,7 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public String getIpAddr() {
-        return ipaddr;
+        return ipaddress;
     }
 
     public String getUsername() {
@@ -82,12 +88,20 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
         return password;
     }
 
-    public String getVSMName() {
-    	return vsmName;
+    public String getvCenterIpaddr() {
+    	return vcenteripaddr;
+    }
+    
+    public String getvCenterDcName() {
+    	return vcenterdcName;
     }
     
     public long getClusterId() {
-    	return clusterId;
+    	return id;
+    }
+    
+    public String getvsmName() {
+    	return vsmName;
     }
 
     /////////////////////////////////////////////////////
@@ -116,15 +130,15 @@ public class AddCiscoNexusVSMCmd extends BaseAsyncCmd {
         }
     }
 
-    @Override
-    public String getEventDescription() {
-        return "Adding a Cisco Nexus VSM device";
-    }
+    //@Override
+    //public String getEventDescription() {
+    //    return "Adding a Cisco Nexus VSM device";
+    //}
 
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD;
-    }
+    //@Override
+    //public String getEventType() {
+    //    return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD;
+    //}
  
     @Override
     public String getCommandName() {

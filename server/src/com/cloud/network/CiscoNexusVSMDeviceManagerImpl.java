@@ -156,14 +156,19 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
-    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vsmName) {
+    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vCenterIpaddr, String vCenterDcName) {
 
     	// In this function, we associate this VSM with each host
     	// in the clusterId specified.
 
     	// First check if the cluster is of type vmware. If not,
     	// throw an exception. VSMs are tightly integrated with vmware clusters.
+    	s_logger.info("in addCiscoNexuVSM, clusterId is --> " + clusterId + ", ipaddress is --> " + ipaddress + ", username --> " + username + ", pwd --> " + password + ", vcenterip --> " + vCenterIpaddr + ", vCenterdcName --> " + vCenterDcName);
+    	
     	ClusterVO cluster = _clusterDao.findById(clusterId);
+    	if (cluster == null) {
+    		throw new InvalidParameterValueException("Cluster with specified ID not found!");
+    	}
     	if (cluster.getHypervisorType() != HypervisorType.VMware) {
     		InvalidParameterValueException ex = new InvalidParameterValueException("Cluster with specified id is not a VMWare hypervisor cluster");
     		throw ex;
@@ -182,6 +187,8 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	
     	// Next, check if this VSM is reachable. Use the XML-RPC VSM API Java bindings to talk to
     	// the VSM.
+    	//NetconfHelper (String ip, String username, String password)
+    	
     	CiscoNexusVSM vsmObj = new CiscoNexusVSM(ipaddress, username, password);
     	if (!vsmObj.connectToVSM()) {
     		throw new CloudRuntimeException("Couldn't login to the specified VSM");    		
@@ -197,11 +204,19 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	// advantage of our approach for now is that existing infrastructure using
     	// the existing VSM won't be affected if the new request to add the VSM
     	// assumed different information on the VSM (mgmt vlan, username, password etc).
-    	CiscoNexusVSMDeviceVO VSMObj = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress);
+    	CiscoNexusVSMDeviceVO VSMObj;
+    	try {
+    		VSMObj = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress);
+    	} catch (Exception e) {
+    		throw new CloudRuntimeException(e.getMessage());
+    	}
+    	
+    	//CiscoNexusVSMDeviceVO VSMObj = _ciscoNexusVSMDeviceDao.getVSMbyDomainId(1);
     	
     	if (VSMObj == null) {
+    		s_logger.info("no record found.. will create one");
     		// Create the VSM record. For now, we aren't using the vsmName field.
-    		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password);
+    		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password, vCenterIpaddr, vCenterDcName);
     		Transaction txn = Transaction.currentTxn();
     		try {
    				txn.start();
@@ -239,6 +254,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         // entries in the database to contain this VSM information before the injection.
     	
         for (HostVO host : hosts) {
+        	s_logger.info("inside for loop!");
         	// Create a host details VO object and write it out for this hostid.
         	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
         	Long hostid = new Long(vsmId);

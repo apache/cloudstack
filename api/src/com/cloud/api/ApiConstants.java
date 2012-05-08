@@ -340,6 +340,9 @@ public class ApiConstants {
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
     // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
+    public static final String VCENTER_IP_ADDRESS = "vcenteripaddr";
+    public static final String VCENTER_DC_NAME = "vcenterdcname";
+    public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

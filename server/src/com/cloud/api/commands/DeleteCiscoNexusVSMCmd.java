@@ -40,7 +40,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
-public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
+public class DeleteCiscoNexusVSMCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "deletecisconexusvsmresponse";
