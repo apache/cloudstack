@@ -1646,7 +1646,13 @@ public class EC2Engine {
 		if ( null != zoneName) {
 			interestedZones = new String[1];
 			interestedZones[0] = zoneName;
+		}else {
+		    CloudStackZone zone = findZone();
+		    if(zone != null){
+		        return zone.getId();
+		    }
 		}
+
 		zones = listZones(interestedZones, domainId);
 
 		if (zones == null || zones.getZoneIdAt( 0 ) == null) 
