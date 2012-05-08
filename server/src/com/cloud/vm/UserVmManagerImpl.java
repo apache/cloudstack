@@ -591,7 +591,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }else {
             	try {
                 	// Format of data disk should be the same as root disk
-                	if(_storageMgr.getSupportedImageFormatForCluster(rootDiskPool.getClusterId()) != volHostVO.getFormat().getFileExtension()){
+                	if( ! volHostVO.getFormat().getFileExtension().equals(_storageMgr.getSupportedImageFormatForCluster(rootDiskPool.getClusterId())) ){
                 		throw new InvalidParameterValueException("Failed to attach volume to VM since volumes format " +volHostVO.getFormat().getFileExtension()+
                 				" is not compatible with the vm hypervisor type" );
                 	}
