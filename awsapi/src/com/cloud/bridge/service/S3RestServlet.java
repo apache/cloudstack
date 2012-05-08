@@ -196,7 +196,7 @@ public class S3RestServlet extends HttpServlet {
         } 
         catch(Throwable e) {
     		logger.error("Unexpected exception " + e.getMessage(), e);
-    		response.setStatus(400);
+    		response.setStatus(404);
         	endResponse(response, "Bad request");
         	
         } finally {
