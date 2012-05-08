@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -782,12 +783,18 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 		S3CreateBucketRequest engineRequest = new S3CreateBucketRequest();
 		engineRequest.setBucketName((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY));
 		engineRequest.setConfig((S3CreateBucketConfiguration)objectInContent);
-		
+		try {
 		S3CreateBucketResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
 		response.addHeader("Location", "/" + engineResponse.getBucketName());
 		response.setContentLength(0);
 		response.setStatus(200);
 		response.flushBuffer();
+		} catch (ObjectAlreadyExistsException oaee) {
+		    response.setStatus(409);
+		    String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <Error><Code>OperationAborted</Code><Message>A conflicting conditional operation is currently in progress against this resource. Please try again..</Message>";
+		    response.setContentType("text/xml; charset=UTF-8");
+	        S3RestServlet.endResponse(response, xml.toString());
+		}
 	}
 	
 	public void executePutBucketAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
