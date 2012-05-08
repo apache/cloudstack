@@ -2105,7 +2105,7 @@ CREATE TABLE `cloud`.`virtual_supervisor_module` (
   `vsmDomainId` bigint unsigned,
   `config_mode` varchar(20),
   `ConfigState` varchar(20),
-  `vsmDeviceState` varchar(20),
+  `vsmDeviceState` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

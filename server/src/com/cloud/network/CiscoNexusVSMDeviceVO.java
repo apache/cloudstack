@@ -258,15 +258,18 @@ public class CiscoNexusVSMDeviceVO {
         this.setVsmPassword(password);
         this.setvCenterIPAddr(vCenterIpaddr);
         this.setvCenterDCName(vCenterDcName);
+        // By default, enable a VSM.
+        this.setVsmDeviceState(VSMDeviceState.Enabled);
     }
     
     public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, long dummy) {    	
     	// Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
-        this.ipaddr = vsmIpAddr;
-        this.vsmUserName = username;
-        this.vsmPassword = password;
-        this.vsmName = vsmName;
+        this.setMgmtIpAddr(vsmIpAddr);
+        this.setVsmUserName(username);
+        this.setVsmPassword(password);
+        this.setVsmName(vsmName);
+        this.setVsmDeviceState(VSMDeviceState.Enabled);
     }
     
     public CiscoNexusVSMDeviceVO() {

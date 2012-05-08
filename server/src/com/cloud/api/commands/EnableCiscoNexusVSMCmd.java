@@ -19,6 +19,7 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -27,100 +28,54 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.CiscoNexusVSMResponse;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=CiscoNexusVSMResponse.class, description="Adds a Cisco Nexus 1000v Virtual Switch Manager device")
-public class AddCiscoNexusVSMCmd extends BaseCmd {
+@Implementation(responseObject=SuccessResponse.class, description="Enable a Cisco Nexus VSM device")
+public class EnableCiscoNexusVSMCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AddCiscoNexusVSMCmd.class.getName());
-    private static final String s_name = "addciscon1kvvsmresponse";
+    public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());
+    private static final String s_name = "enablecisconexusvsmresponse";
     @PlugService CiscoNexusVSMElementService _ciscoNexusVSMService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
-    private long id;
-    
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the Cisco Nexus 1000v VSM appliance.")
-    private String ipaddress;
-    
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="username to reach the Cisco Nexus 1000v VSM device")
-    private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="password to reach the Cisco Nexus 1000v VSM device")
-    private String password;
-    
-    @Parameter(name=ApiConstants.VCENTER_IP_ADDRESS, type=CommandType.STRING, required = true, description="IP Address of the VMWare vCenter the VSM connects to")
-    private String vcenteripaddr;
-    
-    @Parameter(name=ApiConstants.VCENTER_DC_NAME, type=CommandType.STRING, required = true, description="Name of the DataCenter the VSM monitors")
-    private String vcenterdcName;
-    
-    @Parameter(name=ApiConstants.CISCO_NEXUS_VSM_NAME, type=CommandType.STRING, required = false, description="Name of the VSM")
-    private String vsmName;
+    @IdentityMapper(entityTableName="virtual_supervisor_module")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Cisco Nexus 1000v VSM device to be enabled")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddr() {
-        return ipaddress;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getvCenterIpaddr() {
-    	return vcenteripaddr;
-    }
-    
-    public String getvCenterDcName() {
-    	return vcenterdcName;
-    }
-    
-    public long getClusterId() {
-    	return id;
-    }
-    
-    public String getvsmName() {
-    	return vsmName;
+    public Long getCiscoNexusVSMDeviceId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    // NOTE- The uuid that is sent in during the invocation of the API AddCiscoNexusVSM()
-    // automagically gets translated to the corresponding db id before this execute() method
-    // is invoked. That's the reason why we don't have any uuid-dbid translation code here.
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            CiscoNexusVSMDeviceVO vsmDeviceVO = _ciscoNexusVSMService.addCiscoNexusVSM(this);
-            if (vsmDeviceVO != null) {
-                CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMResponse(vsmDeviceVO);
-                response.setObjectName("cisconexusvsm");
+            boolean result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to add Cisco Nexus Virtual Switch Manager due to internal error.");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
@@ -128,7 +83,7 @@ public class AddCiscoNexusVSMCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;
