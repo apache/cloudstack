@@ -151,7 +151,7 @@ public class S3BucketAction implements ServletAction {
 			 }
 			 executePutBucket(request, response);
 		} 
-		else if(method.equalsIgnoreCase("GET") || (method.equalsIgnoreCase("HEAD")) 
+		else if(method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("HEAD")) 
 		{
 			 if (queryString != null && queryString.length() > 0) 
 			 {
@@ -770,7 +770,11 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 				logger.error("Unable to read request data due to " + e.getMessage(), e);
 				throw new NetworkIOException(e);
 				
-			} finally {
+			}  catch (ClassNotFoundException e) {
+                           logger.error("In a normal world this should never never happen:" + e.getMessage(), e);
+                           throw new RuntimeException("A required class was not found in the classpath:" + e.getMessage());
+                        }
+                        finally {
 				if(is != null) is.close();
 			}
 		}
