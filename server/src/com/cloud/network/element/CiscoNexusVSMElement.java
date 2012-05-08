@@ -23,6 +23,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.commands.AddCiscoNexusVSMCmd;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMCmd;
+import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
+import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMNetworksCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
@@ -200,6 +202,20 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     
 
     @Override
+    public boolean enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd) {
+    	boolean result;    	
+    	result = enableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
+    	return result;
+    }
+    
+    @Override
+    public boolean disableCiscoNexusVSM(DisableCiscoNexusVSMCmd cmd) {
+    	boolean result;
+    	result = disableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
+    	return result;
+    }
+    
+    @Override
     public List<? extends PortProfile> listNetworks(ListCiscoNexusVSMNetworksCmd cmd) {
     
     	/***
@@ -227,6 +243,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	return null;
     	
     }
+    
 
     @Override
     public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {    		

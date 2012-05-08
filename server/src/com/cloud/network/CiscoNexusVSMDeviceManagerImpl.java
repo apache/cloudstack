@@ -324,6 +324,56 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         return true;
     }
 
+    @DB
+    public boolean enableCiscoNexusVSM(long vsmId) {
+        CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
+        if (cisconexusvsm == null) {
+        	// This entry is already not present. Return success.
+        	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
+        }
+        // Else, check if this db record shows that this VSM is enabled or not.
+        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled) {        
+        	// it's currently disabled. So change it to enabled and write it out to the db.
+        	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled);
+        	Transaction txn = Transaction.currentTxn();
+        	try {
+        		txn.start();
+        		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
+   	            txn.commit();
+    		} catch (Exception e) {
+    			txn.rollback();
+    			throw new CloudRuntimeException(e.getMessage());
+    		}
+    	}
+        
+        return true;
+    }
+    
+    @DB
+    public boolean disableCiscoNexusVSM(long vsmId) {
+        CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
+        if (cisconexusvsm == null) {
+        	// This entry is already not present. Return success.
+        	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
+        }
+        // Else, check if this db record shows that this VSM is enabled or not.
+        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled) {        
+        	// it's currently disabled. So change it to enabled and write it out to the db.
+        	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled);
+        	Transaction txn = Transaction.currentTxn();
+        	try {
+        		txn.start();
+        		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
+   	            txn.commit();
+    		} catch (Exception e) {
+    			txn.rollback();
+    			throw new CloudRuntimeException(e.getMessage());
+    		}
+    	}
+        
+        return true;
+    }
+    
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         // TODO Auto-generated method stub
         return null;
