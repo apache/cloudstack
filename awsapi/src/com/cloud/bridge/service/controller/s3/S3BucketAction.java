@@ -151,7 +151,7 @@ public class S3BucketAction implements ServletAction {
 			 }
 			 executePutBucket(request, response);
 		} 
-		else if(method.equalsIgnoreCase("GET")) 
+		else if(method.equalsIgnoreCase("GET") || (method.equalsIgnoreCase("HEAD")) 
 		{
 			 if (queryString != null && queryString.length() > 0) 
 			 {
