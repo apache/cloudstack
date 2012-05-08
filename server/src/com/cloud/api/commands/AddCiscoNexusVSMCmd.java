@@ -129,16 +129,6 @@ public class AddCiscoNexusVSMCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
-
-    //@Override
-    //public String getEventDescription() {
-    //    return "Adding a Cisco Nexus VSM device";
-    //}
-
-    //@Override
-    //public String getEventType() {
-    //    return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD;
-    //}
  
     @Override
     public String getCommandName() {

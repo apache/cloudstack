@@ -45,7 +45,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -55,6 +54,8 @@ import com.cloud.network.PortProfile;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Manager;
+import com.cloud.exception.ResourceInUseException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = NetworkElement.class)
 public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
@@ -186,7 +187,15 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
 
     @Override
     public boolean deleteCiscoNexusVSM(DeleteCiscoNexusVSMCmd cmd) {
-    	return true;
+    	boolean result;
+    	try {
+    		result = deleteCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
+    	} catch (ResourceInUseException e) {
+    		s_logger.info("VSM could not be deleted");
+    		// TODO: Throw a better exception here.
+    		throw new CloudRuntimeException("Failed to delete specified VSM");
+    	}
+    	return result;
     }
     
 

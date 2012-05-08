@@ -63,7 +63,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         
         // We may add more and conditions by specifying more fields, like say, accountId.
     }
-
+    
     public CiscoNexusVSMDeviceVO getVSMbyDomainId(long domId) {
     	SearchCriteria<CiscoNexusVSMDeviceVO> sc = domainIdSearch.create();
     	sc.setParameters("vsmSwitchDomainId", domId);

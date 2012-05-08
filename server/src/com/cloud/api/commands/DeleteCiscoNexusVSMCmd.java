@@ -51,15 +51,15 @@ public class DeleteCiscoNexusVSMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="virtual_supervisor_module")
-    @Parameter(name=ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID, type=CommandType.LONG, required=true, description="Cisco Nexus 1000v VSM device ID")
-    private Long vsmDeviceId;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getCiscoNexusVSMDeviceId() {
-        return vsmDeviceId;
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -82,16 +82,6 @@ public class DeleteCiscoNexusVSMCmd extends BaseCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Deleting a Cisco Nexus 1000v VSM device";
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE;
     }
 
     @Override
