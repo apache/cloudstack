@@ -25,6 +25,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
@@ -73,6 +74,7 @@ import com.cloud.bridge.service.core.s3.S3DeleteObjectRequest;
 import com.cloud.bridge.service.core.s3.S3Engine;
 import com.cloud.bridge.service.core.s3.S3GetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3Grant;
+import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsEntry;
 import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsRequest;
 import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsResponse;
 import com.cloud.bridge.service.core.s3.S3ListBucketObjectEntry;
@@ -528,10 +530,27 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 	         // The content-type literally should be "application/xml; charset=UTF-8" 
 	         // but any compliant JVM supplies utf-8 by default
 		
-		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListAllMyBucketsResult", outputStream );
-		resultWriter.startWrite();
-		resultWriter.writeout(allBuckets);
-		resultWriter.stopWrite();
+//		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListAllMyBucketsResult", outputStream );
+//		resultWriter.startWrite();
+//		resultWriter.writeout(allBuckets);
+//		resultWriter.stopWrite();
+	    StringBuffer xml = new StringBuffer();
+        xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
+        xml.append("<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
+        xml.append("<Owner><ID>");
+        xml.append(engineResponse.getOwner().getID()).append("</ID>");
+        xml.append("<DisplayName>").append(engineResponse.getOwner().getDisplayName()).append("</DisplayName>");
+        xml.append("</Owner>").append("<Buckets>");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        for (S3ListAllMyBucketsEntry entry :engineResponse.getBuckets()) {
+            xml.append("<Bucket>").append("<Name>").append(entry.getName()).append("</Name>");
+            xml.append("<CreationDate>").append(sdf.format(entry.getCreationDate().getTime())).append("</CreationDate>");
+            xml.append("</Bucket>");
+        }
+        xml.append("</Buckets>").append("</ListAllMyBucketsResult>");
+        response.setStatus(200);
+        response.setContentType("text/xml; charset=UTF-8");
+        S3RestServlet.endResponse(response, xml.toString());
 		
 	}
 
