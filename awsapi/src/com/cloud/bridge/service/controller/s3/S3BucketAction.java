@@ -749,6 +749,7 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 			try {
 				is = request.getInputStream();
 				String xml = StringHelper.stringFromStream(is);
+                                Class.forName("com.cloud.bridge.service.core.s3.S3CreateBucketConfiguration");
 				XSerializer serializer = new XSerializer(new XSerializerXmlAdapter()); 
 				objectInContent = serializer.serializeFrom(xml);
 				if(objectInContent != null && !(objectInContent instanceof S3CreateBucketConfiguration)) {
