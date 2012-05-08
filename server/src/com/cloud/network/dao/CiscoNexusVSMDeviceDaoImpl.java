@@ -15,6 +15,8 @@ package com.cloud.network.dao;
 import java.util.List;
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -24,6 +26,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=CiscoNexusVSMDeviceDao.class) @DB(txn=false)
 public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDeviceVO, Long> implements CiscoNexusVSMDeviceDao {
+	protected static final Logger s_logger     = Logger.getLogger(CiscoNexusVSMDeviceDaoImpl.class);
     final SearchBuilder<CiscoNexusVSMDeviceVO> mgmtVlanIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> domainIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> nameSearch;
@@ -32,7 +35,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
     // We will add more searchbuilder objects.
     
     
-    public CiscoNexusVSMDeviceDaoImpl() {
+    public CiscoNexusVSMDeviceDaoImpl() {    	
         super();
         
         mgmtVlanIdSearch = createSearchBuilder();
@@ -55,7 +58,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         nameSearch.done();
         
         ipaddrSearch = createSearchBuilder();
-        ipaddrSearch.and("vsmMgmtIPAddr", ipaddrSearch.entity().getvsmName(), Op.EQ);
+        ipaddrSearch.and("ipaddr", ipaddrSearch.entity().getipaddr(), Op.EQ);
         ipaddrSearch.done();
         
         // We may add more and conditions by specifying more fields, like say, accountId.
@@ -75,7 +78,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
     
     public CiscoNexusVSMDeviceVO getVSMbyIpaddress(String ipaddress) {
     	SearchCriteria<CiscoNexusVSMDeviceVO> sc = ipaddrSearch.create();
-    	sc.setParameters("vsmMgmtIPAddr", ipaddress);
+    	sc.setParameters("ipaddr", ipaddress);
     	return findOneBy(sc);
     }
     

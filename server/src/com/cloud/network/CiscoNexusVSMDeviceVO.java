@@ -61,8 +61,8 @@ public class CiscoNexusVSMDeviceVO {
     @Column(name = "password")
     private String vsmPassword;
 
-    @Column(name = "vmsmgmtipaddr")
-    private String vsmMgmtIPAddr;
+    @Column(name = "ipaddr")
+    private String ipaddr;
     
     @Column(name = "vcenteripaddr")
     private String vCenterIPAddr;
@@ -94,27 +94,6 @@ public class CiscoNexusVSMDeviceVO {
     
     @Column(name = "vsmDeviceState")
     private VSMDeviceState vsmDeviceState;    
-    
-    // ********** The ones below could be removed...
-    
-    // Id of the DataCenter (as seen in vCenter) that this VSM manages.
-    // We can probably remove this.
-    @Column(name = "vcenteredcid")
-    private long vCenterDCId;
-    
-    // Name of the DVS that gets created on vCenter to represent this VSM.
-    // Can be queried and hence can be most probably removed.
-    @Column(name = "dvsname")
-    private String dvsName;
-        
-    // Number of VEMs being currently managed by this VSM.
-    // Again, queriable/removable.
-    @Column(name = "num_of_vems")
-    private int numVEMS;
-    
-    // ******** End of removable candidates.
-    
-    
 
     // This tells us whether the VSM is currently enabled or disabled. We may
     // need this if we would like to carry out any sort of maintenance on the
@@ -158,8 +137,8 @@ public class CiscoNexusVSMDeviceVO {
     	return vsmPassword;
     }
 
-    public String getMgmtIpAddr() {
-    	return vsmMgmtIPAddr;
+    public String getipaddr() {
+    	return ipaddr;
     }
     
     public String getvCenterIPAddr() {
@@ -212,20 +191,20 @@ public class CiscoNexusVSMDeviceVO {
         this.hostId = hostid;
     }
     
-    public void getUserName(String username) {
+    public void setVsmUserName(String username) {
     	this.vsmUserName = username;
     }
     
-    public void setvsmName(String vsmName) {
+    public void setVsmName(String vsmName) {
     	this.vsmName = vsmName;
     }
     
-    public void setPassword(String password) {
+    public void setVsmPassword(String password) {
     	this.vsmPassword = password;
     }
 
     public void setMgmtIpAddr(String ipaddr) {
-    	this.vsmMgmtIPAddr = ipaddr;
+    	this.ipaddr = ipaddr;
     }
     
     public void setvCenterIPAddr(String ipaddr) {
@@ -252,37 +231,39 @@ public class CiscoNexusVSMDeviceVO {
     	this.storageVlan = vlan;
     }
     
-    public void setvsmDomainId(long id) {
+    public void setVsmDomainId(long id) {
     	this.vsmDomainId = id;
     }
     
-    public void setvsmConfigMode(VSMConfigMode mode) {
+    public void setVsmConfigMode(VSMConfigMode mode) {
     	this.vsmConfigMode = mode;
     }
     
-    public void setvsmConfigState(VSMConfigState state) {
+    public void setVsmConfigState(VSMConfigState state) {
     	this.vsmConfigState = state;
     }
     
-    public void setvsmDeviceState(VSMDeviceState devState) {
+    public void setVsmDeviceState(VSMDeviceState devState) {
     	this.vsmDeviceState = devState;
     }
  
         
     // Constructor methods.
     
-    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {    	
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, String vCenterIpaddr, String vCenterDcName) {    	
     	// Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
-        this.vsmMgmtIPAddr = vsmIpAddr;
-        this.vsmUserName = username;
-        this.vsmPassword = password;        
+        this.setMgmtIpAddr(vsmIpAddr);
+        this.setVsmUserName(username);
+        this.setVsmPassword(password);
+        this.setvCenterIPAddr(vCenterIpaddr);
+        this.setvCenterDCName(vCenterDcName);
     }
     
-    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, String vsmName) {    	
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, long dummy) {    	
     	// Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
-        this.vsmMgmtIPAddr = vsmIpAddr;
+        this.ipaddr = vsmIpAddr;
         this.vsmUserName = username;
         this.vsmPassword = password;
         this.vsmName = vsmName;

@@ -12,25 +12,10 @@
 
 package com.cloud.network.resource;
 
-import java.util.Map;
-import javax.naming.ConfigurationException;
-import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
-import com.cloud.api.ApiConstants;
-import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
-import com.cloud.resource.ServerResource;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.NumbersUtil;
-import com.google.gson.Gson;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 
 import com.cloud.utils.ssh.*;
 import com.cloud.utils.cisco.n1kv.vsm.CiscoNexusVSMService;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.log4j.Logger;
 

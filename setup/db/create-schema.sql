@@ -2095,7 +2095,7 @@ CREATE TABLE `cloud`.`virtual_supervisor_module` (
   `vsm_name` varchar(255),
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `vsmmgmtipaddr` varchar(80) NOT NULL,
+  `ipaddr` varchar(80) NOT NULL,
   `vcenteripaddr` varchar(80) NOT NULL,
   `vcenterdcname` varchar(255) NOT NULL,
   `management_vlan` int(32),

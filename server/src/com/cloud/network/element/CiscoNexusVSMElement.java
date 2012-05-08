@@ -172,14 +172,15 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         String vsmipaddress = cmd.getIpAddr();
         String vsmusername = cmd.getUsername();
         String vsmpassword = cmd.getPassword();
-        String vsmName = cmd.getVSMName();
+        String vCenterIpaddr = cmd.getvCenterIpaddr();
+        String vCenterDcName = cmd.getvCenterDcName();
         long clusterId = cmd.getClusterId();
         
         // Invoke the addCiscoNexusVSM() function defined in the upper layer (DeviceMgrImpl).
         // The  upper layer function will create a resource of type "host" to represent this VSM.
         // It will add this VSM to the db.
         //CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, (ServerResource) new CiscoNexusVSMResource(), vsmName);
-        CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, vsmName);
+        CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, vCenterIpaddr, vCenterDcName);
         return vsmDeviceVO;
     }
 
@@ -222,7 +223,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {    		
             CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
             response.setId(vsmDeviceVO.getId());
-            response.setMgmtIpAddress(vsmDeviceVO.getMgmtIpAddr());
+            response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
             return response;
         }
 
