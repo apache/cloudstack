@@ -2110,34 +2110,26 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        // if network is security group enabled, and default security group is not present in the list of groups specified, add it automatically
+        // if network is security group enabled, and no security group is specified, then add the default security group automatically
         if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkMgr.canAddDefaultSecurityGroup()) {
-            if (securityGroupIdList == null) {
-                securityGroupIdList = new ArrayList<Long>();
-            }
-
-            SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
-            if (defaultGroup != null) {
-                //check if security group id list already contains Default security group, and if not - add it
-                boolean defaultGroupPresent = false;
-                for (Long securityGroupId : securityGroupIdList) {
-                    if (securityGroupId.longValue() == defaultGroup.getId()) {
-                        defaultGroupPresent = true;
-                        break;
-                    }
+            
+          //add the default securityGroup only if no security group is specified
+            if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
+                if (securityGroupIdList == null) {
+                    securityGroupIdList = new ArrayList<Long>();
                 }
-
-                if (!defaultGroupPresent) {
+    
+                SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
+                if (defaultGroup != null) {
+                    securityGroupIdList.add(defaultGroup.getId());
+                } else {
+                    //create default security group for the account
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
+                    }
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
                     securityGroupIdList.add(defaultGroup.getId());
                 }
-
-            } else {
-                //create default security group for the account
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
-                }
-                defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
-                securityGroupIdList.add(defaultGroup.getId());
             }
         }
 
@@ -2759,7 +2751,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //check if vm is security group enabled
-        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkMgr.canAddDefaultSecurityGroup()) {
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty() && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkMgr.canAddDefaultSecurityGroup()) {
             //if vm is not mapped to security group, create a mapping
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");
