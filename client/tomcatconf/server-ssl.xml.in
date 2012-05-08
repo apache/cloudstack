@@ -54,6 +54,8 @@
     <Executor name="tomcatThreadPool" namePrefix="catalina-exec-" 
         maxThreads="150" minSpareThreads="25"/>
     
+	<Executor name="tomcatThreadPool-internal" namePrefix="catalina-exec-int-" 
+        maxThreads="150" minSpareThreads="25"/>
     
     <!-- A "Connector" represents an endpoint by which requests are received
          and responses are returned. Documentation at :
@@ -91,6 +93,13 @@
 
     <!-- Listen on 6443 instead of 8443 because tomcat6 will change 8443 to a random one when CATALINA_HOME is not /usr/share/tomcat6 -->
     <Connector port="6443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
+               maxThreads="150" scheme="https" secure="true"
+               clientAuth="false" sslProtocol="TLS" 
+               keystoreType="JKS"
+               keystoreFile="/etc/cloud/management/cloudmanagementserver.keystore"
+               keystorePass="vmops.com"/>
+			   
+	<Connector executor="tomcatThreadPool-internal" address="127.0.0.1" port="5443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
                maxThreads="150" scheme="https" secure="true"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"

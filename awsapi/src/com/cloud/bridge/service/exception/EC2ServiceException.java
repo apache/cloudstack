@@ -29,7 +29,7 @@ public class EC2ServiceException extends RuntimeException {
 		InsufficientInstanceCapacity("Server.InsufficientInstanceCapacity", 500),
 		InsufficientReservedInstanceCapacity("Server.InsufficientReservedInstanceCapacity", 500),
 		InternalError("Server.InternalError", 500),
-		Unavailable("Server.Unavailable", 500);
+		Unavailable("Server.Unavailable", 501);
 		
 		private String errorString;
 		private int httpErrorCode;
@@ -126,7 +126,7 @@ public class EC2ServiceException extends RuntimeException {
 	}
 
 	public EC2ServiceException(String message, int errorCode) {
-		super(message);
+		super(message, new AxisFault(message, new QName("Error")));
 		this.httpErrorCode = errorCode;
 	}
 	

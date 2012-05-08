@@ -198,7 +198,7 @@ public class ServiceProvider {
 		if(logger.isInfoEnabled())
 			logger.info("Initializing ServiceProvider...");
 
-		File file = ConfigurationHelper.findConfigurationFile("log4j-cloud-bridge.xml");
+		File file = ConfigurationHelper.findConfigurationFile("log4j-cloud.xml");
 		if(file != null) {
 			System.out.println("Log4j configuration from : " + file.getAbsolutePath());
 			DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
@@ -327,6 +327,7 @@ public class ServiceProvider {
 				try {
 					result = method.invoke(serviceObject, args);
 					PersistContext.commitTransaction();
+			        PersistContext.commitTransaction(true);
 				} catch (PersistException e) {
 				} catch (SessionException e) {
 				} catch(Throwable e) {
@@ -345,6 +346,7 @@ public class ServiceProvider {
 					}
 				} finally {
 					PersistContext.closeSession();
+			        PersistContext.closeSession(true);
 				}
 				return result;
 			}

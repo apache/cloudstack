@@ -31,11 +31,14 @@ import java.util.UUID;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.hibernate.ejb.criteria.expression.UnaryArithmeticOperation.Operation;
 import org.xml.sax.SAXException;
 
 import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
 import com.cloud.bridge.persist.dao.OfferingDao;
 import com.cloud.bridge.service.UserContext;
+
+import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 import com.cloud.bridge.service.exception.EC2ServiceException.ServerError;
@@ -59,6 +62,7 @@ import com.cloud.stack.models.CloudStackSecurityGroupIngress;
 import com.cloud.stack.models.CloudStackServiceOffering;
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
+import com.cloud.stack.models.CloudStackTemplatePermission;
 import com.cloud.stack.models.CloudStackUser;
 import com.cloud.stack.models.CloudStackUserVm;
 import com.cloud.stack.models.CloudStackVolume;
@@ -518,6 +522,34 @@ public class EC2Engine {
 			throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
 		}
 	}
+	
+	
+	/** REST API calls this method.
+     * Modify an existing template
+     * 
+     * @param request
+     * @return
+     */
+    public boolean modifyImageAttribute( EC2Image request ) 
+    {
+        // TODO: This is incomplete
+        EC2DescribeImagesResponse images = new EC2DescribeImagesResponse();
+
+        try {
+            images = listTemplates( request.getId(), images );
+            EC2Image[] imageSet = images.getImageSet();
+            
+            CloudStackTemplate resp = getApi().updateTemplate(request.getId(), null, request.getDescription(), null, imageSet[0].getName(), null, null);
+            if (resp != null) {
+                return true;
+            }
+            return false;
+        } catch( Exception e ) {
+            logger.error( "EC2 ModifyImage - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
 
 	/**
 	 * Modify an existing template
@@ -525,25 +557,87 @@ public class EC2Engine {
 	 * @param request
 	 * @return
 	 */
-	public boolean modifyImageAttribute( EC2Image request ) 
+	public boolean modifyImageAttribute( EC2ModifyImageAttribute request ) 
 	{
-		// TODO: This is incomplete
-		EC2DescribeImagesResponse images = new EC2DescribeImagesResponse();
+        try {
+            if(request.getAttribute().equals(ImageAttribute.launchPermission)){
+                
+                String accounts = "";
+                Boolean isPublic = null;
+                EC2ModifyImageAttribute.Operation operation = request.getLaunchPermOperation();
+                
+                List<String> accountOrGroupList = request.getLaunchPermissionAccountsList();
+                if(accountOrGroupList != null && !accountOrGroupList.isEmpty()){
+                    boolean first = true;
+                    for(String accountOrGroup : accountOrGroupList){
+                        if("all".equalsIgnoreCase(accountOrGroup)){
+                            if(operation.equals(EC2ModifyImageAttribute.Operation.add)){
+                                isPublic = true;
+                            }else{
+                                isPublic = false;
+                            }
+                        }else{
+                            if(!first){
+                                accounts = accounts + ",";
+                            }
+                            accounts = accounts + accountOrGroup;
+                            first = false;
+                        }
+                    }
+                }
+                CloudStackInfoResponse resp = getApi().updateTemplatePermissions(request.getImageId(), accounts, null, null, isPublic, operation.toString());
+                return resp.getSuccess();
+            }else if(request.getAttribute().equals(ImageAttribute.description)){
+                CloudStackTemplate resp = getApi().updateTemplate(request.getImageId(), null, request.getDescription(), null, null, null, null);
+                if (resp != null) {
+                    return true;
+                }
+                return false;
+            }
 
-		try {
-			images = listTemplates( request.getId(), images );
-			EC2Image[] imageSet = images.getImageSet();
-			
-			CloudStackTemplate resp = getApi().updateTemplate(request.getId(), null, request.getDescription(), null, imageSet[0].getName(), null, null);
-			if (resp != null) {
-				return true;
-			}
-			return false;
-		} catch( Exception e ) {
-			logger.error( "EC2 ModifyImage - ", e);
-			throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
-		}
+        } catch (Exception e) {
+            logger.error( "EC2 modifyImageAttribute - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+        
+        return false;
+	    
+	    
 	}
+	
+    public EC2ImageAttributes describeImageAttribute(EC2DescribeImageAttribute request) {
+        EC2ImageAttributes imageAtts = new EC2ImageAttributes();
+        
+        try {
+            imageAtts.setImageId(request.getImageId());
+            if(request.getAttribute().equals(ImageAttribute.launchPermission)){
+                CloudStackTemplatePermission tempPerm = getApi().listTemplatePermissions(request.getImageId(), null, null);
+                if(tempPerm != null){
+                    imageAtts.setDomainId(tempPerm.getDomainId());
+                    
+                    List<String> accntList = tempPerm.getAccounts();
+                    imageAtts.setAccountNamesWithLaunchPermission(accntList);
+                    
+                    imageAtts.setIsPublic(tempPerm.getIsPublic());
+                }
+            }else if(request.getAttribute().equals(ImageAttribute.description)){
+                EC2DescribeImagesResponse descriptionResp = new EC2DescribeImagesResponse();
+                listTemplates(request.getImageId(), descriptionResp);
+                if(descriptionResp.getImageSet() != null){
+                    EC2Image[] images = descriptionResp.getImageSet();
+                    imageAtts.setDescription(images[0].getDescription());
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error( "EC2 describeImageAttribute - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+        
+        return imageAtts;
+    }
+
+    
 
 	/**
 	 * If given a specific list of snapshots of interest, then only values from those snapshots are returned.
@@ -1283,7 +1377,7 @@ public class EC2Engine {
 			}
 
 			if ( canCreateInstances < request.getMaxCount()) 
-				createInstances = canCreateInstances;
+				createInstances = request.getMinCount();
 			else 
 				createInstances = request.getMaxCount();
 
@@ -1701,6 +1795,11 @@ public class EC2Engine {
     			}
     			instances.addInstance(ec2Vm);
     		}
+		}else{
+		    if(instanceId != null){
+		        //no such instance found
+		        throw new EC2ServiceException(ServerError.InternalError, "Instance:" + instanceId + " not found");
+		    }
 		}
 		return instances;
 	}

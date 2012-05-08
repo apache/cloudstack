@@ -14,7 +14,7 @@
 	<property name="hibernate.order_updates">true</property>
     <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
     
-    <property name="show_sql">true</property>
+    <property name="show_sql">false</property>
     <!--  to debug hibernate generated SQL, open following configuration property -->
     <!--  
     <property name="show_sql">true</property>

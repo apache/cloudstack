@@ -899,11 +899,7 @@
         title: 'label.menu.ipaddresses',
         listView: {
           id: 'ipAddresses',
-          label: 'IPs',
-          filters: {
-            allocated: { label: 'label.allocated' },
-            mine: { label: 'label.my.network' }
-          },
+          label: 'IPs',          
           fields: {
             ipaddress: {
               label: 'IP',
