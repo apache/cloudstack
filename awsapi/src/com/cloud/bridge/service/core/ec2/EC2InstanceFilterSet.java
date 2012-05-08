@@ -55,10 +55,10 @@ public class EC2InstanceFilterSet {
 		String value = (String) filterTypes.get( filterName );
 		
 		if (null == value)
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 1", 501 );
+			throw new EC2ServiceException( "Unsupported filter [" + filterName + "]", 501 );
 		
 		if (null != value && value.equalsIgnoreCase( "null" ))
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 2", 501 );
+			throw new EC2ServiceException( "Unsupported filter [" + filterName + "]", 501 );
 
 		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
 		filterSet.add( param );

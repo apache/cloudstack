@@ -81,6 +81,7 @@ import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
+import com.cloud.bridge.service.exception.EC2ServiceException.ServerError;
 import com.cloud.bridge.util.EC2RestAuth;
 
 
@@ -247,7 +248,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
            request.setAttribute(ImageAttribute.launchPermission);
            return toDescribeImageAttributeResponse( engine.describeImageAttribute( request ));
         }
-        else throw new EC2ServiceException( "Unsupported - only description or launchPermission supported", 501 );
+        else throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only description or launchPermission supported" );
     }
 
 
@@ -292,7 +293,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		    request.addInstanceId( diat.getInstanceId());
 		    return toDescribeInstanceAttributeResponse( engine.describeInstances( request ));
 	    }
-	    throw new EC2ServiceException( "Unsupported - only instanceType supported", 501 );
+	    throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only instanceType supported");
 	}
 
 	
@@ -484,7 +485,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             }
             return toModifyImageAttributeResponse( engine.modifyImageAttribute( request ));
 		}
-		throw new EC2ServiceException( "Unsupported - can only modify image description or launchPermission", 501 );
+		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only modify image description or launchPermission");
 	}	
 
 	private void setAccountOrGroupList(LaunchPermissionItemType[] items, EC2ModifyImageAttribute request){
@@ -586,7 +587,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     		request.setLaunchPermOperation(EC2ModifyImageAttribute.Operation.reset);
     		return toResetImageAttributeResponse( engine.modifyImageAttribute( request ));
 		}
-		throw new EC2ServiceException( "Unsupported - can only reset image launchPermission", 501 );
+		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only reset image launchPermission" );
 	}
 	
 	/**
