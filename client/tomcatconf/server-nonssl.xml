@@ -54,6 +54,8 @@
     <Executor name="tomcatThreadPool" namePrefix="catalina-exec-" 
         maxThreads="150" minSpareThreads="25"/>
     
+    <Executor name="tomcatThreadPool-internal" namePrefix="catalina-exec-int-" 
+        maxThreads="150" minSpareThreads="25"/>
     
     <!-- A "Connector" represents an endpoint by which requests are received
          and responses are returned. Documentation at :
@@ -73,6 +75,13 @@
                connectionTimeout="20000" disableUploadTimeout="true"
                acceptCount="150" enableLookups="false" maxThreads="150"
                maxHttpHeaderSize="8192" redirectPort="8443" />
+
+	<Connector executor="tomcatThreadPool-internal" address="127.0.0.1"
+               port="7080" protocol="org.apache.coyote.http11.Http11NioProtocol" 
+               connectionTimeout="20000" disableUploadTimeout="true"
+               acceptCount="150" enableLookups="false" maxThreads="150"
+               maxHttpHeaderSize="8192" redirectPort="8443" />
+			   
     <!-- Define a SSL HTTP/1.1 Connector on port 8443
          This connector uses the JSSE configuration, when using APR, the 
          connector should be using the OpenSSL style configuration
