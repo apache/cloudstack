@@ -216,6 +216,7 @@ public class S3Engine {
 					S3BucketAdapter bucketAdapter =  getStorageHostBucketAdapter(shost_storagelocation_pair.getFirst());
 					bucketAdapter.deleteContainer(shost_storagelocation_pair.getSecond(), request.getBucketName());
 				}
+                PersistContext.rollbackTransaction(false);
 				PersistContext.releaseNamedLock("bucket.creation");
 			}
 			
