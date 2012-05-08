@@ -35,14 +35,12 @@
             type: { label: 'label.type' },
             storagetype: { label: 'label.storage.type' },
             vmdisplayname: { label: 'label.vm.display.name' },
-            state: {
-              converter: function(str) {
-                // For localization
-                return 'state.' + str;
-              },
-              label: 'State',
-              indicator: { 'Ready': 'on' }
-            }
+            state: { 
+						  label: 'State',
+							indicator: {               
+                'Ready': 'on'
+              }
+						}
           },
 
           // List view actions
@@ -172,8 +170,7 @@
                 poll: pollAsyncJobResult
               }
             },
-						            					
-						//???
+						 
 						uploadVolume: {
               isHeader: true,							
               label: 'label.upload.volume',							
@@ -216,7 +213,10 @@
 									url: {
 									  label: 'label.url',
 										validation: { required: true }
-									}                  
+									},
+                  checksum : {
+                    label: 'label.checksum'
+                  }                  
                 }
               },
 
@@ -226,26 +226,16 @@
                 array1.push("&zoneId=" + args.data.availabilityZone);
 								array1.push("&format=" + args.data.format);
 								array1.push("&url=" + todb(args.data.url));
+								if(args.data.checksum != null && args.data.checksum.length > 0)
+								  array1.push("&checksum=" + todb(args.data.checksum));
                 
                 $.ajax({
                   url: createURL("uploadVolume" + array1.join("")),
                   dataType: "json",
                   async: true,
-                  success: function(json) {
-									  debugger;
-                    var jid = json.uploadvolumeresponse.jobid;
-                    args.response.success(
-                      {_custom:
-                       {jobId: jid,
-                        getUpdatedItem: function(json) {
-                          return json.queryasyncjobresultresponse.jobresult.volume;
-                        },
-                        getActionFilter: function() {
-                          return volumeActionfilter;
-                        }
-                       }
-                      }
-                    );
+                  success: function(json) {	
+                    var items = json.uploadvolumeresponse.volume;  
+                    args.response.success({data:items[0]});
                   },
                   error: function(json) {
                     args.response.error(parseXMLHttpResponse(json));
@@ -254,11 +244,12 @@
               },
 
               notification: {
-                poll: pollAsyncJobResult
+                poll: function(args) {
+                  args.complete();
+                }
               }
             }
-						//???					
-						
+							
           },
 
           dataProvider: function(args) {
@@ -1000,16 +991,11 @@
             volumename: { label: 'label.volume' },
             intervaltype: { label: 'label.interval.type' },
             created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
-            state: {
-              converter: function(str) {
-                // For localization
-                return 'state.'+str;
-              },
-              label: 'label.state', indicator: {
-                converter: function(str) {
-                  return 'state.' + str;
-                },
-                'BackedUp': 'on', 'Destroyed': 'off'
+            state: {              
+              label: 'label.state', 
+							indicator: {               
+                'BackedUp': 'on', 
+								'Destroyed': 'off'
               }
             }
           },

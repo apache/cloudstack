@@ -109,7 +109,7 @@ public class PremiumDatabaseUpgradeChecker extends DatabaseUpgradeChecker {
 
         _upgradeMap.put("2.2.10", new DbUpgrade[] { new Upgrade2210to2211(), new Upgrade2211to2212Premium(),
                 new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
-                new Upgrade302to303() });
+                new Upgrade301to302(), new Upgrade302to303() });
 
         _upgradeMap.put("2.2.11", new DbUpgrade[] { new Upgrade2211to2212Premium(), new Upgrade2212to2213(),
                 new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),

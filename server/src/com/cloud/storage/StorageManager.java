@@ -226,4 +226,6 @@ public interface StorageManager extends StorageService, Manager {
 			Long clusterId, ServiceOfferingVO offering,
 			DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size,
 			HypervisorType hyperType) throws NoTransitionException;
+
+	String getSupportedImageFormatForCluster(Long clusterId);
 }

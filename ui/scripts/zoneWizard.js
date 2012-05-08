@@ -235,6 +235,14 @@
       },
 
       configureGuestTraffic: function(args) {
+        if (args.data['network-model'] == 'Basic') {
+          $('.setup-guest-traffic').addClass('basic');
+          $('.setup-guest-traffic').removeClass('advanced');
+        } else {
+          $('.setup-guest-traffic').removeClass('basic');
+          $('.setup-guest-traffic').addClass('advanced');
+        }
+
         return args.data['network-model'] == 'Basic' ||
           $.grep(args.groupedData.physicalNetworks, function(network) {
             return $.inArray('guest', network.trafficTypes) > -1;

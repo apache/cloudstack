@@ -726,7 +726,7 @@ def addFWFramework(brname):
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
             execute("iptables -I FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
-            phydev = execute("brctl show |grep " + brname + " | awk '{print $4}'").strip()
+            phydev = execute("brctl show |grep -w " + brname + " | awk '{print $4}'").strip()
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
