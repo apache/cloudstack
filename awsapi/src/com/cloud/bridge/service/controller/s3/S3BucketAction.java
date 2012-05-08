@@ -727,7 +727,16 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 	}
 	
 	public void executeGetBucketLocation(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setStatus(405);
+              // TODO - This is a fakery! We don't actually store location in backend
+                  StringBuffer xml = new StringBuffer();
+                      xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
+                      xml.append( "<LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" );
+                      // This is the real fakery
+                     xml.append( "us-west-2" );
+                      xml.append( "</LocationConstraint>" );
+                  response.setStatus(200);
+                    response.setContentType("text/xml; charset=UTF-8");
+                    S3RestServlet.endResponse(response, xml.toString());
 	}
 
 	public void executeGetBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
