@@ -214,7 +214,11 @@ public class DownloadListener implements Listener {
 	}
 
 	public void logDisconnect() {
-		s_logger.warn("Unable to monitor download progress of " + template.getName() + " at host " + sserver.getName());
+		if (template != null){
+			s_logger.warn("Unable to monitor download progress of " + template.getName() + " at host " + sserver.getName());
+		}else {
+			s_logger.warn("Unable to monitor download progress of " + volume.getName() + " at host " + sserver.getName());
+		}
 	}
 
 	public synchronized void updateDatabase(Status state, String errorString) {
