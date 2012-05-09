@@ -24,6 +24,8 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.util.Enumeration;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,6 +43,7 @@ import org.w3c.dom.NodeList;
 import com.cloud.bridge.io.MultiPartDimeInputStream;
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.persist.PersistContext;
+import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.controller.s3.S3BucketAction;
 import com.cloud.bridge.service.controller.s3.S3ObjectAction;
@@ -58,6 +61,7 @@ import com.cloud.bridge.service.exception.InvalidBucketName;
 import com.cloud.bridge.service.exception.NoSuchObjectException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
 import com.cloud.bridge.util.AuthenticationUtils;
+import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.RestAuth;
 import com.cloud.bridge.util.S3SoapAuth;
@@ -67,7 +71,9 @@ import com.cloud.bridge.util.S3SoapAuth;
  */
 public class S3RestServlet extends HttpServlet {
 	private static final long serialVersionUID = -6168996266762804877L;
-	
+	public static final String ENABLE_S3_API="enable.s3.api";
+	private static boolean isS3APIEnabled = false;
+
 	public static final Logger logger = Logger.getLogger(S3RestServlet.class);
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
@@ -99,6 +105,26 @@ public class S3RestServlet extends HttpServlet {
         processRequest( req, resp, "DELETE" );
     }
     
+    public void init( ServletConfig config ) throws ServletException {
+		try{
+    	    ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+    		UserCredentialsDao.preCheckTableExistence();
+    		// check if API is enabled
+    		CloudStackConfigurationDao csDao = new CloudStackConfigurationDao();
+    		String value = csDao.getConfigValue(ENABLE_S3_API);
+    		if(value != null) {
+    		    isS3APIEnabled = Boolean.valueOf(value);
+    		}
+    		
+		}finally {
+		    PersistContext.commitTransaction(true);
+            PersistContext.closeSession(true);
+        }
+		
+	}
+    
+    
+    
 	/**
 	 * POST requests do not get authenticated on entry.   The associated
 	 * access key and signature headers are embedded in the message not encoded
@@ -116,6 +142,12 @@ public class S3RestServlet extends HttpServlet {
         	// to report our version of this capability.
         	// -> unauthenticated calls, should still be done over HTTPS
         	String cloudAction = request.getParameter( "Action" );
+        	
+        	 if(!isS3APIEnabled){
+                 throw new RuntimeException("Amazon S3 API is disabled.");
+              }
+        	
+        	
             if (null != cloudAction) 
             {
     	        if (cloudAction.equalsIgnoreCase( "SetUserKeys" )) {
