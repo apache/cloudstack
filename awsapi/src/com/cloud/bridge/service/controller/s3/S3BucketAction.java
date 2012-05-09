@@ -93,6 +93,7 @@ import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.InvalidBucketName;
 import com.cloud.bridge.service.exception.InvalidRequestContentException;
 import com.cloud.bridge.service.exception.NetworkIOException;
+import com.cloud.bridge.service.exception.NoSuchObjectException;
 import com.cloud.bridge.service.exception.ObjectAlreadyExistsException;
 import com.cloud.bridge.service.exception.OutOfServiceException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
@@ -565,6 +566,7 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 		
 		int maxKeys = Converter.toInt(request.getParameter("max-keys"), 1000);
 		engineRequest.setMaxKeys(maxKeys);
+		try {
 		S3ListBucketResponse engineResponse = ServiceProvider.getInstance().getS3Engine().listBucketContents( engineRequest, false );
 		
 		// To allow the all list buckets result to be serialized via Axiom classes
@@ -580,6 +582,21 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 		resultWriter.startWrite();
 		resultWriter.writeout(oneBucket);
 		resultWriter.stopWrite();
+		} catch (NoSuchObjectException nsoe) {
+		    response.setStatus(404);
+		    response.setContentType("application/xml");   
+
+		    StringBuffer xmlError = new StringBuffer();
+		    xmlError.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+		    .append("<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message>")
+		    .append("<BucketName>").append((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY))
+		    .append("</BucketName>")
+		    .append("<RequestId>1DEADBEEF9</RequestId>") //TODO
+		    .append("<HostId>abCdeFgHiJ1k2LmN3op4q56r7st89</HostId>") //TODO
+		    .append("</Error>");
+	        S3RestServlet.endResponse(response, xmlError.toString());
+
+		}
 
 	}
 	
