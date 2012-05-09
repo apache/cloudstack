@@ -20,16 +20,12 @@ package com.cloud.network.element;
 
 import java.util.List;
 import com.cloud.api.commands.AddCiscoNexusVSMCmd;
-import com.cloud.api.commands.ConfigureCiscoNexusVSMCmd;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
-import com.cloud.api.commands.ListCiscoNexusVSMNetworksCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
-import com.cloud.network.Network;
-import com.cloud.network.PortProfile;
 import com.cloud.utils.component.PluggableService;
 
 public interface CiscoNexusVSMElementService extends PluggableService {
@@ -54,13 +50,6 @@ public interface CiscoNexusVSMElementService extends PluggableService {
      * @return list of CiscoNexusVSMDeviceVO for the VSMs the mgmt server knows of.
      */
     public List<CiscoNexusVSMDeviceVO> listCiscoNexusVSMs(ListCiscoNexusVSMCmd cmd);
-
-    /**
-     * lists all the networks (port profiles) configured on the VSM.
-     * @param ListCiscoNexusVSMCmd
-     * @return list of the guest networks that are using this Netscaler load balancer
-     */
-    public List<? extends PortProfile> listNetworks(ListCiscoNexusVSMNetworksCmd cmd);
 
     /**
      * Enables a Cisco Nexus VSM. 

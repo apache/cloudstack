@@ -15,142 +15,56 @@ package com.cloud.network;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiConstants;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterIpAddressVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.exception.DiscoveredWithErrorException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
-import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
-import com.cloud.resource.ResourceStateAdapter;
-import com.cloud.resource.ServerResource;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
+import com.cloud.network.PortProfileVO.BindingType;
+import com.cloud.network.PortProfileVO.PortType;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
+import com.cloud.network.dao.PortProfileDao;
 import com.cloud.network.resource.CiscoNexusVSM;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.network.PortProfileManagerImpl;
 
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
 	@Inject
     CiscoNexusVSMDeviceDao _ciscoNexusVSMDeviceDao;    
     @Inject
-    HostDao _hostDao;
-    @Inject
-    DataCenterDao _dcDao;
-    @Inject
-    NetworkManager _networkMgr;
-    @Inject
-    NicDao _nicDao;
-    @Inject
-    AgentManager _agentMgr;
-
-    @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    VlanDao _vlanDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao;
-    @Inject
-    AccountDao _accountDao;
-    @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
-    @Inject
-    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject
-    AccountManager _accountMgr;
-    @Inject
-    UserStatisticsDao _userStatsDao;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    DomainRouterDao _routerDao;
-    @Inject
-    PortForwardingRulesDao _portForwardingRulesDao;
-    @Inject
-    ConfigurationDao _configDao;
-
-    @Inject
-    NetworkExternalLoadBalancerDao _networkLBDao;
-    @Inject
-    NetworkServiceMapDao _ntwkSrvcProviderDao;
-    @Inject
-    protected HostPodDao _podDao = null;
-
-    
-    @Inject
     ClusterDao _clusterDao;
     @Inject
     ClusterVSMMapDao _clusterVSMDao;
     @Inject
     ResourceManager _resourceMgr;
-    
-	@Inject VmwareManager _vmwareMgr;
-    @Inject AlertManager _alertMgr;
-    @Inject VMTemplateDao _tmpltDao;
-    @Inject ClusterDetailsDao _clusterDetailsDao;
-
+	@Inject
+	VmwareManager _vmwareMgr;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
     @Inject
     HostDetailsDao _hostDetailDao;
+    @Inject
+    PortProfileDao _ppDao;
+
     
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
     
@@ -163,7 +77,6 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
     	// First check if the cluster is of type vmware. If not,
     	// throw an exception. VSMs are tightly integrated with vmware clusters.
-    	s_logger.info("in addCiscoNexuVSM, clusterId is --> " + clusterId + ", ipaddress is --> " + ipaddress + ", username --> " + username + ", pwd --> " + password + ", vcenterip --> " + vCenterIpaddr + ", vCenterdcName --> " + vCenterDcName);
     	
     	ClusterVO cluster = _clusterDao.findById(clusterId);
     	if (cluster == null) {
@@ -346,6 +259,12 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     		}
     	}
         
+        /*****
+        // Ok, I'm putting in a port profile creation call here. Just for testing.
+        PortProfileManagerImpl obj = new PortProfileManagerImpl();
+        obj.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
+        ***/
+        
         return true;
     }
     
@@ -370,7 +289,14 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     			throw new CloudRuntimeException(e.getMessage());
     		}
     	}
-        
+       
+        /**
+        // Deleting the same port profile..        
+        PortProfileVO obj = _ppDao.findByName("pp1");
+        PortProfileManagerImpl obj2 = new PortProfileManagerImpl();
+        obj2.deletePortProfile(obj.getId());
+        //_ppmgr.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
+        **/
         return true;
     }
     
