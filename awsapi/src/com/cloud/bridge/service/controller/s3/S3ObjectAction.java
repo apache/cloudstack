@@ -335,6 +335,9 @@ public class S3ObjectAction implements ServletAction {
 		S3GetObjectResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest( engineRequest );			
 		response.setStatus( engineResponse.getResultCode());
 		
+		if (engineResponse.getResultCode()  >=400 ) {
+		    return;
+		}
 		String deleteMarker = engineResponse.getDeleteMarker();
 		if ( null != deleteMarker ) {
 			 response.addHeader( "x-amz-delete-marker", "true" );	
