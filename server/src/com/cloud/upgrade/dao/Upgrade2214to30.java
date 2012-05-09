@@ -328,8 +328,6 @@ public class Upgrade2214to30 implements DbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             // Load all DataCenters
-            String getNextNetworkSequenceSql = "SELECT value from `cloud`.`sequence` where name='physical_networks_seq'";
-            String advanceNetworkSequenceSql = "UPDATE `cloud`.`sequence` set value=value+1 where name='physical_networks_seq'";
 
             String xenPublicLabel = getNetworkLabelFromConfig(conn, "xen.public.network.device");
             String xenPrivateLabel = getNetworkLabelFromConfig(conn, "xen.private.network.device");
@@ -353,158 +351,88 @@ public class Upgrade2214to30 implements DbUpgrade {
                 String vnet = rs.getString(4);
                 String zoneName = rs.getString(5);
 
-                // add p.network
-                PreparedStatement pstmt2 = conn.prepareStatement(getNextNetworkSequenceSql);
-                ResultSet rsSeq = pstmt2.executeQuery();
-                rsSeq.next();
+                //check if there are multiple guest networks configured using network_tags
+                
+                PreparedStatement pstmt2 = conn.prepareStatement("SELECT distinct tag FROM `cloud`.`network_tags` t JOIN `cloud`.`networks` n where t.network_id = n.id and n.data_center_id = "+zoneId);
+                ResultSet rsTags = pstmt2.executeQuery();
+                if(rsTags.next()){
+                    boolean isFirstPhysicalNtwk = true;
+                    do{
+                        s_logger.debug("Network tags are not empty, might have to create more than one physical network...");
+                        //create one physical network per tag
+                        String guestNetworkTag = rsTags.getString(1);
+                        long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, (isFirstPhysicalNtwk) ? vnet : null, domainId);
+                        //add Traffic types
+                        if(isFirstPhysicalNtwk){
+                            addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);
+                            addTrafficType(conn, physicalNetworkId, "Management", xenPrivateLabel, kvmPrivateLabel, vmwarePrivateLabel);
+                            addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
+                        }
+                        addTrafficType(conn, physicalNetworkId, "Guest", guestNetworkTag, kvmGuestLabel, vmwareGuestLabel);
+                        addDefaultServiceProviders(conn, physicalNetworkId, zoneId);
+                        //for all networks with this tag, add physical_network_id
+                        
+                        PreparedStatement pstmt3 = conn.prepareStatement("SELECT network_id FROM `cloud`.`network_tags` where tag = '" + guestNetworkTag + "'");
+                        ResultSet rsNet = pstmt3.executeQuery();
+                        s_logger.debug("Adding PhysicalNetwork to VLAN");
+                        s_logger.debug("Adding PhysicalNetwork to user_ip_address");
+                        s_logger.debug("Adding PhysicalNetwork to networks");
+                        while(rsNet.next()){
+                            Long networkId = rsNet.getLong(1);
+                            addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId,networkId);
+                        }
+                        pstmt3.close();
+                        // add first physicalNetworkId to op_dc_vnet_alloc for this zone - just a placeholder since direct networking dont need this
+                        if(isFirstPhysicalNtwk){
+                            s_logger.debug("Adding PhysicalNetwork to op_dc_vnet_alloc");
+                            String updateVnet = "UPDATE `cloud`.`op_dc_vnet_alloc` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
+                            pstmtUpdate = conn.prepareStatement(updateVnet);
+                            pstmtUpdate.executeUpdate();
+                            pstmtUpdate.close();
+                        }
+                        
+                        isFirstPhysicalNtwk = false;
+                    }while(rsTags.next());
+                    pstmt2.close();
+                }else{
+                    //default to one physical network
+                    long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, vnet, domainId);
+                    // add traffic types
+                    addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);
+                    addTrafficType(conn, physicalNetworkId, "Management", xenPrivateLabel, kvmPrivateLabel, vmwarePrivateLabel);
+                    addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
+                    addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, kvmGuestLabel, vmwareGuestLabel);
+                    addDefaultServiceProviders(conn, physicalNetworkId, zoneId);
+                    
+                    // add physicalNetworkId to op_dc_vnet_alloc for this zone
+                    s_logger.debug("Adding PhysicalNetwork to op_dc_vnet_alloc");
+                    String updateVnet = "UPDATE `cloud`.`op_dc_vnet_alloc` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
+                    pstmtUpdate = conn.prepareStatement(updateVnet);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
 
-                long physicalNetworkId = rsSeq.getLong(1);
-                rsSeq.close();
-                pstmt2.close();
-                pstmt2 = conn.prepareStatement(advanceNetworkSequenceSql);
-                pstmt2.executeUpdate();
-                pstmt2.close();
+                    // add physicalNetworkId to vlan for this zone
+                    s_logger.debug("Adding PhysicalNetwork to VLAN");
+                    String updateVLAN = "UPDATE `cloud`.`vlan` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
+                    pstmtUpdate = conn.prepareStatement(updateVLAN);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
 
-                String uuid = UUID.randomUUID().toString();
-                String broadcastDomainRange = "POD";
-                if ("Advanced".equals(networkType)) {
-                    broadcastDomainRange = "ZONE";
+                    // add physicalNetworkId to user_ip_address for this zone
+                    s_logger.debug("Adding PhysicalNetwork to user_ip_address");
+                    String updateUsrIp = "UPDATE `cloud`.`user_ip_address` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
+                    pstmtUpdate = conn.prepareStatement(updateUsrIp);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+
+                    // add physicalNetworkId to guest networks for this zone
+                    s_logger.debug("Adding PhysicalNetwork to networks");
+                    String updateNet = "UPDATE `cloud`.`networks` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId + " AND traffic_type = 'Guest'";
+                    pstmtUpdate = conn.prepareStatement(updateNet);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
                 }
 
-                String values = null;
-                values = "('" + physicalNetworkId + "'";
-                values += ",'" + uuid + "'";
-                values += ",'" + zoneId + "'";
-                values += ",'" + vnet + "'";
-                values += ",'" + domainId + "'";
-                values += ",'" + broadcastDomainRange + "'";
-                values += ",'Enabled'";
-                values += ",'" + zoneName + "-pNtwk'";
-                values += ")";
-
-                s_logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
-
-                String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, domain_id, broadcast_domain_range, state, name) VALUES " + values;
-                pstmtUpdate = conn.prepareStatement(sql);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add traffic types
-                s_logger.debug("Adding PhysicalNetwork traffic types");
-                String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label, kvm_network_label, vmware_network_label, uuid) VALUES ( ?, ?, ?, ?, ?, ?)";
-                pstmtUpdate = conn.prepareStatement(insertTraficType);
-                pstmtUpdate.setLong(1, physicalNetworkId);
-                pstmtUpdate.setString(2, "Public");
-                pstmtUpdate.setString(3, xenPublicLabel);
-                pstmtUpdate.setString(4, kvmPublicLabel);
-                pstmtUpdate.setString(5, vmwarePublicLabel);
-                pstmtUpdate.setString(6, UUID.randomUUID().toString());
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                pstmtUpdate = conn.prepareStatement(insertTraficType);
-                pstmtUpdate.setLong(1, physicalNetworkId);
-                pstmtUpdate.setString(2, "Management");
-                pstmtUpdate.setString(3, xenPrivateLabel);
-                pstmtUpdate.setString(4, kvmPrivateLabel);
-                pstmtUpdate.setString(5, vmwarePrivateLabel);
-                pstmtUpdate.setString(6, UUID.randomUUID().toString());
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                pstmtUpdate = conn.prepareStatement(insertTraficType);
-                pstmtUpdate.setLong(1, physicalNetworkId);
-                pstmtUpdate.setString(2, "Storage");
-                pstmtUpdate.setString(3, xenStorageLabel);
-                pstmtUpdate.setString(4, null);
-                pstmtUpdate.setString(5, null);
-                pstmtUpdate.setString(6, UUID.randomUUID().toString());
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                pstmtUpdate = conn.prepareStatement(insertTraficType);
-                pstmtUpdate.setLong(1, physicalNetworkId);
-                pstmtUpdate.setString(2, "Guest");
-                pstmtUpdate.setString(3, xenGuestLabel);
-                pstmtUpdate.setString(4, kvmGuestLabel);
-                pstmtUpdate.setString(5, vmwareGuestLabel);
-                pstmtUpdate.setString(6, UUID.randomUUID().toString());
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add physical network service provider - VirtualRouter
-                s_logger.debug("Adding PhysicalNetworkServiceProvider VirtualRouter");
-                String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
-                        "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
-                        "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-                pstmtUpdate = conn.prepareStatement(insertPNSP);
-                pstmtUpdate.setString(1, UUID.randomUUID().toString());
-                pstmtUpdate.setLong(2, physicalNetworkId);
-                pstmtUpdate.setString(3, "VirtualRouter");
-                pstmtUpdate.setString(4, "Enabled");
-                pstmtUpdate.setLong(5, 0);
-                pstmtUpdate.setInt(6, 1);
-                pstmtUpdate.setInt(7, 1);
-                pstmtUpdate.setInt(8, 1);
-                pstmtUpdate.setInt(9, 1);
-                pstmtUpdate.setInt(10, 1);
-                pstmtUpdate.setInt(11, 1);
-                pstmtUpdate.setInt(12, 1);
-                pstmtUpdate.setInt(13, 1);
-                pstmtUpdate.setInt(14, 1);
-                pstmtUpdate.setInt(15, 1);
-                pstmtUpdate.setInt(16, 0);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add virtual_router_element
-                String fetchNSPid = "SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId;
-                pstmt2 = conn.prepareStatement(fetchNSPid);
-                ResultSet rsNSPid = pstmt2.executeQuery();
-                rsNSPid.next();
-                long nspId = rsNSPid.getLong(1);
-                rsSeq.close();
-                pstmt2.close();
-
-                String insertRouter = "INSERT INTO `cloud`.`virtual_router_providers` (`nsp_id`, `uuid` , `type` , `enabled`) " +
-                        "VALUES (?,?,?,?)";
-                pstmtUpdate = conn.prepareStatement(insertRouter);
-                pstmtUpdate.setLong(1, nspId);
-                pstmtUpdate.setString(2, UUID.randomUUID().toString());
-                pstmtUpdate.setString(3, "VirtualRouter");
-                pstmtUpdate.setInt(4, 1);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add physicalNetworkId to op_dc_vnet_alloc for this zone
-                s_logger.debug("Adding PhysicalNetwork to op_dc_vnet_alloc");
-                String updateVnet = "UPDATE `cloud`.`op_dc_vnet_alloc` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
-                pstmtUpdate = conn.prepareStatement(updateVnet);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add physicalNetworkId to vlan for this zone
-                s_logger.debug("Adding PhysicalNetwork to VLAN");
-                String updateVLAN = "UPDATE `cloud`.`vlan` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
-                pstmtUpdate = conn.prepareStatement(updateVLAN);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add physicalNetworkId to user_ip_address for this zone
-                s_logger.debug("Adding PhysicalNetwork to user_ip_address");
-                String updateUsrIp = "UPDATE `cloud`.`user_ip_address` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
-                pstmtUpdate = conn.prepareStatement(updateUsrIp);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-
-                // add physicalNetworkId to guest networks for this zone
-                s_logger.debug("Adding PhysicalNetwork to networks");
-                String updateNet = "UPDATE `cloud`.`networks` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId + " AND traffic_type = 'Guest'";
-                pstmtUpdate = conn.prepareStatement(updateNet);
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
@@ -653,19 +581,33 @@ public class Upgrade2214to30 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance`");
+        	int numRows = 0;
+        	pstmt = conn.prepareStatement("select count(id) from `cloud`.`vm_instance` where removed is null");
             rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                String value = rs.getString(2);
-                if (value == null) {
-                    continue;
-                }
-                String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vnc_password=? where id=?");
-                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-                pstmt.setLong(2, id);
-                pstmt.executeUpdate();
+            if(rs.next()){
+            	numRows = rs.getInt(1);
+            }
+            rs.close();
+            pstmt.close();
+            int offset = 0;
+            while(offset < numRows){
+            	pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` where removed is null limit "+offset+", 500");
+            	rs = pstmt.executeQuery();
+            	while (rs.next()) {
+            		long id = rs.getLong(1);
+            		String value = rs.getString(2);
+            		if (value == null) {
+            			continue;
+            		}
+            		String encryptedValue = DBEncryptionUtil.encrypt(value);
+            		pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vnc_password=? where id=?");
+            		pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+            		pstmt.setLong(2, id);
+            		pstmt.executeUpdate();
+            		pstmt.close();
+            	}
+            	rs.close();
+            	offset+=500;
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password ", e);
