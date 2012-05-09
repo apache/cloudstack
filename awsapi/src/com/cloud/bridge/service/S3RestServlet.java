@@ -185,16 +185,19 @@ public class S3RestServlet extends HttpServlet {
 			
         } 
         catch( InvalidBucketName e) {
+            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(400);
         	endResponse(response, "Invalid Bucket Name - " + e.toString());    	
         } 
         catch(PermissionDeniedException e) {
+            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(403);
         	endResponse(response, "Access denied - " + e.toString());
         } 
         catch(Throwable e) {
+            PersistContext.rollbackTransaction();
     		logger.error("Unexpected exception " + e.getMessage(), e);
     		response.setStatus(404);
         	endResponse(response, "Bad request");
